@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArbitrageBadge } from "./arbitrage-badge";
 import { PriceDisplay } from "./price-display";
 import { calculateArbitragePercent } from "@/lib/utils";
+import { getImageUrl } from "@/lib/image-url";
 import type { Product } from "@/types";
 
 interface ProductCardProps {
@@ -19,7 +20,7 @@ export function ProductCard({ product, locale }: ProductCardProps) {
 
   const brandName = locale === "zh" ? product.brand?.nameZh : product.brand?.nameEn;
   const categoryName = locale === "zh" ? product.category?.nameZh : product.category?.nameEn;
-  const primaryImage = product.images?.[0]?.url || "/images/placeholders/tractor.svg";
+  const primaryImage = getImageUrl(product.images?.[0]?.url);
 
   const arbitrage = calculateArbitragePercent(product.priceCny, product.priceUsd);
 

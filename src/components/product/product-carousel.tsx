@@ -1,6 +1,7 @@
 "use client";
 
 import { Carousel, CarouselItem } from "@/components/ui/carousel";
+import { getImageUrl } from "@/lib/image-url";
 import type { ProductImage } from "@/types";
 
 interface ProductCarouselProps {
@@ -23,7 +24,7 @@ export function ProductCarousel({ images, alt }: ProductCarouselProps) {
         <CarouselItem key={image.id}>
           <div className="h-96 overflow-hidden rounded-lg bg-gray-100">
             <img
-              src={image.url}
+              src={getImageUrl(image.url)}
               alt={alt}
               className="h-full w-full object-cover"
             />
