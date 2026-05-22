@@ -8,6 +8,7 @@ import { InquiryForm } from "@/components/product/inquiry-form";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin, Clock, Calendar, Wrench, ArrowLeftRight, ExternalLink, Info } from "lucide-react";
+import { getImageUrl, getVideoUrl } from "@/lib/image-url";
 import { formatPrice } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -73,11 +74,11 @@ export default async function ProductDetailPage({
               {product.videos.map((video, idx) => (
                 <div key={video.id} className="overflow-hidden rounded-lg bg-black">
                   <video
-                    src={video.url}
+                    src={getVideoUrl(video.url)}
                     controls
                     className="h-auto w-full"
                     preload="metadata"
-                    poster={product.images[0]?.url}
+                    poster={getImageUrl(product.images[0]?.url)}
                   >
                     <track kind="captions" />
                     {locale === "zh" ? "您的浏览器不支持视频播放" : "Your browser does not support video playback"}

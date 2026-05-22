@@ -18,9 +18,9 @@ export default async function HomePage({
   // 首页只展示4个热门设备（有实拍图的核心产品）
   const priorityIds = [
     "cmpdknl8s00e511kwiy4tzjax", // 东洋 Beet Harvester (2018)
-    "cmpfohy0n000xkrh5d14tvnqy", // 纽荷兰 FR450 (2013)
     "cmpdknk4s008111kw3zr8aimf", // 克拉斯 5300RC (2022)
     "cmpdknkb2009911kwv7u98vpe", // 克罗尼 1290XC (2014)
+    "cmpdknkif009v11kw0dcmfq5q", // 克罗尼 CF155XC (有实拍图)
   ];
 
   const rawProducts = await prisma.product.findMany({

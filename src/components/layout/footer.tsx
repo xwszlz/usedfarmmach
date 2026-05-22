@@ -64,10 +64,19 @@ export function Footer({ locale }: FooterProps) {
             </h3>
             <ul className="mt-3 space-y-2">
               <li className="text-sm text-gray-500">
-                {t("email")}: contact@agritrade.com
+                {t("company")}: 石家庄神雕科技有限公司
               </li>
               <li className="text-sm text-gray-500">
-                {t("phone")}: +86 400-888-8888
+                WhatsApp: +86 15511395016
+              </li>
+              <li className="text-sm text-gray-500">
+                {t("phone")}: +86 18633878701
+              </li>
+              <li className="text-sm text-gray-500">
+                {t("email")}: 932133255@qq.com
+              </li>
+              <li className="text-sm text-gray-500">
+                {t("address")}: 河北省石家庄市元氏县马村乡廖村
               </li>
             </ul>
           </div>
