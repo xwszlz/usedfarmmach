@@ -44,3 +44,7 @@ prisma/migrations/
 
 # uploads
 /public/uploads/
+
+.vercel
+.env.production
+data-export.json
