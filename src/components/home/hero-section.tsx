@@ -4,12 +4,21 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { TrendingUp, ArrowRight, Play } from "lucide-react";
+import { TrendingUp, ArrowRight, Play, Flame } from "lucide-react";
 import { useState } from "react";
+import { getImageUrl } from "@/lib/image-url";
 
 interface HeroSectionProps {
   locale: string;
 }
+
+// 神雕日报 TOP 1 热门设备
+const TOP_PRODUCT = {
+  id: "cmpdknl8s00e511kwiy4tzjax",
+  name: "东洋 Beet Harvester",
+  year: 2018,
+  image: "/uploads/products/cmpdknl8s00e511kwiy4tzjax/1.jpg",
+};
 
 export function HeroSection({ locale }: HeroSectionProps) {
   const t = useTranslations("home");
@@ -48,11 +57,25 @@ export function HeroSection({ locale }: HeroSectionProps) {
         {/* Right: Hero image + Arbitrage card */}
         <div className="flex-1">
           <div className="relative">
-            <div className="h-72 w-full overflow-hidden rounded-2xl bg-gradient-to-br from-primary-200 to-primary-400 sm:h-80">
-              <div className="flex h-full items-center justify-center text-6xl">
-                🚜
+            <Link href={`/${locale}/products/${TOP_PRODUCT.id}`}>
+              <div className="h-72 w-full overflow-hidden rounded-2xl bg-gray-100 sm:h-80">
+                <img
+                  src={getImageUrl(TOP_PRODUCT.image)}
+                  alt={TOP_PRODUCT.name}
+                  className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
+                />
+                {/* TOP 1 badge */}
+                <div className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white shadow-lg">
+                  <Flame className="h-3 w-3" />
+                  {locale === "zh" ? "日报 TOP 1" : "Daily Top 1"}
+                </div>
+                {/* Product info overlay */}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+                  <p className="text-sm font-semibold text-white">{TOP_PRODUCT.name}</p>
+                  <p className="text-xs text-white/80">{TOP_PRODUCT.year}年</p>
+                </div>
               </div>
-            </div>
+            </Link>
             {/* Floating arbitrage card */}
             <Card className="absolute -bottom-4 -right-4 w-64 shadow-lg">
               <CardContent className="p-4">
