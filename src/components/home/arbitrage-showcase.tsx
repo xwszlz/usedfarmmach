@@ -1,3 +1,5 @@
+"use client";
+
 import { useTranslations } from "next-intl";
 import { Card, CardContent } from "@/components/ui/card";
 import { Brain, TrendingUp, Shield, Globe } from "lucide-react";
