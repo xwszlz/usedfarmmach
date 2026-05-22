@@ -1,0 +1,175 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  phone             String?
+  passwordHash       String
+  role              String    @default("buyer") // buyer, seller, admin
+  companyName       String?
+  country           String?
+  preferredLanguage String    @default("zh")
+  credits           Int       @default(0)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  products   Product[]
+  demands    Demand[]
+  inquiries  Inquiry[]
+}
+
+model Brand {
+  id            String @id @default(cuid())
+  nameZh        String
+  nameEn        String
+  originCountry String
+  isImported    Boolean @default(false)
+
+  products    Product[]
+  valuations  Valuation[]
+  demands     Demand[]
+}
+
+model Category {
+  id       String  @id @default(cuid())
+  nameZh   String
+  nameEn   String
+  parentId String?
+
+  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryHierarchy")
+
+  products Product[]
+  demands  Demand[]
+}
+
+model Product {
+  id            String   @id @default(cuid())
+  sellerId      String
+  brandId       String
+  categoryId    String
+  modelName     String
+  year          Int
+  workingHours  Int?
+  condition     String   // excellent, good, fair, poor
+  priceCny      Float
+  priceUsd      Float?
+  location      String
+  descriptionZh String?
+  descriptionEn String?
+  aiGenerated   Boolean  @default(false)
+  status        String   @default("active") // active, sold, draft, archived
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  seller  User          @relation(fields: [sellerId], references: [id])
+  brand   Brand         @relation(fields: [brandId], references: [id])
+  category Category     @relation(fields: [categoryId], references: [id])
+  images              ProductImage[]
+  videos              ProductVideo[]
+  internationalPrices InternationalPrice[]
+  inquiries           Inquiry[]
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  productId String
+  url       String
+  sortOrder Int     @default(0)
+  isPrimary Boolean @default(false)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
+model ProductVideo {
+  id        String  @id @default(cuid())
+  productId String
+  url       String
+  sortOrder Int     @default(0)
+  title     String?  // optional video title/caption
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
+model Demand {
+  id             String   @id @default(cuid())
+  buyerId        String
+  targetCountry  String
+  categoryId     String?
+  brandId        String?
+  budgetMinUsd   Float?
+  budgetMaxUsd   Float?
+  quantity       Int      @default(1)
+  deadlineMonths Int?
+  description    String?
+  status         String   @default("active") // active, fulfilled, closed
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  buyer    User      @relation(fields: [buyerId], references: [id])
+  brand    Brand?    @relation(fields: [brandId], references: [id])
+  category Category? @relation(fields: [categoryId], references: [id])
+}
+
+model Inquiry {
+  id        String   @id @default(cuid())
+  productId String
+  buyerId   String?
+  name      String
+  email     String
+  phone     String?
+  company   String?
+  message   String?
+  status    String   @default("pending") // pending, replied, closed
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id])
+  buyer   User?   @relation(fields: [buyerId], references: [id])
+}
+
+model InternationalPrice {
+  id              String   @id @default(cuid())
+  productId       String
+  priceForeignCny Float    // 国外市场价（人民币换算，万元）
+  priceForeignRaw Float?   // 国外市场价（原始货币金额）
+  currency        String   @default("EUR") // 原始货币：EUR, USD, etc.
+  exchangeRate    Float?   // 当时汇率
+  source          String   // 数据来源：e-farm, TractorHouse, Agroline, etc.
+  sourceUrl       String?  // 来源链接
+  sourceDate      String?  // 数据抓取日期
+  country         String?  // 国外市场国家
+  notes           String?  // 备注
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
+model Valuation {
+  id               String  @id @default(cuid())
+  productId        String?
+  brandId          String
+  modelName        String
+  year             Int
+  workingHours     Int?
+  estimatedPriceCny Float
+  estimatedPriceUsd Float
+  confidenceScore  Float   @default(0.5)
+  factors          String?  // JSON string (SQLite compat)
+
+  brand Brand @relation(fields: [brandId], references: [id])
+}

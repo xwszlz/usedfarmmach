@@ -1,0 +1,145 @@
+export type UserRole = "buyer" | "seller" | "admin";
+
+export type ProductCondition = "excellent" | "good" | "fair" | "poor";
+
+export type ProductStatus = "active" | "sold" | "draft" | "archived";
+
+export type InquiryStatus = "pending" | "replied" | "closed";
+
+export type DemandStatus = "active" | "fulfilled" | "closed";
+
+export interface User {
+  id: string;
+  email: string;
+  phone: string | null;
+  role: UserRole;
+  companyName: string | null;
+  country: string | null;
+  preferredLanguage: string;
+  credits: number;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
+
+export interface Brand {
+  id: string;
+  nameZh: string;
+  nameEn: string;
+  originCountry: string;
+  isImported: boolean;
+}
+
+export interface Category {
+  id: string;
+  nameZh: string;
+  nameEn: string;
+  parentId: string | null;
+}
+
+export interface Product {
+  id: string;
+  sellerId: string;
+  brandId: string;
+  categoryId: string;
+  modelName: string;
+  year: number;
+  workingHours: number | null;
+  condition: ProductCondition;
+  priceCny: number;
+  priceUsd: number | null;
+  location: string;
+  descriptionZh: string | null;
+  descriptionEn: string | null;
+  aiGenerated: boolean;
+  status: ProductStatus;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  brand?: Brand;
+  category?: Category;
+  images?: ProductImage[];
+  seller?: Pick<User, "id" | "companyName" | "country">;
+}
+
+export interface ProductImage {
+  id: string;
+  productId: string;
+  url: string;
+  sortOrder: number;
+  isPrimary: boolean;
+}
+
+export interface Inquiry {
+  id: string;
+  productId: string;
+  buyerId: string | null;
+  name: string;
+  email: string;
+  phone: string | null;
+  company: string | null;
+  message: string | null;
+  status: InquiryStatus;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
+
+export interface Demand {
+  id: string;
+  buyerId: string;
+  targetCountry: string;
+  categoryId: string | null;
+  brandId: string | null;
+  budgetMinUsd: number | null;
+  budgetMaxUsd: number | null;
+  quantity: number;
+  deadlineMonths: number | null;
+  description: string | null;
+  status: DemandStatus;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
+
+export interface Valuation {
+  id: string;
+  productId: string | null;
+  brandId: string;
+  modelName: string;
+  year: number;
+  workingHours: number | null;
+  estimatedPriceCny: number;
+  estimatedPriceUsd: number;
+  confidenceScore: number;
+  factors: Record<string, unknown> | null;
+}
+
+export interface ProductFilters {
+  brand?: string;
+  category?: string;
+  yearMin?: number;
+  yearMax?: number;
+  priceMin?: number;
+  priceMax?: number;
+  location?: string;
+  condition?: ProductCondition;
+  page?: number;
+  pageSize?: number;
+  sort?: string;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface AuthResponse {
+  token: string;
+  user: User;
+}
+
+export interface ApiResponse<T = unknown> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}

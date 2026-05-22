@@ -1,0 +1,113 @@
+import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { MapPin, Clock, Play } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ArbitrageBadge } from "./arbitrage-badge";
+import { PriceDisplay } from "./price-display";
+import { calculateArbitragePercent } from "@/lib/utils";
+import type { Product } from "@/types";
+
+interface ProductCardProps {
+  product: Product;
+  locale: string;
+}
+
+export function ProductCard({ product, locale }: ProductCardProps) {
+  const t = useTranslations("products.card");
+  const td = useTranslations("products.detail");
+
+  const brandName = locale === "zh" ? product.brand?.nameZh : product.brand?.nameEn;
+  const categoryName = locale === "zh" ? product.category?.nameZh : product.category?.nameEn;
+  const primaryImage = product.images?.[0]?.url || "/images/placeholders/tractor.svg";
+
+  const arbitrage = calculateArbitragePercent(product.priceCny, product.priceUsd);
+
+  // Use real international price for arbitrage if available
+  const intlPrice = (product as any).internationalPrices?.[0] || null;
+  const realArbitrage = intlPrice?.priceForeignCny
+    ? Math.round(((product.priceCny - intlPrice.priceForeignCny) / intlPrice.priceForeignCny) * 100)
+    : arbitrage;
+  const conditionLabel = td(`condition${product.condition.charAt(0).toUpperCase() + product.condition.slice(1)}`);
+
+  return (
+    <Link href={`/${locale}/products/${product.id}`}>
+      <Card className="group cursor-pointer overflow-hidden transition-shadow hover:shadow-lg">
+        {/* Image */}
+        <div className="relative h-48 overflow-hidden bg-gray-100">
+          <img
+            src={primaryImage}
+            alt={product.modelName}
+            className="h-full w-full object-cover transition-transform group-hover:scale-105"
+          />
+          {realArbitrage !== null && Math.abs(realArbitrage) > 10 && (
+            <div className="absolute right-2 top-2">
+              <ArbitrageBadge percent={realArbitrage} source={intlPrice?.source} />
+            </div>
+          )}
+          {product.brand?.isImported && (
+            <div className="absolute left-2 top-2">
+              <Badge variant="default" className="text-xs">
+                {locale === "zh" ? "进口" : "Imported"}
+              </Badge>
+            </div>
+          )}
+          {(product as any).videos?.length > 0 && (
+            <div className="absolute bottom-2 right-2">
+              <Badge variant="secondary" className="flex items-center gap-1 bg-black/60 text-xs text-white hover:bg-black/70">
+                <Play className="h-3 w-3" />
+                {(product as any).videos.length}
+              </Badge>
+            </div>
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="p-4">
+          {/* Brand + Model */}
+          <div className="mb-1 flex items-center gap-2">
+            <span className="text-xs font-medium text-primary-600">
+              {brandName}
+            </span>
+            {categoryName && (
+              <span className="text-xs text-gray-400">{categoryName}</span>
+            )}
+          </div>
+          <h3 className="mb-2 text-sm font-semibold text-gray-900 line-clamp-1">
+            {product.modelName}
+          </h3>
+
+          {/* Year + Hours */}
+          <div className="mb-2 flex items-center gap-3 text-xs text-gray-500">
+            <span>{t("year", { year: product.year })}</span>
+            {product.workingHours && (
+              <span className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {t("hours", { hours: product.workingHours.toLocaleString() })}
+              </span>
+            )}
+            <Badge variant="outline" className="text-xs">
+              {conditionLabel}
+            </Badge>
+          </div>
+
+          {/* Price */}
+          <PriceDisplay
+            priceCny={product.priceCny}
+            priceUsd={product.priceUsd}
+            locale={locale}
+            size="sm"
+            showLabel={false}
+            internationalPrice={intlPrice}
+          />
+
+          {/* Location */}
+          <div className="mt-2 flex items-center gap-1 text-xs text-gray-400">
+            <MapPin className="h-3 w-3" />
+            {product.location}
+          </div>
+        </div>
+      </Card>
+    </Link>
+  );
+}
