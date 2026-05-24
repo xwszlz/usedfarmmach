@@ -22,9 +22,16 @@ export function ProductCard({ product, locale }: ProductCardProps) {
   const categoryName = (locale === "zh" ? product.category?.nameZh : locale === "ru" ? (product.category as any)?.nameRu || product.category?.nameEn : product.category?.nameEn);
   const baseImageUrl = getImageUrl(product.images?.[0]?.url);
   // 为特定产品添加缓存破坏参数，强制刷新图片
-  const primaryImage = product.id === 'cmpdknl8s00e511kwiy4tzjax' 
-    ? `${baseImageUrl}?v=202605242240`
-    : baseImageUrl;
+  const cacheBusterMap: Record<string, string> = {
+    // 东洋甜菜机 (2026-05-24 22:40)
+    'cmpdknl8s00e511kwiy4tzjax': '?v=202605242240',
+    // 克拉斯860 (2026-05-24 23:42)
+    'cmpdknii2000111kwcau06hey': '?v=202605242342',
+    // 约翰迪尔7250 (2026-05-24 23:42)
+    'cmpdknj9v004b11kwqvki68wr': '?v=202605242342',
+  };
+  const cacheBuster = cacheBusterMap[product.id];
+  const primaryImage = cacheBuster ? `${baseImageUrl}${cacheBuster}` : baseImageUrl;
 
   const arbitrage = calculateArbitragePercent(product.priceCny, product.priceUsd);
 
