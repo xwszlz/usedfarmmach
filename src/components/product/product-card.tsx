@@ -18,9 +18,13 @@ export function ProductCard({ product, locale }: ProductCardProps) {
   const t = useTranslations("products.card");
   const td = useTranslations("products.detail");
 
-  const brandName = locale === "zh" ? product.brand?.nameZh : product.brand?.nameEn;
-  const categoryName = locale === "zh" ? product.category?.nameZh : product.category?.nameEn;
-  const primaryImage = getImageUrl(product.images?.[0]?.url);
+  const brandName = (locale === "zh" ? product.brand?.nameZh : locale === "ru" ? (product.brand as any)?.nameRu || product.brand?.nameEn : product.brand?.nameEn);
+  const categoryName = (locale === "zh" ? product.category?.nameZh : locale === "ru" ? (product.category as any)?.nameRu || product.category?.nameEn : product.category?.nameEn);
+  const baseImageUrl = getImageUrl(product.images?.[0]?.url);
+  // 为特定产品添加缓存破坏参数，强制刷新图片
+  const primaryImage = product.id === 'cmpdknl8s00e511kwiy4tzjax' 
+    ? `${baseImageUrl}?v=202605242240`
+    : baseImageUrl;
 
   const arbitrage = calculateArbitragePercent(product.priceCny, product.priceUsd);
 
@@ -49,7 +53,7 @@ export function ProductCard({ product, locale }: ProductCardProps) {
           {product.brand?.isImported && (
             <div className="absolute left-2 top-2">
               <Badge variant="default" className="text-xs">
-                {locale === "zh" ? "进口" : "Imported"}
+                {locale === "zh" ? "进口" : locale === "ru" ? "Импорт" : "Imported"}
               </Badge>
             </div>
           )}
