@@ -48,3 +48,4 @@ prisma/migrations/
 .vercel
 .env.production
 data-export.json
+replacements.txt
