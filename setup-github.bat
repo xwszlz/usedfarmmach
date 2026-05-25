@@ -12,7 +12,7 @@ echo    - Personal access tokens → Tokens (classic)
 echo    - 勾选 "repo" 权限，保存生成的令牌
 echo.
 echo 请按任意键继续...
-pause > nul
+pause
 
 set /p GITHUB_USERNAME=请输入您的 GitHub 用户名: 
 set /p REPO_NAME=请输入仓库名称 (默认: usedfarmmach): 
@@ -52,4 +52,7 @@ echo.
 echo 获取方法请参考 docs\github-deployment-guide.md
 echo.
 echo 配置完成后，推送代码会自动触发部署！
+echo.
+echo 如果推送失败，请运行 fix-github-push.bat 进行修复。
+echo.
 pause

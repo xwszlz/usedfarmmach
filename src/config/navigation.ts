@@ -1,8 +1,9 @@
 import type { Locale } from "../../i18n";
 
 export interface NavItem {
-  href: string;
+  href?: string;
   labelKey: string;
+  children?: NavItem[];
 }
 
 export const mainNav: NavItem[] = [
@@ -10,8 +11,13 @@ export const mainNav: NavItem[] = [
   { href: "/products", labelKey: "nav.products" },
   { href: "/logistics", labelKey: "nav.logistics" },
   { href: "/about", labelKey: "nav.about" },
-  { href: "/arbitrage-calculator", labelKey: "nav.arbitrageCalculator" },
-  { href: "/arbitrage-top", labelKey: "nav.arbitrageTop" },
+  { 
+    labelKey: "nav.arbitrage", 
+    children: [
+      { href: "/arbitrage-calculator", labelKey: "nav.arbitrageCalculator" },
+      { href: "/arbitrage-top", labelKey: "nav.arbitrageTop" },
+    ]
+  },
 ];
 
 export function getLocalePath(path: string, locale: Locale): string {

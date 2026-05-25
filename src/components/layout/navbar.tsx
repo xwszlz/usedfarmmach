@@ -2,9 +2,9 @@
 
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { Globe, Menu, X } from "lucide-react";
+import { Globe, Menu, X, ChevronDown } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { mainNav } from "@/config/navigation";
+import { mainNav, type NavItem } from "@/config/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -31,13 +31,7 @@ export function Navbar({ locale }: NavbarProps) {
         {/* Desktop nav */}
         <nav className="hidden items-center gap-6 md:flex">
           {mainNav.map((item) => (
-            <Link
-              key={item.href}
-              href={`/${locale}${item.href}`}
-              className="text-sm font-medium text-gray-600 transition-colors hover:text-primary-600"
-            >
-              {t(item.labelKey)}
-            </Link>
+            <DesktopNavItem key={item.labelKey} item={item} locale={locale} t={t} />
           ))}
         </nav>
 
@@ -72,14 +66,7 @@ export function Navbar({ locale }: NavbarProps) {
         <div className="border-t md:hidden">
           <div className="space-y-1 px-4 py-3">
             {mainNav.map((item) => (
-              <Link
-                key={item.href}
-                href={`/${locale}${item.href}`}
-                className="block rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
-                onClick={() => setMobileOpen(false)}
-              >
-                {t(item.labelKey)}
-              </Link>
+              <MobileNavItem key={item.labelKey} item={item} locale={locale} t={t} setMobileOpen={setMobileOpen} />
             ))}
             <div className="flex gap-2 pt-2">
               <Link href={`/${locale}/auth/login`} className="flex-1">
@@ -97,6 +84,107 @@ export function Navbar({ locale }: NavbarProps) {
         </div>
       )}
     </header>
+  );
+}
+
+interface DesktopNavItemProps {
+  item: NavItem;
+  locale: string;
+  t: (key: string) => string;
+}
+
+function DesktopNavItem({ item, locale, t }: DesktopNavItemProps) {
+  const [open, setOpen] = useState(false);
+
+  if (item.children) {
+    return (
+      <div className="relative">
+        <button
+          onClick={() => setOpen(!open)}
+          className="flex items-center gap-1 text-sm font-medium text-gray-600 transition-colors hover:text-primary-600"
+        >
+          {t(item.labelKey)}
+          <ChevronDown className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+        </button>
+
+        {open && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+            <div className="absolute left-0 top-full z-50 mt-2 w-48 rounded-lg border bg-white py-2 shadow-lg">
+              {item.children.map((child) => (
+                <Link
+                  key={child.href}
+                  href={`/${locale}${child.href}`}
+                  onClick={() => setOpen(false)}
+                  className="block px-4 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 hover:text-primary-600"
+                >
+                  {t(child.labelKey)}
+                </Link>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      href={`/${locale}${item.href}`}
+      className="text-sm font-medium text-gray-600 transition-colors hover:text-primary-600"
+    >
+      {t(item.labelKey)}
+    </Link>
+  );
+}
+
+interface MobileNavItemProps {
+  item: NavItem;
+  locale: string;
+  t: (key: string) => string;
+  setMobileOpen: (open: boolean) => void;
+}
+
+function MobileNavItem({ item, locale, t, setMobileOpen }: MobileNavItemProps) {
+  const [open, setOpen] = useState(false);
+
+  if (item.children) {
+    return (
+      <div className="space-y-1">
+        <button
+          onClick={() => setOpen(!open)}
+          className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
+        >
+          <span>{t(item.labelKey)}</span>
+          <ChevronDown className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+        </button>
+
+        {open && (
+          <div className="ml-4 space-y-1 border-l pl-2">
+            {item.children.map((child) => (
+              <Link
+                key={child.href}
+                href={`/${locale}${child.href}`}
+                onClick={() => setMobileOpen(false)}
+                className="block rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
+              >
+                {t(child.labelKey)}
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      href={`/${locale}${item.href}`}
+      onClick={() => setMobileOpen(false)}
+      className="block rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
+    >
+      {t(item.labelKey)}
+    </Link>
   );
 }
 
