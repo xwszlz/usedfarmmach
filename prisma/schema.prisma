@@ -29,6 +29,7 @@ model Brand {
   id            String @id @default(cuid())
   nameZh        String
   nameEn        String
+  nameRu        String @default("")
   originCountry String
   isImported    Boolean @default(false)
 
@@ -41,6 +42,7 @@ model Category {
   id       String  @id @default(cuid())
   nameZh   String
   nameEn   String
+  nameRu   String @default("")
   parentId String?
 
   parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
@@ -64,6 +66,7 @@ model Product {
   location      String
   descriptionZh String?
   descriptionEn String?
+  descriptionRu String?
   aiGenerated   Boolean  @default(false)
   status        String   @default("active") // active, sold, draft, archived
   createdAt     DateTime @default(now())
@@ -76,6 +79,7 @@ model Product {
   videos              ProductVideo[]
   internationalPrices InternationalPrice[]
   inquiries           Inquiry[]
+  arbitrageTopCaches   ArbitrageTopCache[]
 }
 
 model ProductImage {
@@ -153,6 +157,9 @@ model InternationalPrice {
   notes           String?  // 备注
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  isActive        Boolean  @default(true)
+  confidenceScore Float    @default(0.5)
+  lastVerified    DateTime?
 
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
@@ -172,4 +179,38 @@ model Valuation {
   factors          String?  // JSON string (SQLite compat)
 
   brand Brand @relation(fields: [brandId], references: [id])
+}
+
+// 汇率表 - 存储最新和历史汇率
+model ExchangeRate {
+  id            String   @id @default(cuid())
+  baseCurrency  String   @default("CNY")  // 基础货币
+  targetCurrency String  // 目标货币: USD, EUR, GBP等
+  rate          Float    // 汇率值 (1 CNY = X USD)
+  source        String   @default("exchangerate-api") // 数据来源
+  lastUpdated   DateTime @default(now()) // 最后更新时间
+  effectiveDate DateTime // 汇率生效日期
+  
+  @@unique([baseCurrency, targetCurrency, effectiveDate])
+  @@index([baseCurrency, targetCurrency])
+}
+
+// 套利计算结果缓存表 - 预计算Top N设备
+model ArbitrageTopCache {
+  id            String   @id @default(cuid())
+  productId     String   // 产品ID
+  rank          Int      // 排名 (1-10)
+  domesticPrice Float    // 国内价格(CNY)
+  foreignPrice  Float    // 国外价格(CNY)
+  priceDiff     Float    // 价差(CNY)
+  priceDiffPercent Float // 价差百分比(%)
+  profitMargin  Float?   // 利润率(%)
+  lastCalculated DateTime @default(now()) // 最后计算时间
+  validUntil    DateTime // 有效期至
+  
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@unique([productId, rank])
+  @@index([rank])
+  @@index([validUntil])
 }

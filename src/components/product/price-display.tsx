@@ -73,7 +73,7 @@ export function PriceDisplay({
           </span>
           {showLabel && (
             <span className="text-xs text-gray-400">
-              ({locale === "zh" ? t("usPrice") : t("chinaPrice")})
+              ({locale === "zh" ? t("usPrice") : locale === "ru" ? t("usPrice") : t("chinaPrice")})
             </span>
           )}
           {arbitrage !== null && Math.abs(arbitrage) > 10 && (

@@ -38,27 +38,27 @@ export default function ProductsPage() {
 
       // Hardcoded for MVP - in production fetch from API
       setBrands([
-        { value: "john-deere", label: locale === "zh" ? "约翰迪尔" : "John Deere" },
-        { value: "kubota", label: locale === "zh" ? "久保田" : "Kubota" },
-        { value: "case-ih", label: locale === "zh" ? "凯斯" : "Case IH" },
-        { value: "new-holland", label: locale === "zh" ? "纽荷兰" : "New Holland" },
-        { value: "lovol", label: locale === "zh" ? "雷沃" : "Lovol" },
-        { value: "dongfeng", label: locale === "zh" ? "东风" : "Dongfeng" },
+        { value: "john-deere", label: locale === "zh" ? "约翰迪尔" : locale === "ru" ? "John Deere" : "John Deere" },
+        { value: "kubota", label: locale === "zh" ? "久保田" : locale === "ru" ? "Kubota" : "Kubota" },
+        { value: "case-ih", label: locale === "zh" ? "凯斯" : locale === "ru" ? "Case IH" : "Case IH" },
+        { value: "new-holland", label: locale === "zh" ? "纽荷兰" : locale === "ru" ? "New Holland" : "New Holland" },
+        { value: "lovol", label: locale === "zh" ? "雷沃" : locale === "ru" ? "Lovol" : "Lovol" },
+        { value: "dongfeng", label: locale === "zh" ? "东风" : locale === "ru" ? "Dongfeng" : "Dongfeng" },
       ]);
       setCategories([
-        { value: "tractor", label: locale === "zh" ? "拖拉机" : "Tractor" },
-        { value: "combine", label: locale === "zh" ? "收割机" : "Combine Harvester" },
-        { value: "planter", label: locale === "zh" ? "播种机" : "Planter" },
-        { value: "sprayer", label: locale === "zh" ? "喷洒机" : "Sprayer" },
-        { value: "baler", label: locale === "zh" ? "打捆机" : "Baler" },
-        { value: "excavator", label: locale === "zh" ? "挖掘机" : "Excavator" },
+        { value: "tractor", label: locale === "zh" ? "拖拉机" : locale === "ru" ? "Трактор" : "Tractor" },
+        { value: "combine", label: locale === "zh" ? "收割机" : locale === "ru" ? "Комбайн" : "Combine Harvester" },
+        { value: "planter", label: locale === "zh" ? "播种机" : locale === "ru" ? "Сеялка" : "Planter" },
+        { value: "sprayer", label: locale === "zh" ? "喷洒机" : locale === "ru" ? "Опрыскиватель" : "Sprayer" },
+        { value: "baler", label: locale === "zh" ? "打捆机" : locale === "ru" ? "Пресс-подборщик" : "Baler" },
+        { value: "excavator", label: locale === "zh" ? "挖掘机" : locale === "ru" ? "Экскаватор" : "Excavator" },
       ]);
       setLocations([
-        { value: "山东", label: locale === "zh" ? "山东" : "Shandong" },
-        { value: "河南", label: locale === "zh" ? "河南" : "Henan" },
-        { value: "河北", label: locale === "zh" ? "河北" : "Hebei" },
-        { value: "黑龙江", label: locale === "zh" ? "黑龙江" : "Heilongjiang" },
-        { value: "江苏", label: locale === "zh" ? "江苏" : "Jiangsu" },
+        { value: "山东", label: locale === "zh" ? "山东" : locale === "ru" ? "Шаньдун" : "Shandong" },
+        { value: "河南", label: locale === "zh" ? "河南" : locale === "ru" ? "Хэнань" : "Henan" },
+        { value: "河北", label: locale === "zh" ? "河北" : locale === "ru" ? "Хэбэй" : "Hebei" },
+        { value: "黑龙江", label: locale === "zh" ? "黑龙江" : locale === "ru" ? "Хэйлунцзян" : "Heilongjiang" },
+        { value: "江苏", label: locale === "zh" ? "江苏" : locale === "ru" ? "Цзянсу" : "Jiangsu" },
       ]);
     }
     fetchOptions();

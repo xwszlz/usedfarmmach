@@ -32,6 +32,8 @@
     "products": "设备市场",
     "logistics": "物流方案",
     "about": "关于我们",
+    "arbitrageCalculator": "套利计算器",
+    "arbitrageTop": "套利榜单",
     "login": "登录",
     "register": "注册",
     "logout": "退出",
@@ -234,6 +236,53 @@
     "value4Desc": "发现套利机会，实现买卖双方共赢",
     "team": "团队介绍",
     "teamText": "我们是一支深耕农机行业多年的团队，拥有丰富的国际贸易和技术开发经验。团队成员来自中国、美国、日本等地，致力于打造全球领先的二手农机交易平台。"
+  },
+  "arbitrageCalculator": {
+    "title": "跨境套利计算器",
+    "description": "计算二手农机的跨境套利机会，考虑运输成本、关税、保险等费用，帮助您发现最佳投资机会。我们的智能计算器会自动从数据库中获取产品信息，并提供详细的利润分析和风险评估。",
+    "howToUseTitle": "如何使用套利计算器",
+    "step1": "从产品列表中选择一个产品",
+    "step2": "系统会自动填充国内价格和国外市场价格",
+    "step3": "调整运输成本、关税、保险等参数以获得更准确的估算",
+    "step4": "点击\"计算套利机会\"查看详细的利润分析和风险评估"
+  },
+  "arbitrageTop": {
+    "title": "套利榜单",
+    "description": "查看最高套利机会的农机产品排名，发现跨境投资最佳选择。我们根据中外价差、运输成本、关税等综合因素计算套利分数，为您推荐最具投资价值的产品。",
+    "table": {
+      "rank": "排名",
+      "product": "产品",
+      "domesticPrice": "国内价格",
+      "internationalPrice": "国外价格",
+      "priceDifference": "价差",
+      "arbitrageScore": "套利分数",
+      "opportunityLevel": "机会等级",
+      "details": "详情"
+    },
+    "filters": {
+      "all": "全部",
+      "high": "高机会",
+      "medium": "中机会",
+      "low": "低机会"
+    },
+    "levels": {
+      "high": "高机会",
+      "medium": "中机会",
+      "low": "低机会"
+    },
+    "stats": {
+      "totalProducts": "总产品数",
+      "highOpportunity": "高机会产品",
+      "avgArbitrage": "平均套利空间"
+    },
+    "noData": "暂无套利数据",
+    "loading": "正在加载套利排名...",
+    "rankingExplanationTitle": "榜单说明",
+    "explanation1": "榜单每30分钟自动更新一次，确保数据时效性",
+    "explanation2": "套利得分综合考虑价差、利润率、风险评估和政策因素",
+    "explanation3": "高机会：利润率＞30%，风险可控，强烈推荐",
+    "explanation4": "中机会：利润率15-30%，需关注风险，建议谨慎投资",
+    "explanation5": "低机会：利润率＜15%，或风险较高，建议深入研究"
   },
   "footer": {
     "description": "全球二手农机交易平台，连接中国与全球农机市场",

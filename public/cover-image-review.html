@@ -1,0 +1,3043 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>产品封面图评审工具 - 神雕农机</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+        
+        .guidelines {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-left: 5px solid #2a5298;
+        }
+        
+        .guidelines h2 {
+            color: #2a5298;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+        
+        .criteria-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+        
+        .criteria-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .criteria-card.good {
+            border-left: 4px solid #28a745;
+        }
+        
+        .criteria-card.bad {
+            border-left: 4px solid #dc3545;
+        }
+        
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+        
+        .product-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .product-header {
+            background: #2a5298;
+            color: white;
+            padding: 18px;
+        }
+        
+        .product-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .product-meta {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            display: flex;
+            gap: 15px;
+        }
+        
+        .images-container {
+            padding: 20px;
+        }
+        
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .image-item {
+            position: relative;
+            border-radius: 6px;
+            overflow: hidden;
+            aspect-ratio: 1;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.2s ease;
+        }
+        
+        .image-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .image-item.current-cover {
+            border-color: #ff6b6b;
+        }
+        
+        .image-item.recommended {
+            border-color: #28a745;
+        }
+        
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        
+        .image-index {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            font-size: 0.8rem;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        
+        .current-cover-badge {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #ff6b6b;
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        
+        .recommended-badge {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            background: #28a745;
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        
+        .notes {
+            margin-top: 15px;
+            padding: 12px;
+            background: #fff3cd;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+        
+        .btn-select {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-select:hover {
+            background: #218838;
+        }
+        
+        .btn-view {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .btn-view:hover {
+            background: #138496;
+        }
+        
+        footer {
+            margin-top: 40px;
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9rem;
+            border-top: 1px solid #ddd;
+        }
+        
+        @media (max-width: 768px) {
+            .product-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .image-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>产品封面图评审工具</h1>
+        <div class="subtitle">神雕农机跨境平台 - 优化产品封面图，提升客户吸引力</div>
+        <p>当前分析产品数: <strong>27</strong> | 每个产品图片数: 10张</p>
+    </header>
+    
+    <section class="guidelines">
+        <h2>选图标准指南</h2>
+        <p>请根据以下标准选择最佳封面图（点击图片可放大查看）：</p>
+        
+        <div class="criteria-grid">
+            <div class="criteria-card good">
+                <strong>✅ 优先选择：</strong>
+                <ul>
+                    <li>完整展示整机外观</li>
+                    <li>清晰显示品牌Logo</li>
+                    <li>光线充足，背景整洁</li>
+                    <li>正面或斜45度角</li>
+                    <li>设备清洁，如新感觉</li>
+                </ul>
+            </div>
+            
+            <div class="criteria-card bad">
+                <strong>❌ 避免选择：</strong>
+                <ul>
+                    <li>局部细节图（引擎、轮胎等）</li>
+                    <li>模糊、光线暗的图片</li>
+                    <li>背景杂乱，分散注意力</li>
+                    <li>无品牌标识</li>
+                    <li>角度怪异，难以理解结构</li>
+                </ul>
+            </div>
+        </div>
+        
+        <p style="margin-top: 15px; font-style: italic;">
+            提示：当前封面图以<mark style="background: #ff6b6b; color: white; padding: 2px 6px; border-radius: 3px;">红色边框</mark>标记。
+            您认为更好的图片可以点击选择，记录下产品ID和图片编号。
+        </p>
+    </section>
+    
+    <main>
+        <h2 style="color: #2a5298; margin-bottom: 20px;">产品图片评审</h2>
+        <div class="product-grid">
+
+            <div class="product-card" id="product-cmpdknii2000111kwcau06hey">
+                <div class="product-header">
+                    <div class="product-title">克拉斯 860</div>
+                    <div class="product-meta">
+                        <span>年份: 2024</span>
+                        <span>状态: excellent</span>
+                        <span>ID: cmpdknii...</span>
+                    </div>
+                </div>
+                
+                <div class="images-container">
+                    <p><strong>图片选择</strong>（当前封面图以红色边框标记）</p>
+                    <div class="image-grid">
+                        
+                <div class="image-item current-cover recommended" data-product="cmpdknii2000111kwcau06hey" data-image="1">
+                    <div class="image-index">1</div>
+                    <div class="current-cover-badge">当前封面</div>
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknii2000111kwcau06hey/1.jpg" alt="克拉斯 860 图片1" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknii2000111kwcau06hey" data-image="2">
+                    <div class="image-index">2</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknii2000111kwcau06hey/2.jpg" alt="克拉斯 860 图片2" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknii2000111kwcau06hey" data-image="3">
+                    <div class="image-index">3</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknii2000111kwcau06hey/3.jpg" alt="克拉斯 860 图片3" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknii2000111kwcau06hey" data-image="4">
+                    <div class="image-index">4</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknii2000111kwcau06hey/4.jpg" alt="克拉斯 860 图片4" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknii2000111kwcau06hey" data-image="5">
+                    <div class="image-index">5</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknii2000111kwcau06hey/5.jpg" alt="克拉斯 860 图片5" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknii2000111kwcau06hey" data-image="6">
+                    <div class="image-index">6</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknii2000111kwcau06hey/6.jpg" alt="克拉斯 860 图片6" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknii2000111kwcau06hey" data-image="7">
+                    <div class="image-index">7</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknii2000111kwcau06hey/7.jpg" alt="克拉斯 860 图片7" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknii2000111kwcau06hey" data-image="8">
+                    <div class="image-index">8</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknii2000111kwcau06hey/8.jpg" alt="克拉斯 860 图片8" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknii2000111kwcau06hey" data-image="9">
+                    <div class="image-index">9</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknii2000111kwcau06hey/9.jpg" alt="克拉斯 860 图片9" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknii2000111kwcau06hey" data-image="10">
+                    <div class="image-index">10</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknii2000111kwcau06hey/10.jpg" alt="克拉斯 860 图片10" loading="lazy">
+                </div>
+            
+                    </div>
+                    
+                    <div class="notes"><strong>备注:</strong> 需要人工检查图片内容。</div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-select" onclick="selectBestImage('cmpdknii2000111kwcau06hey')">
+                            📋 记录最佳图片
+                        </button>
+                        <button class="btn btn-view" onclick="viewAllImages('cmpdknii2000111kwcau06hey')">
+                            🔍 查看大图
+                        </button>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="product-card" id="product-cmpdknimn000n11kwnxfuiuzv">
+                <div class="product-header">
+                    <div class="product-title">克拉斯 970</div>
+                    <div class="product-meta">
+                        <span>年份: 2021</span>
+                        <span>状态: good</span>
+                        <span>ID: cmpdknim...</span>
+                    </div>
+                </div>
+                
+                <div class="images-container">
+                    <p><strong>图片选择</strong>（当前封面图以红色边框标记）</p>
+                    <div class="image-grid">
+                        
+                <div class="image-item current-cover recommended" data-product="cmpdknimn000n11kwnxfuiuzv" data-image="1">
+                    <div class="image-index">1</div>
+                    <div class="current-cover-badge">当前封面</div>
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknimn000n11kwnxfuiuzv/1.jpg" alt="克拉斯 970 图片1" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknimn000n11kwnxfuiuzv" data-image="2">
+                    <div class="image-index">2</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknimn000n11kwnxfuiuzv/2.jpg" alt="克拉斯 970 图片2" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknimn000n11kwnxfuiuzv" data-image="3">
+                    <div class="image-index">3</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknimn000n11kwnxfuiuzv/3.jpg" alt="克拉斯 970 图片3" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknimn000n11kwnxfuiuzv" data-image="4">
+                    <div class="image-index">4</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknimn000n11kwnxfuiuzv/4.jpg" alt="克拉斯 970 图片4" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknimn000n11kwnxfuiuzv" data-image="5">
+                    <div class="image-index">5</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknimn000n11kwnxfuiuzv/5.jpg" alt="克拉斯 970 图片5" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknimn000n11kwnxfuiuzv" data-image="6">
+                    <div class="image-index">6</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknimn000n11kwnxfuiuzv/6.jpg" alt="克拉斯 970 图片6" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknimn000n11kwnxfuiuzv" data-image="7">
+                    <div class="image-index">7</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknimn000n11kwnxfuiuzv/7.jpg" alt="克拉斯 970 图片7" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknimn000n11kwnxfuiuzv" data-image="8">
+                    <div class="image-index">8</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknimn000n11kwnxfuiuzv/8.jpg" alt="克拉斯 970 图片8" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknimn000n11kwnxfuiuzv" data-image="9">
+                    <div class="image-index">9</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknimn000n11kwnxfuiuzv/9.jpg" alt="克拉斯 970 图片9" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknimn000n11kwnxfuiuzv" data-image="10">
+                    <div class="image-index">10</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknimn000n11kwnxfuiuzv/10.jpg" alt="克拉斯 970 图片10" loading="lazy">
+                </div>
+            
+                    </div>
+                    
+                    <div class="notes"><strong>备注:</strong> 需要人工检查图片内容。</div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-select" onclick="selectBestImage('cmpdknimn000n11kwnxfuiuzv')">
+                            📋 记录最佳图片
+                        </button>
+                        <button class="btn btn-view" onclick="viewAllImages('cmpdknimn000n11kwnxfuiuzv')">
+                            🔍 查看大图
+                        </button>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="product-card" id="product-cmpdkniqf001911kwfr365zqq">
+                <div class="product-header">
+                    <div class="product-title">克拉斯 850</div>
+                    <div class="product-meta">
+                        <span>年份: 2018</span>
+                        <span>状态: good</span>
+                        <span>ID: cmpdkniq...</span>
+                    </div>
+                </div>
+                
+                <div class="images-container">
+                    <p><strong>图片选择</strong>（当前封面图以红色边框标记）</p>
+                    <div class="image-grid">
+                        
+                <div class="image-item current-cover recommended" data-product="cmpdkniqf001911kwfr365zqq" data-image="1">
+                    <div class="image-index">1</div>
+                    <div class="current-cover-badge">当前封面</div>
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdkniqf001911kwfr365zqq/1.jpg" alt="克拉斯 850 图片1" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdkniqf001911kwfr365zqq" data-image="2">
+                    <div class="image-index">2</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdkniqf001911kwfr365zqq/2.jpg" alt="克拉斯 850 图片2" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdkniqf001911kwfr365zqq" data-image="3">
+                    <div class="image-index">3</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdkniqf001911kwfr365zqq/3.jpg" alt="克拉斯 850 图片3" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdkniqf001911kwfr365zqq" data-image="4">
+                    <div class="image-index">4</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdkniqf001911kwfr365zqq/4.jpg" alt="克拉斯 850 图片4" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdkniqf001911kwfr365zqq" data-image="5">
+                    <div class="image-index">5</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdkniqf001911kwfr365zqq/5.jpg" alt="克拉斯 850 图片5" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdkniqf001911kwfr365zqq" data-image="6">
+                    <div class="image-index">6</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdkniqf001911kwfr365zqq/6.jpg" alt="克拉斯 850 图片6" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdkniqf001911kwfr365zqq" data-image="7">
+                    <div class="image-index">7</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdkniqf001911kwfr365zqq/7.jpg" alt="克拉斯 850 图片7" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdkniqf001911kwfr365zqq" data-image="8">
+                    <div class="image-index">8</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdkniqf001911kwfr365zqq/8.jpg" alt="克拉斯 850 图片8" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdkniqf001911kwfr365zqq" data-image="9">
+                    <div class="image-index">9</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdkniqf001911kwfr365zqq/9.jpg" alt="克拉斯 850 图片9" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdkniqf001911kwfr365zqq" data-image="10">
+                    <div class="image-index">10</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdkniqf001911kwfr365zqq/10.jpg" alt="克拉斯 850 图片10" loading="lazy">
+                </div>
+            
+                    </div>
+                    
+                    <div class="notes"><strong>备注:</strong> 需要人工检查图片内容。</div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-select" onclick="selectBestImage('cmpdkniqf001911kwfr365zqq')">
+                            📋 记录最佳图片
+                        </button>
+                        <button class="btn btn-view" onclick="viewAllImages('cmpdkniqf001911kwfr365zqq')">
+                            🔍 查看大图
+                        </button>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="product-card" id="product-cmpdknitp001v11kwskpdqx6s">
+                <div class="product-header">
+                    <div class="product-title">克拉斯 980</div>
+                    <div class="product-meta">
+                        <span>年份: 2016</span>
+                        <span>状态: good</span>
+                        <span>ID: cmpdknit...</span>
+                    </div>
+                </div>
+                
+                <div class="images-container">
+                    <p><strong>图片选择</strong>（当前封面图以红色边框标记）</p>
+                    <div class="image-grid">
+                        
+                <div class="image-item current-cover recommended" data-product="cmpdknitp001v11kwskpdqx6s" data-image="1">
+                    <div class="image-index">1</div>
+                    <div class="current-cover-badge">当前封面</div>
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknitp001v11kwskpdqx6s/1.jpg" alt="克拉斯 980 图片1" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknitp001v11kwskpdqx6s" data-image="2">
+                    <div class="image-index">2</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknitp001v11kwskpdqx6s/2.jpg" alt="克拉斯 980 图片2" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknitp001v11kwskpdqx6s" data-image="3">
+                    <div class="image-index">3</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknitp001v11kwskpdqx6s/3.jpg" alt="克拉斯 980 图片3" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknitp001v11kwskpdqx6s" data-image="4">
+                    <div class="image-index">4</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknitp001v11kwskpdqx6s/4.jpg" alt="克拉斯 980 图片4" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknitp001v11kwskpdqx6s" data-image="5">
+                    <div class="image-index">5</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknitp001v11kwskpdqx6s/5.jpg" alt="克拉斯 980 图片5" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknitp001v11kwskpdqx6s" data-image="6">
+                    <div class="image-index">6</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknitp001v11kwskpdqx6s/6.jpg" alt="克拉斯 980 图片6" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknitp001v11kwskpdqx6s" data-image="7">
+                    <div class="image-index">7</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknitp001v11kwskpdqx6s/7.jpg" alt="克拉斯 980 图片7" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknitp001v11kwskpdqx6s" data-image="8">
+                    <div class="image-index">8</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknitp001v11kwskpdqx6s/8.jpg" alt="克拉斯 980 图片8" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknitp001v11kwskpdqx6s" data-image="9">
+                    <div class="image-index">9</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknitp001v11kwskpdqx6s/9.jpg" alt="克拉斯 980 图片9" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknitp001v11kwskpdqx6s" data-image="10">
+                    <div class="image-index">10</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknitp001v11kwskpdqx6s/10.jpg" alt="克拉斯 980 图片10" loading="lazy">
+                </div>
+            
+                    </div>
+                    
+                    <div class="notes"><strong>备注:</strong> 需要人工检查图片内容。</div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-select" onclick="selectBestImage('cmpdknitp001v11kwskpdqx6s')">
+                            📋 记录最佳图片
+                        </button>
+                        <button class="btn btn-view" onclick="viewAllImages('cmpdknitp001v11kwskpdqx6s')">
+                            🔍 查看大图
+                        </button>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="product-card" id="product-cmpdknix7002h11kwupfm486g">
+                <div class="product-header">
+                    <div class="product-title">克拉斯 980</div>
+                    <div class="product-meta">
+                        <span>年份: 2015</span>
+                        <span>状态: good</span>
+                        <span>ID: cmpdknix...</span>
+                    </div>
+                </div>
+                
+                <div class="images-container">
+                    <p><strong>图片选择</strong>（当前封面图以红色边框标记）</p>
+                    <div class="image-grid">
+                        
+                <div class="image-item current-cover recommended" data-product="cmpdknix7002h11kwupfm486g" data-image="1">
+                    <div class="image-index">1</div>
+                    <div class="current-cover-badge">当前封面</div>
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknix7002h11kwupfm486g/1.jpg" alt="克拉斯 980 图片1" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknix7002h11kwupfm486g" data-image="2">
+                    <div class="image-index">2</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknix7002h11kwupfm486g/2.jpg" alt="克拉斯 980 图片2" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknix7002h11kwupfm486g" data-image="3">
+                    <div class="image-index">3</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknix7002h11kwupfm486g/3.jpg" alt="克拉斯 980 图片3" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknix7002h11kwupfm486g" data-image="4">
+                    <div class="image-index">4</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknix7002h11kwupfm486g/4.jpg" alt="克拉斯 980 图片4" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknix7002h11kwupfm486g" data-image="5">
+                    <div class="image-index">5</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknix7002h11kwupfm486g/5.jpg" alt="克拉斯 980 图片5" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknix7002h11kwupfm486g" data-image="6">
+                    <div class="image-index">6</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknix7002h11kwupfm486g/6.jpg" alt="克拉斯 980 图片6" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknix7002h11kwupfm486g" data-image="7">
+                    <div class="image-index">7</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknix7002h11kwupfm486g/7.jpg" alt="克拉斯 980 图片7" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknix7002h11kwupfm486g" data-image="8">
+                    <div class="image-index">8</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknix7002h11kwupfm486g/8.jpg" alt="克拉斯 980 图片8" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknix7002h11kwupfm486g" data-image="9">
+                    <div class="image-index">9</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknix7002h11kwupfm486g/9.jpg" alt="克拉斯 980 图片9" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknix7002h11kwupfm486g" data-image="10">
+                    <div class="image-index">10</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknix7002h11kwupfm486g/10.jpg" alt="克拉斯 980 图片10" loading="lazy">
+                </div>
+            
+                    </div>
+                    
+                    <div class="notes"><strong>备注:</strong> 需要人工检查图片内容。</div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-select" onclick="selectBestImage('cmpdknix7002h11kwupfm486g')">
+                            📋 记录最佳图片
+                        </button>
+                        <button class="btn btn-view" onclick="viewAllImages('cmpdknix7002h11kwupfm486g')">
+                            🔍 查看大图
+                        </button>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="product-card" id="product-cmpdknj0s003311kwvcfjwoia">
+                <div class="product-header">
+                    <div class="product-title">克拉斯 900</div>
+                    <div class="product-meta">
+                        <span>年份: 2003</span>
+                        <span>状态: fair</span>
+                        <span>ID: cmpdknj0...</span>
+                    </div>
+                </div>
+                
+                <div class="images-container">
+                    <p><strong>图片选择</strong>（当前封面图以红色边框标记）</p>
+                    <div class="image-grid">
+                        
+                <div class="image-item current-cover recommended" data-product="cmpdknj0s003311kwvcfjwoia" data-image="1">
+                    <div class="image-index">1</div>
+                    <div class="current-cover-badge">当前封面</div>
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknj0s003311kwvcfjwoia/1.jpg" alt="克拉斯 900 图片1" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknj0s003311kwvcfjwoia" data-image="2">
+                    <div class="image-index">2</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknj0s003311kwvcfjwoia/2.jpg" alt="克拉斯 900 图片2" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknj0s003311kwvcfjwoia" data-image="3">
+                    <div class="image-index">3</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknj0s003311kwvcfjwoia/3.jpg" alt="克拉斯 900 图片3" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknj0s003311kwvcfjwoia" data-image="4">
+                    <div class="image-index">4</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknj0s003311kwvcfjwoia/4.jpg" alt="克拉斯 900 图片4" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknj0s003311kwvcfjwoia" data-image="5">
+                    <div class="image-index">5</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknj0s003311kwvcfjwoia/5.jpg" alt="克拉斯 900 图片5" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknj0s003311kwvcfjwoia" data-image="6">
+                    <div class="image-index">6</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknj0s003311kwvcfjwoia/6.jpg" alt="克拉斯 900 图片6" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknj0s003311kwvcfjwoia" data-image="7">
+                    <div class="image-index">7</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknj0s003311kwvcfjwoia/7.jpg" alt="克拉斯 900 图片7" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknj0s003311kwvcfjwoia" data-image="8">
+                    <div class="image-index">8</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknj0s003311kwvcfjwoia/8.jpg" alt="克拉斯 900 图片8" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknj0s003311kwvcfjwoia" data-image="9">
+                    <div class="image-index">9</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknj0s003311kwvcfjwoia/9.jpg" alt="克拉斯 900 图片9" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknj0s003311kwvcfjwoia" data-image="10">
+                    <div class="image-index">10</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknj0s003311kwvcfjwoia/10.jpg" alt="克拉斯 900 图片10" loading="lazy">
+                </div>
+            
+                    </div>
+                    
+                    <div class="notes"><strong>备注:</strong> 需要人工检查图片内容。</div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-select" onclick="selectBestImage('cmpdknj0s003311kwvcfjwoia')">
+                            📋 记录最佳图片
+                        </button>
+                        <button class="btn btn-view" onclick="viewAllImages('cmpdknj0s003311kwvcfjwoia')">
+                            🔍 查看大图
+                        </button>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="product-card" id="product-cmpdknj4r003p11kwhsbejbh0">
+                <div class="product-header">
+                    <div class="product-title">克拉斯 695</div>
+                    <div class="product-meta">
+                        <span>年份: 1995</span>
+                        <span>状态: fair</span>
+                        <span>ID: cmpdknj4...</span>
+                    </div>
+                </div>
+                
+                <div class="images-container">
+                    <p><strong>图片选择</strong>（当前封面图以红色边框标记）</p>
+                    <div class="image-grid">
+                        
+                <div class="image-item current-cover recommended" data-product="cmpdknj4r003p11kwhsbejbh0" data-image="1">
+                    <div class="image-index">1</div>
+                    <div class="current-cover-badge">当前封面</div>
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknj4r003p11kwhsbejbh0/1.jpg" alt="克拉斯 695 图片1" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknj4r003p11kwhsbejbh0" data-image="2">
+                    <div class="image-index">2</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknj4r003p11kwhsbejbh0/2.jpg" alt="克拉斯 695 图片2" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknj4r003p11kwhsbejbh0" data-image="3">
+                    <div class="image-index">3</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknj4r003p11kwhsbejbh0/3.jpg" alt="克拉斯 695 图片3" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknj4r003p11kwhsbejbh0" data-image="4">
+                    <div class="image-index">4</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknj4r003p11kwhsbejbh0/4.jpg" alt="克拉斯 695 图片4" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknj4r003p11kwhsbejbh0" data-image="5">
+                    <div class="image-index">5</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknj4r003p11kwhsbejbh0/5.jpg" alt="克拉斯 695 图片5" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknj4r003p11kwhsbejbh0" data-image="6">
+                    <div class="image-index">6</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknj4r003p11kwhsbejbh0/6.jpg" alt="克拉斯 695 图片6" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknj4r003p11kwhsbejbh0" data-image="7">
+                    <div class="image-index">7</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknj4r003p11kwhsbejbh0/7.jpg" alt="克拉斯 695 图片7" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknj4r003p11kwhsbejbh0" data-image="8">
+                    <div class="image-index">8</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknj4r003p11kwhsbejbh0/8.jpg" alt="克拉斯 695 图片8" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknj4r003p11kwhsbejbh0" data-image="9">
+                    <div class="image-index">9</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknj4r003p11kwhsbejbh0/9.jpg" alt="克拉斯 695 图片9" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknj4r003p11kwhsbejbh0" data-image="10">
+                    <div class="image-index">10</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknj4r003p11kwhsbejbh0/10.jpg" alt="克拉斯 695 图片10" loading="lazy">
+                </div>
+            
+                    </div>
+                    
+                    <div class="notes"><strong>备注:</strong> 需要人工检查图片内容。</div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-select" onclick="selectBestImage('cmpdknj4r003p11kwhsbejbh0')">
+                            📋 记录最佳图片
+                        </button>
+                        <button class="btn btn-view" onclick="viewAllImages('cmpdknj4r003p11kwhsbejbh0')">
+                            🔍 查看大图
+                        </button>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="product-card" id="product-cmpdknj9v004b11kwqvki68wr">
+                <div class="product-header">
+                    <div class="product-title">约翰迪尔 7250</div>
+                    <div class="product-meta">
+                        <span>年份: 2013</span>
+                        <span>状态: fair</span>
+                        <span>ID: cmpdknj9...</span>
+                    </div>
+                </div>
+                
+                <div class="images-container">
+                    <p><strong>图片选择</strong>（当前封面图以红色边框标记）</p>
+                    <div class="image-grid">
+                        
+                <div class="image-item current-cover recommended" data-product="cmpdknj9v004b11kwqvki68wr" data-image="1">
+                    <div class="image-index">1</div>
+                    <div class="current-cover-badge">当前封面</div>
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknj9v004b11kwqvki68wr/1.jpg" alt="约翰迪尔 7250 图片1" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknj9v004b11kwqvki68wr" data-image="2">
+                    <div class="image-index">2</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknj9v004b11kwqvki68wr/2.jpg" alt="约翰迪尔 7250 图片2" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknj9v004b11kwqvki68wr" data-image="3">
+                    <div class="image-index">3</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknj9v004b11kwqvki68wr/3.jpg" alt="约翰迪尔 7250 图片3" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknj9v004b11kwqvki68wr" data-image="4">
+                    <div class="image-index">4</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknj9v004b11kwqvki68wr/4.jpg" alt="约翰迪尔 7250 图片4" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknj9v004b11kwqvki68wr" data-image="5">
+                    <div class="image-index">5</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknj9v004b11kwqvki68wr/5.jpg" alt="约翰迪尔 7250 图片5" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknj9v004b11kwqvki68wr" data-image="6">
+                    <div class="image-index">6</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknj9v004b11kwqvki68wr/6.jpg" alt="约翰迪尔 7250 图片6" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknj9v004b11kwqvki68wr" data-image="7">
+                    <div class="image-index">7</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknj9v004b11kwqvki68wr/7.jpg" alt="约翰迪尔 7250 图片7" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknj9v004b11kwqvki68wr" data-image="8">
+                    <div class="image-index">8</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknj9v004b11kwqvki68wr/8.jpg" alt="约翰迪尔 7250 图片8" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknj9v004b11kwqvki68wr" data-image="9">
+                    <div class="image-index">9</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknj9v004b11kwqvki68wr/9.jpg" alt="约翰迪尔 7250 图片9" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknj9v004b11kwqvki68wr" data-image="10">
+                    <div class="image-index">10</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknj9v004b11kwqvki68wr/10.jpg" alt="约翰迪尔 7250 图片10" loading="lazy">
+                </div>
+            
+                    </div>
+                    
+                    <div class="notes"><strong>备注:</strong> 需要人工检查图片内容。</div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-select" onclick="selectBestImage('cmpdknj9v004b11kwqvki68wr')">
+                            📋 记录最佳图片
+                        </button>
+                        <button class="btn btn-view" onclick="viewAllImages('cmpdknj9v004b11kwqvki68wr')">
+                            🔍 查看大图
+                        </button>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="product-card" id="product-cmpdknjh6004x11kwkz5gvrbo">
+                <div class="product-header">
+                    <div class="product-title">纽荷兰 9080</div>
+                    <div class="product-meta">
+                        <span>年份: 2009</span>
+                        <span>状态: good</span>
+                        <span>ID: cmpdknjh...</span>
+                    </div>
+                </div>
+                
+                <div class="images-container">
+                    <p><strong>图片选择</strong>（当前封面图以红色边框标记）</p>
+                    <div class="image-grid">
+                        
+                <div class="image-item current-cover recommended" data-product="cmpdknjh6004x11kwkz5gvrbo" data-image="1">
+                    <div class="image-index">1</div>
+                    <div class="current-cover-badge">当前封面</div>
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjh6004x11kwkz5gvrbo/1.jpg" alt="纽荷兰 9080 图片1" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknjh6004x11kwkz5gvrbo" data-image="2">
+                    <div class="image-index">2</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjh6004x11kwkz5gvrbo/2.jpg" alt="纽荷兰 9080 图片2" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknjh6004x11kwkz5gvrbo" data-image="3">
+                    <div class="image-index">3</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjh6004x11kwkz5gvrbo/3.jpg" alt="纽荷兰 9080 图片3" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknjh6004x11kwkz5gvrbo" data-image="4">
+                    <div class="image-index">4</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjh6004x11kwkz5gvrbo/4.jpg" alt="纽荷兰 9080 图片4" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknjh6004x11kwkz5gvrbo" data-image="5">
+                    <div class="image-index">5</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjh6004x11kwkz5gvrbo/5.jpg" alt="纽荷兰 9080 图片5" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknjh6004x11kwkz5gvrbo" data-image="6">
+                    <div class="image-index">6</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjh6004x11kwkz5gvrbo/6.jpg" alt="纽荷兰 9080 图片6" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknjh6004x11kwkz5gvrbo" data-image="7">
+                    <div class="image-index">7</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjh6004x11kwkz5gvrbo/7.jpg" alt="纽荷兰 9080 图片7" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknjh6004x11kwkz5gvrbo" data-image="8">
+                    <div class="image-index">8</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjh6004x11kwkz5gvrbo/8.jpg" alt="纽荷兰 9080 图片8" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknjh6004x11kwkz5gvrbo" data-image="9">
+                    <div class="image-index">9</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjh6004x11kwkz5gvrbo/9.jpg" alt="纽荷兰 9080 图片9" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknjh6004x11kwkz5gvrbo" data-image="10">
+                    <div class="image-index">10</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjh6004x11kwkz5gvrbo/10.jpg" alt="纽荷兰 9080 图片10" loading="lazy">
+                </div>
+            
+                    </div>
+                    
+                    <div class="notes"><strong>备注:</strong> 需要人工检查图片内容。</div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-select" onclick="selectBestImage('cmpdknjh6004x11kwkz5gvrbo')">
+                            📋 记录最佳图片
+                        </button>
+                        <button class="btn btn-view" onclick="viewAllImages('cmpdknjh6004x11kwkz5gvrbo')">
+                            🔍 查看大图
+                        </button>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="product-card" id="product-cmpdknjlk005j11kwdeashk68">
+                <div class="product-header">
+                    <div class="product-title">纽荷兰 FR500</div>
+                    <div class="product-meta">
+                        <span>年份: 2014</span>
+                        <span>状态: good</span>
+                        <span>ID: cmpdknjl...</span>
+                    </div>
+                </div>
+                
+                <div class="images-container">
+                    <p><strong>图片选择</strong>（当前封面图以红色边框标记）</p>
+                    <div class="image-grid">
+                        
+                <div class="image-item current-cover recommended" data-product="cmpdknjlk005j11kwdeashk68" data-image="1">
+                    <div class="image-index">1</div>
+                    <div class="current-cover-badge">当前封面</div>
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjlk005j11kwdeashk68/1.jpg" alt="纽荷兰 FR500 图片1" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknjlk005j11kwdeashk68" data-image="2">
+                    <div class="image-index">2</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjlk005j11kwdeashk68/2.jpg" alt="纽荷兰 FR500 图片2" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknjlk005j11kwdeashk68" data-image="3">
+                    <div class="image-index">3</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjlk005j11kwdeashk68/3.jpg" alt="纽荷兰 FR500 图片3" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknjlk005j11kwdeashk68" data-image="4">
+                    <div class="image-index">4</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjlk005j11kwdeashk68/4.jpg" alt="纽荷兰 FR500 图片4" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknjlk005j11kwdeashk68" data-image="5">
+                    <div class="image-index">5</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjlk005j11kwdeashk68/5.jpg" alt="纽荷兰 FR500 图片5" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknjlk005j11kwdeashk68" data-image="6">
+                    <div class="image-index">6</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjlk005j11kwdeashk68/6.jpg" alt="纽荷兰 FR500 图片6" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknjlk005j11kwdeashk68" data-image="7">
+                    <div class="image-index">7</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjlk005j11kwdeashk68/7.jpg" alt="纽荷兰 FR500 图片7" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknjlk005j11kwdeashk68" data-image="8">
+                    <div class="image-index">8</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjlk005j11kwdeashk68/8.jpg" alt="纽荷兰 FR500 图片8" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknjlk005j11kwdeashk68" data-image="9">
+                    <div class="image-index">9</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjlk005j11kwdeashk68/9.jpg" alt="纽荷兰 FR500 图片9" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknjlk005j11kwdeashk68" data-image="10">
+                    <div class="image-index">10</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjlk005j11kwdeashk68/10.jpg" alt="纽荷兰 FR500 图片10" loading="lazy">
+                </div>
+            
+                    </div>
+                    
+                    <div class="notes"><strong>备注:</strong> 需要人工检查图片内容。</div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-select" onclick="selectBestImage('cmpdknjlk005j11kwdeashk68')">
+                            📋 记录最佳图片
+                        </button>
+                        <button class="btn btn-view" onclick="viewAllImages('cmpdknjlk005j11kwdeashk68')">
+                            🔍 查看大图
+                        </button>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="product-card" id="product-cmpdknjou006711kwwrsm5ypx">
+                <div class="product-header">
+                    <div class="product-title">克罗尼 700</div>
+                    <div class="product-meta">
+                        <span>年份: 2020</span>
+                        <span>状态: good</span>
+                        <span>ID: cmpdknjo...</span>
+                    </div>
+                </div>
+                
+                <div class="images-container">
+                    <p><strong>图片选择</strong>（当前封面图以红色边框标记）</p>
+                    <div class="image-grid">
+                        
+                <div class="image-item current-cover recommended" data-product="cmpdknjou006711kwwrsm5ypx" data-image="1">
+                    <div class="image-index">1</div>
+                    <div class="current-cover-badge">当前封面</div>
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjou006711kwwrsm5ypx/1.jpg" alt="克罗尼 700 图片1" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknjou006711kwwrsm5ypx" data-image="2">
+                    <div class="image-index">2</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjou006711kwwrsm5ypx/2.jpg" alt="克罗尼 700 图片2" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknjou006711kwwrsm5ypx" data-image="3">
+                    <div class="image-index">3</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjou006711kwwrsm5ypx/3.jpg" alt="克罗尼 700 图片3" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknjou006711kwwrsm5ypx" data-image="4">
+                    <div class="image-index">4</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjou006711kwwrsm5ypx/4.jpg" alt="克罗尼 700 图片4" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknjou006711kwwrsm5ypx" data-image="5">
+                    <div class="image-index">5</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjou006711kwwrsm5ypx/5.jpg" alt="克罗尼 700 图片5" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknjou006711kwwrsm5ypx" data-image="6">
+                    <div class="image-index">6</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjou006711kwwrsm5ypx/6.jpg" alt="克罗尼 700 图片6" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknjou006711kwwrsm5ypx" data-image="7">
+                    <div class="image-index">7</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjou006711kwwrsm5ypx/7.jpg" alt="克罗尼 700 图片7" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknjou006711kwwrsm5ypx" data-image="8">
+                    <div class="image-index">8</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjou006711kwwrsm5ypx/8.jpg" alt="克罗尼 700 图片8" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknjou006711kwwrsm5ypx" data-image="9">
+                    <div class="image-index">9</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjou006711kwwrsm5ypx/9.jpg" alt="克罗尼 700 图片9" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknjou006711kwwrsm5ypx" data-image="10">
+                    <div class="image-index">10</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjou006711kwwrsm5ypx/10.jpg" alt="克罗尼 700 图片10" loading="lazy">
+                </div>
+            
+                    </div>
+                    
+                    <div class="notes"><strong>备注:</strong> 需要人工检查图片内容。</div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-select" onclick="selectBestImage('cmpdknjou006711kwwrsm5ypx')">
+                            📋 记录最佳图片
+                        </button>
+                        <button class="btn btn-view" onclick="viewAllImages('cmpdknjou006711kwwrsm5ypx')">
+                            🔍 查看大图
+                        </button>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="product-card" id="product-cmpdknjsb006t11kwx8sjwfl5">
+                <div class="product-header">
+                    <div class="product-title">芬特 Katana 65</div>
+                    <div class="product-meta">
+                        <span>年份: 2016</span>
+                        <span>状态: good</span>
+                        <span>ID: cmpdknjs...</span>
+                    </div>
+                </div>
+                
+                <div class="images-container">
+                    <p><strong>图片选择</strong>（当前封面图以红色边框标记）</p>
+                    <div class="image-grid">
+                        
+                <div class="image-item current-cover recommended" data-product="cmpdknjsb006t11kwx8sjwfl5" data-image="1">
+                    <div class="image-index">1</div>
+                    <div class="current-cover-badge">当前封面</div>
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjsb006t11kwx8sjwfl5/1.jpg" alt="芬特 Katana 65 图片1" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknjsb006t11kwx8sjwfl5" data-image="2">
+                    <div class="image-index">2</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjsb006t11kwx8sjwfl5/2.jpg" alt="芬特 Katana 65 图片2" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknjsb006t11kwx8sjwfl5" data-image="3">
+                    <div class="image-index">3</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjsb006t11kwx8sjwfl5/3.jpg" alt="芬特 Katana 65 图片3" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknjsb006t11kwx8sjwfl5" data-image="4">
+                    <div class="image-index">4</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjsb006t11kwx8sjwfl5/4.jpg" alt="芬特 Katana 65 图片4" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknjsb006t11kwx8sjwfl5" data-image="5">
+                    <div class="image-index">5</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjsb006t11kwx8sjwfl5/5.jpg" alt="芬特 Katana 65 图片5" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknjsb006t11kwx8sjwfl5" data-image="6">
+                    <div class="image-index">6</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjsb006t11kwx8sjwfl5/6.jpg" alt="芬特 Katana 65 图片6" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknjsb006t11kwx8sjwfl5" data-image="7">
+                    <div class="image-index">7</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjsb006t11kwx8sjwfl5/7.jpg" alt="芬特 Katana 65 图片7" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknjsb006t11kwx8sjwfl5" data-image="8">
+                    <div class="image-index">8</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjsb006t11kwx8sjwfl5/8.jpg" alt="芬特 Katana 65 图片8" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknjsb006t11kwx8sjwfl5" data-image="9">
+                    <div class="image-index">9</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjsb006t11kwx8sjwfl5/9.jpg" alt="芬特 Katana 65 图片9" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknjsb006t11kwx8sjwfl5" data-image="10">
+                    <div class="image-index">10</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknjsb006t11kwx8sjwfl5/10.jpg" alt="芬特 Katana 65 图片10" loading="lazy">
+                </div>
+            
+                    </div>
+                    
+                    <div class="notes"><strong>备注:</strong> 需要人工检查图片内容。</div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-select" onclick="selectBestImage('cmpdknjsb006t11kwx8sjwfl5')">
+                            📋 记录最佳图片
+                        </button>
+                        <button class="btn btn-view" onclick="viewAllImages('cmpdknjsb006t11kwx8sjwfl5')">
+                            🔍 查看大图
+                        </button>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="product-card" id="product-cmpdknk0w007f11kwdljgy0fq">
+                <div class="product-header">
+                    <div class="product-title">克拉斯 950</div>
+                    <div class="product-meta">
+                        <span>年份: 2015</span>
+                        <span>状态: good</span>
+                        <span>ID: cmpdknk0...</span>
+                    </div>
+                </div>
+                
+                <div class="images-container">
+                    <p><strong>图片选择</strong>（当前封面图以红色边框标记）</p>
+                    <div class="image-grid">
+                        
+                <div class="image-item current-cover recommended" data-product="cmpdknk0w007f11kwdljgy0fq" data-image="1">
+                    <div class="image-index">1</div>
+                    <div class="current-cover-badge">当前封面</div>
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknk0w007f11kwdljgy0fq/1.jpg" alt="克拉斯 950 图片1" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknk0w007f11kwdljgy0fq" data-image="2">
+                    <div class="image-index">2</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknk0w007f11kwdljgy0fq/2.jpg" alt="克拉斯 950 图片2" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknk0w007f11kwdljgy0fq" data-image="3">
+                    <div class="image-index">3</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknk0w007f11kwdljgy0fq/3.jpg" alt="克拉斯 950 图片3" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknk0w007f11kwdljgy0fq" data-image="4">
+                    <div class="image-index">4</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknk0w007f11kwdljgy0fq/4.jpg" alt="克拉斯 950 图片4" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknk0w007f11kwdljgy0fq" data-image="5">
+                    <div class="image-index">5</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknk0w007f11kwdljgy0fq/5.jpg" alt="克拉斯 950 图片5" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknk0w007f11kwdljgy0fq" data-image="6">
+                    <div class="image-index">6</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknk0w007f11kwdljgy0fq/6.jpg" alt="克拉斯 950 图片6" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknk0w007f11kwdljgy0fq" data-image="7">
+                    <div class="image-index">7</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknk0w007f11kwdljgy0fq/7.jpg" alt="克拉斯 950 图片7" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknk0w007f11kwdljgy0fq" data-image="8">
+                    <div class="image-index">8</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknk0w007f11kwdljgy0fq/8.jpg" alt="克拉斯 950 图片8" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknk0w007f11kwdljgy0fq" data-image="9">
+                    <div class="image-index">9</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknk0w007f11kwdljgy0fq/9.jpg" alt="克拉斯 950 图片9" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknk0w007f11kwdljgy0fq" data-image="10">
+                    <div class="image-index">10</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknk0w007f11kwdljgy0fq/10.jpg" alt="克拉斯 950 图片10" loading="lazy">
+                </div>
+            
+                    </div>
+                    
+                    <div class="notes"><strong>备注:</strong> 需要人工检查图片内容。</div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-select" onclick="selectBestImage('cmpdknk0w007f11kwdljgy0fq')">
+                            📋 记录最佳图片
+                        </button>
+                        <button class="btn btn-view" onclick="viewAllImages('cmpdknk0w007f11kwdljgy0fq')">
+                            🔍 查看大图
+                        </button>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="product-card" id="product-cmpdknk4s008111kw3zr8aimf">
+                <div class="product-header">
+                    <div class="product-title">克拉斯 5300RC</div>
+                    <div class="product-meta">
+                        <span>年份: 2022</span>
+                        <span>状态: excellent</span>
+                        <span>ID: cmpdknk4...</span>
+                    </div>
+                </div>
+                
+                <div class="images-container">
+                    <p><strong>图片选择</strong>（当前封面图以红色边框标记）</p>
+                    <div class="image-grid">
+                        
+                <div class="image-item current-cover recommended" data-product="cmpdknk4s008111kw3zr8aimf" data-image="1">
+                    <div class="image-index">1</div>
+                    <div class="current-cover-badge">当前封面</div>
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknk4s008111kw3zr8aimf/1.jpg" alt="克拉斯 5300RC 图片1" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknk4s008111kw3zr8aimf" data-image="2">
+                    <div class="image-index">2</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknk4s008111kw3zr8aimf/2.jpg" alt="克拉斯 5300RC 图片2" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknk4s008111kw3zr8aimf" data-image="3">
+                    <div class="image-index">3</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknk4s008111kw3zr8aimf/3.jpg" alt="克拉斯 5300RC 图片3" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknk4s008111kw3zr8aimf" data-image="4">
+                    <div class="image-index">4</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknk4s008111kw3zr8aimf/4.jpg" alt="克拉斯 5300RC 图片4" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknk4s008111kw3zr8aimf" data-image="5">
+                    <div class="image-index">5</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknk4s008111kw3zr8aimf/5.jpg" alt="克拉斯 5300RC 图片5" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknk4s008111kw3zr8aimf" data-image="6">
+                    <div class="image-index">6</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknk4s008111kw3zr8aimf/6.jpg" alt="克拉斯 5300RC 图片6" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknk4s008111kw3zr8aimf" data-image="7">
+                    <div class="image-index">7</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknk4s008111kw3zr8aimf/7.jpg" alt="克拉斯 5300RC 图片7" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknk4s008111kw3zr8aimf" data-image="8">
+                    <div class="image-index">8</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknk4s008111kw3zr8aimf/8.jpg" alt="克拉斯 5300RC 图片8" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknk4s008111kw3zr8aimf" data-image="9">
+                    <div class="image-index">9</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknk4s008111kw3zr8aimf/9.jpg" alt="克拉斯 5300RC 图片9" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknk4s008111kw3zr8aimf" data-image="10">
+                    <div class="image-index">10</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknk4s008111kw3zr8aimf/10.jpg" alt="克拉斯 5300RC 图片10" loading="lazy">
+                </div>
+            
+                    </div>
+                    
+                    <div class="notes"><strong>备注:</strong> 需要人工检查图片内容。</div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-select" onclick="selectBestImage('cmpdknk4s008111kw3zr8aimf')">
+                            📋 记录最佳图片
+                        </button>
+                        <button class="btn btn-view" onclick="viewAllImages('cmpdknk4s008111kw3zr8aimf')">
+                            🔍 查看大图
+                        </button>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="product-card" id="product-cmpdknk7n008n11kwssps4ivh">
+                <div class="product-header">
+                    <div class="product-title">克拉斯 5300RC</div>
+                    <div class="product-meta">
+                        <span>年份: 2020</span>
+                        <span>状态: good</span>
+                        <span>ID: cmpdknk7...</span>
+                    </div>
+                </div>
+                
+                <div class="images-container">
+                    <p><strong>图片选择</strong>（当前封面图以红色边框标记）</p>
+                    <div class="image-grid">
+                        
+                <div class="image-item current-cover recommended" data-product="cmpdknk7n008n11kwssps4ivh" data-image="1">
+                    <div class="image-index">1</div>
+                    <div class="current-cover-badge">当前封面</div>
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknk7n008n11kwssps4ivh/1.jpg" alt="克拉斯 5300RC 图片1" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknk7n008n11kwssps4ivh" data-image="2">
+                    <div class="image-index">2</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknk7n008n11kwssps4ivh/2.jpg" alt="克拉斯 5300RC 图片2" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknk7n008n11kwssps4ivh" data-image="3">
+                    <div class="image-index">3</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknk7n008n11kwssps4ivh/3.jpg" alt="克拉斯 5300RC 图片3" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknk7n008n11kwssps4ivh" data-image="4">
+                    <div class="image-index">4</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknk7n008n11kwssps4ivh/4.jpg" alt="克拉斯 5300RC 图片4" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknk7n008n11kwssps4ivh" data-image="5">
+                    <div class="image-index">5</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknk7n008n11kwssps4ivh/5.jpg" alt="克拉斯 5300RC 图片5" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknk7n008n11kwssps4ivh" data-image="6">
+                    <div class="image-index">6</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknk7n008n11kwssps4ivh/6.jpg" alt="克拉斯 5300RC 图片6" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknk7n008n11kwssps4ivh" data-image="7">
+                    <div class="image-index">7</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknk7n008n11kwssps4ivh/7.jpg" alt="克拉斯 5300RC 图片7" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknk7n008n11kwssps4ivh" data-image="8">
+                    <div class="image-index">8</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknk7n008n11kwssps4ivh/8.jpg" alt="克拉斯 5300RC 图片8" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknk7n008n11kwssps4ivh" data-image="9">
+                    <div class="image-index">9</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknk7n008n11kwssps4ivh/9.jpg" alt="克拉斯 5300RC 图片9" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknk7n008n11kwssps4ivh" data-image="10">
+                    <div class="image-index">10</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknk7n008n11kwssps4ivh/10.jpg" alt="克拉斯 5300RC 图片10" loading="lazy">
+                </div>
+            
+                    </div>
+                    
+                    <div class="notes"><strong>备注:</strong> 需要人工检查图片内容。</div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-select" onclick="selectBestImage('cmpdknk7n008n11kwssps4ivh')">
+                            📋 记录最佳图片
+                        </button>
+                        <button class="btn btn-view" onclick="viewAllImages('cmpdknk7n008n11kwssps4ivh')">
+                            🔍 查看大图
+                        </button>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="product-card" id="product-cmpdknkb2009911kwv7u98vpe">
+                <div class="product-header">
+                    <div class="product-title">克罗尼 1290XC</div>
+                    <div class="product-meta">
+                        <span>年份: 2014</span>
+                        <span>状态: good</span>
+                        <span>ID: cmpdknkb...</span>
+                    </div>
+                </div>
+                
+                <div class="images-container">
+                    <p><strong>图片选择</strong>（当前封面图以红色边框标记）</p>
+                    <div class="image-grid">
+                        
+                <div class="image-item current-cover recommended" data-product="cmpdknkb2009911kwv7u98vpe" data-image="1">
+                    <div class="image-index">1</div>
+                    <div class="current-cover-badge">当前封面</div>
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkb2009911kwv7u98vpe/1.jpg" alt="克罗尼 1290XC 图片1" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknkb2009911kwv7u98vpe" data-image="2">
+                    <div class="image-index">2</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkb2009911kwv7u98vpe/2.jpg" alt="克罗尼 1290XC 图片2" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknkb2009911kwv7u98vpe" data-image="3">
+                    <div class="image-index">3</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkb2009911kwv7u98vpe/3.jpg" alt="克罗尼 1290XC 图片3" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknkb2009911kwv7u98vpe" data-image="4">
+                    <div class="image-index">4</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkb2009911kwv7u98vpe/4.jpg" alt="克罗尼 1290XC 图片4" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknkb2009911kwv7u98vpe" data-image="5">
+                    <div class="image-index">5</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkb2009911kwv7u98vpe/5.jpg" alt="克罗尼 1290XC 图片5" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknkb2009911kwv7u98vpe" data-image="6">
+                    <div class="image-index">6</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkb2009911kwv7u98vpe/6.jpg" alt="克罗尼 1290XC 图片6" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknkb2009911kwv7u98vpe" data-image="7">
+                    <div class="image-index">7</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkb2009911kwv7u98vpe/7.jpg" alt="克罗尼 1290XC 图片7" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknkb2009911kwv7u98vpe" data-image="8">
+                    <div class="image-index">8</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkb2009911kwv7u98vpe/8.jpg" alt="克罗尼 1290XC 图片8" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknkb2009911kwv7u98vpe" data-image="9">
+                    <div class="image-index">9</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkb2009911kwv7u98vpe/9.jpg" alt="克罗尼 1290XC 图片9" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknkb2009911kwv7u98vpe" data-image="10">
+                    <div class="image-index">10</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkb2009911kwv7u98vpe/10.jpg" alt="克罗尼 1290XC 图片10" loading="lazy">
+                </div>
+            
+                    </div>
+                    
+                    <div class="notes"><strong>备注:</strong> 需要人工检查图片内容。</div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-select" onclick="selectBestImage('cmpdknkb2009911kwv7u98vpe')">
+                            📋 记录最佳图片
+                        </button>
+                        <button class="btn btn-view" onclick="viewAllImages('cmpdknkb2009911kwv7u98vpe')">
+                            🔍 查看大图
+                        </button>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="product-card" id="product-cmpdknkif009v11kw0dcmfq5q">
+                <div class="product-header">
+                    <div class="product-title">克罗尼 CF155XC</div>
+                    <div class="product-meta">
+                        <span>年份: 2014</span>
+                        <span>状态: good</span>
+                        <span>ID: cmpdknki...</span>
+                    </div>
+                </div>
+                
+                <div class="images-container">
+                    <p><strong>图片选择</strong>（当前封面图以红色边框标记）</p>
+                    <div class="image-grid">
+                        
+                <div class="image-item current-cover recommended" data-product="cmpdknkif009v11kw0dcmfq5q" data-image="1">
+                    <div class="image-index">1</div>
+                    <div class="current-cover-badge">当前封面</div>
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkif009v11kw0dcmfq5q/1.jpg" alt="克罗尼 CF155XC 图片1" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknkif009v11kw0dcmfq5q" data-image="2">
+                    <div class="image-index">2</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkif009v11kw0dcmfq5q/2.jpg" alt="克罗尼 CF155XC 图片2" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknkif009v11kw0dcmfq5q" data-image="3">
+                    <div class="image-index">3</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkif009v11kw0dcmfq5q/3.jpg" alt="克罗尼 CF155XC 图片3" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknkif009v11kw0dcmfq5q" data-image="4">
+                    <div class="image-index">4</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkif009v11kw0dcmfq5q/4.jpg" alt="克罗尼 CF155XC 图片4" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknkif009v11kw0dcmfq5q" data-image="5">
+                    <div class="image-index">5</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkif009v11kw0dcmfq5q/5.jpg" alt="克罗尼 CF155XC 图片5" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknkif009v11kw0dcmfq5q" data-image="6">
+                    <div class="image-index">6</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkif009v11kw0dcmfq5q/6.jpg" alt="克罗尼 CF155XC 图片6" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknkif009v11kw0dcmfq5q" data-image="7">
+                    <div class="image-index">7</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkif009v11kw0dcmfq5q/7.jpg" alt="克罗尼 CF155XC 图片7" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknkif009v11kw0dcmfq5q" data-image="8">
+                    <div class="image-index">8</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkif009v11kw0dcmfq5q/8.jpg" alt="克罗尼 CF155XC 图片8" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknkif009v11kw0dcmfq5q" data-image="9">
+                    <div class="image-index">9</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkif009v11kw0dcmfq5q/9.jpg" alt="克罗尼 CF155XC 图片9" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknkif009v11kw0dcmfq5q" data-image="10">
+                    <div class="image-index">10</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkif009v11kw0dcmfq5q/10.jpg" alt="克罗尼 CF155XC 图片10" loading="lazy">
+                </div>
+            
+                    </div>
+                    
+                    <div class="notes"><strong>备注:</strong> 需要人工检查图片内容。</div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-select" onclick="selectBestImage('cmpdknkif009v11kw0dcmfq5q')">
+                            📋 记录最佳图片
+                        </button>
+                        <button class="btn btn-view" onclick="viewAllImages('cmpdknkif009v11kw0dcmfq5q')">
+                            🔍 查看大图
+                        </button>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="product-card" id="product-cmpdknklh00ah11kwozy0g48e">
+                <div class="product-header">
+                    <div class="product-title">盈嘉 9YG-1.25</div>
+                    <div class="product-meta">
+                        <span>年份: 2025</span>
+                        <span>状态: excellent</span>
+                        <span>ID: cmpdknkl...</span>
+                    </div>
+                </div>
+                
+                <div class="images-container">
+                    <p><strong>图片选择</strong>（当前封面图以红色边框标记）</p>
+                    <div class="image-grid">
+                        
+                <div class="image-item current-cover recommended" data-product="cmpdknklh00ah11kwozy0g48e" data-image="1">
+                    <div class="image-index">1</div>
+                    <div class="current-cover-badge">当前封面</div>
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknklh00ah11kwozy0g48e/1.jpg" alt="盈嘉 9YG-1.25 图片1" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknklh00ah11kwozy0g48e" data-image="2">
+                    <div class="image-index">2</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknklh00ah11kwozy0g48e/2.jpg" alt="盈嘉 9YG-1.25 图片2" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknklh00ah11kwozy0g48e" data-image="3">
+                    <div class="image-index">3</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknklh00ah11kwozy0g48e/3.jpg" alt="盈嘉 9YG-1.25 图片3" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknklh00ah11kwozy0g48e" data-image="4">
+                    <div class="image-index">4</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknklh00ah11kwozy0g48e/4.jpg" alt="盈嘉 9YG-1.25 图片4" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknklh00ah11kwozy0g48e" data-image="5">
+                    <div class="image-index">5</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknklh00ah11kwozy0g48e/5.jpg" alt="盈嘉 9YG-1.25 图片5" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknklh00ah11kwozy0g48e" data-image="6">
+                    <div class="image-index">6</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknklh00ah11kwozy0g48e/6.jpg" alt="盈嘉 9YG-1.25 图片6" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknklh00ah11kwozy0g48e" data-image="7">
+                    <div class="image-index">7</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknklh00ah11kwozy0g48e/7.jpg" alt="盈嘉 9YG-1.25 图片7" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknklh00ah11kwozy0g48e" data-image="8">
+                    <div class="image-index">8</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknklh00ah11kwozy0g48e/8.jpg" alt="盈嘉 9YG-1.25 图片8" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknklh00ah11kwozy0g48e" data-image="9">
+                    <div class="image-index">9</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknklh00ah11kwozy0g48e/9.jpg" alt="盈嘉 9YG-1.25 图片9" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknklh00ah11kwozy0g48e" data-image="10">
+                    <div class="image-index">10</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknklh00ah11kwozy0g48e/10.jpg" alt="盈嘉 9YG-1.25 图片10" loading="lazy">
+                </div>
+            
+                    </div>
+                    
+                    <div class="notes"><strong>备注:</strong> 需要人工检查图片内容。</div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-select" onclick="selectBestImage('cmpdknklh00ah11kwozy0g48e')">
+                            📋 记录最佳图片
+                        </button>
+                        <button class="btn btn-view" onclick="viewAllImages('cmpdknklh00ah11kwozy0g48e')">
+                            🔍 查看大图
+                        </button>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="product-card" id="product-cmpdknkog00b311kwql4ortgt">
+                <div class="product-header">
+                    <div class="product-title">奥库 DENS-X</div>
+                    <div class="product-meta">
+                        <span>年份: 2019</span>
+                        <span>状态: good</span>
+                        <span>ID: cmpdknko...</span>
+                    </div>
+                </div>
+                
+                <div class="images-container">
+                    <p><strong>图片选择</strong>（当前封面图以红色边框标记）</p>
+                    <div class="image-grid">
+                        
+                <div class="image-item current-cover recommended" data-product="cmpdknkog00b311kwql4ortgt" data-image="1">
+                    <div class="image-index">1</div>
+                    <div class="current-cover-badge">当前封面</div>
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkog00b311kwql4ortgt/1.jpg" alt="奥库 DENS-X 图片1" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknkog00b311kwql4ortgt" data-image="2">
+                    <div class="image-index">2</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkog00b311kwql4ortgt/2.jpg" alt="奥库 DENS-X 图片2" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknkog00b311kwql4ortgt" data-image="3">
+                    <div class="image-index">3</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkog00b311kwql4ortgt/3.jpg" alt="奥库 DENS-X 图片3" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknkog00b311kwql4ortgt" data-image="4">
+                    <div class="image-index">4</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkog00b311kwql4ortgt/4.jpg" alt="奥库 DENS-X 图片4" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknkog00b311kwql4ortgt" data-image="5">
+                    <div class="image-index">5</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkog00b311kwql4ortgt/5.jpg" alt="奥库 DENS-X 图片5" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknkog00b311kwql4ortgt" data-image="6">
+                    <div class="image-index">6</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkog00b311kwql4ortgt/6.jpg" alt="奥库 DENS-X 图片6" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknkog00b311kwql4ortgt" data-image="7">
+                    <div class="image-index">7</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkog00b311kwql4ortgt/7.jpg" alt="奥库 DENS-X 图片7" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknkog00b311kwql4ortgt" data-image="8">
+                    <div class="image-index">8</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkog00b311kwql4ortgt/8.jpg" alt="奥库 DENS-X 图片8" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknkog00b311kwql4ortgt" data-image="9">
+                    <div class="image-index">9</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkog00b311kwql4ortgt/9.jpg" alt="奥库 DENS-X 图片9" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknkog00b311kwql4ortgt" data-image="10">
+                    <div class="image-index">10</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkog00b311kwql4ortgt/10.jpg" alt="奥库 DENS-X 图片10" loading="lazy">
+                </div>
+            
+                    </div>
+                    
+                    <div class="notes"><strong>备注:</strong> 需要人工检查图片内容。</div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-select" onclick="selectBestImage('cmpdknkog00b311kwql4ortgt')">
+                            📋 记录最佳图片
+                        </button>
+                        <button class="btn btn-view" onclick="viewAllImages('cmpdknkog00b311kwql4ortgt')">
+                            🔍 查看大图
+                        </button>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="product-card" id="product-cmpdknks300bp11kwp1c7z4cg">
+                <div class="product-header">
+                    <div class="product-title">凯斯 Disc Mower</div>
+                    <div class="product-meta">
+                        <span>年份: 2007</span>
+                        <span>状态: fair</span>
+                        <span>ID: cmpdknks...</span>
+                    </div>
+                </div>
+                
+                <div class="images-container">
+                    <p><strong>图片选择</strong>（当前封面图以红色边框标记）</p>
+                    <div class="image-grid">
+                        
+                <div class="image-item current-cover recommended" data-product="cmpdknks300bp11kwp1c7z4cg" data-image="1">
+                    <div class="image-index">1</div>
+                    <div class="current-cover-badge">当前封面</div>
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknks300bp11kwp1c7z4cg/1.jpg" alt="凯斯 Disc Mower 图片1" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknks300bp11kwp1c7z4cg" data-image="2">
+                    <div class="image-index">2</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknks300bp11kwp1c7z4cg/2.jpg" alt="凯斯 Disc Mower 图片2" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknks300bp11kwp1c7z4cg" data-image="3">
+                    <div class="image-index">3</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknks300bp11kwp1c7z4cg/3.jpg" alt="凯斯 Disc Mower 图片3" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknks300bp11kwp1c7z4cg" data-image="4">
+                    <div class="image-index">4</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknks300bp11kwp1c7z4cg/4.jpg" alt="凯斯 Disc Mower 图片4" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknks300bp11kwp1c7z4cg" data-image="5">
+                    <div class="image-index">5</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknks300bp11kwp1c7z4cg/5.jpg" alt="凯斯 Disc Mower 图片5" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknks300bp11kwp1c7z4cg" data-image="6">
+                    <div class="image-index">6</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknks300bp11kwp1c7z4cg/6.jpg" alt="凯斯 Disc Mower 图片6" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknks300bp11kwp1c7z4cg" data-image="7">
+                    <div class="image-index">7</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknks300bp11kwp1c7z4cg/7.jpg" alt="凯斯 Disc Mower 图片7" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknks300bp11kwp1c7z4cg" data-image="8">
+                    <div class="image-index">8</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknks300bp11kwp1c7z4cg/8.jpg" alt="凯斯 Disc Mower 图片8" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknks300bp11kwp1c7z4cg" data-image="9">
+                    <div class="image-index">9</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknks300bp11kwp1c7z4cg/9.jpg" alt="凯斯 Disc Mower 图片9" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknks300bp11kwp1c7z4cg" data-image="10">
+                    <div class="image-index">10</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknks300bp11kwp1c7z4cg/10.jpg" alt="凯斯 Disc Mower 图片10" loading="lazy">
+                </div>
+            
+                    </div>
+                    
+                    <div class="notes"><strong>备注:</strong> 需要人工检查图片内容。</div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-select" onclick="selectBestImage('cmpdknks300bp11kwp1c7z4cg')">
+                            📋 记录最佳图片
+                        </button>
+                        <button class="btn btn-view" onclick="viewAllImages('cmpdknks300bp11kwp1c7z4cg')">
+                            🔍 查看大图
+                        </button>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="product-card" id="product-cmpdknkuz00cb11kwexyt0dbp">
+                <div class="product-header">
+                    <div class="product-title">康斯凯尔 Stone Picker</div>
+                    <div class="product-meta">
+                        <span>年份: 2017</span>
+                        <span>状态: good</span>
+                        <span>ID: cmpdknku...</span>
+                    </div>
+                </div>
+                
+                <div class="images-container">
+                    <p><strong>图片选择</strong>（当前封面图以红色边框标记）</p>
+                    <div class="image-grid">
+                        
+                <div class="image-item current-cover recommended" data-product="cmpdknkuz00cb11kwexyt0dbp" data-image="1">
+                    <div class="image-index">1</div>
+                    <div class="current-cover-badge">当前封面</div>
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkuz00cb11kwexyt0dbp/1.jpg" alt="康斯凯尔 Stone Picker 图片1" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknkuz00cb11kwexyt0dbp" data-image="2">
+                    <div class="image-index">2</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkuz00cb11kwexyt0dbp/2.jpg" alt="康斯凯尔 Stone Picker 图片2" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknkuz00cb11kwexyt0dbp" data-image="3">
+                    <div class="image-index">3</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkuz00cb11kwexyt0dbp/3.jpg" alt="康斯凯尔 Stone Picker 图片3" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknkuz00cb11kwexyt0dbp" data-image="4">
+                    <div class="image-index">4</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkuz00cb11kwexyt0dbp/4.jpg" alt="康斯凯尔 Stone Picker 图片4" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknkuz00cb11kwexyt0dbp" data-image="5">
+                    <div class="image-index">5</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkuz00cb11kwexyt0dbp/5.jpg" alt="康斯凯尔 Stone Picker 图片5" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknkuz00cb11kwexyt0dbp" data-image="6">
+                    <div class="image-index">6</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkuz00cb11kwexyt0dbp/6.jpg" alt="康斯凯尔 Stone Picker 图片6" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknkuz00cb11kwexyt0dbp" data-image="7">
+                    <div class="image-index">7</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkuz00cb11kwexyt0dbp/7.jpg" alt="康斯凯尔 Stone Picker 图片7" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknkuz00cb11kwexyt0dbp" data-image="8">
+                    <div class="image-index">8</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkuz00cb11kwexyt0dbp/8.jpg" alt="康斯凯尔 Stone Picker 图片8" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknkuz00cb11kwexyt0dbp" data-image="9">
+                    <div class="image-index">9</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkuz00cb11kwexyt0dbp/9.jpg" alt="康斯凯尔 Stone Picker 图片9" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknkuz00cb11kwexyt0dbp" data-image="10">
+                    <div class="image-index">10</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknkuz00cb11kwexyt0dbp/10.jpg" alt="康斯凯尔 Stone Picker 图片10" loading="lazy">
+                </div>
+            
+                    </div>
+                    
+                    <div class="notes"><strong>备注:</strong> 需要人工检查图片内容。</div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-select" onclick="selectBestImage('cmpdknkuz00cb11kwexyt0dbp')">
+                            📋 记录最佳图片
+                        </button>
+                        <button class="btn btn-view" onclick="viewAllImages('cmpdknkuz00cb11kwexyt0dbp')">
+                            🔍 查看大图
+                        </button>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="product-card" id="product-cmpdknl0p00cx11kwh9q8i1lt">
+                <div class="product-header">
+                    <div class="product-title">迈科农机 9GL-950</div>
+                    <div class="product-meta">
+                        <span>年份: 2024</span>
+                        <span>状态: excellent</span>
+                        <span>ID: cmpdknl0...</span>
+                    </div>
+                </div>
+                
+                <div class="images-container">
+                    <p><strong>图片选择</strong>（当前封面图以红色边框标记）</p>
+                    <div class="image-grid">
+                        
+                <div class="image-item current-cover recommended" data-product="cmpdknl0p00cx11kwh9q8i1lt" data-image="1">
+                    <div class="image-index">1</div>
+                    <div class="current-cover-badge">当前封面</div>
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknl0p00cx11kwh9q8i1lt/1.jpg" alt="迈科农机 9GL-950 图片1" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknl0p00cx11kwh9q8i1lt" data-image="2">
+                    <div class="image-index">2</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknl0p00cx11kwh9q8i1lt/2.jpg" alt="迈科农机 9GL-950 图片2" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknl0p00cx11kwh9q8i1lt" data-image="3">
+                    <div class="image-index">3</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknl0p00cx11kwh9q8i1lt/3.jpg" alt="迈科农机 9GL-950 图片3" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknl0p00cx11kwh9q8i1lt" data-image="4">
+                    <div class="image-index">4</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknl0p00cx11kwh9q8i1lt/4.jpg" alt="迈科农机 9GL-950 图片4" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknl0p00cx11kwh9q8i1lt" data-image="5">
+                    <div class="image-index">5</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknl0p00cx11kwh9q8i1lt/5.jpg" alt="迈科农机 9GL-950 图片5" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknl0p00cx11kwh9q8i1lt" data-image="6">
+                    <div class="image-index">6</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknl0p00cx11kwh9q8i1lt/6.jpg" alt="迈科农机 9GL-950 图片6" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknl0p00cx11kwh9q8i1lt" data-image="7">
+                    <div class="image-index">7</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknl0p00cx11kwh9q8i1lt/7.jpg" alt="迈科农机 9GL-950 图片7" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknl0p00cx11kwh9q8i1lt" data-image="8">
+                    <div class="image-index">8</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknl0p00cx11kwh9q8i1lt/8.jpg" alt="迈科农机 9GL-950 图片8" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknl0p00cx11kwh9q8i1lt" data-image="9">
+                    <div class="image-index">9</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknl0p00cx11kwh9q8i1lt/9.jpg" alt="迈科农机 9GL-950 图片9" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknl0p00cx11kwh9q8i1lt" data-image="10">
+                    <div class="image-index">10</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknl0p00cx11kwh9q8i1lt/10.jpg" alt="迈科农机 9GL-950 图片10" loading="lazy">
+                </div>
+            
+                    </div>
+                    
+                    <div class="notes"><strong>备注:</strong> 需要人工检查图片内容。</div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-select" onclick="selectBestImage('cmpdknl0p00cx11kwh9q8i1lt')">
+                            📋 记录最佳图片
+                        </button>
+                        <button class="btn btn-view" onclick="viewAllImages('cmpdknl0p00cx11kwh9q8i1lt')">
+                            🔍 查看大图
+                        </button>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="product-card" id="product-cmpdknl6n00dj11kwogl5io6x">
+                <div class="product-header">
+                    <div class="product-title">牧神 4YZB-4E</div>
+                    <div class="product-meta">
+                        <span>年份: 2022</span>
+                        <span>状态: excellent</span>
+                        <span>ID: cmpdknl6...</span>
+                    </div>
+                </div>
+                
+                <div class="images-container">
+                    <p><strong>图片选择</strong>（当前封面图以红色边框标记）</p>
+                    <div class="image-grid">
+                        
+                <div class="image-item current-cover recommended" data-product="cmpdknl6n00dj11kwogl5io6x" data-image="1">
+                    <div class="image-index">1</div>
+                    <div class="current-cover-badge">当前封面</div>
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknl6n00dj11kwogl5io6x/1.jpg" alt="牧神 4YZB-4E 图片1" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknl6n00dj11kwogl5io6x" data-image="2">
+                    <div class="image-index">2</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknl6n00dj11kwogl5io6x/2.jpg" alt="牧神 4YZB-4E 图片2" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknl6n00dj11kwogl5io6x" data-image="3">
+                    <div class="image-index">3</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknl6n00dj11kwogl5io6x/3.jpg" alt="牧神 4YZB-4E 图片3" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknl6n00dj11kwogl5io6x" data-image="4">
+                    <div class="image-index">4</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknl6n00dj11kwogl5io6x/4.jpg" alt="牧神 4YZB-4E 图片4" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknl6n00dj11kwogl5io6x" data-image="5">
+                    <div class="image-index">5</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknl6n00dj11kwogl5io6x/5.jpg" alt="牧神 4YZB-4E 图片5" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknl6n00dj11kwogl5io6x" data-image="6">
+                    <div class="image-index">6</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknl6n00dj11kwogl5io6x/6.jpg" alt="牧神 4YZB-4E 图片6" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknl6n00dj11kwogl5io6x" data-image="7">
+                    <div class="image-index">7</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknl6n00dj11kwogl5io6x/7.jpg" alt="牧神 4YZB-4E 图片7" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknl6n00dj11kwogl5io6x" data-image="8">
+                    <div class="image-index">8</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknl6n00dj11kwogl5io6x/8.jpg" alt="牧神 4YZB-4E 图片8" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknl6n00dj11kwogl5io6x" data-image="9">
+                    <div class="image-index">9</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknl6n00dj11kwogl5io6x/9.jpg" alt="牧神 4YZB-4E 图片9" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknl6n00dj11kwogl5io6x" data-image="10">
+                    <div class="image-index">10</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknl6n00dj11kwogl5io6x/10.jpg" alt="牧神 4YZB-4E 图片10" loading="lazy">
+                </div>
+            
+                    </div>
+                    
+                    <div class="notes"><strong>备注:</strong> 需要人工检查图片内容。</div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-select" onclick="selectBestImage('cmpdknl6n00dj11kwogl5io6x')">
+                            📋 记录最佳图片
+                        </button>
+                        <button class="btn btn-view" onclick="viewAllImages('cmpdknl6n00dj11kwogl5io6x')">
+                            🔍 查看大图
+                        </button>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="product-card" id="product-cmpdknl8s00e511kwiy4tzjax">
+                <div class="product-header">
+                    <div class="product-title">东洋 Beet Harvester</div>
+                    <div class="product-meta">
+                        <span>年份: 2018</span>
+                        <span>状态: good</span>
+                        <span>ID: cmpdknl8...</span>
+                    </div>
+                </div>
+                
+                <div class="images-container">
+                    <p><strong>图片选择</strong>（当前封面图以红色边框标记）</p>
+                    <div class="image-grid">
+                        
+                <div class="image-item current-cover recommended" data-product="cmpdknl8s00e511kwiy4tzjax" data-image="1">
+                    <div class="image-index">1</div>
+                    <div class="current-cover-badge">当前封面</div>
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknl8s00e511kwiy4tzjax/1.jpg" alt="东洋 Beet Harvester 图片1" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknl8s00e511kwiy4tzjax" data-image="2">
+                    <div class="image-index">2</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknl8s00e511kwiy4tzjax/2.jpg" alt="东洋 Beet Harvester 图片2" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknl8s00e511kwiy4tzjax" data-image="3">
+                    <div class="image-index">3</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknl8s00e511kwiy4tzjax/3.jpg" alt="东洋 Beet Harvester 图片3" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknl8s00e511kwiy4tzjax" data-image="4">
+                    <div class="image-index">4</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknl8s00e511kwiy4tzjax/4.jpg" alt="东洋 Beet Harvester 图片4" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknl8s00e511kwiy4tzjax" data-image="5">
+                    <div class="image-index">5</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknl8s00e511kwiy4tzjax/5.jpg" alt="东洋 Beet Harvester 图片5" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknl8s00e511kwiy4tzjax" data-image="6">
+                    <div class="image-index">6</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknl8s00e511kwiy4tzjax/6.jpg" alt="东洋 Beet Harvester 图片6" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknl8s00e511kwiy4tzjax" data-image="7">
+                    <div class="image-index">7</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknl8s00e511kwiy4tzjax/7.jpg" alt="东洋 Beet Harvester 图片7" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknl8s00e511kwiy4tzjax" data-image="8">
+                    <div class="image-index">8</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknl8s00e511kwiy4tzjax/8.jpg" alt="东洋 Beet Harvester 图片8" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknl8s00e511kwiy4tzjax" data-image="9">
+                    <div class="image-index">9</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknl8s00e511kwiy4tzjax/9.jpg" alt="东洋 Beet Harvester 图片9" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknl8s00e511kwiy4tzjax" data-image="10">
+                    <div class="image-index">10</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknl8s00e511kwiy4tzjax/10.jpg" alt="东洋 Beet Harvester 图片10" loading="lazy">
+                </div>
+            
+                    </div>
+                    
+                    <div class="notes"><strong>备注:</strong> 需要人工检查图片内容。</div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-select" onclick="selectBestImage('cmpdknl8s00e511kwiy4tzjax')">
+                            📋 记录最佳图片
+                        </button>
+                        <button class="btn btn-view" onclick="viewAllImages('cmpdknl8s00e511kwiy4tzjax')">
+                            🔍 查看大图
+                        </button>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="product-card" id="product-cmpdknlaz00er11kwncetd63g">
+                <div class="product-header">
+                    <div class="product-title">马赛 Beet Harvester</div>
+                    <div class="product-meta">
+                        <span>年份: 2016</span>
+                        <span>状态: good</span>
+                        <span>ID: cmpdknla...</span>
+                    </div>
+                </div>
+                
+                <div class="images-container">
+                    <p><strong>图片选择</strong>（当前封面图以红色边框标记）</p>
+                    <div class="image-grid">
+                        
+                <div class="image-item current-cover recommended" data-product="cmpdknlaz00er11kwncetd63g" data-image="1">
+                    <div class="image-index">1</div>
+                    <div class="current-cover-badge">当前封面</div>
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknlaz00er11kwncetd63g/1.jpg" alt="马赛 Beet Harvester 图片1" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknlaz00er11kwncetd63g" data-image="2">
+                    <div class="image-index">2</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknlaz00er11kwncetd63g/2.jpg" alt="马赛 Beet Harvester 图片2" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknlaz00er11kwncetd63g" data-image="3">
+                    <div class="image-index">3</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknlaz00er11kwncetd63g/3.jpg" alt="马赛 Beet Harvester 图片3" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknlaz00er11kwncetd63g" data-image="4">
+                    <div class="image-index">4</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknlaz00er11kwncetd63g/4.jpg" alt="马赛 Beet Harvester 图片4" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknlaz00er11kwncetd63g" data-image="5">
+                    <div class="image-index">5</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknlaz00er11kwncetd63g/5.jpg" alt="马赛 Beet Harvester 图片5" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknlaz00er11kwncetd63g" data-image="6">
+                    <div class="image-index">6</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknlaz00er11kwncetd63g/6.jpg" alt="马赛 Beet Harvester 图片6" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknlaz00er11kwncetd63g" data-image="7">
+                    <div class="image-index">7</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknlaz00er11kwncetd63g/7.jpg" alt="马赛 Beet Harvester 图片7" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknlaz00er11kwncetd63g" data-image="8">
+                    <div class="image-index">8</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknlaz00er11kwncetd63g/8.jpg" alt="马赛 Beet Harvester 图片8" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknlaz00er11kwncetd63g" data-image="9">
+                    <div class="image-index">9</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknlaz00er11kwncetd63g/9.jpg" alt="马赛 Beet Harvester 图片9" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknlaz00er11kwncetd63g" data-image="10">
+                    <div class="image-index">10</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknlaz00er11kwncetd63g/10.jpg" alt="马赛 Beet Harvester 图片10" loading="lazy">
+                </div>
+            
+                    </div>
+                    
+                    <div class="notes"><strong>备注:</strong> 需要人工检查图片内容。</div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-select" onclick="selectBestImage('cmpdknlaz00er11kwncetd63g')">
+                            📋 记录最佳图片
+                        </button>
+                        <button class="btn btn-view" onclick="viewAllImages('cmpdknlaz00er11kwncetd63g')">
+                            🔍 查看大图
+                        </button>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="product-card" id="product-cmpdknle000fd11kwwfbic4p8">
+                <div class="product-header">
+                    <div class="product-title">克拉斯 3300RC</div>
+                    <div class="product-meta">
+                        <span>年份: 2022</span>
+                        <span>状态: excellent</span>
+                        <span>ID: cmpdknle...</span>
+                    </div>
+                </div>
+                
+                <div class="images-container">
+                    <p><strong>图片选择</strong>（当前封面图以红色边框标记）</p>
+                    <div class="image-grid">
+                        
+                <div class="image-item current-cover recommended" data-product="cmpdknle000fd11kwwfbic4p8" data-image="1">
+                    <div class="image-index">1</div>
+                    <div class="current-cover-badge">当前封面</div>
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknle000fd11kwwfbic4p8/1.jpg" alt="克拉斯 3300RC 图片1" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknle000fd11kwwfbic4p8" data-image="2">
+                    <div class="image-index">2</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknle000fd11kwwfbic4p8/2.jpg" alt="克拉斯 3300RC 图片2" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknle000fd11kwwfbic4p8" data-image="3">
+                    <div class="image-index">3</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknle000fd11kwwfbic4p8/3.jpg" alt="克拉斯 3300RC 图片3" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknle000fd11kwwfbic4p8" data-image="4">
+                    <div class="image-index">4</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknle000fd11kwwfbic4p8/4.jpg" alt="克拉斯 3300RC 图片4" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknle000fd11kwwfbic4p8" data-image="5">
+                    <div class="image-index">5</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknle000fd11kwwfbic4p8/5.jpg" alt="克拉斯 3300RC 图片5" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknle000fd11kwwfbic4p8" data-image="6">
+                    <div class="image-index">6</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknle000fd11kwwfbic4p8/6.jpg" alt="克拉斯 3300RC 图片6" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknle000fd11kwwfbic4p8" data-image="7">
+                    <div class="image-index">7</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknle000fd11kwwfbic4p8/7.jpg" alt="克拉斯 3300RC 图片7" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknle000fd11kwwfbic4p8" data-image="8">
+                    <div class="image-index">8</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknle000fd11kwwfbic4p8/8.jpg" alt="克拉斯 3300RC 图片8" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknle000fd11kwwfbic4p8" data-image="9">
+                    <div class="image-index">9</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknle000fd11kwwfbic4p8/9.jpg" alt="克拉斯 3300RC 图片9" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknle000fd11kwwfbic4p8" data-image="10">
+                    <div class="image-index">10</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknle000fd11kwwfbic4p8/10.jpg" alt="克拉斯 3300RC 图片10" loading="lazy">
+                </div>
+            
+                    </div>
+                    
+                    <div class="notes"><strong>备注:</strong> 需要人工检查图片内容。</div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-select" onclick="selectBestImage('cmpdknle000fd11kwwfbic4p8')">
+                            📋 记录最佳图片
+                        </button>
+                        <button class="btn btn-view" onclick="viewAllImages('cmpdknle000fd11kwwfbic4p8')">
+                            🔍 查看大图
+                        </button>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="product-card" id="product-cmpdknlgv00fz11kwlmz8l0uw">
+                <div class="product-header">
+                    <div class="product-title">克罗尼 500</div>
+                    <div class="product-meta">
+                        <span>年份: 2007</span>
+                        <span>状态: fair</span>
+                        <span>ID: cmpdknlg...</span>
+                    </div>
+                </div>
+                
+                <div class="images-container">
+                    <p><strong>图片选择</strong>（当前封面图以红色边框标记）</p>
+                    <div class="image-grid">
+                        
+                <div class="image-item current-cover recommended" data-product="cmpdknlgv00fz11kwlmz8l0uw" data-image="1">
+                    <div class="image-index">1</div>
+                    <div class="current-cover-badge">当前封面</div>
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknlgv00fz11kwlmz8l0uw/1.jpg" alt="克罗尼 500 图片1" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknlgv00fz11kwlmz8l0uw" data-image="2">
+                    <div class="image-index">2</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknlgv00fz11kwlmz8l0uw/2.jpg" alt="克罗尼 500 图片2" loading="lazy">
+                </div>
+            
+                <div class="image-item  recommended" data-product="cmpdknlgv00fz11kwlmz8l0uw" data-image="3">
+                    <div class="image-index">3</div>
+                    
+                    <div class="recommended-badge">推荐</div>
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknlgv00fz11kwlmz8l0uw/3.jpg" alt="克罗尼 500 图片3" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknlgv00fz11kwlmz8l0uw" data-image="4">
+                    <div class="image-index">4</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknlgv00fz11kwlmz8l0uw/4.jpg" alt="克罗尼 500 图片4" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknlgv00fz11kwlmz8l0uw" data-image="5">
+                    <div class="image-index">5</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknlgv00fz11kwlmz8l0uw/5.jpg" alt="克罗尼 500 图片5" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknlgv00fz11kwlmz8l0uw" data-image="6">
+                    <div class="image-index">6</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknlgv00fz11kwlmz8l0uw/6.jpg" alt="克罗尼 500 图片6" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknlgv00fz11kwlmz8l0uw" data-image="7">
+                    <div class="image-index">7</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknlgv00fz11kwlmz8l0uw/7.jpg" alt="克罗尼 500 图片7" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknlgv00fz11kwlmz8l0uw" data-image="8">
+                    <div class="image-index">8</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknlgv00fz11kwlmz8l0uw/8.jpg" alt="克罗尼 500 图片8" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknlgv00fz11kwlmz8l0uw" data-image="9">
+                    <div class="image-index">9</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknlgv00fz11kwlmz8l0uw/9.jpg" alt="克罗尼 500 图片9" loading="lazy">
+                </div>
+            
+                <div class="image-item  " data-product="cmpdknlgv00fz11kwlmz8l0uw" data-image="10">
+                    <div class="image-index">10</div>
+                    
+                    
+                    <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/cmpdknlgv00fz11kwlmz8l0uw/10.jpg" alt="克罗尼 500 图片10" loading="lazy">
+                </div>
+            
+                    </div>
+                    
+                    <div class="notes"><strong>备注:</strong> 需要人工检查图片内容。</div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-select" onclick="selectBestImage('cmpdknlgv00fz11kwlmz8l0uw')">
+                            📋 记录最佳图片
+                        </button>
+                        <button class="btn btn-view" onclick="viewAllImages('cmpdknlgv00fz11kwlmz8l0uw')">
+                            🔍 查看大图
+                        </button>
+                    </div>
+                </div>
+            </div>
+        
+        </div>
+    </main>
+    
+    <footer>
+        <p>神雕农机跨境平台 - 产品图片优化项目</p>
+        <p>生成时间: <!--DATE--> | 图片存储: 阿里云OSS</p>
+        <p>使用说明: 点击图片可查看大图，记录下需要设为封面的图片编号，联系技术人员更新数据库。</p>
+    </footer>
+    
+    <script>
+        // 图片点击放大
+        document.querySelectorAll('.image-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const productId = this.dataset.product;
+                const imageNum = this.dataset.image;
+                const imgUrl = this.querySelector('img').src;
+                
+                // 在新窗口打开大图
+                window.open(imgUrl, '_blank');
+            });
+        });
+        
+        // 选择最佳图片
+        function selectBestImage(productId) {
+            const productCard = document.getElementById(`product-${productId}`);
+            const images = productCard.querySelectorAll('.image-item');
+            
+            // 简单交互：点击标记为最佳
+            images.forEach(img => {
+                img.addEventListener('click', function selectHandler() {
+                    images.forEach(i => i.classList.remove('selected'));
+                    this.classList.add('selected');
+                    
+                    const imageNum = this.dataset.image;
+                    alert(`已记录: 产品 ${productId.slice(0,8)}... 的最佳封面图为第 ${imageNum} 张\n\n请将此信息告知技术人员更新数据库。`);
+                    
+                    // 移除事件监听器，避免重复
+                    this.removeEventListener('click', selectHandler);
+                }, { once: true });
+            });
+            
+            alert(`请点击 ${productId.slice(0,8)}... 产品中的最佳图片进行选择`);
+        }
+        
+        // 查看所有图片
+        function viewAllImages(productId) {
+            const baseUrl = 'https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com';
+            let imageUrls = '';
+            for (let i = 1; i <= 10; i++) {
+                imageUrls += baseUrl + '/uploads/products/' + productId + '/' + i + '.jpg\n';
+            }
+            
+            // 复制到剪贴板
+            navigator.clipboard.writeText(imageUrls).then(() => {
+                alert('产品 ' + productId.slice(0,8) + '... 的所有图片URL已复制到剪贴板，您可以在浏览器中逐个打开查看。');
+            });
+        }
+        
+        // 页面加载时显示产品数量
+        document.addEventListener('DOMContentLoaded', function() {
+            const count = document.querySelectorAll('.product-card').length;
+            document.querySelector('header p strong').textContent = '#' + count;
+        });
+    </script>
+</body>
+</html>

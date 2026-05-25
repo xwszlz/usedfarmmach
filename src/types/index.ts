@@ -143,3 +143,36 @@ export interface ApiResponse<T = unknown> {
   data?: T;
   error?: string;
 }
+
+// 带完整关联数据的Product类型
+export interface ProductWithDetails extends Product {
+  brand?: Brand;
+  category?: Category;
+  images?: ProductImage[];
+  seller?: Pick<User, "id" | "companyName" | "country">;
+  internationalPrices?: InternationalPrice[];
+}
+
+// 国际价格类型
+export interface InternationalPrice {
+  id: string;
+  productId: string;
+  priceForeignCny: number;
+  priceForeignRaw: number | null;
+  currency: string;
+  exchangeRate: number | null;
+  source: string;
+  sourceUrl: string | null;
+  sourceDate: string | null;
+  country: string | null;
+  notes: string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  isActive: boolean;
+  confidenceScore: number;
+  lastVerified: Date | string | null;
+}
+
+// 套利相关类型导出
+export * from './arbitrage';
+export * from './exchange-rates';

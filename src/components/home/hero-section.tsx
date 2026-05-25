@@ -15,9 +15,27 @@ interface HeroSectionProps {
 // 神雕日报 TOP 1 热门设备
 const TOP_PRODUCT = {
   id: "cmpdknl8s00e511kwiy4tzjax",
-  name: "东洋 Beet Harvester",
+  names: { zh: "东洋 Beet Harvester", en: "Toyonoki Beet Harvester", ru: "Toyonoki Свеклоуборочный комбайн" },
   year: 2018,
   image: "/uploads/products/cmpdknl8s00e511kwiy4tzjax/1.jpg",
+};
+
+const TOP1_LABELS: Record<string, string> = {
+  zh: "日报 TOP 1",
+  en: "Daily Top 1",
+  ru: "ТОП 1 дня",
+};
+
+const CLOSE_LABELS: Record<string, string> = {
+  zh: "关闭",
+  en: "Close",
+  ru: "Закрыть",
+};
+
+const VIDEO_ERROR_LABELS: Record<string, string> = {
+  zh: "您的浏览器不支持视频播放。",
+  en: "Your browser does not support video playback.",
+  ru: "Ваш браузер не поддерживает воспроизведение видео.",
 };
 
 export function HeroSection({ locale }: HeroSectionProps) {
@@ -61,18 +79,18 @@ export function HeroSection({ locale }: HeroSectionProps) {
               <div className="h-72 w-full overflow-hidden rounded-2xl bg-gray-100 sm:h-80">
                 <img
                   src={getImageUrl(TOP_PRODUCT.image)}
-                  alt={TOP_PRODUCT.name}
+                  alt={TOP_PRODUCT.names[locale as keyof typeof TOP_PRODUCT.names] || TOP_PRODUCT.names.en}
                   className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
                 />
                 {/* TOP 1 badge */}
                 <div className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white shadow-lg">
                   <Flame className="h-3 w-3" />
-                  {locale === "zh" ? "日报 TOP 1" : "Daily Top 1"}
+                  {TOP1_LABELS[locale] || TOP1_LABELS.en}
                 </div>
                 {/* Product info overlay */}
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-                  <p className="text-sm font-semibold text-white">{TOP_PRODUCT.name}</p>
-                  <p className="text-xs text-white/80">{TOP_PRODUCT.year}年</p>
+                  <p className="text-sm font-semibold text-white">{TOP_PRODUCT.names[locale as keyof typeof TOP_PRODUCT.names] || TOP_PRODUCT.names.en}</p>
+                  <p className="text-xs text-white/80">{TOP_PRODUCT.year}{locale === "zh" ? "年" : locale === "ru" ? " г." : ""}</p>
                 </div>
               </div>
             </Link>
@@ -110,7 +128,7 @@ export function HeroSection({ locale }: HeroSectionProps) {
               onClick={() => setShowVideo(false)}
               className="absolute -top-10 right-0 text-white hover:text-gray-300"
             >
-              ✕ 关闭
+              ✕ {CLOSE_LABELS[locale] || CLOSE_LABELS.en}
             </button>
             <video
               controls
@@ -119,7 +137,7 @@ export function HeroSection({ locale }: HeroSectionProps) {
               onClick={(e) => e.stopPropagation()}
             >
               <source src="/videos/intro.mp4" type="video/mp4" />
-              您的浏览器不支持视频播放。
+              {VIDEO_ERROR_LABELS[locale] || VIDEO_ERROR_LABELS.en}
             </video>
           </div>
         </div>

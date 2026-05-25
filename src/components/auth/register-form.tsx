@@ -66,13 +66,14 @@ export function RegisterForm({ locale }: RegisterFormProps) {
   }
 
   const countryOptions = [
-    { value: "CN", label: locale === "zh" ? "中国" : "China" },
-    { value: "US", label: locale === "zh" ? "美国" : "United States" },
-    { value: "JP", label: locale === "zh" ? "日本" : "Japan" },
-    { value: "AU", label: locale === "zh" ? "澳大利亚" : "Australia" },
-    { value: "BR", label: locale === "zh" ? "巴西" : "Brazil" },
-    { value: "IN", label: locale === "zh" ? "印度" : "India" },
-    { value: "OTHER", label: locale === "zh" ? "其他" : "Other" },
+    { value: "CN", label: locale === "zh" ? "中国" : locale === "ru" ? "Китай" : "China" },
+    { value: "US", label: locale === "zh" ? "美国" : locale === "ru" ? "США" : "United States" },
+    { value: "JP", label: locale === "zh" ? "日本" : locale === "ru" ? "Япония" : "Japan" },
+    { value: "AU", label: locale === "zh" ? "澳大利亚" : locale === "ru" ? "Австралия" : "Australia" },
+    { value: "BR", label: locale === "zh" ? "巴西" : locale === "ru" ? "Бразилия" : "Brazil" },
+    { value: "IN", label: locale === "zh" ? "印度" : locale === "ru" ? "Индия" : "India" },
+    { value: "RU", label: locale === "zh" ? "俄罗斯" : locale === "ru" ? "Россия" : "Russia" },
+    { value: "OTHER", label: locale === "zh" ? "其他" : locale === "ru" ? "Другое" : "Other" },
   ];
 
   const roleOptions = [

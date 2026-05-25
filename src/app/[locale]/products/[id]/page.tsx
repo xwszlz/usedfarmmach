@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin, Clock, Calendar, Wrench, ArrowLeftRight, ExternalLink, Info } from "lucide-react";
 import { getImageUrl, getVideoUrl } from "@/lib/image-url";
 import { formatPrice } from "@/lib/utils";
+import ArbitrageCalculatorSection from "@/components/product/arbitrage-calculator-section";
 
 export const dynamic = "force-dynamic";
 
@@ -38,9 +39,9 @@ export default async function ProductDetailPage({
     notFound();
   }
 
-  const brandName = locale === "zh" ? product.brand.nameZh : product.brand.nameEn;
-  const categoryName = locale === "zh" ? product.category.nameZh : product.category.nameEn;
-  const description = locale === "zh" ? product.descriptionZh : product.descriptionEn;
+  const brandName = locale === "zh" ? product.brand.nameZh : locale === "ru" ? (product.brand as any).nameRu || product.brand.nameEn : product.brand.nameEn;
+  const categoryName = locale === "zh" ? product.category.nameZh : locale === "ru" ? (product.category as any).nameRu || product.category.nameEn : product.category.nameEn;
+  const description = locale === "zh" ? product.descriptionZh : locale === "ru" ? (product as any).descriptionRu || product.descriptionEn : product.descriptionEn;
   const conditionLabel = t(`condition${product.condition.charAt(0).toUpperCase() + product.condition.slice(1)}`);
 
   // Use real international price from 神雕日报 if available, fallback to simple USD conversion
@@ -81,11 +82,11 @@ export default async function ProductDetailPage({
                     poster={getImageUrl(product.images[0]?.url)}
                   >
                     <track kind="captions" />
-                    {locale === "zh" ? "您的浏览器不支持视频播放" : "Your browser does not support video playback"}
+                    {locale === "zh" ? "您的浏览器不支持视频播放" : locale === "ru" ? "Ваш браузер не поддерживает воспроизведение видео" : "Your browser does not support video playback"}
                   </video>
                   {product.videos.length > 1 && (
                     <div className="bg-gray-900 px-3 py-1.5 text-xs text-gray-300">
-                      {locale === "zh" ? `视频` : "Video"} {idx + 1}/{product.videos.length}
+                      {locale === "zh" ? `视频` : locale === "ru" ? "Видео" : "Video"} {idx + 1}/{product.videos.length}
                       {video.title && ` — ${video.title}`}
                     </div>
                   )}
@@ -104,7 +105,7 @@ export default async function ProductDetailPage({
               <Badge variant="secondary">{categoryName}</Badge>
               {product.brand.isImported && (
                 <Badge variant="accent">
-                  {locale === "zh" ? "进口品牌" : "Imported"}
+                  {locale === "zh" ? "进口品牌" : locale === "ru" ? "Импортный бренд" : "Imported"}
                 </Badge>
               )}
             </div>
@@ -139,7 +140,7 @@ export default async function ProductDetailPage({
                   <div>
                     <p className="text-xs text-gray-500">{t("workingHours")}</p>
                     <p className="text-sm font-medium">
-                      {product.workingHours?.toLocaleString() || "-"} {locale === "zh" ? "小时" : "hrs"}
+                      {product.workingHours?.toLocaleString() || "-"} {locale === "zh" ? "小时" : locale === "ru" ? "моточасов" : "hrs"}
                     </p>
                   </div>
                 </div>
@@ -211,7 +212,7 @@ export default async function ProductDetailPage({
                 <div className="mt-2 flex items-center justify-center gap-1 text-xs text-gray-400">
                   <Info className="h-3 w-3" />
                   <span>
-                    {locale === "zh" ? "数据来源" : "Source"}: {intlSource}
+                    {locale === "zh" ? "数据来源" : locale === "ru" ? "Источник" : "Source"}: {intlSource}
                     {intlCountry && ` · ${intlCountry}`}
                     {formattedSourceDate && ` · ${formattedSourceDate}`}
                   </span>
@@ -239,6 +240,26 @@ export default async function ProductDetailPage({
               )}
             </CardContent>
           </Card>
+
+          {/* Arbitrage Calculator */}
+          {arbitragePercent !== null && latestIntlPrice && (
+            <div className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>跨境套利计算器</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ArbitrageCalculatorSection
+                    productId={product.id}
+                    domesticPrice={product.priceCny}
+                    foreignPrice={latestIntlPrice.priceForeignRaw || undefined}
+                    foreignCurrency={latestIntlPrice.currency as any}
+                    showForeignPrice={true}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
           {/* Inquiry */}
           <InquiryForm productId={product.id} />

@@ -1,0 +1,26 @@
+sequenceDiagram
+    participant User as 用户
+    participant Page as 产品详情页
+    participant Calculator as ArbitrageCalculator组件
+    participant API as 套利计算API
+    participant Service as ArbitrageCalculator服务
+    participant DB as 数据库
+    participant Exchange as 汇率服务
+    
+    User->>Page: 访问产品详情页
+    Page->>DB: 查询产品基本信息
+    DB-->>Page: 返回产品数据
+    Page->>Calculator: 渲染套利计算器组件
+    
+    User->>Calculator: 输入/调整计算参数
+    Calculator->>API: 发送计算请求(带参数)
+    API->>Service: 调用计算服务
+    Service->>DB: 查询产品最新价格
+    DB-->>Service: 返回价格数据
+    Service->>Exchange: 获取最新汇率
+    Exchange-->>Service: 返回汇率
+    Service->>Service: 执行套利计算
+    Service-->>API: 返回计算结果
+    API-->>Calculator: 返回API响应
+    Calculator->>Calculator: 更新UI显示结果
+    Calculator-->>User: 展示计算结果

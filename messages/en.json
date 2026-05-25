@@ -32,6 +32,8 @@
     "products": "Equipment",
     "logistics": "Logistics",
     "about": "About",
+    "arbitrageCalculator": "Arbitrage Calculator",
+    "arbitrageTop": "Arbitrage Rankings",
     "login": "Login",
     "register": "Register",
     "logout": "Logout",
@@ -234,6 +236,53 @@
     "value4Desc": "Discover arbitrage opportunities for mutual benefit",
     "team": "Our Team",
     "teamText": "We are a team with deep expertise in the agricultural machinery industry and rich experience in international trade and technology development. Team members are from China, the US, Japan and beyond, dedicated to building the world's leading used farm machinery trading platform."
+  },
+  "arbitrageCalculator": {
+    "title": "Cross-border Arbitrage Calculator",
+    "description": "Calculate cross-border arbitrage opportunities for used farm machinery, considering shipping costs, tariffs, insurance, and other expenses to help you discover the best investment opportunities. Our smart calculator automatically retrieves product information from the database and provides detailed profit analysis and risk assessment.",
+    "howToUseTitle": "How to Use the Arbitrage Calculator",
+    "step1": "Select a product from the list",
+    "step2": "Domestic and international market prices will be automatically filled",
+    "step3": "Adjust shipping costs, tariffs, insurance, and other parameters for more accurate estimates",
+    "step4": "Click \"Calculate Arbitrage Opportunity\" to view detailed profit analysis and risk assessment"
+  },
+  "arbitrageTop": {
+    "title": "Arbitrage Rankings",
+    "description": "View rankings of farm machinery products with the highest arbitrage opportunities. Discover the best investment choices for cross-border trading. We calculate arbitrage scores based on China-international price differences, shipping costs, tariffs, and other factors to recommend the most valuable products.",
+    "table": {
+      "rank": "Rank",
+      "product": "Product",
+      "domesticPrice": "Domestic Price",
+      "internationalPrice": "International Price",
+      "priceDifference": "Price Difference",
+      "arbitrageScore": "Arbitrage Score",
+      "opportunityLevel": "Opportunity Level",
+      "details": "Details"
+    },
+    "filters": {
+      "all": "All",
+      "high": "High Opportunity",
+      "medium": "Medium Opportunity",
+      "low": "Low Opportunity"
+    },
+    "levels": {
+      "high": "High Opportunity",
+      "medium": "Medium Opportunity",
+      "low": "Low Opportunity"
+    },
+    "stats": {
+      "totalProducts": "Total Products",
+      "highOpportunity": "High Opportunity Products",
+      "avgArbitrage": "Average Arbitrage Space"
+    },
+    "noData": "No arbitrage data available",
+    "loading": "Loading arbitrage rankings...",
+    "rankingExplanationTitle": "Ranking Explanation",
+    "explanation1": "The ranking updates automatically every 30 minutes to ensure data timeliness",
+    "explanation2": "Arbitrage scores consider price difference, profit margin, risk assessment, and policy factors",
+    "explanation3": "High opportunity: Profit margin >30%, controllable risk, strongly recommended",
+    "explanation4": "Medium opportunity: Profit margin 15-30%, risk concerns, cautious investment recommended",
+    "explanation5": "Low opportunity: Profit margin <15%, or higher risk, in-depth research recommended"
   },
   "footer": {
     "description": "Global used farm machinery trading platform, connecting China and global markets",

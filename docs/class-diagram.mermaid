@@ -1,0 +1,38 @@
+classDiagram
+    class ArbitrageCalculator {
+        +calculateArbitrage(params: ArbitrageParams): ArbitrageResult
+        +calculateBreakdown(params: ArbitrageParams): CostBreakdown
+        +simulateScenarios(baseParams: ArbitrageParams, variations: Variation[]): ScenarioResult[]
+    }
+    
+    class PriceMonitorService {
+        +fetchLatestPrices(): Promise~PriceUpdateResult~
+        +validatePriceData(price: InternationalPrice): ValidationResult
+        +cleanupExpiredPrices(days: number): Promise~number~
+    }
+    
+    class ExchangeRateService {
+        -cache: Map~string, ExchangeRate~
+        +getLatestRate(base: string, target: string): Promise~ExchangeRate~
+        +convertAmount(amount: number, from: string, to: string): Promise~number~
+        +updateRates(): Promise~UpdateResult~
+    }
+    
+    class TopArbitrageService {
+        +calculateTopProducts(limit: number, minPriceDiff: number): Promise~ArbitrageTopItem[]~
+        +refreshCache(): Promise~void~
+        +getCachedTop(limit: number): Promise~ArbitrageTopItem[]~
+    }
+    
+    class CronScheduler {
+        +schedulePriceUpdates(cronExpression: string): void
+        +scheduleRateUpdates(cronExpression: string): void
+        +scheduleCacheRefresh(cronExpression: string): void
+    }
+    
+    ArbitrageCalculator --> ExchangeRateService : 使用汇率转换
+    ArbitrageCalculator --> PriceMonitorService : 验证价格数据
+    TopArbitrageService --> ArbitrageCalculator : 计算套利结果
+    CronScheduler --> PriceMonitorService : 触发更新
+    CronScheduler --> ExchangeRateService : 触发更新
+    CronScheduler --> TopArbitrageService : 触发缓存刷新
