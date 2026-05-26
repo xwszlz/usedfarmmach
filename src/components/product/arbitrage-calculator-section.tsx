@@ -49,6 +49,7 @@ export default function ArbitrageCalculatorSection({
   return (
     <div className="mt-6">
       <ArbitrageCalculator
+        key={productId}
         productId={productId}
         initialDomesticPrice={domesticPrice}
         initialForeignPrice={foreignPrice}

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { productQuerySchema } from "@/lib/validators";
+import { getImageUrl } from "@/lib/image-url";
+
+// 强制动态渲染，避免静态生成问题
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
@@ -135,10 +139,22 @@ export async function GET(request: NextRequest) {
 
     const total = withImgCount + withoutImgCount;
 
+    // 转换图片URL为完整的OSS地址
+    const processedData = data.map(product => {
+      return {
+        ...product,
+        // 转换图片URL
+        images: product.images?.map(img => ({
+          ...img,
+          url: getImageUrl(img.url)
+        })) || []
+      };
+    });
+
     return NextResponse.json({
       success: true,
       data: {
-        data,
+        data: processedData,
         total,
         page,
         pageSize,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import type { ArbitrageTopItem, TopArbitrageResponse } from '@/types/arbitrage';
 import { Loader2, ExternalLink, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
 import PriceTrendChart from '@/components/arbitrage/trend/PriceTrendChart';
@@ -26,11 +27,30 @@ async function fetchTopArbitrage(limit: number = 10) {
 
 
 export default function ArbitrageTopClient() {
+  const pathname = usePathname();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<TopArbitrageResponse['data'] | null>(null);
   const [limit, setLimit] = useState(10);
   const [priceTrendData, setPriceTrendData] = useState<PriceDataPoint[]>([]);
+
+  // 从当前路径提取语言前缀
+  const getLocaleFromPathname = (): string => {
+    if (!pathname) return 'zh'; // 默认中文
+    const segments = pathname.split('/').filter(Boolean);
+    if (segments.length === 0) return 'zh';
+    const locale = segments[0];
+    if (['zh', 'en', 'ru'].includes(locale)) {
+      return locale;
+    }
+    return 'zh'; // 默认中文
+  };
+
+  // 构建产品详情页面URL
+  const buildProductUrl = (productId: string): string => {
+    const locale = getLocaleFromPathname();
+    return `/${locale}/products/${productId}`;
+  };
 
   // 生成模拟价格趋势数据
   const generateMockPriceTrendData = (arbitrageData: TopArbitrageResponse['data'] | null): PriceDataPoint[] => {
@@ -345,15 +365,15 @@ export default function ArbitrageTopClient() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <a 
-                        href={item.productUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-900 flex items-center gap-1"
-                      >
-                        查看详情
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
+<a 
+                      href={buildProductUrl(item.productId)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-900 flex items-center gap-1"
+                    >
+                      查看详情
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
                     </td>
                   </tr>
                 );

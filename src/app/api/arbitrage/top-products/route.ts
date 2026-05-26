@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { TopArbitrageService } from "@/lib/services/top-arbitrage-service";
 import type { ArbitrageTopItem, TopArbitrageResponse } from "@/types/arbitrage";
 
+// 强制动态渲染，避免静态生成问题
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/arbitrage/top-products
  * 获取套利榜单API

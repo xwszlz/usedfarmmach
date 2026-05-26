@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
-import { ArbitrageCalculator as CalculatorService } from '@/lib/services/arbitrage-calculator';
+import React, { useState, useEffect } from 'react';
 import type { ArbitrageCalculatorParams, ArbitrageResult } from '@/types/arbitrage';
 import CalculatorInputs from './CalculatorInputs';
 import CalculatorResults from './CalculatorResults';
@@ -25,33 +24,57 @@ export default function ArbitrageCalculator({
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ArbitrageResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  
-  const defaultParams: ArbitrageCalculatorParams = {
-    productId,
+
+  // 使用函数式 useState 初始化，避免闭包问题，确保动态导入场景下正确初始化
+  const [params, setParams] = useState<ArbitrageCalculatorParams>(() => ({
+    productId: productId || '',
     domesticPrice: initialDomesticPrice || undefined,
     foreignPrice: initialForeignPrice || undefined,
-    shippingCostPercentage: 10, // 默认10%
-    importTaxRate: 8, // 默认8%
-    insuranceRate: 2, // 默认2%
+    shippingCostPercentage: 0.1, // 默认10% (小数形式)
+    importTaxRate: 0.08, // 默认8% (小数形式)
+    insuranceRate: 0.02, // 默认2% (小数形式)
     quantity: 1,
     includeAnalysis: true
-  };
-  
-  const [params, setParams] = useState<ArbitrageCalculatorParams>(defaultParams);
-  
+  }));
+
+  // 当外部传入的 props 变化时，同步更新 state（首次加载或切换产品时）
+  useEffect(() => {
+    setParams(prev => ({
+      ...prev,
+      productId: productId || prev.productId,
+      domesticPrice: initialDomesticPrice || prev.domesticPrice,
+      foreignPrice: initialForeignPrice || prev.foreignPrice,
+    }));
+  }, [productId, initialDomesticPrice, initialForeignPrice]);
+
   const handleCalculate = async () => {
     if (!params.productId) {
       setError('请选择产品');
       return;
     }
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
-      const calculator = new CalculatorService();
-      const calculationResult = await calculator.calculateArbitrage(params);
-      setResult(calculationResult);
+      // 调用 API 而不是直接在浏览器中实例化 Service（避免 PrismaClient 浏览器报错）
+      const response = await fetch('/api/arbitrage/calculator', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '计算失败');
+      }
+
+      const responseData = await response.json();
+      if (!responseData.success) {
+        throw new Error(responseData.error || '计算失败');
+      }
+
+      setResult(responseData.data);
     } catch (err) {
       console.error('套利计算错误:', err);
       setError(err instanceof Error ? err.message : '计算失败，请稍后重试');
@@ -59,9 +82,18 @@ export default function ArbitrageCalculator({
       setLoading(false);
     }
   };
-  
+
   const handleReset = () => {
-    setParams(defaultParams);
+    setParams({
+      productId: productId || '',
+      domesticPrice: initialDomesticPrice || undefined,
+      foreignPrice: initialForeignPrice || undefined,
+      shippingCostPercentage: 0.1,
+      importTaxRate: 0.08,
+      insuranceRate: 0.02,
+      quantity: 1,
+      includeAnalysis: true
+    });
     setResult(null);
     setError(null);
   };

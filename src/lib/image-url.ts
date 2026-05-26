@@ -5,7 +5,9 @@
  * 前端渲染时需要将相对路径转换为 OSS 完整 URL
  */
 
-const OSS_BASE_URL = process.env.NEXT_PUBLIC_OSS_BASE_URL || "https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com";
+const OSS_BASE_URL_RAW = process.env.NEXT_PUBLIC_OSS_BASE_URL || process.env.OSS_BASE_URL || "https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com";
+// 确保 OSS_BASE_URL 末尾没有斜杠
+const OSS_BASE_URL = OSS_BASE_URL_RAW.endsWith('/') ? OSS_BASE_URL_RAW.slice(0, -1) : OSS_BASE_URL_RAW;
 
 /**
  * 将媒体 URL 转换为完整可访问的地址

@@ -71,7 +71,7 @@ export default function CalculatorInputs({ params, onChange, disabled }: Calcula
   };
 
   const handlePercentageChange = (field: keyof ArbitrageCalculatorParams, value: string) => {
-    const numValue = value === '' ? undefined : parseFloat(value);
+    const numValue = value === '' ? undefined : parseFloat(value) / 100;
     onChange({
       ...params,
       [field]: numValue,
@@ -186,7 +186,7 @@ export default function CalculatorInputs({ params, onChange, disabled }: Calcula
                 min={0}
                 max={100}
                 step={0.1}
-                value={formatPercentage(params.shippingCostPercentage)}
+                value={formatPercentage(params.shippingCostPercentage ?? DEFAULT_SHIPPING_RATE)}
                 onChange={(e) => handlePercentageChange('shippingCostPercentage', e.target.value)}
                 disabled={disabled}
                 className="w-full pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
@@ -214,7 +214,7 @@ export default function CalculatorInputs({ params, onChange, disabled }: Calcula
                 min={0}
                 max={100}
                 step={0.1}
-                value={formatPercentage(params.importTaxRate)}
+                value={formatPercentage(params.importTaxRate ?? DEFAULT_IMPORT_TAX_RATE)}
                 onChange={(e) => handlePercentageChange('importTaxRate', e.target.value)}
                 disabled={disabled}
                 className="w-full pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
@@ -242,7 +242,7 @@ export default function CalculatorInputs({ params, onChange, disabled }: Calcula
                 min={0}
                 max={100}
                 step={0.1}
-                value={formatPercentage(params.insuranceRate)}
+                value={formatPercentage(params.insuranceRate ?? DEFAULT_INSURANCE_RATE)}
                 onChange={(e) => handlePercentageChange('insuranceRate', e.target.value)}
                 disabled={disabled}
                 className="w-full pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
