@@ -46,8 +46,8 @@ export default async function HomePage({
   const topProduct = rankedProducts[0] ? toProduct(rankedProducts[0]) : null;
   const topReportData = DAILY_REPORT_RANKING[0];
 
-  // #2~#6: 热门设备（首页仅展示5台）
-  const hotProducts = rankedProducts.slice(1, 6).map(toProduct);
+  // #2~#5: 热门设备（首页展示4台）
+  const hotProducts = rankedProducts.slice(1, 5).map(toProduct);
 
   return (
     <div>
