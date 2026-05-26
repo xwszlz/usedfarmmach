@@ -41,7 +41,7 @@ export const productQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   pageSize: z.coerce.number().int().positive().max(50).default(12),
   sort: z
-    .enum(["newest", "priceLow", "priceHigh", "yearNew", "hoursLow"])
+    .enum(["newest", "priceLow", "priceHigh", "yearNew", "hoursLow", "rank"])
     .default("newest"),
 });
 

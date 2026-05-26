@@ -32,6 +32,7 @@ export function ProductFilters({
   }
 
   const sortOptions: SelectOption[] = [
+    { value: "rank", label: "📊 日报排名" },
     { value: "newest", label: t("sortNewest") },
     { value: "priceLow", label: t("sortPriceLow") },
     { value: "priceHigh", label: t("sortPriceHigh") },
@@ -97,7 +98,7 @@ export function ProductFilters({
         />
         <Select
           options={sortOptions}
-          value={filters.sort || "newest"}
+          value={filters.sort || "rank"}
           onChange={(e) => onFilterChange("sort", e.target.value)}
         />
       </div>

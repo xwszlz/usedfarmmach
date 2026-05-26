@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { productQuerySchema } from "@/lib/validators";
 import { getImageUrl } from "@/lib/image-url";
+import { sortByDailyRank } from "@/config/daily-report-ranking";
 
 // 强制动态渲染，避免静态生成问题
 export const dynamic = 'force-dynamic';
@@ -71,6 +72,53 @@ export async function GET(request: NextRequest) {
         break;
     }
 
+    // 日报排名排序：需要全量查询后按排名排序再分页
+    const skip = (page - 1) * pageSize;
+
+    if (sort === "rank") {
+      const rankParams = {
+        where: where as any,
+        include: {
+          brand: true,
+          category: true,
+          images: { where: { isPrimary: true }, take: 1 },
+          videos: { select: { id: true } },
+          internationalPrices: { orderBy: { sourceDate: "desc" as const }, take: 1 },
+          seller: { select: { id: true, companyName: true, country: true } },
+        },
+      };
+      
+      // 查询所有匹配产品
+      const allProducts = await prisma.product.findMany(rankParams);
+      
+      // 按日报排名排序
+      const sorted = sortByDailyRank(allProducts);
+      
+      // 分页
+      const paged = sorted.slice(skip, skip + pageSize);
+      const total = sorted.length;
+      
+      // 转换图片URL
+      const processedData = paged.map(product => ({
+        ...product,
+        images: product.images?.map(img => ({
+          ...img,
+          url: getImageUrl(img.url)
+        })) || []
+      }));
+      
+      return NextResponse.json({
+        success: true,
+        data: {
+          data: processedData,
+          total,
+          page,
+          pageSize,
+          totalPages: Math.ceil(total / pageSize),
+        },
+      });
+    }
+
     // 分两次查询：有图片的优先，没图片的放后面
     // 先查有图片的产品总数和没图片的产品总数
     const [withImgCount, withoutImgCount] = await Promise.all([
@@ -78,7 +126,6 @@ export async function GET(request: NextRequest) {
       prisma.product.count({ where: { ...where, images: { none: {} } } }),
     ]);
 
-    const skip = (page - 1) * pageSize;
     let data;
 
     if (skip < withImgCount) {

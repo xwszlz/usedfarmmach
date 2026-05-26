@@ -18,7 +18,7 @@ export default function ProductsPage() {
   const [filters, setFilters] = useState<Filters>({
     page: 1,
     pageSize: 12,
-    sort: "newest",
+    sort: "rank",
   });
 
   const [brands, setBrands] = useState<{ value: string; label: string }[]>([]);
@@ -108,7 +108,7 @@ export default function ProductsPage() {
   }
 
   function handleReset() {
-    setFilters({ page: 1, pageSize: 12, sort: "newest" });
+    setFilters({ page: 1, pageSize: 12, sort: "rank" });
   }
 
   function handlePageChange(page: number) {
