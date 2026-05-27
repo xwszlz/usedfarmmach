@@ -3,36 +3,36 @@
  * 数据来源：神雕库存表 + Agroline/e-farm/TractorHouse 国际价格
  */
 
-// 品牌价值系数（基于国际市场认可度）
+// 品牌价值系数（>1.0 = 溢价品牌，<1.0 = 折价品牌）
 export const BRAND_COEFFICIENTS: Record<string, number> = {
-  "克拉斯": 0.95,
-  "CLAAS": 0.95,
-  "克罗尼": 0.93,
-  "Krone": 0.93,
-  "约翰迪尔": 0.90,
-  "John Deere": 0.90,
-  "纽荷兰": 0.85,
-  "New Holland": 0.85,
-  "凯斯": 0.83,
-  "Case IH": 0.83,
-  "芬特": 0.88,
-  "Fendt": 0.88,
-  "麦赛弗格森": 0.80,
-  "Massey Ferguson": 0.80,
-  "库恩": 0.82,
-  "Kuhn": 0.82,
-  "格立莫": 0.78,
-  "Grimme": 0.78,
-  "奥库": 0.72,
-  "Orkel": 0.72,
-  "康斯凯尔": 0.70,
-  "Kongskilde": 0.70,
-  "格兰": 0.75,
-  "Arcusin": 0.65,
-  "东方红": 0.60,
-  "Dongfanghong": 0.60,
-  "牧神": 0.55,
-  "Mushen": 0.55,
+  "克拉斯": 1.30,
+  "CLAAS": 1.30,
+  "克罗尼": 1.25,
+  "Krone": 1.25,
+  "约翰迪尔": 1.20,
+  "John Deere": 1.20,
+  "纽荷兰": 1.10,
+  "New Holland": 1.10,
+  "凯斯": 1.10,
+  "Case IH": 1.10,
+  "芬特": 1.15,
+  "Fendt": 1.15,
+  "麦赛弗格森": 1.05,
+  "Massey Ferguson": 1.05,
+  "库恩": 1.00,
+  "Kuhn": 1.00,
+  "格立莫": 0.95,
+  "Grimme": 0.95,
+  "奥库": 0.85,
+  "Orkel": 0.85,
+  "康斯凯尔": 0.80,
+  "Kongskilde": 0.80,
+  "格兰": 0.90,
+  "Arcusin": 0.75,
+  "东方红": 0.65,
+  "Dongfanghong": 0.65,
+  "牧神": 0.60,
+  "Mushen": 0.60,
   "德翔": 0.50,
   "Dexiang": 0.50,
   "盈嘉": 0.50,
@@ -41,7 +41,7 @@ export const BRAND_COEFFICIENTS: Record<string, number> = {
 };
 
 // 默认品牌系数
-export const DEFAULT_BRAND_COEFFICIENT = 0.70;
+export const DEFAULT_BRAND_COEFFICIENT = 0.85;
 
 // 品类基准新机价格（万元人民币）
 export const CATEGORY_BASE_PRICES: Record<string, number> = {
@@ -68,11 +68,11 @@ export const CONDITION_FACTORS: Record<string, number> = {
   "poor": 0.75,
 };
 
-// 折旧率（分年段）
+// 折旧率（分年段）— 农机价值保持优于汽车
 export const DEPRECIATION_TABLE = [
-  { maxYear: 3, rate: 0.10 },   // 0-3年: 每年折10%
-  { maxYear: 7, rate: 0.08 },   // 4-7年: 每年折8%
-  { maxYear: 12, rate: 0.06 },  // 8-12年: 每年折6%
+  { maxYear: 3, rate: 0.05 },   // 0-3年: 每年折5%
+  { maxYear: 7, rate: 0.06 },   // 4-7年: 每年折6%
+  { maxYear: 12, rate: 0.05 },  // 8-12年: 每年折5%
   { maxYear: 999, rate: 0.04 }, // 13年+: 每年折4%
 ];
 
