@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { getTranslations } from "next-intl/server";
 import { HeroSection } from "@/components/home/hero-section";
+import { DailyReportSection } from "@/components/home/daily-report-section";
 import { HotEquipment } from "@/components/home/hot-equipment";
 import { ArbitrageShowcase } from "@/components/home/arbitrage-showcase";
 import { Testimonials } from "@/components/home/testimonials";
@@ -52,6 +53,7 @@ export default async function HomePage({
   return (
     <div>
       <HeroSection locale={locale} topProduct={topProduct} topReportData={topReportData} />
+      <DailyReportSection locale={locale} />
       <HotEquipment products={hotProducts} locale={locale} />
       <ArbitrageShowcase />
       <Testimonials locale={locale} />
