@@ -13,6 +13,7 @@ import { formatPrice } from "@/lib/utils";
 import ArbitrageCalculatorSection from "@/components/product/arbitrage-calculator-section";
 import { QuickContact } from "@/components/product/quick-contact";
 import { BuyIntentButton } from "@/components/product/buy-intent-button";
+import { ValuationCard } from "@/components/valuation/valuation-card";
 
 export const dynamic = "force-dynamic";
 
@@ -246,6 +247,15 @@ export default async function ProductDetailPage({
           {/* Buy Intent Button: 我要买 */}
           <div className="mt-4">
             <BuyIntentButton
+              productId={product.id}
+              productName={`${brandName} ${product.modelName}`}
+              locale={locale}
+            />
+          </div>
+
+          {/* AI Valuation */}
+          <div className="mt-4">
+            <ValuationCard
               productId={product.id}
               productName={`${brandName} ${product.modelName}`}
               locale={locale}
