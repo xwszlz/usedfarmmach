@@ -12,6 +12,7 @@ import { getImageUrl, getVideoUrl } from "@/lib/image-url";
 import { formatPrice } from "@/lib/utils";
 import ArbitrageCalculatorSection from "@/components/product/arbitrage-calculator-section";
 import { QuickContact } from "@/components/product/quick-contact";
+import { BuyIntentButton } from "@/components/product/buy-intent-button";
 
 export const dynamic = "force-dynamic";
 
@@ -241,6 +242,15 @@ export default async function ProductDetailPage({
               )}
             </CardContent>
           </Card>
+
+          {/* Buy Intent Button: 我要买 */}
+          <div className="mt-4">
+            <BuyIntentButton
+              productId={product.id}
+              productName={`${brandName} ${product.modelName}`}
+              locale={locale}
+            />
+          </div>
 
           {/* Arbitrage Calculator */}
           {arbitragePercent !== null && latestIntlPrice && (
