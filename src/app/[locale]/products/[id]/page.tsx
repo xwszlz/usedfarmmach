@@ -11,6 +11,7 @@ import { MapPin, Clock, Calendar, Wrench, ArrowLeftRight, ExternalLink, Info } f
 import { getImageUrl, getVideoUrl } from "@/lib/image-url";
 import { formatPrice } from "@/lib/utils";
 import ArbitrageCalculatorSection from "@/components/product/arbitrage-calculator-section";
+import { QuickContact } from "@/components/product/quick-contact";
 
 export const dynamic = "force-dynamic";
 
@@ -260,6 +261,9 @@ export default async function ProductDetailPage({
               </Card>
             </div>
           )}
+
+          {/* Quick Contact: 微信/支付宝 */}
+          <QuickContact locale={locale} />
 
           {/* Inquiry */}
           <InquiryForm productId={product.id} />
