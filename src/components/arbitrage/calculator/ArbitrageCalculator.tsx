@@ -1,5 +1,6 @@
 "use client";
 
+// v2026-05-26: Fixed PrismaClient browser error (API call) + functional useState + useEffect for props sync
 import React, { useState, useEffect } from 'react';
 import type { ArbitrageCalculatorParams, ArbitrageResult } from '@/types/arbitrage';
 import CalculatorInputs from './CalculatorInputs';

@@ -1,0 +1,46 @@
+# 排除Git相关文件和目录
+\.git\
+.gitignore
+\.github\  # 需要手动复制workflows目录，但先排除
+
+# 排除构建和开发目录
+\node_modules\
+\.next\
+\dist\
+\build\
+
+# 排除编辑器配置
+\.vscode\
+\.idea\
+
+# 排除环境变量
+\.env
+\.env.local
+\.env.production
+\*.env
+
+# 排除日志和临时文件
+\*.log
+\*.tmp
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 排除特定脚本文件（有些包含敏感信息）
+\*.bat
+\*.ps1
+\fix-github-push.bat
+\create-new-repo.bat
+\push-to-github.ps1
+\fresh-start.bat
+\exclude-files.txt
+\exclude-list.txt
+
+# 排除大文件
+\uploads\
+\public\uploads\
+
+# 排除测试相关
+\__tests__\
+\*.test.*
+\*.spec.*

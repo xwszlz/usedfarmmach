@@ -58,6 +58,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      version: "v2-20260527",
       data: result,
     });
   } catch (error) {
@@ -109,6 +110,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      version: "v2-20260527",
       data: result,
     });
   } catch (error) {
