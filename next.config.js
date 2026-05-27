@@ -4,6 +4,7 @@ const withNextIntl = createNextIntlPlugin("./i18n.ts");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  generateBuildId: () => `shendiao-build-${Date.now()}`,
   images: {
     remotePatterns: [
       {
