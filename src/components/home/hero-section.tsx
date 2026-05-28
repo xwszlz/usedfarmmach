@@ -13,6 +13,7 @@ interface HeroSectionProps {
   locale: string;
   topProduct: Product | null;
   topReportData: { id: string; rank: number; model: string; price: number; foreignPriceDesc: string; profit: string; margin: string; };
+  heroCoverImage?: string;
 }
 
 const TOP1_LABELS: Record<string, string> = {
@@ -33,7 +34,7 @@ const VIDEO_ERROR_LABELS: Record<string, string> = {
   ru: "Ваш браузер не поддерживает воспроизведение видео.",
 };
 
-export function HeroSection({ locale, topProduct, topReportData }: HeroSectionProps) {
+export function HeroSection({ locale, topProduct, topReportData, heroCoverImage }: HeroSectionProps) {
   const t = useTranslations("home");
   const [showVideo, setShowVideo] = useState(false);
 
@@ -42,9 +43,8 @@ export function HeroSection({ locale, topProduct, topReportData }: HeroSectionPr
     ? (locale === "zh" ? topProduct.brand?.nameZh : locale === "ru" ? (topProduct.brand as any)?.nameRu || topProduct.brand?.nameEn : topProduct.brand?.nameEn) + " " + topProduct.modelName
     : topReportData.model;
   const productYear = topProduct?.year || null;
-  const productImage = topProduct?.images?.[0]?.url
-    ? getImageUrl(topProduct.images[0].url)
-    : null;
+  const productImage = heroCoverImage
+    || (topProduct?.images?.[0]?.url ? getImageUrl(topProduct.images[0].url) : null);
   const productId = topProduct?.id || topReportData.id;
   const intlPrice = (topProduct as any)?.internationalPrices?.[0] || null;
   const foreignDisplayPrice = intlPrice?.priceForeignCny

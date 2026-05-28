@@ -52,7 +52,7 @@ export default async function HomePage({
 
   return (
     <div>
-      <HeroSection locale={locale} topProduct={topProduct} topReportData={topReportData} />
+      <HeroSection locale={locale} topProduct={topProduct} topReportData={topReportData} heroCoverImage="/images/hero-claas-970-2017.jpg" />
       <DailyReportSection locale={locale} />
       <HotEquipment products={hotProducts} locale={locale} />
       <ArbitrageShowcase />
