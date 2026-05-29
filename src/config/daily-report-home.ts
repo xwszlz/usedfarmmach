@@ -9,6 +9,7 @@ export interface DailyReportHighlight {
   label: string;
   value: string;
   color: "red" | "green" | "blue" | "orange";
+  url?: string;
 }
 
 export interface DailyReportArbitrage {
@@ -20,12 +21,18 @@ export interface DailyReportArbitrage {
   productId: string;
 }
 
+export interface DailyReportIntel {
+  icon: string;
+  text: string;
+  url: string;
+}
+
 export interface DailyReportConfig {
   date: string;
   title: string;
   highlights: DailyReportHighlight[];
   topArbitrage: DailyReportArbitrage[];
-  marketIntel: { icon: string; text: string }[];
+  marketIntel: DailyReportIntel[];
   totalProducts: number;
   totalValue: string;
 }
@@ -47,10 +54,10 @@ export const DAILY_REPORT_CONFIG: DailyReportConfig = {
     { rank: 5, product: "克拉斯 Jaguar 850（准新机）", price: 1190000, profit: "82万+", margin: "68.9%", productId: "cmpfohxzt000pkrh533z2mf2z" },
   ],
   marketIntel: [
-    { icon: "🇷🇺", text: "俄罗斯二手农机机会窗口！新车关税提高=二手不受限" },
-    { icon: "🇺🇦", text: "乌克兰溢价37%持续确认，Jaguar 960 EUR399K" },
-    { icon: "🇧🇷", text: "巴西农机市场USD84.2亿→113.8亿（CAGR 6.22%）" },
-    { icon: "🇰🇿", text: "中亚农机需求爆发，哈萨克斯坦替换需求旺盛" },
+    { icon: "🇷🇺", text: "俄罗斯二手农机机会窗口！新车关税提高=二手不受限", url: "/zh/products?sort=rank&location=河北" },
+    { icon: "🇺🇦", text: "乌克兰溢价37%持续确认，Jaguar 960 EUR399K", url: "/zh/arbitrage-top" },
+    { icon: "🇧🇷", text: "巴西农机市场USD84.2亿→113.8亿（CAGR 6.22%）", url: "/zh/products?brand=克拉斯&sort=rank" },
+    { icon: "🇰🇿", text: "中亚农机需求爆发，哈萨克斯坦替换需求旺盛", url: "/zh/products?sort=rank&yearMin=2015" },
   ],
   totalProducts: 59,
   totalValue: "¥1,808万",

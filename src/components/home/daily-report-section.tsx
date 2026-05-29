@@ -148,10 +148,10 @@ export function DailyReportSection({ locale }: DailyReportSectionProps) {
             </h3>
             <div className="space-y-3">
               {data.marketIntel.map((item, idx) => (
-                <div key={idx} className="flex items-start gap-2 rounded-lg bg-gray-50 p-3">
+                <Link key={idx} href={item.url} target={`_self`} className="flex items-start gap-2 rounded-lg bg-gray-50 p-3 transition-colors hover:bg-blue-50 hover:border hover:border-blue-100">
                   <span className="text-lg flex-shrink-0">{item.icon}</span>
                   <p className="text-xs text-gray-600 leading-relaxed">{item.text}</p>
-                </div>
+                </Link>
               ))}
             </div>
             <Link
