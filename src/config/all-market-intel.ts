@@ -13,14 +13,24 @@ export interface MarketIntelItem {
 
 export const ALL_MARKET_INTEL: MarketIntelItem[] = [
   {
+    icon: "🇷🇺", region: "俄罗斯", tags: ["CTT", "最后一天"],
+    text: "CTT展会第4天·最后一天（5月26-29日）！所有线索终极跟进，限时优惠今日24:00截止",
+    url: "/zh/arbitrage-top",
+  },
+  {
     icon: "🇷🇺", region: "俄罗斯", tags: ["关税新政", "窗口期"],
-    text: "俄罗斯二手农机窗口期！新车关税大幅提升，二手农机不受限，市场需求旺盛，中国出口机遇期",
+    text: "俄罗斯二手农机窗口期持续！新车关税大幅提升，二手农机不受限",
     url: "/zh/products?sort=rank",
   },
   {
-    icon: "🇷🇺", region: "俄罗斯", tags: ["展会", "CTT2026"],
-    text: "CTT展会5月26-29日莫斯科举行，神雕参展进行中，现场获取大量询盘线索",
-    url: "/zh/arbitrage-top",
+    icon: "💶", region: "欧洲", tags: ["Agroline", "历史新高"],
+    text: "Agroline 970 EUR428,400维持历史新高！中方163万 vs 欧价337万，套利174万(162%)",
+    url: "/zh/products/cmpfohy08000tkrh5vaaw12nd",
+  },
+  {
+    icon: "📊", region: "中国", tags: ["出口数据", "高景气"],
+    text: "中国农机出口持续高景气：湖南+39.7%，山东青岛+27.1%，全国Q1+28.9%",
+    url: "/zh/products?sort=rank",
   },
   {
     icon: "🇺🇦", region: "乌克兰", tags: ["溢价", "高回报"],
@@ -30,7 +40,7 @@ export const ALL_MARKET_INTEL: MarketIntelItem[] = [
   {
     icon: "🇧🇷", region: "巴西", tags: ["市场扩张", "CAGR"],
     text: "巴西农机市场持续扩张，预计从USD84.2亿增长至113.8亿（CAGR 6.22%）",
-    url: "/zh/products?brand=克拉斯&sort=rank",
+    url: "/zh/products?sort=rank",
   },
   {
     icon: "🇰🇿", region: "哈萨克斯坦", tags: ["需求爆发", "替换升级"],
@@ -43,33 +53,23 @@ export const ALL_MARKET_INTEL: MarketIntelItem[] = [
     url: "/zh/products?sort=rank",
   },
   {
-    icon: "🇦🇫", region: "阿富汗", tags: ["重建需求", "基础设施"],
-    text: "阿富汗重建需求：道路/农业基础设施恢复带来大量工程和农机需求",
-    url: "/zh/products?sort=rank",
-  },
-  {
-    icon: "🌍", region: "非洲", tags: ["新兴市场", "性价比"],
-    text: "非洲农机市场：中国二手农机性价比高，非洲进口需求上升中",
-    url: "/zh/products?sort=rank",
-  },
-  {
     icon: "🇨🇳", region: "中国", tags: ["库存盘点", "数据"],
-    text: "神雕农机库存53台，总货值¥1,808万，进口机型44台占75%，国产7台",
-    url: "/zh/products?sort=rank",
-  },
-  {
-    icon: "🇷🇺", region: "俄罗斯", tags: ["拖拉机", "进口需求"],
-    text: "俄罗斯拖拉机进口需求持续增长，100马力以上机型最受欢迎，中国品牌份额上升",
-    url: "/zh/products?sort=rank",
-  },
-  {
-    icon: "🇧🇾", region: "白俄罗斯", tags: ["合作", "零部件"],
-    text: "白俄罗斯农机零部件需求旺盛，中白工业园农机合作项目推进中",
+    text: "神雕农机库存59台，总货值¥1,808万，进口机型44台占75%，国产7台",
     url: "/zh/products?sort=rank",
   },
   {
     icon: "🌏", region: "东南亚", tags: ["水稻机械", "插秧机"],
     text: "东南亚水稻机械化率提升，二手插秧机/收割机需求增加，泰国菲律宾为主力市场",
+    url: "/zh/products?sort=rank",
+  },
+  {
+    icon: "🌍", region: "非洲", tags: ["新兴市场", "性价比"],
+    text: "非洲农机市场：中国二手农机性价比高，非洲进口需求上升中，中东线主力是迪尔",
+    url: "/zh/products?sort=rank",
+  },
+  {
+    icon: "🇦🇫", region: "阿富汗", tags: ["重建需求", "基础设施"],
+    text: "阿富汗重建需求：道路/农业基础设施恢复带来大量工程和农机需求",
     url: "/zh/products?sort=rank",
   },
 ];

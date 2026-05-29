@@ -36,7 +36,7 @@ export default async function IntelligencePage({
           <div className="mt-6 flex items-center gap-4 text-sm text-accent-200">
             <div className="flex items-center gap-1.5">
               <Calendar className="h-4 w-4" />
-              <span>{t("latest")}: 2026-05-25</span>
+              <span>{t("latest")}: 2026-05-29</span>
             </div>
             <div className="flex items-center gap-1.5">
               <BarChart3 className="h-4 w-4" />

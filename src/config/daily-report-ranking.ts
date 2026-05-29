@@ -16,8 +16,8 @@ export interface DailyReportRankItem {
 
 export const DAILY_REPORT_RANKING: DailyReportRankItem[] = [
   // 第一梯队：超高套利（毛利 >100万）
-  { id: "cmpfohy08000tkrh5vaaw12nd", rank: 1, model: "克拉斯 Jaguar 970（欧版/有户口）", price: 1630000, foreignPriceDesc: "EUR320K~391K", profit: "120万+", margin: "73.6%" },
-  { id: "cmpdknitp001v11kwskpdqx6s", rank: 2, model: "克拉斯 Jaguar 980（美版/有户口）", price: 1430000, foreignPriceDesc: "EUR190K~461K", profit: "105万+", margin: "73.5%" },
+  { id: "cmpfohy08000tkrh5vaaw12nd", rank: 1, model: "克拉斯 Jaguar 970（欧版/有户口）", price: 1630000, foreignPriceDesc: "EUR428K(337万)", profit: "174万+", margin: "79.8%" },
+  { id: "cmpdknitp001v11kwskpdqx6s", rank: 2, model: "克拉斯 Jaguar 980（美版/有户口）", price: 1430000, foreignPriceDesc: "EUR378K(298万)", profit: "155万+", margin: "69.9%" },
   { id: "cmpdknix7002h11kwupfm486g", rank: 3, model: "克拉斯 Jaguar 980（2015款）", price: 1300000, foreignPriceDesc: "EUR190K~220K", profit: "95万+", margin: "73.1%" },
   // 第二梯队：高套利（毛利 50~100万）
   { id: "cmpdknk4s008111kw3zr8aimf", rank: 4, model: "克拉斯 5300RC（2022款/全新）", price: 950000, foreignPriceDesc: "EUR25万+", profit: "85万+", margin: "89.5%" },
