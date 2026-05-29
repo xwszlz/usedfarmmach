@@ -16,7 +16,7 @@ const LABELS: Record<string, {
     title: "跨境套利日报",
     viewReport: "查看完整日报",
     topOpportunities: "今日TOP5 套利机会",
-    marketIntel: "全球市场情报",
+    marketIntel: "市场情报速递",
     price: "报价",
     profit: "毛利",
   },

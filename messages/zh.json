@@ -32,7 +32,7 @@
     "products": "设备市场",
     "logistics": "物流方案",
     "about": "关于我们",
-        "arbitrageCalculator": "套利计算器",
+    "arbitrageCalculator": "套利计算器",
     "arbitrageTop": "套利榜单",
     "login": "登录",
     "register": "注册",
@@ -40,7 +40,8 @@
     "dashboard": "管理后台",
     "myProducts": "我的设备",
     "myInquiries": "我的询盘",
-    "sellEquipment": "发布设备"
+    "sellEquipment": "发布设备",
+    "intelligence": "市场情报"
   },
   "home": {
     "heroTitle": "全球二手农机，一站交易",
@@ -296,5 +297,12 @@
     "phone": "电话",
     "address": "地址",
     "copyright": "© 2024 石家庄神雕科技有限公司. 保留所有权利。"
+  },
+  "intelligence": {
+    "title": "市场情报速递",
+    "subtitle": "全球二手农机市场动态、套利机会与行业趋势一网打尽",
+    "latest": "最新更新",
+    "items": "条情报",
+    "arbitrageHighlights": "套利榜单速览"
   }
 }

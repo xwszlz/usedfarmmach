@@ -32,7 +32,7 @@
     "products": "Equipment",
     "logistics": "Logistics",
     "about": "About",
-        "arbitrageCalculator": "Arbitrage Calculator",
+    "arbitrageCalculator": "Arbitrage Calculator",
     "arbitrageTop": "Arbitrage Rankings",
     "login": "Login",
     "register": "Register",
@@ -40,7 +40,8 @@
     "dashboard": "Dashboard",
     "myProducts": "My Equipment",
     "myInquiries": "My Inquiries",
-    "sellEquipment": "Sell Equipment"
+    "sellEquipment": "Sell Equipment",
+    "intelligence": "Market Intel"
   },
   "home": {
     "heroTitle": "Global Used Farm Machinery, One Platform",
@@ -296,5 +297,12 @@
     "phone": "Phone",
     "address": "Address",
     "copyright": "© 2024 Shijiazhuang Shendiao Technology Co., Ltd. All rights reserved."
+  },
+  "intelligence": {
+    "title": "Market Intelligence",
+    "subtitle": "Global used farm machinery market trends, arbitrage opportunities & industry insights",
+    "latest": "Latest",
+    "items": "reports",
+    "arbitrageHighlights": "Top Arbitrage Picks"
   }
 }
