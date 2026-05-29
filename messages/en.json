@@ -41,7 +41,8 @@
     "myProducts": "My Equipment",
     "myInquiries": "My Inquiries",
     "sellEquipment": "Sell Equipment",
-    "intelligence": "Market Intel"
+    "intelligence": "Market Intel",
+    "blog": "Industry News"
   },
   "home": {
     "heroTitle": "Global Used Farm Machinery, One Platform",
@@ -304,5 +305,28 @@
     "latest": "Latest",
     "items": "reports",
     "arbitrageHighlights": "Top Arbitrage Picks"
+  },
+  "blog": {
+    "title": "Industry Insights",
+    "subtitle": "Global used farm machinery market trends, price analysis, brand reviews and buying guides",
+    "readMore": "Read More",
+    "publishedOn": "Published on {date}",
+    "viewCount": "{count} views",
+    "categories": {
+      "all": "All",
+      "market-analysis": "Market Analysis",
+      "price-guide": "Price Guide",
+      "brand-review": "Brand Review",
+      "industry-news": "Industry News",
+      "buying-guide": "Buying Guide"
+    },
+    "recentPosts": "Recent Posts",
+    "relatedPosts": "Related Posts",
+    "noPosts": "No articles yet",
+    "backToList": "Back to Articles",
+    "shareArticle": "Share Article",
+    "tags": "Tags",
+    "source": "Source",
+    "searchPlaceholder": "Search articles..."
   }
 }

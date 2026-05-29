@@ -9,6 +9,7 @@ export interface NavItem {
 export const mainNav: NavItem[] = [
   { href: "/", labelKey: "nav.home" },
   { href: "/products", labelKey: "nav.products" },
+  { href: "/blog", labelKey: "nav.blog" },
   { href: "/intelligence", labelKey: "nav.intelligence" },
   { href: "/logistics", labelKey: "nav.logistics" },
   { href: "/about", labelKey: "nav.about" },

@@ -41,7 +41,8 @@
     "myProducts": "我的设备",
     "myInquiries": "我的询盘",
     "sellEquipment": "发布设备",
-    "intelligence": "市场情报"
+    "intelligence": "市场情报",
+    "blog": "行业资讯"
   },
   "home": {
     "heroTitle": "全球二手农机，一站交易",
@@ -304,5 +305,28 @@
     "latest": "最新更新",
     "items": "条情报",
     "arbitrageHighlights": "套利榜单速览"
+  },
+  "blog": {
+    "title": "行业资讯",
+    "subtitle": "全球二手农机市场动态、价格分析、品牌评测与购买指南",
+    "readMore": "阅读全文",
+    "publishedOn": "发布于 {date}",
+    "viewCount": "{count} 次阅读",
+    "categories": {
+      "all": "全部",
+      "market-analysis": "市场分析",
+      "price-guide": "价格指南",
+      "brand-review": "品牌评测",
+      "industry-news": "行业动态",
+      "buying-guide": "购买指南"
+    },
+    "recentPosts": "最新文章",
+    "relatedPosts": "相关文章",
+    "noPosts": "暂无文章",
+    "backToList": "返回文章列表",
+    "shareArticle": "分享文章",
+    "tags": "标签",
+    "source": "数据来源",
+    "searchPlaceholder": "搜索文章..."
   }
 }

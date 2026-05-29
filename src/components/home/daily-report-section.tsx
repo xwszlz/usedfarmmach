@@ -15,7 +15,7 @@ const LABELS: Record<string, {
   zh: {
     title: "跨境套利日报",
     viewReport: "查看完整日报",
-    topOpportunities: "今日TOP5 套利机会",
+    topOpportunities: "今日TOP3 套利机会",
     marketIntel: "市场情报速递",
     price: "报价",
     profit: "毛利",
@@ -23,7 +23,7 @@ const LABELS: Record<string, {
   en: {
     title: "Cross-Border Arbitrage Daily",
     viewReport: "View Full Report",
-    topOpportunities: "Today's TOP5 Opportunities",
+    topOpportunities: "Today's TOP3 Opportunities",
     marketIntel: "Global Market Intel",
     price: "Price",
     profit: "Profit",
@@ -31,7 +31,7 @@ const LABELS: Record<string, {
   ru: {
     title: "Ежедневный арбитраж",
     viewReport: "Полный отчёт",
-    topOpportunities: "ТОП-5 возможностей",
+    topOpportunities: "ТОП-3 возможностей",
     marketIntel: "Обзор рынка",
     price: "Цена",
     profit: "Прибыль",
