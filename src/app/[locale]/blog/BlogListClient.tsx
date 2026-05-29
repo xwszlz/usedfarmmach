@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { Locale } from '../../../../../i18n';
 
 interface Article {
   id: string;
@@ -24,19 +23,19 @@ interface Article {
 
 const CATEGORIES = ['all', 'market-analysis', 'price-guide', 'brand-review', 'industry-news', 'buying-guide'];
 
-function getTitle(article: Article, locale: Locale): string {
+function getTitle(article: Article, locale: string): string {
   if (locale === 'en' && article.titleEn) return article.titleEn;
   if (locale === 'ru' && article.titleRu) return article.titleRu;
   return article.titleZh;
 }
 
-function getExcerpt(article: Article, locale: Locale): string {
+function getExcerpt(article: Article, locale: string): string {
   if (locale === 'en' && article.excerptEn) return article.excerptEn;
   if (locale === 'ru' && article.excerptRu) return article.excerptRu;
   return article.excerptZh || '';
 }
 
-function formatDate(dateStr: string | null, locale: Locale): string {
+function formatDate(dateStr: string | null, locale: string): string {
   if (!dateStr) return '';
   const date = new Date(dateStr);
   return date.toLocaleDateString(locale === 'zh' ? 'zh-CN' : locale === 'ru' ? 'ru-RU' : 'en-US', {
@@ -46,7 +45,7 @@ function formatDate(dateStr: string | null, locale: Locale): string {
   });
 }
 
-export default function BlogListClient({ locale, initialCategory }: { locale: Locale; initialCategory?: string }) {
+export default function BlogListClient({ locale, initialCategory }: { locale: string; initialCategory?: string }) {
   const t = useTranslations('blog');
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);

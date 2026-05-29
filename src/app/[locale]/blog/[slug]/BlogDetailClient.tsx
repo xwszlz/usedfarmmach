@@ -2,7 +2,6 @@
 
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { Locale } from '../../../../../i18n';
 
 interface Article {
   id: string;
@@ -42,25 +41,25 @@ interface RelatedArticle {
   viewCount: number;
 }
 
-function getTitle(article: Article | RelatedArticle, locale: Locale): string {
+function getTitle(article: Article | RelatedArticle, locale: string): string {
   if (locale === 'en' && article.titleEn) return article.titleEn;
   if (locale === 'ru' && article.titleRu) return article.titleRu;
   return article.titleZh;
 }
 
-function getExcerpt(article: Article | RelatedArticle, locale: Locale): string {
+function getExcerpt(article: Article | RelatedArticle, locale: string): string {
   if (locale === 'en' && article.excerptEn) return article.excerptEn;
   if (locale === 'ru' && article.excerptRu) return article.excerptRu;
   return article.excerptZh || '';
 }
 
-function getContent(article: Article, locale: Locale): string {
+function getContent(article: Article, locale: string): string {
   if (locale === 'en' && article.contentEn) return article.contentEn;
   if (locale === 'ru' && article.contentRu) return article.contentRu;
   return article.contentZh;
 }
 
-function formatDate(dateStr: string | null, locale: Locale): string {
+function formatDate(dateStr: string | null, locale: string): string {
   if (!dateStr) return '';
   const date = new Date(dateStr);
   return date.toLocaleDateString(locale === 'zh' ? 'zh-CN' : locale === 'ru' ? 'ru-RU' : 'en-US', {
@@ -90,7 +89,7 @@ export default function BlogDetailClient({
   article,
   relatedArticles,
 }: {
-  locale: Locale;
+  locale: string;
   article: Article;
   relatedArticles: RelatedArticle[];
 }) {

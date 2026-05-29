@@ -1,16 +1,16 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { PrismaClient } from '@prisma/client';
-import { Locale } from '../../../../../i18n';
 import BlogDetailClient from './BlogDetailClient';
 
 const prisma = new PrismaClient();
 
 interface Props {
-  params: { locale: Locale; slug: string };
+  params: Promise<{ locale: string; slug: string }>;
 }
 
-export async function generateMetadata({ params: { locale, slug } }: Props): Promise<Metadata> {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale, slug } = await params;
   const article = await prisma.article.findUnique({ where: { slug } });
   if (!article) return { title: 'Article Not Found' };
 
@@ -27,7 +27,8 @@ export async function generateMetadata({ params: { locale, slug } }: Props): Pro
   };
 }
 
-export default async function BlogDetailPage({ params: { locale, slug } }: Props) {
+export default async function BlogDetailPage({ params }: Props) {
+  const { locale, slug } = await params;
   const article = await prisma.article.findUnique({ where: { slug } });
 
   if (!article || (article.status !== 'published')) {
