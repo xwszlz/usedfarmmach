@@ -1,0 +1,208 @@
+"use client";
+
+import { useState } from "react";
+import {
+  Globe, TrendingUp, BarChart3, Calendar, ChevronDown, ChevronUp,
+  Lightbulb, Table, ArrowRight, X
+} from "lucide-react";
+import Link from "next/link";
+import { DAILY_REPORT_RANKING } from "@/config/daily-report-ranking";
+import { ALL_MARKET_INTEL, type MarketIntelItem } from "@/config/all-market-intel";
+
+interface IntelCardProps {
+  item: MarketIntelItem;
+  locale: string;
+}
+
+function IntelCard({ item, locale }: IntelCardProps) {
+  const [expanded, setExpanded] = useState(false);
+
+  // 将Markdown表格转换为HTML
+  const renderContent = (content: string) => {
+    return content.split("\n").map((line, i) => {
+      if (line.startsWith("## ")) {
+        return <h3 key={i} className="mt-4 mb-2 text-base font-bold text-gray-800">{line.slice(3)}</h3>;
+      }
+      if (line.startsWith("### ")) {
+        return <h4 key={i} className="mt-3 mb-1.5 text-sm font-semibold text-gray-700">{line.slice(4)}</h4>;
+      }
+      if (line.startsWith("|") && line.endsWith("|")) {
+        // 表格行
+        const cells = line.split("|").filter(c => c.trim());
+        const isHeader = line.includes("---");
+        return (
+          <div key={i} className="flex text-xs">
+            {cells.map((cell, ci) => (
+              <span key={ci} className={`flex-1 px-2 py-1 ${isHeader ? "font-bold text-accent-700 bg-accent-50" : "text-gray-600 border-b border-gray-100"}`}>
+                {cell.trim()}
+              </span>
+            ))}
+          </div>
+        );
+      }
+      if (line.startsWith("- ")) {
+        return <li key={i} className="ml-4 text-xs text-gray-600 list-disc">{line.slice(2)}</li>;
+      }
+      if (line.startsWith("1. ") || line.startsWith("2. ") || line.startsWith("3. ") || line.startsWith("4. ") || line.startsWith("5. ")) {
+        return <li key={i} className="ml-4 text-xs text-gray-600 list-decimal">{line.slice(3)}</li>;
+      }
+      if (line.trim() === "") return <div key={i} className="h-1" />;
+      return <p key={i} className="text-xs text-gray-600 leading-relaxed">{line}</p>;
+    });
+  };
+
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden transition-all">
+      {/* 卡片头部（始终可见） */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full p-5 text-left transition-colors hover:bg-accent-50/30"
+      >
+        <div className="flex items-start gap-3">
+          <span className="text-2xl flex-shrink-0 mt-0.5">{item.icon}</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-900 leading-relaxed">{item.text}</p>
+            {/* 标签 */}
+            {item.tags?.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {item.tags.map((tag) => (
+                  <span key={tag} className="rounded-full bg-accent-50 px-2 py-0.5 text-[10px] text-accent-600">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="flex-shrink-0 text-accent-400">
+            {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </div>
+        </div>
+      </button>
+
+      {/* 展开后的详细内容 */}
+      {expanded && item.detailedContent && (
+        <div className="border-t border-gray-100 bg-gray-50/50">
+          <div className="p-5">
+            <div className="space-y-1">
+              {renderContent(item.detailedContent)}
+            </div>
+
+            {/* 行动建议 */}
+            {item.actionTips && item.actionTips.length > 0 && (
+              <div className="mt-4 rounded-lg border border-accent-100 bg-accent-50 p-4">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Lightbulb className="h-4 w-4 text-amber-500" />
+                  <span className="text-xs font-bold text-accent-700">行动建议</span>
+                </div>
+                <ul className="space-y-1.5">
+                  {item.actionTips.map((tip, i) => (
+                    <li key={i} className="flex items-start gap-2 text-xs text-gray-700">
+                      <span className="text-accent-500 mt-0.5">▸</span>
+                      {tip}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function IntelligencePageClient({ locale }: { locale: string }) {
+  const t = (key: string) => {
+    const labels: Record<string, string> = {
+      "intelligence.title": "市场情报速递",
+      "intelligence.subtitle": "全球二手农机市场动态、套利机会与行业趋势一网打尽",
+      "intelligence.latest": "最新更新",
+      "intelligence.items": "条情报",
+      "intelligence.arbitrageHighlights": "套利榜单速览",
+    };
+    return labels[key] || key;
+  };
+
+  // 按地区分组（保留顺序）
+  const regionOrder = ["俄罗斯", "欧洲", "中国", "乌克兰", "巴西", "哈萨克斯坦", "乌兹别克斯坦", "东南亚", "非洲", "阿富汗"];
+  const grouped: Record<string, MarketIntelItem[]> = {};
+  for (const item of ALL_MARKET_INTEL) {
+    if (!grouped[item.region]) grouped[item.region] = [];
+    grouped[item.region].push(item);
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-gradient-to-br from-accent-800 via-accent-700 to-primary-800 py-16 text-white">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-3 mb-4">
+            <Globe className="h-8 w-8 text-accent-200" />
+            <h1 className="text-3xl font-bold sm:text-4xl">{t("intelligence.title")}</h1>
+          </div>
+          <p className="max-w-2xl text-accent-100">{t("intelligence.subtitle")}</p>
+          <div className="mt-6 flex items-center gap-4 text-sm text-accent-200">
+            <div className="flex items-center gap-1.5">
+              <Calendar className="h-4 w-4" />
+              <span>{t("intelligence.latest")}: 2026-05-29</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <BarChart3 className="h-4 w-4" />
+              <span>{ALL_MARKET_INTEL.length} {t("intelligence.items")}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        {/* 区域分组 */}
+        {regionOrder.filter(r => grouped[r]).map((region) => (
+          <section key={region} className="mb-10">
+            <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-800">
+              {grouped[region][0]?.icon} {region}
+              <span className="ml-2 text-xs font-normal text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">
+                {grouped[region].length}条
+              </span>
+            </h2>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {grouped[region].map((item, idx) => (
+                <IntelCard key={idx} item={item} locale={locale} />
+              ))}
+            </div>
+          </section>
+        ))}
+
+        {/* 套利榜单速览 */}
+        <section className="mb-10">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-800">
+            <TrendingUp className="h-5 w-5 text-accent-600" />
+            {t("intelligence.arbitrageHighlights")}
+          </h2>
+          <div className="rounded-xl border bg-white p-5 shadow-sm">
+            <div className="grid gap-3 sm:grid-cols-3">
+              {DAILY_REPORT_RANKING.slice(0, 3).map((item) => (
+                <Link
+                  key={item.rank}
+                  href={`/${locale}/products/${item.id}`}
+                  className="flex items-center gap-3 rounded-lg border border-gray-100 p-3 transition-colors hover:border-accent-200 hover:bg-accent-50"
+                >
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-600 text-xs font-bold text-white">
+                    {item.rank}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="truncate text-sm font-medium text-gray-900">{item.model}</div>
+                    <div className="text-xs text-gray-500">¥{item.price / 10000}万</div>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <div className="text-sm font-bold text-green-600">{item.profit}</div>
+                    <div className="text-xs text-green-500">{item.margin}</div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
