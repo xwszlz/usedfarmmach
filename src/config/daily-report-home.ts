@@ -38,7 +38,7 @@ export interface DailyReportConfig {
 }
 
 export const DAILY_REPORT_CONFIG: DailyReportConfig = {
-  date: "2026-05-29",
+  date: "2026-05-30",
   title: "跨境套利日报",
   highlights: [
     { emoji: "🎪", label: "CTT莫斯科展会", value: "最后一天！(5.26-29)", color: "red", url: "/zh/arbitrage-top" },
