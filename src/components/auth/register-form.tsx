@@ -53,8 +53,9 @@ export function RegisterForm({ locale }: RegisterFormProps) {
       const result = await res.json();
 
       if (result.success) {
+        localStorage.setItem("token", result.data.token);
         router.push(`/${locale}`);
-        router.refresh();
+        window.location.reload();
       } else {
         setError(result.error || t("error"));
       }

@@ -38,8 +38,10 @@ export function LoginForm({ locale }: LoginFormProps) {
       const result = await res.json();
 
       if (result.success) {
+        // 保存 token 到 localStorage，导航栏会读取它显示登录态
+        localStorage.setItem("token", result.data.token);
         router.push(`/${locale}`);
-        router.refresh();
+        window.location.reload();
       } else {
         setError(result.error || t("error"));
       }
