@@ -1,13 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Globe, TrendingUp, BarChart3, Calendar, ChevronDown, ChevronUp,
   Lightbulb, Table, ArrowRight, X
 } from "lucide-react";
 import Link from "next/link";
 import { DAILY_REPORT_RANKING } from "@/config/daily-report-ranking";
-import { ALL_MARKET_INTEL, type MarketIntelItem } from "@/config/all-market-intel";
+
+interface MarketIntelItem {
+  id: string;
+  icon: string;
+  region: string;
+  tags: string[];
+  text: string;
+  url?: string;
+  detailedContent?: string;
+  dataSummary?: { label: string; value: string }[];
+  actionTips?: string[];
+  sortOrder: number;
+}
 
 interface IntelCardProps {
   item: MarketIntelItem;
@@ -123,10 +135,28 @@ export default function IntelligencePageClient({ locale }: { locale: string }) {
     return labels[key] || key;
   };
 
+  // 从 API 获取市场情报
+  const [marketData, setMarketData] = useState<MarketIntelItem[]>([]);
+  const [dataDate, setDataDate] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/intelligence")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success) {
+          setMarketData(d.data);
+          setDataDate(d.date);
+        }
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
   // 按地区分组（保留顺序）
   const regionOrder = ["俄罗斯", "欧洲", "中国", "乌克兰", "巴西", "哈萨克斯坦", "乌兹别克斯坦", "东南亚", "非洲", "阿富汗"];
   const grouped: Record<string, MarketIntelItem[]> = {};
-  for (const item of ALL_MARKET_INTEL) {
+  for (const item of marketData) {
     if (!grouped[item.region]) grouped[item.region] = [];
     grouped[item.region].push(item);
   }
@@ -144,17 +174,28 @@ export default function IntelligencePageClient({ locale }: { locale: string }) {
           <div className="mt-6 flex items-center gap-4 text-sm text-accent-200">
             <div className="flex items-center gap-1.5">
               <Calendar className="h-4 w-4" />
-              <span>{t("intelligence.latest")}: 2026-05-29</span>
+              <span>{t("intelligence.latest")}: {dataDate || "加载中..."}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <BarChart3 className="h-4 w-4" />
-              <span>{ALL_MARKET_INTEL.length} {t("intelligence.items")}</span>
+              <span>{loading ? "..." : marketData.length} {t("intelligence.items")}</span>
             </div>
           </div>
         </div>
       </div>
 
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        {loading ? (
+          <div className="flex items-center justify-center py-20 text-gray-400">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-accent-200 border-t-accent-600" />
+            <span className="ml-3">加载中...</span>
+          </div>
+        ) : marketData.length === 0 ? (
+          <div className="py-20 text-center text-gray-400">
+            <p>暂无情报数据</p>
+          </div>
+        ) : (
+        <>
         {/* 区域分组 */}
         {regionOrder.filter(r => grouped[r]).map((region) => (
           <section key={region} className="mb-10">
@@ -202,6 +243,8 @@ export default function IntelligencePageClient({ locale }: { locale: string }) {
             </div>
           </div>
         </section>
+        </>
+        )}
       </div>
     </div>
   );

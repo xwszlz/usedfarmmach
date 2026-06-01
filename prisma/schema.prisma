@@ -246,3 +246,24 @@ model Article {
   @@index([category])
   @@index([sourcePlatform])
 }
+
+// 市场情报速递 - 每日更新
+model MarketIntel {
+  id              String   @id @default(cuid())
+  date            DateTime // 数据日期（每日一条）
+  icon            String   // emoji图标
+  region          String   // 地区
+  tags            String   // JSON数组: ["tag1","tag2"]
+  text            String   // 摘要文本
+  url             String?  // 链接
+  detailedContent String?  // 展开后的Markdown内容
+  dataSummary     String?  // JSON: [{"label":"...","value":"..."}]
+  actionTips      String?  // JSON数组: ["tip1","tip2"]
+  sortOrder       Int      @default(0)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([date])
+  @@index([isActive, date])
+}
