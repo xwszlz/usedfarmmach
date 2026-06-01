@@ -38,24 +38,24 @@ export interface DailyReportConfig {
 }
 
 export const DAILY_REPORT_CONFIG: DailyReportConfig = {
-  date: "2026-05-30",
+  date: "2026-06-02",
   title: "跨境套利日报",
   highlights: [
-    { emoji: "🎪", label: "CTT莫斯科展会", value: "最后一天！(5.26-29)", color: "red", url: "/zh/arbitrage-top" },
-    { emoji: "💱", label: "EUR/CNY 汇率", value: "7.88 高位企稳", color: "green" },
-    { emoji: "📈", label: "970国际价", value: "EUR428K 历史新高", color: "blue" },
-    { emoji: "🚀", label: "湖南农机出口", value: "+39.7% 持续高景气", color: "orange" },
+    { emoji: "💱", label: "EUR/CNY 汇率", value: "7.9122 高位", color: "green" },
+    { emoji: "💵", label: "USD/CNY 汇率", value: "6.8167", color: "blue" },
+    { emoji: "📈", label: "970价差率", value: "108.2% 极大套利空间", color: "red" },
+    { emoji: "📈", label: "980价差率", value: "109.1% 极大套利空间", color: "red" },
   ],
   topArbitrage: [
-    { rank: 1, product: "克拉斯 Jaguar 970（欧版）", price: 1630000, profit: "174万+", margin: "79.8%", productId: "cmpfohy08000tkrh5vaaw12nd" },
-    { rank: 2, product: "克拉斯 Jaguar 980（美版）", price: 1430000, profit: "155万+", margin: "69.9%", productId: "cmpdknitp001v11kwskpdqx6s" },
+    { rank: 1, product: "克拉斯 Jaguar 970（2017款）", price: 1630000, profit: "176.4万", margin: "108.2%", productId: "cmpfohy08000tkrh5vaaw12nd" },
+    { rank: 2, product: "克拉斯 Jaguar 980（2016款）", price: 1430000, profit: "156.0万", margin: "109.1%", productId: "cmpdknitp001v11kwskpdqx6s" },
     { rank: 3, product: "克拉斯 Jaguar 980（2015款）", price: 1300000, profit: "95万+", margin: "73.1%", productId: "cmpdknix7002h11kwupfm486g" },
   ],
   marketIntel: [
-    { icon: "🇷🇺", text: "CTT展会今天第4天·最后一天！所有线索终极跟进，限时优惠今日24:00截止", url: "/zh/arbitrage-top" },
-    { icon: "💶", text: "Agroline 970 EUR428,400维持历史新高！我方报价163万，套利174万(162%)", url: "/zh/products/cmpfohy08000tkrh5vaaw12nd" },
-    { icon: "📊", text: "中国农机出口持续高景气：湖南+39.7%，山东青岛+27.1%", url: "/zh/products?sort=rank" },
+    { icon: "🇷🇺", text: "目标市场（俄罗斯、东南亚、中东）买家需求优先级确认中", url: "/zh/arbitrage-top" },
+    { icon: "💶", text: "Agroline 970 EUR429,000国际报价，国内163万，套利176.4万(108.2%)", url: "/zh/products/cmpfohy08000tkrh5vaaw12nd" },
+    { icon: "⚠️", text: "风险提示：国际物流±20%波动、汇率±5%波动、进口政策调整风险", url: "/zh/products?sort=rank" },
   ],
-  totalProducts: 59,
-  totalValue: "¥1,808万",
+  totalProducts: 290,
+  totalValue: "¥待核算",
 };
