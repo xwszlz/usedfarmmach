@@ -2,8 +2,8 @@
 
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { Globe, Menu, X, ChevronDown } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { Globe, Menu, X, ChevronDown, Store, LayoutDashboard } from "lucide-react";
+import { useState, useEffect, type ReactNode } from "react";
 import { mainNav, type NavItem } from "@/config/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,23 @@ interface NavbarProps {
 export function Navbar({ locale }: NavbarProps) {
   const t = useTranslations();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [user, setUser] = useState<{ role: string; email: string } | null>(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        setUser({ role: payload.role, email: payload.email || "" });
+      } catch {}
+    }
+  }, []);
+
+  const logout = () => {
+    localStorage.removeItem("token");
+    setUser(null);
+    window.location.href = `/${locale}`;
+  };
 
   return (
     <header className="sticky top-0 z-40 border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
@@ -39,14 +56,36 @@ export function Navbar({ locale }: NavbarProps) {
         <div className="flex items-center gap-3">
           <LanguageSwitcher locale={locale} />
           <div className="hidden items-center gap-2 md:flex">
-            <Link href={`/${locale}/auth/login`}>
-              <Button variant="ghost" size="sm">
-                {t("nav.login")}
-              </Button>
-            </Link>
-            <Link href={`/${locale}/auth/register`}>
-              <Button size="sm">{t("nav.register")}</Button>
-            </Link>
+            {user ? (
+              <>
+                <Link href={`/${locale}/seller/products`}>
+                  <Button variant="ghost" size="sm" className="flex items-center gap-1.5">
+                    <Store className="h-4 w-4" />
+                    卖家中心
+                  </Button>
+                </Link>
+                {user.role === "admin" && (
+                  <Link href={`/${locale}/admin`}>
+                    <Button variant="ghost" size="sm" className="flex items-center gap-1.5">
+                      <LayoutDashboard className="h-4 w-4" />
+                      管理后台
+                    </Button>
+                  </Link>
+                )}
+                <Button variant="outline" size="sm" onClick={logout}>
+                  退出
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link href={`/${locale}/auth/login`}>
+                  <Button variant="ghost" size="sm">{t("nav.login")}</Button>
+                </Link>
+                <Link href={`/${locale}/auth/register`}>
+                  <Button size="sm">{t("nav.register")}</Button>
+                </Link>
+              </>
+            )}
           </div>
           <button
             className="rounded-lg p-2 hover:bg-gray-100 md:hidden"
@@ -69,16 +108,30 @@ export function Navbar({ locale }: NavbarProps) {
               <MobileNavItem key={item.labelKey} item={item} locale={locale} t={t} setMobileOpen={setMobileOpen} />
             ))}
             <div className="flex gap-2 pt-2">
-              <Link href={`/${locale}/auth/login`} className="flex-1">
-                <Button variant="outline" size="sm" className="w-full">
-                  {t("nav.login")}
-                </Button>
-              </Link>
-              <Link href={`/${locale}/auth/register`} className="flex-1">
-                <Button size="sm" className="w-full">
-                  {t("nav.register")}
-                </Button>
-              </Link>
+              {user ? (
+                <>
+                  <Link href={`/${locale}/seller/products`} className="flex-1" onClick={() => setMobileOpen(false)}>
+                    <Button size="sm" className="w-full">卖家中心</Button>
+                  </Link>
+                  {user.role === "admin" && (
+                    <Link href={`/${locale}/admin`} className="flex-1" onClick={() => setMobileOpen(false)}>
+                      <Button variant="outline" size="sm" className="w-full">管理后台</Button>
+                    </Link>
+                  )}
+                  <Button variant="outline" size="sm" onClick={() => { logout(); setMobileOpen(false); }}>
+                    退出
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Link href={`/${locale}/auth/login`} className="flex-1">
+                    <Button variant="outline" size="sm" className="w-full">{t("nav.login")}</Button>
+                  </Link>
+                  <Link href={`/${locale}/auth/register`} className="flex-1">
+                    <Button size="sm" className="w-full">{t("nav.register")}</Button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
