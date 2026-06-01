@@ -85,11 +85,12 @@ export function QuickContact({ locale }: QuickContactProps) {
               <div className="flex h-5 w-5 items-center justify-center rounded bg-blue-500 text-[10px] font-bold text-white">支</div>
               <span className="text-sm font-semibold text-blue-700">{l.alipay}</span>
             </div>
-            <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-lg border-2 border-dashed border-blue-300 bg-blue-50/50">
-              <div className="text-center text-blue-500">
-                <QrCode className="mx-auto h-8 w-8" />
-                <span className="text-[10px]">{l.scan}</span>
-              </div>
+            <div className="mx-auto h-24 w-24 overflow-hidden rounded-lg border border-blue-200">
+              <img
+                src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/images/alipay-qr.jpg"
+                alt="Alipay QR Code"
+                className="h-full w-full object-cover"
+              />
             </div>
           </div>
         </div>
