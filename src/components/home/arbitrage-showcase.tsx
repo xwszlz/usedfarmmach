@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
-import { Brain, TrendingUp, Shield, Globe, ChevronDown, Loader2 } from "lucide-react";
-import { DAILY_REPORT_RANKING } from "@/config/daily-report-ranking";
+import { Brain, TrendingUp, Shield, Globe, ChevronDown, Loader2, Calculator } from "lucide-react";
 
 interface ValuationResult {
   estimatedValue: number;
@@ -21,43 +20,63 @@ function formatMoney(value: number): string {
   return `¥${value.toLocaleString()}`;
 }
 
+const CATEGORIES = ["青储机", "打捆机", "拖拉机", "割草机", "播种机", "收获机", "裹包机", "搂草机", "捡拾机"];
+
+const CONDITIONS = [
+  { value: "excellent", label: "优秀" },
+  { value: "good", label: "良好" },
+  { value: "fair", label: "一般" },
+  { value: "poor", label: "较差" },
+];
+
 export function ArbitrageShowcase() {
   const t = useTranslations("home");
   const locale = useLocale();
   const navT = useTranslations("nav");
   const [arbitrageExpanded, setArbitrageExpanded] = useState(false);
   const [valuationExpanded, setValuationExpanded] = useState(false);
-  const [valuationData, setValuationData] = useState<ValuationResult | null>(null);
-  const [valuationLoading, setValuationLoading] = useState(false);
-  const [valuationError, setValuationError] = useState("");
 
-  // 获取TOP1产品ID用于AI估值演示
-  const topProduct = DAILY_REPORT_RANKING[0];
+  // 估值表单
+  const [brand, setBrand] = useState("");
+  const [modelName, setModelName] = useState("");
+  const [category, setCategory] = useState("青储机");
+  const [year, setYear] = useState(2020);
+  const [hours, setHours] = useState("");
+  const [condition, setCondition] = useState("good");
+  const [priceCny, setPriceCny] = useState("");
 
-  const fetchValuation = async () => {
-    if (!topProduct) return;
-    setValuationLoading(true);
-    setValuationError("");
+  const [result, setResult] = useState<ValuationResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const doValuation = async () => {
+    if (!brand.trim()) { setError("请输入品牌"); return; }
+    setLoading(true);
+    setError("");
+    setResult(null);
     try {
-      const res = await fetch(`/api/valuation?productId=${topProduct.id}`);
+      const res = await fetch("/api/valuation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          brand: brand.trim(),
+          modelName: modelName.trim() || undefined,
+          category,
+          year: Number(year),
+          workingHours: hours ? Number(hours) : undefined,
+          condition,
+          priceCny: priceCny ? Number(priceCny) : undefined,
+        }),
+      });
       const data = await res.json();
-      if (data.success) {
-        setValuationData(data.data);
-      } else {
-        setValuationError(data.error || "估值失败");
-      }
+      if (data.success) setResult(data.data);
+      else setError(data.error || "估值失败");
     } catch {
-      setValuationError("网络错误");
+      setError("网络错误，请重试");
     } finally {
-      setValuationLoading(false);
+      setLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (valuationExpanded && !valuationData && !valuationLoading) {
-      fetchValuation();
-    }
-  }, [valuationExpanded]);
 
   const features = [
     {
@@ -130,76 +149,137 @@ export function ArbitrageShowcase() {
                   </h3>
                   <p className="text-sm text-gray-500">{feat.desc}</p>
                   
-                  {/* AI估值展开内容 */}
+                  {/* AI估值 - 通用表单 */}
                   {isValuation && valuationExpanded && (
-                    <div className="mt-4 space-y-3 border-t pt-4">
-                      {valuationLoading ? (
-                        <div className="flex items-center justify-center py-4 text-sm text-gray-400">
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          正在估值...
+                    <div className="mt-4 space-y-3 border-t pt-4" onClick={(e) => e.stopPropagation()}>
+                      {/* 品牌 */}
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">品牌</label>
+                        <input
+                          value={brand} onChange={(e) => setBrand(e.target.value)}
+                          placeholder="如: 克拉斯、纽荷兰、约翰迪尔"
+                          className="w-full rounded-lg border border-gray-200 px-3 py-2 text-xs focus:border-primary-500 focus:outline-none"
+                        />
+                      </div>
+                      {/* 品类 + 年份 */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">品类</label>
+                          <select
+                            value={category} onChange={(e) => setCategory(e.target.value)}
+                            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-xs focus:border-primary-500 focus:outline-none"
+                          >
+                            {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                          </select>
                         </div>
-                      ) : valuationError ? (
-                        <div className="rounded-lg bg-red-50 p-3 text-xs text-red-600">
-                          {valuationError}
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">年份</label>
+                          <input
+                            type="number" value={year} onChange={(e) => setYear(Number(e.target.value))}
+                            min={1990} max={2026}
+                            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-xs focus:border-primary-500 focus:outline-none"
+                          />
                         </div>
-                      ) : valuationData ? (
-                        <div className="space-y-3">
-                          {/* AI估值核心数据 */}
-                          <div className="rounded-lg bg-primary-50 p-3">
-                            <div className="text-xs text-primary-600">AI智能估值</div>
-                            <div className="text-lg font-bold text-primary-700">
-                              {formatMoney(valuationData.estimatedValue)}
-                            </div>
-                            <div className="mt-1 text-xs text-primary-500">
-                              合理区间: {formatMoney(valuationData.priceRange.low)} ~ {formatMoney(valuationData.priceRange.high)}
+                      </div>
+                      {/* 型号 + 工时 */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">型号 (可选)</label>
+                          <input
+                            value={modelName} onChange={(e) => setModelName(e.target.value)}
+                            placeholder="如: 970、FR450"
+                            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-xs focus:border-primary-500 focus:outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">工时 (可选)</label>
+                          <input
+                            type="number" value={hours} onChange={(e) => setHours(e.target.value)}
+                            placeholder="如: 5000"
+                            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-xs focus:border-primary-500 focus:outline-none"
+                          />
+                        </div>
+                      </div>
+                      {/* 成色 + 卖家报价 */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">成色</label>
+                          <select
+                            value={condition} onChange={(e) => setCondition(e.target.value)}
+                            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-xs focus:border-primary-500 focus:outline-none"
+                          >
+                            {CONDITIONS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">卖家报价 (可选)</label>
+                          <input
+                            type="number" value={priceCny} onChange={(e) => setPriceCny(e.target.value)}
+                            placeholder="单位: 元"
+                            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-xs focus:border-primary-500 focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      {/* 估价按钮 */}
+                      <button
+                        onClick={doValuation}
+                        disabled={loading}
+                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-700 disabled:opacity-50"
+                      >
+                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calculator className="h-4 w-4" />}
+                        {loading ? "正在估值..." : "开始AI估值"}
+                      </button>
+
+                      {error && (
+                        <div className="rounded-lg bg-red-50 p-3 text-xs text-red-600">{error}</div>
+                      )}
+
+                      {/* 估值结果 */}
+                      {result && (
+                        <div className="space-y-3 rounded-lg bg-gray-50 p-3">
+                          <div className="flex items-center gap-2 rounded-lg bg-primary-50 p-3">
+                            <Brain className="h-5 w-5 text-primary-600" />
+                            <div>
+                              <div className="text-xs text-primary-600">AI智能估值</div>
+                              <div className="text-lg font-bold text-primary-700">{formatMoney(result.estimatedValue)}</div>
+                              <div className="text-xs text-primary-500">
+                                合理区间: {formatMoney(result.priceRange.low)} ~ {formatMoney(result.priceRange.high)}
+                              </div>
                             </div>
                           </div>
-                          {/* 卖家报价对比 */}
-                          <div className="rounded-lg bg-gray-50 p-3">
-                            <div className="text-xs text-gray-500">卖家报价</div>
-                            <div className="text-lg font-bold text-gray-700">
-                              {formatMoney(valuationData.sellerPrice)}
+                          {result.sellerPrice > 0 && (
+                            <div className="flex items-center justify-between rounded-lg bg-white p-3">
+                              <span className="text-xs text-gray-500">卖家报价</span>
+                              <span className="text-sm font-bold text-gray-700">{formatMoney(result.sellerPrice)}</span>
                             </div>
-                          </div>
-                          {/* 估值分析 */}
-                          <div className="text-xs text-gray-600 leading-relaxed">
-                            {valuationData.analysis}
-                          </div>
-                          {/* 估值详情 */}
+                          )}
+                          <div className="text-xs text-gray-600 leading-relaxed">{result.analysis}</div>
                           <div className="space-y-1">
-                            {valuationData.details.slice(0, 3).map((d, i) => (
+                            {result.details.slice(0, 4).map((d, i) => (
                               <div key={i} className="flex items-center justify-between text-xs">
                                 <span className="text-gray-500">{d.factor}</span>
                                 <span className="font-medium text-gray-700">{d.impact}</span>
                               </div>
                             ))}
                           </div>
-                          <Link
-                            href={`/${locale}/products/${topProduct?.id}`}
-                            className="block rounded-lg bg-primary-600 px-3 py-2 text-center text-xs font-medium text-white transition-colors hover:bg-primary-700"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            查看完整估价详情 →
-                          </Link>
                         </div>
-                      ) : null}
+                      )}
                     </div>
                   )}
                   
                   {/* 跨境套利展开内容 */}
                   {isArbitrage && arbitrageExpanded && (
-                    <div className="mt-4 space-y-2 border-t pt-4">
+                    <div className="mt-4 space-y-2 border-t pt-4" onClick={(e) => e.stopPropagation()}>
                       <Link 
                         href={`/${locale}/arbitrage-calculator`}
                         className="block rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-primary-600"
-                        onClick={(e) => e.stopPropagation()}
                       >
                         {navT("arbitrageCalculator")}
                       </Link>
                       <Link 
                         href={`/${locale}/arbitrage-top`}
                         className="block rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-primary-600"
-                        onClick={(e) => e.stopPropagation()}
                       >
                         {navT("arbitrageTop")}
                       </Link>
