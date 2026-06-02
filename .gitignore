@@ -49,3 +49,18 @@ prisma/migrations/
 .env.production
 data-export.json
 replacements.txt
+
+# workbuddy local data
+.workbuddy/
+
+# temporary files
+*.tmp
+.tmp-*
+temp-*
+
+# scripts that should not be in repo (temporary utilities)
+scripts/compare-inventory.js
+scripts/upload-covers-oss.js
+
+# windows special files
+nul
