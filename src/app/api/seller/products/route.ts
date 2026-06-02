@@ -6,19 +6,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyToken, getTokenFromHeaders } from "@/lib/auth";
-// @ts-expect-error ali-oss has no TS declarations
-import OSS from "ali-oss";
+import { uploadFileToOSS } from "@/lib/oss-upload";
 
 const PUBLISH_COST = 1;
-const OSS_BASE = "https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com";
-
-const ossClient = new OSS({
-  region: "oss-cn-beijing",
-  accessKeyId: process.env.OSS_ACCESS_KEY_ID!,
-  accessKeySecret: process.env.OSS_ACCESS_KEY_SECRET!,
-  bucket: "usedfarmmach-oss",
-  secure: true,
-});
 
 function getSeller(req: NextRequest) {
   const token = getTokenFromHeaders(req.headers);
@@ -142,26 +132,20 @@ export async function POST(request: NextRequest) {
     // === 上传封面图 ===
     const coverFile = formData.get("coverImage") as File | null;
     if (coverFile && coverFile.size > 0) {
-      const ext = coverFile.name.split(".").pop() || "jpg";
-      const fileName = `cover_${Date.now()}.${ext}`;
-      const ossKey = `uploads/products/${product.id}/${fileName}`;
-      const buffer = Buffer.from(await coverFile.arrayBuffer());
-      await ossClient.put(ossKey, buffer);
+      const folder = `uploads/products/${product.id}`;
+      const { url: coverUrl, key: coverKey } = await uploadFileToOSS(coverFile, folder);
       await prisma.productImage.create({
-        data: { productId: product.id, url: `/${ossKey}`, sortOrder: -1, isPrimary: true },
+        data: { productId: product.id, url: `/${coverKey}`, sortOrder: -1, isPrimary: true },
       });
     }
 
     // === 上传视频 ===
     const videoFile = formData.get("video") as File | null;
     if (videoFile && videoFile.size > 0) {
-      const ext = videoFile.name.split(".").pop() || "mp4";
-      const fileName = `video_${Date.now()}.${ext}`;
-      const ossKey = `uploads/products/${product.id}/${fileName}`;
-      const buffer = Buffer.from(await videoFile.arrayBuffer());
-      await ossClient.put(ossKey, buffer);
+      const folder = `uploads/products/${product.id}`;
+      const { url: videoUrl, key: videoKey } = await uploadFileToOSS(videoFile, folder);
       await prisma.productVideo.create({
-        data: { productId: product.id, url: `/${ossKey}`, sortOrder: 0, title: `${modelName} 运转视频` },
+        data: { productId: product.id, url: `/${videoKey}`, sortOrder: 0, title: `${modelName} 运转视频` },
       });
     }
 
