@@ -1,29 +1,36 @@
 /**
  * 卖家产品管理 API
- * GET  /api/seller/products - 获取卖家自己的产品列表
- * POST /api/seller/products - 发布新产品（消耗积分）
+ * - GET: 产品列表
+ * - POST: 发布新产品（支持自定义品牌/品类 + 图片/视频上传）
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyToken, getTokenFromHeaders } from "@/lib/auth";
+// @ts-expect-error ali-oss has no TS declarations
+import OSS from "ali-oss";
 
-const PUBLISH_COST = 1; // 发布一台产品消耗 1 积分
+const PUBLISH_COST = 1;
+const OSS_BASE = "https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com";
 
-// 验证卖家身份
+const ossClient = new OSS({
+  region: "oss-cn-beijing",
+  accessKeyId: process.env.OSS_ACCESS_KEY_ID!,
+  accessKeySecret: process.env.OSS_ACCESS_KEY_SECRET!,
+  bucket: "usedfarmmach-oss",
+  secure: true,
+});
+
 function getSeller(req: NextRequest) {
   const token = getTokenFromHeaders(req.headers);
   if (!token) return null;
   const payload = verifyToken(token);
-  if (!payload) return null;
   return payload;
 }
 
-// 获取卖家产品列表
+// GET - 卖家产品列表
 export async function GET(request: NextRequest) {
   const seller = getSeller(request);
-  if (!seller) {
-    return NextResponse.json({ success: false, error: "请先登录" }, { status: 401 });
-  }
+  if (!seller) return NextResponse.json({ success: false, error: "请先登录" }, { status: 401 });
 
   const products = await prisma.product.findMany({
     where: { sellerId: seller.userId },
@@ -35,63 +42,131 @@ export async function GET(request: NextRequest) {
     },
     orderBy: { createdAt: "desc" },
   });
-
   return NextResponse.json({ success: true, data: products });
 }
 
-// 发布新产品
+// POST - 发布新产品（multipart/form-data）
 export async function POST(request: NextRequest) {
   const seller = getSeller(request);
-  if (!seller) {
-    return NextResponse.json({ success: false, error: "请先登录" }, { status: 401 });
-  }
+  if (!seller) return NextResponse.json({ success: false, error: "请先登录" }, { status: 401 });
 
   try {
-    const body = await request.json();
-    const { brandId, categoryId, modelName, year, workingHours, condition, priceCny, location, descriptionZh } = body;
+    const formData = await request.formData();
 
-    // 必填校验
-    if (!brandId || !categoryId || !modelName || !year || !condition || !priceCny || !location) {
-      return NextResponse.json({ success: false, error: "请填写完整信息" }, { status: 400 });
+    // === 解析文本字段 ===
+    const brandId = formData.get("brandId")?.toString();
+    const brandName = formData.get("brandName")?.toString();
+    const categoryId = formData.get("categoryId")?.toString();
+    const categoryName = formData.get("categoryName")?.toString();
+    const modelName = formData.get("modelName")?.toString();
+    const yearStr = formData.get("year")?.toString();
+    const workingHoursStr = formData.get("workingHours")?.toString();
+    const condition = formData.get("condition")?.toString() || "good";
+    const priceCnyStr = formData.get("priceCny")?.toString();
+    const location = formData.get("location")?.toString();
+
+    // 结构化描述
+    const descPower = formData.get("descPower")?.toString();
+    const descDrive = formData.get("descDrive")?.toString();
+    const descHeader = formData.get("descHeader")?.toString();
+    const descEngineHours = formData.get("descEngineHours")?.toString();
+    const descRollerHours = formData.get("descRollerHours")?.toString();
+    const descOther = formData.get("descOther")?.toString();
+
+    // 校验
+    if (!modelName || !yearStr || !priceCnyStr || !location) {
+      return NextResponse.json({ success: false, error: "请填写完整信息（型号、年份、价格、位置为必填）" }, { status: 400 });
+    }
+    if (!brandId && !brandName) return NextResponse.json({ success: false, error: "请选择或输入品牌" }, { status: 400 });
+    if (!categoryId && !categoryName) return NextResponse.json({ success: false, error: "请选择或输入品类" }, { status: 400 });
+
+    // === 解析品牌 ===
+    let finalBrandId = brandId;
+    if (!finalBrandId && brandName) {
+      const existing = await prisma.brand.findFirst({ where: { nameZh: brandName } });
+      if (existing) {
+        finalBrandId = existing.id;
+      } else {
+        const created = await prisma.brand.create({ data: { nameZh: brandName, nameEn: brandName, originCountry: "未知" } });
+        finalBrandId = created.id;
+      }
     }
 
-    // 检查积分
+    // === 解析品类 ===
+    let finalCategoryId = categoryId;
+    if (!finalCategoryId && categoryName) {
+      const existing = await prisma.category.findFirst({ where: { nameZh: categoryName } });
+      if (existing) {
+        finalCategoryId = existing.id;
+      } else {
+        const created = await prisma.category.create({ data: { nameZh: categoryName, nameEn: categoryName } });
+        finalCategoryId = created.id;
+      }
+    }
+
+    // === 组装描述 ===
+    const descParts = [];
+    if (descPower) descParts.push(`马力：${descPower}`);
+    if (descDrive) descParts.push(`驱动：${descDrive}`);
+    if (descHeader) descParts.push(`割台：${descHeader}`);
+    if (descEngineHours) descParts.push(`发动机小时：${descEngineHours}`);
+    if (descRollerHours) descParts.push(`轧辊小时：${descRollerHours}`);
+    if (descOther) descParts.push(descOther);
+    const descriptionZh = descParts.join("\n");
+
+    // === 检查积分 ===
     const user = await prisma.user.findUnique({ where: { id: seller.userId } });
-    if (!user) {
-      return NextResponse.json({ success: false, error: "用户不存在" }, { status: 404 });
-    }
+    if (!user) return NextResponse.json({ success: false, error: "用户不存在" }, { status: 404 });
     if (user.credits < PUBLISH_COST) {
-      return NextResponse.json({
-        success: false,
-        error: `积分不足，发布需 ${PUBLISH_COST} 积分，当前 ${user.credits} 积分`,
-        credits: user.credits,
-        required: PUBLISH_COST,
-      }, { status: 403 });
+      return NextResponse.json({ success: false, error: `积分不足，当前 ${user.credits} 积分，发布需 ${PUBLISH_COST} 积分`, credits: user.credits, required: PUBLISH_COST }, { status: 403 });
     }
 
-    // 创建产品
+    // === 创建产品 ===
     const product = await prisma.product.create({
       data: {
         sellerId: seller.userId,
-        brandId,
-        categoryId,
+        brandId: finalBrandId!,
+        categoryId: finalCategoryId!,
         modelName,
-        year: Number(year),
-        workingHours: workingHours ? Number(workingHours) : null,
+        year: Number(yearStr),
+        workingHours: workingHoursStr ? Number(workingHoursStr) : null,
         condition,
-        priceCny: Number(priceCny),
-        priceUsd: Math.round(Number(priceCny) / 7.25),
-        location,
+        priceCny: Number(priceCnyStr),
+        priceUsd: Math.round(Number(priceCnyStr) / 7.25),
+        location: location || "",
         descriptionZh: descriptionZh || null,
         status: "active",
       },
     });
 
-    // 扣除积分
-    await prisma.user.update({
-      where: { id: seller.userId },
-      data: { credits: { decrement: PUBLISH_COST } },
-    });
+    // === 上传封面图 ===
+    const coverFile = formData.get("coverImage") as File | null;
+    if (coverFile && coverFile.size > 0) {
+      const ext = coverFile.name.split(".").pop() || "jpg";
+      const fileName = `cover_${Date.now()}.${ext}`;
+      const ossKey = `uploads/products/${product.id}/${fileName}`;
+      const buffer = Buffer.from(await coverFile.arrayBuffer());
+      await ossClient.put(ossKey, buffer);
+      await prisma.productImage.create({
+        data: { productId: product.id, url: `/${ossKey}`, sortOrder: -1, isPrimary: true },
+      });
+    }
+
+    // === 上传视频 ===
+    const videoFile = formData.get("video") as File | null;
+    if (videoFile && videoFile.size > 0) {
+      const ext = videoFile.name.split(".").pop() || "mp4";
+      const fileName = `video_${Date.now()}.${ext}`;
+      const ossKey = `uploads/products/${product.id}/${fileName}`;
+      const buffer = Buffer.from(await videoFile.arrayBuffer());
+      await ossClient.put(ossKey, buffer);
+      await prisma.productVideo.create({
+        data: { productId: product.id, url: `/${ossKey}`, sortOrder: 0, title: `${modelName} 运转视频` },
+      });
+    }
+
+    // === 扣除积分 ===
+    await prisma.user.update({ where: { id: seller.userId }, data: { credits: { decrement: PUBLISH_COST } } });
 
     return NextResponse.json({
       success: true,
@@ -100,6 +175,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Publish error:", error);
-    return NextResponse.json({ success: false, error: "发布失败" }, { status: 500 });
+    return NextResponse.json({ success: false, error: "发布失败，请稍后重试" }, { status: 500 });
   }
 }
