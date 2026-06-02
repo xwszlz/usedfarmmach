@@ -20,6 +20,7 @@ export async function GET(
         brand: true,
         category: true,
         images: { orderBy: { sortOrder: "asc" } },
+        videos: true,
         seller: { select: { id: true, companyName: true, country: true } },
         internationalPrices: {
           orderBy: { sourceDate: "desc" },

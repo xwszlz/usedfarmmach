@@ -17,6 +17,15 @@ const OSS_BASE_URL = OSS_BASE_URL_RAW.endsWith('/') ? OSS_BASE_URL_RAW.slice(0, 
 const OSS_PROCESS_PARAMS = "?x-oss-process=image/quality,q_75";
 
 /**
+ * OSS 基础路径（不含图片处理参数）
+ */
+function getOssUrl(url: string): string {
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  if (url.startsWith("/uploads/")) return `${OSS_BASE_URL}${url}`;
+  return url;
+}
+
+/**
  * 将媒体 URL 转换为完整可访问的地址
  * - 如果已经是完整 URL（http/https），直接返回
  * - 如果是 /uploads/ 开头的相对路径，拼接 OSS 地址并增加压缩参数
@@ -25,28 +34,18 @@ const OSS_PROCESS_PARAMS = "?x-oss-process=image/quality,q_75";
 export function getImageUrl(url: string | null | undefined): string {
   if (!url) return "/images/placeholders/tractor.svg";
   
-  // 已经是完整 URL
-  if (url.startsWith("http://") || url.startsWith("https://")) {
-    // 如果是 OSS 地址且尚未包含 x-oss-process 参数，追加压缩
-    if (url.includes("oss-cn-beijing.aliyuncs.com") && !url.includes("x-oss-process")) {
-      return url + OSS_PROCESS_PARAMS;
-    }
-    return url;
+  const base = getOssUrl(url);
+  // 如果是 OSS 地址且尚未包含 x-oss-process 参数，追加压缩
+  if (base.includes("oss-cn-beijing.aliyuncs.com") && !base.includes("x-oss-process")) {
+    return base + OSS_PROCESS_PARAMS;
   }
-  
-  // /uploads/ 开头的路径 → 转换为 OSS 地址 + 压缩
-  if (url.startsWith("/uploads/")) {
-    return `${OSS_BASE_URL}${url}${OSS_PROCESS_PARAMS}`;
-  }
-  
-  // 其他路径保持不变（如 /images/、/logo.jpg）
-  return url;
+  return base;
 }
 
 /**
- * 将视频 URL 转换为完整可访问的地址（与图片共用 OSS）
+ * 将视频 URL 转换为完整可访问的地址（不含图片压缩参数）
  */
 export function getVideoUrl(url: string | null | undefined): string {
   if (!url) return "";
-  return getImageUrl(url);
+  return getOssUrl(url);
 }
