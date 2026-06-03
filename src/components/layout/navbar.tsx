@@ -12,25 +12,50 @@ interface NavbarProps {
   locale: string;
 }
 
+type Userinfo = {
+  role: string;
+  email: string;
+  membershipTier: string;
+} | null;
+
 export function Navbar({ locale }: NavbarProps) {
   const t = useTranslations();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [user, setUser] = useState<{ role: string; email: string } | null>(null);
+  const [user, setUser] = useState<Userinfo>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
       try {
-        const payload = JSON.parse(atob(token.split(".")[1]));
-        setUser({ role: payload.role, email: payload.email || "" });
+        const u = JSON.parse(userStr);
+        setUser({
+          role: u.role,
+          email: u.email,
+          membershipTier: u.membershipTier || "free",
+        });
       } catch {}
     }
   }, []);
 
   const logout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
     setUser(null);
     window.location.href = `/${locale}`;
+  };
+
+  const tierLabel: Record<string, string> = {
+    free: "免费",
+    basic: "普通会员",
+    premium: "高级会员",
+    enterprise: "企业会员",
+  };
+
+  const tierColor: Record<string, string> = {
+    free: "bg-gray-100 text-gray-500",
+    basic: "bg-blue-100 text-blue-700",
+    premium: "bg-amber-100 text-amber-700",
+    enterprise: "bg-purple-100 text-purple-700",
   };
 
   return (
@@ -58,6 +83,11 @@ export function Navbar({ locale }: NavbarProps) {
           <div className="hidden items-center gap-2 md:flex">
             {user ? (
               <>
+                {/* 会员等级徽章 */}
+                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${tierColor[user.membershipTier] || tierColor.free}`}>
+                  {tierLabel[user.membershipTier] || "免费"}
+                </span>
+
                 <Link href={`/${locale}/seller/products`}>
                   <Button variant="ghost" size="sm" className="flex items-center gap-1.5">
                     <Store className="h-4 w-4" />
@@ -110,6 +140,9 @@ export function Navbar({ locale }: NavbarProps) {
             <div className="flex gap-2 pt-2">
               {user ? (
                 <>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${tierColor[user.membershipTier] || tierColor.free}`}>
+                    {tierLabel[user.membershipTier] || "免费"}
+                  </span>
                   <Link href={`/${locale}/seller/products`} className="flex-1" onClick={() => setMobileOpen(false)}>
                     <Button size="sm" className="w-full">卖家中心</Button>
                   </Link>

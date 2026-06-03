@@ -155,16 +155,18 @@
       "submit": "Войти",
       "noAccount": "Нет аккаунта?",
       "registerLink": "Зарегистрироваться",
-      "error": "Неверный адрес почты или пароль",
-      "success": "Вход выполнен"
+      "error": "Неверное имя/email или пароль",
+      "success": "Вход выполнен",
+      "identifier": "Имя пользователя или Email",
+      "identifierPlaceholder": "Введите имя или email"
     },
     "register": {
       "title": "Регистрация",
       "subtitle": "Создайте аккаунт",
-      "email": "Эл. почта",
-      "emailPlaceholder": "Введите адрес эл. почты",
+      "email": "Email (Необязательно)",
+      "emailPlaceholder": "Необязательно, для восстановления",
       "password": "Пароль",
-      "passwordPlaceholder": "Введите пароль (минимум 6 символов)",
+      "passwordPlaceholder": "Минимум 8 символов",
       "confirmPassword": "Подтвердите пароль",
       "confirmPasswordPlaceholder": "Введите пароль ещё раз",
       "phone": "Телефон",
@@ -181,7 +183,11 @@
       "loginLink": "Войти",
       "error": "Ошибка регистрации. Попробуйте снова.",
       "success": "Регистрация успешна",
-      "passwordMismatch": "Пароли не совпадают"
+      "passwordMismatch": "Пароли не совпадают",
+      "username": "Имя пользователя",
+      "usernamePlaceholder": "Минимум 3 символа",
+      "usernameTooShort": "Имя должно быть не менее 3 символов",
+      "passwordTooShort": "Пароль должен быть не менее 8 символов"
     }
   },
   "logistics": {

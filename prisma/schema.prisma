@@ -10,6 +10,7 @@ datasource db {
 model User {
   id                String    @id @default(cuid())
   email             String    @unique
+  username          String?    @unique
   phone             String?
   passwordHash       String
   role              String    @default("buyer") // buyer, seller, admin
@@ -17,12 +18,19 @@ model User {
   country           String?
   preferredLanguage String    @default("zh")
   credits           Int       @default(0)
+  membershipTier    String    @default("free") // free, basic, premium, enterprise
+  membershipExpiresAt DateTime?
+  freeValuationsUsed   Int   @default(0)
+  freeValuationsResetAt DateTime @default(now())
+  isActive          Boolean   @default(true)
+  lastLoginAt       DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
   products   Product[]
   demands    Demand[]
   inquiries  Inquiry[]
+  creditTransactions CreditTransaction[]
 }
 
 model Brand {
@@ -179,6 +187,21 @@ model Valuation {
   factors          String?  // JSON string (SQLite compat)
 
   brand Brand @relation(fields: [brandId], references: [id])
+}
+
+model CreditTransaction {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // consume, recharge, reward, expire
+  amount    Int      // 正=入账，负=扣款
+  balance   Int      // 操作后余额
+  reason    String?  // 消费原因：valuation, publish_product, etc.
+  relatedId String? // 关联对象ID
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }
 
 // 汇率表 - 存储最新和历史汇率

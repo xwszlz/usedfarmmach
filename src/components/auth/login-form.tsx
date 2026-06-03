@@ -25,7 +25,7 @@ export function LoginForm({ locale }: LoginFormProps) {
 
     const form = e.currentTarget;
     const data = {
-      email: (form.elements.namedItem("email") as HTMLInputElement).value,
+      identifier: (form.elements.namedItem("identifier") as HTMLInputElement).value,
       password: (form.elements.namedItem("password") as HTMLInputElement).value,
     };
 
@@ -38,8 +38,9 @@ export function LoginForm({ locale }: LoginFormProps) {
       const result = await res.json();
 
       if (result.success) {
-        // 保存 token 到 localStorage，导航栏会读取它显示登录态
+        // 保存 token 和用户信息到 localStorage
         localStorage.setItem("token", result.data.token);
+        localStorage.setItem("user", JSON.stringify(result.data.user));
         router.push(`/${locale}`);
         window.location.reload();
       } else {
@@ -52,14 +53,14 @@ export function LoginForm({ locale }: LoginFormProps) {
     }
   }
 
-  return (
+    return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <Input
-        id="login-email"
-        name="email"
-        label={t("email")}
-        type="email"
-        placeholder={t("emailPlaceholder")}
+        id="login-identifier"
+        name="identifier"
+        label={t("identifier") || "用户名或邮箱"}
+        type="text"
+        placeholder={t("identifierPlaceholder") || "请输入用户名或邮箱"}
         required
       />
       <Input

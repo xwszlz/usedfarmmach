@@ -25,8 +25,23 @@ export function RegisterForm({ locale }: RegisterFormProps) {
     setError("");
 
     const form = e.currentTarget;
+    const username = (form.elements.namedItem("username") as HTMLInputElement).value.trim();
     const password = (form.elements.namedItem("password") as HTMLInputElement).value;
     const confirmPassword = (form.elements.namedItem("confirmPassword") as HTMLInputElement).value;
+
+    // 用户名校验
+    if (username.length < 3) {
+      setError(t("usernameTooShort") || "用户名至少3位");
+      setLoading(false);
+      return;
+    }
+
+    // 密码至少8位
+    if (password.length < 8) {
+      setError(t("passwordTooShort") || "密码至少8位");
+      setLoading(false);
+      return;
+    }
 
     if (password !== confirmPassword) {
       setError(t("passwordMismatch"));
@@ -35,12 +50,13 @@ export function RegisterForm({ locale }: RegisterFormProps) {
     }
 
     const data = {
-      email: (form.elements.namedItem("email") as HTMLInputElement).value,
+      username,
+      email: (form.elements.namedItem("email") as HTMLInputElement).value || undefined,
       password,
       confirmPassword,
       phone: (form.elements.namedItem("phone") as HTMLInputElement).value || undefined,
       companyName: (form.elements.namedItem("companyName") as HTMLInputElement).value || undefined,
-      country: (form.elements.namedItem("country") as HTMLInputElement).value || undefined,
+      country: (form.elements.namedItem("country") as HTMLSelectElement).value || undefined,
       role: (form.elements.namedItem("role") as HTMLSelectElement).value || "buyer",
     };
 
@@ -54,6 +70,7 @@ export function RegisterForm({ locale }: RegisterFormProps) {
 
       if (result.success) {
         localStorage.setItem("token", result.data.token);
+        localStorage.setItem("user", JSON.stringify(result.data.user));
         router.push(`/${locale}`);
         window.location.reload();
       } else {
@@ -69,12 +86,12 @@ export function RegisterForm({ locale }: RegisterFormProps) {
   const countryOptions = [
     { value: "CN", label: locale === "zh" ? "中国" : locale === "ru" ? "Китай" : "China" },
     { value: "US", label: locale === "zh" ? "美国" : locale === "ru" ? "США" : "United States" },
-    { value: "JP", label: locale === "zh" ? "日本" : locale === "ru" ? "Япония" : "Japan" },
-    { value: "AU", label: locale === "zh" ? "澳大利亚" : locale === "ru" ? "Австралия" : "Australia" },
-    { value: "BR", label: locale === "zh" ? "巴西" : locale === "ru" ? "Бразилия" : "Brazil" },
-    { value: "IN", label: locale === "zh" ? "印度" : locale === "ru" ? "Индия" : "India" },
-    { value: "RU", label: locale === "zh" ? "俄罗斯" : locale === "ru" ? "Россия" : "Russia" },
-    { value: "OTHER", label: locale === "zh" ? "其他" : locale === "ru" ? "Другое" : "Other" },
+    { value: "JP", label: locale === "zh" ? "日本" : locale === "ru" ? "Японія" : "Japan" },
+    { value: "AU", label: locale === "zh" ? "澳大利亚" : locale === "ru" ? "Австралія" : "Australia" },
+    { value: "BR", label: locale === "zh" ? "巴西" : locale === "ru" ? "Бразилія" : "Brazil" },
+    { value: "IN", label: locale === "zh" ? "印度" : locale === "ru" ? "Індія" : "India" },
+    { value: "RU", label: locale === "zh" ? "俄罗斯" : locale === "ru" ? "Росія" : "Russia" },
+    { value: "OTHER", label: locale === "zh" ? "其他" : locale === "ru" ? "Інше" : "Other" },
   ];
 
   const roleOptions = [
@@ -84,30 +101,46 @@ export function RegisterForm({ locale }: RegisterFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* 用户名 - 最上面 */}
       <Input
-        id="reg-email"
-        name="email"
-        label={t("email")}
-        type="email"
-        placeholder={t("emailPlaceholder")}
+        id="reg-username"
+        name="username"
+        label={t("username") || "用户名"}
+        type="text"
+        placeholder={t("usernamePlaceholder") || "请输入用户名（至少3位）"}
         required
+        minLength={3}
       />
+
+      {/* 密码 */}
       <Input
         id="reg-password"
         name="password"
         label={t("password")}
         type="password"
-        placeholder={t("passwordPlaceholder")}
+        placeholder={t("passwordPlaceholder") || "至少8位密码"}
         required
+        minLength={8}
       />
       <Input
         id="reg-confirm-password"
         name="confirmPassword"
         label={t("confirmPassword")}
         type="password"
-        placeholder={t("confirmPasswordPlaceholder")}
+        placeholder={t("confirmPasswordPlaceholder") || "再次输入密码"}
         required
+        minLength={8}
       />
+
+      {/* 邮箱 - 挪到下面，可选 */}
+      <Input
+        id="reg-email"
+        name="email"
+        label={t("email") + "（可选）"}
+        type="email"
+        placeholder={t("emailPlaceholder") || "选填，用于找回密码"}
+      />
+
       <Input
         id="reg-phone"
         name="phone"

@@ -155,16 +155,18 @@
       "submit": "Login",
       "noAccount": "Don't have an account?",
       "registerLink": "Register now",
-      "error": "Invalid email or password",
-      "success": "Login successful"
+      "error": "Invalid username/email or password",
+      "success": "Login successful",
+      "identifier": "Username or Email",
+      "identifierPlaceholder": "Enter username or email"
     },
     "register": {
       "title": "Register",
       "subtitle": "Create your account",
-      "email": "Email",
-      "emailPlaceholder": "Enter your email",
+      "email": "Email (Optional)",
+      "emailPlaceholder": "Optional, for password recovery",
       "password": "Password",
-      "passwordPlaceholder": "Enter password (at least 6 characters)",
+      "passwordPlaceholder": "At least 8 characters",
       "confirmPassword": "Confirm Password",
       "confirmPasswordPlaceholder": "Enter password again",
       "phone": "Phone",
@@ -181,7 +183,11 @@
       "loginLink": "Login now",
       "error": "Registration failed. Please try again.",
       "success": "Registration successful",
-      "passwordMismatch": "Passwords do not match"
+      "passwordMismatch": "Passwords do not match",
+      "username": "Username",
+      "usernamePlaceholder": "At least 3 characters",
+      "usernameTooShort": "Username must be at least 3 characters",
+      "passwordTooShort": "Password must be at least 8 characters"
     }
   },
   "logistics": {

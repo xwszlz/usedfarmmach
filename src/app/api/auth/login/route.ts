@@ -1,28 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { verifyPassword, signToken, ensureJwtSecret } from "@/lib/auth";
-import { loginSchema } from "@/lib/validators";
+import { verifyPassword, signToken, ensureJwtSecret, setTokenCookie } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   ensureJwtSecret();
   try {
-    const body = await request.json();
-    const parsed = loginSchema.safeParse(body);
+  const body = await request.json();
+  const { identifier, password } = body;  // identifier = username or email
 
-    if (!parsed.success) {
-      return NextResponse.json(
-        { success: false, error: parsed.error.errors[0].message },
-        { status: 400 }
-      );
-    }
+  if (!identifier || !password) {
+    return NextResponse.json(
+      { success: false, error: "Username/email and password required" },
+      { status: 400 }
+    );
+  }
 
-    const { email, password } = parsed.data;
-
-    const user = await prisma.user.findUnique({ where: { email } });
+  // 支持用户名或邮箱登录
+  const user = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { email: identifier },
+        { username: identifier },
+      ],
+    },
+  });
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Invalid email or password" },
         { status: 401 }
+      );
+    }
+
+    if (!user.isActive) {
+      return NextResponse.json(
+        { success: false, error: "Account disabled" },
+        { status: 403 }
       );
     }
 
@@ -34,9 +46,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const token = signToken({ userId: user.id, role: user.role });
+    // 更新最后登录时间
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() },
+    });
 
-    return NextResponse.json({
+    const token = signToken({
+      userId: user.id,
+      role: user.role,
+      tier: user.membershipTier,
+    });
+
+    const response = NextResponse.json({
       success: true,
       data: {
         token,
@@ -48,9 +70,17 @@ export async function POST(request: NextRequest) {
           country: user.country,
           preferredLanguage: user.preferredLanguage,
           credits: user.credits,
+          membershipTier: user.membershipTier,
+          membershipExpiresAt: user.membershipExpiresAt,
+          freeValuationsUsed: user.freeValuationsUsed,
         },
       },
     });
+
+    // 写入 HTTP-only cookie（供中间件 SSR 读取）
+    setTokenCookie(response, token);
+
+    return response;
   } catch (error) {
     console.error("Login error:", error);
     return NextResponse.json(

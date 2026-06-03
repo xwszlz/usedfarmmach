@@ -1,13 +1,13 @@
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import jwt, { SignOptions } from "jsonwebtoken";
 import { prisma } from "./db";
 
 const JWT_SECRET = process.env.JWT_SECRET!;
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
+const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "7d") as SignOptions["expiresIn"];
 
 export function ensureJwtSecret(): void {
   if (!process.env.JWT_SECRET) {
-    throw new Error("FATAL: JWT_SECRET environment variable is not set. Refusing to start without it.");
+    throw new Error("FATAL: JWT_SECRET environment variable is not set.");
   }
 }
 
@@ -22,19 +22,58 @@ export async function verifyPassword(
   return bcrypt.compare(password, hash);
 }
 
-export function signToken(payload: { userId: string; role: string }): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN as jwt.SignOptions["expiresIn"] });
+export function signToken(payload: {
+  userId: string;
+  role: string;
+  tier?: string;
+}): string {
+  return jwt.sign(
+    {
+      userId: payload.userId,
+      role: payload.role,
+      tier: payload.tier || "free",
+    },
+    JWT_SECRET,
+    { expiresIn: JWT_EXPIRES_IN }
+  );
 }
 
-export function verifyToken(token: string): { userId: string; role: string } | null {
+export function verifyToken(token: string): {
+  userId: string;
+  role: string;
+  tier: string;
+} | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as { userId: string; role: string };
+    return jwt.verify(token, JWT_SECRET) as {
+      userId: string;
+      role: string;
+      tier: string;
+    };
   } catch {
     return null;
   }
 }
 
-export async function getUserFromToken(token: string) {
+/**
+ * 从请求中解析当前用户（完整信息）
+ */
+export async function getUserFromRequest(req: {
+  headers: Headers;
+  cookies?: { get: (name: string) => { value: string } | undefined };
+}) {
+  // 优先从 Authorization header 读
+  let token: string | null = null;
+  const auth = req.headers.get("authorization");
+  if (auth?.startsWith("Bearer ")) {
+    token = auth.slice(7);
+  }
+  // 回退到 cookie
+  if (!token && req.cookies) {
+    token = req.cookies.get("token")?.value || null;
+  }
+
+  if (!token) return null;
+
   const payload = verifyToken(token);
   if (!payload) return null;
 
@@ -49,16 +88,42 @@ export async function getUserFromToken(token: string) {
       country: true,
       preferredLanguage: true,
       credits: true,
+      membershipTier: true,
+      membershipExpiresAt: true,
+      freeValuationsUsed: true,
+      freeValuationsResetAt: true,
+      isActive: true,
+      lastLoginAt: true,
       createdAt: true,
       updatedAt: true,
     },
   });
 
+  if (!user || !user.isActive) return null;
+
   return user;
 }
 
-export function getTokenFromHeaders(headers: Headers): string | null {
-  const auth = headers.get("authorization");
-  if (!auth?.startsWith("Bearer ")) return null;
-  return auth.slice(7);
+/**
+ * 写 token 到响应 cookie（SSR 用）
+ */
+export function setTokenCookie(response: NextResponse, token: string) {
+  response.cookies.set({
+    name: "token",
+    value: token,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 7, // 7 天
+    path: "/",
+  });
+}
+
+export function clearTokenCookie(response: NextResponse) {
+  response.cookies.set({
+    name: "token",
+    value: "",
+    maxAge: 0,
+    path: "/",
+  });
 }
