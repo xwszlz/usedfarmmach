@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import createMiddleware from "next-intl/middleware";
 import { verifyToken } from "@/lib/auth";
+
+// next-intl 国际化中间件
+const intlMiddleware = createMiddleware({
+  locales: ["zh", "en", "ru"],
+  defaultLocale: "zh",
+  localePrefix: "always",
+});
 
 // 需要登录的路径
 const PROTECTED_PATHS = [
@@ -13,30 +21,42 @@ const PROTECTED_PATHS = [
 // 仅管理员可访问
 const ADMIN_PATHS = ["/api/admin", "/admin"];
 
-// 仅卖家可访问
-const SELLER_PATHS = ["/api/seller", "/seller"];
+function getTokenFromRequest(request: NextRequest): string | null {
+  const authHeader = request.headers.get("authorization");
+  if (authHeader?.startsWith("Bearer ")) {
+    return authHeader.slice(7);
+  }
+  const cookie = request.cookies.get("token")?.value;
+  return cookie || null;
+}
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // 先执行 next-intl 中间件（处理 locale 路由）
+  const intlResponse = intlMiddleware(request);
+
+  // 如果 next-intl 返回了重定向，直接返回
+  if (intlResponse.status === 307 || intlResponse.status === 308) {
+    return intlResponse;
+  }
+
   // 跳过非保护路径
   const isProtected = PROTECTED_PATHS.some((p) => pathname.startsWith(p));
   if (!isProtected) {
-    return NextResponse.next();
+    return intlResponse;
   }
 
   // 提取 token
   const token = getTokenFromRequest(request);
   if (!token) {
-    // API 请求 → 返回 401
     if (pathname.startsWith("/api/")) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
         { status: 401 }
       );
     }
-    // 页面请求 → 跳转登录页
-    const loginUrl = new URL("/login", request.url);
+    const loginUrl = new URL("/zh/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }
@@ -50,7 +70,7 @@ export function middleware(request: NextRequest) {
         { status: 401 }
       );
     }
-    const loginUrl = new URL("/login", request.url);
+    const loginUrl = new URL("/zh/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }
@@ -64,7 +84,7 @@ export function middleware(request: NextRequest) {
     );
   }
 
-  // 在请求头中传递用户信息，供 API route 使用
+  // 在请求头中传递用户信息
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-user-id", payload.userId);
   requestHeaders.set("x-user-role", payload.role);
@@ -74,16 +94,6 @@ export function middleware(request: NextRequest) {
   });
 }
 
-function getTokenFromRequest(request: NextRequest): string | null {
-  const authHeader = request.headers.get("authorization");
-  if (authHeader?.startsWith("Bearer ")) {
-    return authHeader.slice(7);
-  }
-  // 也从 cookie 读取（兼容 SSR）
-  const cookie = request.cookies.get("token")?.value;
-  return cookie || null;
-}
-
 export const config = {
-  matcher: ["/api/:path*", "/seller/:path*", "/admin/:path*"],
+  matcher: ["/", "/(zh|en|ru)/:path*", "/api/:path*"],
 };
