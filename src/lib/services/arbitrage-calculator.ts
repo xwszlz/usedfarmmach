@@ -286,8 +286,10 @@ export class ArbitrageCalculator {
       let exchangeRateUsed = params.exchangeRate;
       
       // 如果需要汇率转换且未提供汇率，则获取最新汇率
+      // getLatestRate(base, target) = 1 base = ? target
+      // 我们要把 foreignCurrency 转成 CNY，所以 getLatestRate(foreignCurrency, 'CNY')
       if (foreignCurrency !== 'CNY' && !exchangeRateUsed) {
-        const rate = await exchangeRateService.getLatestRate('CNY', foreignCurrency as any);
+        const rate = await exchangeRateService.getLatestRate(foreignCurrency as any, 'CNY');
         exchangeRateUsed = rate.rate;
       } else if (!exchangeRateUsed) {
         exchangeRateUsed = 1;
@@ -324,7 +326,7 @@ export class ArbitrageCalculator {
     let exchangeRateUsed = latestPrice.exchangeRate;
     
     if (!exchangeRateUsed || foreignCurrency !== 'CNY') {
-      const rate = await exchangeRateService.getLatestRate('CNY', foreignCurrency as any);
+      const rate = await exchangeRateService.getLatestRate(foreignCurrency as any, 'CNY');
       exchangeRateUsed = rate.rate;
     }
 
