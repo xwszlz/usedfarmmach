@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt, { SignOptions } from "jsonwebtoken";
+import { NextResponse } from "next/server";
 import { prisma } from "./db";
 
 const JWT_SECRET = process.env.JWT_SECRET!;
@@ -52,6 +53,51 @@ export function verifyToken(token: string): {
   } catch {
     return null;
   }
+}
+
+/**
+ * 从 Headers 中提取 token（兼容旧代码）
+ */
+export function getTokenFromHeaders(headers: Headers): string | null {
+  const auth = headers.get("authorization");
+  if (auth?.startsWith("Bearer ")) return auth.slice(7);
+  const cookie = headers.get("cookie");
+  const m = cookie?.match(/token=([^;]+)/);
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+/**
+ * 从 token 解析用户（兼容旧代码）
+ */
+export async function getUserFromToken(token: string) {
+  const payload = verifyToken(token);
+  if (!payload) return null;
+
+  const user = await prisma.user.findUnique({
+    where: { id: payload.userId },
+    select: {
+      id: true,
+      email: true,
+      username: true,
+      phone: true,
+      role: true,
+      companyName: true,
+      country: true,
+      preferredLanguage: true,
+      credits: true,
+      membershipTier: true,
+      membershipExpiresAt: true,
+      freeValuationsUsed: true,
+      freeValuationsResetAt: true,
+      isActive: true,
+      lastLoginAt: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  if (!user || !user.isActive) return null;
+  return user;
 }
 
 /**

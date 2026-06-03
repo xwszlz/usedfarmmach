@@ -46,14 +46,14 @@ export async function POST(request: NextRequest) {
     const user = await prisma.user.create({
       data: {
         username,
-        email,
+        ...(email ? { email } : {}),
         passwordHash,
         phone,
         companyName,
         country,
         role: role || "buyer",
         membershipTier: "free",
-        credites: freeCredits,
+        credits: freeCredits,
         freeValuationsUsed: 0,
       },
       select: {
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
         companyName: true,
         country: true,
         preferredLanguage: true,
-        credites: true,
+        credits: true,
         membershipTier: true,
         freeValuationsUsed: true,
         freeValuationsResetAt: true,

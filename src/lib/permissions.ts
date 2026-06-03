@@ -11,6 +11,8 @@ export const MEMBERSHIP_TIERS = {
     label: { zh: '免费用户', en: 'Free', ru: 'Бесплатно' },
     valuationsPerMonth: 5,   // 每月免费估价次数
     publishesPerMonth: 1,      // 每月免费发布产品数
+    credits: 10,               // 注册赠送积分
+    freeValuationsPerMonth: 5,
     canViewSellerContact: true, // 能否查看卖家联系方式
     canExportData: false,
     canSeeArbitrage: false,       // 能否查看跨境套利数据
@@ -53,6 +55,9 @@ export const MEMBERSHIP_TIERS = {
   },
 } as const;
 
+// 兼容旧代码的别名导出
+export const membershipConfig = MEMBERSHIP_TIERS;
+
 export type MembershipTier = keyof typeof MEMBERSHIP_TIERS;
 
 // 角色配置
@@ -62,6 +67,7 @@ export const ROLE_PERMISSIONS = {
     canPublishProduct: false,
     canInquire: true,
     canFavorite: true,
+    canViewSellerContact: true,
     canViewArbitrage: false,
   },
   seller: {
@@ -69,6 +75,7 @@ export const ROLE_PERMISSIONS = {
     canPublishProduct: true,
     canInquire: true,
     canFavorite: true,
+    canViewSellerContact: true,
     canViewArbitrage: true,
   },
   admin: {
@@ -76,6 +83,7 @@ export const ROLE_PERMISSIONS = {
     canPublishProduct: true,
     canInquire: true,
     canFavorite: true,
+    canViewSellerContact: true,
     canViewArbitrage: true,
     canManageUsers: true,
     canManageProducts: true,
@@ -101,9 +109,9 @@ export function checkPermission(
 
   switch (action) {
     case 'valuation':
-      return tierConfig.valuationsPerMonth !== 0;
+      return (tierConfig.valuationsPerMonth as number) === -1 || (tierConfig.valuationsPerMonth as number) > 0;
     case 'publish':
-      return !!rolePerms.canPublishProduct && tierConfig.publishesPerMonth !== 0;
+      return !!rolePerms.canPublishProduct && ((tierConfig.publishesPerMonth as number) === -1 || (tierConfig.publishesPerMonth as number) > 0);
     case 'viewContact':
       return !!rolePerms.canViewSellerContact;
     case 'viewArbitrage':

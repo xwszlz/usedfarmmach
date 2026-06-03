@@ -1,10 +1,18 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { getTokenFromHeaders, verifyToken } from "@/lib/auth";
+import { verifyToken } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { AdminSidebar } from "./admin-sidebar";
 
 export const dynamic = "force-dynamic";
+
+function getTokenFromHeaders(headersList: Headers) {
+  const auth = headersList.get("authorization");
+  if (auth?.startsWith("Bearer ")) return auth.slice(7);
+  const cookie = headersList.get("cookie");
+  const m = cookie?.match(/token=([^;]+)/);
+  return m ? decodeURIComponent(m[1]) : null;
+}
 
 export default async function AdminLayout({
   children,
