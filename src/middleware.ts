@@ -33,7 +33,47 @@ function getTokenFromRequest(request: NextRequest): string | null {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 先执行 next-intl 中间件（处理 locale 路由）
+  // API 路由：跳过 next-intl，只做 auth 检查
+  if (pathname.startsWith("/api/")) {
+    const isProtected = PROTECTED_PATHS.some((p) => pathname.startsWith(p));
+    if (!isProtected) {
+      return NextResponse.next();
+    }
+
+    const token = getTokenFromRequest(request);
+    if (!token) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const payload = verifyToken(token);
+    if (!payload) {
+      return NextResponse.json(
+        { success: false, error: "Invalid or expired token" },
+        { status: 401 }
+      );
+    }
+
+    const isAdminPath = ADMIN_PATHS.some((p) => pathname.startsWith(p));
+    if (isAdminPath && payload.role !== "admin") {
+      return NextResponse.json(
+        { success: false, error: "Forbidden: admin only" },
+        { status: 403 }
+      );
+    }
+
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set("x-user-id", payload.userId);
+    requestHeaders.set("x-user-role", payload.role);
+
+    return NextResponse.next({
+      request: { headers: requestHeaders },
+    });
+  }
+
+  // 页面路由：先执行 next-intl 中间件（处理 locale 路由）
   const intlResponse = intlMiddleware(request);
 
   // 如果 next-intl 返回了重定向，直接返回
