@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { inquirySchema } from "@/lib/validators";
 import { getTokenFromHeaders, getUserFromToken } from "@/lib/auth";
+import { notifyInquiry } from "@/lib/email";
 
 export async function POST(request: NextRequest) {
   try {
@@ -46,6 +47,14 @@ export async function POST(request: NextRequest) {
         company,
         message,
       },
+    });
+
+    // 发送邮件通知管理员
+    notifyInquiry({
+      productName: `${product.modelName}`,
+      buyerName: name,
+      buyerContact: `${phone || ''} ${email || ''}`.trim(),
+      buyerMessage: message || '',
     });
 
     return NextResponse.json({
