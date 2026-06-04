@@ -32,13 +32,13 @@ export default function NewProductPage() {
     descPower: "", descDrive: "二驱", descHeader: "",
     descEngineHours: "", descRollerHours: "", descOther: "",
   });
-  const [coverFile, setCoverFile] = useState<File | null>(null);
-  const [coverPreview, setCoverPreview] = useState<string>("");
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<{ url: string; name: string }[]>([]);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
-  const coverInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -49,20 +49,45 @@ export default function NewProductPage() {
 
   const update = (key: string, value: any) => setForm(f => ({ ...f, [key]: value }));
 
-  const handleCoverSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    // 验证图片尺寸比例
-    const img = new window.Image();
-    img.onload = () => {
-      const ratio = img.width / img.height;
-      if (ratio < 1.5 || ratio > 2.0) {
-        setResult({ success: false, message: "封面图建议 16:9 比例（如 1920×1080）。当前宽高比约 " + ratio.toFixed(2) });
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    // 最多 8 张
+    const total = imageFiles.length + files.length;
+    if (total > 8) {
+      setResult({ success: false, message: `最多上传 8 张图片，当前已有 ${imageFiles.length} 张` });
+      return;
+    }
+
+    // 验证每张图
+    const validFiles: File[] = [];
+    files.forEach((f) => {
+      if (f.size > 10 * 1024 * 1024) {
+        setResult({ success: false, message: `图片 ${f.name} 超过 10MB，请压缩后上传` });
+        return;
       }
-    };
-    img.src = URL.createObjectURL(f);
-    setCoverFile(f);
-    setCoverPreview(URL.createObjectURL(f));
+      validFiles.push(f);
+      const img = new window.Image();
+      img.onload = () => {
+        const ratio = img.width / img.height;
+        if (ratio < 1.0 || ratio > 2.5) {
+          setResult({ success: false, message: `图片 ${f.name} 比例建议 4:3 ~ 16:9。当前约 ${ratio.toFixed(2)}` });
+        }
+      };
+      img.src = URL.createObjectURL(f);
+    });
+
+    setImageFiles((prev) => [...prev, ...validFiles]);
+    setImagePreviews((prev) => [
+      ...prev,
+      ...validFiles.map((f) => ({ url: URL.createObjectURL(f), name: f.name })),
+    ]);
+  };
+
+  const removeImage = (index: number) => {
+    setImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -110,7 +135,7 @@ export default function NewProductPage() {
       fd.append("descEngineHours", form.descEngineHours);
       fd.append("descRollerHours", form.descRollerHours);
       fd.append("descOther", form.descOther);
-      if (coverFile) fd.append("coverImage", coverFile);
+      imageFiles.forEach((f) => fd.append("images", f));
       if (videoFile) fd.append("video", videoFile);
 
       const res = await fetch("/api/seller/products", {
@@ -275,30 +300,58 @@ export default function NewProductPage() {
           </div>
         </div>
 
-        {/* ====== 封面图（16:9） ====== */}
-        <h2 className="text-base font-bold text-gray-800 border-b pb-2">封面图（建议 16:9）</h2>
+        {/* ====== 产品图片 ====== */}
+        <h2 className="text-base font-bold text-gray-800 border-b pb-2">产品图片（整机和关键部位）</h2>
 
-        <div
-          onClick={() => coverInputRef.current?.click()}
-          className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-6 transition-colors hover:border-primary-400 hover:bg-primary-50"
-          style={coverPreview ? { minHeight: 200 } : {}}
-        >
-          {coverPreview ? (
-            <div className="relative w-full">
-              <img src={coverPreview} alt="封面预览" className="mx-auto max-h-64 rounded-lg object-contain" style={{ aspectRatio: "16/9" }} />
-              <button onClick={(e) => { e.stopPropagation(); setCoverFile(null); setCoverPreview(""); }}
-                className="absolute -right-2 -top-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600">
-                <X className="h-3 w-3" />
-              </button>
+        <div className="space-y-3">
+          {/* 已上传图片网格 */}
+          {imagePreviews.length > 0 && (
+            <div className="grid grid-cols-3 gap-3">
+              {imagePreviews.map((img, idx) => (
+                <div key={idx} className="relative rounded-lg border border-gray-200 bg-gray-50 p-1">
+                  <img src={img.url} alt={img.name} className="h-24 w-full rounded object-cover" />
+                  {/* 标签：第1张封面，其余细节 */}
+                  <span className={`absolute left-1 top-1 rounded px-1.5 py-0.5 text-[10px] font-medium ${idx === 0 ? "bg-primary-600 text-white" : "bg-gray-600 text-white"}`}>
+                    {idx === 0 ? "封面" : "细节"}
+                  </span>
+                  <button
+                    onClick={() => removeImage(idx)}
+                    className="absolute -right-1.5 -top-1.5 rounded-full bg-red-500 p-0.5 text-white hover:bg-red-600"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
             </div>
-          ) : (
-            <>
-              <Camera className="mb-2 h-10 w-10 text-gray-300" />
-              <p className="text-sm font-medium text-gray-600">点击上传 16:9 封面图</p>
-              <p className="mt-1 text-xs text-gray-400">推荐尺寸 1920×1080 像素，JPEG/PNG</p>
-            </>
           )}
-          <input ref={coverInputRef} type="file" accept="image/*" onChange={handleCoverSelect} className="hidden" />
+
+          {/* 继续添加按钮 */}
+          {imagePreviews.length < 8 && (
+            <div
+              onClick={() => imageInputRef.current?.click()}
+              className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-4 transition-colors hover:border-primary-400 hover:bg-primary-50"
+            >
+              <Camera className="mb-1 h-6 w-6 text-gray-300" />
+              <p className="text-xs font-medium text-gray-600">
+                {imagePreviews.length === 0 ? "点击上传产品图片" : "继续添加图片"}
+              </p>
+              <p className="mt-0.5 text-[11px] text-gray-400">
+                建议拍摄：整机全貌、发动机、割台、驾驶室、轮胎/履带
+              </p>
+              <p className="text-[11px] text-gray-400">
+                {imagePreviews.length}/8 张，单张不超过 10MB
+              </p>
+            </div>
+          )}
+
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleImageSelect}
+            className="hidden"
+          />
         </div>
 
         {/* ====== 运转视频 ====== */}

@@ -129,14 +129,23 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // === 上传封面图 ===
-    const coverFile = formData.get("coverImage") as File | null;
-    if (coverFile && coverFile.size > 0) {
+    // === 上传产品图片（多张）===
+    const imageFiles = formData.getAll("images") as File[];
+    const validImages = imageFiles.filter((f) => f.size > 0);
+
+    if (validImages.length > 0) {
       const folder = `uploads/products/${product.id}`;
-      const { url: coverUrl, key: coverKey } = await uploadFileToOSS(coverFile, folder);
-      await prisma.productImage.create({
-        data: { productId: product.id, url: `/${coverKey}`, sortOrder: -1, isPrimary: true },
-      });
+      for (let i = 0; i < validImages.length; i++) {
+        const { key } = await uploadFileToOSS(validImages[i], folder);
+        await prisma.productImage.create({
+          data: {
+            productId: product.id,
+            url: `/${key}`,
+            sortOrder: i === 0 ? -1 : i,
+            isPrimary: i === 0,
+          },
+        });
+      }
     }
 
     // === 上传视频 ===
