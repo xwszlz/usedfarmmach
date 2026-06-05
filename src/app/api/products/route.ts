@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
     }
 
     const {
+      query,
       brand,
       category,
       yearMin,
@@ -51,6 +52,20 @@ export async function GET(request: NextRequest) {
       where.priceCny = {};
       if (priceMin) (where.priceCny as Record<string, number>).gte = priceMin;
       if (priceMax) (where.priceCny as Record<string, number>).lte = priceMax;
+    }
+
+    // 万能搜索：匹配型号、品牌名、品类名、描述
+    if (query) {
+      where.OR = [
+        { modelName: { contains: query, mode: "insensitive" } },
+        { brand: { nameZh: { contains: query, mode: "insensitive" } } },
+        { brand: { nameEn: { contains: query, mode: "insensitive" } } },
+        { category: { nameZh: { contains: query, mode: "insensitive" } } },
+        { category: { nameEn: { contains: query, mode: "insensitive" } } },
+        { descriptionZh: { contains: query, mode: "insensitive" } },
+        { descriptionEn: { contains: query, mode: "insensitive" } },
+        { location: { contains: query, mode: "insensitive" } },
+      ];
     }
 
     const orderBy: Record<string, string> = {};

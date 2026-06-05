@@ -25,49 +25,34 @@ export default function ProductsPage() {
   const [categories, setCategories] = useState<{ value: string; label: string }[]>([]);
   const [locations, setLocations] = useState<{ value: string; label: string }[]>([]);
 
-  // Fetch filter options
+  // 从数据库获取真实的品牌/类型/地区筛选选项
   useEffect(() => {
-    async function fetchOptions() {
+    async function fetchFilterOptions() {
       try {
-        const res = await fetch("/api/products?pageSize=1");
-        // We'll use the seed data for brands/categories
-        // In production, these would come from dedicated API endpoints
+        const res = await fetch("/api/products/filters");
+        const json = await res.json();
+        if (json.success) {
+          const getLabel = (item: { labelZh: string; labelEn: string; labelRu?: string }) => {
+            if (locale === "en") return item.labelEn;
+            if (locale === "ru" && item.labelRu) return item.labelRu;
+            return item.labelZh;
+          };
+          setBrands(json.data.brands.map((b: any) => ({ value: b.value, label: getLabel(b) })));
+          setCategories(json.data.categories.map((c: any) => ({ value: c.value, label: getLabel(c) })));
+          setLocations(json.data.locations.map((l: any) => ({ value: l.value, label: getLabel(l) })));
+        }
       } catch (e) {
-        // fallback - empty options
+        console.error("Failed to fetch filter options:", e);
       }
-
-      // Hardcoded for MVP - in production fetch from API
-      setBrands([
-        { value: "john-deere", label: locale === "zh" ? "约翰迪尔" : locale === "ru" ? "John Deere" : "John Deere" },
-        { value: "kubota", label: locale === "zh" ? "久保田" : locale === "ru" ? "Kubota" : "Kubota" },
-        { value: "case-ih", label: locale === "zh" ? "凯斯" : locale === "ru" ? "Case IH" : "Case IH" },
-        { value: "new-holland", label: locale === "zh" ? "纽荷兰" : locale === "ru" ? "New Holland" : "New Holland" },
-        { value: "lovol", label: locale === "zh" ? "雷沃" : locale === "ru" ? "Lovol" : "Lovol" },
-        { value: "dongfeng", label: locale === "zh" ? "东风" : locale === "ru" ? "Dongfeng" : "Dongfeng" },
-      ]);
-      setCategories([
-        { value: "tractor", label: locale === "zh" ? "拖拉机" : locale === "ru" ? "Трактор" : "Tractor" },
-        { value: "combine", label: locale === "zh" ? "收割机" : locale === "ru" ? "Комбайн" : "Combine Harvester" },
-        { value: "planter", label: locale === "zh" ? "播种机" : locale === "ru" ? "Сеялка" : "Planter" },
-        { value: "sprayer", label: locale === "zh" ? "喷洒机" : locale === "ru" ? "Опрыскиватель" : "Sprayer" },
-        { value: "baler", label: locale === "zh" ? "打捆机" : locale === "ru" ? "Пресс-подборщик" : "Baler" },
-        { value: "excavator", label: locale === "zh" ? "挖掘机" : locale === "ru" ? "Экскаватор" : "Excavator" },
-      ]);
-      setLocations([
-        { value: "山东", label: locale === "zh" ? "山东" : locale === "ru" ? "Шаньдун" : "Shandong" },
-        { value: "河南", label: locale === "zh" ? "河南" : locale === "ru" ? "Хэнань" : "Henan" },
-        { value: "河北", label: locale === "zh" ? "河北" : locale === "ru" ? "Хэбэй" : "Hebei" },
-        { value: "黑龙江", label: locale === "zh" ? "黑龙江" : locale === "ru" ? "Хэйлунцзян" : "Heilongjiang" },
-        { value: "江苏", label: locale === "zh" ? "江苏" : locale === "ru" ? "Цзянсу" : "Jiangsu" },
-      ]);
     }
-    fetchOptions();
+    fetchFilterOptions();
   }, [locale]);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
+      if (filters.query) params.set("query", filters.query);
       if (filters.brand) params.set("brand", filters.brand);
       if (filters.category) params.set("category", filters.category);
       if (filters.yearMin) params.set("yearMin", String(filters.yearMin));
@@ -126,7 +111,7 @@ export default function ProductsPage() {
         <p className="mt-1 text-gray-500">{t("subtitle")}</p>
       </div>
 
-      {/* Filters */}
+      {/* Filters + Search */}
       <ProductFilters
         filters={filters}
         brands={brands}

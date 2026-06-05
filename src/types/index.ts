@@ -112,6 +112,7 @@ export interface Valuation {
 }
 
 export interface ProductFilters {
+  query?: string;
   brand?: string;
   category?: string;
   yearMin?: number;

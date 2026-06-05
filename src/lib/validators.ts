@@ -40,6 +40,7 @@ export const inquirySchema = z.object({
 });
 
 export const productQuerySchema = z.object({
+  query: z.string().optional(),
   brand: z.string().optional(),
   category: z.string().optional(),
   yearMin: z.coerce.number().int().optional(),
