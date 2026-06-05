@@ -82,6 +82,8 @@ function renderInline(text: string): string {
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
     // Links [text](url) - MUST be after bold/italic so ** inside links works
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-green-700 hover:text-green-900 underline font-medium">$1</a>')
+    // Plain URLs auto-link (after escaped HTML, so href is clean)
+    .replace(/(https?:\/\/[^\s<>]+)(?![^<]*<\/a>)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-green-700 hover:text-green-900 underline font-medium">$1</a>')
     // Inline code `code`
     .replace(/`([^`]+)`/g, '<code class="bg-gray-100 px-1.5 py-0.5 rounded text-sm text-red-600">$1</code>');
   return result;
