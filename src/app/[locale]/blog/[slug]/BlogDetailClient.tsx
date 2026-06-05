@@ -69,19 +69,119 @@ function formatDate(dateStr: string | null, locale: string): string {
   });
 }
 
-// Simple markdown-like rendering
-function renderContent(content: string): string {
-  return content
-    .replace(/^### (.+)$/gm, '<h3 class="text-xl font-semibold text-gray-900 mt-8 mb-3">$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2 class="text-2xl font-bold text-gray-900 mt-10 mb-4">$1</h2>')
-    .replace(/^# (.+)$/gm, '<h1 class="text-3xl font-bold text-gray-900 mt-12 mb-6">$1</h1>')
+// Render inline elements (bold, italic, links, code)
+function renderInline(text: string): string {
+  let result = text
+    // Escape HTML to prevent XSS
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    // Bold **text**
     .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-gray-900">$1</strong>')
+    // Italic *text*
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/^> (.+)$/gm, '<blockquote class="border-l-4 border-green-500 pl-4 py-2 my-4 bg-green-50 text-gray-700 italic">$1</blockquote>')
-    .replace(/^- (.+)$/gm, '<li class="ml-4 list-disc text-gray-700">$1</li>')
-    .replace(/^---$/gm, '<hr class="my-8 border-gray-200" />')
-    .replace(/\n\n/g, '</p><p class="text-gray-700 leading-relaxed mb-4">')
-    .replace(/\n/g, '<br />');
+    // Links [text](url) - MUST be after bold/italic so ** inside links works
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-green-700 hover:text-green-900 underline font-medium">$1</a>')
+    // Inline code `code`
+    .replace(/`([^`]+)`/g, '<code class="bg-gray-100 px-1.5 py-0.5 rounded text-sm text-red-600">$1</code>');
+  return result;
+}
+
+// Simple markdown-like rendering with full block + inline support
+function renderContent(content: string): string {
+  // Wrap in a container
+  let html = '<div class="article-content">';
+
+  // Split by double newlines (paragraphs/blocks)
+  const blocks = content.split(/\n\n+/);
+
+  for (const block of blocks) {
+    const trimmed = block.trim();
+    if (!trimmed) continue;
+
+    // --- Table (lines starting with |) ---
+    if (trimmed.includes('\n') && trimmed.split('\n').every(l => l.trim().startsWith('|'))) {
+      const rows = trimmed.split('\n').filter(l => l.trim().startsWith('|'));
+      // Filter out separator rows like |---|---|
+      const dataRows = rows.filter(l => !l.match(/^\|[\s\-:|]+\|$/));
+      if (dataRows.length > 0) {
+        html += '<div class="overflow-x-auto my-6"><table class="min-w-full border-collapse border border-gray-300">';
+        dataRows.forEach((row, ri) => {
+          // Split by | and trim, skip first/last empty cells
+          const cells = row.split('|').filter((_, i, arr) => i > 0 && i < arr.length - 1);
+          const tag = ri === 0 ? 'th' : 'td';
+          html += `<tr>`;
+          cells.forEach(cell => {
+            const cls = ri === 0
+              ? 'border border-gray-300 bg-gray-50 px-4 py-2 text-sm font-semibold text-gray-700 text-left'
+              : 'border border-gray-300 px-4 py-2 text-sm text-gray-700';
+            html += `<${tag} class="${cls}">${renderInline(cell.trim())}</${tag}>`;
+          });
+          html += '</tr>';
+        });
+        html += '</table></div>';
+        continue;
+      }
+    }
+
+    // --- Heading level 3 ---
+    if (/^### (.+)/.test(trimmed)) {
+      html += `<h3 class="text-xl font-semibold text-gray-900 mt-8 mb-3">${renderInline(trimmed.replace(/^### /, ''))}</h3>`;
+      continue;
+    }
+
+    // --- Heading level 2 ---
+    if (/^## (.+)/.test(trimmed)) {
+      html += `<h2 class="text-2xl font-bold text-gray-900 mt-10 mb-4">${renderInline(trimmed.replace(/^## /, ''))}</h2>`;
+      continue;
+    }
+
+    // --- Heading level 1 ---
+    if (/^# (.+)/.test(trimmed)) {
+      html += `<h1 class="text-3xl font-bold text-gray-900 mt-12 mb-6">${renderInline(trimmed.replace(/^# /, ''))}</h1>`;
+      continue;
+    }
+
+    // --- Blockquote ---
+    if (/^> (.+)/.test(trimmed)) {
+      html += `<blockquote class="border-l-4 border-green-500 pl-4 py-2 my-4 bg-green-50 text-gray-700 italic">${renderInline(trimmed.replace(/^> /, ''))}</blockquote>`;
+      continue;
+    }
+
+    // --- Unordered list ---
+    if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+      html += '<ul class="list-disc ml-6 my-4 space-y-1">';
+      trimmed.split('\n').forEach(line => {
+        const content = line.replace(/^[-*]\s+/, '');
+        html += `<li class="text-gray-700">${renderInline(content)}</li>`;
+      });
+      html += '</ul>';
+      continue;
+    }
+
+    // --- Ordered list ---
+    if (/^\d+\.\s+/.test(trimmed)) {
+      html += '<ol class="list-decimal ml-6 my-4 space-y-1">';
+      trimmed.split('\n').forEach(line => {
+        const content = line.replace(/^\d+\.\s+/, '');
+        html += `<li class="text-gray-700">${renderInline(content)}</li>`;
+      });
+      html += '</ol>';
+      continue;
+    }
+
+    // --- Horizontal rule ---
+    if (/^-{3,}$/.test(trimmed)) {
+      html += '<hr class="my-8 border-gray-200" />';
+      continue;
+    }
+
+    // --- Default paragraph ---
+    html += `<p class="text-gray-700 leading-relaxed mb-4">${renderInline(trimmed)}</p>`;
+  }
+
+  html += '</div>';
+  return html;
 }
 
 export default function BlogDetailClient({
@@ -137,7 +237,7 @@ export default function BlogDetailClient({
         {/* Cover Image */}
         {article.coverImage && (
           <div className="mb-8 rounded-lg overflow-hidden">
-            <img src={article.coverImage} alt={getTitle(article, locale)} className="w-full" />
+            <img src={article.coverImage} alt={getTitle(article, locale)} className="w-full h-auto max-h-96 object-cover" />
           </div>
         )}
 
