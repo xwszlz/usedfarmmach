@@ -21,16 +21,19 @@ export function ProductCard({ product, locale }: ProductCardProps) {
   const brandName = (locale === "zh" ? product.brand?.nameZh : locale === "ru" ? (product.brand as any)?.nameRu || product.brand?.nameEn : product.brand?.nameEn);
   const categoryName = (locale === "zh" ? product.category?.nameZh : locale === "ru" ? (product.category as any)?.nameRu || product.category?.nameEn : product.category?.nameEn);
   const baseImageUrl = getImageUrl(product.images?.[0]?.url);
-  // 为特定产品添加缓存破坏参数，强制刷新图片 (2026-05-24 23:52 更新)
+  // 为特定产品添加缓存破坏参数，强制刷新图片
+  // 注意：getImageUrl() 已经包含 query string (?x-oss-process=...)，追加参数必须用 &
   const cacheBusterMap: Record<string, string> = {
     // 东洋甜菜机
-    'cmpdknl8s00e511kwiy4tzjax': '?v=202605242352',
+    'cmpdknl8s00e511kwiy4tzjax': '&v=20260605',
     // 克拉斯860
-    'cmpdknii2000111kwcau06hey': '?v=202605242352',
+    'cmpdknii2000111kwcau06hey': '&v=20260605',
     // 约翰迪尔7250
-    'cmpdknj9v004b11kwqvki68wr': '?v=202605242352',
+    'cmpdknj9v004b11kwqvki68wr': '&v=20260605',
   };
   const cacheBuster = cacheBusterMap[product.id];
+  // 如果 URL 已经有 ?x-oss-process 参数，用 & 追加；否则用 ? 开头
+  const separator = baseImageUrl.includes('?') ? '&' : '?';
   const primaryImage = cacheBuster ? `${baseImageUrl}${cacheBuster}` : baseImageUrl;
 
   const arbitrage = calculateArbitragePercent(product.priceCny, product.priceUsd);
