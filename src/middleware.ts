@@ -32,6 +32,14 @@ function getTokenFromRequest(request: NextRequest): string | null {
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const host = request.headers.get("host") || "";
+
+  // .cn → .com 全站301跳转
+  if (host.includes("usedfarmmach.cn")) {
+    const url = new URL(request.url);
+    url.hostname = "usedfarmmach.com";
+    return NextResponse.redirect(url, 301);
+  }
 
   // API 路由：跳过 next-intl，只做 auth 检查
   if (pathname.startsWith("/api/")) {
