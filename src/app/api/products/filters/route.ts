@@ -22,7 +22,7 @@ export async function GET() {
         orderBy: { nameZh: "asc" },
       }),
       prisma.product.findMany({
-        where: { status: "active", location: { not: null } },
+        where: { status: "active" },
         select: { location: true },
         distinct: ["location"],
         orderBy: { location: "asc" },
