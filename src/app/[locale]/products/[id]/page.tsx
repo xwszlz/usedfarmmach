@@ -14,8 +14,18 @@ import ArbitrageCalculatorSection from "@/components/product/arbitrage-calculato
 import { QuickContact } from "@/components/product/quick-contact";
 import { BuyIntentButton } from "@/components/product/buy-intent-button";
 import { ValuationCard } from "@/components/valuation/valuation-card";
+import { DAILY_REPORT_RANKING } from "@/config/daily-report-ranking";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
+
+export async function generateStaticParams() {
+  const topIds = DAILY_REPORT_RANKING.slice(0, 20).map((p) => p.id);
+  return topIds.flatMap((id) => [
+    { locale: "zh", id },
+    { locale: "en", id },
+    { locale: "ru", id },
+  ]);
+}
 
 export default async function ProductDetailPage({
   params,

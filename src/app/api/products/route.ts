@@ -4,8 +4,8 @@ import { productQuerySchema } from "@/lib/validators";
 import { getImageUrl } from "@/lib/image-url";
 import { sortByDailyRank } from "@/config/daily-report-ranking";
 
-// 强制动态渲染，避免静态生成问题
-export const dynamic = 'force-dynamic';
+// ISR: 每5分钟重新验证
+export const revalidate = 300;
 
 export async function GET(request: NextRequest) {
   try {

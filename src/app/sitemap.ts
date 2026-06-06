@@ -1,11 +1,10 @@
 import { MetadataRoute } from "next";
 import { PrismaClient } from "@prisma/client";
 
-// Force dynamic rendering — sitemap must query the database at request time
-export const dynamic = "force-dynamic";
-export const revalidate = 3600; // Revalidate every 1 hour
+// ISR: 每天重新生成站点地图
+export const revalidate = 86400;
 
-const BASE_URL = "https://usedfarmmach.cn";
+const BASE_URL = "https://usedfarmmach.com";
 const locales = ["zh", "en", "ru"];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

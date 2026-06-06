@@ -8,7 +8,7 @@ import { Testimonials } from "@/components/home/testimonials";
 import { DAILY_REPORT_RANKING } from "@/config/daily-report-ranking";
 import type { Product } from "@/types";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 const baseInclude = {
   brand: true,

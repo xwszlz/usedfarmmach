@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { TopArbitrageService } from "@/lib/services/top-arbitrage-service";
 import type { ArbitrageTopItem, TopArbitrageResponse } from "@/types/arbitrage";
 
-// 强制动态渲染，避免静态生成问题
-export const dynamic = 'force-dynamic';
+// ISR: 套利榜单每小时更新
+export const revalidate = 3600;
 
 /**
  * GET /api/arbitrage/top-products

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
-// 强制动态渲染
-export const dynamic = 'force-dynamic';
+// ISR: 筛选选项几乎不变，每小时更新
+export const revalidate = 3600;
 
 export async function GET() {
   try {
