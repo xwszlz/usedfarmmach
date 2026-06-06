@@ -1,0 +1,33 @@
+name: Keep Neon Alive
+
+# 每5分钟运行一次，防止Neon免费层休眠（5分钟无活动即休眠）
+on:
+  schedule:
+    # 每5分钟触发一次
+    - cron: '*/5 * * * *'
+  # 允许手动触发
+  workflow_dispatch:
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping keepalive endpoint
+        run: |
+          echo "⏰ 保活任务执行时间: $(date -u)"
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://usedfarmmach.com/api/cron/keep-alive)
+          echo "📡 响应状态码: $HTTP_CODE"
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ 保活成功！Neon数据库已唤醒"
+          else
+            echo "⚠️ 保活失败，状态码: $HTTP_CODE"
+            exit 1
+          fi
+        env:
+          # 可选：如果需要认证，在这里加 secret
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+     
+      - name: 失败通知
+        if: failure()
+        run: |
+          echo "🚨 保活任务失败！请检查 /api/cron/keep-alive 接口"
