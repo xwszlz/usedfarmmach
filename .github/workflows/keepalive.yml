@@ -12,10 +12,11 @@ jobs:
   keepalive:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping keepalive endpoint
+      - name: Ping products API (keepalive)
         run: |
           echo "⏰ 保活任务执行时间: $(date -u)"
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://usedfarmmach.com/api/cron/keep-alive)
+          # 使用已存在的正常API来保活Neon（products API会查询数据库）
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "https://usedfarmmach.com/api/products?limit=1")
           echo "📡 响应状态码: $HTTP_CODE"
           if [ "$HTTP_CODE" = "200" ]; then
             echo "✅ 保活成功！Neon数据库已唤醒"
@@ -30,4 +31,4 @@ jobs:
       - name: 失败通知
         if: failure()
         run: |
-          echo "🚨 保活任务失败！请检查 /api/cron/keep-alive 接口"
+          echo "🚨 保活任务失败！请检查 /api/products API"
