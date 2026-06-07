@@ -310,7 +310,11 @@
     "subtitle": "Global used farm machinery market trends, arbitrage opportunities & industry insights",
     "latest": "Latest",
     "items": "reports",
-    "arbitrageHighlights": "Top Arbitrage Picks"
+    "arbitrageHighlights": "Top Arbitrage Picks",
+    "loading": "Loading...",
+    "empty": "No intelligence data",
+    "count": "{count} reports",
+    "actionTips": "Action Tips"
   },
   "blog": {
     "title": "Industry Insights",

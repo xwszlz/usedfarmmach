@@ -1,7 +1,8 @@
 /**
  * 市场情报速递 API
- * GET /api/intelligence?date=2026-06-01
+ * GET /api/intelligence?date=2026-06-01&locale=zh
  * 返回指定日期的情报数据，默认返回最近一日
+ * locale参数控制返回哪个语言的内容 (zh/en/ru)
  */
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
@@ -11,6 +12,7 @@ const prisma = new PrismaClient();
 export async function GET(request: NextRequest) {
   try {
     const dateStr = request.nextUrl.searchParams.get("date");
+    const locale = request.nextUrl.searchParams.get("locale") || "zh";
 
     let dateFilter: Date;
     if (dateStr) {
@@ -42,15 +44,22 @@ export async function GET(request: NextRequest) {
       orderBy: { sortOrder: "asc" },
     });
 
+    // 根据locale选择对应语言字段
+    const getField = (item: any, fieldZh: string, fieldEn: string | null, fieldRu: string | null) => {
+      if (locale === "en" && fieldEn) return fieldEn;
+      if (locale === "ru" && fieldRu) return fieldRu;
+      return item[fieldZh];
+    };
+
     // 解析 JSON 字段
     const parsed = items.map((item) => ({
       id: item.id,
       icon: item.icon,
-      region: item.region,
-      tags: JSON.parse(item.tags || "[]"),
-      text: item.text,
+      region: getField(item, "region", item.regionEn, item.regionRu),
+      tags: JSON.parse(getField(item, "tags", item.tagsEn, item.tagsRu) || "[]"),
+      text: getField(item, "text", item.textEn, item.textRu),
       url: item.url,
-      detailedContent: item.detailedContent,
+      detailedContent: getField(item, "detailedContent", item.detailedContentEn, item.detailedContentRu),
       dataSummary: item.dataSummary ? JSON.parse(item.dataSummary) : undefined,
       actionTips: item.actionTips ? JSON.parse(item.actionTips) : undefined,
       sortOrder: item.sortOrder,

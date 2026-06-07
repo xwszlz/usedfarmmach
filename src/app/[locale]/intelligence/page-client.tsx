@@ -6,6 +6,7 @@ import {
   Lightbulb, Table, ArrowRight, X
 } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { DAILY_REPORT_RANKING } from "@/config/daily-report-ranking";
 
 interface MarketIntelItem {
@@ -24,9 +25,10 @@ interface MarketIntelItem {
 interface IntelCardProps {
   item: MarketIntelItem;
   locale: string;
+  actionTipsLabel: string;
 }
 
-function IntelCard({ item, locale }: IntelCardProps) {
+function IntelCard({ item, locale, actionTipsLabel }: IntelCardProps) {
   const [expanded, setExpanded] = useState(false);
 
   // 将Markdown表格转换为HTML
@@ -104,7 +106,7 @@ function IntelCard({ item, locale }: IntelCardProps) {
               <div className="mt-4 rounded-lg border border-accent-100 bg-accent-50 p-4">
                 <div className="flex items-center gap-1.5 mb-2">
                   <Lightbulb className="h-4 w-4 text-amber-500" />
-                  <span className="text-xs font-bold text-accent-700">行动建议</span>
+                  <span className="text-xs font-bold text-accent-700">{actionTipsLabel}</span>
                 </div>
                 <ul className="space-y-1.5">
                   {item.actionTips.map((tip, i) => (
@@ -124,16 +126,7 @@ function IntelCard({ item, locale }: IntelCardProps) {
 }
 
 export default function IntelligencePageClient({ locale }: { locale: string }) {
-  const t = (key: string) => {
-    const labels: Record<string, string> = {
-      "intelligence.title": "市场情报速递",
-      "intelligence.subtitle": "全球二手农机市场动态、套利机会与行业趋势一网打尽",
-      "intelligence.latest": "最新更新",
-      "intelligence.items": "条情报",
-      "intelligence.arbitrageHighlights": "套利榜单速览",
-    };
-    return labels[key] || key;
-  };
+  const t = useTranslations("intelligence");
 
   // 从 API 获取市场情报
   const [marketData, setMarketData] = useState<MarketIntelItem[]>([]);
@@ -141,7 +134,7 @@ export default function IntelligencePageClient({ locale }: { locale: string }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/intelligence")
+    fetch(`/api/intelligence?locale=${locale}`)
       .then((r) => r.json())
       .then((d) => {
         if (d.success) {
@@ -151,10 +144,13 @@ export default function IntelligencePageClient({ locale }: { locale: string }) {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, []);
+  }, [locale]);
 
-  // 按地区分组（保留顺序）
-  const regionOrder = ["俄罗斯", "欧洲", "中国", "乌克兰", "巴西", "哈萨克斯坦", "乌兹别克斯坦", "东南亚", "非洲", "阿富汗"];
+  // 区域顺序按语言适配
+  const regionOrderZh = ["俄罗斯", "欧洲", "中国", "乌克兰", "巴西", "哈萨克斯坦", "乌兹别克斯坦", "东南亚", "非洲", "阿富汗"];
+  const regionOrderEn = ["Russia", "Europe", "China", "Ukraine", "Brazil", "Kazakhstan", "Uzbekistan", "Southeast Asia", "Africa", "Afghanistan"];
+  const regionOrderRu = ["Россия", "Европа", "Китай", "Украина", "Бразилия", "Казахстан", "Узбекистан", "Юго-Восточная Азия", "Африка", "Афганистан"];
+  const regionOrder = locale === "en" ? regionOrderEn : locale === "ru" ? regionOrderRu : regionOrderZh;
   const grouped: Record<string, MarketIntelItem[]> = {};
   for (const item of marketData) {
     if (!grouped[item.region]) grouped[item.region] = [];
@@ -168,17 +164,17 @@ export default function IntelligencePageClient({ locale }: { locale: string }) {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3 mb-4">
             <Globe className="h-8 w-8 text-accent-200" />
-            <h1 className="text-3xl font-bold sm:text-4xl">{t("intelligence.title")}</h1>
+            <h1 className="text-3xl font-bold sm:text-4xl">{t("title")}</h1>
           </div>
-          <p className="max-w-2xl text-accent-100">{t("intelligence.subtitle")}</p>
+          <p className="max-w-2xl text-accent-100">{t("subtitle")}</p>
           <div className="mt-6 flex items-center gap-4 text-sm text-accent-200">
             <div className="flex items-center gap-1.5">
               <Calendar className="h-4 w-4" />
-              <span>{t("intelligence.latest")}: {dataDate || "加载中..."}</span>
+              <span>{t("latest")}: {dataDate || t("loading")}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <BarChart3 className="h-4 w-4" />
-              <span>{loading ? "..." : marketData.length} {t("intelligence.items")}</span>
+              <span>{loading ? "..." : t("count", { count: marketData.length })}</span>
             </div>
           </div>
         </div>
@@ -188,11 +184,11 @@ export default function IntelligencePageClient({ locale }: { locale: string }) {
         {loading ? (
           <div className="flex items-center justify-center py-20 text-gray-400">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-accent-200 border-t-accent-600" />
-            <span className="ml-3">加载中...</span>
+            <span className="ml-3">{t("loading")}</span>
           </div>
         ) : marketData.length === 0 ? (
           <div className="py-20 text-center text-gray-400">
-            <p>暂无情报数据</p>
+            <p>{t("empty")}</p>
           </div>
         ) : (
         <>
@@ -202,12 +198,12 @@ export default function IntelligencePageClient({ locale }: { locale: string }) {
             <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-800">
               {grouped[region][0]?.icon} {region}
               <span className="ml-2 text-xs font-normal text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">
-                {grouped[region].length}条
+                {t("count", { count: grouped[region].length })}
               </span>
             </h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {grouped[region].map((item, idx) => (
-                <IntelCard key={idx} item={item} locale={locale} />
+                <IntelCard key={idx} item={item} locale={locale} actionTipsLabel={t("actionTips")} />
               ))}
             </div>
           </section>
@@ -217,7 +213,7 @@ export default function IntelligencePageClient({ locale }: { locale: string }) {
         <section className="mb-10">
           <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-800">
             <TrendingUp className="h-5 w-5 text-accent-600" />
-            {t("intelligence.arbitrageHighlights")}
+            {t("arbitrageHighlights")}
           </h2>
           <div className="rounded-xl border bg-white p-5 shadow-sm">
             <div className="grid gap-3 sm:grid-cols-3">

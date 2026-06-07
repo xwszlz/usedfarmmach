@@ -308,7 +308,11 @@
     "subtitle": "全球二手农机市场动态、套利机会与行业趋势一网打尽",
     "latest": "最新更新",
     "items": "条情报",
-    "arbitrageHighlights": "套利榜单速览"
+    "arbitrageHighlights": "套利榜单速览",
+    "loading": "加载中...",
+    "empty": "暂无情报数据",
+    "count": "{count}条",
+    "actionTips": "行动建议"
   },
   "blog": {
     "title": "行业资讯",
