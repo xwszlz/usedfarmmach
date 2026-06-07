@@ -18,6 +18,8 @@ interface Article {
   coverImage: string | null;
   category: string | null;
   tags: string | null;
+  tagsEn: string | null;
+  tagsRu: string | null;
   sourcePlatform: string | null;
   sourceUrl: string | null;
   publishedAt: string | null;
@@ -197,7 +199,18 @@ export default function BlogDetailClient({
 }) {
   const t = useTranslations('blog');
   const content = getContent(article, locale);
-  const tags = article.tags ? (typeof article.tags === 'string' ? JSON.parse(article.tags) : article.tags) : [];
+  const tags = (() => {
+    if (locale === 'en' && article.tagsEn) {
+      const parsed = typeof article.tagsEn === 'string' ? JSON.parse(article.tagsEn) : article.tagsEn;
+      return Array.isArray(parsed) ? parsed : [];
+    }
+    if (locale === 'ru' && article.tagsRu) {
+      const parsed = typeof article.tagsRu === 'string' ? JSON.parse(article.tagsRu) : article.tagsRu;
+      return Array.isArray(parsed) ? parsed : [];
+    }
+    const parsed = article.tags ? (typeof article.tags === 'string' ? JSON.parse(article.tags) : article.tags) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  })();
 
   return (
     <div className="min-h-screen bg-gray-50">

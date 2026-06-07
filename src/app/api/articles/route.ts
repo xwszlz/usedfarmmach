@@ -45,6 +45,8 @@ export async function GET(request: NextRequest) {
           coverImage: true,
           category: true,
           tags: true,
+          tagsEn: true,
+          tagsRu: true,
           sourcePlatform: true,
           publishedAt: true,
           viewCount: true,

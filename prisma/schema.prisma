@@ -254,7 +254,9 @@ model Article {
   coverImage    String?              // 封面图URL
   status        String    @default("draft")  // draft, published, archived
   category      String?              // market-analysis, price-guide, brand-review, industry-news, buying-guide
-  tags          String?   @db.Text   // JSON数组字符串 ["CLAAS","青储机","套利"]
+  tags          String?   @db.Text   // JSON数组字符串 (中文) ["CLAAS","青储机","套利"]
+  tagsEn        String?   @db.Text   // 英文标签: ["CLAAS","Forage Harvester","Arbitrage"]
+  tagsRu        String?   @db.Text   // 俄文标签: ["CLAAS","Кормоуборочный","Арбитраж"]
   sourcePlatform String?             // 数据来源平台: agroline, machinerypete, tractorhouse, mascus, e-farm, internal
   sourceUrl     String?              // 原始数据来源URL
   metaTitle     String?              // SEO标题

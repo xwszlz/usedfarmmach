@@ -126,6 +126,8 @@ async function main() {
           status: article.status || 'published',
           category: article.category || null,
           tags: article.tags || null,
+          tagsEn: article.tagsEn || null,
+          tagsRu: article.tagsRu || null,
           sourcePlatform: article.sourcePlatform || null,
           sourceUrl: article.sourceUrl || null,
           metaTitle: article.metaTitle || null,
