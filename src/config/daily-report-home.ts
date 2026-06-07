@@ -65,7 +65,7 @@ export function getLocalizedData(locale: string) {
     marketIntel: d.marketIntel.map(m => ({
       icon: m.icon,
       text: locale === 'en' ? m.textEn : locale === 'ru' ? m.textRu : m.textZh,
-      url: m.url,
+      url: m.url.replace('/zh/', `/${locale}/`),
     })),
     totalProducts: d.totalProducts,
   };
