@@ -8,7 +8,12 @@ export const metadata: Metadata = {
   description: '查看最高套利机会的农机产品排名，发现跨境投资最佳选择。',
 };
 
-export default async function ArbitrageTopPage() {
+interface Params {
+  locale: string;
+}
+
+export default async function ArbitrageTopPage({ params }: { params: Promise<Params> }) {
+  const { locale } = await params;
   const t = await getTranslations('arbitrageTop');
   
   return (
@@ -52,7 +57,7 @@ export default async function ArbitrageTopPage() {
               </div>
             </div>
           }>
-            <ArbitrageTopClient />
+            <ArbitrageTopClient locale={locale} />
           </Suspense>
         </div>
       </div>

@@ -255,15 +255,35 @@
   "arbitrageTop": {
     "title": "套利榜单",
     "description": "查看最高套利机会的农机产品排名，发现跨境投资最佳选择。我们根据中外价差、运输成本、关税等综合因素计算套利分数，为您推荐最具投资价值的产品。",
+    "liveRanking": "实时套利榜单",
+    "dataUpdatedAt": "数据更新时间",
+    "showCount": "显示数量",
+    "refreshing": "刷新中...",
+    "refresh": "刷新榜单",
+    "reload": "重新加载",
+    "noData": "暂无套利机会数据",
+    "noDataHint": "请稍后再试或检查国际价格数据是否已导入",
+    "loadError": "加载数据失败，请刷新页面重试",
+    "loading": "加载套利榜单中...",
+    "rankingExplanationTitle": "榜单说明",
+    "explanation1": "榜单每30分钟自动更新一次，确保数据时效性",
+    "explanation2": "套利得分综合考虑价差、利润率、风险评估和政策因素",
+    "explanation3": "高机会：利润率>30%，风险可控，强烈推荐",
+    "explanation4": "中机会：利润率15-30%，需关注风险，建议谨慎投资",
+    "explanation5": "低机会：利润率<15%，或风险较高，建议深入研究",
     "table": {
       "rank": "排名",
-      "product": "产品",
-      "domesticPrice": "国内价格",
-      "internationalPrice": "国外价格",
-      "priceDifference": "价差",
-      "arbitrageScore": "套利分数",
-      "opportunityLevel": "机会等级",
-      "details": "详情"
+      "productInfo": "产品信息",
+      "priceInfo": "价格信息",
+      "arbitrageEval": "套利评估",
+      "action": "操作",
+      "domesticPrice": "国内价",
+      "foreignPrice": "国外价(CNY)",
+      "priceDiff": "价差",
+      "profitMargin": "利润率",
+      "viewDetail": "查看详情",
+      "score": "{score}分",
+      "year": "{year}年"
     },
     "filters": {
       "all": "全部",
@@ -274,21 +294,19 @@
     "levels": {
       "high": "高机会",
       "medium": "中机会",
-      "low": "低机会"
+      "low": "低机会",
+      "unknown": "未知"
     },
     "stats": {
       "totalProducts": "总产品数",
       "highOpportunity": "高机会产品",
+      "profitMargin": "平均利润率",
+      "totalProfit": "总预估利润",
       "avgArbitrage": "平均套利空间"
     },
-    "noData": "暂无套利数据",
-    "loading": "正在加载套利排名...",
-    "rankingExplanationTitle": "榜单说明",
-    "explanation1": "榜单每30分钟自动更新一次，确保数据时效性",
-    "explanation2": "套利得分综合考虑价差、利润率、风险评估和政策因素",
-    "explanation3": "高机会：利润率＞30%，风险可控，强烈推荐",
-    "explanation4": "中机会：利润率15-30%，需关注风险，建议谨慎投资",
-    "explanation5": "低机会：利润率＜15%，或风险较高，建议深入研究"
+    "priceTrend": "价格趋势分析",
+    "priceTrendDesc": "展示 {productName} 的国内外价格变化趋势，帮助您把握最佳买入时机。",
+    "note": "备注：榜单数据基于最新国际价格和实时汇率计算，计算结果仅供参考。实际交易请综合考虑运输、关税、保险等成本因素。"
   },
   "footer": {
     "description": "全球二手农机交易平台，连接中国与全球农机市场",

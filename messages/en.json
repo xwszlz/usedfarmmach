@@ -257,15 +257,35 @@
   "arbitrageTop": {
     "title": "Arbitrage Rankings",
     "description": "View rankings of farm machinery products with the highest arbitrage opportunities. Discover the best investment choices for cross-border trading. We calculate arbitrage scores based on China-international price differences, shipping costs, tariffs, and other factors to recommend the most valuable products.",
+    "liveRanking": "Live Arbitrage Rankings",
+    "dataUpdatedAt": "Data Updated",
+    "showCount": "Show",
+    "refreshing": "Refreshing...",
+    "refresh": "Refresh",
+    "reload": "Reload",
+    "noData": "No arbitrage data available",
+    "noDataHint": "Please try again later or check if international price data has been imported",
+    "loadError": "Failed to load data, please refresh the page",
+    "loading": "Loading arbitrage rankings...",
+    "rankingExplanationTitle": "Ranking Explanation",
+    "explanation1": "Rankings update automatically every 30 minutes",
+    "explanation2": "Scores consider price difference, profit margin, risk assessment and policy factors",
+    "explanation3": "High opportunity: Profit margin >30%, manageable risk, strongly recommended",
+    "explanation4": "Medium opportunity: Profit margin 15-30%, monitor risk, cautious investment",
+    "explanation5": "Low opportunity: Profit margin <15% or higher risk, research recommended",
     "table": {
       "rank": "Rank",
-      "product": "Product",
+      "productInfo": "Product Info",
+      "priceInfo": "Price Info",
+      "arbitrageEval": "Arbitrage Eval",
+      "action": "Action",
       "domesticPrice": "Domestic Price",
-      "internationalPrice": "International Price",
-      "priceDifference": "Price Difference",
-      "arbitrageScore": "Arbitrage Score",
-      "opportunityLevel": "Opportunity Level",
-      "details": "Details"
+      "foreignPrice": "Intl Price(CNY)",
+      "priceDiff": "Difference",
+      "profitMargin": "Profit Margin",
+      "viewDetail": "View Details",
+      "score": "{score} pts",
+      "year": "{year}"
     },
     "filters": {
       "all": "All",
@@ -276,21 +296,19 @@
     "levels": {
       "high": "High Opportunity",
       "medium": "Medium Opportunity",
-      "low": "Low Opportunity"
+      "low": "Low Opportunity",
+      "unknown": "Unknown"
     },
     "stats": {
       "totalProducts": "Total Products",
-      "highOpportunity": "High Opportunity Products",
-      "avgArbitrage": "Average Arbitrage Space"
+      "highOpportunity": "High Opportunity",
+      "profitMargin": "Avg Profit Margin",
+      "totalProfit": "Est. Total Profit",
+      "avgArbitrage": "Avg Arbitrage"
     },
-    "noData": "No arbitrage data available",
-    "loading": "Loading arbitrage rankings...",
-    "rankingExplanationTitle": "Ranking Explanation",
-    "explanation1": "The ranking updates automatically every 30 minutes to ensure data timeliness",
-    "explanation2": "Arbitrage scores consider price difference, profit margin, risk assessment, and policy factors",
-    "explanation3": "High opportunity: Profit margin >30%, controllable risk, strongly recommended",
-    "explanation4": "Medium opportunity: Profit margin 15-30%, risk concerns, cautious investment recommended",
-    "explanation5": "Low opportunity: Profit margin <15%, or higher risk, in-depth research recommended"
+    "priceTrend": "Price Trend Analysis",
+    "priceTrendDesc": "Showing domestic vs international price trends for {productName} to help you time your purchase.",
+    "note": "Note: Rankings are based on latest international prices and real-time exchange rates. Calculations are for reference only. Please consider shipping, tariffs, insurance, and other costs in actual transactions."
   },
   "footer": {
     "description": "Global used farm machinery trading platform, connecting China and global markets",
