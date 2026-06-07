@@ -18,8 +18,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     : locale === 'ru' && article.titleRu ? article.titleRu
     : article.titleZh;
 
+  const brand = locale === 'ru' ? 'UsedFarmMach' : locale === 'en' ? 'UsedFarmMach' : '神雕农机';
   return {
-    title: `${title} | 神雕农机 | UsedFarmMach`,
+    title: `${title} | ${brand} | UsedFarmMach`,
     description: article.metaDesc || (locale === 'en' && article.excerptEn ? article.excerptEn
       : locale === 'ru' && article.excerptRu ? article.excerptRu
       : article.excerptZh) || '',

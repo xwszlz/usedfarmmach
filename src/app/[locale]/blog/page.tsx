@@ -10,8 +10,9 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'blog' });
+  const brand = locale === 'ru' ? 'UsedFarmMach' : locale === 'en' ? 'UsedFarmMach' : '神雕农机';
   return {
-    title: `${t('title')} | 神雕农机 | UsedFarmMach`,
+    title: `${t('title')} | ${brand} | UsedFarmMach`,
     description: t('subtitle'),
   };
 }

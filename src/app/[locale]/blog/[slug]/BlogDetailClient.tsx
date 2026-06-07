@@ -198,6 +198,7 @@ export default function BlogDetailClient({
   relatedArticles: RelatedArticle[];
 }) {
   const t = useTranslations('blog');
+  const tn = useTranslations('nav');
   const content = getContent(article, locale);
   const tags = (() => {
     if (locale === 'en' && article.tagsEn) {
@@ -218,7 +219,7 @@ export default function BlogDetailClient({
       <div className="bg-white border-b">
         <div className="max-w-4xl mx-auto px-4 py-3">
           <div className="flex items-center gap-2 text-sm text-gray-500">
-            <Link href={`/${locale}`} className="hover:text-green-700">首页</Link>
+            <Link href={`/${locale}`} className="hover:text-green-700">{tn('home')}</Link>
             <span>/</span>
             <Link href={`/${locale}/blog`} className="hover:text-green-700">{t('title')}</Link>
             <span>/</span>
