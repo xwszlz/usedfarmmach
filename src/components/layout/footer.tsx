@@ -64,7 +64,7 @@ export function Footer({ locale }: FooterProps) {
             </h3>
             <ul className="mt-3 space-y-2">
               <li className="text-sm text-gray-500">
-                {t("company")}: 石家庄神雕科技有限公司
+                {t("company")}: {t("companyName")}
               </li>
               <li className="text-sm text-gray-500">
                 WhatsApp: +86 15511395016
@@ -76,7 +76,7 @@ export function Footer({ locale }: FooterProps) {
                 {t("email")}: 932133255@qq.com
               </li>
               <li className="text-sm text-gray-500">
-                {t("address")}: 河北省石家庄市元氏县马村乡廖村
+                {t("address")}: {t("companyAddress")}
               </li>
             </ul>
           </div>
