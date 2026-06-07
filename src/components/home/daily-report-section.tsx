@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { TrendingUp, ArrowRight, Calendar, BarChart3, Globe } from "lucide-react";
-import { DAILY_REPORT_CONFIG } from "@/config/daily-report-home";
+import { getLocalizedData } from "@/config/daily-report-home";
 
 const LABELS: Record<string, {
   title: string;
@@ -51,7 +51,7 @@ interface DailyReportSectionProps {
 
 export function DailyReportSection({ locale }: DailyReportSectionProps) {
   const l = LABELS[locale] || LABELS.zh;
-  const data = DAILY_REPORT_CONFIG;
+  const data = getLocalizedData(locale);
   const reportUrl = `/${locale}/arbitrage-top`;
 
   const formatPrice = (price: number) => {
@@ -75,7 +75,6 @@ export function DailyReportSection({ locale }: DailyReportSectionProps) {
                 <span className="mx-1">·</span>
                 <span>{data.totalProducts}台设备</span>
                 <span className="mx-1">·</span>
-                <span>货值{data.totalValue}</span>
               </div>
             </div>
           </div>
