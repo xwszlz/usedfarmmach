@@ -32,26 +32,34 @@ export function Footer({ locale }: FooterProps) {
             <ul className="mt-3 space-y-2">
               <li>
                 <Link
-                  href={`/${locale}/products`}
+                  href={`/${locale}/category/forage-harvester`}
                   className="text-sm text-gray-500 hover:text-primary-600"
                 >
-                  {t("quickLinks")}
+                  {t("quickLinkForage")}
                 </Link>
               </li>
               <li>
                 <Link
-                  href={`/${locale}/logistics`}
+                  href={`/${locale}/brand/claas`}
                   className="text-sm text-gray-500 hover:text-primary-600"
                 >
-                  {t("quickLinks")}
+                  {t("quickLinkClaas")}
                 </Link>
               </li>
               <li>
                 <Link
-                  href={`/${locale}/about`}
+                  href={`/${locale}/`}
                   className="text-sm text-gray-500 hover:text-primary-600"
                 >
-                  {t("quickLinks")}
+                  {t("quickLinkValuation")}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href={`/${locale}/intelligence`}
+                  className="text-sm text-gray-500 hover:text-primary-600"
+                >
+                  {t("quickLinkArbitrage")}
                 </Link>
               </li>
             </ul>
