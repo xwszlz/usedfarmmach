@@ -42,7 +42,9 @@
     "myInquiries": "我的询盘",
     "sellEquipment": "发布设备",
     "intelligence": "市场情报",
-    "blog": "行业资讯"
+    "blog": "行业资讯",
+    "brands": "品牌馆",
+    "categories": "品类专区"
   },
   "home": {
     "heroTitle": "全球二手农机，一站交易",
@@ -56,17 +58,36 @@
     "hotEquipment": "热门设备",
     "hotEquipmentDesc": "精选优质二手农机，来自全球认证卖家",
     "viewAll": "查看全部",
-    "features": "平台优势",
-    "feature1Title": "AI智能估价",
-    "feature1Desc": "基于品牌、年份、工时等多维度精准估价",
-    "feature2Title": "跨境套利",
-    "feature2Desc": "实时中外价格对比，发现套利投资机会",
-    "feature3Title": "安全交易",
-    "feature3Desc": "第三方资金托管，交易安全有保障",
-    "feature4Title": "全球物流",
-    "feature4Desc": "海运、空运多种方案，门到门服务",
+    "features": "热门导航",
+    "feature1Title": "青储机专区",
+    "feature1Desc": "CLAAS Jaguar等主力青储机，搜索量最高的核心品类",
+    "feature2Title": "CLAAS品牌馆",
+    "feature2Desc": "德国克拉斯全系列品牌机型，品牌词搜索首选入口",
+    "feature3Title": "行业资讯",
+    "feature3Desc": "市场分析、价格指南、品牌评测，长尾关键词入口",
+    "feature4Title": "高价设备",
+    "feature4Desc": "套利空间最大的高端设备，吸引全球B2B大买家",
     "testimonialsTitle": "客户实拍反馈",
     "testimonialsDesc": "来自世界各地农机用户的真实使用场景"
+  },
+  "brandPage": {
+    "home": "首页",
+    "products": "设备市场",
+    "notFound": "未找到该品牌",
+    "backToProducts": "返回设备市场",
+    "originCountry": "原产国",
+    "productCount": "共 {count} 台设备在售",
+    "importedBrand": "进口品牌",
+    "noProducts": "该品牌暂无在售设备"
+  },
+  "categoryPage": {
+    "home": "首页",
+    "products": "设备市场",
+    "notFound": "未找到该品类",
+    "backToProducts": "返回设备市场",
+    "productCount": "共 {count} 台设备在售",
+    "subCategories": "子分类",
+    "noProducts": "该品类暂无在售设备"
   },
   "products": {
     "title": "设备市场",

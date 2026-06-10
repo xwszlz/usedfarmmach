@@ -52,7 +52,13 @@ async function deduplicateByTitle(importingArticles) {
   let deletedCount = 0;
   for (const [key, group] of Object.entries(groups)) {
     if (group.length > 1) {
-      group.sort((a, b) => b.publishedAt - a.publishedAt);
+      // 排序：publishedAt降序（最新的在前）；相同时slug更长的优先（-v2后缀视为新版本）
+      group.sort((a, b) => {
+        const timeDiff = b.publishedAt - a.publishedAt;
+        if (timeDiff !== 0) return timeDiff;
+        // publishedAt相同时，slug较长的（带-v2后缀）视为更新版本，排在前面
+        return (b.slug || '').length - (a.slug || '').length;
+      });
       for (let i = 1; i < group.length; i++) {
         const old = group[i];
         // 只删除数据库中真实存在的记录（不是新文章的占位）
@@ -85,6 +91,17 @@ async function main() {
   // 去重：删除同category+标题相似的旧文章
   console.log('\n[去重检查] 相同类别下标题高度相似的文章...');
   await deduplicateByTitle(articles);
+
+  // Slug冲突处理：如果要导入的slug已存在但没有被title去重覆盖，先删除旧文章再重新创建
+  // 防止数据库中残留在publishedAt相同时排序不稳定的旧版slug
+  console.log('\n[Slug冲突检查] 检查并清理冲突slug...');
+  for (const article of articles) {
+    const existing = await prisma.article.findUnique({ where: { slug: article.slug } });
+    if (existing) {
+      await prisma.article.delete({ where: { id: existing.id } });
+      console.log(`  CLEAN (slug冲突): ${article.slug}`);
+    }
+  }
 
   let successCount = 0;
   let skipCount = 0;
