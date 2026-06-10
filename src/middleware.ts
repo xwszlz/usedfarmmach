@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import createMiddleware from "next-intl/middleware";
 import { verifyToken } from "@/lib/auth";
 
-// next-intl 国际化中间件
+// next-intl 国际化中间件（自动检测浏览器语言）
 const intlMiddleware = createMiddleware({
   locales: ["zh", "en", "ru", "es", "pt"],
   defaultLocale: "zh",
   localePrefix: "always",
+  localeDetection: true, // 根据 Accept-Language 自动切换
 });
 
 // 需要登录的路径
