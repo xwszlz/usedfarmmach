@@ -4,7 +4,7 @@ import { verifyToken } from "@/lib/auth";
 
 // next-intl 国际化中间件（自动检测浏览器语言）
 const intlMiddleware = createMiddleware({
-  locales: ["zh", "en", "ru", "es", "pt"],
+  locales: ["zh", "en", "ru", "es", "pt", "ar", "fr", "hi"],
   defaultLocale: "zh",
   localePrefix: "always",
   localeDetection: true, // 根据 Accept-Language 自动切换
@@ -144,5 +144,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/(zh|en|ru|es|pt)/:path*", "/api/:path*"],
+  matcher: ["/", "/(zh|en|ru|es|pt|ar|fr|hi)/:path*", "/api/:path*"],
 };

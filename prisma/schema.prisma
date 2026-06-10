@@ -40,6 +40,9 @@ model Brand {
   nameRu        String @default("")
   nameEs        String @default("")
   namePt        String @default("")
+  nameAr        String @default("")
+  nameFr        String @default("")
+  nameHi        String @default("")
   originCountry String
   isImported    Boolean @default(false)
 
@@ -55,6 +58,9 @@ model Category {
   nameRu   String @default("")
   nameEs   String @default("")
   namePt   String @default("")
+  nameAr   String @default("")
+  nameFr   String @default("")
+  nameHi   String @default("")
   parentId String?
 
   parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
@@ -79,6 +85,11 @@ model Product {
   descriptionZh String?
   descriptionEn String?
   descriptionRu String?
+  descriptionEs String?
+  descriptionPt String?
+  descriptionAr String?
+  descriptionFr String?
+  descriptionHi String?
   descriptionEs String?
   descriptionPt String?
   aiGenerated   Boolean  @default(false)
@@ -253,16 +264,25 @@ model Article {
   titleRu       String?
   titleEs       String?
   titlePt       String?
+  titleAr       String?
+  titleFr       String?
+  titleHi       String?
   contentZh     String    @db.Text
   contentEn     String?   @db.Text
   contentRu     String?   @db.Text
   contentEs     String?   @db.Text
   contentPt     String?   @db.Text
+  contentAr     String?   @db.Text
+  contentFr     String?   @db.Text
+  contentHi     String?   @db.Text
   excerptZh     String?   @db.Text   // 摘要/简介
   excerptEn     String?   @db.Text
   excerptRu     String?   @db.Text
   excerptEs     String?   @db.Text
   excerptPt     String?   @db.Text
+  excerptAr     String?   @db.Text
+  excerptFr     String?   @db.Text
+  excerptHi     String?   @db.Text
   coverImage    String?              // 封面图URL
   status        String    @default("draft")  // draft, published, archived
   category      String?              // market-analysis, price-guide, brand-review, industry-news, buying-guide
@@ -271,6 +291,9 @@ model Article {
   tagsRu        String?   @db.Text   // 俄文标签: ["CLAAS","Кормоуборочный","Арбитраж"]
   tagsEs        String?   @db.Text
   tagsPt        String?   @db.Text
+  tagsAr        String?   @db.Text
+  tagsFr        String?   @db.Text
+  tagsHi        String?   @db.Text
   sourcePlatform String?             // 数据来源平台: agroline, machinerypete, tractorhouse, mascus, e-farm, internal
   sourceUrl     String?              // 原始数据来源URL
   metaTitle     String?              // SEO标题
@@ -296,22 +319,34 @@ model MarketIntel {
   regionRu        String?  // 地区（俄文）
   regionEs        String?  // 地区（西班牙语）
   regionPt        String?  // 地区（葡萄牙语）
+  regionAr        String?  // 地区（阿拉伯语）
+  regionFr        String?  // 地区（法语）
+  regionHi        String?  // 地区（印地语）
   tags            String   // JSON数组: ["tag1","tag2"] (中文)
   tagsEn          String?  @db.Text // 英文标签JSON
   tagsRu          String?  @db.Text // 俄文标签JSON
   tagsEs          String?  @db.Text // 西班牙语标签JSON
   tagsPt          String?  @db.Text // 葡萄牙语标签JSON
+  tagsAr          String?  @db.Text // 阿拉伯语标签JSON
+  tagsFr          String?  @db.Text // 法语标签JSON
+  tagsHi          String?  @db.Text // 印地语标签JSON
   text            String   // 摘要文本（中文）
   textEn          String?  // 摘要文本（英文）
   textRu          String?  // 摘要文本（俄文）
   textEs          String?  // 摘要文本（西班牙语）
   textPt          String?  // 摘要文本（葡萄牙语）
+  textAr          String?  // 摘要文本（阿拉伯语）
+  textFr          String?  // 摘要文本（法语）
+  textHi          String?  // 摘要文本（印地语）
   url             String?  // 链接
   detailedContent String?  // 展开后的Markdown内容（中文）
   detailedContentEn String? @db.Text // 展开后的Markdown内容（英文）
   detailedContentRu String? @db.Text // 展开后的Markdown内容（俄文）
   detailedContentEs String? @db.Text // 展开后的Markdown内容（西班牙语）
   detailedContentPt String? @db.Text // 展开后的Markdown内容（葡萄牙语）
+  detailedContentAr String? @db.Text // 展开后的Markdown内容（阿拉伯语）
+  detailedContentFr String? @db.Text // 展开后的Markdown内容（法语）
+  detailedContentHi String? @db.Text // 展开后的Markdown内容（印地语）
   dataSummary     String?  // JSON: [{"label":"...","value":"..."}]
   actionTips      String?  // JSON数组: ["tip1","tip2"]
   sortOrder       Int      @default(0)

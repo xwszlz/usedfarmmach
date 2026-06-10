@@ -6,7 +6,7 @@ export const siteConfig = {
   url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
   ogImage: "/images/og.png",
   defaultLocale: "zh" as const,
-  locales: ["zh", "en", "ru", "es", "pt"] as const,
+  locales: ["zh", "en", "ru", "es", "pt", "ar", "fr", "hi"] as const,
 };
 
 export const exchangeRate = {

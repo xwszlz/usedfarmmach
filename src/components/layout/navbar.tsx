@@ -283,6 +283,9 @@ function LanguageSwitcher({ locale }: { locale: string }) {
     { code: "ru", label: "Русский", flag: "🇷🇺" },
     { code: "es", label: "Español", flag: "🇪🇸" },
     { code: "pt", label: "Português", flag: "🇧🇷" },
+    { code: "ar", label: "العربية", flag: "🇸🇦" },
+    { code: "fr", label: "Français", flag: "🇫🇷" },
+    { code: "hi", label: "हिन्दी", flag: "🇮🇳" },
   ];
 
   const current = languages.find((l) => l.code === locale) || languages[0];

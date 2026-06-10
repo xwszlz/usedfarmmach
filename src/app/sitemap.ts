@@ -5,7 +5,7 @@ import { PrismaClient } from "@prisma/client";
 export const revalidate = 86400;
 
 const BASE_URL = "https://usedfarmmach.com";
-const locales = ["zh", "en", "ru", "es", "pt"];
+const locales = ["zh", "en", "ru", "es", "pt", "ar", "fr", "hi"];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const prisma = new PrismaClient();
