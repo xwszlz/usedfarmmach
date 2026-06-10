@@ -90,8 +90,6 @@ model Product {
   descriptionAr String?
   descriptionFr String?
   descriptionHi String?
-  descriptionEs String?
-  descriptionPt String?
   aiGenerated   Boolean  @default(false)
   status        String   @default("active") // active, sold, draft, archived
   createdAt     DateTime @default(now())
