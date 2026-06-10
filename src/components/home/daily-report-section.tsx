@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { TrendingUp, ArrowRight, Calendar, BarChart3, Globe } from "lucide-react";
 import { getLocalizedData } from "@/config/daily-report-home";
@@ -53,6 +54,21 @@ export function DailyReportSection({ locale }: DailyReportSectionProps) {
   const l = LABELS[locale] || LABELS.zh;
   const data = getLocalizedData(locale);
   const reportUrl = `/${locale}/arbitrage-top`;
+  const intelUrl = `/${locale}/intelligence`;
+
+  const [activeIntel, setActiveIntel] = useState(0);
+  const intelItems = data.marketIntel;
+
+  const nextIntel = useCallback(() => {
+    setActiveIntel((prev) => (prev + 1) % intelItems.length);
+  }, [intelItems.length]);
+
+  // Auto-rotate market intel every 4 seconds
+  useEffect(() => {
+    if (intelItems.length <= 1) return;
+    const timer = setInterval(nextIntel, 4000);
+    return () => clearInterval(timer);
+  }, [nextIntel, intelItems.length]);
 
   const formatPrice = (price: number) => {
     return `¥${Math.round(price / 10000)}万`;
@@ -139,27 +155,51 @@ export function DailyReportSection({ locale }: DailyReportSectionProps) {
             </div>
           </div>
 
-          {/* 市场情报 */}
+          {/* 市场情报 - 自动滚动 */}
           <div className="rounded-xl border bg-white p-5 shadow-sm">
             <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
               <Globe className="h-4 w-4 text-blue-600" />
               {l.marketIntel}
             </h3>
-            <div className="space-y-3">
-              {data.marketIntel.map((item, idx) => (
-                <Link key={idx} href={item.url} target={`_self`} className="flex items-start gap-2 rounded-lg bg-gray-50 p-3 transition-colors hover:bg-blue-50 hover:border hover:border-blue-100">
-                  <span className="text-lg flex-shrink-0">{item.icon}</span>
+            <div className="relative overflow-hidden rounded-lg bg-gray-50" style={{ minHeight: "80px" }}>
+              {intelItems.map((item, idx) => (
+                <Link
+                  key={idx}
+                  href={intelUrl}
+                  className={`flex items-start gap-2 rounded-lg p-3 transition-all duration-500 ease-in-out absolute inset-0 ${
+                    idx === activeIntel
+                      ? "opacity-100 translate-y-0 pointer-events-auto"
+                      : "opacity-0 translate-y-4 pointer-events-none"
+                  }`}
+                >
+                  <span className="text-lg flex-shrink-0 mt-0.5">{item.icon}</span>
                   <p className="text-xs text-gray-600 leading-relaxed">{item.text}</p>
                 </Link>
               ))}
             </div>
-            <Link
-              href={reportUrl}
-              className="mt-4 flex w-full items-center justify-center gap-1 rounded-lg border border-accent-200 bg-accent-50 py-2 text-sm font-medium text-accent-600 hover:bg-accent-100 sm:hidden"
-            >
-              {l.viewReport}
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+            {/* 指示器 */}
+            {intelItems.length > 1 && (
+              <div className="mt-2 flex items-center justify-between">
+                <div className="flex gap-1">
+                  {intelItems.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setActiveIntel(idx)}
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                        idx === activeIntel ? "w-4 bg-blue-600" : "w-1.5 bg-gray-300 hover:bg-gray-400"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <Link
+                  href={intelUrl}
+                  className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-0.5"
+                >
+                  {locale === "zh" ? "查看全部" : locale === "ru" ? "Все" : "View all"}
+                  <ArrowRight className="h-3 w-3" />
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </div>
