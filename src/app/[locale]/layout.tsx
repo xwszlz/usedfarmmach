@@ -5,7 +5,7 @@ import Script from "next/script";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 
-const locales = ["zh", "en", "ru"];
+const locales = ["zh", "en", "ru", "es", "pt"];
 
 export default async function LocaleLayout({
   children,

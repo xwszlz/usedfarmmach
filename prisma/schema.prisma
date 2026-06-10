@@ -38,6 +38,8 @@ model Brand {
   nameZh        String
   nameEn        String
   nameRu        String @default("")
+  nameEs        String @default("")
+  namePt        String @default("")
   originCountry String
   isImported    Boolean @default(false)
 
@@ -51,6 +53,8 @@ model Category {
   nameZh   String
   nameEn   String
   nameRu   String @default("")
+  nameEs   String @default("")
+  namePt   String @default("")
   parentId String?
 
   parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
@@ -75,6 +79,8 @@ model Product {
   descriptionZh String?
   descriptionEn String?
   descriptionRu String?
+  descriptionEs String?
+  descriptionPt String?
   aiGenerated   Boolean  @default(false)
   status        String   @default("active") // active, sold, draft, archived
   createdAt     DateTime @default(now())
@@ -245,18 +251,26 @@ model Article {
   titleZh       String
   titleEn       String?
   titleRu       String?
+  titleEs       String?
+  titlePt       String?
   contentZh     String    @db.Text
   contentEn     String?   @db.Text
   contentRu     String?   @db.Text
+  contentEs     String?   @db.Text
+  contentPt     String?   @db.Text
   excerptZh     String?   @db.Text   // 摘要/简介
   excerptEn     String?   @db.Text
   excerptRu     String?   @db.Text
+  excerptEs     String?   @db.Text
+  excerptPt     String?   @db.Text
   coverImage    String?              // 封面图URL
   status        String    @default("draft")  // draft, published, archived
   category      String?              // market-analysis, price-guide, brand-review, industry-news, buying-guide
   tags          String?   @db.Text   // JSON数组字符串 (中文) ["CLAAS","青储机","套利"]
   tagsEn        String?   @db.Text   // 英文标签: ["CLAAS","Forage Harvester","Arbitrage"]
   tagsRu        String?   @db.Text   // 俄文标签: ["CLAAS","Кормоуборочный","Арбитраж"]
+  tagsEs        String?   @db.Text
+  tagsPt        String?   @db.Text
   sourcePlatform String?             // 数据来源平台: agroline, machinerypete, tractorhouse, mascus, e-farm, internal
   sourceUrl     String?              // 原始数据来源URL
   metaTitle     String?              // SEO标题
@@ -280,16 +294,24 @@ model MarketIntel {
   region          String   // 地区（中文）
   regionEn        String?  // 地区（英文）
   regionRu        String?  // 地区（俄文）
+  regionEs        String?  // 地区（西班牙语）
+  regionPt        String?  // 地区（葡萄牙语）
   tags            String   // JSON数组: ["tag1","tag2"] (中文)
   tagsEn          String?  @db.Text // 英文标签JSON
   tagsRu          String?  @db.Text // 俄文标签JSON
+  tagsEs          String?  @db.Text // 西班牙语标签JSON
+  tagsPt          String?  @db.Text // 葡萄牙语标签JSON
   text            String   // 摘要文本（中文）
   textEn          String?  // 摘要文本（英文）
   textRu          String?  // 摘要文本（俄文）
+  textEs          String?  // 摘要文本（西班牙语）
+  textPt          String?  // 摘要文本（葡萄牙语）
   url             String?  // 链接
   detailedContent String?  // 展开后的Markdown内容（中文）
   detailedContentEn String? @db.Text // 展开后的Markdown内容（英文）
   detailedContentRu String? @db.Text // 展开后的Markdown内容（俄文）
+  detailedContentEs String? @db.Text // 展开后的Markdown内容（西班牙语）
+  detailedContentPt String? @db.Text // 展开后的Markdown内容（葡萄牙语）
   dataSummary     String?  // JSON: [{"label":"...","value":"..."}]
   actionTips      String?  // JSON数组: ["tip1","tip2"]
   sortOrder       Int      @default(0)

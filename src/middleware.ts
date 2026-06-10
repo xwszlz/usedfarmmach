@@ -4,7 +4,7 @@ import { verifyToken } from "@/lib/auth";
 
 // next-intl 国际化中间件
 const intlMiddleware = createMiddleware({
-  locales: ["zh", "en", "ru"],
+  locales: ["zh", "en", "ru", "es", "pt"],
   defaultLocale: "zh",
   localePrefix: "always",
 });
@@ -143,5 +143,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/(zh|en|ru)/:path*", "/api/:path*"],
+  matcher: ["/", "/(zh|en|ru|es|pt)/:path*", "/api/:path*"],
 };
