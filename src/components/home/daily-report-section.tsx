@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { TrendingUp, ArrowRight, Calendar, BarChart3, Globe } from "lucide-react";
+import { TrendingUp, ArrowRight, Calendar, BarChart3, Globe, Loader2 } from "lucide-react";
 import { getLocalizedData } from "@/config/daily-report-home";
 
 const LABELS: Record<string, {
@@ -57,7 +57,26 @@ export function DailyReportSection({ locale }: DailyReportSectionProps) {
   const intelUrl = `/${locale}/intelligence`;
 
   const [activeIntel, setActiveIntel] = useState(0);
-  const intelItems = data.marketIntel;
+  const [liveIntel, setLiveIntel] = useState<{ icon: string; text: string }[] | null>(null);
+  const fallbackRef = useRef(data.marketIntel.map((m) => ({ icon: m.icon, text: m.text })));
+
+  // 从 API 拉取市场情报前3条（与情报主页同源）
+  useEffect(() => {
+    fetch(`/api/intelligence?locale=${locale}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success && d.data?.length > 0) {
+          const top3 = d.data.slice(0, 3).map((item: any) => ({
+            icon: item.icon,
+            text: item.text,
+          }));
+          setLiveIntel(top3);
+        }
+      })
+      .catch(() => setLiveIntel(null));
+  }, [locale]);
+
+  const intelItems = liveIntel ?? fallbackRef.current;
 
   const nextIntel = useCallback(() => {
     setActiveIntel((prev) => (prev + 1) % intelItems.length);
