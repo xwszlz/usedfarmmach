@@ -1,15 +1,14 @@
 import type { Metadata } from 'next';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/db';
 import { generatePageMetadata } from '@/lib/seo-metadata';
 import { BreadcrumbStructuredData, ItemListStructuredData } from '@/components/seo/structured-data';
 import BlogListClient from './BlogListClient';
 
-const prisma = new PrismaClient();
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
 
 interface Props {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ category?: string; page?: string }>;
+  searchParams: { category?: string; page?: string };
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -19,7 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function BlogPage({ params, searchParams }: Props) {
   const { locale } = await params;
-  const sp = await searchParams;
+  const sp = searchParams;
 
   // Server-side fetch: 搜索引擎可直接看到文章列表
   const where: any = { status: 'published' };
