@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { PrismaClient } from '@prisma/client';
 import BlogDetailClient from './BlogDetailClient';
+import { getHreflangLanguages } from "@/components/seo/hreflang-head";
 
 const prisma = new PrismaClient();
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
@@ -31,6 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     keywords: article.keywords || '',
     alternates: {
       canonical: `${BASE_URL}/${locale}/blog/${slug}`,
+      languages: getHreflangLanguages(`/blog/${slug}`),
     },
     openGraph: {
       title: `${title} | ${brand}`,

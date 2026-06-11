@@ -4,19 +4,13 @@ import ArbitrageCalculatorClient from './ArbitrageCalculatorClient';
 import { getTranslations } from 'next-intl/server';
 import { generatePageMetadata } from "@/lib/seo-metadata";
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
-
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  return generatePageMetadata("arbitrageCalculator", locale, {
-    alternates: {
-      canonical: `${BASE_URL}/${locale}/arbitrage-calculator`,
-    },
-  });
+  return generatePageMetadata("arbitrageCalculator", locale, "/arbitrage-calculator");
 }
 
 export default async function ArbitrageCalculatorPage() {

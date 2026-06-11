@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import CategoryClientPage from "./CategoryClient";
+import { getHreflangLanguages } from "@/components/seo/hreflang-head";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
 
@@ -60,6 +61,7 @@ export async function generateMetadata({
     description: descMap[locale] || descMap["en"],
     alternates: {
       canonical: `${BASE_URL}/${locale}/category/${slug}`,
+      languages: getHreflangLanguages(`/category/${slug}`),
     },
     openGraph: {
       title: titleMap[locale] || titleMap["en"],

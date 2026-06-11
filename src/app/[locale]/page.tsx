@@ -19,10 +19,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  return generatePageMetadata("home", locale, {
-    alternates: {
-      canonical: `${BASE_URL}/${locale}`,
-    },
+  return generatePageMetadata("home", locale, "", {
     openGraph: {
       images: [{ url: `${BASE_URL}/images/og.png`, width: 1200, height: 630 }],
     },

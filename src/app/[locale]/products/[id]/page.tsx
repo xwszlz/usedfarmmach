@@ -16,6 +16,7 @@ import { QuickContact } from "@/components/product/quick-contact";
 import { BuyIntentButton } from "@/components/product/buy-intent-button";
 import { ValuationCard } from "@/components/valuation/valuation-card";
 import { DAILY_REPORT_RANKING } from "@/config/daily-report-ranking";
+import { getHreflangLanguages } from "@/components/seo/hreflang-head";
 
 export const revalidate = 300;
 
@@ -76,6 +77,7 @@ export async function generateMetadata({
     description: descMap[locale] || descMap["en"],
     alternates: {
       canonical: `${BASE_URL}/${locale}/products/${id}`,
+      languages: getHreflangLanguages(`/products/${id}`),
     },
     openGraph: {
       title: titleMap[locale] || titleMap["en"],

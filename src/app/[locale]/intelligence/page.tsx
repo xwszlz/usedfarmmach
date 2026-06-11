@@ -3,19 +3,13 @@ import { setRequestLocale } from "next-intl/server";
 import { generatePageMetadata } from "@/lib/seo-metadata";
 import IntelligencePageClient from "./page-client";
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
-
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  return generatePageMetadata("intelligence", locale, {
-    alternates: {
-      canonical: `${BASE_URL}/${locale}/intelligence`,
-    },
-  });
+  return generatePageMetadata("intelligence", locale, "/intelligence");
 }
 
 export default async function IntelligencePage({

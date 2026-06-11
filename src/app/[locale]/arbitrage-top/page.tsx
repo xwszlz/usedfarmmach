@@ -4,19 +4,13 @@ import ArbitrageTopClient from './ArbitrageTopClient';
 import { getTranslations } from 'next-intl/server';
 import { generatePageMetadata } from "@/lib/seo-metadata";
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
-
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  return generatePageMetadata("arbitrageTop", locale, {
-    alternates: {
-      canonical: `${BASE_URL}/${locale}/arbitrage-top`,
-    },
-  });
+  return generatePageMetadata("arbitrageTop", locale, "/arbitrage-top");
 }
 
 interface Params {

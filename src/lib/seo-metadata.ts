@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { siteConfig } from "@/config/site";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
 
@@ -278,6 +277,23 @@ const localizedMeta: Record<string, Record<string, { title: string; description:
   },
 };
 
+export const ALL_LOCALES = ["zh", "en", "ru", "es", "pt", "ar", "fr", "hi"] as const;
+export type Locale = (typeof ALL_LOCALES)[number];
+
+/**
+ * Build locale-aware hreflang alternates for a given page path.
+ * Example: buildHreflang("/products") returns:
+ *   { zh: ".../zh/products", en: ".../en/products", ..., "x-default": ".../en/products" }
+ */
+export function buildHreflang(pagePath: string): Record<string, string> {
+  const path = pagePath.startsWith("/") ? pagePath : `/${pagePath}`;
+  const alternates: Record<string, string> = { "x-default": `${BASE_URL}/en${path}` };
+  for (const lang of ALL_LOCALES) {
+    alternates[lang] = `${BASE_URL}/${lang}${path}`;
+  }
+  return alternates;
+}
+
 const fallbackLang = ["en", "ru", "es", "pt", "ar", "fr", "hi"];
 
 function getMeta(
@@ -292,22 +308,19 @@ function getMeta(
 export function generatePageMetadata(
   page: keyof typeof localizedMeta,
   locale: string,
+  pagePath: string = "",
   overrides?: Partial<Metadata>
 ): Metadata {
   const meta = getMeta(page, locale);
-  const localePath = locale === "zh" ? "/zh" : `/${locale}`;
-
-  const alternates: Record<string, string> = { "x-default": `${BASE_URL}/en` };
-  for (const lang of siteConfig.locales) {
-    alternates[lang] = `${BASE_URL}/${lang}`;
-  }
+  const path = pagePath || "";
+  const localePath = locale === "zh" ? `/zh${path}` : `/${locale}${path}`;
 
   return {
     title: meta.title,
     description: meta.description,
     alternates: {
       canonical: `${BASE_URL}${localePath}`,
-      languages: alternates,
+      languages: buildHreflang(path),
     },
     openGraph: {
       title: meta.title,
