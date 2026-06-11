@@ -1,141 +1,83 @@
-"use client";
+import type { Metadata } from "next";
+import BrandClientPage from "./BrandClient";
 
-import { useState, useEffect } from "react";
-import { useTranslations, useLocale } from "next-intl";
-import { useParams } from "next/navigation";
-import Link from "next/link";
-import { ProductGrid } from "@/components/product/product-grid";
-import { ArrowLeft, Globe, Tractor } from "lucide-react";
-import type { Product, Brand as BrandType } from "@/types";
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
 
-interface BrandWithSlug extends BrandType {
-  slug: string;
-  productCount: number;
-  nameRu?: string;
+async function getBrandData(slug: string) {
+  try {
+    const apiUrl = `${BASE_URL}/api/brands?slug=${encodeURIComponent(slug)}`;
+    const res = await fetch(apiUrl, { next: { revalidate: 300 } });
+    const json = await res.json();
+    return json.success ? json.data : null;
+  } catch {
+    return null;
+  }
 }
 
-interface BrandPageData {
-  brand: BrandWithSlug;
-  products: Product[];
-}
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string; slug: string }>;
+}): Promise<Metadata> {
+  const { locale, slug } = await params;
+  const data = await getBrandData(slug);
 
-export default function BrandPage() {
-  const t = useTranslations("brandPage");
-  const locale = useLocale();
-  const params = useParams();
-  const slug = params.slug as string;
+  if (!data?.brand) {
+    return { title: "品牌未找到" };
+  }
 
-  const [data, setData] = useState<BrandPageData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    async function fetchBrand() {
-      try {
-        const res = await fetch(`/api/brands?slug=${encodeURIComponent(slug)}`);
-        const json = await res.json();
-        if (json.success) {
-          setData(json.data);
-        } else {
-          setError(json.error || "Brand not found");
-        }
-      } catch {
-        setError("Network error");
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchBrand();
-  }, [slug]);
-
-  const brandName = data?.brand
-    ? locale === "zh"
+  const brandName =
+    locale === "zh"
       ? data.brand.nameZh
-      : locale === "ru" && (data.brand as any).nameRu
-        ? (data.brand as any).nameRu
-        : data.brand.nameEn
-    : "";
+      : locale === "ru" && data.brand.nameRu
+        ? data.brand.nameRu
+        : data.brand.nameEn;
 
-  if (loading) {
-    return (
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 w-64 rounded bg-gray-200" />
-          <div className="h-4 w-96 rounded bg-gray-200" />
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {[1, 2, 3, 4].map(i => (
-              <div key={i} className="h-64 rounded-lg bg-gray-200" />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const titleMap: Record<string, string> = {
+    zh: `${brandName}二手农机_${brandName}设备价格_品牌馆_神雕农机`,
+    en: `${brandName} Used Farm Machinery | ${brandName} Equipment & Prices | AgriTrade`,
+    ru: `${brandName} Подержанная сельхозтехника | Цены | AgriTrade`,
+    es: `${brandName} Maquinaria Agrícola Usada | Precios | AgriTrade`,
+    pt: `${brandName} Máquinas Agrícolas Usadas | Preços | AgriTrade`,
+    ar: `${brandName} آلات زراعية مستعملة | الأسعار | AgriTrade`,
+    fr: `${brandName} Machines Agricoles d'Occasion | Prix | AgriTrade`,
+    hi: `${brandName} प्रयुक्त कृषि मशीनरी | मूल्य | AgriTrade`,
+  };
 
-  if (error || !data) {
-    return (
-      <div className="mx-auto max-w-7xl px-4 py-16 text-center sm:px-6 lg:px-8">
-        <Tractor className="mx-auto h-16 w-16 text-gray-300" />
-        <h2 className="mt-4 text-xl font-semibold text-gray-900">
-          {t("notFound")}
-        </h2>
-        <Link
-          href={`/${locale}/products`}
-          className="mt-4 inline-flex items-center text-primary-600 hover:text-primary-700"
-        >
-          <ArrowLeft className="mr-1 h-4 w-4" />
-          {t("backToProducts")}
-        </Link>
-      </div>
-    );
-  }
+  const descMap: Record<string, string> = {
+    zh: `浏览${brandName}二手农机设备：${data.brand.productCount || ''}台在售。神雕农机全球平台，AI智能估价，跨境价格对比，真实套利分析。`,
+    en: `Browse ${brandName} used farm machinery: ${data.brand.productCount || ''} units available. AgriTrade — AI valuation, cross-border price comparison & arbitrage analysis.`,
+    ru: `Просмотр подержанной техники ${brandName}: ${data.brand.productCount || ''} ед. в наличии. AgriTrade — AI оценка, сравнение цен и арбитражный анализ.`,
+    es: `Explore maquinaria agrícola usada ${brandName}: ${data.brand.productCount || ''} unidades. AgriTrade — valoración IA y análisis de arbitraje.`,
+    pt: `Explore máquinas agrícolas usadas ${brandName}: ${data.brand.productCount || ''} unidades. AgriTrade — avaliação IA e análise de arbitragem.`,
+    ar: `تصفح آلات ${brandName} الزراعية المستعملة: ${data.brand.productCount || ''} وحدة متاحة. AgriTrade — تقييم بالذكاء الاصطناعي وتحليل المراجحة.`,
+    fr: `Parcourez les machines agricoles d'occasion ${brandName}: ${data.brand.productCount || ''} unités. AgriTrade — évaluation IA et analyse d'arbitrage.`,
+    hi: `${brandName} प्रयुक्त कृषि मशीनरी ब्राउज़ करें: ${data.brand.productCount || ''} उपलब्ध। AgriTrade — AI मूल्यांकन और आर्बिट्राज विश्लेषण।`,
+  };
 
-  return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      {/* Breadcrumb */}
-      <nav className="mb-6 flex items-center gap-2 text-sm text-gray-500">
-        <Link href={`/${locale}`} className="hover:text-primary-600">
-          {t("home")}
-        </Link>
-        <span>/</span>
-        <Link href={`/${locale}/products`} className="hover:text-primary-600">
-          {t("products")}
-        </Link>
-        <span>/</span>
-        <span className="text-gray-900">{brandName}</span>
-      </nav>
+  return {
+    title: titleMap[locale] || titleMap["en"],
+    description: descMap[locale] || descMap["en"],
+    alternates: {
+      canonical: `${BASE_URL}/${locale}/brand/${slug}`,
+    },
+    openGraph: {
+      title: titleMap[locale] || titleMap["en"],
+      description: descMap[locale] || descMap["en"],
+      type: "website",
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+  };
+}
 
-      {/* Brand Header */}
-      <div className="mb-8 rounded-xl bg-gradient-to-r from-primary-600 to-primary-700 p-8 text-white">
-        <div className="flex items-center gap-4">
-          <div className="rounded-xl bg-white/20 p-4 backdrop-blur-sm">
-            <Globe className="h-8 w-8" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold">{brandName}</h1>
-            <p className="mt-1 text-primary-100">
-              {data.brand.originCountry && (
-                <span>{t("originCountry")}: {data.brand.originCountry} · </span>
-              )}
-              {t("productCount", { count: data.brand.productCount })}
-            </p>
-          </div>
-        </div>
-        {data.brand.isImported && (
-          <span className="mt-3 inline-block rounded-full bg-white/20 px-3 py-1 text-sm font-medium backdrop-blur-sm">
-            ✅ {t("importedBrand")}
-          </span>
-        )}
-      </div>
-
-      {/* Products */}
-      {data.products.length > 0 ? (
-        <ProductGrid products={data.products} locale={locale} />
-      ) : (
-        <div className="py-16 text-center text-gray-500">
-          {t("noProducts")}
-        </div>
-      )}
-    </div>
-  );
+export default async function BrandPage({
+  params,
+}: {
+  params: Promise<{ locale: string; slug: string }>;
+}) {
+  const { locale, slug } = await params;
+  return <BrandClientPage initialLocale={locale} initialSlug={slug} />;
 }

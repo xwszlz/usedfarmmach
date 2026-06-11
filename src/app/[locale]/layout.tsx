@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { notFound } from "next/navigation";
@@ -5,7 +6,21 @@ import Script from "next/script";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 
-const locales = ["zh", "en", "ru", "es", "pt", "ar", "fr", "hi"];
+const locales = ["zh", "en", "ru", "es", "pt", "ar", "fr", "hi"] as const;
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+    openGraph: {
+      locale: locale === "zh" ? "zh_CN" : locale,
+    },
+  };
+}
 
 export default async function LocaleLayout({
   children,
@@ -16,7 +31,7 @@ export default async function LocaleLayout({
 }) {
   const { locale } = await params;
 
-  if (!locales.includes(locale)) {
+  if (!(locales as readonly string[]).includes(locale)) {
     notFound();
   }
 

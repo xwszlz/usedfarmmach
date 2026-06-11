@@ -1,6 +1,8 @@
-import { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+import type { Metadata } from 'next';
+import { generatePageMetadata } from '@/lib/seo-metadata';
 import BlogListClient from './BlogListClient';
+
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
 
 interface Props {
   params: Promise<{ locale: string }>;
@@ -9,12 +11,11 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'blog' });
-  const brand = locale === 'ru' ? 'UsedFarmMach' : locale === 'en' ? 'UsedFarmMach' : '神雕农机';
-  return {
-    title: `${t('title')} | ${brand} | UsedFarmMach`,
-    description: t('subtitle'),
-  };
+  return generatePageMetadata("blog", locale, {
+    alternates: {
+      canonical: `${BASE_URL}/${locale}/blog`,
+    },
+  });
 }
 
 export default async function BlogPage({ params, searchParams }: Props) {

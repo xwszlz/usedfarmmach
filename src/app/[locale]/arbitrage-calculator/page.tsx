@@ -1,21 +1,31 @@
+import type { Metadata } from "next";
 import { Suspense } from 'react';
 import ArbitrageCalculatorClient from './ArbitrageCalculatorClient';
 import { getTranslations } from 'next-intl/server';
-import { Metadata } from 'next';
+import { generatePageMetadata } from "@/lib/seo-metadata";
 
-export const metadata: Metadata = {
-  title: '跨境套利计算器',
-  description: '计算二手农机的跨境套利机会，考虑运输成本、关税、保险等费用，帮助您发现最佳投资机会。',
-};
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return generatePageMetadata("arbitrageCalculator", locale, {
+    alternates: {
+      canonical: `${BASE_URL}/${locale}/arbitrage-calculator`,
+    },
+  });
+}
 
 export default async function ArbitrageCalculatorPage() {
   const t = await getTranslations('arbitrageCalculator');
-  
+
   return (
     <main className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto">
-          {/* 页面标题和描述 */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-4">
               {t('title')}
@@ -25,7 +35,6 @@ export default async function ArbitrageCalculatorPage() {
             </p>
           </div>
 
-          {/* 如何使用说明 */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
             <h2 className="text-lg font-semibold text-blue-800 mb-2">
               {t('howToUseTitle')}
@@ -38,7 +47,6 @@ export default async function ArbitrageCalculatorPage() {
             </ol>
           </div>
 
-          {/* 套利计算器客户端组件 */}
           <Suspense fallback={
             <div className="border rounded-lg p-8 bg-white shadow-sm">
               <div className="animate-pulse">

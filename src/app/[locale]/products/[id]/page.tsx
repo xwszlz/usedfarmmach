@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getTranslations } from "next-intl/server";
@@ -17,6 +18,77 @@ import { ValuationCard } from "@/components/valuation/valuation-card";
 import { DAILY_REPORT_RANKING } from "@/config/daily-report-ranking";
 
 export const revalidate = 300;
+
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string; id: string }>;
+}): Promise<Metadata> {
+  const { locale, id } = await params;
+
+  const product = await prisma.product.findUnique({
+    where: { id },
+    select: {
+      modelName: true,
+      year: true,
+      brand: { select: { nameZh: true, nameEn: true } },
+      category: { select: { nameZh: true, nameEn: true } },
+      images: { select: { url: true }, orderBy: { sortOrder: "asc" }, take: 1 },
+      descriptionZh: true,
+      descriptionEn: true,
+    },
+  });
+
+  if (!product) {
+    return { title: "产品未找到" };
+  }
+
+  const brandName = locale === "zh" ? product.brand.nameZh : product.brand.nameEn;
+  const categoryName = locale === "zh" ? product.category.nameZh : product.category.nameEn;
+  const imgUrl = product.images[0] ? getImageUrl(product.images[0].url) : null;
+
+  const titleMap: Record<string, string> = {
+    zh: `${brandName} ${product.modelName} ${product.year}款二手${categoryName}_价格_神雕农机`,
+    en: `${brandName} ${product.modelName} ${product.year} Used ${categoryName} | Price & Specs | AgriTrade`,
+    ru: `${brandName} ${product.modelName} ${product.year} Подержанный ${categoryName} | Цена | AgriTrade`,
+    es: `${brandName} ${product.modelName} ${product.year} ${categoryName} Usado | Precio | AgriTrade`,
+    pt: `${brandName} ${product.modelName} ${product.year} ${categoryName} Usado | Preço | AgriTrade`,
+    ar: `${brandName} ${product.modelName} ${product.year} ${categoryName} مستعمل | السعر | AgriTrade`,
+    fr: `${brandName} ${product.modelName} ${product.year} ${categoryName} d'Occasion | Prix | AgriTrade`,
+    hi: `${brandName} ${product.modelName} ${product.year} प्रयुक्त ${categoryName} | मूल्य | AgriTrade`,
+  };
+
+  const descMap: Record<string, string> = {
+    zh: `${brandName} ${product.modelName} ${product.year}款二手${categoryName}。神雕农机全球平台，AI智能估价，真实跨境价格对比，中美汇率价差分析。`,
+    en: `${brandName} ${product.modelName} ${product.year} used ${categoryName}. Browse on AgriTrade — AI valuation, cross-border price comparison, real arbitrage analysis.`,
+    ru: `${brandName} ${product.modelName} ${product.year} подержанный ${categoryName}. AgriTrade — AI оценка, сравнение цен, арбитражный анализ.`,
+    es: `${brandName} ${product.modelName} ${product.year} ${categoryName} usado. Explore en AgriTrade — valoración IA, comparación de precios, análisis de arbitraje.`,
+    pt: `${brandName} ${product.modelName} ${product.year} ${categoryName} usado. AgriTrade — avaliação IA, comparação de preços, análise de arbitragem.`,
+    ar: `${brandName} ${product.modelName} ${product.year} ${categoryName} مستعمل. AgriTrade — تقييم بالذكاء الاصطناعي، مقارنة أسعار، تحليل المراجحة.`,
+    fr: `${brandName} ${product.modelName} ${product.year} ${categoryName} d'occasion. AgriTrade — évaluation IA, comparaison de prix, analyse d'arbitrage.`,
+    hi: `${brandName} ${product.modelName} ${product.year} प्रयुक्त ${categoryName}। AgriTrade — AI मूल्यांकन, मूल्य तुलना, आर्बिट्राज विश्लेषण।`,
+  };
+
+  return {
+    title: titleMap[locale] || titleMap["en"],
+    description: descMap[locale] || descMap["en"],
+    alternates: {
+      canonical: `${BASE_URL}/${locale}/products/${id}`,
+    },
+    openGraph: {
+      title: titleMap[locale] || titleMap["en"],
+      description: descMap[locale] || descMap["en"],
+      type: "website",
+      ...(imgUrl ? { images: [{ url: imgUrl, width: 800, height: 600 }] } : {}),
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+  };
+}
 
 export async function generateStaticParams() {
   const topIds = DAILY_REPORT_RANKING.slice(0, 20).map((p) => p.id);

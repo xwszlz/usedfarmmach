@@ -1,160 +1,83 @@
-"use client";
+import type { Metadata } from "next";
+import CategoryClientPage from "./CategoryClient";
 
-import { useState, useEffect } from "react";
-import { useTranslations, useLocale } from "next-intl";
-import { useParams } from "next/navigation";
-import Link from "next/link";
-import { ProductGrid } from "@/components/product/product-grid";
-import { ArrowLeft, Wheat, ChevronRight } from "lucide-react";
-import type { Product, Category as CategoryType } from "@/types";
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
 
-interface CategoryWithSlug extends CategoryType {
-  slug: string;
-  productCount: number;
-  nameRu?: string;
+async function getCategoryData(slug: string) {
+  try {
+    const apiUrl = `${BASE_URL}/api/categories?slug=${encodeURIComponent(slug)}`;
+    const res = await fetch(apiUrl, { next: { revalidate: 300 } });
+    const json = await res.json();
+    return json.success ? json.data : null;
+  } catch {
+    return null;
+  }
 }
 
-interface CategoryPageData {
-  category: CategoryWithSlug;
-  children: CategoryWithSlug[];
-  products: Product[];
-}
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string; slug: string }>;
+}): Promise<Metadata> {
+  const { locale, slug } = await params;
+  const data = await getCategoryData(slug);
 
-export default function CategoryPage() {
-  const t = useTranslations("categoryPage");
-  const locale = useLocale();
-  const params = useParams();
-  const slug = params.slug as string;
+  if (!data?.category) {
+    return { title: "品类未找到" };
+  }
 
-  const [data, setData] = useState<CategoryPageData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    async function fetchCategory() {
-      try {
-        const res = await fetch(`/api/categories?slug=${encodeURIComponent(slug)}`);
-        const json = await res.json();
-        if (json.success) {
-          setData(json.data);
-        } else {
-          setError(json.error || "Category not found");
-        }
-      } catch {
-        setError("Network error");
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchCategory();
-  }, [slug]);
-
-  const categoryName = data?.category
-    ? locale === "zh"
+  const categoryName =
+    locale === "zh"
       ? data.category.nameZh
-      : locale === "ru" && (data.category as any).nameRu
-        ? (data.category as any).nameRu
-        : data.category.nameEn
-    : "";
+      : locale === "ru" && data.category.nameRu
+        ? data.category.nameRu
+        : data.category.nameEn;
 
-  if (loading) {
-    return (
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 w-64 rounded bg-gray-200" />
-          <div className="h-4 w-96 rounded bg-gray-200" />
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {[1, 2, 3, 4].map(i => (
-              <div key={i} className="h-64 rounded-lg bg-gray-200" />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const titleMap: Record<string, string> = {
+    zh: `二手${categoryName}_${categoryName}设备价格_品类专区_神雕农机`,
+    en: `Used ${categoryName} Equipment | ${categoryName} Prices & Specs | AgriTrade`,
+    ru: `Подержанные ${categoryName} | Цены и характеристики | AgriTrade`,
+    es: `${categoryName} Usados | Precios y Especificaciones | AgriTrade`,
+    pt: `${categoryName} Usados | Preços e Especificações | AgriTrade`,
+    ar: `${categoryName} مستعملة | الأسعار والمواصفات | AgriTrade`,
+    fr: `${categoryName} d'Occasion | Prix et Spécifications | AgriTrade`,
+    hi: `प्रयुक्त ${categoryName} | मूल्य और विशिष्टताएं | AgriTrade`,
+  };
 
-  if (error || !data) {
-    return (
-      <div className="mx-auto max-w-7xl px-4 py-16 text-center sm:px-6 lg:px-8">
-        <Wheat className="mx-auto h-16 w-16 text-gray-300" />
-        <h2 className="mt-4 text-xl font-semibold text-gray-900">
-          {t("notFound")}
-        </h2>
-        <Link
-          href={`/${locale}/products`}
-          className="mt-4 inline-flex items-center text-primary-600 hover:text-primary-700"
-        >
-          <ArrowLeft className="mr-1 h-4 w-4" />
-          {t("backToProducts")}
-        </Link>
-      </div>
-    );
-  }
+  const descMap: Record<string, string> = {
+    zh: `浏览二手${categoryName}设备：${data.category.productCount || ''}台在售。神雕农机全球平台，支持品牌/年份/价格筛选，每日更新跨境套利数据。`,
+    en: `Browse used ${categoryName}: ${data.category.productCount || ''} units available. AgriTrade — filter by brand, year & price. Daily arbitrage data updates.`,
+    ru: `Просмотр подержанных ${categoryName}: ${data.category.productCount || ''} ед. в наличии. AgriTrade — фильтр по бренду, году и цене. Ежедневные обновления.`,
+    es: `Explore ${categoryName} usados: ${data.category.productCount || ''} unidades. AgriTrade — filtre por marca, año y precio. Datos de arbitraje actualizados a diario.`,
+    pt: `Explore ${categoryName} usados: ${data.category.productCount || ''} unidades. AgriTrade — filtre por marca, ano e preço. Dados de arbitragem atualizados diariamente.`,
+    ar: `تصفح ${categoryName} المستعملة: ${data.category.productCount || ''} وحدة متاحة. AgriTrade — تصفية حسب العلامة التجارية والسنة والسعر. تحديثات يومية.`,
+    fr: `Parcourez les ${categoryName} d'occasion: ${data.category.productCount || ''} unités. AgriTrade — filtrez par marque, année et prix. Données d'arbitrage mises à jour quotidiennement.`,
+    hi: `प्रयुक्त ${categoryName} ब्राउज़ करें: ${data.category.productCount || ''} उपलब्ध। AgriTrade — ब्रांड, वर्ष और कीमत के अनुसार फ़िल्टर करें। दैनिक आर्बिट्राज डेटा अपडेट।`,
+  };
 
-  return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      {/* Breadcrumb */}
-      <nav className="mb-6 flex items-center gap-2 text-sm text-gray-500">
-        <Link href={`/${locale}`} className="hover:text-primary-600">
-          {t("home")}
-        </Link>
-        <span>/</span>
-        <Link href={`/${locale}/products`} className="hover:text-primary-600">
-          {t("products")}
-        </Link>
-        <span>/</span>
-        <span className="text-gray-900">{categoryName}</span>
-      </nav>
+  return {
+    title: titleMap[locale] || titleMap["en"],
+    description: descMap[locale] || descMap["en"],
+    alternates: {
+      canonical: `${BASE_URL}/${locale}/category/${slug}`,
+    },
+    openGraph: {
+      title: titleMap[locale] || titleMap["en"],
+      description: descMap[locale] || descMap["en"],
+      type: "website",
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+  };
+}
 
-      {/* Category Header */}
-      <div className="mb-8 rounded-xl bg-gradient-to-r from-accent-600 to-accent-700 p-8 text-white">
-        <div className="flex items-center gap-4">
-          <div className="rounded-xl bg-white/20 p-4 backdrop-blur-sm">
-            <Wheat className="h-8 w-8" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold">{categoryName}</h1>
-            <p className="mt-1 text-accent-100">
-              {t("productCount", { count: data.category.productCount })}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Sub-categories */}
-      {data.children && data.children.length > 0 && (
-        <div className="mb-8">
-          <h2 className="mb-3 text-lg font-semibold text-gray-900">{t("subCategories")}</h2>
-          <div className="flex flex-wrap gap-3">
-            {data.children.map(child => {
-              const childName = locale === "zh"
-                ? child.nameZh
-                : locale === "ru" && (child as any).nameRu
-                  ? (child as any).nameRu
-                  : child.nameEn;
-              return (
-                <Link
-                  key={child.id}
-                  href={`/${locale}/category/${child.slug}`}
-                  className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-primary-300 hover:bg-primary-50 hover:text-primary-600"
-                >
-                  {childName}
-                  <ChevronRight className="h-3 w-3" />
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Products */}
-      {data.products.length > 0 ? (
-        <ProductGrid products={data.products} locale={locale} />
-      ) : (
-        <div className="py-16 text-center text-gray-500">
-          {t("noProducts")}
-        </div>
-      )}
-    </div>
-  );
+export default async function CategoryPage({
+  params,
+}: {
+  params: Promise<{ locale: string; slug: string }>;
+}) {
+  const { locale, slug } = await params;
+  return <CategoryClientPage initialLocale={locale} initialSlug={slug} />;
 }

@@ -1,14 +1,33 @@
+import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
-import { getTranslations } from "next-intl/server";
 import { HeroSection } from "@/components/home/hero-section";
 import { DailyReportSection } from "@/components/home/daily-report-section";
 import { HotEquipment } from "@/components/home/hot-equipment";
 import { ArbitrageShowcase } from "@/components/home/arbitrage-showcase";
 import { Testimonials } from "@/components/home/testimonials";
 import { DAILY_REPORT_RANKING } from "@/config/daily-report-ranking";
+import { generatePageMetadata } from "@/lib/seo-metadata";
 import type { Product } from "@/types";
 
 export const revalidate = 300;
+
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return generatePageMetadata("home", locale, {
+    alternates: {
+      canonical: `${BASE_URL}/${locale}`,
+    },
+    openGraph: {
+      images: [{ url: `${BASE_URL}/images/og.png`, width: 1200, height: 630 }],
+    },
+  });
+}
 
 const baseInclude = {
   brand: true,

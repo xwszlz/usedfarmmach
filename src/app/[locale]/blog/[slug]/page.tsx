@@ -1,9 +1,10 @@
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { PrismaClient } from '@prisma/client';
 import BlogDetailClient from './BlogDetailClient';
 
 const prisma = new PrismaClient();
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
 
 interface Props {
   params: Promise<{ locale: string; slug: string }>;
@@ -18,13 +19,30 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     : locale === 'ru' && article.titleRu ? article.titleRu
     : article.titleZh;
 
-  const brand = locale === 'ru' ? 'UsedFarmMach' : locale === 'en' ? 'UsedFarmMach' : '神雕农机';
+  const description = article.metaDesc || (locale === 'en' && article.excerptEn ? article.excerptEn
+    : locale === 'ru' && article.excerptRu ? article.excerptRu
+    : article.excerptZh) || '';
+
+  const brand = locale === 'zh' ? '神雕农机' : 'AgriTrade';
+
   return {
-    title: `${title} | ${brand} | UsedFarmMach`,
-    description: article.metaDesc || (locale === 'en' && article.excerptEn ? article.excerptEn
-      : locale === 'ru' && article.excerptRu ? article.excerptRu
-      : article.excerptZh) || '',
+    title: `${title} | ${brand}`,
+    description: description?.slice(0, 160),
     keywords: article.keywords || '',
+    alternates: {
+      canonical: `${BASE_URL}/${locale}/blog/${slug}`,
+    },
+    openGraph: {
+      title: `${title} | ${brand}`,
+      description: description?.slice(0, 160),
+      type: 'article',
+      publishedTime: article.publishedAt?.toISOString(),
+      ...(article.coverImage ? { images: [{ url: article.coverImage }] } : {}),
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
   };
 }
 
