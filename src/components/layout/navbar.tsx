@@ -181,6 +181,7 @@ interface DesktopNavItemProps {
 
 function DesktopNavItem({ item, locale, t }: DesktopNavItemProps) {
   const [open, setOpen] = useState(false);
+  const label = item.label || t(item.labelKey || '');
 
   if (item.children) {
     return (
@@ -189,7 +190,7 @@ function DesktopNavItem({ item, locale, t }: DesktopNavItemProps) {
           onClick={() => setOpen(!open)}
           className="flex items-center gap-1 text-sm font-medium text-gray-600 transition-colors hover:text-primary-600"
         >
-          {t(item.labelKey)}
+          {label}
           <ChevronDown className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`} />
         </button>
 
@@ -204,7 +205,7 @@ function DesktopNavItem({ item, locale, t }: DesktopNavItemProps) {
                   onClick={() => setOpen(false)}
                   className="block px-4 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 hover:text-primary-600"
                 >
-                  {t(child.labelKey)}
+                  {child.label || t(child.labelKey || '')}
                 </Link>
               ))}
             </div>
@@ -219,7 +220,7 @@ function DesktopNavItem({ item, locale, t }: DesktopNavItemProps) {
       href={`/${locale}${item.href}`}
       className="text-sm font-medium text-gray-600 transition-colors hover:text-primary-600"
     >
-      {t(item.labelKey)}
+      {label}
     </Link>
   );
 }
@@ -233,6 +234,7 @@ interface MobileNavItemProps {
 
 function MobileNavItem({ item, locale, t, setMobileOpen }: MobileNavItemProps) {
   const [open, setOpen] = useState(false);
+  const label = item.label || t(item.labelKey || '');
 
   if (item.children) {
     return (
@@ -241,7 +243,7 @@ function MobileNavItem({ item, locale, t, setMobileOpen }: MobileNavItemProps) {
           onClick={() => setOpen(!open)}
           className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
         >
-          <span>{t(item.labelKey)}</span>
+          <span>{label}</span>
           <ChevronDown className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`} />
         </button>
 
@@ -254,7 +256,7 @@ function MobileNavItem({ item, locale, t, setMobileOpen }: MobileNavItemProps) {
                 onClick={() => setMobileOpen(false)}
                 className="block rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
               >
-                {t(child.labelKey)}
+                {child.label || t(child.labelKey || '')}
               </Link>
             ))}
           </div>
@@ -269,7 +271,7 @@ function MobileNavItem({ item, locale, t, setMobileOpen }: MobileNavItemProps) {
       onClick={() => setMobileOpen(false)}
       className="block rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
     >
-      {t(item.labelKey)}
+      {label}
     </Link>
   );
 }
