@@ -31,8 +31,65 @@ interface IntelCardProps {
 function IntelCard({ item, locale, actionTipsLabel }: IntelCardProps) {
   const [expanded, setExpanded] = useState(false);
 
+  // 将 [text](url) 格式转为可点击的 React 元素
+  const renderTip = (tip: string) => {
+    const parts = [];
+    let remaining = tip;
+    const regex = /\[([^\]]+)\]\(([^)]+)\)/g;
+    let match;
+    let lastIndex = 0;
+    while ((match = regex.exec(tip)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(tip.slice(lastIndex, match.index));
+      }
+      parts.push(
+        <a key={parts.length} href={match[2]} target="_blank" rel="noopener noreferrer"
+           className="text-accent-600 hover:text-accent-800 underline">
+          {match[1]}
+        </a>
+      );
+      lastIndex = match.index + match[0].length;
+    }
+    if (lastIndex < tip.length) {
+      parts.push(tip.slice(lastIndex));
+    }
+    return parts.length > 0 ? parts : tip;
+  };
+
   // 将Markdown表格转换为HTML
   const renderContent = (content: string) => {
+    // Helper: render inline markdown (bold + links) as React elements
+    const renderInlineMd = (text: string) => {
+      const parts: React.ReactNode[] = [];
+      let remaining = text;
+      // Process [text](url) and **bold** — priority: links first, then bold
+      const linkRegex = /\[([^\]]+)\]\(([^)]+)\)|(\*\*([^*]+)\*\*)/g;
+      let match;
+      let lastIdx = 0;
+      while ((match = linkRegex.exec(remaining)) !== null) {
+        if (match.index > lastIdx) {
+          parts.push(remaining.slice(lastIdx, match.index));
+        }
+        if (match[1]) {
+          // It's a link [text](url)
+          parts.push(
+            <a key={parts.length} href={match[2]} target="_blank" rel="noopener noreferrer"
+               className="text-accent-600 hover:text-accent-800 underline">
+              {match[1]}
+            </a>
+          );
+        } else if (match[4]) {
+          // It's **bold**
+          parts.push(<strong key={parts.length} className="font-semibold text-gray-900">{match[4]}</strong>);
+        }
+        lastIdx = match.index + match[0].length;
+      }
+      if (lastIdx < remaining.length) {
+        parts.push(remaining.slice(lastIdx));
+      }
+      return parts.length > 0 ? <>{parts}</> : text;
+    };
+
     return content.split("\n").map((line, i) => {
       if (line.startsWith("## ")) {
         return <h3 key={i} className="mt-4 mb-2 text-base font-bold text-gray-800">{line.slice(3)}</h3>;
@@ -48,20 +105,20 @@ function IntelCard({ item, locale, actionTipsLabel }: IntelCardProps) {
           <div key={i} className="flex text-xs">
             {cells.map((cell, ci) => (
               <span key={ci} className={`flex-1 px-2 py-1 ${isHeader ? "font-bold text-accent-700 bg-accent-50" : "text-gray-600 border-b border-gray-100"}`}>
-                {cell.trim()}
+                {renderInlineMd(cell.trim())}
               </span>
             ))}
           </div>
         );
       }
       if (line.startsWith("- ")) {
-        return <li key={i} className="ml-4 text-xs text-gray-600 list-disc">{line.slice(2)}</li>;
+        return <li key={i} className="ml-4 text-xs text-gray-600 list-disc">{renderInlineMd(line.slice(2))}</li>;
       }
-      if (line.startsWith("1. ") || line.startsWith("2. ") || line.startsWith("3. ") || line.startsWith("4. ") || line.startsWith("5. ")) {
-        return <li key={i} className="ml-4 text-xs text-gray-600 list-decimal">{line.slice(3)}</li>;
+      if (line.match(/^\d+\.\s/)) {
+        return <li key={i} className="ml-4 text-xs text-gray-600 list-decimal">{renderInlineMd(line.replace(/^\d+\.\s+/, ''))}</li>;
       }
       if (line.trim() === "") return <div key={i} className="h-1" />;
-      return <p key={i} className="text-xs text-gray-600 leading-relaxed">{line}</p>;
+      return <p key={i} className="text-xs text-gray-600 leading-relaxed">{renderInlineMd(line)}</p>;
     });
   };
 
@@ -112,7 +169,7 @@ function IntelCard({ item, locale, actionTipsLabel }: IntelCardProps) {
                   {item.actionTips.map((tip, i) => (
                     <li key={i} className="flex items-start gap-2 text-xs text-gray-700">
                       <span className="text-accent-500 mt-0.5">▸</span>
-                      {tip}
+                      {renderTip(tip)}
                     </li>
                   ))}
                 </ul>
