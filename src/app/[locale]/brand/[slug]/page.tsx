@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import BrandClientPage from "./BrandClient";
 import { getHreflangLanguages } from "@/components/seo/hreflang-head";
+import { BreadcrumbStructuredData } from "@/components/seo/structured-data";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
 
@@ -81,5 +82,27 @@ export default async function BrandPage({
   params: Promise<{ locale: string; slug: string }>;
 }) {
   const { locale, slug } = await params;
-  return <BrandClientPage initialLocale={locale} initialSlug={slug} />;
+  const data = await getBrandData(slug);
+
+  const brandName = data?.brand
+    ? locale === "zh"
+      ? data.brand.nameZh
+      : locale === "ru" && data.brand.nameRu
+        ? data.brand.nameRu
+        : data.brand.nameEn
+    : "";
+
+  return (
+    <>
+      <BreadcrumbStructuredData
+        locale={locale}
+        items={[
+          { name: locale === "zh" ? "首页" : "Home", url: `${BASE_URL}/${locale}` },
+          { name: locale === "zh" ? "设备市场" : "Products", url: `${BASE_URL}/${locale}/products` },
+          { name: brandName, url: `${BASE_URL}/${locale}/brand/${slug}` },
+        ]}
+      />
+      <BrandClientPage initialLocale={locale} initialSlug={slug} />
+    </>
+  );
 }

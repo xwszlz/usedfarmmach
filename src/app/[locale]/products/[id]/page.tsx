@@ -17,6 +17,7 @@ import { BuyIntentButton } from "@/components/product/buy-intent-button";
 import { ValuationCard } from "@/components/valuation/valuation-card";
 import { DAILY_REPORT_RANKING } from "@/config/daily-report-ranking";
 import { getHreflangLanguages } from "@/components/seo/hreflang-head";
+import { ProductStructuredData, BreadcrumbStructuredData } from "@/components/seo/structured-data";
 
 export const revalidate = 300;
 
@@ -152,6 +153,28 @@ export default async function ProductDetailPage({
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <ProductStructuredData
+        id={product.id}
+        name={`${brandName} ${product.modelName}`}
+        brand={brandName}
+        category={categoryName}
+        year={product.year}
+        description={description || ""}
+        priceCny={product.priceCny}
+        condition={product.condition}
+        location={product.location || ""}
+        workingHours={product.workingHours ?? undefined}
+        imageUrl={product.images[0] ? getImageUrl(product.images[0].url) : `${BASE_URL}/images/og.png`}
+        locale={locale}
+      />
+      <BreadcrumbStructuredData
+        locale={locale}
+        items={[
+          { name: locale === "zh" ? "首页" : "Home", url: `${BASE_URL}/${locale}` },
+          { name: locale === "zh" ? "设备市场" : "Products", url: `${BASE_URL}/${locale}/products` },
+          { name: `${brandName} ${product.modelName}`, url: `${BASE_URL}/${locale}/products/${product.id}` },
+        ]}
+      />
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         {/* Left: Images + Videos */}
         <div className="space-y-4">

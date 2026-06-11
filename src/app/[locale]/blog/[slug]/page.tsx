@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { PrismaClient } from '@prisma/client';
 import BlogDetailClient from './BlogDetailClient';
 import { getHreflangLanguages } from "@/components/seo/hreflang-head";
+import { ArticleStructuredData, BreadcrumbStructuredData } from "@/components/seo/structured-data";
 
 const prisma = new PrismaClient();
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
@@ -87,7 +88,33 @@ export default async function BlogDetailPage({ params }: Props) {
     },
   });
 
-  return <BlogDetailClient locale={locale} article={{
+  const articleTitle = locale === 'en' && article.titleEn ? article.titleEn
+    : locale === 'ru' && article.titleRu ? article.titleRu
+    : article.titleZh;
+  const articleDesc = locale === 'en' && article.excerptEn ? article.excerptEn
+    : locale === 'ru' && article.excerptRu ? article.excerptRu
+    : article.excerptZh || '';
+
+  return (
+    <>
+      <ArticleStructuredData
+        title={articleTitle}
+        description={articleDesc.slice(0, 200)}
+        url={`${BASE_URL}/${locale}/blog/${slug}`}
+        datePublished={article.publishedAt?.toISOString() || article.createdAt.toISOString()}
+        dateModified={article.updatedAt.toISOString()}
+        imageUrl={article.coverImage || undefined}
+        keywords={article.keywords ? article.keywords.split(/[,， ]+/) : undefined}
+      />
+      <BreadcrumbStructuredData
+        locale={locale}
+        items={[
+          { name: locale === "zh" ? "首页" : "Home", url: `${BASE_URL}/${locale}` },
+          { name: locale === "zh" ? "行业资讯" : "Blog", url: `${BASE_URL}/${locale}/blog` },
+          { name: articleTitle, url: `${BASE_URL}/${locale}/blog/${slug}` },
+        ]}
+      />
+      <BlogDetailClient locale={locale} article={{
     ...article,
     publishedAt: article.publishedAt?.toISOString() || null,
     createdAt: article.createdAt.toISOString(),
@@ -96,5 +123,7 @@ export default async function BlogDetailPage({ params }: Props) {
   }} relatedArticles={relatedArticles.map(a => ({
     ...a,
     publishedAt: a.publishedAt?.toISOString() || null,
-  }))} />;
+  }))} />
+    </>
+  );
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import CategoryClientPage from "./CategoryClient";
 import { getHreflangLanguages } from "@/components/seo/hreflang-head";
+import { BreadcrumbStructuredData } from "@/components/seo/structured-data";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
 
@@ -81,5 +82,27 @@ export default async function CategoryPage({
   params: Promise<{ locale: string; slug: string }>;
 }) {
   const { locale, slug } = await params;
-  return <CategoryClientPage initialLocale={locale} initialSlug={slug} />;
+  const data = await getCategoryData(slug);
+
+  const categoryName = data?.category
+    ? locale === "zh"
+      ? data.category.nameZh
+      : locale === "ru" && data.category.nameRu
+        ? data.category.nameRu
+        : data.category.nameEn
+    : "";
+
+  return (
+    <>
+      <BreadcrumbStructuredData
+        locale={locale}
+        items={[
+          { name: locale === "zh" ? "首页" : "Home", url: `${BASE_URL}/${locale}` },
+          { name: locale === "zh" ? "设备市场" : "Products", url: `${BASE_URL}/${locale}/products` },
+          { name: categoryName, url: `${BASE_URL}/${locale}/category/${slug}` },
+        ]}
+      />
+      <CategoryClientPage initialLocale={locale} initialSlug={slug} />
+    </>
+  );
 }

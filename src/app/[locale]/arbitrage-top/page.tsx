@@ -3,6 +3,9 @@ import { Suspense } from 'react';
 import ArbitrageTopClient from './ArbitrageTopClient';
 import { getTranslations } from 'next-intl/server';
 import { generatePageMetadata } from "@/lib/seo-metadata";
+import { BreadcrumbStructuredData } from "@/components/seo/structured-data";
+
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
 
 export async function generateMetadata({
   params,
@@ -25,6 +28,13 @@ export default async function ArbitrageTopPage({ params }: { params: Promise<Par
     <main className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto">
+          <BreadcrumbStructuredData
+            locale={locale}
+            items={[
+              { name: locale === "zh" ? "首页" : "Home", url: `${BASE_URL}/${locale}` },
+              { name: locale === "zh" ? "套利榜单" : "Arbitrage Rankings", url: `${BASE_URL}/${locale}/arbitrage-top` },
+            ]}
+          />
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-4">
               {t('title')}

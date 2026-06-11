@@ -7,6 +7,8 @@ import { ArbitrageShowcase } from "@/components/home/arbitrage-showcase";
 import { Testimonials } from "@/components/home/testimonials";
 import { DAILY_REPORT_RANKING } from "@/config/daily-report-ranking";
 import { generatePageMetadata } from "@/lib/seo-metadata";
+import { BreadcrumbStructuredData, ItemListStructuredData } from "@/components/seo/structured-data";
+import { getImageUrl } from "@/lib/image-url";
 import type { Product } from "@/types";
 
 export const revalidate = 300;
@@ -68,6 +70,22 @@ export default async function HomePage({
 
   return (
     <div>
+      <BreadcrumbStructuredData
+        locale={locale}
+        items={[{ name: locale === "zh" ? "首页" : "Home", url: `${BASE_URL}/${locale}` }]}
+      />
+      <ItemListStructuredData
+        locale={locale}
+        listName={locale === "zh" ? "热门设备" : "Hot Equipment"}
+        items={[...rankedProducts.slice(0, 5)].filter(Boolean).map((p: any) => ({
+          id: p.id,
+          name: (locale === "zh" ? p.brand?.nameZh : p.brand?.nameEn) + " " + p.modelName,
+          url: `${BASE_URL}/${locale}/products/${p.id}`,
+          imageUrl: p.images?.[0] ? getImageUrl(p.images[0].url) : undefined,
+          priceCny: p.priceCny,
+          brand: locale === "zh" ? p.brand?.nameZh : p.brand?.nameEn,
+        }))}
+      />
       <HeroSection locale={locale} topProduct={topProduct} topReportData={topReportData} heroCoverImage="/images/hero-claas-970-2017.jpg" />
       <DailyReportSection locale={locale} />
       <HotEquipment products={hotProducts} locale={locale} />

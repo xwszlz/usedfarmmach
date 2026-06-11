@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import Script from "next/script";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
+import { OrganizationStructuredData } from "@/components/seo/structured-data";
 
 const locales = ["zh", "en", "ru", "es", "pt", "ar", "fr", "hi"] as const;
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
@@ -40,6 +41,7 @@ export default async function LocaleLayout({
   return (
     <html lang={locale}>
       <body className="min-h-screen bg-white">
+        <OrganizationStructuredData locale={locale} />
         <NextIntlClientProvider messages={messages}>
           <Navbar locale={locale} />
           <main className="min-h-[calc(100vh-4rem)]">{children}</main>
