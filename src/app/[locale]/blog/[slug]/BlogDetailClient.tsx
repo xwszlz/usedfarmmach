@@ -72,7 +72,7 @@ function formatDate(dateStr: string | null, locale: string): string {
 }
 
 // Render inline elements (bold, italic, links, code)
-function renderInline(text: string): string {
+function renderInline(text: string, locale: string): string {
   let result = text
     // Escape HTML to prevent XSS
     .replace(/&/g, '&amp;')
@@ -83,16 +83,22 @@ function renderInline(text: string): string {
     // Italic *text*
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
     // Links [text](url) - MUST be after bold/italic so ** inside links works
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-green-700 hover:text-green-900 underline font-medium">$1</a>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, textContent, url) => {
+      const fixedUrl = fixInternalLinkLocale(url, locale);
+      return `<a href="${fixedUrl}" target="_blank" rel="noopener noreferrer" class="text-green-700 hover:text-green-900 underline font-medium">${textContent}</a>`;
+    })
     // Plain URLs auto-link (after escaped HTML, so href is clean)
-    .replace(/(https?:\/\/[^\s<>]+)(?![^<]*<\/a>)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-green-700 hover:text-green-900 underline font-medium">$1</a>')
+    .replace(/(https?:\/\/[^\s<>]+)(?![^<]*<\/a>)/g, (_, url) => {
+      const fixedUrl = fixInternalLinkLocale(url, locale);
+      return `<a href="${fixedUrl}" target="_blank" rel="noopener noreferrer" class="text-green-700 hover:text-green-900 underline font-medium">${fixedUrl}</a>`;
+    })
     // Inline code `code`
     .replace(/`([^`]+)`/g, '<code class="bg-gray-100 px-1.5 py-0.5 rounded text-sm text-red-600">$1</code>');
   return result;
 }
 
 // Simple markdown-like rendering with full block + inline support
-function renderContent(content: string): string {
+function renderContent(content: string, locale: string): string {
   // Wrap in a container
   let html = '<div class="article-content">';
 
@@ -119,7 +125,7 @@ function renderContent(content: string): string {
             const cls = ri === 0
               ? 'border border-gray-300 bg-gray-50 px-4 py-2 text-sm font-semibold text-gray-700 text-left'
               : 'border border-gray-300 px-4 py-2 text-sm text-gray-700';
-            html += `<${tag} class="${cls}">${renderInline(cell.trim())}</${tag}>`;
+            html += `<${tag} class="${cls}">${renderInline(cell.trim(), locale)}</${tag}>`;
           });
           html += '</tr>';
         });
@@ -130,25 +136,25 @@ function renderContent(content: string): string {
 
     // --- Heading level 3 ---
     if (/^### (.+)/.test(trimmed)) {
-      html += `<h3 class="text-xl font-semibold text-gray-900 mt-8 mb-3">${renderInline(trimmed.replace(/^### /, ''))}</h3>`;
+      html += `<h3 class="text-xl font-semibold text-gray-900 mt-8 mb-3">${renderInline(trimmed.replace(/^### /, ''), locale)}</h3>`;
       continue;
     }
 
     // --- Heading level 2 ---
     if (/^## (.+)/.test(trimmed)) {
-      html += `<h2 class="text-2xl font-bold text-gray-900 mt-10 mb-4">${renderInline(trimmed.replace(/^## /, ''))}</h2>`;
+      html += `<h2 class="text-2xl font-bold text-gray-900 mt-10 mb-4">${renderInline(trimmed.replace(/^## /, ''), locale)}</h2>`;
       continue;
     }
 
     // --- Heading level 1 ---
     if (/^# (.+)/.test(trimmed)) {
-      html += `<h1 class="text-3xl font-bold text-gray-900 mt-12 mb-6">${renderInline(trimmed.replace(/^# /, ''))}</h1>`;
+      html += `<h1 class="text-3xl font-bold text-gray-900 mt-12 mb-6">${renderInline(trimmed.replace(/^# /, ''), locale)}</h1>`;
       continue;
     }
 
     // --- Blockquote ---
     if (/^> (.+)/.test(trimmed)) {
-      html += `<blockquote class="border-l-4 border-green-500 pl-4 py-2 my-4 bg-green-50 text-gray-700 italic">${renderInline(trimmed.replace(/^> /, ''))}</blockquote>`;
+      html += `<blockquote class="border-l-4 border-green-500 pl-4 py-2 my-4 bg-green-50 text-gray-700 italic">${renderInline(trimmed.replace(/^> /, ''), locale)}</blockquote>`;
       continue;
     }
 
@@ -157,7 +163,7 @@ function renderContent(content: string): string {
       html += '<ul class="list-disc ml-6 my-4 space-y-1">';
       trimmed.split('\n').forEach(line => {
         const content = line.replace(/^[-*]\s+/, '');
-        html += `<li class="text-gray-700">${renderInline(content)}</li>`;
+        html += `<li class="text-gray-700">${renderInline(content, locale)}</li>`;
       });
       html += '</ul>';
       continue;
@@ -168,7 +174,7 @@ function renderContent(content: string): string {
       html += '<ol class="list-decimal ml-6 my-4 space-y-1">';
       trimmed.split('\n').forEach(line => {
         const content = line.replace(/^\d+\.\s+/, '');
-        html += `<li class="text-gray-700">${renderInline(content)}</li>`;
+        html += `<li class="text-gray-700">${renderInline(content, locale)}</li>`;
       });
       html += '</ol>';
       continue;
@@ -181,11 +187,29 @@ function renderContent(content: string): string {
     }
 
     // --- Default paragraph ---
-    html += `<p class="text-gray-700 leading-relaxed mb-4">${renderInline(trimmed)}</p>`;
+    html += `<p class="text-gray-700 leading-relaxed mb-4">${renderInline(trimmed, locale)}</p>`;
   }
 
   html += '</div>';
   return html;
+}
+
+// Fix internal links missing locale prefix (e.g., /products/xxx → /zh/products/xxx)
+function fixInternalLinkLocale(url: string, locale: string): string {
+  // Only process usedfarmmach.com URLs that are missing locale prefix
+  if (url.includes('usedfarmmach.com')) {
+    // Check if URL already has a locale segment
+    const urlObj = new URL(url);
+    const pathParts = urlObj.pathname.split('/').filter(Boolean);
+    const locales = ['zh', 'en', 'ru', 'es', 'pt', 'ar', 'fr', 'hi'];
+    const firstSegment = pathParts[0];
+    if (!locales.includes(firstSegment)) {
+      // Insert locale as first path segment
+      urlObj.pathname = `/${locale}/${pathParts.join('/')}`;
+      return urlObj.toString();
+    }
+  }
+  return url;
 }
 
 export default function BlogDetailClient({
@@ -260,7 +284,7 @@ export default function BlogDetailClient({
         {/* Content */}
         <div
           className="prose prose-lg max-w-none bg-white rounded-lg shadow p-8"
-          dangerouslySetInnerHTML={{ __html: renderContent(content) }}
+          dangerouslySetInnerHTML={{ __html: renderContent(content, locale) }}
         />
 
         {/* Tags */}
