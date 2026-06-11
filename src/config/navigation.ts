@@ -25,7 +25,7 @@ export const mainNav: NavItem[] = [
       { href: "/category/forage-harvester", label: "青储机" },
       { href: "/category/baler", label: "打捆机" },
       { href: "/category/mower", label: "割草机" },
-      { href: "/category/wrapper", label: "裹包机" },
+      { href: "/category/bale-wrapper", label: "裹包机" },
     ],
   },
   { href: "/blog", labelKey: "nav.blog" },
