@@ -87,6 +87,8 @@ export default async function BlogPage({ params, searchParams }: Props) {
         initialTotal={total}
         initialTotalPages={totalPages}
       />
+
+      {/* Force redeploy — SSR blog articles */}
     </>
   );
 }
