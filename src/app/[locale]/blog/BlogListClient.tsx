@@ -16,7 +16,7 @@ interface Article {
   coverImage: string | null;
   category: string | null;
   tags: string | null;
-  sourcePlatform: string | null;
+  sourcePlatform?: string | null;
   publishedAt: string | null;
   viewCount: number;
 }
@@ -45,16 +45,37 @@ function formatDate(dateStr: string | null, locale: string): string {
   });
 }
 
-export default function BlogListClient({ locale, initialCategory }: { locale: string; initialCategory?: string }) {
+interface Props {
+  locale: string;
+  initialCategory?: string;
+  initialArticles?: Article[];
+  initialTotal?: number;
+  initialTotalPages?: number;
+}
+
+export default function BlogListClient({
+  locale,
+  initialCategory,
+  initialArticles = [],
+  initialTotal = 0,
+  initialTotalPages = 1,
+}: Props) {
   const t = useTranslations('blog');
-  const [articles, setArticles] = useState<Article[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [articles, setArticles] = useState<Article[]>(initialArticles);
+  const [loading, setLoading] = useState(initialArticles.length === 0);
   const [activeCategory, setActiveCategory] = useState(initialCategory || 'all');
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(initialTotalPages);
+  const [total, setTotal] = useState(initialTotal);
+  const [seoHydrated, setSeoHydrated] = useState(initialArticles.length > 0);
 
+  // Client-side fetch for filtering/pagination (supplements SSR initial data)
   useEffect(() => {
+    // Skip first render if we already have SSR data for the current filter
+    if (seoHydrated && page === 1 && activeCategory === (initialCategory || 'all')) {
+      return;
+    }
+
     async function fetchArticles() {
       setLoading(true);
       try {
@@ -78,7 +99,7 @@ export default function BlogListClient({ locale, initialCategory }: { locale: st
       }
     }
     fetchArticles();
-  }, [activeCategory, page, locale]);
+  }, [activeCategory, page, locale, initialCategory, seoHydrated]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -96,7 +117,7 @@ export default function BlogListClient({ locale, initialCategory }: { locale: st
           {CATEGORIES.map((cat) => (
             <button
               key={cat}
-              onClick={() => { setActiveCategory(cat); setPage(1); }}
+              onClick={() => { setActiveCategory(cat); setPage(1); setSeoHydrated(false); }}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                 activeCategory === cat
                   ? 'bg-green-700 text-white'
