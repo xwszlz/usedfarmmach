@@ -147,14 +147,22 @@ export default function IntelligencePageClient({ locale }: { locale: string }) {
   }, [locale]);
 
   // 区域顺序按语言适配
-  const regionOrderZh = ["俄罗斯", "欧洲", "中国", "乌克兰", "巴西", "哈萨克斯坦", "乌兹别克斯坦", "东南亚", "非洲", "阿富汗"];
-  const regionOrderEn = ["Russia", "Europe", "China", "Ukraine", "Brazil", "Kazakhstan", "Uzbekistan", "Southeast Asia", "Africa", "Afghanistan"];
-  const regionOrderRu = ["Россия", "Европа", "Китай", "Украина", "Бразилия", "Казахстан", "Узбекистан", "Юго-Восточная Азия", "Африка", "Афганистан"];
+  const regionOrderZh = ["全球推广", "俄罗斯", "欧洲", "中国", "乌克兰", "巴西", "哈萨克斯坦", "乌兹别克斯坦", "东南亚", "非洲", "阿富汗"];
+  const regionOrderEn = ["Global Promotion", "Russia", "Europe", "China", "Ukraine", "Brazil", "Kazakhstan", "Uzbekistan", "Southeast Asia", "Africa", "Afghanistan"];
+  const regionOrderRu = ["Глобальное продвижение", "Россия", "Европа", "Китай", "Украина", "Бразилия", "Казахстан", "Узбекистан", "Юго-Восточная Азия", "Африка", "Афганистан"];
   const regionOrder = locale === "en" ? regionOrderEn : locale === "ru" ? regionOrderRu : regionOrderZh;
   const grouped: Record<string, MarketIntelItem[]> = {};
   for (const item of marketData) {
     if (!grouped[item.region]) grouped[item.region] = [];
     grouped[item.region].push(item);
+  }
+
+  // 把不在 regionOrder 里的区域追加到末尾
+  const allRegions = [...regionOrder];
+  for (const region of Object.keys(grouped)) {
+    if (!allRegions.includes(region)) {
+      allRegions.push(region);
+    }
   }
 
   return (
@@ -193,7 +201,7 @@ export default function IntelligencePageClient({ locale }: { locale: string }) {
         ) : (
         <>
         {/* 区域分组 */}
-        {regionOrder.filter(r => grouped[r]).map((region) => (
+        {allRegions.filter(r => grouped[r]).map((region) => (
           <section key={region} className="mb-10">
             <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-800">
               {grouped[region][0]?.icon} {region}
