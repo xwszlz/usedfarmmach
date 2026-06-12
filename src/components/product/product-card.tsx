@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArbitrageBadge } from "./arbitrage-badge";
 import { PriceDisplay } from "./price-display";
 import { calculateArbitragePercent } from "@/lib/utils";
-import { getImageUrl } from "@/lib/image-url";
+import { getImageUrl, generateImageAlt } from "@/lib/image-url";
 import type { Product } from "@/types";
 
 interface ProductCardProps {
@@ -52,8 +52,12 @@ export function ProductCard({ product, locale }: ProductCardProps) {
         <div className="relative h-48 overflow-hidden bg-gray-100">
           <img
             src={primaryImage}
-            alt={product.modelName}
+            alt={generateImageAlt(brandName, product.modelName, product.year, categoryName, locale, {
+              location: product.location || undefined,
+              condition: product.condition,
+            })}
             className="h-full w-full object-cover transition-transform group-hover:scale-105"
+            loading="lazy"
           />
           {realArbitrage !== null && Math.abs(realArbitrage) > 10 && (
             <div className="absolute right-2 top-2">

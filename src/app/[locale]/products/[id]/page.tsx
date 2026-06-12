@@ -9,7 +9,7 @@ import { InquiryForm } from "@/components/product/inquiry-form";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin, Clock, Calendar, Wrench, ArrowLeftRight, ExternalLink, Info } from "lucide-react";
-import { getImageUrl, getVideoUrl } from "@/lib/image-url";
+import { getImageUrl, getVideoUrl, generateImageAlt } from "@/lib/image-url";
 import { formatPrice } from "@/lib/utils";
 import ArbitrageCalculatorSection from "@/components/product/arbitrage-calculator-section";
 import { QuickContact } from "@/components/product/quick-contact";
@@ -178,7 +178,10 @@ export default async function ProductDetailPage({
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         {/* Left: Images + Videos */}
         <div className="space-y-4">
-          <ProductCarousel images={product.images} alt={product.modelName} />
+          <ProductCarousel images={product.images} alt={generateImageAlt(brandName, product.modelName, product.year, categoryName, locale, {
+            location: product.location || undefined,
+            condition: product.condition,
+          })} />
           {/* Video Player */}
           {product.videos.length > 0 && (
             <div className="space-y-3">

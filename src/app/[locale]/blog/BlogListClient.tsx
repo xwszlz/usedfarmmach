@@ -163,6 +163,7 @@ export default function BlogListClient({
                       src={article.coverImage}
                       alt={getTitle(article, locale)}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-green-50">
