@@ -8,24 +8,44 @@ import { Pagination } from "@/components/ui/pagination";
 import { ProductGridSkeleton } from "@/components/ui/skeleton";
 import type { Product, ProductFilters as Filters, PaginatedResponse } from "@/types";
 
-export default function ProductsClient() {
+interface Props {
+  initialProducts?: Product[];
+  initialTotal?: number;
+  initialTotalPages?: number;
+  initialBrands?: { value: string; label: string }[];
+  initialCategories?: { value: string; label: string }[];
+  initialLocations?: { value: string; label: string }[];
+}
+
+export default function ProductsClient({
+  initialProducts = [],
+  initialTotal = 0,
+  initialTotalPages = 0,
+  initialBrands = [],
+  initialCategories = [],
+  initialLocations = [],
+}: Props) {
   const t = useTranslations("products");
   const locale = useLocale();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [total, setTotal] = useState(initialTotal);
+  const [totalPages, setTotalPages] = useState(initialTotalPages);
+  const [loading, setLoading] = useState(initialProducts.length === 0);
   const [filters, setFilters] = useState<Filters>({
     page: 1,
     pageSize: 12,
     sort: "rank",
   });
+  const [seoHydrated, setSeoHydrated] = useState(initialProducts.length > 0);
 
-  const [brands, setBrands] = useState<{ value: string; label: string }[]>([]);
-  const [categories, setCategories] = useState<{ value: string; label: string }[]>([]);
-  const [locations, setLocations] = useState<{ value: string; label: string }[]>([]);
+  const [brands, setBrands] = useState<{ value: string; label: string }[]>(initialBrands);
+  const [categories, setCategories] = useState<{ value: string; label: string }[]>(initialCategories);
+  const [locations, setLocations] = useState<{ value: string; label: string }[]>(initialLocations);
 
+  // Only fetch filter options if not provided from SSR
   useEffect(() => {
+    if (initialBrands.length > 0 || initialCategories.length > 0) return;
+
     async function fetchFilterOptions() {
       try {
         const res = await fetch("/api/products/filters");
@@ -45,9 +65,16 @@ export default function ProductsClient() {
       }
     }
     fetchFilterOptions();
-  }, [locale]);
+  }, [locale, initialBrands.length, initialCategories.length]);
 
   const fetchProducts = useCallback(async () => {
+    // Skip first render if we have SSR data with default filters
+    if (seoHydrated && filters.page === 1 && filters.sort === "rank"
+      && !filters.query && !filters.brand && !filters.category
+      && !filters.location && !filters.condition) {
+      return;
+    }
+
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -78,7 +105,7 @@ export default function ProductsClient() {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, seoHydrated]);
 
   useEffect(() => {
     fetchProducts();
@@ -88,14 +115,17 @@ export default function ProductsClient() {
     key: keyof Filters,
     value: string | number | undefined
   ) {
+    setSeoHydrated(false);
     setFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
   }
 
   function handleReset() {
+    setSeoHydrated(false);
     setFilters({ page: 1, pageSize: 12, sort: "rank" });
   }
 
   function handlePageChange(page: number) {
+    setSeoHydrated(false);
     setFilters((prev) => ({ ...prev, page }));
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
