@@ -70,7 +70,7 @@ export default async function BlogDetailPage({ params }: Props) {
       category: article.category,
       id: { not: article.id },
     },
-    orderBy: { publishedAt: 'desc' },
+    orderBy: [{ isPinned: 'desc' }, { publishedAt: 'desc' }],
     take: 3,
     select: {
       id: true,

@@ -27,7 +27,7 @@ export default async function BlogPage({ params, searchParams }: Props) {
   const [articles, total] = await Promise.all([
     prisma.article.findMany({
       where,
-      orderBy: { publishedAt: 'desc' },
+      orderBy: [{ isPinned: 'desc' }, { publishedAt: 'desc' }],
       take: 12,
       select: {
         id: true,

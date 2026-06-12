@@ -295,6 +295,7 @@ model Article {
   sourcePlatform String?             // 数据来源平台: agroline, machinerypete, tractorhouse, mascus, e-farm, internal
   sourceUrl     String?              // 原始数据来源URL
   metaTitle     String?              // SEO标题
+  isPinned      Boolean   @default(false)  // 置顶标记
   metaDesc      String?              // SEO描述
   keywords      String?              // SEO关键词
   publishedAt   DateTime?
