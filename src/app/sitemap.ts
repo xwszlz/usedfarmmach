@@ -1,81 +1,100 @@
 import { MetadataRoute } from "next";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/db";
 
 // ISR: 每天重新生成站点地图
 export const revalidate = 86400;
 
-const BASE_URL = "https://usedfarmmach.com";
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
 const locales = ["zh", "en", "ru", "es", "pt", "ar", "fr", "hi"];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const prisma = new PrismaClient();
+  // Fetch all data in parallel
+  const [products, articles, brands, categories] = await Promise.all([
+    prisma.product.findMany({
+      where: { status: "active" },
+      select: { id: true, updatedAt: true },
+      orderBy: { updatedAt: "desc" },
+    }),
+    prisma.article.findMany({
+      where: { status: "published" },
+      select: { slug: true, updatedAt: true },
+      orderBy: { updatedAt: "desc" },
+    }),
+    prisma.brand.findMany({
+      select: { slug: true, updatedAt: true },
+      orderBy: { slug: "asc" },
+    }),
+    prisma.category.findMany({
+      select: { slug: true, updatedAt: true },
+      orderBy: { slug: "asc" },
+    }),
+  ]);
 
-  try {
-    // Fetch all published products and articles from DB
-    const [products, articles] = await Promise.all([
-      prisma.product.findMany({
-        select: { id: true, updatedAt: true },
-        orderBy: { updatedAt: "desc" },
-      }),
-      prisma.article.findMany({
-        where: { status: "published" },
-        select: { slug: true, updatedAt: true },
-        orderBy: { updatedAt: "desc" },
-      }),
-    ]);
+  // Static pages for each locale
+  const staticPages = [
+    { path: "", priority: 1.0, freq: "daily" as const },
+    { path: "/products", priority: 0.9, freq: "weekly" as const },
+    { path: "/blog", priority: 0.7, freq: "weekly" as const },
+    { path: "/about", priority: 0.5, freq: "monthly" as const },
+    { path: "/arbitrage-top", priority: 0.8, freq: "daily" as const },
+    { path: "/arbitrage-calculator", priority: 0.7, freq: "weekly" as const },
+    { path: "/intelligence", priority: 0.7, freq: "daily" as const },
+    { path: "/logistics", priority: 0.6, freq: "monthly" as const },
+  ];
 
-    // Static pages for each locale
-    const staticPages = [
-      "", // homepage
-      "/products",
-      "/blog",
-      "/about",
-      "/arbitrage-top",
-      "/arbitrage-calculator",
-      "/intelligence",
-      "/logistics",
-    ];
+  const entries: MetadataRoute.Sitemap = [];
 
-    const staticEntries: MetadataRoute.Sitemap = [];
-    for (const locale of locales) {
-      for (const page of staticPages) {
-        staticEntries.push({
-          url: `${BASE_URL}/${locale}${page}`,
-          lastModified: new Date(),
-          changeFrequency: page === "" ? "daily" : "weekly",
-          priority: page === "" ? 1.0 : page === "/products" ? 0.9 : 0.7,
-        });
-      }
+  for (const locale of locales) {
+    // Static pages
+    for (const page of staticPages) {
+      entries.push({
+        url: `${BASE_URL}/${locale}${page.path}`,
+        lastModified: new Date(),
+        changeFrequency: page.freq,
+        priority: page.priority,
+      });
     }
 
-    // Product detail pages for each locale
-    const productEntries: MetadataRoute.Sitemap = [];
-    for (const locale of locales) {
-      for (const product of products) {
-        productEntries.push({
-          url: `${BASE_URL}/${locale}/products/${product.id}`,
-          lastModified: product.updatedAt,
-          changeFrequency: "weekly",
-          priority: 0.8,
-        });
-      }
+    // Product detail pages
+    for (const product of products) {
+      entries.push({
+        url: `${BASE_URL}/${locale}/products/${product.id}`,
+        lastModified: product.updatedAt,
+        changeFrequency: "weekly",
+        priority: 0.8,
+      });
     }
 
-    // Blog article pages for each locale
-    const articleEntries: MetadataRoute.Sitemap = [];
-    for (const locale of locales) {
-      for (const article of articles) {
-        articleEntries.push({
-          url: `${BASE_URL}/${locale}/blog/${article.slug}`,
-          lastModified: article.updatedAt,
-          changeFrequency: "monthly",
-          priority: 0.6,
-        });
-      }
+    // Blog article pages
+    for (const article of articles) {
+      entries.push({
+        url: `${BASE_URL}/${locale}/blog/${article.slug}`,
+        lastModified: article.updatedAt,
+        changeFrequency: "monthly",
+        priority: 0.6,
+      });
     }
 
-    return [...staticEntries, ...productEntries, ...articleEntries];
-  } finally {
-    await prisma.$disconnect();
+    // Brand pages
+    for (const brand of brands) {
+      entries.push({
+        url: `${BASE_URL}/${locale}/brand/${brand.slug}`,
+        lastModified: brand.updatedAt,
+        changeFrequency: "weekly",
+        priority: 0.7,
+      });
+    }
+
+    // Category pages
+    for (const category of categories) {
+      entries.push({
+        url: `${BASE_URL}/${locale}/category/${category.slug}`,
+        lastModified: category.updatedAt,
+        changeFrequency: "weekly",
+        priority: 0.7,
+      });
+    }
   }
+
+  return entries;
 }
