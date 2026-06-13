@@ -119,7 +119,7 @@ export function generateImageAlt(
   // 添加成色
   if (extra?.condition) {
     parts.push("—");
-    const conditionMap: Record<string, string> = {
+    const conditionMap: Record<string, Record<string, string>> = {
       zh: { excellent: "优秀", good: "良好", fair: "一般", poor: "较差" },
       en: { excellent: "Excellent", good: "Good", fair: "Fair", poor: "Poor" },
     };
