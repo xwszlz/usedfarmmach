@@ -11,7 +11,7 @@ export function generateOrganizationJsonLd(locale: string) {
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: locale === "zh" ? "石家庄神雕科技有限公司" : "Shijiazhuang Shendiao Technology Co., Ltd.",
+    name: locale === "zh" ? "石家庄神雕农机科技有限公司" : "Shijiazhuang Shendiao Agricultural Machinery Technology Co., Ltd.",
     alternateName: locale === "zh" ? "神雕农机" : "AgriTrade",
     url: `${BASE_URL}/${locale}`,
     logo: `${BASE_URL}/images/logo.png`,
@@ -272,7 +272,7 @@ export function generateLocalBusinessJsonLd(locale: string) {
   return {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
-    name: locale === "zh" ? "石家庄神雕科技有限公司" : "Shijiazhuang Shendiao Technology Co., Ltd.",
+    name: locale === "zh" ? "石家庄神雕农机科技有限公司" : "Shijiazhuang Shendiao Agricultural Machinery Technology Co., Ltd.",
     alternateName: locale === "zh" ? "神雕农机" : "AgriTrade",
     url: `${BASE_URL}/${locale}`,
     logo: `${BASE_URL}/images/logo.png`,

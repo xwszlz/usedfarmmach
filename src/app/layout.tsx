@@ -23,9 +23,9 @@ export const metadata: Metadata = {
     "约翰迪尔拖拉机", "克拉斯收割机", "二手农机价格", "农机跨境套利",
     "used farm machinery", "agricultural equipment export",
   ],
-  authors: [{ name: "石家庄神雕科技有限公司" }],
+  authors: [{ name: "石家庄神雕农机科技有限公司" }],
   creator: "神雕农机",
-  publisher: "石家庄神雕科技有限公司",
+  publisher: "石家庄神雕农机科技有限公司",
   alternates: {
     canonical: `${BASE_URL}/zh`,
     languages: {
