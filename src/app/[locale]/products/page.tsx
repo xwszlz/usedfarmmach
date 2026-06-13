@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { generatePageMetadata } from "@/lib/seo-metadata";
 import { BreadcrumbStructuredData, ItemListStructuredData } from "@/components/seo/structured-data";
 import { getImageUrl } from "@/lib/image-url";
+import { toSlug } from "@/lib/slug";
 import ProductsClient from "./ProductsClient";
 import type { Product } from "@/types";
 
@@ -66,8 +67,8 @@ export default async function ProductsPage({
   });
 
   // Fetch filter options server-side
-  const brands = await prisma.brand.findMany({ select: { slug: true, nameZh: true, nameEn: true, nameRu: true }, orderBy: { nameEn: "asc" } });
-  const categories = await prisma.category.findMany({ select: { slug: true, nameZh: true, nameEn: true, nameRu: true }, orderBy: { nameEn: "asc" } });
+  const brands = await prisma.brand.findMany({ select: { nameZh: true, nameEn: true, nameRu: true }, orderBy: { nameEn: "asc" } });
+  const categories = await prisma.category.findMany({ select: { nameZh: true, nameEn: true, nameRu: true }, orderBy: { nameEn: "asc" } });
   const locations = await prisma.product.findMany({ where: { status: "active" }, select: { location: true }, distinct: ["location"] });
 
   const getLabel = (item: any) => {
@@ -94,8 +95,8 @@ export default async function ProductsPage({
         initialProducts={products}
         initialTotal={total}
         initialTotalPages={totalPages}
-        initialBrands={brands.map((b: any) => ({ value: b.slug, label: getLabel(b) }))}
-        initialCategories={categories.map((c: any) => ({ value: c.slug, label: getLabel(c) }))}
+        initialBrands={brands.map((b: any) => ({ value: toSlug(b.nameEn), label: getLabel(b) }))}
+        initialCategories={categories.map((c: any) => ({ value: toSlug(c.nameEn), label: getLabel(c) }))}
         initialLocations={locations.filter((l: any) => l.location).map((l: any) => ({ value: l.location, label: l.location }))}
       />
     </>

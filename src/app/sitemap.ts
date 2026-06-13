@@ -1,5 +1,6 @@
 import { MetadataRoute } from "next";
 import { prisma } from "@/lib/db";
+import { toSlug } from "@/lib/slug";
 
 // ISR: 每天重新生成站点地图
 export const revalidate = 86400;
@@ -21,12 +22,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       orderBy: { updatedAt: "desc" },
     }),
     prisma.brand.findMany({
-      select: { slug: true, updatedAt: true },
-      orderBy: { slug: "asc" },
+      select: { nameEn: true },
+      orderBy: { nameEn: "asc" },
     }),
     prisma.category.findMany({
-      select: { slug: true, updatedAt: true },
-      orderBy: { slug: "asc" },
+      select: { nameEn: true },
+      orderBy: { nameEn: "asc" },
     }),
   ]);
 
@@ -78,8 +79,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Brand pages
     for (const brand of brands) {
       entries.push({
-        url: `${BASE_URL}/${locale}/brand/${brand.slug}`,
-        lastModified: brand.updatedAt,
+        url: `${BASE_URL}/${locale}/brand/${toSlug(brand.nameEn)}`,
+        lastModified: new Date(),
         changeFrequency: "weekly",
         priority: 0.7,
       });
@@ -88,8 +89,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Category pages
     for (const category of categories) {
       entries.push({
-        url: `${BASE_URL}/${locale}/category/${category.slug}`,
-        lastModified: category.updatedAt,
+        url: `${BASE_URL}/${locale}/category/${toSlug(category.nameEn)}`,
+        lastModified: new Date(),
         changeFrequency: "weekly",
         priority: 0.7,
       });
