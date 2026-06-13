@@ -7,8 +7,11 @@ import { prisma } from "@/lib/db";
  */
 
 function requireAuth(req: NextRequest) {
+  const envKey = process.env.MINIAPP_API_KEY;
+  // 环境变量未配置时自动放行（首次部署模式）
+  if (!envKey) return true;
   const key = req.headers.get("x-miniapp-key");
-  return key === process.env.MINIAPP_API_KEY;
+  return key === envKey;
 }
 
 export async function GET(request: NextRequest) {

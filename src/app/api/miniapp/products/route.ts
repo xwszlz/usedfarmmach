@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getOssUrl } from "@/lib/oss-upload";
 
 /**
  * 小程序 API — 产品列表 & 创建
@@ -8,11 +7,11 @@ import { getOssUrl } from "@/lib/oss-upload";
  */
 
 function requireAuth(req: NextRequest) {
+  const envKey = process.env.MINIAPP_API_KEY;
+  // 环境变量未配置时自动放行（首次部署模式）
+  if (!envKey) return true;
   const key = req.headers.get("x-miniapp-key");
-  if (key !== process.env.MINIAPP_API_KEY) {
-    return false;
-  }
-  return true;
+  return key === envKey;
 }
 
 // 产品图片基础字段
