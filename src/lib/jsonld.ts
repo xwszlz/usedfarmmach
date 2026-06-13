@@ -123,7 +123,7 @@ export function generateProductJsonLd(product: ProductData) {
       : {
           itemCondition: {
             "@type": "UsedCondition",
-            name: product.condition === "excellent" ? "优秀" : product.condition === "good" ? "良好" : product.condition === "fair" ? "一般" : "较差",
+            name: product.condition === "fair" ? "一般" : "较差",
           },
         }),
     ...(product.workingHours
