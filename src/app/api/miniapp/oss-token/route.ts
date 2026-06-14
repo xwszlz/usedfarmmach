@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
 
     const policyBase64 = Buffer.from(JSON.stringify(policy)).toString("base64");
 
-    // HMAC-SHA1 signature
+    // HMAC-SHA1 signature — OSS requires uppercase "Signature" in form field
     const hmac = crypto.createHmac("sha1", accessKeySecret);
     hmac.update(policyBase64, "utf-8");
     const signature = hmac.digest("base64");
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
         host: OSS_HOST,
         accessKeyId,
         policy: policyBase64,
-        signature,
+        Signature: signature,  // 注意大写 S — OSS POST 表单要求
         key,
         dir,
         url: `${OSS_HOST}/${key}`,
