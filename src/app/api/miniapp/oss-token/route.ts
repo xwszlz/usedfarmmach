@@ -45,7 +45,6 @@ export async function POST(request: NextRequest) {
       conditions: [
         { bucket: OSS_BUCKET },
         ["starts-with", "$key", dir],
-        { "x-oss-credential": accessKeyId },
       ],
     };
 
