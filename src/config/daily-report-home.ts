@@ -102,11 +102,11 @@ export const DAILY_REPORT_CONFIG: DailyReportConfig = {
   topArbitrage: [
     {
       rank: 0,
-      productZh: "🔥 纽荷兰 5070 小方捆（2020款）", productEn: "🔥 NH 5070 Small Baler (2020)", productRu: "🔥 NH 5070 Пресс (2020)",
+      productZh: "🔥 纽荷兰 5070 小方捆（2013款）", productEn: "🔥 NH 5070 Small Baler (2013)", productRu: "🔥 NH 5070 Пресс (2013)",
       price: 34000,
       profitZh: "2万/台·12台库存", profitEn: "20K/unit·12 stock", profitRu: "20K/ед·12 склад",
       margin: "58.8%",
-      productId: "cmpzm1qnu002pyllpcqe4rlll",
+      productId: "cmpzm1r610030yllp7jcxhfv5",
     },
     {
       rank: 1,

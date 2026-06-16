@@ -16,9 +16,9 @@ export interface DailyReportRankItem {
 
 export const DAILY_REPORT_RANKING: DailyReportRankItem[] = [
   // 🔥 头条爆款：纽荷兰5070小方捆
-  { id: "cmpzm1qnu002pyllpcqe4rlll", rank: 0, model: "🔥 纽荷兰 5070 小方捆（2020款）", price: 34000, foreignPriceDesc: "海外$7,000+ / 库存12台", profit: "2万/台", margin: "58.8%" },
+  { id: "cmpzm1r610030yllp7jcxhfv5", rank: 0, model: "🔥 纽荷兰 5070 小方捆（2013款）", price: 34000, foreignPriceDesc: "海外$7,000+ / 库存12台", profit: "2万/台", margin: "58.8%" },
   // 热门设备（首页 #2-#5）
-  { id: "cmpzm1qnu002pyllpcqe4rlll", rank: 1, model: "纽荷兰 5070 小方捆（2020款）·爆款", price: 34000, foreignPriceDesc: "海外$7,000+ / 库存12台", profit: "2万/台", margin: "58.8%" },
+  { id: "cmpzm1r610030yllp7jcxhfv5", rank: 1, model: "纽荷兰 5070 小方捆（2013款）·爆款", price: 34000, foreignPriceDesc: "海外$7,000+ / 库存12台", profit: "2万/台", margin: "58.8%" },
   { id: "cmpfohy08000tkrh5vaaw12nd", rank: 2, model: "克拉斯 Jaguar 970（2017款/欧版）", price: 1630000, foreignPriceDesc: "EUR429K(339万)", profit: "176.4万", margin: "108.2%" },
   { id: "cmpdknkog00b311kwql4ortgt", rank: 3, model: "Orkel DENS-X 裹包机（2019款/挪威）", price: 1050000, foreignPriceDesc: "EUR130K+(102万+)", profit: "3万+", margin: "2.9%" },
   // 高套利（毛利 50~100万）
