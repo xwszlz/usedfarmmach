@@ -72,7 +72,7 @@ export function getLocalizedData(locale: string) {
 }
 
 export const DAILY_REPORT_CONFIG: DailyReportConfig = {
-  date: "2026-06-02",
+  date: "2026-06-17",
   highlights: [
     {
       emoji: "💱",
