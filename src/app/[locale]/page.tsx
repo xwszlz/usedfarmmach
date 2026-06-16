@@ -31,7 +31,7 @@ export async function generateMetadata({
 const baseInclude = {
   brand: true,
   category: true,
-  images: { orderBy: { sortOrder: "asc" as const } },
+  images: { orderBy: { sortOrder: "asc" as const }, take: 1 },
   internationalPrices: { orderBy: { sourceDate: "desc" as const }, take: 1 },
   seller: { select: { id: true, companyName: true, country: true } },
 };

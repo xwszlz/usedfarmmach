@@ -5,9 +5,7 @@
  * locale参数控制返回哪个语言的内容 (zh/en/ru)
  */
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/db";
 
 export async function GET(request: NextRequest) {
   try {
@@ -69,6 +67,8 @@ export async function GET(request: NextRequest) {
       success: true,
       data: parsed,
       date: dateFilter.toISOString().split("T")[0],
+    }, {
+      headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" },
     });
   } catch (error) {
     console.error("获取市场情报失败:", error);

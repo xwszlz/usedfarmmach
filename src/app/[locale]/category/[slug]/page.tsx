@@ -5,6 +5,8 @@ import { BreadcrumbStructuredData } from "@/components/seo/structured-data";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
 
+export const revalidate = 600;
+
 async function getCategoryData(slug: string) {
   try {
     const apiUrl = `${BASE_URL}/api/categories?slug=${encodeURIComponent(slug)}`;

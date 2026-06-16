@@ -101,6 +101,14 @@ export const DAILY_REPORT_CONFIG: DailyReportConfig = {
   ],
   topArbitrage: [
     {
+      rank: 0,
+      productZh: "🔥 纽荷兰 5070 小方捆（2020款）", productEn: "🔥 NH 5070 Small Baler (2020)", productRu: "🔥 NH 5070 Пресс (2020)",
+      price: 34000,
+      profitZh: "2万/台·12台库存", profitEn: "20K/unit·12 stock", profitRu: "20K/ед·12 склад",
+      margin: "58.8%",
+      productId: "cmpzm1qnu002pyllpcqe4rlll",
+    },
+    {
       rank: 1,
       productZh: "克拉斯 Jaguar 970（2017款）", productEn: "CLAAS Jaguar 970 (2017)", productRu: "CLAAS Jaguar 970 (2017)",
       price: 1630000,
@@ -126,6 +134,13 @@ export const DAILY_REPORT_CONFIG: DailyReportConfig = {
     },
   ],
   marketIntel: [
+    {
+      icon: "🔥",
+      textZh: "纽荷兰5070小方捆·12台库存爆款！¥3.4万/台，海外$7000+，利润58.8%，小方捆打捆机需求旺盛",
+      textEn: "New Holland 5070 Small Square Baler·12 units! ¥34K/unit, overseas $7K+, 58.8% margin, high demand",
+      textRu: "New Holland 5070 Малый тюковый пресс·12 ед! ¥34K/ед, зарубеж $7K+, 58.8% маржа, высокий спрос",
+      url: "/zh/intelligence",
+    },
     {
       icon: "🇷🇺",
       textZh: "目标市场（俄罗斯、东南亚、中东）买家需求优先级确认中",

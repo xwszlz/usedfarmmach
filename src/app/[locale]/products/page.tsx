@@ -9,6 +9,8 @@ import type { Product } from "@/types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
 
+export const revalidate = 300;
+
 export async function generateMetadata({
   params,
 }: {
