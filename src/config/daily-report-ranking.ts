@@ -22,9 +22,9 @@ export const DAILY_REPORT_RANKING: DailyReportRankItem[] = [
   { id: "cmpfohy08000tkrh5vaaw12nd", rank: 2, model: "克拉斯 Jaguar 970（2017款/欧版）", price: 1630000, foreignPriceDesc: "EUR429K(339万)", profit: "176.4万", margin: "108.2%" },
   { id: "cmpdknkog00b311kwql4ortgt", rank: 3, model: "Orkel DENS-X 裹包机（2019款/挪威）", price: 1050000, foreignPriceDesc: "EUR130K+(102万+)", profit: "3万+", margin: "2.9%" },
   // 高套利（毛利 50~100万）
-  { id: "cmpdknk4s008111kw3zr8aimf", rank: 4, model: "克拉斯 5300RC（2022款/全新）", price: 950000, foreignPriceDesc: "EUR25万+", profit: "85万+", margin: "89.5%" },
+  { id: "cmpdknitp001v11kwskpdqx6s", rank: 4, model: "克拉斯 Jaguar 980（2016款/美版）", price: 1430000, foreignPriceDesc: "EUR378K(299万)", profit: "156.0万", margin: "109.1%" },
   // 第一梯队：超高套利（毛利 >100万）
-  { id: "cmpdknitp001v11kwskpdqx6s", rank: 5, model: "克拉斯 Jaguar 980（2016款/美版）", price: 1430000, foreignPriceDesc: "EUR378K(299万)", profit: "156.0万", margin: "109.1%" },
+  { id: "cmpdknk4s008111kw3zr8aimf", rank: 5, model: "克拉斯 5300RC（2022款/全新）", price: 950000, foreignPriceDesc: "EUR25万+", profit: "85万+", margin: "89.5%" },
   { id: "cmpdknix7002h11kwupfm486g", rank: 6, model: "克拉斯 Jaguar 980（2015款）", price: 1300000, foreignPriceDesc: "EUR190K~220K", profit: "95万+", margin: "73.1%" },
   // 第二梯队：高套利（毛利 50~100万）
   { id: "cmpfohxzt000pkrh533z2mf2z", rank: 7, model: "克拉斯 Jaguar 850（2020款/准新机）", price: 1190000, foreignPriceDesc: "EUR25万+", profit: "82万+", margin: "68.9%" },
