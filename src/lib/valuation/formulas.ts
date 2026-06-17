@@ -9,6 +9,7 @@ import {
   BRAND_COEFFICIENTS,
   DEFAULT_BRAND_COEFFICIENT,
   CATEGORY_BASE_PRICES,
+  MODEL_BASE_PRICES,
   CONDITION_FACTORS,
   DEPRECIATION_TABLE,
   HOURS_PARAMS,
@@ -69,11 +70,23 @@ function getBrandFactor(brand: string): number {
 
 /**
  * 获取品类基准价
+ * 优先级：型号精确匹配 > 品类名匹配 > 默认值
  */
-function getCategoryBasePrice(category: string): number {
+function getCategoryBasePrice(category: string, modelName?: string): number {
+  // 1. 优先按型号匹配精确基准价
+  if (modelName) {
+    for (const [key, val] of Object.entries(MODEL_BASE_PRICES)) {
+      if (modelName.includes(key) || key.includes(modelName)) {
+        return val.basePrice * 10000;
+      }
+    }
+  }
+
+  // 2. 按品类名匹配
   for (const [key, val] of Object.entries(CATEGORY_BASE_PRICES)) {
     if (category.includes(key) || key.includes(category)) return val * 10000;
   }
+
   return 800000; // 默认80万
 }
 
@@ -141,7 +154,7 @@ export function calculateValuation(input: ValuationInput): ValuationResult {
   const currentYear = new Date().getFullYear();
 
   // 1. 基准价
-  const categoryBasePrice = getCategoryBasePrice(input.category);
+  const categoryBasePrice = getCategoryBasePrice(input.category, input.modelName);
   const brandFactor = getBrandFactor(input.brand);
   const basePrice = categoryBasePrice * brandFactor;
 

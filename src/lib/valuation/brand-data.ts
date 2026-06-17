@@ -46,7 +46,10 @@ export const DEFAULT_BRAND_COEFFICIENT = 0.85;
 // 品类基准新机价格（万元人民币）
 export const CATEGORY_BASE_PRICES: Record<string, number> = {
   "青储机": 250,
-  "打捆机": 120,
+  "打捆机": 120,   // 默认（大圆捆级别），实际由子品类/型号覆盖
+  "小方捆": 20,    // NH 5070/570, Case IH 等小方捆
+  "大方捆": 80,    // NH 1290/870, CLAAS 5300RC, Krone 1290 等大方捆
+  "圆捆机": 120,   // CLAAS Rollant, Krone 圆捆机
   "割草机": 60,
   "裹包机": 30,
   "捡石机": 20,
@@ -58,6 +61,28 @@ export const CATEGORY_BASE_PRICES: Record<string, number> = {
   "捡拾台": 15,
   "割台": 15,
   "茎穗兼收机": 50,
+};
+
+// 型号基准价格映射表（万元人民币）
+// 用于根据 modelName 精确定位基准价，优先级高于品类匹配
+export const MODEL_BASE_PRICES: Record<string, { category: string; basePrice: number }> = {
+  // 小方捆
+  "5070": { category: "小方捆", basePrice: 20 },
+  "570": { category: "小方捆", basePrice: 22 },
+  "9YDB": { category: "小方捆", basePrice: 8 },
+  "9YY": { category: "小方捆", basePrice: 10 },
+  // 大方捆
+  "870": { category: "大方捆", basePrice: 65 },
+  "1270": { category: "大方捆", basePrice: 70 },
+  "1290": { category: "大方捆", basePrice: 75 },
+  "5300RC": { category: "大方捆", basePrice: 80 },
+  "890": { category: "大方捆", basePrice: 70 },
+  "CF155": { category: "大方捆", basePrice: 75 },
+  "1290XC": { category: "大方捆", basePrice: 75 },
+  "9YG": { category: "大方捆", basePrice: 35 },
+  // 圆捆机
+  "Rollant": { category: "圆捆机", basePrice: 120 },
+  "RP": { category: "圆捆机", basePrice: 110 },
 };
 
 // 成色系数
