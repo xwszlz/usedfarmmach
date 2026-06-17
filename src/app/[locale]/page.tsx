@@ -86,7 +86,7 @@ export default async function HomePage({
           brand: locale === "zh" ? p.brand?.nameZh : p.brand?.nameEn,
         }))}
       />
-      <HeroSection locale={locale} topProduct={topProduct} topReportData={topReportData} heroCoverImage="/images/hero-claas-970-2017.jpg" />
+      <HeroSection locale={locale} topProduct={topProduct} topReportData={topReportData} />
       <DailyReportSection locale={locale} />
       <HotEquipment products={hotProducts} locale={locale} />
       <ArbitrageShowcase />
