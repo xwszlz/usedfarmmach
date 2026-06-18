@@ -72,18 +72,18 @@ export function getLocalizedData(locale: string) {
 }
 
 export const DAILY_REPORT_CONFIG: DailyReportConfig = {
-  date: "2026-06-17",
+  date: "2026-06-19",
   highlights: [
     {
       emoji: "💱",
       labelZh: "EUR/CNY 汇率", labelEn: "EUR/CNY Rate", labelRu: "Курс EUR/CNY",
-      valueZh: "7.9122 高位", valueEn: "7.9122 High", valueRu: "7.9122 высокий",
+      valueZh: "7.7600 逼近支撑", valueEn: "7.7600 Near Support", valueRu: "7.7600 у поддержки",
       color: "green",
     },
     {
       emoji: "💵",
       labelZh: "USD/CNY 汇率", labelEn: "USD/CNY Rate", labelRu: "Курс USD/CNY",
-      valueZh: "6.8167", valueEn: "6.8167", valueRu: "6.8167",
+      valueZh: "6.7702", valueEn: "6.7702", valueRu: "6.7702",
       color: "blue",
     },
     {
@@ -163,5 +163,5 @@ export const DAILY_REPORT_CONFIG: DailyReportConfig = {
       url: "/zh/products?sort=rank",
     },
   ],
-  totalProducts: 290,
+  totalProducts: 104,
 };
