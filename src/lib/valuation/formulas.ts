@@ -78,33 +78,49 @@ function getBrandFactor(brand: string): number {
  *    （JavaScript 对象迭代时整数键会优先于非整数键，导致 "300" 在 "5300RC" 前被遍历）
  */
 function getCategoryBasePrice(category: string, modelName?: string): number {
+  // 0. 附件品类前置检查 — 捡拾台/割台/捡拾器等是附件，不是整机
+  // 即使型号匹配到整机价格（如 "890" 匹配到大方捆70万），附件也应使用附件基准价
+  const ATTACHMENT_KEYWORDS = ["捡拾台", "割台", "捡拾器", "割草台", "捡拾头"];
+  const isAttachment = ATTACHMENT_KEYWORDS.some((kw) => category.includes(kw));
+  if (isAttachment) {
+    // 附件基准价：5-15万区间
+    return 100000; // 10万
+  }
+
+  // 子品类别名映射（让"打捆机"能匹配到"小方捆"/"大方捆"等子品类）
+  const CATEGORY_ALIASES: Record<string, string[]> = {
+    "打捆机": ["小方捆", "大方捆", "圆捆机", "打包机"],
+    "收获机": ["茎穗兼收机", "茎穗双收", "单收"],
+    "青储机": [],  // 青储机没有子品类
+  };
+
   if (modelName) {
     // 按 key 长度降序排列，长键优先匹配（避免 "300" 抢先匹配 "5300RC"）
     const sortedEntries = Object.entries(MODEL_BASE_PRICES).sort(
       (a, b) => b[0].length - a[0].length
     );
 
-    // 0. 精确匹配（型号完全等于 key）
+    // 1. 精确匹配（型号完全等于 key）
     for (const [key, val] of sortedEntries) {
       if (modelName === key) return val.basePrice * 10000;
     }
 
-    // 1a. 型号含子串匹配 + 品类一致性检查
-    for (const [key, val] of sortedEntries) {
-      if ((modelName.includes(key) || key.includes(modelName)) &&
-          (category.includes(val.category) || val.category.includes(category))) {
-        return val.basePrice * 10000;
-      }
-    }
-    // 1b. 型号含子串匹配（无品类一致性，降级匹配）
+    // 2. 型号含子串匹配 + 品类一致性检查（含子品类别名）
+    const aliases = CATEGORY_ALIASES[category] || [];
     for (const [key, val] of sortedEntries) {
       if (modelName.includes(key) || key.includes(modelName)) {
-        return val.basePrice * 10000;
+        // 检查品类一致：直接匹配 或 通过别名匹配
+        if (category.includes(val.category) || val.category.includes(category) ||
+            aliases.includes(val.category)) {
+          return val.basePrice * 10000;
+        }
       }
     }
+    // 注意：已删除"降级匹配"（无品类一致性的子串匹配），因为它会导致
+    // 捡拾台型号"890"误匹配到大方捆70万、捡拾台型号"1290"误匹配到大方捆75万等问题
   }
 
-  // 2. 按品类名匹配
+  // 3. 按品类名匹配
   for (const [key, val] of Object.entries(CATEGORY_BASE_PRICES)) {
     if (category.includes(key) || key.includes(category)) return val * 10000;
   }
@@ -194,7 +210,13 @@ export function calculateValuation(input: ValuationInput): ValuationResult {
   const marketFactor = calcMarketFactor(input.foreignPriceCny, baseValue);
 
   // 6. 最终估值
-  const estimatedValue = Math.round(baseValue * marketFactor);
+  let estimatedValue = Math.round(baseValue * marketFactor);
+
+  // 6a. 估值上限保护：如果AI估值远超卖家报价（>2倍），说明可能是配件/残值机
+  // 或者基准价对该产品不适用，将估值限制在报价的2倍以内
+  if (input.priceCny && input.priceCny > 0 && estimatedValue > input.priceCny * 2) {
+    estimatedValue = Math.round(input.priceCny * 2);
+  }
 
   // 7. 折旧率
   const depreciationPercent = Math.round((1 - estimatedValue / basePrice) * 100);

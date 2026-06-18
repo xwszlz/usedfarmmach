@@ -277,17 +277,17 @@ const mower_result = calculateValuation(mower);
 const mower_wan = mower_result.estimatedValue / 10000;
 
 assert(
-  mower_result.basePrice === 600000 * 1.00,
-  "割草机 基准价 = 60万 × 库恩1.00 = 60万",
-  `${600000 * 1.00}`,
+  mower_result.basePrice === 400000 * 1.00,
+  "割草机 基准价 = 40万 × 库恩1.00 = 40万",
+  `${400000 * 1.00}`,
   `${mower_result.basePrice}`
 );
 
 assertInRange(
   mower_wan,
-  30,
-  55,
-  "割草机(库恩FC313 2021) 估值应在30-55万区间"
+  20,
+  40,
+  "割草机(库恩FC313 2021) 估值应在20-40万区间"
 );
 
 console.log(`  ℹ️  库恩FC313(2021) 详细估值: ¥${mower_wan.toFixed(1)}万`);
@@ -384,9 +384,9 @@ const unknownModel: ValuationInput = {
 };
 const unknownModel_result = calculateValuation(unknownModel);
 assert(
-  unknownModel_result.basePrice === 1200000 * 1.10,
-  '无匹配型号回退到品类"打捆机"默认价120万',
-  `${1200000 * 1.10}`,
+  unknownModel_result.basePrice === 400000 * 1.10,
+  '无匹配型号回退到品类"打捆机"默认价40万',
+  `${400000 * 1.10}`,
   `${unknownModel_result.basePrice}`
 );
 
@@ -469,9 +469,9 @@ assert(
   `${CATEGORY_BASE_PRICES["大方捆"]}`
 );
 assert(
-  "圆捆机" in CATEGORY_BASE_PRICES && CATEGORY_BASE_PRICES["圆捆机"] === 120,
-  'CATEGORY_BASE_PRICES["圆捆机"] = 120万',
-  "120",
+  "圆捆机" in CATEGORY_BASE_PRICES && CATEGORY_BASE_PRICES["圆捆机"] === 100,
+  'CATEGORY_BASE_PRICES["圆捆机"] = 100万',
+  "100",
   `${CATEGORY_BASE_PRICES["圆捆机"]}`
 );
 
@@ -713,9 +713,9 @@ const danShou: ValuationInput = {
 };
 const danShou_result = calculateValuation(danShou);
 assert(
-  danShou_result.basePrice === 80000 * 0.30,
-  '品类"单收" 无匹配型号 → 8万 × 废铁0.30 = 2.4万',
-  `${80000 * 0.30}`,
+  danShou_result.basePrice === 60000 * 0.30,
+  '品类"单收" 无匹配型号 → 6万 × 废铁0.30 = 1.8万',
+  `${60000 * 0.30}`,
   `${danShou_result.basePrice}`
 );
 
@@ -729,9 +729,9 @@ const tianCai: ValuationInput = {
 };
 const tianCai_result = calculateValuation(tianCai);
 assert(
-  tianCai_result.basePrice === 300000 * 0.45,
-  '品类"甜菜机" 无匹配型号 → 30万 × 艾美特0.45 = 13.5万',
-  `${300000 * 0.45}`,
+  tianCai_result.basePrice === 200000 * 0.45,
+  '品类"甜菜机" 无匹配型号 → 20万 × 艾美特0.45 = 9万',
+  `${200000 * 0.45}`,
   `${tianCai_result.basePrice}`
 );
 
@@ -745,9 +745,9 @@ const shensuobi: ValuationInput = {
 };
 const shensuobi_result = calculateValuation(shensuobi);
 assert(
-  shensuobi_result.basePrice === 250000 * 1.10,
-  '品类"伸缩臂夹包机" 无匹配型号 → 25万 × 曼尼通1.10 = 27.5万',
-  `${250000 * 1.10}`,
+  shensuobi_result.basePrice === 200000 * 1.10,
+  '品类"伸缩臂夹包机" 无匹配型号 → 20万 × 曼尼通1.10 = 22万',
+  `${200000 * 1.10}`,
   `${shensuobi_result.basePrice}`
 );
 
