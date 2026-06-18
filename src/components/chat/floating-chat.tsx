@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { MessageCircle, X, Send, Bot, User, ChevronRight, Loader2 } from "lucide-react";
 import { ProductCardList, type ProductCardData } from "./product-card";
