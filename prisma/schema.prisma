@@ -356,3 +356,34 @@ model MarketIntel {
   @@index([date])
   @@index([isActive, date])
 }
+
+// ── 多语客服 Agent 对话表 ──
+model ChatSession {
+  id        String   @id @default(cuid())
+  visitorId String   // 匿名访客指纹或登录用户ID
+  productId String?  // 关联产品（如果从产品页发起）
+  locale    String   @default("en") // zh, en, ru, es, pt, ar, fr, hi
+  status    String   @default("active") // active, closed, handed_over
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages ChatMessage[]
+
+  @@index([visitorId, status])
+  @@index([productId])
+  @@index([updatedAt])
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  sessionId String
+  role      String   // user, assistant, system, human
+  content   String   @db.Text
+  intent    String?  // 意图分类：price_inquiry, product_compare, shipping, payment, warranty, general, hand_over
+  metadata  String?  // JSON: { productIds: [...], confidence: 0.92, model: "openrouter/..." }
+  createdAt DateTime @default(now())
+
+  session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
+}

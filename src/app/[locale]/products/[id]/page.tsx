@@ -18,6 +18,7 @@ import { ValuationCard } from "@/components/valuation/valuation-card";
 import { DAILY_REPORT_RANKING } from "@/config/daily-report-ranking";
 import { getHreflangLanguages } from "@/components/seo/hreflang-head";
 import { ProductStructuredData, BreadcrumbStructuredData } from "@/components/seo/structured-data";
+import { FloatingChat } from "@/components/chat/floating-chat";
 
 export const revalidate = 300;
 
@@ -413,6 +414,8 @@ export default async function ProductDetailPage({
           </Card>
         </div>
       )}
+      {/* AI 多语客服浮动窗口 */}
+      <FloatingChat locale={locale as any} productId={id} />
     </div>
   );
 }
