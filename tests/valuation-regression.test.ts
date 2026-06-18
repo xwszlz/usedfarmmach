@@ -248,9 +248,9 @@ const jaguar970: ValuationInput = {
 const jaguar970_result = calculateValuation(jaguar970);
 
 assert(
-  jaguar970_result.basePrice === 2500000 * 1.30,
-  "青储机 基准价 = 250万 × 克拉斯1.30 = 325万",
-  `${2500000 * 1.30}`,
+  jaguar970_result.basePrice === 2800000 * 1.30,
+  "青储机(970) 基准价 = 型号映射280万 × 克拉斯1.30 = 364万",
+  `${2800000 * 1.30}`,
   `${jaguar970_result.basePrice}`
 );
 
@@ -585,6 +585,170 @@ assert(
   "formatValuationMoney(100000) = '¥10.0万'",
   "¥10.0万",
   formatValuationMoney(100000)
+);
+
+// ============================================================
+// 测试8：奥库DENS-X估值修复（V2核心Bug）
+// ============================================================
+console.log("\n═══════════════════════════════════════════════");
+console.log("测试8：奥库DENS-X估值修复（V2核心Bug）");
+console.log("═══════════════════════════════════════════════");
+
+const orkelDensX: ValuationInput = {
+  brand: "奥库",
+  modelName: "DENS-X",
+  category: "裹包机",
+  year: 2019,
+  condition: "good",
+};
+const orkelDensX_result = calculateValuation(orkelDensX);
+
+assert(
+  orkelDensX_result.brandFactor === 1.15,
+  "奥库品牌系数 = 1.15（从0.85调高）",
+  "1.15",
+  `${orkelDensX_result.brandFactor}`
+);
+
+assert(
+  orkelDensX_result.basePrice === 1600000 * 1.15,
+  "奥库DENS-X 基准价 = 型号映射160万 × 奥库1.15 = 184万",
+  `${1600000 * 1.15}`,
+  `${orkelDensX_result.basePrice}`
+);
+
+const orkelDensX_wan = orkelDensX_result.estimatedValue / 10000;
+assertInRange(
+  orkelDensX_wan,
+  80,
+  150,
+  "奥库DENS-X(2019) 估值应在80-150万区间（修复前仅15.6万）"
+);
+
+assert(
+  orkelDensX_wan > 50,
+  "奥库DENS-X 估值不再严重偏低（>50万，修复前15.6万）",
+  "> 50万",
+  `${orkelDensX_wan.toFixed(1)}万`
+);
+
+console.log(`  ℹ️  奥库DENS-X(2019) 详细估值: ¥${orkelDensX_wan.toFixed(1)}万`);
+
+// ============================================================
+// 测试9：5300RC key匹配Bug修复验证
+// ============================================================
+console.log("\n═══════════════════════════════════════════════");
+console.log("测试9：5300RC key匹配Bug修复验证");
+console.log("═══════════════════════════════════════════════");
+
+const claas5300rc_check: ValuationInput = {
+  brand: "克拉斯",
+  modelName: "5300RC",
+  category: "打捆机",
+  year: 2022,
+  condition: "good",
+};
+const claas5300rc_check_result = calculateValuation(claas5300rc_check);
+
+assert(
+  claas5300rc_check_result.basePrice === 800000 * 1.30,
+  '5300RC 匹配 "5300RC"键 → 大方捆80万（不是"300"键15万）',
+  `${800000 * 1.30}`,
+  `${claas5300rc_check_result.basePrice}`
+);
+
+assert(
+  claas5300rc_check_result.basePrice > 1000000,
+  "5300RC 基准价 > 100万（确认未被300键误匹配为15万）",
+  "> 100万",
+  `${claas5300rc_check_result.basePrice}`
+);
+
+// ============================================================
+// 测试10：牧农品牌系数修复
+// ============================================================
+console.log("\n═══════════════════════════════════════════════");
+console.log("测试10：牧农品牌系数修复");
+console.log("═══════════════════════════════════════════════");
+
+const munongYT: ValuationInput = {
+  brand: "牧农",
+  modelName: "YT",
+  category: "青储机",
+  year: 2020,
+  condition: "good",
+};
+const munongYT_result = calculateValuation(munongYT);
+
+assert(
+  munongYT_result.brandFactor === 0.45,
+  "牧农品牌系数 = 0.45（不是默认0.85）",
+  "0.45",
+  `${munongYT_result.brandFactor}`
+);
+
+assert(
+  munongYT_result.basePrice === 120000 * 0.45,
+  "牧农YT 基准价 = 型号映射12万 × 牧农0.45 = 5.4万",
+  `${120000 * 0.45}`,
+  `${munongYT_result.basePrice}`
+);
+
+console.log(`  ℹ️  牧农YT(2020) 详细估值: ¥${(munongYT_result.estimatedValue / 10000).toFixed(1)}万`);
+
+// ============================================================
+// 测试11：新增品类验证
+// ============================================================
+console.log("\n═══════════════════════════════════════════════");
+console.log("测试11：新增品类验证");
+console.log("═══════════════════════════════════════════════");
+
+// 单收 - 无型号，回退品类匹配
+const danShou: ValuationInput = {
+  brand: "废铁",
+  modelName: "未知型号",
+  category: "单收",
+  year: 2024,
+  condition: "good",
+};
+const danShou_result = calculateValuation(danShou);
+assert(
+  danShou_result.basePrice === 80000 * 0.30,
+  '品类"单收" 无匹配型号 → 8万 × 废铁0.30 = 2.4万',
+  `${80000 * 0.30}`,
+  `${danShou_result.basePrice}`
+);
+
+// 甜菜机 - 无型号，回退品类匹配
+const tianCai: ValuationInput = {
+  brand: "艾美特",
+  modelName: "未知型号",
+  category: "甜菜机",
+  year: 2023,
+  condition: "good",
+};
+const tianCai_result = calculateValuation(tianCai);
+assert(
+  tianCai_result.basePrice === 300000 * 0.45,
+  '品类"甜菜机" 无匹配型号 → 30万 × 艾美特0.45 = 13.5万',
+  `${300000 * 0.45}`,
+  `${tianCai_result.basePrice}`
+);
+
+// 伸缩臂夹包机 - 无型号，回退品类匹配
+const shensuobi: ValuationInput = {
+  brand: "曼尼通",
+  modelName: "未知型号",
+  category: "伸缩臂夹包机",
+  year: 2021,
+  condition: "good",
+};
+const shensuobi_result = calculateValuation(shensuobi);
+assert(
+  shensuobi_result.basePrice === 250000 * 1.10,
+  '品类"伸缩臂夹包机" 无匹配型号 → 25万 × 曼尼通1.10 = 27.5万',
+  `${250000 * 1.10}`,
+  `${shensuobi_result.basePrice}`
 );
 
 // ============================================================

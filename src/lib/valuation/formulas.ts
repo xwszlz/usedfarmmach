@@ -70,12 +70,34 @@ function getBrandFactor(brand: string): number {
 
 /**
  * 获取品类基准价
- * 优先级：型号精确匹配 > 品类名匹配 > 默认值
+ * 优先级：精确匹配 > 型号含子串匹配（按key长度降序，品类一致）> 型号降级匹配 > 品类名匹配 > 默认值
+ *
+ * 改进：
+ * 1. 型号匹配时先检查品类一致性，避免数字型号跨品类误匹配
+ * 2. 按 key 长度降序排列，防止短数字键（如 "300"）抢先匹配长型号（如 "5300RC"）
+ *    （JavaScript 对象迭代时整数键会优先于非整数键，导致 "300" 在 "5300RC" 前被遍历）
  */
 function getCategoryBasePrice(category: string, modelName?: string): number {
-  // 1. 优先按型号匹配精确基准价
   if (modelName) {
-    for (const [key, val] of Object.entries(MODEL_BASE_PRICES)) {
+    // 按 key 长度降序排列，长键优先匹配（避免 "300" 抢先匹配 "5300RC"）
+    const sortedEntries = Object.entries(MODEL_BASE_PRICES).sort(
+      (a, b) => b[0].length - a[0].length
+    );
+
+    // 0. 精确匹配（型号完全等于 key）
+    for (const [key, val] of sortedEntries) {
+      if (modelName === key) return val.basePrice * 10000;
+    }
+
+    // 1a. 型号含子串匹配 + 品类一致性检查
+    for (const [key, val] of sortedEntries) {
+      if ((modelName.includes(key) || key.includes(modelName)) &&
+          (category.includes(val.category) || val.category.includes(category))) {
+        return val.basePrice * 10000;
+      }
+    }
+    // 1b. 型号含子串匹配（无品类一致性，降级匹配）
+    for (const [key, val] of sortedEntries) {
       if (modelName.includes(key) || key.includes(modelName)) {
         return val.basePrice * 10000;
       }
