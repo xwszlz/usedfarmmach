@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, CheckCircle, AlertCircle, Upload, Camera, Video, Image, Plus, X } from "lucide-react";
 import Link from "next/link";
+import SellerAiAssistant from "@/components/seller/ai-assistant";
 
 const CONDITIONS = [
   { value: "excellent", label: "优秀/全新" },
@@ -170,6 +171,26 @@ export default function NewProductPage() {
 
       <h1 className="mb-2 text-2xl font-bold text-gray-900">发布新产品</h1>
       <p className="mb-8 text-sm text-gray-500">发布消耗 1 积分。支持自定义品牌/品类，上传 16:9 封面图和运转视频</p>
+
+      {/* AI 拍照识别助手 */}
+      <div className="mb-8">
+        <SellerAiAssistant
+          onFill={(data) => {
+            setForm((f) => ({
+              ...f,
+              brandName: data.brandName,
+              modelName: data.modelName,
+              year: data.year,
+              workingHours: data.workingHours,
+              condition: data.condition,
+            }));
+            // 如果有品牌名，尝试切换到自定义品牌模式
+            if (data.brandName) {
+              setBrandMode("custom");
+            }
+          }}
+        />
+      </div>
 
       <div className="space-y-6 rounded-xl border bg-white p-6 shadow-sm">
         {/* ====== 基本信息 ====== */}

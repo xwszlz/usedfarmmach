@@ -1,0 +1,54 @@
+# #1 卖方采集 Agent — 每日定时采集工作流
+# 触发：每天 06:00 UTC+8 (前一天 22:00 UTC)
+# 行为：运行 Python 采集脚本 → 导入到 Neon DB
+
+name: Seller Scout Daily
+
+on:
+  schedule:
+    # 每天 UTC 22:00 = 北京时间 06:00
+    - cron: "0 22 * * *"
+  workflow_dispatch: # 支持手动触发
+
+jobs:
+  scrape-and-import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install Python dependencies
+        run: pip install urllib3
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Run Agriaffaires scraper
+        run: python scripts/scrape_agriaffaires.py
+        env:
+          PYTHONIOENCODING: utf-8
+
+      - name: Import to database
+        run: npx tsx scripts/import-seller-scout.ts
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Report status
+        if: always()
+        run: |
+          echo "Scrape status: ${{ job.status }}"
+          echo "Date: $(date -u +%Y-%m-%dT%H:%M:%SZ)"

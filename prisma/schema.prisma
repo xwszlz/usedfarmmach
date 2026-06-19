@@ -374,6 +374,50 @@ model ChatSession {
   @@index([updatedAt])
 }
 
+// ── 卖方采集原始数据表 ──
+model RawListing {
+  id            String   @id @default(cuid())
+  source        String   // 来源：agriaffaires, tractorhouse, nongjitong, etc.
+  sourceUrl     String   // 原始链接
+  status        String   @default("pending") // pending, reviewed, approved, rejected
+  
+  // 产品信息（采集原始数据）
+  brandName     String   // 品牌名（原始文本，未映射到 Brand 表）
+  modelName     String   // 型号
+  year          Int?     // 年份
+  workingHours  Int?     // 工作小时
+  condition     String?  // 状况描述
+  priceRaw      Float?   // 原始价格
+  currency      String?  // 原始货币
+  priceCny      Float?   // 换算人民币
+  location      String   // 地区
+  
+  // 卖家信息
+  sellerName    String?  // 卖家名
+  sellerPhone   String?  // 电话
+  sellerWechat  String?  // 微信
+  sellerWhatsapp String? // WhatsApp
+  
+  // 图片
+  images        String?  // JSON 数组：["url1", "url2"]
+  
+  // 去重
+  contentHash   String   @unique // MD5(brand+model+year+location+price)
+  
+  // 元数据
+  scrapedAt     DateTime @default(now())
+  reviewedAt    DateTime?
+  reviewedBy    String?  // 审核人ID
+  notes         String?  // 审核备注
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([status, scrapedAt])
+  @@index([source, scrapedAt])
+  @@index([contentHash])
+}
+
 model ChatMessage {
   id        String   @id @default(cuid())
   sessionId String
