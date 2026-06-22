@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { ArbitrageCalculator } from "@/lib/services/arbitrage-calculator";
+import { cache, cacheKey } from "@/lib/cache";
 
 export async function GET(
   request: NextRequest,
@@ -13,6 +14,16 @@ export async function GET(
     // 解析查询参数
     const includeArbitrage = searchParams.get("includeArbitrage") !== "false"; // 默认true
     const arbitrageQuantity = parseInt(searchParams.get("quantity") || "1", 10);
+
+    // 缓存 key：按产品ID + 是否含套利，TTL 300 秒
+    const cacheKeyString = cacheKey(
+      "product",
+      `${id}${includeArbitrage ? ":arbitrage" : ""}`
+    );
+    const cached = await cache.get(cacheKeyString);
+    if (cached) {
+      return NextResponse.json(cached);
+    }
 
     const product = await prisma.product.findUnique({
       where: { id },
@@ -30,10 +41,12 @@ export async function GET(
     });
 
     if (!product || product.status !== "active") {
-      return NextResponse.json(
-        { success: false, error: "Product not found" },
-        { status: 404 }
-      );
+      const notFoundResponse = {
+        success: false,
+        error: "Product not found",
+      };
+      await cache.set(cacheKeyString, notFoundResponse, 60);
+      return NextResponse.json(notFoundResponse, { status: 404 });
     }
 
     // 构建基本响应数据
@@ -71,10 +84,12 @@ export async function GET(
       }
     }
 
-    return NextResponse.json({ 
+    const detailResponse = { 
       success: true, 
       data: responseData 
-    });
+    };
+    await cache.set(cacheKeyString, detailResponse, 300);
+    return NextResponse.json(detailResponse);
   } catch (error) {
     console.error("Product detail error:", error);
     return NextResponse.json(

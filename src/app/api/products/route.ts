@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { productQuerySchema } from "@/lib/validators";
 import { getImageUrl } from "@/lib/image-url";
 import { sortByDailyRank } from "@/config/daily-report-ranking";
+import { cache, cacheKey } from "@/lib/cache";
 
 // ISR: 每5分钟重新验证
 export const revalidate = 300;
@@ -11,6 +12,14 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const params = Object.fromEntries(searchParams.entries());
+
+    // 缓存 key：按完整 URL 参数生成，TTL 60 秒
+    const cacheKeyString = cacheKey("products", request.url);
+    const cached = await cache.get(cacheKeyString);
+    if (cached) {
+      return NextResponse.json(cached);
+    }
+
     const parsed = productQuerySchema.safeParse(params);
 
     if (!parsed.success) {
@@ -122,7 +131,7 @@ export async function GET(request: NextRequest) {
         })) || []
       }));
       
-      return NextResponse.json({
+      const rankResponse = {
         success: true,
         data: {
           data: processedData,
@@ -131,7 +140,9 @@ export async function GET(request: NextRequest) {
           pageSize,
           totalPages: Math.ceil(total / pageSize),
         },
-      });
+      };
+      await cache.set(cacheKeyString, rankResponse, 60);
+      return NextResponse.json(rankResponse);
     }
 
     // 分两次查询：有图片的优先，没图片的放后面
@@ -213,7 +224,7 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return NextResponse.json({
+    const listResponse = {
       success: true,
       data: {
         data: processedData,
@@ -222,7 +233,9 @@ export async function GET(request: NextRequest) {
         pageSize,
         totalPages: Math.ceil(total / pageSize),
       },
-    });
+    };
+    await cache.set(cacheKeyString, listResponse, 60);
+    return NextResponse.json(listResponse);
   } catch (error) {
     console.error("Products list error:", error);
     return NextResponse.json(
