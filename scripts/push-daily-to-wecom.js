@@ -22,6 +22,7 @@ var WEBHOOK_KEY = '9d46e962-5b34-48af-b010-06e8e8b78cf4';
 var WEBHOOK_URL = 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=' + WEBHOOK_KEY;
 var LEXIANG_REPORT_BASE = 'https://lexiangla.com/pages';
 var COMPANY_FROM = 'e987003e566611f187fa321d7b2198c0';
+var LATEST_REPORT_ID = '195ce24fc42448368249244e5481cd73'; // updated on report push
 
 function formatDate(date) {
   var y = date.getFullYear();
@@ -220,7 +221,7 @@ async function main() {
   }
   
   console.log('[PUSH] sending reminder message...');
-  var lexiangUrl = LEXIANG_REPORT_BASE + '/762b50adcd8c4662aa3e6db79c5f329d?_fid=762b50adcd8c4662aa3e6db79c5f329d&company_from=' + COMPANY_FROM;
+  var lexiangUrl = LEXIANG_REPORT_BASE + '/' + LATEST_REPORT_ID + '?company_from=' + COMPANY_FROM;
   var reminder = buildTextReminder(report, lexiangUrl);
   var result2 = await postToWecom('text', reminder);
   if (result2.errcode === 0) {

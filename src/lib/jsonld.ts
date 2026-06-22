@@ -23,7 +23,7 @@ export function generateOrganizationJsonLd(locale: string) {
       "@type": "PostalAddress",
       addressLocality: locale === "zh" ? "石家庄市" : "Shijiazhuang",
       addressRegion: locale === "zh" ? "河北省" : "Hebei",
-      streetAddress: "元氏县马村乡廖村",
+      streetAddress: "元氏县马村乡聊村",
       addressCountry: "CN",
     },
     contactPoint: {
@@ -282,7 +282,7 @@ export function generateLocalBusinessJsonLd(locale: string) {
         : "Global used farm machinery trading platform specializing in cross-border export, AI valuation & logistics",
     address: {
       "@type": "PostalAddress",
-      streetAddress: "元氏县马村乡廖村",
+      streetAddress: "元氏县马村乡聊村",
       addressLocality: locale === "zh" ? "石家庄市" : "Shijiazhuang",
       addressRegion: locale === "zh" ? "河北省" : "Hebei",
       addressCountry: "CN",

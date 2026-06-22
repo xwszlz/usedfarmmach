@@ -19,8 +19,9 @@ const PROTECTED_PATHS = [
   "/admin",
 ];
 
-// 仅管理员可访问
+// 仅管理员可访问（admin + super_admin）
 const ADMIN_PATHS = ["/api/admin", "/admin"];
+const ADMIN_ROLES = ["admin", "super_admin"];
 
 function getTokenFromRequest(request: NextRequest): string | null {
   const authHeader = request.headers.get("authorization");
@@ -66,7 +67,7 @@ export function middleware(request: NextRequest) {
     }
 
     const isAdminPath = ADMIN_PATHS.some((p) => pathname.startsWith(p));
-    if (isAdminPath && payload.role !== "admin") {
+    if (isAdminPath && !ADMIN_ROLES.includes(payload.role)) {
       return NextResponse.json(
         { success: false, error: "Forbidden: admin only" },
         { status: 403 }
@@ -126,7 +127,7 @@ export function middleware(request: NextRequest) {
 
   // 检查管理员权限
   const isAdminPath = ADMIN_PATHS.some((p) => pathname.startsWith(p));
-  if (isAdminPath && payload.role !== "admin") {
+  if (isAdminPath && !ADMIN_ROLES.includes(payload.role)) {
     return NextResponse.json(
       { success: false, error: "Forbidden: admin only" },
       { status: 403 }

@@ -62,21 +62,17 @@ export type MembershipTier = keyof typeof MEMBERSHIP_TIERS;
 
 // 角色配置
 export const ROLE_PERMISSIONS = {
-  buyer: {
-    label: { zh: '买家', en: 'Buyer', ru: 'Покупатель' },
-    canPublishProduct: false,
-    canInquire: true,
-    canFavorite: true,
-    canViewSellerContact: true,
-    canViewArbitrage: false,
-  },
-  seller: {
-    label: { zh: '卖家', en: 'Seller', ru: 'Продавец' },
+  super_admin: {
+    label: { zh: '超级管理员', en: 'Super Admin', ru: 'Супер Администратор' },
     canPublishProduct: true,
     canInquire: true,
     canFavorite: true,
     canViewSellerContact: true,
     canViewArbitrage: true,
+    canManageUsers: true,
+    canManageProducts: true,
+    canManageAdmins: true,
+    canManageSystem: true,
   },
   admin: {
     label: { zh: '管理员', en: 'Admin', ru: 'Администратор' },
@@ -87,6 +83,22 @@ export const ROLE_PERMISSIONS = {
     canViewArbitrage: true,
     canManageUsers: true,
     canManageProducts: true,
+  },
+  seller: {
+    label: { zh: '卖家', en: 'Seller', ru: 'Продавец' },
+    canPublishProduct: true,
+    canInquire: true,
+    canFavorite: true,
+    canViewSellerContact: true,
+    canViewArbitrage: true,
+  },
+  buyer: {
+    label: { zh: '买家', en: 'Buyer', ru: 'Покупатель' },
+    canPublishProduct: false,
+    canInquire: true,
+    canFavorite: true,
+    canViewSellerContact: true,
+    canViewArbitrage: false,
   },
 } as const;
 

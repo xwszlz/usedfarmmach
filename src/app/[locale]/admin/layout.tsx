@@ -36,7 +36,7 @@ export default async function AdminLayout({
     select: { role: true },
   });
 
-  if (!user || user.role !== "admin") {
+  if (!user || !["admin", "super_admin"].includes(user.role)) {
     redirect("/");
   }
 

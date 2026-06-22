@@ -179,7 +179,8 @@
       "error": "Invalid username/email or password",
       "success": "Login successful",
       "identifier": "Username or Email",
-      "identifierPlaceholder": "Enter username or email"
+      "identifierPlaceholder": "Enter username or email",
+      "forgotPassword": "Forgot password?"
     },
     "register": {
       "title": "Register",
@@ -187,7 +188,7 @@
       "email": "Email (Optional)",
       "emailPlaceholder": "Optional, for password recovery",
       "password": "Password",
-      "passwordPlaceholder": "At least 8 characters",
+      "passwordPlaceholder": "At least 6 characters",
       "confirmPassword": "Confirm Password",
       "confirmPasswordPlaceholder": "Enter password again",
       "phone": "Phone",
@@ -208,7 +209,34 @@
       "username": "Username",
       "usernamePlaceholder": "At least 3 characters",
       "usernameTooShort": "Username must be at least 3 characters",
-      "passwordTooShort": "Password must be at least 8 characters"
+      "passwordTooShort": "Password must be at least 6 characters"
+    },
+    "forgotPassword": {
+      "title": "Forgot Password",
+      "subtitle": "Enter your username or email to receive a reset link",
+      "identifier": "Username or Email",
+      "identifierPlaceholder": "Enter your registered username or email",
+      "hint": "We will send a password reset link to your registered email",
+      "submit": "Send Reset Link",
+      "errorEmpty": "Please enter username or email",
+      "sentMessage": "If the account exists with an email, a reset link has been sent. Please check your inbox (and spam folder).",
+      "backToLogin": "Back to Login",
+      "error": "Operation failed, please try again later"
+    },
+    "resetPassword": {
+      "title": "Reset Password",
+      "subtitle": "Enter your new password",
+      "newPassword": "New Password",
+      "passwordPlaceholder": "At least 6 characters",
+      "confirmPassword": "Confirm New Password",
+      "confirmPlaceholder": "Enter new password again",
+      "submit": "Reset Password",
+      "tooShort": "Password must be at least 6 characters",
+      "mismatch": "Passwords do not match",
+      "successMessage": "Password reset successful! Redirecting to login...",
+      "noToken": "Missing reset token. Please access this page via the link in your email.",
+      "requestNew": "Request a new reset link",
+      "error": "Reset failed, please try again later"
     }
   },
   "logistics": {

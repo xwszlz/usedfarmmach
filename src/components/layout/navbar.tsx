@@ -94,7 +94,7 @@ export function Navbar({ locale }: NavbarProps) {
                     卖家中心
                   </Button>
                 </Link>
-                {user.role === "admin" && (
+                {["admin", "super_admin"].includes(user.role) && (
                   <Link href={`/${locale}/admin`}>
                     <Button variant="ghost" size="sm" className="flex items-center gap-1.5">
                       <LayoutDashboard className="h-4 w-4" />
@@ -146,7 +146,7 @@ export function Navbar({ locale }: NavbarProps) {
                   <Link href={`/${locale}/seller/products`} className="flex-1" onClick={() => setMobileOpen(false)}>
                     <Button size="sm" className="w-full">卖家中心</Button>
                   </Link>
-                  {user.role === "admin" && (
+                  {["admin", "super_admin"].includes(user.role) && (
                     <Link href={`/${locale}/admin`} className="flex-1" onClick={() => setMobileOpen(false)}>
                       <Button variant="outline" size="sm" className="w-full">管理后台</Button>
                     </Link>

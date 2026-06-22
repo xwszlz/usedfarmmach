@@ -179,7 +179,8 @@
       "error": "Неверное имя/email или пароль",
       "success": "Вход выполнен",
       "identifier": "Имя пользователя или Email",
-      "identifierPlaceholder": "Введите имя или email"
+      "identifierPlaceholder": "Введите имя или email",
+      "forgotPassword": "Забыли пароль?"
     },
     "register": {
       "title": "Регистрация",
@@ -187,7 +188,7 @@
       "email": "Email (Необязательно)",
       "emailPlaceholder": "Необязательно, для восстановления",
       "password": "Пароль",
-      "passwordPlaceholder": "Минимум 8 символов",
+      "passwordPlaceholder": "Минимум 6 символов",
       "confirmPassword": "Подтвердите пароль",
       "confirmPasswordPlaceholder": "Введите пароль ещё раз",
       "phone": "Телефон",
@@ -208,7 +209,34 @@
       "username": "Имя пользователя",
       "usernamePlaceholder": "Минимум 3 символа",
       "usernameTooShort": "Имя должно быть не менее 3 символов",
-      "passwordTooShort": "Пароль должен быть не менее 8 символов"
+      "passwordTooShort": "Пароль должен быть не менее 6 символов"
+    },
+    "forgotPassword": {
+      "title": "Восстановление пароля",
+      "subtitle": "Введите имя пользователя или email для получения ссылки",
+      "identifier": "Имя пользователя или Email",
+      "identifierPlaceholder": "Введите зарегистрированное имя или email",
+      "hint": "Мы отправим ссылку для сброса пароля на ваш email",
+      "submit": "Отправить ссылку",
+      "errorEmpty": "Пожалуйста, введите имя или email",
+      "sentMessage": "Если аккаунт существует, ссылка отправлена на ваш email. Проверьте почту (и папку спам).",
+      "backToLogin": "Вернуться к входу",
+      "error": "Ошибка, попробуйте позже"
+    },
+    "resetPassword": {
+      "title": "Сброс пароля",
+      "subtitle": "Введите новый пароль",
+      "newPassword": "Новый пароль",
+      "passwordPlaceholder": "Минимум 6 символов",
+      "confirmPassword": "Подтвердите пароль",
+      "confirmPlaceholder": "Введите пароль ещё раз",
+      "submit": "Сбросить пароль",
+      "tooShort": "Пароль должен быть не менее 6 символов",
+      "mismatch": "Пароли не совпадают",
+      "successMessage": "Пароль сброшен! Перенаправление на страницу входа...",
+      "noToken": "Отсутствует токен сброса. Откройте эту страницу по ссылке из письма.",
+      "requestNew": "Запросить новую ссылку",
+      "error": "Ошибка сброса, попробуйте позже"
     }
   },
   "logistics": {

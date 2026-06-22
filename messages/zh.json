@@ -176,6 +176,7 @@
       "submit": "登录",
       "noAccount": "还没有账号？",
       "registerLink": "立即注册",
+      "forgotPassword": "忘记密码？",
       "error": "用户名/邮箱或密码错误",
       "success": "登录成功"
     },
@@ -183,13 +184,13 @@
       "title": "注册",
       "subtitle": "创建您的账号",
       "username": "用户名",
-      "usernamePlaceholder": "请输入用户名（至少3位，字母/数字/下划线）",
+      "usernamePlaceholder": "请输入用户名（至少3位，支持中英文/数字/下划线/连字符）",
       "usernameTooShort": "用户名至少3位",
       "email": "邮箱（选填）",
       "emailPlaceholder": "选填，用于找回密码",
       "password": "密码",
-      "passwordPlaceholder": "至少8位，含大小写字母+数字",
-      "passwordTooShort": "密码至少8位",
+      "passwordPlaceholder": "至少6位",
+      "passwordTooShort": "密码至少6位",
       "confirmPassword": "确认密码",
       "confirmPasswordPlaceholder": "再次输入密码",
       "phone": "电话",
@@ -207,6 +208,33 @@
       "error": "注册失败，请稍后重试",
       "success": "注册成功",
       "passwordMismatch": "两次密码不一致"
+    },
+    "forgotPassword": {
+      "title": "忘记密码",
+      "subtitle": "输入用户名或邮箱，我们将发送重置链接",
+      "identifier": "用户名或邮箱",
+      "identifierPlaceholder": "请输入注册时的用户名或邮箱",
+      "hint": "我们将向您的注册邮箱发送密码重置链接",
+      "submit": "发送重置链接",
+      "errorEmpty": "请输入用户名或邮箱",
+      "sentMessage": "如果该账号存在且绑定了邮箱，重置链接已发送到您的邮箱。请查收邮件（注意检查垃圾邮件文件夹）。",
+      "backToLogin": "返回登录",
+      "error": "操作失败，请稍后重试"
+    },
+    "resetPassword": {
+      "title": "重置密码",
+      "subtitle": "请输入您的新密码",
+      "newPassword": "新密码",
+      "passwordPlaceholder": "至少6位",
+      "confirmPassword": "确认新密码",
+      "confirmPlaceholder": "再次输入新密码",
+      "submit": "重置密码",
+      "tooShort": "密码至少6位",
+      "mismatch": "两次输入的密码不一致",
+      "successMessage": "密码重置成功！即将跳转到登录页面...",
+      "noToken": "缺少重置令牌，请通过邮件中的链接访问此页面",
+      "requestNew": "重新申请重置链接",
+      "error": "重置失败，请稍后重试"
     }
   },
   "logistics": {

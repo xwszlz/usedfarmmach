@@ -36,9 +36,9 @@ export function RegisterForm({ locale }: RegisterFormProps) {
       return;
     }
 
-    // 密码至少8位
-    if (password.length < 8) {
-      setError(t("passwordTooShort") || "密码至少8位");
+    // 密码至少6位
+    if (password.length < 6) {
+      setError(t("passwordTooShort") || "密码至少6位");
       setLoading(false);
       return;
     }
@@ -118,9 +118,9 @@ export function RegisterForm({ locale }: RegisterFormProps) {
         name="password"
         label={t("password")}
         type="password"
-        placeholder={t("passwordPlaceholder") || "至少8位密码"}
+        placeholder={t("passwordPlaceholder") || "至少6位密码"}
         required
-        minLength={8}
+        minLength={6}
       />
       <Input
         id="reg-confirm-password"
@@ -129,7 +129,7 @@ export function RegisterForm({ locale }: RegisterFormProps) {
         type="password"
         placeholder={t("confirmPasswordPlaceholder") || "再次输入密码"}
         required
-        minLength={8}
+        minLength={6}
       />
 
       {/* 邮箱 - 挪到下面，可选 */}

@@ -76,15 +76,23 @@ export function LoginForm({ locale }: LoginFormProps) {
         <LogIn className="mr-2 h-4 w-4" />
         {loading ? "..." : t("submit")}
       </Button>
-      <p className="text-center text-sm text-gray-500">
-        {t("noAccount")}{" "}
+      <div className="flex items-center justify-between text-sm">
         <Link
-          href={`/${locale}/auth/register`}
-          className="font-medium text-primary-600 hover:underline"
+          href={`/${locale}/auth/forgot-password`}
+          className="text-gray-500 hover:text-primary-600 hover:underline"
         >
-          {t("registerLink")}
+          {t("forgotPassword") || "忘记密码？"}
         </Link>
-      </p>
+        <span className="text-gray-500">
+          {t("noAccount")}{" "}
+          <Link
+            href={`/${locale}/auth/register`}
+            className="font-medium text-primary-600 hover:underline"
+          >
+            {t("registerLink")}
+          </Link>
+        </span>
+      </div>
     </form>
   );
 }

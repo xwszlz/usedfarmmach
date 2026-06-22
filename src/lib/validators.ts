@@ -6,14 +6,11 @@ export const registerSchema = z
       .string()
       .min(3, "Username must be at least 3 characters")
       .max(30, "Username too long")
-      .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers and underscore"),
+      .regex(/^[a-zA-Z0-9_\-\u4e00-\u9fa5]+$/, "Username can only contain letters, numbers, underscore, hyphen and Chinese"),
     email: z.string().email("Invalid email address").optional().or(z.literal("")),
     password: z
       .string()
-      .min(8, "Password must be at least 8 characters")
-      .regex(/[a-z]/, "Password must contain lowercase letter")
-      .regex(/[A-Z]/, "Password must contain uppercase letter")
-      .regex(/[0-9]/, "Password must contain a number"),
+      .min(6, "Password must be at least 6 characters"),
     confirmPassword: z.string(),
     phone: z.string().optional(),
     companyName: z.string().optional(),

@@ -13,7 +13,7 @@ model User {
   username          String?    @unique
   phone             String?
   passwordHash       String
-  role              String    @default("buyer") // buyer, seller, admin
+  role              String    @default("buyer") // buyer, seller, admin, super_admin
   companyName       String?
   country           String?
   preferredLanguage String    @default("zh")
@@ -24,6 +24,8 @@ model User {
   freeValuationsResetAt DateTime @default(now())
   isActive          Boolean   @default(true)
   lastLoginAt       DateTime?
+  resetToken        String?   // 密码重置令牌
+  resetTokenExpires DateTime? // 重置令牌过期时间
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 

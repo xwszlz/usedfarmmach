@@ -12,7 +12,7 @@ async function checkAdmin(req: NextRequest) {
   const payload = verifyToken(token);
   if (!payload) return null;
   const user = await prisma.user.findUnique({ where: { id: payload.userId }, select: { role: true } });
-  if (!user || user.role !== "admin") return null;
+  if (!user || !["admin", "super_admin"].includes(user.role)) return null;
   return payload;
 }
 
