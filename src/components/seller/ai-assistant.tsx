@@ -63,26 +63,23 @@ export default function SellerAiAssistant({ onFill }: SellerAiAssistantProps) {
     setRecognized(null);
 
     try {
-      // 先上传图片到 OSS
-      const uploadPromises = imageFiles.map(async (file) => {
-        const formData = new FormData();
-        formData.append("file", file);
-        const res = await fetch("/api/miniapp/upload", {
-          method: "POST",
-          body: formData,
-        });
-        const data = await res.json();
-        if (!data.success) throw new Error("图片上传失败");
-        return data.url;
-      });
+      // 将图片转为 base64 data URL（避免 OSS 依赖，更可靠）
+      const imageDataUrls = await Promise.all(
+        imageFiles.map(async (file) => {
+          return new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = () => reject(new Error("图片读取失败"));
+            reader.readAsDataURL(file);
+          });
+        })
+      );
 
-      const imageUrls = await Promise.all(uploadPromises);
-
-      // 调用 AI 识别 API
+      // 调用 AI 识别 API（直接传 base64 图片）
       const res = await fetch("/api/agents/seller-helper/recognize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageUrls }),
+        body: JSON.stringify({ imageUrls: imageDataUrls }),
       });
 
       const data = await res.json();
