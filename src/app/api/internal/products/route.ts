@@ -12,6 +12,45 @@ import crypto from "crypto";
 
 const PUBLISH_COST = 1;
 
+// 国际农机品牌列表（中英文）
+const INTERNATIONAL_BRANDS = new Set([
+  // 欧美品牌
+  "claas", "克拉斯", "class",
+  "john deere", "约翰迪尔", "john deere",
+  "new holland", "纽荷兰", "凯斯纽荷兰",
+  "case ih", "凯斯",
+  "fendt", "芬特",
+  "massey ferguson", "麦赛福格森",
+  "deutz-fahr", "道依茨法尔", "道依茨",
+  "krone", "科罗尼", "克朗",
+  "jcb",
+  "valtra", "维美德",
+  "lemken", "雷肯",
+  "grimme", "格立莫",
+  "amazone", "阿玛松",
+  "poettinger", "波廷格",
+  "kverneland", "库恩",
+  "kuhn",
+  "claydon",
+  "horsch", "豪狮",
+  "kubota", "久保田",
+  "yanmar", "洋马",
+  "iseki", "井关",
+  "shibaura",
+]);
+
+function isInternationalBrand(brandName: string | undefined): boolean {
+  if (!brandName) return false;
+  const lower = brandName.toLowerCase().trim();
+  // 精确匹配
+  if (INTERNATIONAL_BRANDS.has(lower)) return true;
+  // 部分匹配（如 "claas jaguar" 匹配 "claas"）
+  for (const ib of INTERNATIONAL_BRANDS) {
+    if (ib.length >= 4 && (lower.includes(ib) || ib.includes(lower))) return true;
+  }
+  return false;
+}
+
 function getApiKey(req: NextRequest): string | null {
   const header = req.headers.get("x-api-key");
   if (header) return header;
@@ -61,20 +100,21 @@ async function getOrCreateDefaultSeller() {
 async function resolveBrand(brandId?: string, brandName?: string) {
   if (brandId) {
     const existing = await prisma.brand.findUnique({ where: { id: brandId } });
-    if (existing) return existing.id;
+    if (existing) return existing;
   }
   if (brandName) {
     const existing = await prisma.brand.findFirst({ where: { nameZh: brandName } });
-    if (existing) return existing.id;
+    if (existing) return existing;
+    const isImported = isInternationalBrand(brandName);
     const created = await prisma.brand.create({
       data: {
         nameZh: brandName,
         nameEn: brandName,
-        originCountry: "未知",
-        isImported: false,
+        originCountry: isImported ? "进口" : "中国",
+        isImported,
       },
     });
-    return created.id;
+    return created;
   }
   throw new Error("brandId 和 brandName 至少提供一个");
 }
@@ -192,10 +232,15 @@ export async function POST(request: NextRequest) {
     }
 
     // 解析品牌/品类
-    const [finalBrandId, finalCategoryId] = await Promise.all([
+    const [brandRecord, finalCategoryId] = await Promise.all([
       resolveBrand(brandId, brandName),
       resolveCategory(categoryId, categoryName),
     ]);
+    const finalBrandId = brandRecord.id;
+    const isImported = brandRecord.isImported || isInternationalBrand(brandName || brandRecord.nameZh);
+
+    // 品牌是国际品牌 → 自动通过（status: active）；国产 → 待审核（status: draft）
+    const productStatus = isImported ? "active" : "draft";
 
     // 组装描述（与网站格式一致）
     const descParts = [];
@@ -221,7 +266,7 @@ export async function POST(request: NextRequest) {
         priceUsd: Math.round(Number(priceCny) / 7.25),
         location: location || "",
         descriptionZh,
-        status: "active",
+        status: productStatus,
       },
     });
 
@@ -274,7 +319,7 @@ export async function POST(request: NextRequest) {
     });
 
     // 记录来源（可选，未来可做 openid 映射）
-    console.log(`[internal/products] created from miniapp, openid=${openid || "unknown"}, productId=${product.id}`);
+    console.log(`[internal/products] created from miniapp, openid=${openid || "unknown"}, productId=${product.id}, status=${productStatus}, isImported=${isImported}`);
 
     return NextResponse.json({
       success: true,
@@ -282,6 +327,9 @@ export async function POST(request: NextRequest) {
         id: product.id,
         sellerId: finalSellerId,
         creditsRemaining: user.credits - PUBLISH_COST,
+        status: productStatus,
+        isImported,
+        message: isImported ? "国际品牌，自动上架" : "国产品牌，审核中，通过后将自动上架",
       },
     });
   } catch (error) {

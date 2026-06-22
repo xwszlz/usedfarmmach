@@ -13,9 +13,13 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const params = Object.fromEntries(searchParams.entries());
 
+    // 小程序调用时带 includeMiniapp=true，包含待审核的国产农机
+    const includeMiniapp = searchParams.get("includeMiniapp") === "true";
+
     // 缓存 key：按完整 URL 参数生成，TTL 60 秒
     const cacheKeyString = cacheKey("products", request.url);
-    const cached = await cache.get(cacheKeyString);
+    // 小程序模式不缓存（待审核产品变化快）
+    const cached = includeMiniapp ? null : await cache.get(cacheKeyString);
     if (cached) {
       return NextResponse.json(cached);
     }
@@ -44,9 +48,15 @@ export async function GET(request: NextRequest) {
       sort,
     } = parsed.data;
 
-    const where: Record<string, unknown> = {
-      status: "active",
-    };
+    // 审核策略：网站只展示 active；小程序展示 active + 待审核的国产农机
+    const where: Record<string, unknown> = includeMiniapp
+      ? {
+          OR: [
+            { status: "active" },
+            { AND: [{ status: "draft" }, { seller: { email: "miniprogram@shendiao.com" } }] },
+          ],
+        }
+      : { status: "active" };
 
     if (brand) where.brandId = brand;
     if (category) where.categoryId = category;
