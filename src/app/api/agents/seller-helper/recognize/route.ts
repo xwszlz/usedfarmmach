@@ -16,11 +16,15 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   try {
-    const { imageUrls } = await request.json();
+    const body = await request.json();
+    const imageUrls: string[] = body.imageUrls || [];
+    const imageDataUris: string[] = body.imageDataUris || [];
 
-    if (!imageUrls || !Array.isArray(imageUrls) || imageUrls.length === 0) {
+    const images = [...imageUrls, ...imageDataUris];
+
+    if (!images || !Array.isArray(images) || images.length === 0) {
       return NextResponse.json(
-        { success: false, error: "需要至少一张图片 URL" },
+        { success: false, error: "需要至少一张图片 URL 或图片 Base64 数据" },
         { status: 400 }
       );
     }
@@ -53,7 +57,7 @@ export async function POST(request: NextRequest) {
 3. 型号尽可能精确
 4. 如果图片质量差或无法识别，confidence 设为 0.3 以下`,
       },
-      ...imageUrls.map((url: string) => ({
+      ...images.map((url: string) => ({
         type: "image_url" as const,
         image_url: { url },
       })),
