@@ -431,3 +431,66 @@ model ChatMessage {
 
   @@index([sessionId, createdAt])
 }
+
+// ═══════════════════════════════════════════════════════
+// #0 调度者 Agent — 数据模型
+// ═══════════════════════════════════════════════════════
+
+model AgentDefinition {
+  id          String   @id @default(cuid())
+  agentId     String   @unique // 唯一标识：price-intel, buyer-chat, seller-scout, seller-helper
+  name        String   // 显示名称
+  description String?  // 描述
+  version     String   @default("0.1.0")
+  
+  // 触发方式
+  triggerType String   @default("manual") // manual, cron, webhook, dependency
+  schedule    String?  // cron 表达式（如 "0 6 * * *"）
+  endpoint    String?  // API 端点（如 "/api/agents/price-intel"）
+  
+  // 依赖：此 Agent 执行前需要先执行哪些 Agent
+  dependencies String? // JSON 数组：["seller-scout", ...]
+  
+  // 状态
+  status      String   @default("active") // active, paused, disabled, error
+  lastRunAt   DateTime?
+  nextRunAt   DateTime?
+  
+  // 配置
+  config      String?  // JSON：各 Agent 自定义配置
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  runs        AgentRunLog[]
+  
+  @@index([status, agentId])
+}
+
+model AgentRunLog {
+  id          String   @id @default(cuid())
+  agentId     String
+  
+  // 执行信息
+  triggeredBy String   @default("manual") // manual, cron, dependency, webhook, system
+  status      String   // running, success, failed, cancelled, timeout
+  
+  // 时间
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  durationMs  Int?     // 执行耗时（毫秒）
+  
+  // 结果
+  result      String?  // JSON：成功时的返回数据摘要
+  errorMessage String? // 失败时的错误信息
+  
+  // 元数据
+  metadata    String?  // JSON：额外信息（如触发参数、输入摘要）
+  
+  createdAt   DateTime @default(now())
+  
+  agent       AgentDefinition @relation(fields: [agentId], references: [agentId], onDelete: Cascade)
+  
+  @@index([agentId, startedAt])
+  @@index([status, startedAt])
+}
