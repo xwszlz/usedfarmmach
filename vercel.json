@@ -1,0 +1,6 @@
+{
+  "env": {
+    "UPSTASH_REDIS_REST_URL": "https://settling-mackerel-151220.upstash.io",
+    "UPSTASH_REDIS_REST_TOKEN": "gQAAAAAAAk60AAIgcDJjNzNjZDViNzIxMjc0ZDlmOGUxNDdiYjRhMGM2NjBlYQ"
+  }
+}
