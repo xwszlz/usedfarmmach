@@ -105,21 +105,29 @@ async function downloadBuffer(url: string): Promise<{ buffer: Buffer; contentTyp
   return { buffer: Buffer.from(arrayBuffer), contentType };
 }
 
-function guessExt(contentType: string, url: string): string {
+async function getImageBuffer(src: string): Promise<{ buffer: Buffer; contentType: string }> {
+  // 支持 base64 Data URI（小程序直传）
+  if (src.startsWith("data:")) {
+    const match = src.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
+    if (!match) throw new Error(`Invalid data URI: ${src.substring(0, 100)}`);
+    return {
+      buffer: Buffer.from(match[2], "base64"),
+      contentType: match[1],
+    };
+  }
+  // 支持 HTTPS URL（云函数转传）
+  return await downloadBuffer(src);
+}
+
+function guessExtFromMime(mime: string): string {
   const map: Record<string, string> = {
     "image/jpeg": "jpg",
-    "image/jpg": "jpg",
     "image/png": "png",
     "image/webp": "webp",
     "image/gif": "gif",
-    "video/mp4": "mp4",
-    "video/quicktime": "mov",
-    "video/x-matroska": "mkv",
+    "image/bmp": "bmp",
   };
-  if (map[contentType]) return map[contentType];
-  const ext = url.split("?")[0].split(".").pop();
-  if (ext && /^[a-zA-Z0-9]{2,5}$/.test(ext)) return ext.toLowerCase();
-  return "bin";
+  return map[mime] || "jpg";
 }
 
 export async function POST(request: NextRequest) {
@@ -222,8 +230,8 @@ export async function POST(request: NextRequest) {
     // 上传图片
     for (let i = 0; i < images.length; i++) {
       try {
-        const { buffer, contentType } = await downloadBuffer(images[i]);
-        const ext = guessExt(contentType, images[i]);
+        const { buffer, contentType } = await getImageBuffer(images[i]);
+        const ext = guessExtFromMime(contentType);
         const key = `${folder}/image_${i}_${Date.now()}.${ext}`;
         const url = await uploadBufferToOSS(key, buffer, contentType);
         await prisma.productImage.create({
@@ -235,7 +243,7 @@ export async function POST(request: NextRequest) {
           },
         });
       } catch (err) {
-        console.error(`[internal/products] image upload failed: ${images[i]}`, err);
+        console.error(`[internal/products] image upload failed: ${images[i].substring(0, 100)}`, err);
       }
     }
 
@@ -243,7 +251,7 @@ export async function POST(request: NextRequest) {
     if (video) {
       try {
         const { buffer, contentType } = await downloadBuffer(video);
-        const ext = guessExt(contentType, video);
+        const ext = guessExtFromMime(contentType);
         const key = `${folder}/video_${Date.now()}.${ext}`;
         const url = await uploadBufferToOSS(key, buffer, contentType);
         await prisma.productVideo.create({
