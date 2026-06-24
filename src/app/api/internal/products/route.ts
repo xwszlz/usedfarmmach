@@ -3,12 +3,18 @@
  * - 仅允许持有 INTERNAL_API_KEY 的请求调用
  * - 自动下载小程序云存储图片/视频，上传到 OSS
  * - 创建或复用品牌、品类，创建产品与图片/视频记录
+ *
+ * ⚠️ 此接口执行耗时较长（多张图片上传OSS），
+ *    已设置 maxDuration=60 避免 Vercel 默认10s超时。
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { uploadBufferToOSS } from "@/lib/oss-upload";
 import { hashPassword } from "@/lib/auth";
 import crypto from "crypto";
+
+// Vercel Serverless Function 超时延长至60秒（默认10秒不够用）
+export const maxDuration = 60;
 
 const PUBLISH_COST = 1;
 
