@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
     }
 
     const folder = (formData.get("folder") as string) || "miniapp";
+    const productId = (formData.get("productId") as string) || "";
     const ext = file.name.split(".").pop()?.toLowerCase() || "bin";
     const allowedExts = ["jpg", "jpeg", "png", "webp", "gif", "mp4", "mov", "webm"];
 
@@ -50,9 +51,18 @@ export async function POST(request: NextRequest) {
     }
 
     const isVideo = ["mp4", "mov", "webm"].includes(ext);
-    const subFolder = isVideo ? `${folder}/videos` : `${folder}/images`;
-    const fileName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
-    const ossKey = `uploads/${subFolder}/${fileName}`;
+
+    // 如果传了productId，使用标准路径 products/{id}/
+    // 否则走 uploads/{folder}/ 兼容旧逻辑
+    let ossKey: string;
+    if (productId && !isVideo) {
+      const safeName = file.name.replace(/[^a-zA-Z0-9._\-]/g, "_");
+      ossKey = `products/${productId}/${safeName}`;
+    } else {
+      const subFolder = isVideo ? `${folder}/videos` : `${folder}/images`;
+      const fileName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      ossKey = `uploads/${subFolder}/${fileName}`;
+    }
 
     const buffer = Buffer.from(await file.arrayBuffer());
     const contentType = file.type || (isVideo ? "video/mp4" : "image/jpeg");

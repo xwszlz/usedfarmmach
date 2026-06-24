@@ -49,7 +49,7 @@ export interface OrchestratorStatusInput {
 export interface OrchestratorTriggerInput {
   agentId: string; // 要触发的 Agent ID
   params?: Record<string, unknown>; // 传递给 Agent 的参数
-  triggeredBy?: TriggerType; // 默认 manual
+  triggeredBy?: TriggerType | string; // 默认 manual，cron 调用可写 cron
 }
 
 export interface OrchestratorHealthInput {

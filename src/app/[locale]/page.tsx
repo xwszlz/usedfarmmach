@@ -36,6 +36,41 @@ const baseInclude = {
   seller: { select: { id: true, companyName: true, country: true } },
 };
 
+/**
+ * 安全查询首页产品数据，带容错降级。
+ * Vercel Serverless 环境下可能出现冷启动超时或瞬时连接失败，
+ * 此函数确保即使 DB 查询失败也不会导致整页 500（避免 ISR 缓存中毒）。
+ */
+async function fetchHomeProducts() {
+  try {
+    const allIds = DAILY_REPORT_RANKING.map((p) => p.id);
+    const rawProducts = await prisma.product.findMany({
+      where: { id: { in: allIds }, status: "active" },
+      include: baseInclude,
+    });
+
+    // 按日报排名顺序重组
+    const rankedProducts = allIds
+      .map((id) => rawProducts.find((p) => p.id === id))
+      .filter(Boolean);
+
+    const toProduct = (p: any) => ({
+      ...p,
+      condition: p.condition as Product["condition"],
+      status: p.status as Product["status"],
+    }) as Product;
+
+    const topProduct = rankedProducts[0] ? toProduct(rankedProducts[0]) : null;
+    const hotProducts = rankedProducts.slice(1, 5).map(toProduct);
+
+    return { topProduct, hotProducts, rankedProducts, error: null };
+  } catch (err) {
+    console.error("[HomePage] 产品数据查询失败（返回空数据以避免 500）:", err);
+    // 返回空数据而不是抛出异常，防止 ISR 缓存错误响应
+    return { topProduct: null, hotProducts: [], rankedProducts: [], error: String(err) };
+  }
+}
+
 export default async function HomePage({
   params,
 }: {
@@ -43,30 +78,9 @@ export default async function HomePage({
 }) {
   const { locale } = await params;
 
-  // 按日报排名顺序查询产品
-  const allIds = DAILY_REPORT_RANKING.map((p) => p.id);
-  const rawProducts = await prisma.product.findMany({
-    where: { id: { in: allIds }, status: "active" },
-    include: baseInclude,
-  });
-
-  // 按日报排名顺序重组
-  const rankedProducts = allIds
-    .map((id) => rawProducts.find((p) => p.id === id))
-    .filter(Boolean);
-
-  const toProduct = (p: any) => ({
-    ...p,
-    condition: p.condition as Product["condition"],
-    status: p.status as Product["status"],
-  }) as Product;
-
-  // TOP1: 日报头条
-  const topProduct = rankedProducts[0] ? toProduct(rankedProducts[0]) : null;
+  // 安全获取产品数据（带容错）
+  const { topProduct, hotProducts, rankedProducts } = await fetchHomeProducts();
   const topReportData = DAILY_REPORT_RANKING[0];
-
-  // #2~#5: 热门设备（首页展示4台）
-  const hotProducts = rankedProducts.slice(1, 5).map(toProduct);
 
   return (
     <div>

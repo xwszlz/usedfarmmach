@@ -77,6 +77,67 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// ========== SCP 智能首图选择器（与 auto-upload-product.js 同分） ==========
+const POSITIVE_KW = ["fm","FM","cover","main","主图","全景","全貌","外观","整体","侧面","side","front","rear","back"];
+const NEGATIVE_KW = ["铭牌","label","ce ","ce_","cert","证书","标贴","内饰","内景","仪表","方向盘","dashboard","interior","detail","细节","部件","零件","滚筒","皮带","挂钩","局部","close","特写"];
+
+function scpScoreImage(filename: string): number {
+  const name = filename.toLowerCase();
+  let score = 50;
+  for (const kw of POSITIVE_KW) { if (name.includes(kw.toLowerCase())) { score += kw === "fm" || kw === "FM" ? 50 : 25; break; } }
+  for (const kw of NEGATIVE_KW) { if (name.includes(kw.toLowerCase())) score -= 30; }
+  return Math.max(0, Math.min(100, score));
+}
+
+/**
+ * SCP: 创建完图片后自动优化 — 选最佳整机图作为首图
+ * 确保 sortOrder=0 且 isPrimary=true 的图是最高分的
+ */
+async function autoOptimizeCover(productId: string, imageUrls: string[]) {
+  if (!imageUrls || imageUrls.length <= 1) return; // 0或1张图无需优化
+
+  // 评分排序
+  const scored = imageUrls.map((url, idx) => ({
+    url,
+    fname: url.split("/").pop() || `img_${idx}`,
+    score: scpScoreImage(url),
+  })).sort((a, b) => b.score - a.score);
+
+  const best = scored[0];
+  const firstUrl = imageUrls[0];
+
+  // 如果第一张已经是最佳，无需调整
+  if (best.url === firstUrl && best.score >= 70) return;
+
+  // 更新DB：设最佳图为 isPrimary=true
+  await prisma.productImage.updateMany({
+    where: { productId, url: best.url },
+    data: { isPrimary: true, sortOrder: 0 },
+  });
+  // 取消其他
+  await prisma.productImage.updateMany({
+    where: { productId, url: { not: best.url }, isPrimary: true },
+    data: { isPrimary: false },
+  });
+  // 重排其余sortOrder
+  const allImages = await prisma.productImage.findMany({
+    where: { productId },
+    orderBy: { sortOrder: "asc" },
+  });
+  let sortIdx = 0;
+  for (const img of allImages) {
+    if (img.url !== best.url) {
+      sortIdx++;
+      await prisma.productImage.update({
+        where: { id: img.id },
+        data: { sortOrder: sortIdx },
+      });
+    }
+  }
+
+  console.log(`[SCP] 产品 ${productId} 首图已优化 → ${best.fname} (score=${best.score})`);
+}
+
 // ========== POST 创建产品 ==========
 export async function POST(request: NextRequest) {
   if (!requireAuth(request)) {
@@ -127,6 +188,13 @@ export async function POST(request: NextRequest) {
           isPrimary: i === 0,
         })),
       });
+
+      // ✨ SCP 自动优化封面 — 选最佳整机图作为首图
+      try {
+        await autoOptimizeCover(product.id, body.images);
+      } catch (scpError) {
+        console.error("[SCP] 封面优化失败（不影响产品创建）:", scpError);
+      }
     }
 
     // 如果有视频，创建视频记录
