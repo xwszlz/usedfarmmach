@@ -58,6 +58,14 @@ export function ProductCard({ product, locale }: ProductCardProps) {
             })}
             className="h-full w-full object-cover transition-transform group-hover:scale-105"
             loading="lazy"
+            onError={(e) => {
+              const img = e.currentTarget;
+              // 重试一次（可能是 OSS 偶发超时）
+              if (!img.dataset.retried) {
+                img.dataset.retried = '1';
+                img.src = primaryImage + (primaryImage.includes('?') ? '&' : '?') + '_r=' + Date.now();
+              }
+            }}
           />
           {realArbitrage !== null && Math.abs(realArbitrage) > 10 && (
             <div className="absolute right-2 top-2">
