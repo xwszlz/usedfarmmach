@@ -19,6 +19,59 @@ jobs:
       - name: Install Vercel CLI
         run: npm i -g vercel@latest
 
+      # Step 1: 注入 OSS 环境变量到 Vercel（通过 REST API）
+      - name: Inject OSS env vars into Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          PROJECT_ID: prj_BQYAPRqXERYn9cCXHEYRXRtBxxOD
+          OSS_ACCESS_KEY_ID: ${{ secrets.OSS_ACCESS_KEY_ID }}
+          OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
+        run: |
+          set -e
+
+          api_base="https://api.vercel.com/v10/projects/${PROJECT_ID}/env"
+
+          # helper: create or update env var
+          upsert_env() {
+            local key="$1" value="$2"
+            # try to find existing env id
+            existing=$(curl -sS -H "Authorization: Bearer ${VERCEL_TOKEN}" \
+              "${api_base}?decrypt=true" | \
+              python3 -c "
+              import sys,json
+              data=json.load(sys.stdin)
+              for e in data.get('envs',[]):
+                if e.get('key')=='$key':
+                  print(e['id'])
+                  break
+            " 2>/dev/null || echo "")
+
+            if [ -n "$existing" ]; then
+              # update existing
+              curl -sS -X PATCH "${api_base}/${existing}" \
+                -H "Authorization: Bearer ${VERCEL_TOKEN}" \
+                -H "Content-Type: application/json" \
+                -d "{\"value\":\"${value}\",\"target\":[\"production\",\"preview\",\"development\"]}"
+              echo "  ✅ Updated $key (id: $existing)"
+            else
+              # create new
+              curl -sS -X POST "${api_base}" \
+                -H "Authorization: Bearer ${VERCEL_TOKEN}" \
+                -H "Content-Type: application/json" \
+                -d "{\"key\":\"${key}\",\"value\":\"${value}\",\"target\":[\"production\",\"preview\",\"development\"]}"
+              echo "  ✅ Created $key"
+            fi
+          }
+
+          echo "📦 Injecting 5 OSS environment variables..."
+          upsert_env "OSS_REGION" "oss-cn-beijing"
+          upsert_env "OSS_ACCESS_KEY_ID" "${OSS_ACCESS_KEY_ID}"
+          upsert_env "OSS_ACCESS_KEY_SECRET" "${OSS_ACCESS_KEY_SECRET}"
+          upsert_env "OSS_BUCKET" "usedfarmmach-oss"
+          upsert_env "OSS_ENDPOINT" "https://oss-cn-beijing.aliyuncs.com"
+          echo "🎉 All 5 OSS vars injected!"
+
+      # Step 2: 部署到 Vercel
       - name: Deploy to Vercel
         run: vercel deploy --prod --yes --token="${{ secrets.VERCEL_TOKEN }}"
         env:
