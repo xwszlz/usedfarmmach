@@ -357,8 +357,24 @@ export async function POST(request: NextRequest) {
 
     const folder = `uploads/products/${product.id}`;
 
+    // ── Step 4 预检：提前检查 OSS 凭证是否可用（避免循环中反复失败才暴露问题）──
+    let ossCredentialsOk = false;
+    let ossPrecheckError: string | null = null;
+    try {
+      // 通过尝试获取凭证来验证配置是否存在（不实际上传）
+      const ossTestKey = `${folder}/_health_check_${Date.now()}.txt`;
+      const testBuffer = Buffer.from("ok", "ascii");
+      await uploadBufferToOSS(ossTestKey, testBuffer, "text/plain");
+      ossCredentialsOk = true;
+      console.log(`[internal/products] step-4 precheck: OSS connectivity OK`);
+    } catch (ossErr) {
+      ossPrecheckError = extractErrorMessage(ossErr);
+      console.error(`[internal/products] step-4 precheck: OSS connectivity FAILED — ${ossPrecheckError}`);
+    }
+
     // ── Step 4: 上传图片（带失败计数 + 全部失败回滚）──
     let uploadedImageCount = 0;
+    let firstImageError: string | null = null; // 记录第一个失败的详细原因，用于诊断
     for (let i = 0; i < images.length; i++) {
       const imgStart = Date.now();
       try {
@@ -366,6 +382,7 @@ export async function POST(request: NextRequest) {
         const { buffer, contentType } = await getDataUriBuffer(images[i]);
         const ext = guessExtFromMime(contentType);
         const key = `${folder}/image_${i}_${Date.now()}.${ext}`;
+        console.log(`[internal/products] step-4 image[${i}] decoding OK, size=${buffer.length}bytes, type=${contentType}, uploading...`);
         const url = await uploadBufferToOSS(key, buffer, contentType);
         await prisma.productImage.create({
           data: {
@@ -378,13 +395,23 @@ export async function POST(request: NextRequest) {
         uploadedImageCount++;
         console.log(`[internal/products] step-4 image[${i}] uploaded OK in ${Date.now() - imgStart}ms`);
       } catch (err) {
-        console.error(`[internal/products] step-4 image[${i}] FAILED in ${Date.now() - imgStart}ms: src=${String(images[i]).substring(0, 100)}`, err);
+        const errDetail = extractErrorMessage(err);
+        const srcPreview = String(images[i]).substring(0, 120);
+        console.error(
+          `[internal/products] step-4 image[${i}] FAILED in ${Date.now() - imgStart}ms: ` +
+          `src=${srcPreview}, error=${errDetail}`,
+          err
+        );
+        // 只记录第一个错误的详细信息
+        if (!firstImageError) {
+          firstImageError = `[image ${i}] ${errDetail} (src preview: ${srcPreview})`;
+        }
       }
     }
 
     // ⚠️ 问题 2 修复（R4）：所有图片上传失败 → 回滚产品并返回明确错误码
     if (uploadedImageCount === 0) {
-      console.error(`[internal/products] step-4 ALL ${images.length} images FAILED, rolling back product ${product.id}`);
+      console.error(`[internal/products] step-4 ALL ${images.length} images FAILED, rolling back product ${product.id}. First error: ${firstImageError}`);
       try {
         await prisma.product.delete({ where: { id: product.id } });
         createdProductId = null; // 已回滚，catch 中无需再删
@@ -397,6 +424,11 @@ export async function POST(request: NextRequest) {
           error: "图片上传全部失败，请检查图片格式后重试",
           code: "ALL_IMAGES_FAILED",
           attempted: images.length,
+          // 🔍 R6 修复：返回诊断信息，便于定位根因
+          firstError: firstImageError || "未知错误（错误信息未被捕获）",
+          // 🔍 R6 修复：OSS 预检结果（如果 OSS 本身不通，这里会直接说明原因）
+          ossPrecheckOk: ossCredentialsOk,
+          ossPrecheckError: ossPrecheckError || undefined,
         },
         { status: 503 }
       );
@@ -425,7 +457,8 @@ export async function POST(request: NextRequest) {
         console.log(`[internal/products] step-5 video uploaded OK in ${Date.now() - vidStart}ms`);
       } catch (err) {
         // 视频失败不阻塞产品发布（非核心功能），仅记录日志
-        console.error(`[internal/products] step-5 video FAILED in ${Date.now() - vidStart}ms: src=${String(video).substring(0, 100)}`, err);
+        const vidErrDetail = extractErrorMessage(err);
+        console.error(`[internal/products] step-5 video FAILED in ${Date.now() - vidStart}ms: src=${String(video).substring(0, 100)}, error=${vidErrDetail}`, err);
       }
     }
 
