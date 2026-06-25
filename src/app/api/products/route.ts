@@ -8,6 +8,12 @@ import { cache, cacheKey } from "@/lib/cache";
 // ISR: 每5分钟重新验证
 export const revalidate = 300;
 
+// ✅ Round3 修复: Vercel Serverless 超时延长到30秒
+// 原因: 此接口执行复杂查询（多表 JOIN: product+brand+category+images+videos+internationalPrices+seller）
+//       + 有图/无图分页策略需 2-4 次 DB 查询 + Neon 免费层冷启动 2-5s
+//       Vercel 默认 10s 在数据量增大或冷启动时容易超时 → ERR_TIMED_OUT
+export const maxDuration = 30;
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
