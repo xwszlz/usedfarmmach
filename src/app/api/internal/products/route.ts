@@ -142,6 +142,9 @@ async function resolveCategory(categoryId?: string, categoryName?: string) {
   throw new Error("categoryId 和 categoryName 至少提供一个");
 }
 
+/**
+ * 从 HTTPS URL 下载文件到 Buffer（仅支持 URL，不支持 Data URI）
+ */
 async function downloadBuffer(url: string): Promise<{ buffer: Buffer; contentType: string }> {
   const res = await fetch(url, { redirect: "follow" });
   if (!res.ok) {
@@ -156,9 +159,13 @@ async function downloadBuffer(url: string): Promise<{ buffer: Buffer; contentTyp
  * 从 Data URI 或 HTTPS URL 中提取 Buffer
  * - 支持 base64 Data URI（新版小程序：data:image/jpeg;base64,... / data:video/mp4;base64,...）
  * - 支持 HTTPS URL（旧版兼容：云函数转传）
+ *
+ * 🐛 Bug 1 修复（R4）：
+ *   旧代码用 getImageBuffer() 只匹配 image/* 的 Data URI，
+ *   新版小程序发送的视频是 data:video/mp4;base64,... 格式。
+ *   现在统一为 getDataUriBuffer()，正则改为 [a-zA-Z/+-]+ 兼容所有 MIME 类型。
  */
 async function getDataUriBuffer(src: string): Promise<{ buffer: Buffer; contentType: string }> {
-  // 支持 base64 Data URI（新版小程序直传）— 兼容 image 和 video
   if (src.startsWith("data:")) {
     const match = src.match(/^data:([a-zA-Z/+-]+);base64,(.+)$/);
     if (!match) throw new Error(`Invalid data URI format: ${src.substring(0, 120)}`);
@@ -167,7 +174,7 @@ async function getDataUriBuffer(src: string): Promise<{ buffer: Buffer; contentT
       contentType: match[1],
     };
   }
-  // 支持 HTTPS URL（云函数转传）
+  // HTTPS URL 回退到 downloadBuffer
   return await downloadBuffer(src);
 }
 
@@ -178,21 +185,66 @@ function guessExtFromMime(mime: string): string {
     "image/webp": "webp",
     "image/gif": "gif",
     "image/bmp": "bmp",
+    "video/mp4": "mp4",
+    "video/quicktime": "mov",
   };
   return map[mime] || "jpg";
 }
 
+/**
+ * 安全提取错误消息 — 兼容 Error 实例、字符串、对象、null/undefined 等
+ *
+ * 🐛 Bug 3 修复（R4）：
+ *   旧代码 error instanceof Error ? error.message : "Internal server error"
+ *   当 error 是字符串、对象或非标准类型时，message 可能为 undefined → 客户端收到 falsy 值
+ *   显示"服务器返回异常"。现在覆盖所有边界情况。
+ */
+function extractErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    // 处理嵌套 cause（如 Prisma/Vercel 错误链）
+    if (error.cause instanceof Error) {
+      return `${error.message} (原因: ${error.cause.message})`;
+    }
+    return error.message;
+  }
+  if (typeof error === "string") return error;
+  if (error && typeof error === "object") {
+    // 处理 { message: "..." } 或 { error: { message: "..." } }
+    const obj = error as Record<string, unknown>;
+    if (typeof obj.message === "string") return obj.message;
+    if (typeof obj.error === "string") return obj.error;
+    if (obj.error && typeof obj.error === "object" && typeof (obj.error as Record<string, unknown>).message === "string") {
+      return (obj.error as Record<string, unknown>).message as string;
+    }
+  }
+  // 兜底序列化
+  try {
+    const str = JSON.stringify(error);
+    return str && str !== "null" && str !== "undefined" ? str : "Unknown server error";
+  } catch {
+    return "Unknown server error";
+  }
+}
+
 export async function POST(request: NextRequest) {
-  const t0 = Date.now();
+  const requestStartTime = Date.now();
 
   if (!requireApiKey(request)) {
-    return NextResponse.json({ success: false, error: "Unauthorized", code: "UNAUTHORIZED" }, { status: 401 });
+    return NextResponse.json(
+      { success: false, error: "Unauthorized", code: "UNAUTHORIZED" },
+      { status: 401 }
+    );
   }
 
+  // 用于异常回滚：记录已创建但未完成的产品 ID
+  let createdProductId: string | null = null;
+
   try {
-    const body = await request.json();
+    // ── Step 1: 解析请求体 ──
     const t1 = Date.now();
-    console.log(`[internal/products] body parsed in ${t1 - t0}ms`);
+    const body = await request.json();
+    console.log(`[internal/products] step-1 body parsed in ${Date.now() - t1}ms`);
+
     const {
       sellerId,
       openid,
@@ -215,51 +267,65 @@ export async function POST(request: NextRequest) {
       video,
     } = body;
 
-    // 校验
+    // ── 校验 ──
     if (!modelName || !year || !priceCny || !location) {
       return NextResponse.json(
-        { success: false, error: "请填写完整信息（型号、年份、价格、位置为必填）" },
+        { success: false, error: "请填写完整信息（型号、年份、价格、位置为必填）", code: "VALIDATION_ERROR" },
         { status: 400 }
       );
     }
     if (!brandId && !brandName) {
-      return NextResponse.json({ success: false, error: "请选择或输入品牌" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: "请选择或输入品牌", code: "VALIDATION_ERROR" },
+        { status: 400 }
+      );
     }
     if (!categoryId && !categoryName) {
-      return NextResponse.json({ success: false, error: "请选择或输入品类" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: "请选择或输入品类", code: "VALIDATION_ERROR" },
+        { status: 400 }
+      );
     }
     if (!images || images.length === 0) {
-      return NextResponse.json({ success: false, error: "请至少上传一张图片" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: "请至少上传一张图片", code: "NO_IMAGES" },
+        { status: 400 }
+      );
     }
 
-    // 确定卖家
+    // ── 确定卖家 ──
     const finalSellerId = sellerId || (await getOrCreateDefaultSeller());
 
-    // 检查积分
+    // ── 检查积分 ──
     const user = await prisma.user.findUnique({ where: { id: finalSellerId } });
     if (!user) {
-      return NextResponse.json({ success: false, error: "卖家不存在" }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: "卖家不存在", code: "SELLER_NOT_FOUND" },
+        { status: 404 }
+      );
     }
     if (user.credits < PUBLISH_COST) {
       return NextResponse.json(
-        { success: false, error: "积分不足", credits: user.credits, required: PUBLISH_COST },
+        { success: false, error: "积分不足", credits: user.credits, required: PUBLISH_COST, code: "INSUFFICIENT_CREDITS" },
         { status: 403 }
       );
     }
 
-    // 解析品牌/品类
+    // ── Step 2: 解析品牌/品类 ──
+    const t2 = Date.now();
     const [brandRecord, finalCategoryId] = await Promise.all([
       resolveBrand(brandId, brandName),
       resolveCategory(categoryId, categoryName),
     ]);
     const finalBrandId = brandRecord.id;
     const isImported = brandRecord.isImported || isInternationalBrand(brandName || brandRecord.nameZh);
+    console.log(`[internal/products] step-2 brand/category resolved in ${Date.now() - t2}ms, brand=${brandRecord.nameZh}, isImported=${isImported}`);
 
     // 品牌是国际品牌 → 自动通过（status: active）；国产 → 待审核（status: draft）
     const productStatus = isImported ? "active" : "draft";
 
-    // 组装描述（与网站格式一致）
-    const descParts = [];
+    // ── 组装描述（与网站格式一致）──
+    const descParts: string[] = [];
     if (descPower) descParts.push(`马力：${descPower}`);
     if (descDrive) descParts.push(`驱动：${descDrive}`);
     if (descHeader) descParts.push(`割台：${descHeader}`);
@@ -268,7 +334,8 @@ export async function POST(request: NextRequest) {
     if (descOther) descParts.push(descOther);
     const descriptionZh = descParts.join("\n") || null;
 
-    // 创建产品
+    // ── Step 3: 创建产品 ──
+    const t3 = Date.now();
     const product = await prisma.product.create({
       data: {
         sellerId: finalSellerId,
@@ -285,16 +352,17 @@ export async function POST(request: NextRequest) {
         status: productStatus,
       },
     });
-    const t2 = Date.now();
-    console.log(`[internal/products] product created (id=${product.id}) in ${t2 - t1}ms`);
+    createdProductId = product.id;
+    console.log(`[internal/products] step-3 product created in ${Date.now() - t3}ms, id=${product.id}`);
 
     const folder = `uploads/products/${product.id}`;
 
-    // 上传图片
-    let imagesUploaded = 0;
+    // ── Step 4: 上传图片（带失败计数 + 全部失败回滚）──
+    let uploadedImageCount = 0;
     for (let i = 0; i < images.length; i++) {
+      const imgStart = Date.now();
       try {
-        const ti0 = Date.now();
+        // 使用 getDataUriBuffer 同时支持 base64(Data URI) 和 URL
         const { buffer, contentType } = await getDataUriBuffer(images[i]);
         const ext = guessExtFromMime(contentType);
         const key = `${folder}/image_${i}_${Date.now()}.${ext}`;
@@ -307,27 +375,41 @@ export async function POST(request: NextRequest) {
             isPrimary: i === 0,
           },
         });
-        imagesUploaded++;
-        console.log(`[internal/products] image[${i}] uploaded in ${Date.now() - ti0}ms`);
+        uploadedImageCount++;
+        console.log(`[internal/products] step-4 image[${i}] uploaded OK in ${Date.now() - imgStart}ms`);
       } catch (err) {
-        console.error(`[internal/products] image upload failed: ${images[i].substring(0, 100)}`, err);
+        console.error(`[internal/products] step-4 image[${i}] FAILED in ${Date.now() - imgStart}ms: src=${String(images[i]).substring(0, 100)}`, err);
       }
     }
 
-    // 所有图片上传失败 → 回滚（删除孤儿产品）
-    if (imagesUploaded === 0) {
-      await prisma.product.delete({ where: { id: product.id } });
+    // ⚠️ 问题 2 修复（R4）：所有图片上传失败 → 回滚产品并返回明确错误码
+    if (uploadedImageCount === 0) {
+      console.error(`[internal/products] step-4 ALL ${images.length} images FAILED, rolling back product ${product.id}`);
+      try {
+        await prisma.product.delete({ where: { id: product.id } });
+        createdProductId = null; // 已回滚，catch 中无需再删
+      } catch (delErr) {
+        console.error(`[internal/products] rollback delete failed for ${product.id}:`, delErr);
+      }
       return NextResponse.json(
-        { success: false, error: "所有图片上传失败", code: "ALL_IMAGES_FAILED" },
-        { status: 400 }
+        {
+          success: false,
+          error: "图片上传全部失败，请检查图片格式后重试",
+          code: "ALL_IMAGES_FAILED",
+          attempted: images.length,
+        },
+        { status: 503 }
       );
     }
+    console.log(`[internal/products] step-4 images done: ${uploadedImageCount}/${images.length} succeeded`);
 
-    // 上传视频
+    // ── Step 5: 上传视频（如有）──
+    // 🐛 Bug 1 修复（R4）：改用 getDataUriBuffer 替代 downloadBuffer
+    //   旧代码：downloadBuffer(video) 内部调用 fetch(url) → 对 base64 Data URI 会抛错
+    //   新代码：getDataUriBuffer(video) 先检测 data: 前缀，正确解码 base64
     if (video) {
+      const vidStart = Date.now();
       try {
-        const tv0 = Date.now();
-        // ⚠️ 使用 getDataUriBuffer（支持 base64 Data URI + URL），而非 downloadBuffer（仅支持 URL）
         const { buffer, contentType } = await getDataUriBuffer(video);
         const ext = guessExtFromMime(contentType);
         const key = `${folder}/video_${Date.now()}.${ext}`;
@@ -340,21 +422,28 @@ export async function POST(request: NextRequest) {
             title: `${modelName} 运转视频`,
           },
         });
-        console.log(`[internal/products] video uploaded in ${Date.now() - tv0}ms`);
+        console.log(`[internal/products] step-5 video uploaded OK in ${Date.now() - vidStart}ms`);
       } catch (err) {
-        console.error(`[internal/products] video upload failed: ${video.substring(0, 100)}`, err);
+        // 视频失败不阻塞产品发布（非核心功能），仅记录日志
+        console.error(`[internal/products] step-5 video FAILED in ${Date.now() - vidStart}ms: src=${String(video).substring(0, 100)}`, err);
       }
     }
 
-    // 扣积分
+    // ── Step 6: 扣除积分 ──
+    const t6 = Date.now();
     await prisma.user.update({
       where: { id: finalSellerId },
       data: { credits: { decrement: PUBLISH_COST } },
     });
+    console.log(`[internal/products] step-6 credits deducted in ${Date.now() - t6}ms`);
 
-    // 记录来源（可选，未来可做 openid 映射）
-    console.log(`[internal/products] created from miniapp, openid=${openid || "unknown"}, productId=${product.id}, status=${productStatus}, isImported=${isImported}`);
-    console.log(`[internal/products] TOTAL time: ${Date.now() - t0}ms`);
+    // ── 完成 ──
+    const totalMs = Date.now() - requestStartTime;
+    console.log(
+      `[internal/products] ✅ TOTAL ${totalMs}ms | productId=${product.id}, ` +
+      `status=${productStatus}, images=${uploadedImageCount}/${images.length}, ` +
+      `video=${!!video}, openid=${openid || "unknown"}, isImported=${isImported}`
+    );
 
     return NextResponse.json({
       success: true,
@@ -364,14 +453,28 @@ export async function POST(request: NextRequest) {
         creditsRemaining: user.credits - PUBLISH_COST,
         status: productStatus,
         isImported,
-        message: isImported ? "国际品牌，自动上架" : "国产品牌，审核中，通过后将自动上架",
+        message: isImported
+          ? "国际品牌，自动上架"
+          : "国产品牌，审核中，通过后将自动上架",
       },
     });
   } catch (error) {
-    const errMsg = String(error?.message || error || "Unknown error");
-    console.error("[internal/products] error:", errMsg);
+    // 🐛 Bug 3 修复（R4）+ 异常回滚
+    const errorMessage = extractErrorMessage(error);
+    console.error(`[internal/products] ❌ error after ${Date.now() - requestStartTime}ms:`, errorMessage);
+
+    // 尝试回滚已创建但未完成的产品（防止孤儿产品）
+    if (createdProductId) {
+      try {
+        await prisma.product.delete({ where: { id: createdProductId } });
+        console.log(`[internal/products] rolled back orphan product ${createdProductId}`);
+      } catch (rollbackErr) {
+        console.error(`[internal/products] failed to rollback product ${createdProductId}:`, rollbackErr);
+      }
+    }
+
     return NextResponse.json(
-      { success: false, error: errMsg, code: "INTERNAL_ERROR" },
+      { success: false, error: errorMessage, code: "INTERNAL_ERROR" },
       { status: 500 }
     );
   }
