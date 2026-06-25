@@ -166,6 +166,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // HTTP 402 — OpenRouter 余额不足（特有错误码）
+    if (statusCode === 402) {
+      console.warn("[SellerHelper] OpenRouter API 余额不足 (HTTP 402)");
+      return NextResponse.json(
+        {
+          success: false,
+          error: "AI识别功能余额不足，请手动填写产品信息",
+          code: "AI_INSUFFICIENT_CREDITS",
+        },
+        { status: 503 } // 服务暂时不可用，客户端应降级为手动填写
+      );
+    }
+
     // HTTP 4xx 错误（API Key 无效、配额超限等）→ 返回具体原因
     if (statusCode && statusCode >= 400 && statusCode < 500) {
       const msg = statusCode === 401
