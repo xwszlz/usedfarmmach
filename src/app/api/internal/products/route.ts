@@ -1,10 +1,11 @@
 /**
- * 内部 API：接收小程序云函数发布的产品数据
+ * 内部 API：接收小程序发布的产品数据
  * - 仅允许持有 INTERNAL_API_KEY 的请求调用
- * - 自动下载小程序云存储图片/视频，上传到 OSS
- * - 创建或复用品牌、品类，创建产品与图片/视频记录
+ * - 支持客户端发送 base64 Data URI（新版小程序）或 HTTPS URL（旧版兼容）
+ * - 自动上传图片/视频到 OSS，创建产品与关联记录
+ * - 所有图片上传失败时回滚（删除孤儿产品）
  *
- * ⚠️ 此接口执行耗时较长（多张图片上传OSS），
+ * ⚠️ 此接口执行耗时较长（多张 base64 图片上传OSS），
  *    已设置 maxDuration=60 避免 Vercel 默认10s超时。
  */
 import { NextRequest, NextResponse } from "next/server";
@@ -151,11 +152,16 @@ async function downloadBuffer(url: string): Promise<{ buffer: Buffer; contentTyp
   return { buffer: Buffer.from(arrayBuffer), contentType };
 }
 
-async function getImageBuffer(src: string): Promise<{ buffer: Buffer; contentType: string }> {
-  // 支持 base64 Data URI（小程序直传）
+/**
+ * 从 Data URI 或 HTTPS URL 中提取 Buffer
+ * - 支持 base64 Data URI（新版小程序：data:image/jpeg;base64,... / data:video/mp4;base64,...）
+ * - 支持 HTTPS URL（旧版兼容：云函数转传）
+ */
+async function getDataUriBuffer(src: string): Promise<{ buffer: Buffer; contentType: string }> {
+  // 支持 base64 Data URI（新版小程序直传）— 兼容 image 和 video
   if (src.startsWith("data:")) {
-    const match = src.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
-    if (!match) throw new Error(`Invalid data URI: ${src.substring(0, 100)}`);
+    const match = src.match(/^data:([a-zA-Z/+-]+);base64,(.+)$/);
+    if (!match) throw new Error(`Invalid data URI format: ${src.substring(0, 120)}`);
     return {
       buffer: Buffer.from(match[2], "base64"),
       contentType: match[1],
@@ -177,12 +183,16 @@ function guessExtFromMime(mime: string): string {
 }
 
 export async function POST(request: NextRequest) {
+  const t0 = Date.now();
+
   if (!requireApiKey(request)) {
-    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ success: false, error: "Unauthorized", code: "UNAUTHORIZED" }, { status: 401 });
   }
 
   try {
     const body = await request.json();
+    const t1 = Date.now();
+    console.log(`[internal/products] body parsed in ${t1 - t0}ms`);
     const {
       sellerId,
       openid,
@@ -275,13 +285,17 @@ export async function POST(request: NextRequest) {
         status: productStatus,
       },
     });
+    const t2 = Date.now();
+    console.log(`[internal/products] product created (id=${product.id}) in ${t2 - t1}ms`);
 
     const folder = `uploads/products/${product.id}`;
 
     // 上传图片
+    let imagesUploaded = 0;
     for (let i = 0; i < images.length; i++) {
       try {
-        const { buffer, contentType } = await getImageBuffer(images[i]);
+        const ti0 = Date.now();
+        const { buffer, contentType } = await getDataUriBuffer(images[i]);
         const ext = guessExtFromMime(contentType);
         const key = `${folder}/image_${i}_${Date.now()}.${ext}`;
         const url = await uploadBufferToOSS(key, buffer, contentType);
@@ -293,15 +307,28 @@ export async function POST(request: NextRequest) {
             isPrimary: i === 0,
           },
         });
+        imagesUploaded++;
+        console.log(`[internal/products] image[${i}] uploaded in ${Date.now() - ti0}ms`);
       } catch (err) {
         console.error(`[internal/products] image upload failed: ${images[i].substring(0, 100)}`, err);
       }
     }
 
+    // 所有图片上传失败 → 回滚（删除孤儿产品）
+    if (imagesUploaded === 0) {
+      await prisma.product.delete({ where: { id: product.id } });
+      return NextResponse.json(
+        { success: false, error: "所有图片上传失败", code: "ALL_IMAGES_FAILED" },
+        { status: 400 }
+      );
+    }
+
     // 上传视频
     if (video) {
       try {
-        const { buffer, contentType } = await downloadBuffer(video);
+        const tv0 = Date.now();
+        // ⚠️ 使用 getDataUriBuffer（支持 base64 Data URI + URL），而非 downloadBuffer（仅支持 URL）
+        const { buffer, contentType } = await getDataUriBuffer(video);
         const ext = guessExtFromMime(contentType);
         const key = `${folder}/video_${Date.now()}.${ext}`;
         const url = await uploadBufferToOSS(key, buffer, contentType);
@@ -313,8 +340,9 @@ export async function POST(request: NextRequest) {
             title: `${modelName} 运转视频`,
           },
         });
+        console.log(`[internal/products] video uploaded in ${Date.now() - tv0}ms`);
       } catch (err) {
-        console.error(`[internal/products] video upload failed: ${video}`, err);
+        console.error(`[internal/products] video upload failed: ${video.substring(0, 100)}`, err);
       }
     }
 
@@ -326,6 +354,7 @@ export async function POST(request: NextRequest) {
 
     // 记录来源（可选，未来可做 openid 映射）
     console.log(`[internal/products] created from miniapp, openid=${openid || "unknown"}, productId=${product.id}, status=${productStatus}, isImported=${isImported}`);
+    console.log(`[internal/products] TOTAL time: ${Date.now() - t0}ms`);
 
     return NextResponse.json({
       success: true,
@@ -339,9 +368,10 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("[internal/products] error:", error);
+    const errMsg = String(error?.message || error || "Unknown error");
+    console.error("[internal/products] error:", errMsg);
     return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : "Internal server error" },
+      { success: false, error: errMsg, code: "INTERNAL_ERROR" },
       { status: 500 }
     );
   }
