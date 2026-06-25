@@ -4,7 +4,13 @@ import { uploadBufferToOSS } from "@/lib/oss-upload";
 /**
  * 小程序 API — 图片/视频上传到 OSS
  * 小程序通过 wx.uploadFile 将文件发送到此接口，服务端直传 OSS
+ *
+ * ⚠️ maxDuration=30：文件需经 Vercel → OSS 转传，大文件（最大50MB视频）
+ *    在网络不佳时可能耗时较长，需避免 Vercel 默认10s超时。
  */
+
+// Vercel Serverless Function 超时延长至30秒（默认10秒）
+export const maxDuration = 30;
 
 function requireAuth(req: NextRequest) {
   const envKey = process.env.MINIAPP_API_KEY;

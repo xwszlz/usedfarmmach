@@ -166,6 +166,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // ⛔ 图片守卫：如果用户传了 images 字段但为空数组，拒绝创建无图产品
+    // 场景：小程序选了图片但 OSS 上传全部失败 → imageUrls=[] → 不应创建空壳产品
+    if (body.images && Array.isArray(body.images) && body.images.length === 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "图片上传失败，没有有效的图片URL。请检查网络后重试。",
+          code: "EMPTY_IMAGES",
+        },
+        { status: 400 }
+      );
+    }
+
     // 创建产品
     const product = await prisma.product.create({
       data: {

@@ -1,10 +1,16 @@
-import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
-
 /**
  * 小程序 API — 获取 OSS 直传凭证
  * 小程序获取临时凭证后，直接 POST 文件到 OSS，绕过 Vercel 4.5MB 限制
+ *
+ * ⚠️ maxDuration=30：此接口涉及 crypto 签名计算，虽通常很快，
+ *    但在冷启动或高并发时可能延迟，需避免 Vercel 默认10s超时。
  */
+import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
+
+// Vercel Serverless Function 超时延长至30秒（默认10秒）
+export const maxDuration = 30;
+
 const OSS_BUCKET = "usedfarmmach-oss";
 const OSS_REGION = "oss-cn-beijing";
 const OSS_HOST = `https://${OSS_BUCKET}.${OSS_REGION}.aliyuncs.com`;
