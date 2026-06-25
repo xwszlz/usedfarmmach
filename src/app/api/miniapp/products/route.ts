@@ -1,10 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
-
 /**
  * 小程序 API — 产品列表 & 创建
  * 认证：Header `x-miniapp-key` 校验
+ *
+ * ⚠️ 此接口包含图片处理和SCP封面优化，执行时间可能较长。
+ *    已设置 maxDuration=60 避免 Vercel 默认10s超时导致小程序发布失败。
  */
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+
+// Vercel Serverless Function 超时延长至60秒（默认10秒，含SCP优化可能超时）
+export const maxDuration = 60;
 
 function requireAuth(req: NextRequest) {
   const envKey = process.env.MINIAPP_API_KEY;
@@ -92,6 +97,8 @@ function scpScoreImage(filename: string): number {
 /**
  * SCP: 创建完图片后自动优化 — 选最佳整机图作为首图
  * 确保 sortOrder=0 且 isPrimary=true 的图是最高分的
+ *
+ * ✨ 性能优化：使用批量操作替代循环单条更新（原方案N张图需2+N次DB调用）
  */
 async function autoOptimizeCover(productId: string, imageUrls: string[]) {
   if (!imageUrls || imageUrls.length <= 1) return; // 0或1张图无需优化
@@ -106,31 +113,32 @@ async function autoOptimizeCover(productId: string, imageUrls: string[]) {
   const best = scored[0];
   const firstUrl = imageUrls[0];
 
-  // 如果第一张已经是最佳，无需调整
+  // 如果第一张已经是最佳且分数足够高，跳过优化
   if (best.url === firstUrl && best.score >= 70) return;
 
-  // 更新DB：设最佳图为 isPrimary=true
+  const otherUrls = imageUrls.filter(u => u !== best.url);
+
+  // ✅ 批量操作：一次更新所有图片的 isPrimary 和 sortOrder（仅需3次DB调用）
+  // 1. 将最佳图设为 isPrimary=true, sortOrder=0
   await prisma.productImage.updateMany({
     where: { productId, url: best.url },
     data: { isPrimary: true, sortOrder: 0 },
   });
-  // 取消其他
-  await prisma.productImage.updateMany({
-    where: { productId, url: { not: best.url }, isPrimary: true },
-    data: { isPrimary: false },
-  });
-  // 重排其余sortOrder
-  const allImages = await prisma.productImage.findMany({
-    where: { productId },
-    orderBy: { sortOrder: "asc" },
-  });
-  let sortIdx = 0;
-  for (const img of allImages) {
-    if (img.url !== best.url) {
-      sortIdx++;
-      await prisma.productImage.update({
-        where: { id: img.id },
-        data: { sortOrder: sortIdx },
+
+  // 2. 将其余所有图的 isPrimary 设为 false
+  if (otherUrls.length > 0) {
+    await prisma.productImage.updateMany({
+      where: { productId, url: { in: otherUrls }, isPrimary: true },
+      data: { isPrimary: false },
+    });
+  }
+
+  // 3. 批量重排其余图的 sortOrder
+  if (otherUrls.length > 1) {
+    for (let i = 0; i < otherUrls.length; i++) {
+      await prisma.productImage.updateMany({
+        where: { productId, url: otherUrls[i] },
+        data: { sortOrder: i + 1 },
       });
     }
   }
