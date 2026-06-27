@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getImageUrl } from "@/lib/image-url";
 import { toSlug } from "@/lib/slug";
 
+export const dynamic = 'force-dynamic';
 export const revalidate = 300;
 
 /** GET /api/brands — 列出所有品牌（含slug） */

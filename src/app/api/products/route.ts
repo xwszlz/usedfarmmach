@@ -6,6 +6,7 @@ import { sortByDailyRank } from "@/config/daily-report-ranking";
 import { cache, cacheKey } from "@/lib/cache";
 
 // ISR: 每5分钟重新验证
+export const dynamic = 'force-dynamic';
 export const revalidate = 300;
 
 // ✅ Round3 修复: Vercel Serverless 超时延长到30秒

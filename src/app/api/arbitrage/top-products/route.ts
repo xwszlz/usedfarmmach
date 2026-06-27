@@ -3,6 +3,7 @@ import { TopArbitrageService } from "@/lib/services/top-arbitrage-service";
 import type { ArbitrageTopItem, TopArbitrageResponse } from "@/types/arbitrage";
 
 // ISR: 套利榜单每小时更新
+export const dynamic = 'force-dynamic';
 export const revalidate = 3600;
 
 /**
