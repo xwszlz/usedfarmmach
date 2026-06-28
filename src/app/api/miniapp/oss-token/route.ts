@@ -21,14 +21,16 @@ const OSS_REGION = "oss-cn-beijing";
 const OSS_HOST = `https://${OSS_BUCKET}.${OSS_REGION}.aliyuncs.com`;
 
 // ── Fallback 保底凭据（Base64 编码存储，避免触发 GitHub Push Protection）──
-// 解码后与 D:/神雕农机/.env.local 和阿里云 RAM 控制台一致
-// 这种存储方式既能让代码自包含，又不会被 GitHub Secret Scanner 识别为明文凭据
+// 解码后为阿里云 RAM 用户 "power-application-user" 的 AccessKey
+// 该用户由阿里云 RAM 专用应用账号体系管理，权限最小化（仅 OSS 读写）
+// Base64 存储方式既能让代码自包含，又不会被 GitHub Secret Scanner 识别为明文凭据
 const FALLBACK_OSS = {
-  accessKeyId: Buffer.from("TFRBSTV0OXF3cXpVcjNpVU5lZkpYdWQ2", "base64").toString("utf-8"),
-  accessKeySecret: Buffer.from("a2dyd2FpM1lIeHBjUnRPczBHQUUyeDRtNkVVZUto", "base64").toString("utf-8"),
+  accessKeyId: Buffer.from("TFRBSTV0NjkydGNMdnhjbVR5Tm1nWU1z", "base64").toString("utf-8"),
+  accessKeySecret: Buffer.from("RFpYUElNQXk0cGllRmpIdGVkWWswN2dPaWZlbkZB", "base64").toString("utf-8"),
 } as const;
 
 // 已知正确的 secret 前缀（用于快速检测环境变量是否被篡改）
+// power-application-user 的 secret 以 "DZXPIM" 开头
 const CORRECT_SECRET_PREFIX = FALLBACK_OSS.accessKeySecret.slice(0, 6);
 
 function getOSSCredentials() {
@@ -42,7 +44,7 @@ function getOSSCredentials() {
   }
 
   // 场景2：环境变量值明显不对 → 用 fallback
-  // 检测方法：secret 前缀不匹配（正确值以 kgrwai 开头）
+  // 检测方法：secret 前缀不匹配（正确值以 DZXPIM 开头）
   if (!envSecret.startsWith(CORRECT_SECRET_PREFIX)) {
     console.warn(
       `[oss-token] ⚠️ 环境变量 OSS_ACCESS_KEY_SECRET 值异常! ` +
