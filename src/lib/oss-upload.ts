@@ -1,5 +1,4 @@
-/**
- * 阿里云 OSS 上传工具
+/** 阿里云 OSS 上传工具
  *
  * 🔧 2026-06-29 重构：
  *   使用 ali-oss 官方 SDK 替代手动签名
@@ -7,8 +6,8 @@
  *         经排查是 canonical resource 构造问题，oss2/ali-oss 内部实现复杂
  *   ali-oss 是阿里云官方维护的 Node.js SDK，签名逻辑经过充分验证
  */
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const OSS = require("ali-oss") as typeof import("ali-oss");
+
+import type { PutObjectResult } from "ali-oss";
 
 // ── Fallback 保底凭据（Base64 编码）──
 const FALLBACK_OSS = {
@@ -17,51 +16,56 @@ const FALLBACK_OSS = {
 } as const;
 const CORRECT_SECRET_PREFIX = FALLBACK_OSS.accessKeySecret.slice(0, 6);
 
-/** 创建 OSS 客户端实例 */
-function createOSSClient(): OSS {
-  let creds: { accessKeyId: string; accessKeySecret: string };
-
+function getCredentials() {
   const envId = process.env.OSS_ACCESS_KEY_ID?.trim();
   const envSecret = process.env.OSS_ACCESS_KEY_SECRET?.trim();
 
   if (!envId || !envSecret || envId === "your-access-key-id") {
-    creds = FALLBACK_OSS;
-  } else if (!envSecret.startsWith(CORRECT_SECRET_PREFIX)) {
-    console.warn(`[oss-upload] ⚠️ 环境变量异常，切换到 Fallback`);
-    creds = FALLBACK_OSS;
-  } else {
-    creds = { accessKeyId: envId, accessKeySecret: envSecret };
+    return FALLBACK_OSS;
   }
+  if (!envSecret.startsWith(CORRECT_SECRET_PREFIX)) {
+    console.warn(`[oss-upload] ⚠️ 环境变量异常，切换到 Fallback`);
+    return FALLBACK_OSS;
+  }
+  return { accessKeyId: envId, accessKeySecret: envSecret };
+}
 
+/** 创建 ali-oss 客户端 */
+function createClient() {
+  const { accessKeyId, accessKeySecret } = getCredentials();
+
+  // 动态 import 避免顶层 require 的 TS 类型检查问题
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const OSS = require("ali-oss");
   return new OSS({
     region: "oss-cn-beijing",
     bucket: "usedfarmmach-oss",
-    accessKeyId: creds.accessKeyId,
-    accessKeySecret: creds.accessKeySecret,
-    timeout: 120000, // 上传大文件需要更长超时
-  });
+    accessKeyId,
+    accessKeySecret,
+    timeout: 120000,
+  }) as {
+    put(name: string, file: Buffer | string | ReadableStream, options?: Record<string, unknown>): Promise<PutObjectResult & { url?: string; name: string; res: { status: number } }>;
+    delete(name: string, options?: Record<string, unknown>): Promise<{ res: { status: number } }>;
+  };
 }
 
 /**
- * 上传 Buffer 到 OSS（使用 ali-oss SDK 的 put 方法）
+ * 上传 Buffer 到 OSS（使用 ali-oss SDK）
  */
 export async function uploadBufferToOSS(
   ossKey: string,
   buffer: Buffer | Uint8Array,
   contentType?: string
 ): Promise<string> {
-  const client = createOSSClient();
-  const opts: OSS.PutObjectOptions = {};
+  const client = createClient();
+  const buf = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
 
-  if (contentType) {
-    opts.headers = { 'Content-Type': contentType };
-  }
-
-  // ali-oss put() 接受 Buffer、string、ReadableStream
-  const result = await client.put(ossKey, buffer as any, opts);
+  const result = await client.put(ossKey, buf, {
+    headers: contentType ? { "Content-Type": contentType } : undefined,
+  });
 
   // 返回完整 URL
-  return result.url || `https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/${ossKey}`;
+  return (result.url as string) || `https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/${ossKey}`;
 }
 
 /**
