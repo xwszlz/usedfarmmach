@@ -14,8 +14,9 @@ import { uploadBufferToOSS } from "@/lib/oss-upload";
 import { hashPassword } from "@/lib/auth";
 import crypto from "crypto";
 
-// Vercel Serverless Function 超时延长至60秒（默认10秒不够用）
-export const maxDuration = 60;
+// Vercel Serverless Function 超时延长至300秒（Pro计划上限）
+// 小程序可能同时上传多张大图+视频，60秒不够用
+export const maxDuration = 300;
 
 const PUBLISH_COST = 1;
 
@@ -357,22 +358,8 @@ export async function POST(request: NextRequest) {
 
     const folder = `uploads/products/${product.id}`;
 
-    // ── Step 4 预检：提前检查 OSS 凭证是否可用（避免循环中反复失败才暴露问题）──
-    let ossCredentialsOk = false;
-    let ossPrecheckError: string | null = null;
-    try {
-      // 通过尝试获取凭证来验证配置是否存在（不实际上传）
-      const ossTestKey = `${folder}/_health_check_${Date.now()}.txt`;
-      const testBuffer = Buffer.from("ok", "ascii");
-      await uploadBufferToOSS(ossTestKey, testBuffer, "text/plain");
-      ossCredentialsOk = true;
-      console.log(`[internal/products] step-4 precheck: OSS connectivity OK`);
-    } catch (ossErr) {
-      ossPrecheckError = extractErrorMessage(ossErr);
-      console.error(`[internal/products] step-4 precheck: OSS connectivity FAILED — ${ossPrecheckError}`);
-    }
-
     // ── Step 4: 上传图片（带失败计数 + 全部失败回滚）──
+    // OSS凭据已在uploadBufferToOSS内部通过Fallback机制保证可用，无需预检
     let uploadedImageCount = 0;
     let firstImageError: string | null = null; // 记录第一个失败的详细原因，用于诊断
     for (let i = 0; i < images.length; i++) {
@@ -426,9 +413,6 @@ export async function POST(request: NextRequest) {
           attempted: images.length,
           // 🔍 R6 修复：返回诊断信息，便于定位根因
           firstError: firstImageError || "未知错误（错误信息未被捕获）",
-          // 🔍 R6 修复：OSS 预检结果（如果 OSS 本身不通，这里会直接说明原因）
-          ossPrecheckOk: ossCredentialsOk,
-          ossPrecheckError: ossPrecheckError || undefined,
         },
         { status: 503 }
       );
