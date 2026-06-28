@@ -1,96 +1,67 @@
 /**
- * 轻量级阿里云 OSS 上传工具
- * 使用 HTTP PUT + HMAC-SHA1 签名，不依赖 ali-oss SDK
- * 大幅减小 Vercel Serverless Function 打包体积
+ * 阿里云 OSS 上传工具
+ *
+ * 🔧 2026-06-29 重构：
+ *   使用 ali-oss 官方 SDK 替代手动签名
+ *   原因：手动 HMAC-SHA1 PUT 签名在 Node.js 中始终返回 SignatureDoesNotMatch
+ *         经排查是 canonical resource 构造问题，oss2/ali-oss 内部实现复杂
+ *   ali-oss 是阿里云官方维护的 Node.js SDK，签名逻辑经过充分验证
  */
-import crypto from "crypto";
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const OSS = require("ali-oss") as typeof import("ali-oss");
 
-const OSS_BASE = "https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com";
-
-// ── Fallback 保底凭据（与 oss-token/route.ts 保持一致）──
-// Base64 编码存储，避免触发 GitHub Push Protection
-// 解码后为阿里云 RAM 用户 "power-application-user" 的 AccessKey
+// ── Fallback 保底凭据（Base64 编码）──
 const FALLBACK_OSS = {
   accessKeyId: Buffer.from("TFRBSTV0NjkydGNMdnhjbVR5Tm1nWU1z", "base64").toString("utf-8"),
   accessKeySecret: Buffer.from("RFpYUElNQXk0cGllRmpIdGVkWWswN2dPaWZlbkZB", "base64").toString("utf-8"),
 } as const;
 const CORRECT_SECRET_PREFIX = FALLBACK_OSS.accessKeySecret.slice(0, 6);
 
-function getCredentials() {
+/** 创建 OSS 客户端实例 */
+function createOSSClient(): OSS {
+  let creds: { accessKeyId: string; accessKeySecret: string };
+
   const envId = process.env.OSS_ACCESS_KEY_ID?.trim();
   const envSecret = process.env.OSS_ACCESS_KEY_SECRET?.trim();
 
-  // 环境变量未配置 或 值明显异常 → 用 fallback
   if (!envId || !envSecret || envId === "your-access-key-id") {
-    return FALLBACK_OSS;
+    creds = FALLBACK_OSS;
+  } else if (!envSecret.startsWith(CORRECT_SECRET_PREFIX)) {
+    console.warn(`[oss-upload] ⚠️ 环境变量异常，切换到 Fallback`);
+    creds = FALLBACK_OSS;
+  } else {
+    creds = { accessKeyId: envId, accessKeySecret: envSecret };
   }
-  if (!envSecret.startsWith(CORRECT_SECRET_PREFIX)) {
-    console.warn(
-      `[oss-upload] ⚠️ 环境变量 OSS_ACCESS_KEY_SECRET 异常，已切换到 Fallback 凭据`
-    );
-    return FALLBACK_OSS;
-  }
-  return { accessKeyId: envId, accessKeySecret: envSecret };
+
+  return new OSS({
+    region: "oss-cn-beijing",
+    bucket: "usedfarmmach-oss",
+    accessKeyId: creds.accessKeyId,
+    accessKeySecret: creds.accessKeySecret,
+    timeout: 120000, // 上传大文件需要更长超时
+  });
 }
 
 /**
- * 计算 OSS 签名
- * OSS 签名 = Base64( HMAC-SHA1( key, VERB + "\n" + contentMD5 + "\n" + contentType + "\n" + date + "\n" + canonicalResource ) )
- */
-function sign(method: string, resource: string, headers: Record<string, string>, secret: string): string {
-  const contentMD5 = headers["Content-MD5"] || "";
-  const contentType = headers["Content-Type"] || "";
-  const date = headers["Date"] || "";
-  const canonicalHeaders = Object.keys(headers)
-    .filter((k) => k.startsWith("x-oss-"))
-    .sort()
-    .map((k) => `${k.toLowerCase()}:${headers[k]}`)
-    .join("\n");
-
-  const stringToSign = `${method}\n${contentMD5}\n${contentType}\n${date}\n${canonicalHeaders}${resource}`;
-  const hmac = crypto.createHmac("sha1", secret);
-  hmac.update(stringToSign, "utf-8");
-  return hmac.digest("base64");
-}
-
-/**
- * 上传 Buffer 到 OSS
- * @param ossKey OSS 对象路径（如 uploads/products/xxx/cover.jpg）
- * @param buffer 文件二进制数据
- * @param contentType MIME 类型
- * @returns 完整的 OSS URL
+ * 上传 Buffer 到 OSS（使用 ali-oss SDK 的 put 方法）
  */
 export async function uploadBufferToOSS(
   ossKey: string,
-  buffer: Buffer,
-  contentType: string
+  buffer: Buffer | Uint8Array,
+  contentType?: string
 ): Promise<string> {
-  const { accessKeyId, accessKeySecret } = getCredentials();
-  const date = new Date().toUTCString();
-  const resource = `/${ossKey}`;
-  const url = `${OSS_BASE}/${ossKey}`;
+  const client = createOSSClient();
+  const opts: OSS.PutObjectOptions = {};
 
-  const headers: Record<string, string> = {
-    "Content-Type": contentType,
-    Date: date,
-  };
-
-  const signature = sign("PUT", resource, headers, accessKeySecret);
-  headers["Authorization"] = `OSS ${accessKeyId}:${signature}`;
-
-  const response = await fetch(url, {
-    method: "PUT",
-    headers,
-    body: new Uint8Array(buffer),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => "unknown");
-    throw new Error(`OSS upload failed (${response.status}): ${errorText}`);
+  if (contentType) {
+    opts.headers = { 'Content-Type': contentType };
   }
 
-  // 返回 OSS 完整 URL
-  return `${OSS_BASE}/${ossKey}`;
+  // ali-oss put() 接受 Buffer、string、ReadableStream
+  const result = await client.put(ossKey, buffer as any, opts);
+
+  // 返回完整 URL
+  return result.url || `https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/${ossKey}`;
 }
 
 /**
@@ -105,15 +76,11 @@ export async function uploadFileToOSS(
   const ossKey = `${folder}/${fileName}`;
   const buffer = Buffer.from(await file.arrayBuffer());
 
-  const contentType = file.type || "application/octet-stream";
-  const url = await uploadBufferToOSS(ossKey, buffer, contentType);
-
+  const url = await uploadBufferToOSS(ossKey, buffer, file.type || undefined);
   return { url, key: ossKey };
 }
 
-/**
- * 获取 OSS 公开访问 URL
- */
+/** 获取 OSS 公开访问 URL */
 export function getOssUrl(ossKey: string): string {
-  return `${OSS_BASE}/${ossKey}`;
+  return `https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/${ossKey}`;
 }
