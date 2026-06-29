@@ -322,8 +322,9 @@ export async function POST(request: NextRequest) {
     const isImported = brandRecord.isImported || isInternationalBrand(brandName || brandRecord.nameZh);
     console.log(`[internal/products] step-2 brand/category resolved in ${Date.now() - t2}ms, brand=${brandRecord.nameZh}, isImported=${isImported}`);
 
-    // 品牌是国际品牌 → 自动通过（status: active）；国产 → 待审核（status: draft）
-    const productStatus = isImported ? "active" : "draft";
+    // 品牌策略：国际品牌→手机+网站同时展示；国产品牌→只在手机端展示，不在网站展示
+    // 所有产品统一设为 active（小程序内都能显示），网站端通过 brand.isImported 过滤
+    const productStatus = "active"; // 统一 active，由网站 API 决定是否展示
 
     // ── 组装描述（与网站格式一致）──
     const descParts: string[] = [];
@@ -484,8 +485,8 @@ export async function POST(request: NextRequest) {
         status: productStatus,
         isImported,
         message: isImported
-          ? "国际品牌，自动上架"
-          : "国产品牌，审核中，通过后将自动上架",
+          ? "国际品牌，手机+网站同时展示"
+          : "国产品牌，仅在小程序展示",
       },
     });
   } catch (error) {

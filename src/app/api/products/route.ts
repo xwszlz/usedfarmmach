@@ -55,15 +55,33 @@ export async function GET(request: NextRequest) {
       sort,
     } = parsed.data;
 
-    // 审核策略：网站只展示 active；小程序展示 active + 待审核的国产农机
-    const where: Record<string, unknown> = includeMiniapp
-      ? {
-          OR: [
-            { status: "active" },
-            { AND: [{ status: "draft" }, { seller: { email: "miniprogram@shendiao.com" } }] },
-          ],
-        }
-      : { status: "active" };
+    // 展示策略（2026-06-29 更新）：
+    //   - 国际品牌的产品：通过小程序发布 → 手机+网站同时展示
+    //   - 国产品牌的产品：通过小程序发布 → 仅在小程序展示，不在网站展示
+    //   - 网站端：排除 miniprogram 发布的国产品牌（seller=miniprogram + brand.isImported=false）
+    //   - 小程序端：展示所有 active + miniprogram 的全部产品
+    const MINIAPP_SELLER_EMAIL = "miniprogram@shendiao.com";
+
+    if (includeMiniapp) {
+      // 小程序调用：显示所有 active + miniprogram 发布的全部产品（含国产）
+      var where: Record<string, unknown> = {
+        OR: [
+          { status: "active" },
+          { AND: [{ status: "draft" }, { seller: { email: MINIAPP_SELLER_EMAIL } }] },
+        ],
+      };
+    } else {
+      // 网站调用：显示 active 产品，但排除「miniprogram 发布的国产品牌」
+      // 即：允许 miniprogram 的国际品牌产品，禁止 miniprogram 的国产品牌产品
+      var where: Record<string, unknown> = {
+        OR: [
+          // 非 miniprogram 来源的所有 active 产品
+          { AND: [{ status: "active" }, { NOT: { seller: { email: MINIAPP_SELLER_EMAIL } } }] },
+          // miniprogram 来源的国际品牌产品（brand.isImported=true）
+          { AND: [{ status: "active" }, { seller: { email: MINIAPP_SELLER_EMAIL } }, { brand: { isImported: true } }] },
+        ],
+      };
+    }
 
     if (brand) where.brandId = brand;
     if (category) where.categoryId = category;
