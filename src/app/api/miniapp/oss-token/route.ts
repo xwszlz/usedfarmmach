@@ -58,11 +58,17 @@ function getOSSCredentials() {
   return { accessKeyId: envId, accessKeySecret: envSecret };
 }
 
-function requireAuth(req: NextRequest) {
-  const envKey = process.env.MINIAPP_API_KEY;
-  if (!envKey) return true; // 未配置 MINIAPP_API_KEY 则跳过认证
-  const key = req.headers.get("x-miniapp-key");
-  return key === envKey;
+// 统一使用 INTERNAL_API_KEY 认证（与 /api/internal/products 一致）
+function requireAuth(req: NextRequest): boolean {
+  const header = req.headers.get("x-api-key");
+  if (!header) return false;
+  const expected = process.env.INTERNAL_API_KEY;
+  if (!expected) {
+    // 未配置 INTERNAL_API_KEY 时跳过认证（开发模式兼容）
+    console.warn("[oss-token] INTERNAL_API_KEY 未配置，跳过认证");
+    return true;
+  }
+  return header === expected;
 }
 
 export async function POST(request: NextRequest) {
