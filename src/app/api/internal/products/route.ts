@@ -420,25 +420,38 @@ export async function POST(request: NextRequest) {
     console.log(`[internal/products] step-4 images done: ${uploadedImageCount}/${images.length} succeeded`);
 
     // ── Step 5: 上传视频（如有）──
-    // 🐛 Bug 1 修复（R4）：改用 getDataUriBuffer 替代 downloadBuffer
-    //   旧代码：downloadBuffer(video) 内部调用 fetch(url) → 对 base64 Data URI 会抛错
-    //   新代码：getDataUriBuffer(video) 先检测 data: 前缀，正确解码 base64
+    // OSS 直传模式：小程序已通过 wx.uploadFile 把视频直传到 OSS，
+    // 此时 video 字段为完整 HTTPS URL，应直接复用入库，避免在 Vercel
+    // Serverless 内再次下载大文件导致超时/内存溢出（视频静默丢失根因）。
+    // 同时保留对 base64 Data URI 旧模式的兼容。
     if (video) {
       const vidStart = Date.now();
       try {
-        const { buffer, contentType } = await getDataUriBuffer(video);
-        const ext = guessExtFromMime(contentType);
-        const key = `${folder}/video_${Date.now()}.${ext}`;
-        const url = await uploadBufferToOSS(key, buffer, contentType);
+        let videoUrlForDb: string;
+
+        if (video.startsWith("https://") || video.startsWith("http://")) {
+          // ✅ OSS 直传新模式：video 已经是完整的 HTTP(S) URL
+          // 直接使用该 URL 创建 ProductVideo 记录，无需下载再上传
+          videoUrlForDb = video.replace("https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com", "");
+          console.log(`[internal/products] step-5 video is direct OSS URL, reusing: ${videoUrlForDb}`);
+        } else {
+          // 兼容旧模式：base64 Data URI 格式
+          const { buffer, contentType } = await getDataUriBuffer(video);
+          const ext = guessExtFromMime(contentType);
+          const key = `${folder}/video_${Date.now()}.${ext}`;
+          const uploadedUrl = await uploadBufferToOSS(key, buffer, contentType);
+          videoUrlForDb = uploadedUrl.replace("https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com", "");
+        }
+
         await prisma.productVideo.create({
           data: {
             productId: product.id,
-            url: url.replace("https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com", ""),
+            url: videoUrlForDb,
             sortOrder: 0,
             title: `${modelName} 运转视频`,
           },
         });
-        console.log(`[internal/products] step-5 video uploaded OK in ${Date.now() - vidStart}ms`);
+        console.log(`[internal/products] step-5 video saved OK in ${Date.now() - vidStart}ms, url=${videoUrlForDb}`);
       } catch (err) {
         // 视频失败不阻塞产品发布（非核心功能），仅记录日志
         const vidErrDetail = extractErrorMessage(err);
