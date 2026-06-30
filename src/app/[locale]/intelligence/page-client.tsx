@@ -185,13 +185,26 @@ function IntelCard({ item, locale, actionTipsLabel }: IntelCardProps) {
 export default function IntelligencePageClient({ locale }: { locale: string }) {
   const t = useTranslations("intelligence");
 
+  // 从 URL 读取 date 参数（支持 ?date=YYYY-MM-DD 按日期筛选）
+  const [dateParam, setDateParam] = useState("");
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const d = params.get("date");
+      if (d) setDateParam(d);
+    }
+  }, []);
+
   // 从 API 获取市场情报
   const [marketData, setMarketData] = useState<MarketIntelItem[]>([]);
   const [dataDate, setDataDate] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/intelligence?locale=${locale}`)
+    const url = dateParam
+      ? `/api/intelligence?locale=${locale}&date=${dateParam}`
+      : `/api/intelligence?locale=${locale}`;
+    fetch(url)
       .then((r) => r.json())
       .then((d) => {
         if (d.success) {
@@ -201,7 +214,7 @@ export default function IntelligencePageClient({ locale }: { locale: string }) {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [locale]);
+  }, [locale, dateParam]);
 
   // 区域顺序按语言适配
   const regionOrderZh = ["全球推广", "俄罗斯", "欧洲", "中国", "乌克兰", "巴西", "哈萨克斯坦", "乌兹别克斯坦", "东南亚", "非洲", "阿富汗"];
