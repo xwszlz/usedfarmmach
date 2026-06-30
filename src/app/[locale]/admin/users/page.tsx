@@ -1,9 +1,30 @@
 import { prisma } from "@/lib/db";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { verifyToken } from "@/lib/auth";
 import { CreditManager } from "./credit-manager";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminUsersPage() {
+  // Editor 角色不能访问用户管理
+  const headersList = headers();
+  const token = (() => {
+    const auth = headersList.get("authorization");
+    if (auth?.startsWith("Bearer ")) return auth.slice(7);
+    const cookie = headersList.get("cookie");
+    const m = cookie?.match(/token=([^;]+)/);
+    return m ? decodeURIComponent(m[1]) : null;
+  })();
+  if (token) {
+    const payload = verifyToken(token);
+    if (payload) {
+      const user = await prisma.user.findUnique({ where: { id: payload.userId }, select: { role: true } });
+      if (user?.role === "editor") {
+        redirect("/admin/products");
+      }
+    }
+  }
   const users = await prisma.user.findMany({
     orderBy: { createdAt: "desc" },
     select: { id: true, email: true, role: true, companyName: true, country: true, credits: true, createdAt: true, _count: { select: { products: true, inquiries: true } } },
@@ -38,6 +59,7 @@ export default async function AdminUsersPage() {
                   <td className="px-6 py-3">
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                       u.role === "admin" ? "bg-purple-100 text-purple-700" :
+                      u.role === "editor" ? "bg-teal-100 text-teal-700" :
                       u.role === "seller" ? "bg-blue-100 text-blue-700" :
                       "bg-gray-100 text-gray-600"
                     }`}>{u.role}</span>

@@ -5,23 +5,29 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Users, Package, Settings, FileText } from "lucide-react";
 
-export function AdminSidebar() {
+export function AdminSidebar({ role }: { role: string }) {
   const t = useTranslations("nav");
   const pathname = usePathname();
   const locale = pathname.split("/")[1] || "zh";
 
+  const isEditor = role === "editor";
+
   const links = [
-    { href: `/${locale}/admin`, label: "控制台", icon: LayoutDashboard },
-    { href: `/${locale}/admin/users`, label: "用户管理", icon: Users },
-    { href: `/${locale}/admin/products`, label: "产品管理", icon: Package },
-    { href: `/${locale}/seller/products`, label: "卖家产品", icon: FileText },
+    { href: `/${locale}/admin`, label: "控制台", icon: LayoutDashboard, hideForEditor: true },
+    { href: `/${locale}/admin/users`, label: "用户管理", icon: Users, hideForEditor: true },
+    { href: `/${locale}/admin/products`, label: "产品管理", icon: Package, hideForEditor: false },
+    { href: `/${locale}/seller/products`, label: "卖家产品", icon: FileText, hideForEditor: true },
   ];
+
+  const visibleLinks = links.filter((l) => !(isEditor && l.hideForEditor));
 
   return (
     <aside className="w-60 border-r bg-gray-50 p-4">
-      <h2 className="mb-4 text-sm font-semibold text-gray-400 uppercase">管理后台</h2>
+      <h2 className="mb-4 text-sm font-semibold text-gray-400 uppercase">
+        {isEditor ? "编辑面板" : "管理后台"}
+      </h2>
       <nav className="space-y-1">
-        {links.map((link) => {
+        {visibleLinks.map((link) => {
           const Icon = link.icon;
           const active = pathname === link.href;
           return (

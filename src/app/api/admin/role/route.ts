@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const { userId, role } = await request.json();
-    if (!["buyer", "seller", "admin"].includes(role)) {
+    if (!["buyer", "seller", "editor", "admin"].includes(role)) {
       return NextResponse.json({ success: false, error: "无效角色" }, { status: 400 });
     }
     await prisma.user.update({

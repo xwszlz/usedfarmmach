@@ -33,16 +33,16 @@ export default async function AdminLayout({
 
   const user = await prisma.user.findUnique({
     where: { id: payload.userId },
-    select: { role: true },
+    select: { role: true, email: true },
   });
 
-  if (!user || !["admin", "super_admin"].includes(user.role)) {
+  if (!user || !["admin", "super_admin", "editor"].includes(user.role)) {
     redirect("/");
   }
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)]">
-      <AdminSidebar />
+      <AdminSidebar role={user.role} />
       <main className="flex-1 p-6">{children}</main>
     </div>
   );

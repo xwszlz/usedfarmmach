@@ -1,8 +1,28 @@
 import { prisma } from "@/lib/db";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { verifyToken } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
+  const headersList = headers();
+  const token = (() => {
+    const auth = headersList.get("authorization");
+    if (auth?.startsWith("Bearer ")) return auth.slice(7);
+    const cookie = headersList.get("cookie");
+    const m = cookie?.match(/token=([^;]+)/);
+    return m ? decodeURIComponent(m[1]) : null;
+  })();
+  if (token) {
+    const payload = verifyToken(token);
+    if (payload) {
+      const user = await prisma.user.findUnique({ where: { id: payload.userId }, select: { role: true } });
+      if (user?.role === "editor") {
+        redirect("/admin/products");
+      }
+    }
+  }
   const [userCount, productCount, activeProducts, recentUsers] = await Promise.all([
     prisma.user.count(),
     prisma.product.count(),
@@ -56,6 +76,7 @@ export default async function AdminDashboard() {
                   <td className="px-6 py-3">
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                       u.role === "admin" ? "bg-purple-100 text-purple-700" :
+                      u.role === "editor" ? "bg-teal-100 text-teal-700" :
                       u.role === "seller" ? "bg-blue-100 text-blue-700" :
                       "bg-gray-100 text-gray-600"
                     }`}>{u.role}</span>

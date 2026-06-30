@@ -18,6 +18,7 @@
 interface CacheProvider {
   get<T>(key: string): Promise<T | null>;
   set<T>(key: string, value: T, ttlSeconds?: number): Promise<void>;
+  del(key: string): Promise<void>;
 }
 
 // 内存缓存实现
@@ -53,6 +54,10 @@ class MemoryCache implements CacheProvider {
       value: JSON.stringify(value),
       expiresAt,
     });
+  }
+
+  async del(key: string): Promise<void> {
+    this.store.delete(key);
   }
 }
 
@@ -98,6 +103,13 @@ async function getRedisProvider(): Promise<CacheProvider | null> {
           }
         } catch (err) {
           console.error("[Cache] Redis set failed:", err);
+        }
+      },
+      async del(key: string): Promise<void> {
+        try {
+          await redis.del(key);
+        } catch (err) {
+          console.error("[Cache] Redis del failed:", err);
         }
       },
     };
@@ -147,6 +159,18 @@ class CacheManager implements CacheProvider {
     // 写入 Redis（如果可用）
     if (this.redis) {
       await this.redis.set(key, value, ttlSeconds);
+    }
+  }
+
+  async del(key: string): Promise<void> {
+    await this.init();
+
+    // 删除内存
+    await this.memory.del(key);
+
+    // 删除 Redis（如果可用）
+    if (this.redis) {
+      await this.redis.del(key);
     }
   }
 }

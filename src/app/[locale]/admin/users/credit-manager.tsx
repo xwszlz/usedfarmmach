@@ -61,6 +61,7 @@ export function CreditManager({ userId, currentCredits, currentRole }: Props) {
         className="rounded border px-1 py-0.5 text-xs">
         <option value="buyer">buyer</option>
         <option value="seller">seller</option>
+        <option value="editor">editor</option>
         <option value="admin">admin</option>
       </select>
       {msg && <span className="text-xs text-green-600">{msg}</span>}
