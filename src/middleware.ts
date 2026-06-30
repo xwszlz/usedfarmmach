@@ -36,6 +36,21 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const host = request.headers.get("host") || "";
 
+  // 静态资源路径：跳过所有中间件处理（直接由 Next.js static file serving 处理）
+  const STATIC_PATHS = [
+    "/daily-reports/",
+    "/_next/",
+    "/images/",
+    "/logo",
+    "/videos/",
+    "/favicon.ico",
+    "/robots.txt",
+    "/sitemap.xml",
+  ];
+  if (STATIC_PATHS.some((p) => pathname.startsWith(p))) {
+    return NextResponse.next();
+  }
+
   // .cn → .com 全站301跳转
   if (host.includes("usedfarmmach.cn")) {
     const url = new URL(request.url);
