@@ -125,7 +125,7 @@ async function importFromJson(jsonPath: string) {
 }
 
 async function main() {
-  const jsonPath = path.join(__dirname, "..", "..", "scripts", "agriaffaires_data.json");
+  const jsonPath = path.join(__dirname, "agriaffaires_data.json");
 
   console.log("=".repeat(60));
   console.log("🚜 #1 卖方采集 Agent — 导入脚本");

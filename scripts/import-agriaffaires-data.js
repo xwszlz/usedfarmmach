@@ -13,7 +13,7 @@ const path = require('path');
 
 const prisma = new PrismaClient();
 
-const DATA_FILE = path.join(__dirname, '..', '..', 'scripts', 'agriaffaires_data.json');
+const DATA_FILE = path.join(__dirname, 'agriaffaires_data.json');
 
 async function main() {
   console.log('=' .repeat(60));

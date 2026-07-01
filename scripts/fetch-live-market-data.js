@@ -15,7 +15,7 @@ const path = require('path');
 
 const prisma = new PrismaClient();
 
-const DATA_FILE = path.join(__dirname, '..', '..', 'scripts', 'agriaffaires_data.json');
+const DATA_FILE = path.join(__dirname, 'agriaffaires_data.json');
 const EUR_CNY_RATE = 7.91; // 2026-06 参考汇率
 
 async function main() {
