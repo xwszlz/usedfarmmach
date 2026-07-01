@@ -219,7 +219,7 @@ function buildStrategyMarkdown(strategyData, dateStr) {
   lines.push('');
   lines.push('---');
   lines.push('\uD83D\uDCC4 \u5B8C\u6574Excel\u62A5\u544A\uFF1A`神雕农机_全量产品策略分析_' + dateStr + '.xlsx`');
-  lines.push('\uD83D\uDC49 [\u67E5\u770B\u5728\u552E\u4EA7\u54C1](https://usedfarmmach.cn/zh/products)');
+  lines.push('\uD83D\uDCCC \u6587\u4EF6\u4F4D\u7F6E\uFF1AD\:\\\\神雕农机\\\\神雕日报\\\\');
 
   return lines.join('\n');
 }
@@ -246,7 +246,7 @@ function buildBasicStrategySummary(dateStr) {
     '- G.\u4E13\u7528\u8BBE\u5907\u2192\u5782\u76F4\u573A\u666F\n' +
     '- H.\u5F85\u5206\u7C7B\u2192\u9700\u4EBA\u5DE5\u590D\u6838\n\n' +
     '\uD83D\uDCC4 \u8BE6\u7EC6\u5185\u5BB9\u8BF7\u67E5\u770BExcel\u6587\u4EF6\n' +
-    '\uD83D\uDC49 [\u67E5\u770b\u5728\u552e\u4ea7\u54c1](https://usedfarmmach.cn/zh/products)';
+    '\uD83D\uDCCC \u6587\u4EF6\u4F4D\u7F6E\uFF1AD\:\\\\神雕农机\\\\神雕日报\\\\';
 }
 
 /**
@@ -374,7 +374,7 @@ function buildStrategyMessages(strategyData, dateStr) {
   messages.push(
     '---\n' +
     '\uD83D\uDCC4 **\u5B8C\u6574Excel\u62A5\u544A\uFF1A** `神雕农机_全量产品策略分析_' + dateStr + '.xlsx`\n\n' +
-    '\uD83D\uDC49 [\u67E5\u770B\u5728\u552E\u4EA7\u54C1](https://usedfarmmach.cn/zh/products)'
+    '\uD83D\uDCCC \u6587\u4EF6\u5728\u672C\u673A D\:\\\\神雕农机\\\\神雕日报\\\\ \u6587\u4EF6\u5939'
   );
 
   return messages;
