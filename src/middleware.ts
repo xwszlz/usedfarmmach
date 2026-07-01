@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import createMiddleware from "next-intl/middleware";
-import { verifyToken } from "@/lib/auth";
+// 注意：不能用 @/lib/auth.ts（jsonwebtoken 是 Node.js-only，middleware 是 Edge Runtime）
+import { verifyTokenEdge } from "@/lib/auth-edge";
 
 // next-intl 国际化中间件（自动检测浏览器语言）
 const intlMiddleware = createMiddleware({
@@ -33,7 +34,7 @@ function getTokenFromRequest(request: NextRequest): string | null {
   return cookie || null;
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const host = request.headers.get("host") || "";
 
@@ -74,7 +75,7 @@ export function middleware(request: NextRequest) {
       );
     }
 
-    const payload = verifyToken(token);
+    const payload = await verifyTokenEdge(token);
     if (!payload) {
       return NextResponse.json(
         { success: false, error: "Invalid or expired token" },
@@ -128,7 +129,7 @@ export function middleware(request: NextRequest) {
   }
 
   // 验证 token
-  const payload = verifyToken(token);
+  const payload = await verifyTokenEdge(token);
   if (!payload) {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json(
