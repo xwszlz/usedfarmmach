@@ -13,7 +13,6 @@ import path from "path";
 export const dynamic = 'force-dynamic';
 
 const REPORTS_DIR = path.join(process.cwd(), "public", "daily-reports");
-const DAILY_DIR = path.resolve(process.cwd(), "..", "神雕日报");
 
 function stripHtml(html: string): string {
   return html
@@ -105,7 +104,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 优先级2: Markdown文件（当日新生成的报告）
-    const mdPath = path.join(DAILY_DIR, `${date}_跨境套利日报.md`);
+    const mdPath = path.join(REPORTS_DIR, `${date}_跨境套利日报.md`);
     if (fs.existsSync(mdPath)) {
       const mdContent = fs.readFileSync(mdPath, "utf-8");
 

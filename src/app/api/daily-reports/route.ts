@@ -15,8 +15,8 @@ import path from "path";
 export const dynamic = 'force-dynamic';
 
 const REPORTS_DIR = path.join(process.cwd(), "public", "daily-reports");
-// 神雕日报目录：usedfarmmach 的同级目录下的 神雕日报 文件夹
-const DAILY_DIR = path.resolve(process.cwd(), "..", "神雕日报");
+// 数据文件统一放在 public/daily-reports/ 下（Vercel部署可用）
+// 本地开发时也同步到此处（自动化脚本负责复制）
 
 // 获取今天的日期字符串
 function getTodayStr(): string {
@@ -64,8 +64,8 @@ export async function GET() {
 
   // 1. 日报状态检查
   const dailyHtmlPath = path.join(REPORTS_DIR, `${today}.html`);
-  const dailyMdPath = path.join(DAILY_DIR, `${today}_跨境套利日报.md`);
-  const dailyPdfPath = path.join(DAILY_DIR, `${today}_跨境套利日报_HD.pdf`);
+  const dailyMdPath = path.join(REPORTS_DIR, `${today}_跨境套利日报.md`);
+  const dailyPdfPath = path.join(REPORTS_DIR, `${today}_跨境套利日报_HD.pdf`);
 
   const dailyReport = {
     date: today,
@@ -187,7 +187,7 @@ export async function GET() {
   };
 
   // 4. 今日文章 — 从JSON文件读取（优先）或从数据库读取
-  const articlesPath = path.join(DAILY_DIR, `articles_${today}.json`);
+  const articlesPath = path.join(REPORTS_DIR, `articles_${today}.json`);
   const articlesData = readJson<Array<{
     id?: string;
     slug?: string;
