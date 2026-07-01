@@ -27,8 +27,11 @@ interface AgentRun {
   id: string;
   status: RunStatus;
   startedAt: string;
+  completedAt?: string;
   durationMs?: number;
   errorMessage?: string;
+  result?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
 }
 
 interface AgentItem {
@@ -138,9 +141,20 @@ export function OrchestratorDashboard() {
       });
       const result = await res.json();
       if (!result.ok) {
-        alert(`触发失败: ${result.error || result.message}`);
+        const errMsg = result.error || result.message || "未知错误";
+        alert(`❌ 触发失败：${errMsg}\n\n查看 dashboard 展开详情可看到完整结果。`);
       } else {
-        alert(`触发成功: ${result.message}`);
+        const msg = result.message || `Agent ${agentId} 触发成功`;
+        const workflowUrl = result.result?.workflowUrl as string | undefined;
+        const guide = result.result?.guide as string | undefined;
+        let alertText = `✅ ${msg}`;
+        if (workflowUrl) {
+          alertText += `\n\n查看运行进度：\n${workflowUrl}`;
+        }
+        if (guide) {
+          alertText += `\n\n⚙️ ${guide}`;
+        }
+        alert(alertText);
         fetchData(); // 刷新状态
       }
     } catch (err) {
@@ -428,22 +442,42 @@ export function OrchestratorDashboard() {
                       {agent.recentRuns.slice(0, 5).map((run) => (
                         <div
                           key={run.id}
-                          className={`flex items-center justify-between p-2 rounded-lg border text-sm ${runStatusBg[run.status]}`}
+                          className={`p-2 rounded-lg border text-sm ${runStatusBg[run.status]}`}
                         >
-                          <div className="flex items-center gap-2">
-                            {runStatusIcons[run.status]}
-                            <span className={runStatusColors[run.status]}>
-                              {run.status}
-                            </span>
-                            <span className="text-gray-500">
-                              {new Date(run.startedAt).toLocaleString()}
-                            </span>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              {runStatusIcons[run.status]}
+                              <span className={runStatusColors[run.status]}>
+                                {run.status}
+                              </span>
+                              <span className="text-gray-500">
+                                {new Date(run.startedAt).toLocaleString()}
+                              </span>
+                            </div>
+                            <div className="text-gray-500">
+                              {run.durationMs
+                                ? `${(run.durationMs / 1000).toFixed(1)}s`
+                                : "-"}
+                            </div>
                           </div>
-                          <div className="text-gray-500">
-                            {run.durationMs
-                              ? `${(run.durationMs / 1000).toFixed(1)}s`
-                              : "-"}
-                          </div>
+
+                          {/* 结果详情（折叠） */}
+                          {(run.result || run.errorMessage) && (
+                            <details className="mt-2 text-xs">
+                              <summary className="cursor-pointer text-gray-500 hover:text-gray-700">
+                                {run.result ? "查看运行结果" : "查看错误详情"}
+                              </summary>
+                              <div className="mt-2 p-2 bg-white border border-gray-200 rounded font-mono text-xs whitespace-pre-wrap break-all">
+                                {run.errorMessage ? (
+                                  <span className="text-red-600">{run.errorMessage}</span>
+                                ) : run.result ? (
+                                  <pre className="text-gray-700">
+                                    {JSON.stringify(run.result, null, 2)}
+                                  </pre>
+                                ) : null}
+                              </div>
+                            </details>
+                          )}
                         </div>
                       ))}
                     </div>

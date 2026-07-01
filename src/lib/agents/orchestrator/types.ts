@@ -75,8 +75,11 @@ export interface AgentStatusOutput {
     id: string;
     status: RunStatus;
     startedAt: string;
+    completedAt?: string;
     durationMs?: number;
     errorMessage?: string;
+    result?: Record<string, unknown>;
+    metadata?: Record<string, unknown>;
   }>;
 }
 

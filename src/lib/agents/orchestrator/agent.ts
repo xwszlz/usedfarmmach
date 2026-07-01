@@ -108,13 +108,34 @@ export async function getAgentStatus(
       lastRunStatus: recentRuns[0]?.status as RunStatus,
       totalRuns,
       successRate,
-      recentRuns: recentRuns.map((run) => ({
-        id: run.id,
-        status: run.status as RunStatus,
-        startedAt: run.startedAt.toISOString(),
-        durationMs: run.durationMs || undefined,
-        errorMessage: run.errorMessage || undefined,
-      })),
+      recentRuns: recentRuns.map((run) => {
+        let parsedResult: Record<string, unknown> | undefined;
+        if (run.result) {
+          try {
+            parsedResult = JSON.parse(run.result);
+          } catch {
+            // ignore
+          }
+        }
+        let parsedMeta: Record<string, unknown> | undefined;
+        if (run.metadata) {
+          try {
+            parsedMeta = JSON.parse(run.metadata);
+          } catch {
+            // ignore
+          }
+        }
+        return {
+          id: run.id,
+          status: run.status as RunStatus,
+          startedAt: run.startedAt.toISOString(),
+          completedAt: run.completedAt?.toISOString(),
+          durationMs: run.durationMs || undefined,
+          errorMessage: run.errorMessage || undefined,
+          result: parsedResult,
+          metadata: parsedMeta,
+        };
+      }),
     });
   }
 
@@ -259,11 +280,41 @@ async function executeAgent(
     }
 
     case "seller-scout": {
-      // #1 通过 GitHub Actions 触发，这里返回提示
+      // #1 通过 GitHub Actions workflow_dispatch 触发（真采集）
+      const token = process.env.GITHUB_TOKEN;
+      const repo = process.env.GITHUB_REPO; // 形如 "xwszlz/usedfarmmach"
+      if (!token || !repo) {
+        return {
+          mode: "external-cron",
+          ok: false,
+          message:
+            "缺少 GITHUB_TOKEN / GITHUB_REPO 环境变量。需要在 Vercel Dashboard 配置。",
+          guide:
+            "请到 Vercel 项目设置 → Environment Variables 添加 GITHUB_TOKEN（fine-grained, workflow 权限）和 GITHUB_REPO（xwszlz/usedfarmmach）",
+        };
+      }
+      const url = `https://api.github.com/repos/${repo}/actions/workflows/seller-scout.yml/dispatches`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          Accept: "application/vnd.github+json",
+          Authorization: `Bearer ${token}`,
+          "X-GitHub-Api-Version": "2022-11-28",
+          "User-Agent": "usedfarmmach-orchestrator",
+        },
+        body: JSON.stringify({ ref: "main" }),
+      });
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`GitHub dispatch ${res.status}: ${txt.slice(0, 300)}`);
+      }
       return {
-        mode: "external-cron",
-        message: "Seller-scout runs via GitHub Actions. Trigger via workflow_dispatch or wait for scheduled run.",
-        workflowUrl: "https://github.com/xwszlz/usedfarmmach/actions/workflows/seller-scout.yml",
+        mode: "github-dispatch",
+        ok: true,
+        message:
+          "已触发 GitHub Actions seller-scout.yml，结果将写入 DB。可到 https://github.com/xwszlz/usedfarmmach/actions 查看运行进度。",
+        workflow: "seller-scout.yml",
+        workflowUrl: `https://github.com/${repo}/actions/workflows/seller-scout.yml`,
       };
     }
 
