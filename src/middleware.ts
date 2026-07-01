@@ -15,6 +15,7 @@ const PROTECTED_PATHS = [
   "/api/seller",
   "/api/inquiries",
   "/api/demands",
+  "/api/agents/orchestrator",
   "/seller",
   "/admin",
 ];

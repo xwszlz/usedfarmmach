@@ -18,16 +18,26 @@ import {
 
 export const dynamic = "force-dynamic";
 
-// ── 简单认证检查 ──
+const ADMIN_ROLES = ["admin", "super_admin"];
+
+// ── 认证检查：优先信任中间件注入的用户头，再回退 CRON_API_KEY ──
 function checkAuth(req: NextRequest): NextResponse | null {
+  // 1) 优先：被 middleware 认证过的用户（cookie 合法且角色足够）
+  const userId = req.headers.get("x-user-id");
+  const userRole = req.headers.get("x-user-role");
+  if (userId && userRole && ADMIN_ROLES.includes(userRole)) {
+    return null; // OK：放行
+  }
+
+  // 2) 回退：CRON_API_KEY（外部 cron / CLI 调用）
   const apiKey = process.env.CRON_API_KEY || "dev-secret-key";
   const auth = req.headers.get("Authorization");
-  if (process.env.NODE_ENV === "production") {
-    if (!auth || !auth.startsWith("Bearer ") || auth.substring(7) !== apiKey) {
-      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
-    }
+  if (auth && auth.startsWith("Bearer ") && auth.substring(7) === apiKey) {
+    return null; // OK：放行
   }
-  return null;
+
+  // 3) 都不满足
+  return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 }
 
 // ── GET：查询状态 ──
