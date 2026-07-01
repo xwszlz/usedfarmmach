@@ -107,6 +107,7 @@ export function OrchestratorDashboard() {
       setRefreshing(true);
       const res = await fetch("/api/agents/orchestrator?history=true&limit=10", {
         cache: "no-store",
+        credentials: "include",
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
@@ -132,6 +133,7 @@ export function OrchestratorDashboard() {
       const res = await fetch("/api/agents/orchestrator", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ action: "trigger", agentId }),
       });
       const result = await res.json();
@@ -153,6 +155,7 @@ export function OrchestratorDashboard() {
       const res = await fetch("/api/agents/orchestrator", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ action, agentId }),
       });
       const result = await res.json();
@@ -183,13 +186,27 @@ export function OrchestratorDashboard() {
         <div className="text-center">
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <p className="text-red-600 font-medium">加载失败</p>
-          <p className="text-gray-500 text-sm mt-2">{error}</p>
-          <button
-            onClick={fetchData}
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-          >
-            重试
-          </button>
+          <p className="text-gray-500 text-sm mt-2">
+            {error.includes("401")
+              ? "登录状态已失效或未登录，请重新登录后再访问"
+              : error}
+          </p>
+          <div className="mt-4 flex gap-2 justify-center">
+            <button
+              onClick={fetchData}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+            >
+              重试
+            </button>
+            {error.includes("401") && (
+              <a
+                href="/zh/login?redirect=/zh/admin/orchestrator"
+                className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              >
+                重新登录
+              </a>
+            )}
+          </div>
         </div>
       </div>
     );
