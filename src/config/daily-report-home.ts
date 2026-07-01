@@ -72,7 +72,7 @@ export function getLocalizedData(locale: string) {
 }
 
 export const DAILY_REPORT_CONFIG: DailyReportConfig = {
-  date: "2026-06-30",
+  date: "2026-07-02",
   highlights: [
     {
       emoji: "💱",
@@ -136,30 +136,30 @@ export const DAILY_REPORT_CONFIG: DailyReportConfig = {
   marketIntel: [
     {
       icon: "🔥",
-      textZh: "6月收官：EUR/CNY -1.60% + EUR/RUB +5.52% = 俄线出口利润历史级黄金窗口延续！7月决战AGRO展",
-      textEn: "June close: EUR/CNY -1.60% + EUR/RUB +5.52% = historic Russia export window! July AGRO Expo campaign",
-      textRu: "Закрытие июня: EUR/CNY -1,60% + EUR/RUB +5,52% = историческое окно экспорта в РФ! Июль AGRO Expo",
+      textZh: "7月开局第2天：EUR/CNY 7.741持稳 + EUR/RUB 87.403高位 = 俄线历史级黄金窗口延续！7/9-11 AGRO展倒计时7天",
+      textEn: "July Day 2: EUR/CNY 7.741 stable + EUR/RUB 87.403 high = historic Russia window continues! AGRO Expo T-7 days",
+      textRu: "Июль день 2: EUR/CNY 7,741 стабильно + EUR/RUB 87,403 высокий = историческое окно РФ продолжается! AGRO Expo T-7 дней",
       url: "/zh/intelligence",
     },
     {
       icon: "📊",
-      textZh: "970系列增至28条在售(+1) + 🆕960/1290新入榜 + 俄线利润持续增厚，6/30开盘聚焦FR450×10台冲量",
-      textEn: "970 series 28 listings(+1) + 🆕960/1290 new entries + Russia margin boost, 6/30 open focus FR450×10 bulk",
-      textRu: "970 серия 28 объяв(+1) + 🆕960/1290 новые + маржа РФ рост, 6/30 открытие фокус FR450×10 оптом",
+      textZh: "970系列维持29条在售 + 🆕970(2018)178.5万中端锚点 + 980(2019)196.3万中端锚点 | FR450×10台7月冲量",
+      textEn: "970 series 29 listings stable + 🆕970(2018)¥1.785M + 980(2019)¥1.963M mid-hour anchors | FR450×10 Jul push",
+      textRu: "970 серия 29 объяв стабильно + 🆕970(2018)¥1,785M + 980(2019)¥1,963M якоря | FR450×10 июль продажа",
       url: "/zh/arbitrage-top",
     },
     {
       icon: "💶",
-      textZh: "5300RC(2020)€99,900→77.4万国际 vs 国内18万，价差59.4万(330%)全品类第一！6月收官俄国线王牌",
-      textEn: "5300RC(2020) €99,900→774K intl vs China 180K, spread 594K (330%) #1! June close Russia line king",
-      textRu: "5300RC(2020) €99,900→774K заруб vs Китай 180K, спред 594K (330%) №1! Закрытие июня линия РФ король",
+      textZh: "5300RC(2020)330.0%全品类第一 + Kuhn 890大方捆337.5%新入榜 | 7月俄线王牌绝对主力",
+      textEn: "5300RC(2020)330.0% #1 + Kuhn 890 337.5% new entry | July Russia line absolute king",
+      textRu: "5300RC(2020)330,0% №1 + Kuhn 890 337,5% новый | Июль линия РФ абсолютный король",
       url: "/zh/products?sort=rank",
     },
     {
       icon: "⚠️",
-      textZh: "风险：AGRO 2026基辅展倒计时9天急需备货；ECB 7/22-23+CBR 7/25议息；EU第21轮制裁草案7月落地",
-      textEn: "Risk: AGRO 2026 Kyiv expo T-9 days urgent prep; ECB 7/22-23 + CBR 7/25 rate decisions; EU 21st sanctions Jul",
-      textRu: "Риски: AGRO 2026 Киев T-9 дней срочная подготовка; ЕЦБ 22-23.07 + ЦБР 25.07 ставки; 21-й пакет санкций ЕС июль",
+      textZh: "风险：AGRO 2026基辅展倒计时7天急需备货；ECB 7/22-23+CBR 7/25议息；EU第21轮制裁草案7月落地",
+      textEn: "Risk: AGRO 2026 Kyiv expo T-7 days urgent prep; ECB 7/22-23 + CBR 7/25 rate decisions; EU 21st sanctions Jul",
+      textRu: "Риски: AGRO 2026 Киев T-7 дней срочная подготовка; ЕЦБ 22-23.07 + ЦБР 25.07 ставки; 21-й пакет санкций ЕС июль",
       url: "/zh/products?sort=rank",
     },
   ],
