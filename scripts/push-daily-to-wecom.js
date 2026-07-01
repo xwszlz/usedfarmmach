@@ -20,9 +20,9 @@ var prisma = new PrismaClient();
 // ========== config ==========
 var WEBHOOK_KEY = '9d46e962-5b34-48af-b010-06e8e8b78cf4';
 var WEBHOOK_URL = 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=' + WEBHOOK_KEY;
-var LEXIANG_REPORT_BASE = 'https://lexiangla.com/pages';
-var COMPANY_FROM = 'e987003e566611f187fa321d7b2198c0';
-var LATEST_REPORT_ID = '195ce24fc42448368249244e5481cd73'; // updated on report push
+// 注意：乐享报告页面已失效(403)，改用网站产品页作为备用链接
+var WEBSITE_PRODUCT_URL = 'https://usedfarmmach.cn/zh/products';
+var LATEST_REPORT_ID = ''; // 留空时自动使用网站链接
 
 function formatDate(date) {
   var y = date.getFullYear();
@@ -183,7 +183,7 @@ function buildMarkdown(report) {
     '> \uD83D\uDCB0 未标价' + r.unpricedCount + '台需补充价格\n' +
     '> \uD83C\uDFF7\uFE0F 异常品牌信息需确认并修改\n' +
     '> \n' +
-    '> \uD83D\uDC49 [查看完整83台产品明细报告](https://lexiangla.com/pages/)';
+    '> \uD83D\uDC49 [查看完整产品列表](' + WEBSITE_PRODUCT_URL + ')';
 }
 
 function buildTextReminder(report, lexiangUrl) {
@@ -221,7 +221,7 @@ async function main() {
   }
   
   console.log('[PUSH] sending reminder message...');
-  var lexiangUrl = LEXIANG_REPORT_BASE + '/' + LATEST_REPORT_ID + '?company_from=' + COMPANY_FROM;
+  var lexiangUrl = WEBSITE_PRODUCT_URL;
   var reminder = buildTextReminder(report, lexiangUrl);
   var result2 = await postToWecom('text', reminder);
   if (result2.errcode === 0) {
