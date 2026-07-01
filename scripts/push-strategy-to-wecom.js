@@ -16,7 +16,7 @@ var path = require('path');
 
 // ========== config ==========
 // 【重要】这是"神雕套利运营日报(3)"群的机器人 Webhook Key
-var STRATEGY_WEBHOOK_KEY = 'PLACEHOLDER_NEW_WEBHOOK_KEY'; // 需要替换为新群的Key
+var STRATEGY_WEBHOOK_KEY = '658da92f-33e1-48af-9f17-46d130a51acd';
 var STRATEGY_WEBHOOK_URL = 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=' + STRATEGY_WEBHOOK_KEY;
 
 var REPORT_BASE_DIR = 'D:/神雕农机/神雕日报';
@@ -249,6 +249,137 @@ function buildBasicStrategySummary(dateStr) {
     '\uD83D\uDC49 [\u67E5\u770b\u5728\u552e\u4ea7\u54c1](https://usedfarmmach.cn/zh/products)';
 }
 
+/**
+ * 将长消息拆分为多条，每条不超过maxLen字符
+ */
+function splitMessages(markdown, maxLen) {
+  var lines = markdown.split('\n');
+  var chunks = [];
+  var current = '';
+  
+  lines.forEach(function(line) {
+    if ((current + '\n' + line).length > maxLen && current.length > 0) {
+      chunks.push(current);
+      current = line;
+    } else {
+      current = current ? (current + '\n' + line) : line;
+    }
+  });
+  if (current) chunks.push(current);
+  return chunks;
+}
+
+/**
+ * 构建策略分析多条Markdown消息（每条<4000字）
+ */
+function buildStrategyMessages(strategyData, dateStr) {
+  if (!strategyData || !strategyData.products) return null;
+
+  var products = strategyData.products;
+  var totalProducts = strategyData.totalProducts || products.length;
+  var highArbCount = strategyData.highArbCount || 0;
+  var remainingCount = products.length;
+
+  // 按分类统计
+  var categories = {};
+  products.forEach(function(p) {
+    var cat = p.strategyCategory || 'H-待分类';
+    categories[cat] = (categories[cat] || 0) + 1;
+  });
+
+  var messages = [];
+
+  // === 消息1: 概览 ===
+  var msg1 = [];
+  msg1.push('## \uD83E\uDDEA \u795E\u96D5\u519C\u673A \u5168\u91CF\u4EA7\u54C1\u7B56\u7565\u5206\u6790 \u00B7 ' + dateStr);
+  msg1.push('> <font color="warning">\u3010\u5185\u90E8\u6587\u4EF6\u3011\u53EA\u9002\u5408\u8FD0\u8425\u56E2\u961F\u67E5\u770B</font>');
+  msg1.push('');
+  msg1.push('**\uD83D\uDCCA \u5E93\u5B58\u6982\u89C8**');
+  msg1.push('- \u7F51\u7AD9\u603B\u4EA7\u54C1\uFF1A**' + totalProducts + '**\u4E2A | \u9AD8\u5957\u5229\uFF1A**' + highArbCount + '**\u4E2A | **\u672C\u62A5\u544A\u5206\u6790\uFF1A' + remainingCount + '**\u4E2A');
+  msg1.push('');
+  msg1.push('**\uD83D\uDD20 \u7B56\u7565\u5206\u7C7B\u5206\u5E03**');
+
+  var catList = [
+    ['A-\u51C6\u65B0\u673A\u63A8\u5E7F', '\u9AD8\u6210\u8272+\u8FD12\u5E74'],
+    ['B-\u9AD8\u4EF7\u56FD\u9645\u724C', '\u226560\u4E07\u5927\u724C'],
+    ['C-\u4E2D\u7AEF\u8D70\u91CF', '15-60\u4E07'],
+    ['D-\u56FD\u4EA7\u5C0F\u4F17', '\u56FD\u4EA7+\u65B0\u5174\u5E02\u573A'],
+    ['E-\u8001\u65E7\u6E05\u4ED3', '>15\u5E74\u8F66\u9F84'],
+    ['F-\u4F4E\u4EF7\u65B0\u54C1', '\u226420\u4E07\u5F15\u6D41'],
+    ['G-\u4E13\u7528\u8BBE\u5907', '\u5782\u76F4\u573A\u666F'],
+    ['H-\u5F85\u5206\u7C7B', '\u9700\u4EBA\u5DE5\u590D\u6838']
+  ];
+  catList.forEach(function(item) {
+    var c = categories[item[0]] || 0;
+    if (c > 0) msg1.push('- **' + item[0] + '**: ' + c + '\u4E2A (' + item[1] + ')');
+  });
+  msg1.push('');
+  msg1.push('**\u2705 \u884C\u52A8\u6E05\u5355\u6C47\u603B**');
+  msg1.push('');
+  var actions = [
+    ['A', '\u6807\u6746\u5C55\u793A+\u89C6\u9891\u91CD\u70B9', 'P0'],
+    ['B', '\u6D77\u5916\u7CBE\u51C6+\u591A\u8BED\u79CD', 'P0'],
+    ['C', '\u6279\u91CF\u62A5\u4EF7+\u4FE1\u606F\u63A8\u9001', 'P1'],
+    ['D', '\u56FD\u5185\u76F4\u4F9B+\u65B0\u5174\u5E02\u573A', 'P2'],
+    ['E', '\u5FEB\u901F\u6E05\u4ED3\u56DE\u7B54\u8D44\u91D1', 'P0'],
+    ['F', '\u5F15\u6D41\u83B7\u5BA2+\u5C55\u793A\u4F4D\u7F6E', 'P1'],
+    ['G', '\u5782\u76F4\u573A\u666F\u8425\u9500', 'P2']
+  ];
+  actions.forEach(function(a) {
+    var cn = catList[parseInt(a[0].charCodeAt(0))-65];
+    var cnt = categories[cn[0]] || 0;
+    if (cnt > 0) msg1.push('- ' + cn[0] + ': **' + cnt + '**\u4E2A \u2192 ' + a[1] + ' (' + a[2] + ')');
+  });
+  messages.push(msg1.join('\n'));
+
+  // === 消息2-N: 每个分组的产品详情 ===
+  var groupNames = {
+    'A-\u51C6\u65B0\u673A\u63A8\u5E7F\u578B': '\uD83D\uDC51 A.\u51C6\u65B0\u673A\u63A8\u5E7F',
+    'B-\u9AD8\u4EF7\u56FD\u9645\u724C\u578B': '\uD83D\uDCDC B.\u9AD8\u4EF7\u56FD\u9645\u724C',
+    'C-\u4E2D\u7AEF\u8D70\u91CF\u578B': '\uD83D\uDCB5 C.\u4E2D\u7AEF\u8D70\u91CF',
+    'D-\u56FD\u4EA7/\u5C0F\u4F17\u724C\u578B': '\uD83D\uDD34 D.\u56FD\u4EA7\u5C0F\u4F17',
+    'E-\u8001\u65E7\u6E05\u4ED3\u578B': '\u26A0 FE.\u8001\u65E7\u6E05\u4ED3',
+    'F-\u4F4E\u4EF7\u65B0\u54C1\u578B': '\u2604 F.\u4F4E\u4EF7\u65B0\u54C1',
+    'G-\u4E13\u7528\u8BBE\u5907\u578B': '\u2699 G.\u4E13\u7528\u8BBE\u5907'
+  };
+
+  catList.forEach(function(item) {
+    var catName = item[0] + '\u578B';
+    var groupProducts = products.filter(function(p) { return (p.strategyCategory || '') === catName; });
+    
+    if (groupProducts.length === 0) return;
+
+    var gmsg = [];
+    gmsg.push('---');
+    gmsg.push('**' + (groupNames[catName] || catName) + '** (' + groupProducts.length + '\u4E2A)');
+    gmsg.push('');
+
+    groupProducts.forEach(function(p, idx) {
+      var line = (idx+1) + '. **' + (p.brandNameZh||'?') + ' ' + (p.modelName||'-') + '** ';
+      line += (p.year||'-') + '\u5E74 | \u00A5' + ((p.priceCny||0)/10000).toFixed(1) + '\u4E07';
+      
+      if (p.actionSuggestion) {
+        var s = p.actionSuggestion.substring(0, 30);
+        if (p.actionSuggestion.length > 30) s += '..';
+        line += '\n   \u2192 ' + s;
+      }
+      if (p.recommendedMarket) line += ' [' + p.recommendedMarket + ']';
+      gmsg.push(line);
+    });
+    
+    messages.push(gmsg.join('\n'));
+  });
+
+  // 最后一条：文件链接
+  messages.push(
+    '---\n' +
+    '\uD83D\uDCC4 **\u5B8C\u6574Excel\u62A5\u544A\uFF1A** `神雕农机_全量产品策略分析_' + dateStr + '.xlsx`\n\n' +
+    '\uD83D\uDC49 [\u67E5\u770B\u5728\u552E\u4EA7\u54C1](https://usedfarmmach.cn/zh/products)'
+  );
+
+  return messages;
+}
+
 async function main() {
   var args = process.argv.slice(2);
   var targetDate = null;
@@ -261,45 +392,55 @@ async function main() {
 
   // Check if strategy Excel exists
   var excelPath = path.join(REPORT_BASE_DIR, '\u795E\u96D5\u519C\u673A_\u5168\u91CF\u4EA7\u54C1\u7B56\u7565\u5206\u6790_' + dateStr + '.xlsx');
-
   if (!fs.existsSync(excelPath)) {
     console.error('[FAIL] Strategy Excel not found: ' + excelPath);
-    console.error('Please run gen_full_portfolio_strategy.py first.');
     process.exit(1);
   }
-
   console.log('[STRATEGY-PUSH] found strategy Excel: ' + excelPath);
 
   // Try to read detailed strategy data
   var strategyData = readStrategyData(dateStr);
 
-  // Build message
-  var markdown;
-  if (strategyData) {
-    console.log('[STRATEGY-PUSH] using full detail mode');
-    markdown = buildStrategyMarkdown(strategyData, dateStr);
-  } else {
-    console.log('[STRATEGY-PUSH] using basic summary mode (no JSON data)');
-    markdown = buildBasicStrategySummary(dateStr);
-  }
-
   // Check webhook key is configured
   if (STRATEGY_WEBHOOK_KEY === 'PLACEHOLDER_NEW_WEBHOOK_KEY') {
     console.error('[FAIL] STRATEGY_WEBHOOK_KEY not configured!');
-    console.error('Please edit this script and replace PLACEHOLDER_NEW_WEBHOOK_KEY with the actual webhook key.');
     process.exit(1);
   }
 
-  // Send message
-  console.log('[STRATEGY-PUSH] sending to strategy group...');
-  var result = await postToWecom(STRATEGY_WEBHOOK_URL, 'markdown', markdown);
-
-  if (result.errcode === 0) {
-    console.log('[OK] Strategy report sent to 神雕套利运营日报 group successfully');
+  var messages;
+  if (strategyData) {
+    console.log('[STRATEGY-PUSH] using full detail mode');
+    messages = buildStrategyMessages(strategyData, dateStr);
   } else {
-    console.error('[FAIL] send failed: ' + result.errmsg + ' (errcode: ' + result.errcode + ')');
+    console.log('[STRATEGY-PUSH] using basic summary mode (no JSON data)');
+    messages = [buildBasicStrategySummary(dateStr)];
+  }
+
+  if (!messages || messages.length === 0) {
+    console.error('[FAIL] no messages to send');
     process.exit(1);
   }
+
+  // Send each message sequentially
+  for (var m = 0; m < messages.length; m++) {
+    var md = messages[m];
+    // Ensure each message is under limit
+    var chunks = splitMessages(md, 3800); // leave some margin from 4096
+    for (var c = 0; c < chunks.length; c++) {
+      console.log('[STRATEGY-PUSH] sending message ' + (m+1) + '/' + messages.length + ' chunk ' + (c+1) + '/' + chunks.length + ' (' + chunks[c].length + ' chars)...');
+      var result = await postToWecom(STRATEGY_WEBHOOK_URL, 'markdown', chunks[c]);
+      if (result.errcode !== 0) {
+        console.error('[FAIL] chunk send failed: ' + result.errmsg);
+        process.exit(1);
+      }
+      // Small delay between messages to avoid rate limiting
+      if (c < chunks.length - 1 || m < messages.length - 1) {
+        await new Promise(function(r) { setTimeout(r, 500); });
+      }
+    }
+  }
+
+  console.log('[OK] All ' + messages.length + ' strategy messages sent successfully to 神雕套利运营日报 group');
 }
 
 main()
