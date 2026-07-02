@@ -3,8 +3,8 @@
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Globe, Menu, X, ChevronDown, Store, LayoutDashboard } from "lucide-react";
-import { useState, useEffect, type ReactNode } from "react";
-import { mainNav, type NavItem } from "@/config/navigation";
+import { useState, useEffect } from "react";
+import { mainNav, mainNavEn, type NavItem } from "@/config/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -22,6 +22,7 @@ export function Navbar({ locale }: NavbarProps) {
   const t = useTranslations();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState<Userinfo>(null);
+  const navItems = locale === "en" ? mainNavEn : mainNav;
 
   useEffect(() => {
     const userStr = localStorage.getItem("user");
@@ -59,7 +60,8 @@ export function Navbar({ locale }: NavbarProps) {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
+    <>
+      <header className="sticky top-0 z-40 border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href={`/${locale}`} className="flex items-center gap-2">
@@ -72,8 +74,8 @@ export function Navbar({ locale }: NavbarProps) {
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-6 md:flex">
-          {mainNav.map((item) => (
-            <DesktopNavItem key={item.labelKey} item={item} locale={locale} t={t} />
+          {navItems.map((item) => (
+            <DesktopNavItem key={item.labelKey || item.label || item.href} item={item} locale={locale} t={t} />
           ))}
         </nav>
 
@@ -134,8 +136,8 @@ export function Navbar({ locale }: NavbarProps) {
       {mobileOpen && (
         <div className="border-t md:hidden">
           <div className="space-y-1 px-4 py-3">
-            {mainNav.map((item) => (
-              <MobileNavItem key={item.labelKey} item={item} locale={locale} t={t} setMobileOpen={setMobileOpen} />
+            {navItems.map((item) => (
+              <MobileNavItem key={item.labelKey || item.label || item.href} item={item} locale={locale} t={t} setMobileOpen={setMobileOpen} />
             ))}
             <div className="flex gap-2 pt-2">
               {user ? (
@@ -170,6 +172,14 @@ export function Navbar({ locale }: NavbarProps) {
         </div>
       )}
     </header>
+
+    {/* Tagline banner — English locale only */}
+    {locale === "en" && (
+      <div className="bg-gray-900 text-center text-xs sm:text-sm text-white py-1.5 tracking-wide">
+        Reliable Used Farm Machinery &nbsp;|&nbsp; Export Worldwide &nbsp;|&nbsp; FOB China Port
+      </div>
+    )}
+  </>
   );
 }
 
