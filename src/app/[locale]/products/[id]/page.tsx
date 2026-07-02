@@ -3,12 +3,14 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getTranslations } from "next-intl/server";
 import { setRequestLocale } from "next-intl/server";
-import { ProductCarousel } from "@/components/product/product-carousel";
-import { PriceDisplay } from "@/components/product/price-display";
+import { ImageGallery } from "@/components/product/image-gallery";
+import { SpecificationTable } from "@/components/product/specification-table";
+import { PriceTradeSection } from "@/components/product/price-trade-section";
+import { StandardDescription } from "@/components/product/standard-description";
 import { InquiryForm } from "@/components/product/inquiry-form";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin, Clock, Calendar, Wrench, ArrowLeftRight, ExternalLink, Info } from "lucide-react";
+import { MapPin, ArrowLeftRight, Info, Mail, ExternalLink } from "lucide-react";
 import { getImageUrl, getVideoUrl, generateImageAlt } from "@/lib/image-url";
 import { formatPrice } from "@/lib/utils";
 import ArbitrageCalculatorSection from "@/components/product/arbitrage-calculator-section";
@@ -103,6 +105,25 @@ export async function generateStaticParams() {
   ]);
 }
 
+/** Build the main title (Section 1) per spec */
+function buildMainTitle(
+  brandName: string,
+  modelName: string,
+  year: number,
+  categoryName: string,
+  enginePower: number | null,
+  locale: string
+): string {
+  if (locale === "zh") {
+    const hpPart = enginePower ? ` | ${enginePower}马力` : "";
+    return `二手 ${brandName} ${modelName} ${categoryName} - ${year}年${hpPart}`;
+  }
+  // English (and fallback): "Used [Brand] [Model] Silage Harvester - [Year] | [HP] HP"
+  // Note: We use categoryName instead of hardcoding "Silage Harvester"
+  const hpPart = enginePower ? ` | ${enginePower} HP` : "";
+  return `Used ${brandName} ${modelName} ${categoryName} - ${year}${hpPart}`;
+}
+
 export default async function ProductDetailPage({
   params,
 }: {
@@ -152,6 +173,8 @@ export default async function ProductDetailPage({
     ? `${intlSourceDate.slice(0, 4)}-${intlSourceDate.slice(4, 6)}-${intlSourceDate.slice(6, 8)}`
     : null;
 
+  const mainTitle = buildMainTitle(brandName, product.modelName, product.year, categoryName, product.enginePower ?? null, locale);
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <ProductStructuredData
@@ -176,14 +199,150 @@ export default async function ProductDetailPage({
           { name: `${brandName} ${product.modelName}`, url: `${BASE_URL}/${locale}/products/${product.id}` },
         ]}
       />
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        {/* Left: Images + Videos */}
-        <div className="space-y-4">
-          <ProductCarousel images={product.images} alt={generateImageAlt(brandName, product.modelName, product.year, categoryName, locale, {
+
+      {/* ================================================================ */}
+      {/*  SECTION 1 — Main Title                                          */}
+      {/* ================================================================ */}
+      <div className="mb-8">
+        <div className="flex items-center gap-2 mb-2">
+          <Badge variant="default">{brandName}</Badge>
+          <Badge variant="secondary">{categoryName}</Badge>
+          {product.brand.isImported && (
+            <Badge variant="accent">
+              {locale === "zh" ? "进口品牌" : locale === "ru" ? "Импортный бренд" : "Imported"}
+            </Badge>
+          )}
+        </div>
+        <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
+          {mainTitle}
+        </h1>
+      </div>
+
+      {/* ================================================================ */}
+      {/*  SECTION 2 — 8-Angle Image Gallery                               */}
+      {/* ================================================================ */}
+      <div className="mb-8">
+        <ImageGallery
+          images={product.images}
+          alt={generateImageAlt(brandName, product.modelName, product.year, categoryName, locale, {
             location: product.location || undefined,
             condition: product.condition,
-          })} />
-          {/* Video Player */}
+          })}
+          locale={locale}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+        {/* Left Column: Specs + Price */}
+        <div className="space-y-6">
+          {/* ================================================================ */}
+          {/*  SECTION 3 — Specification Table (11 rows)                      */}
+          {/* ================================================================ */}
+          <SpecificationTable
+            brandName={brandName}
+            modelName={product.modelName}
+            year={product.year}
+            workingHours={product.workingHours ?? null}
+            engineType={product.engineType ?? null}
+            enginePower={product.enginePower ?? null}
+            driveSystem={product.driveSystem ?? null}
+            mainConfig={product.mainConfig ?? null}
+            overallLength={product.overallLength ?? null}
+            overallWidth={product.overallWidth ?? null}
+            overallHeight={product.overallHeight ?? null}
+            netWeight={product.netWeight ?? null}
+            conditionLabel={conditionLabel}
+            locale={locale}
+          />
+
+          {/* ================================================================ */}
+          {/*  SECTION 5 — Price & Trade Terms                                 */}
+          {/* ================================================================ */}
+          <PriceTradeSection
+            priceCny={product.priceCny}
+            priceUsd={product.priceUsd ?? null}
+            priceMode={product.priceMode || "por"}
+            tradeTerm={product.tradeTerm || "FOB"}
+            tradePort={product.tradePort ?? null}
+            locale={locale}
+          />
+
+          {/* Cross-Border Price Comparison (kept from existing design) */}
+          {intlPriceCny && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ArrowLeftRight className="h-5 w-5" />
+                  {t("priceComparison")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-lg bg-primary-50 p-4 text-center">
+                    <p className="text-xs text-gray-500">{t("chinaMarketPrice")}</p>
+                    <p className="text-xl font-bold text-primary-700">
+                      {formatPrice(product.priceCny, "cny")}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-blue-50 p-4 text-center">
+                    <p className="text-xs text-gray-500">{t("usMarketPrice")}</p>
+                    <p className="text-xl font-bold text-blue-700">
+                      {formatPrice(intlPriceCny, "cny")}
+                    </p>
+                    {intlPriceRaw && (
+                      <p className="mt-0.5 text-xs text-blue-500">
+                        {intlCurrency === "EUR" ? "€" : "$"}{intlPriceRaw.toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {latestIntlPrice && (
+                  <div className="mt-2 flex items-center justify-center gap-1 text-xs text-gray-400">
+                    <Info className="h-3 w-3" />
+                    <span>
+                      {locale === "zh" ? "数据来源" : locale === "ru" ? "Источник" : "Source"}: {intlSource}
+                      {intlCountry && ` · ${intlCountry}`}
+                      {formattedSourceDate && ` · ${formattedSourceDate}`}
+                    </span>
+                  </div>
+                )}
+
+                {arbitragePercent !== null && (
+                  <div className="mt-3 rounded-lg bg-accent-50 p-3 text-center">
+                    <p className="text-sm font-medium text-accent-700">
+                      {t("priceDifference")}: {arbitragePercent > 0 ? "+" : ""}
+                      {arbitragePercent}%
+                      {Math.abs(arbitragePercent) > 15 && (
+                        <span className="ml-2">
+                          ({t("arbitrageOpportunity")}!)
+                        </span>
+                      )}
+                    </p>
+                    {latestIntlPrice && latestIntlPrice.notes && (
+                      <p className="mt-1 text-xs text-accent-600/70">
+                        {latestIntlPrice.notes}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Buy Intent Button */}
+          <BuyIntentButton
+            productId={product.id}
+            productName={`${brandName} ${product.modelName}`}
+            locale={locale}
+          />
+        </div>
+
+        {/* Right Column: Video + Contact */}
+        <div className="space-y-6">
+          {/* ================================================================ */}
+          {/*  SECTION 4 — Video Area                                         */}
+          {/* ================================================================ */}
           {product.videos.length > 0 && (
             <div className="space-y-3">
               {product.videos.map((video, idx) => (
@@ -208,213 +367,83 @@ export default async function ProductDetailPage({
               ))}
             </div>
           )}
-        </div>
 
-        {/* Right: Details */}
-        <div className="space-y-6">
-          {/* Title area */}
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Badge variant="default">{brandName}</Badge>
-              <Badge variant="secondary">{categoryName}</Badge>
-              {product.brand.isImported && (
-                <Badge variant="accent">
-                  {locale === "zh" ? "进口品牌" : locale === "ru" ? "Импортный бренд" : "Imported"}
-                </Badge>
-              )}
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
-              {brandName} {product.modelName}
-            </h1>
-          </div>
-
-          {/* Specs */}
+          {/* ================================================================ */}
+          {/*  SECTION 7 — Contact & Inquiry (+ Email)                        */}
+          {/* ================================================================ */}
           <Card>
             <CardHeader>
-              <CardTitle>{t("specs")}</CardTitle>
+              <CardTitle>{t("contactSeller")}</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-center gap-2">
-                  <Wrench className="h-4 w-4 text-gray-400" />
-                  <div>
-                    <p className="text-xs text-gray-500">{t("brand")}</p>
-                    <p className="text-sm font-medium">{brandName}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-gray-400" />
-                  <div>
-                    <p className="text-xs text-gray-500">{t("year")}</p>
-                    <p className="text-sm font-medium">{product.year}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-gray-400" />
-                  <div>
-                    <p className="text-xs text-gray-500">{t("workingHours")}</p>
-                    <p className="text-sm font-medium">
-                      {product.workingHours?.toLocaleString() || "-"} {locale === "zh" ? "小时" : locale === "ru" ? "моточасов" : "hrs"}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-gray-400" />
-                  <div>
-                    <p className="text-xs text-gray-500">{t("location")}</p>
-                    <p className="text-sm font-medium">{product.location}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="mt-4">
-                <Badge
-                  variant={
-                    product.condition === "excellent"
-                      ? "success"
-                      : product.condition === "good"
-                        ? "default"
-                        : product.condition === "fair"
-                          ? "warning"
-                          : "destructive"
-                  }
+            <CardContent className="space-y-4">
+              {/* Email */}
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <Mail className="h-4 w-4 text-gray-400" />
+                <span>Email: </span>
+                <a
+                  href="mailto:info@shendiaomach.com"
+                  className="text-primary-600 hover:text-primary-700 font-medium"
                 >
-                  {conditionLabel}
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Price Comparison */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ArrowLeftRight className="h-5 w-5" />
-                {t("priceComparison")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                {/* 中国市场价 */}
-                <div className="rounded-lg bg-primary-50 p-4 text-center">
-                  <p className="text-xs text-gray-500">{t("chinaMarketPrice")}</p>
-                  <p className="text-xl font-bold text-primary-700">
-                    {formatPrice(product.priceCny, "cny")}
-                  </p>
-                </div>
-                {/* 国外市场价 - 来自神雕日报 */}
-                <div className="rounded-lg bg-blue-50 p-4 text-center">
-                  <p className="text-xs text-gray-500">{t("usMarketPrice")}</p>
-                  {intlPriceCny ? (
-                    <>
-                      <p className="text-xl font-bold text-blue-700">
-                        {formatPrice(intlPriceCny, "cny")}
-                      </p>
-                      {intlPriceRaw && (
-                        <p className="mt-0.5 text-xs text-blue-500">
-                          {intlCurrency === "EUR" ? "€" : "$"}{intlPriceRaw.toLocaleString()}
-                        </p>
-                      )}
-                    </>
-                  ) : (
-                    <p className="text-xl font-bold text-gray-400">-</p>
-                  )}
-                </div>
+                  info@shendiaomach.com
+                </a>
               </div>
 
-              {/* 国外市场价数据来源标注 */}
-              {latestIntlPrice && (
-                <div className="mt-2 flex items-center justify-center gap-1 text-xs text-gray-400">
-                  <Info className="h-3 w-3" />
-                  <span>
-                    {locale === "zh" ? "数据来源" : locale === "ru" ? "Источник" : "Source"}: {intlSource}
-                    {intlCountry && ` · ${intlCountry}`}
-                    {formattedSourceDate && ` · ${formattedSourceDate}`}
-                  </span>
-                </div>
-              )}
+              {/* Inquiry Form */}
+              <InquiryForm productId={product.id} />
 
-              {/* 套利空间显示 */}
-              {arbitragePercent !== null && (
-                <div className="mt-3 rounded-lg bg-accent-50 p-3 text-center">
-                  <p className="text-sm font-medium text-accent-700">
-                    {t("priceDifference")}: {arbitragePercent > 0 ? "+" : ""}
-                    {arbitragePercent}%
-                    {Math.abs(arbitragePercent) > 15 && (
-                      <span className="ml-2">
-                        ({t("arbitrageOpportunity")}!)
-                      </span>
-                    )}
-                  </p>
-                  {latestIntlPrice && latestIntlPrice.notes && (
-                    <p className="mt-1 text-xs text-accent-600/70">
-                      {latestIntlPrice.notes}
-                    </p>
-                  )}
-                </div>
-              )}
+              {/* Quick Contact: QR Codes */}
+              <QuickContact locale={locale} />
             </CardContent>
           </Card>
-
-          {/* Buy Intent Button: 我要买 */}
-          <div className="mt-4">
-            <BuyIntentButton
-              productId={product.id}
-              productName={`${brandName} ${product.modelName}`}
-              locale={locale}
-            />
-          </div>
-
-          {/* AI Valuation */}
-          <div className="mt-4">
-            <ValuationCard
-              productId={product.id}
-              productName={`${brandName} ${product.modelName}`}
-              locale={locale}
-            />
-          </div>
-
-          {/* Arbitrage Calculator */}
-          {arbitragePercent !== null && latestIntlPrice && (
-            <div className="mt-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>跨境套利计算器</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ArbitrageCalculatorSection
-                    productId={product.id}
-                    domesticPrice={product.priceCny}
-                    foreignPrice={latestIntlPrice.priceForeignRaw || undefined}
-                    foreignCurrency={latestIntlPrice.currency as any}
-                    showForeignPrice={true}
-                  />
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {/* Quick Contact: 微信/支付宝 */}
-          <QuickContact locale={locale} />
-
-          {/* Inquiry */}
-          <InquiryForm productId={product.id} />
         </div>
       </div>
 
-      {/* Description */}
-      {description && (
-        <div className="mt-8">
+      {/* ================================================================ */}
+      {/*  SECTION 6 — Standard Product Description                        */}
+      {/* ================================================================ */}
+      <div className="mt-8">
+        <StandardDescription
+          standardDescriptionEn={product.standardDescriptionEn ?? null}
+          descriptionZh={product.descriptionZh ?? null}
+          descriptionEn={product.descriptionEn ?? null}
+          locale={locale}
+        />
+      </div>
+
+      {/* ================================================================ */}
+      {/*  Differentiated Features (below standard blocks)                 */}
+      {/* ================================================================ */}
+
+      {/* Arbitrage Calculator */}
+      {arbitragePercent !== null && latestIntlPrice && (
+        <div className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>{t("description")}</CardTitle>
+              <CardTitle>跨境套利计算器</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="whitespace-pre-line text-gray-600">{description}</p>
+              <ArbitrageCalculatorSection
+                productId={product.id}
+                domesticPrice={product.priceCny}
+                foreignPrice={latestIntlPrice.priceForeignRaw || undefined}
+                foreignCurrency={latestIntlPrice.currency as any}
+                showForeignPrice={true}
+              />
             </CardContent>
           </Card>
         </div>
       )}
-      {/* AI 多语客服浮动窗口 */}
+
+      {/* AI Valuation */}
+      <div className="mt-6">
+        <ValuationCard
+          productId={product.id}
+          productName={`${brandName} ${product.modelName}`}
+          locale={locale}
+        />
+      </div>
+
+      {/* AI Multi-language Chat Floating Window */}
       <FloatingChat locale={locale as any} productId={id} />
     </div>
   );

@@ -50,13 +50,32 @@ export interface Product {
   location: string;
   descriptionZh: string | null;
   descriptionEn: string | null;
+  descriptionRu: string | null;
+  descriptionEs: string | null;
+  descriptionPt: string | null;
+  descriptionAr: string | null;
+  descriptionFr: string | null;
+  descriptionHi: string | null;
   aiGenerated: boolean;
   status: ProductStatus;
+  enginePower?: number | null;
+  engineType?: string | null;
+  driveSystem?: string | null;
+  overallLength?: number | null;
+  overallWidth?: number | null;
+  overallHeight?: number | null;
+  netWeight?: number | null;
+  mainConfig?: string | null;
+  priceMode?: string;
+  tradeTerm?: string;
+  tradePort?: string | null;
+  standardDescriptionEn?: string | null;
   createdAt: Date | string;
   updatedAt: Date | string;
   brand?: Brand;
   category?: Category;
   images?: ProductImage[];
+  videos?: ProductVideo[];
   seller?: Pick<User, "id" | "companyName" | "country">;
 }
 
@@ -66,6 +85,15 @@ export interface ProductImage {
   url: string;
   sortOrder: number;
   isPrimary: boolean;
+  angleLabel?: string | null;
+}
+
+export interface ProductVideo {
+  id: string;
+  productId: string;
+  url: string;
+  sortOrder: number;
+  title?: string | null;
 }
 
 export interface Inquiry {

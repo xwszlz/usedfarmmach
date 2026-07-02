@@ -16,6 +16,66 @@ interface ProductCardProps {
   locale: string;
 }
 
+/** Build the card title per locale specification */
+function buildCardTitle(product: Product, locale: string): string {
+  // Resolve brand name by locale
+  const brandName =
+    locale === "zh"
+      ? product.brand?.nameZh
+      : locale === "ru"
+        ? (product.brand as any)?.nameRu || product.brand?.nameEn
+        : product.brand?.nameEn;
+
+  if (locale === "zh") {
+    // Chinese: keep existing format — just show modelName
+    return product.modelName;
+  }
+
+  // English (and fallback): "Used [Brand] [Model] | [HP] HP | [Year] Year"
+  const hpPart = product.enginePower ? `${product.enginePower} HP` : null;
+  const yearPart = `${product.year} Year`;
+  const brandModel = `Used ${brandName || ""} ${product.modelName}`.trim();
+
+  const parts = [brandModel];
+  if (hpPart) parts.push(hpPart);
+  parts.push(yearPart);
+
+  return parts.join(" | ");
+}
+
+/** Build the price line per mode */
+function buildPriceLine(
+  product: Product,
+  locale: string
+): { primary: string; secondary: string | null } | null {
+  const priceMode = (product as any).priceMode || "por";
+
+  if (locale === "zh") {
+    // Chinese: keep existing behavior — let PriceDisplay handle it
+    return null; // signal to use existing PriceDisplay
+  }
+
+  if (priceMode === "por") {
+    return { primary: "Price on Request (POR)", secondary: null };
+  }
+
+  // Fixed price mode
+  const tradePort = (product as any).tradePort || "China Port";
+  const tradeTerm = (product as any).tradeTerm || "FOB";
+
+  if (product.priceUsd) {
+    return {
+      primary: `USD ${product.priceUsd.toLocaleString("en-US")} ${tradeTerm} ${tradePort}`,
+      secondary: `≈ ¥${product.priceCny.toLocaleString("zh-CN")}`,
+    };
+  }
+
+  return {
+    primary: `¥${product.priceCny.toLocaleString("zh-CN")} ${tradeTerm} ${tradePort}`,
+    secondary: null,
+  };
+}
+
 export function ProductCard({ product, locale }: ProductCardProps) {
   const t = useTranslations("products.card");
   const td = useTranslations("products.detail");
@@ -46,6 +106,9 @@ export function ProductCard({ product, locale }: ProductCardProps) {
     ? Math.round(((product.priceCny - intlPrice.priceForeignCny) / intlPrice.priceForeignCny) * 100)
     : arbitrage;
   const conditionLabel = td(`condition${product.condition.charAt(0).toUpperCase() + product.condition.slice(1)}`);
+
+  const cardTitle = buildCardTitle(product, locale);
+  const priceLine = buildPriceLine(product, locale);
 
   return (
     <Link href={`/${locale}/products/${product.id}`}>
@@ -103,7 +166,7 @@ export function ProductCard({ product, locale }: ProductCardProps) {
             )}
           </div>
           <h3 className="mb-2 text-sm font-semibold text-gray-900 line-clamp-1">
-            {product.modelName}
+            {cardTitle}
           </h3>
 
           {/* Year + Hours */}
@@ -121,14 +184,34 @@ export function ProductCard({ product, locale }: ProductCardProps) {
           </div>
 
           {/* Price */}
-          <PriceDisplay
-            priceCny={product.priceCny}
-            priceUsd={product.priceUsd}
-            locale={locale}
-            size="sm"
-            showLabel={false}
-            internationalPrice={intlPrice}
-          />
+          {locale === "zh" ? (
+            <PriceDisplay
+              priceCny={product.priceCny}
+              priceUsd={product.priceUsd}
+              locale={locale}
+              size="sm"
+              showLabel={false}
+              internationalPrice={intlPrice}
+            />
+          ) : priceLine ? (
+            <div className="space-y-0.5">
+              <div className="text-sm font-bold text-primary-700">
+                {priceLine.primary}
+              </div>
+              {priceLine.secondary && (
+                <div className="text-xs text-gray-500">{priceLine.secondary}</div>
+              )}
+            </div>
+          ) : (
+            <PriceDisplay
+              priceCny={product.priceCny}
+              priceUsd={product.priceUsd}
+              locale={locale}
+              size="sm"
+              showLabel={false}
+              internationalPrice={intlPrice}
+            />
+          )}
 
           {/* Location */}
           <div className="mt-2 flex items-center gap-1 text-xs text-gray-400">
