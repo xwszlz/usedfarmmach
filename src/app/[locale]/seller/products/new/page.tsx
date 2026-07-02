@@ -13,7 +13,8 @@ const CONDITIONS = [
   { value: "poor", label: "较差/需维修" },
 ];
 
-const DRIVE_TYPES = ["二驱", "四驱", "其他"];
+const DRIVE_SYSTEMS = ["二驱", "四驱", "全液压驱动"];
+const TRADE_TERMS = ["FOB", "CIF", "CFR", "EXW", "其他"];
 const COVER_ASPECT_RATIO = 16 / 9;
 
 export default function NewProductPage() {
@@ -29,13 +30,10 @@ export default function NewProductPage() {
     brandId: "", brandName: "", categoryId: "", categoryName: "",
     modelName: "", year: 2020, workingHours: "", condition: "good",
     priceCny: "", location: "",
-    // 结构化描述
-    descPower: "", descDrive: "二驱", descHeader: "",
-    descEngineHours: "", descRollerHours: "", descOther: "",
-    // 新规格字段
-    enginePower: "", engineType: "Diesel Engine", driveSystem: "2WD",
+    // 详细规格（与 Prisma schema 一致，不使用废弃旧字段名）
+    enginePower: "", engineType: "柴油发动机", driveSystem: "二驱",
     overallLength: "", overallWidth: "", overallHeight: "", netWeight: "",
-    mainConfig: "",
+    mainConfig: "", condition: "good",
     // 贸易信息
     priceMode: "por", tradeTerm: "FOB", tradePort: "Qingdao",
   });
@@ -132,16 +130,11 @@ export default function NewProductPage() {
       fd.append("categoryName", form.categoryName || "其他");
       fd.append("modelName", form.modelName);
       fd.append("year", String(form.year));
-      fd.append("workingHours", form.workingHours);
+      fd.append("workingHours", "");
       fd.append("condition", form.condition);
       fd.append("priceCny", form.priceCny);
       fd.append("location", form.location);
-      fd.append("descPower", form.descPower);
-      fd.append("descDrive", form.descDrive);
-      fd.append("descHeader", form.descHeader);
-      fd.append("descEngineHours", form.descEngineHours);
-      fd.append("descRollerHours", form.descRollerHours);
-      fd.append("descOther", form.descOther);
+      // 新规格字段（与 Prisma schema 一致）
       fd.append("enginePower", form.enginePower);
       fd.append("engineType", form.engineType);
       fd.append("driveSystem", form.driveSystem);
@@ -150,6 +143,8 @@ export default function NewProductPage() {
       fd.append("overallHeight", form.overallHeight);
       fd.append("netWeight", form.netWeight);
       fd.append("mainConfig", form.mainConfig);
+      fd.append("descOther", form.descOther || "");
+      // 贸易信息
       fd.append("priceMode", form.priceMode);
       fd.append("tradeTerm", form.tradeTerm);
       fd.append("tradePort", form.tradePort);
@@ -273,53 +268,7 @@ export default function NewProductPage() {
             className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-primary-500 focus:outline-none" />
         </div>
 
-        {/* ====== 核心参数 ====== */}
-        <h2 className="text-base font-bold text-gray-800 border-b pb-2">核心参数</h2>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">马力 (HP)</label>
-            <input value={form.descPower} onChange={e => update("descPower", e.target.value)}
-              placeholder="如: 400" className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-primary-500 focus:outline-none" />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">驱动方式</label>
-            <select value={form.descDrive} onChange={e => update("descDrive", e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-primary-500 focus:outline-none">
-              {DRIVE_TYPES.map(d => <option key={d} value={d}>{d}</option>)}
-            </select>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">发动机小时数</label>
-            <input value={form.descEngineHours} onChange={e => update("descEngineHours", e.target.value)}
-              placeholder="如: 4600" className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-primary-500 focus:outline-none" />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">轧辊/工作小时数</label>
-            <input value={form.descRollerHours} onChange={e => update("descRollerHours", e.target.value)}
-              placeholder="如: 3250" className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-primary-500 focus:outline-none" />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">割台型号及宽度</label>
-            <input value={form.descHeader} onChange={e => update("descHeader", e.target.value)}
-              placeholder="如: 冠军445 4.5米" className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-primary-500 focus:outline-none" />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">成色 *</label>
-            <select value={form.condition} onChange={e => update("condition", e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-primary-500 focus:outline-none">
-              {CONDITIONS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-            </select>
-          </div>
-        </div>
-
-        {/* ====== 价格与位置 ====== */}
+        {/* ====== 价格与位置 ====== */
         <h2 className="text-base font-bold text-gray-800 border-b pb-2">价格与位置</h2>
 
         <div className="grid grid-cols-2 gap-4">
@@ -431,7 +380,7 @@ export default function NewProductPage() {
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">发动机类型</label>
             <input value={form.engineType} onChange={e => update("engineType", e.target.value)}
-              placeholder="Diesel Engine"
+              placeholder="柴油发动机"
               className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-primary-500 focus:outline-none" />
           </div>
         </div>
@@ -441,17 +390,26 @@ export default function NewProductPage() {
             <label className="mb-1 block text-sm font-medium text-gray-700">驱动方式</label>
             <select value={form.driveSystem} onChange={e => update("driveSystem", e.target.value)}
               className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-primary-500 focus:outline-none">
-              <option value="2WD">两驱 (2WD)</option>
-              <option value="4WD">四驱 (4WD)</option>
-              <option value="Full Hydraulic">全液压驱动 (Full Hydraulic)</option>
+              {DRIVE_SYSTEMS.map(d => <option key={d} value={d}>{d}</option>)}
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">常用配置</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">成色 *</label>
+            <select value={form.condition} onChange={e => update("condition", e.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-primary-500 focus:outline-none">
+              {CONDITIONS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">主要配置</label>
             <input value={form.mainConfig} onChange={e => update("mainConfig", e.target.value)}
               placeholder="如: 冠军445割台, 自动导航"
               className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-primary-500 focus:outline-none" />
           </div>
+          <div></div>
         </div>
 
         <p className="text-xs text-gray-400 -mt-2">外形尺寸 (mm)</p>
@@ -491,7 +449,7 @@ export default function NewProductPage() {
             <label className="mb-1 block text-sm font-medium text-gray-700">价格模式</label>
             <select value={form.priceMode} onChange={e => update("priceMode", e.target.value)}
               className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-primary-500 focus:outline-none">
-              <option value="fixed">固定价格 (Fixed)</option>
+              <option value="fob">FOB（固定价格）</option>
               <option value="por">询价 (POR)</option>
             </select>
           </div>
@@ -499,16 +457,21 @@ export default function NewProductPage() {
             <label className="mb-1 block text-sm font-medium text-gray-700">贸易术语</label>
             <select value={form.tradeTerm} onChange={e => update("tradeTerm", e.target.value)}
               className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-primary-500 focus:outline-none">
-              <option value="FOB">FOB</option>
-              <option value="CIF">CIF</option>
-              <option value="EXW">EXW</option>
+              {TRADE_TERMS.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">发货港口</label>
-            <input value={form.tradePort} onChange={e => update("tradePort", e.target.value)}
-              placeholder="如: Qingdao"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-primary-500 focus:outline-none" />
+            <select value={form.tradePort} onChange={e => update("tradePort", e.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-primary-500 focus:outline-none">
+              <option value="青岛">青岛</option>
+              <option value="上海">上海</option>
+              <option value="天津">天津</option>
+              <option value="广州">广州</option>
+              <option value="连云港">连云港</option>
+              <option value="宁波">宁波</option>
+              <option value="其他">其他</option>
+            </select>
           </div>
         </div>
 
