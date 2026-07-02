@@ -262,6 +262,14 @@ export async function POST(request: NextRequest) {
       driveSystem,
       mainConfig,
       netWeight,
+      // 外形尺寸
+      overallLength,
+      overallWidth,
+      overallHeight,
+      // 贸易信息
+      priceMode = 'por',
+      tradeTerm = 'FOB',
+      tradePort = '青岛',
       // 旧字段名（向后兼容，优先级低于新字段名）
       descPower,
       descDrive,
@@ -349,6 +357,12 @@ export async function POST(request: NextRequest) {
     if (descRollerHours) descParts.push(`轧辊小时：${descRollerHours}`);
     if (finalMainConfig) descParts.push(`配置：${finalMainConfig}`);
     if (finalNetWeight) descParts.push(`净重：${finalNetWeight}kg`);
+    if (overallLength || overallWidth || overallHeight) {
+      descParts.push(`尺寸：${overallLength || '-'}×${overallWidth || '-'}×${overallHeight || '-'} mm`);
+    }
+    if (priceMode || tradeTerm || tradePort) {
+      descParts.push(`贸易：${priceMode?.toUpperCase() || ''}/${tradeTerm || ''}/${tradePort || ''}`);
+    }
     if (descOther) descParts.push(descOther);
     const descriptionZh = descParts.join("\n") || null;
 
@@ -374,6 +388,14 @@ export async function POST(request: NextRequest) {
         driveSystem: finalDriveSystem,
         mainConfig: finalMainConfig,
         netWeight: finalNetWeight ? Number(finalNetWeight) : null,
+        // 外形尺寸
+        overallLength: overallLength ? Number(overallLength) : null,
+        overallWidth: overallWidth ? Number(overallWidth) : null,
+        overallHeight: overallHeight ? Number(overallHeight) : null,
+        // 贸易信息
+        priceMode,
+        tradeTerm,
+        tradePort,
       },
     });
     createdProductId = product.id;
