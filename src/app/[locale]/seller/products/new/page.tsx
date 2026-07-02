@@ -33,7 +33,7 @@ export default function NewProductPage() {
     // 详细规格（与 Prisma schema 一致，不使用废弃旧字段名）
     enginePower: "", engineType: "柴油发动机", driveSystem: "二驱",
     overallLength: "", overallWidth: "", overallHeight: "", netWeight: "",
-    mainConfig: "", condition: "good",
+    mainConfig: "", descOther: "",
     // 贸易信息
     priceMode: "por", tradeTerm: "FOB", tradePort: "Qingdao",
   });
@@ -268,7 +268,7 @@ export default function NewProductPage() {
             className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-primary-500 focus:outline-none" />
         </div>
 
-        {/* ====== 价格与位置 ====== */
+        {/* ====== 价格与位置 ====== */}
         <h2 className="text-base font-bold text-gray-800 border-b pb-2">价格与位置</h2>
 
         <div className="grid grid-cols-2 gap-4">
