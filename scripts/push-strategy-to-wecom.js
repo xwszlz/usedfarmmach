@@ -364,7 +364,7 @@ function buildBasicStrategySummary(dateStr) {
 }
 
 /**
- * 将长消息拆分为多条，每条不超过maxLen字符
+ * 将长消息拆分为多条，每条不超过maxLen字节（企微按UTF-8字节数限制4096）
  */
 function splitMessages(markdown, maxLen) {
   var lines = markdown.split('\n');
@@ -372,11 +372,12 @@ function splitMessages(markdown, maxLen) {
   var current = '';
   
   lines.forEach(function(line) {
-    if ((current + '\n' + line).length > maxLen && current.length > 0) {
+    var candidate = current ? (current + '\n' + line) : line;
+    if (Buffer.byteLength(candidate, 'utf8') > maxLen && current.length > 0) {
       chunks.push(current);
       current = line;
     } else {
-      current = current ? (current + '\n' + line) : line;
+      current = candidate;
     }
   });
   if (current) chunks.push(current);
@@ -548,7 +549,7 @@ async function pushReportsToWecom(dateStr) {
       '\uD83D\uDCE6 \u2193 \u4E0B\u65B9\u53D1\u9001\u6587\u4EF6\uFF0C\u70B9\u51FB\u5373\u53EF\u67E5\u770B/\u4E0B\u8F7D';
     var ok = await pushFileToWecomGroup(STRATEGY_WEBHOOK_KEY, STRATEGY_WEBHOOK_URL, pdfPath, desc);
     if (ok) count++;
-    await new Promise(function(r) { setTimeout(r, 800); });
+    await new Promise(function(r) { setTimeout(r, 3000); });
   } else {
     console.warn('[WARN] daily PDF not found: ' + pdfPath);
   }
@@ -645,9 +646,9 @@ async function main() {
         console.error('[FAIL] chunk send failed: ' + result.errmsg);
         process.exit(1);
       }
-      // Small delay between messages to avoid rate limiting
+      // Small delay between messages to avoid rate limiting (2s for wecom bot safety)
       if (c < chunks.length - 1 || m < messages.length - 1) {
-        await new Promise(function(r) { setTimeout(r, 500); });
+        await new Promise(function(r) { setTimeout(r, 2000); });
       }
     }
   }
