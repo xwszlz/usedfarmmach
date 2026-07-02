@@ -256,6 +256,13 @@ export async function POST(request: NextRequest) {
       modelName,
       year,
       condition = "good",
+      // 新字段名（对齐 Prisma schema）
+      enginePower,
+      engineType,
+      driveSystem,
+      mainConfig,
+      netWeight,
+      // 旧字段名（向后兼容，优先级低于新字段名）
       descPower,
       descDrive,
       descEngineHours,
@@ -267,6 +274,13 @@ export async function POST(request: NextRequest) {
       images = [],
       video,
     } = body;
+
+    // 新旧字段兼容映射
+    const finalEnginePower = enginePower ?? descPower;
+    const finalEngineType = engineType ?? null;
+    const finalDriveSystem = driveSystem ?? descDrive ?? null;
+    const finalMainConfig = mainConfig ?? descHeader ?? null;
+    const finalNetWeight = netWeight ?? null;
 
     // ── 校验 ──
     if (!modelName || !year || !priceCny || !location) {
@@ -328,11 +342,13 @@ export async function POST(request: NextRequest) {
 
     // ── 组装描述（与网站格式一致）──
     const descParts: string[] = [];
-    if (descPower) descParts.push(`马力：${descPower}`);
-    if (descDrive) descParts.push(`驱动：${descDrive}`);
-    if (descHeader) descParts.push(`割台：${descHeader}`);
+    if (finalEnginePower) descParts.push(`马力：${finalEnginePower}HP`);
+    if (finalEngineType) descParts.push(`发动机：${finalEngineType}`);
+    if (finalDriveSystem) descParts.push(`驱动：${finalDriveSystem}`);
     if (descEngineHours) descParts.push(`发动机小时：${descEngineHours}`);
     if (descRollerHours) descParts.push(`轧辊小时：${descRollerHours}`);
+    if (finalMainConfig) descParts.push(`配置：${finalMainConfig}`);
+    if (finalNetWeight) descParts.push(`净重：${finalNetWeight}kg`);
     if (descOther) descParts.push(descOther);
     const descriptionZh = descParts.join("\n") || null;
 
@@ -352,6 +368,12 @@ export async function POST(request: NextRequest) {
         location: location || "",
         descriptionZh,
         status: productStatus,
+        // 新字段写入数据库
+        enginePower: finalEnginePower ? Number(finalEnginePower) : null,
+        engineType: finalEngineType,
+        driveSystem: finalDriveSystem,
+        mainConfig: finalMainConfig,
+        netWeight: finalNetWeight ? Number(finalNetWeight) : null,
       },
     });
     createdProductId = product.id;
