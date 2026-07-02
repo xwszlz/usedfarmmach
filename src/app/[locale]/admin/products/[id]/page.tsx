@@ -56,6 +56,17 @@ export default async function ProductEditPage({
           brand: product.brand,
           category: product.category,
           images: product.images.map((img) => ({ id: img.id, url: img.url, isPrimary: img.isPrimary })),
+          enginePower: product.enginePower,
+          engineType: product.engineType,
+          driveSystem: product.driveSystem,
+          overallLength: product.overallLength,
+          overallWidth: product.overallWidth,
+          overallHeight: product.overallHeight,
+          netWeight: product.netWeight,
+          mainConfig: product.mainConfig,
+          priceMode: product.priceMode,
+          tradeTerm: product.tradeTerm,
+          tradePort: product.tradePort,
         }}
         brands={brands.map((b) => ({ id: b.id, nameZh: b.nameZh, nameEn: b.nameEn }))}
         categories={categories.map((c) => ({ id: c.id, nameZh: c.nameZh, nameEn: c.nameEn }))}

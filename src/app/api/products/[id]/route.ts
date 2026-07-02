@@ -149,6 +149,19 @@ export async function PATCH(
     if (body.brandId !== undefined) updateData.brandId = String(body.brandId);
     if (body.categoryId !== undefined) updateData.categoryId = String(body.categoryId);
     if (body.status !== undefined) updateData.status = String(body.status);
+    // 规范化新字段
+    if (body.enginePower !== undefined) updateData.enginePower = body.enginePower === null ? null : Number(body.enginePower);
+    if (body.engineType !== undefined) updateData.engineType = body.engineType === null ? null : String(body.engineType);
+    if (body.driveSystem !== undefined) updateData.driveSystem = body.driveSystem === null ? null : String(body.driveSystem);
+    if (body.overallLength !== undefined) updateData.overallLength = body.overallLength === null ? null : Number(body.overallLength);
+    if (body.overallWidth !== undefined) updateData.overallWidth = body.overallWidth === null ? null : Number(body.overallWidth);
+    if (body.overallHeight !== undefined) updateData.overallHeight = body.overallHeight === null ? null : Number(body.overallHeight);
+    if (body.netWeight !== undefined) updateData.netWeight = body.netWeight === null ? null : Number(body.netWeight);
+    if (body.mainConfig !== undefined) updateData.mainConfig = body.mainConfig === null ? null : String(body.mainConfig);
+    if (body.priceMode !== undefined) updateData.priceMode = String(body.priceMode);
+    if (body.tradeTerm !== undefined) updateData.tradeTerm = String(body.tradeTerm);
+    if (body.tradePort !== undefined) updateData.tradePort = body.tradePort === null ? null : String(body.tradePort);
+    if (body.standardDescriptionEn !== undefined) updateData.standardDescriptionEn = body.standardDescriptionEn === null ? null : String(body.standardDescriptionEn);
 
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json({ success: false, error: "没有需要更新的字段" }, { status: 400 });

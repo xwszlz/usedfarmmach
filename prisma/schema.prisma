@@ -94,6 +94,18 @@ model Product {
   descriptionHi String?
   aiGenerated   Boolean  @default(false)
   status        String   @default("active") // active, sold, draft, archived
+  enginePower      Int?     // 额定马力 HP
+  engineType       String?  // 发动机类型，默认 "Diesel Engine"
+  driveSystem      String?  // 传动方式：2WD / 4WD / Full Hydraulic
+  overallLength    Float?   // 长 mm
+  overallWidth     Float?   // 宽 mm
+  overallHeight    Float?   // 高 mm
+  netWeight        Float?   // 整机重量 KG
+  mainConfig       String?  // 主要配置描述
+  priceMode        String   @default("por")  // "fixed" | "por"
+  tradeTerm        String   @default("FOB")  // FOB / CIF / EXW
+  tradePort        String?  // 发货港口
+  standardDescriptionEn String? // 英文标准描述
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -113,6 +125,7 @@ model ProductImage {
   url       String
   sortOrder Int     @default(0)
   isPrimary Boolean @default(false)
+  angleLabel String? // 拍摄角度标签
 
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 

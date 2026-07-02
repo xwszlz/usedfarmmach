@@ -63,6 +63,19 @@ export async function POST(request: NextRequest) {
     const descRollerHours = formData.get("descRollerHours")?.toString();
     const descOther = formData.get("descOther")?.toString();
 
+    // 新规格字段
+    const enginePower = formData.get("enginePower")?.toString();
+    const engineType = formData.get("engineType")?.toString();
+    const driveSystem = formData.get("driveSystem")?.toString();
+    const overallLength = formData.get("overallLength")?.toString();
+    const overallWidth = formData.get("overallWidth")?.toString();
+    const overallHeight = formData.get("overallHeight")?.toString();
+    const netWeight = formData.get("netWeight")?.toString();
+    const mainConfig = formData.get("mainConfig")?.toString();
+    const priceMode = formData.get("priceMode")?.toString();
+    const tradeTerm = formData.get("tradeTerm")?.toString();
+    const tradePort = formData.get("tradePort")?.toString();
+
     // 校验
     if (!modelName || !yearStr || !priceCnyStr || !location) {
       return NextResponse.json({ success: false, error: "请填写完整信息（型号、年份、价格、位置为必填）" }, { status: 400 });
@@ -126,6 +139,17 @@ export async function POST(request: NextRequest) {
         location: location || "",
         descriptionZh: descriptionZh || null,
         status: "active",
+        enginePower: enginePower ? Number(enginePower) : null,
+        engineType: engineType || null,
+        driveSystem: driveSystem || null,
+        overallLength: overallLength ? Number(overallLength) : null,
+        overallWidth: overallWidth ? Number(overallWidth) : null,
+        overallHeight: overallHeight ? Number(overallHeight) : null,
+        netWeight: netWeight ? Number(netWeight) : null,
+        mainConfig: mainConfig || null,
+        priceMode: priceMode || "por",
+        tradeTerm: tradeTerm || "FOB",
+        tradePort: tradePort || null,
       },
     });
 

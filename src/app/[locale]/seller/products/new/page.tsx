@@ -32,6 +32,12 @@ export default function NewProductPage() {
     // 结构化描述
     descPower: "", descDrive: "二驱", descHeader: "",
     descEngineHours: "", descRollerHours: "", descOther: "",
+    // 新规格字段
+    enginePower: "", engineType: "Diesel Engine", driveSystem: "2WD",
+    overallLength: "", overallWidth: "", overallHeight: "", netWeight: "",
+    mainConfig: "",
+    // 贸易信息
+    priceMode: "por", tradeTerm: "FOB", tradePort: "Qingdao",
   });
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<{ url: string; name: string }[]>([]);
@@ -136,6 +142,17 @@ export default function NewProductPage() {
       fd.append("descEngineHours", form.descEngineHours);
       fd.append("descRollerHours", form.descRollerHours);
       fd.append("descOther", form.descOther);
+      fd.append("enginePower", form.enginePower);
+      fd.append("engineType", form.engineType);
+      fd.append("driveSystem", form.driveSystem);
+      fd.append("overallLength", form.overallLength);
+      fd.append("overallWidth", form.overallWidth);
+      fd.append("overallHeight", form.overallHeight);
+      fd.append("netWeight", form.netWeight);
+      fd.append("mainConfig", form.mainConfig);
+      fd.append("priceMode", form.priceMode);
+      fd.append("tradeTerm", form.tradeTerm);
+      fd.append("tradePort", form.tradePort);
       imageFiles.forEach((f) => fd.append("images", f));
       if (videoFile) fd.append("video", videoFile);
 
@@ -399,6 +416,100 @@ export default function NewProductPage() {
             </>
           )}
           <input ref={videoInputRef} type="file" accept="video/*" onChange={handleVideoSelect} className="hidden" />
+        </div>
+
+        {/* ====== 详细规格 ====== */}
+        <h2 className="text-base font-bold text-gray-800 border-b pb-2">详细规格（推荐填写，提升曝光）</h2>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">额定马力 (HP)</label>
+            <input type="number" value={form.enginePower} onChange={e => update("enginePower", e.target.value)}
+              placeholder="如: 480" min={0}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-primary-500 focus:outline-none" />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">发动机类型</label>
+            <input value={form.engineType} onChange={e => update("engineType", e.target.value)}
+              placeholder="Diesel Engine"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-primary-500 focus:outline-none" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">驱动方式</label>
+            <select value={form.driveSystem} onChange={e => update("driveSystem", e.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-primary-500 focus:outline-none">
+              <option value="2WD">两驱 (2WD)</option>
+              <option value="4WD">四驱 (4WD)</option>
+              <option value="Full Hydraulic">全液压驱动 (Full Hydraulic)</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">常用配置</label>
+            <input value={form.mainConfig} onChange={e => update("mainConfig", e.target.value)}
+              placeholder="如: 冠军445割台, 自动导航"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-primary-500 focus:outline-none" />
+          </div>
+        </div>
+
+        <p className="text-xs text-gray-400 -mt-2">外形尺寸 (mm)</p>
+        <div className="grid grid-cols-3 gap-3">
+          <div>
+            <label className="mb-1 block text-xs text-gray-500">总长</label>
+            <input type="number" value={form.overallLength} onChange={e => update("overallLength", e.target.value)}
+              placeholder="mm" min={0}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none" />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-500">总宽</label>
+            <input type="number" value={form.overallWidth} onChange={e => update("overallWidth", e.target.value)}
+              placeholder="mm" min={0}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none" />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-500">总高</label>
+            <input type="number" value={form.overallHeight} onChange={e => update("overallHeight", e.target.value)}
+              placeholder="mm" min={0}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none" />
+          </div>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">整机重量 (KG)</label>
+          <input type="number" value={form.netWeight} onChange={e => update("netWeight", e.target.value)}
+            placeholder="如: 14000" min={0}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-primary-500 focus:outline-none" />
+        </div>
+
+        {/* ====== 贸易信息 ====== */}
+        <h2 className="text-base font-bold text-gray-800 border-b pb-2">贸易信息</h2>
+
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">价格模式</label>
+            <select value={form.priceMode} onChange={e => update("priceMode", e.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-primary-500 focus:outline-none">
+              <option value="fixed">固定价格 (Fixed)</option>
+              <option value="por">询价 (POR)</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">贸易术语</label>
+            <select value={form.tradeTerm} onChange={e => update("tradeTerm", e.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-primary-500 focus:outline-none">
+              <option value="FOB">FOB</option>
+              <option value="CIF">CIF</option>
+              <option value="EXW">EXW</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">发货港口</label>
+            <input value={form.tradePort} onChange={e => update("tradePort", e.target.value)}
+              placeholder="如: Qingdao"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-primary-500 focus:outline-none" />
+          </div>
         </div>
 
         {/* ====== 补充描述 ====== */}

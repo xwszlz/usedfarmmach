@@ -38,6 +38,17 @@ interface ProductData {
   brand: Brand;
   category: Category;
   images: ProductImage[];
+  enginePower: number | null;
+  engineType: string | null;
+  driveSystem: string | null;
+  overallLength: number | null;
+  overallWidth: number | null;
+  overallHeight: number | null;
+  netWeight: number | null;
+  mainConfig: string | null;
+  priceMode: string;
+  tradeTerm: string;
+  tradePort: string | null;
 }
 
 interface Props {
@@ -60,6 +71,23 @@ const STATUSES = [
   { value: "archived", label: "归档" },
 ];
 
+const DRIVE_SYSTEMS = [
+  { value: "2WD", label: "2WD" },
+  { value: "4WD", label: "4WD" },
+  { value: "Full Hydraulic", label: "Full Hydraulic" },
+];
+
+const PRICE_MODES = [
+  { value: "fixed", label: "Fixed Price (固定价格)" },
+  { value: "por", label: "Price on Request (询价)" },
+];
+
+const TRADE_TERMS = [
+  { value: "FOB", label: "FOB" },
+  { value: "CIF", label: "CIF" },
+  { value: "EXW", label: "EXW" },
+];
+
 export function ProductEditForm({ product, brands, categories }: Props) {
   const router = useRouter();
 
@@ -74,6 +102,17 @@ export function ProductEditForm({ product, brands, categories }: Props) {
     brandId: product.brandId,
     categoryId: product.categoryId,
     status: product.status,
+    enginePower: product.enginePower ?? null as number | null,
+    engineType: product.engineType || "Diesel Engine",
+    driveSystem: product.driveSystem || "2WD",
+    overallLength: product.overallLength ?? null as number | null,
+    overallWidth: product.overallWidth ?? null as number | null,
+    overallHeight: product.overallHeight ?? null as number | null,
+    netWeight: product.netWeight ?? null as number | null,
+    mainConfig: product.mainConfig || "",
+    priceMode: product.priceMode || "por",
+    tradeTerm: product.tradeTerm || "FOB",
+    tradePort: product.tradePort || "",
   });
 
   const [saving, setSaving] = useState(false);
@@ -107,6 +146,17 @@ export function ProductEditForm({ product, brands, categories }: Props) {
           brandId: form.brandId,
           categoryId: form.categoryId,
           status: form.status,
+          enginePower: form.enginePower,
+          engineType: form.engineType || null,
+          driveSystem: form.driveSystem || null,
+          overallLength: form.overallLength,
+          overallWidth: form.overallWidth,
+          overallHeight: form.overallHeight,
+          netWeight: form.netWeight,
+          mainConfig: form.mainConfig || null,
+          priceMode: form.priceMode,
+          tradeTerm: form.tradeTerm,
+          tradePort: form.tradePort || null,
         }),
       });
 
@@ -255,6 +305,165 @@ export function ProductEditForm({ product, brands, categories }: Props) {
                 <option key={s.value} value={s.value}>{s.label}</option>
               ))}
             </select>
+          </label>
+        </div>
+      </div>
+
+      {/* Engine & Dimensions */}
+      <div className="rounded-xl border bg-white shadow-sm">
+        <div className="border-b px-6 py-4">
+          <h2 className="font-semibold text-gray-900">引擎与规格参数</h2>
+        </div>
+        <div className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2 lg:grid-cols-3">
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-gray-500">额定马力 (HP)</span>
+            <input
+              type="number"
+              value={form.enginePower ?? ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                handleChange("enginePower", val === "" ? null : Number(val));
+              }}
+              min={0}
+              className="rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-gray-500">发动机类型</span>
+            <input
+              type="text"
+              value={form.engineType}
+              onChange={(e) => handleChange("engineType", e.target.value)}
+              placeholder="Diesel Engine"
+              className="rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-gray-500">驱动方式</span>
+            <select
+              value={form.driveSystem || ""}
+              onChange={(e) => handleChange("driveSystem", e.target.value)}
+              className="rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="">未设置</option>
+              {DRIVE_SYSTEMS.map((d) => (
+                <option key={d.value} value={d.value}>{d.label}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-gray-500">总长 (mm)</span>
+            <input
+              type="number"
+              value={form.overallLength ?? ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                handleChange("overallLength", val === "" ? null : Number(val));
+              }}
+              min={0}
+              className="rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-gray-500">总宽 (mm)</span>
+            <input
+              type="number"
+              value={form.overallWidth ?? ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                handleChange("overallWidth", val === "" ? null : Number(val));
+              }}
+              min={0}
+              className="rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-gray-500">总高 (mm)</span>
+            <input
+              type="number"
+              value={form.overallHeight ?? ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                handleChange("overallHeight", val === "" ? null : Number(val));
+              }}
+              min={0}
+              className="rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-gray-500">整机重量 (KG)</span>
+            <input
+              type="number"
+              value={form.netWeight ?? ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                handleChange("netWeight", val === "" ? null : Number(val));
+              }}
+              min={0}
+              className="rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1 sm:col-span-2">
+            <span className="text-xs font-medium text-gray-500">主要配置</span>
+            <input
+              type="text"
+              value={form.mainConfig}
+              onChange={(e) => handleChange("mainConfig", e.target.value)}
+              placeholder="如: 冠军445割台, 四轮驱动, 自动导航"
+              className="rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </label>
+        </div>
+      </div>
+
+      {/* Trade Info */}
+      <div className="rounded-xl border bg-white shadow-sm">
+        <div className="border-b px-6 py-4">
+          <h2 className="font-semibold text-gray-900">贸易信息</h2>
+        </div>
+        <div className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2 lg:grid-cols-3">
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-gray-500">价格模式</span>
+            <select
+              value={form.priceMode}
+              onChange={(e) => handleChange("priceMode", e.target.value)}
+              className="rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              {PRICE_MODES.map((p) => (
+                <option key={p.value} value={p.value}>{p.label}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-gray-500">贸易术语</span>
+            <select
+              value={form.tradeTerm}
+              onChange={(e) => handleChange("tradeTerm", e.target.value)}
+              className="rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              {TRADE_TERMS.map((t) => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-gray-500">发货港口</span>
+            <input
+              type="text"
+              value={form.tradePort}
+              onChange={(e) => handleChange("tradePort", e.target.value)}
+              placeholder="如: Qingdao"
+              className="rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
           </label>
         </div>
       </div>
