@@ -1,6 +1,6 @@
 # #1 卖方采集 Agent — 每日定时采集工作流
 # 触发：每天 06:00 UTC+8 (前一天 22:00 UTC)
-# 行为：运行 Python 采集脚本 → 导入到 Neon DB
+# 行为：运行 Python 采集脚本 → 导入到 Neon DB（容错模式）
 
 name: Seller Scout Daily
 
@@ -38,17 +38,53 @@ jobs:
         run: npx prisma generate
 
       - name: Run Agriaffaires scraper
+        id: scrape
+        continue-on-error: true
         run: python scripts/scrape_agriaffaires.py
         env:
           PYTHONIOENCODING: utf-8
 
+      - name: Check scrape results
+        id: check
+        run: |
+          if [ -f scripts/agriaffaires_data.json ]; then
+            COUNT=$(python3 -c "import json; d=json.load(open('scripts/agriaffaires_data.json')); print(d.get('totalListings', 0))")
+            echo "listing_count=$COUNT" >> $GITHUB_OUTPUT
+            echo "✅ 采集到 $COUNT 条数据"
+          else
+            echo "listing_count=0" >> $GITHUB_OUTPUT
+            echo "⚠️ 采集数据文件不存在，写入空 fallback"
+            echo '{"scrapedAt":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","source":"agriaffaires","totalListings":0,"withPrice":0,"priceOnRequest":0,"listings":[]}' > scripts/agriaffaires_data.json
+          fi
+
       - name: Import to database
+        id: import
+        if: env.DATABASE_URL != ''
+        continue-on-error: true
         run: npx tsx scripts/import-seller-scout.ts
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
+      - name: Skip import (no DATABASE_URL)
+        if: env.DATABASE_URL == ''
+        run: echo "⚠️ DATABASE_URL secret 未配置，跳过数据库导入"
+
+      - name: Upload scrape data as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agriaffaires-data-${{ github.run_number }}
+          path: scripts/agriaffaires_data.json
+          retention-days: 30
+
       - name: Report status
         if: always()
         run: |
-          echo "Scrape status: ${{ job.status }}"
-          echo "Date: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📊 Seller Scout Daily 报告"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "采集条数: ${{ steps.check.outputs.listing_count || 0 }}"
+          echo "采集状态: ${{ steps.scrape.outcome }}"
+          echo "导入状态: ${{ steps.import.outcome || 'skipped' }}"
+          echo "时间: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
