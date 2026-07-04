@@ -88,3 +88,24 @@ export async function uploadFileToOSS(
 export function getOssUrl(ossKey: string): string {
   return `https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/${ossKey}`;
 }
+
+/**
+ * 删除 OSS 文件（忽略失败）
+ * 用于产品删除、图片删除、视频删除时清理云端文件
+ */
+export async function deleteFromOSS(urlOrKey: string): Promise<void> {
+  if (!urlOrKey) return;
+  try {
+    const key = urlOrKey.startsWith("http")
+      ? urlOrKey.replace(/^https:\/\/[^/]+\/?/, "")
+      : urlOrKey;
+    if (!key) return;
+
+    const client = createClient();
+    await client.delete(key);
+    console.log(`[oss-upload] ✅ 已删除: ${key}`);
+  } catch (err) {
+    // OSS 删除失败不影响主流程（数据库记录已删即可）
+    console.warn(`[oss-upload] ⚠️ 删除失败（可忽略）: ${urlOrKey}`, err);
+  }
+}

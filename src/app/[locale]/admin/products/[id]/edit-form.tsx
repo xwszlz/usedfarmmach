@@ -129,6 +129,10 @@ export function ProductEditForm({ product, brands, categories }: Props) {
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  // 图片/视频列表状态（用于删除后即时更新UI）
+  const [images, setImages] = useState<ProductImage[]>(product.images);
+  const [videos, setVideos] = useState<ProductVideo[]>(product.videos);
+
   const handleChange = (field: string, value: string | number | null) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
@@ -214,6 +218,52 @@ export function ProductEditForm({ product, brands, categories }: Props) {
     }
   }
 
+  // 删除单张图片
+  async function handleDeleteImage(imgId: string) {
+    const confirmed = window.confirm("确定删除这张图片？");
+    if (!confirmed) return;
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/products/${product.id}/images/${imgId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        setImages((prev) => prev.filter((i) => i.id !== imgId));
+        setUploadStatus("✅ 图片已删除");
+        setTimeout(() => setUploadStatus(null), 3000);
+      } else {
+        alert(`❌ ${data.error || "删除失败"}`);
+      }
+    } catch {
+      alert("❌ 网络错误，请重试");
+    }
+  }
+
+  // 删除单个视频
+  async function handleDeleteVideo(vidId: string) {
+    const confirmed = window.confirm("确定删除这个视频？");
+    if (!confirmed) return;
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/products/${product.id}/videos/${vidId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        setVideos((prev) => prev.filter((v) => v.id !== vidId));
+        setUploadStatus("✅ 视频已删除");
+        setTimeout(() => setUploadStatus(null), 3000);
+      } else {
+        alert(`❌ ${data.error || "删除失败"}`);
+      }
+    } catch {
+      alert("❌ 网络错误，请重试");
+    }
+  }
+
   async function handleMediaUpload(type: "image" | "video", e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -237,10 +287,25 @@ export function ProductEditForm({ product, brands, categories }: Props) {
       if (data.success) {
         setUploadStatus(`✅ ${data.message}`);
         e.target.value = ""; // 清空 input，允许重复上传同一文件
+        // 即时更新本地列表（无需刷新页面）
+        if (type === "image" && data.data) {
+          const newImgs = data.data.map((r: { id: string; url: string }) => ({
+            id: r.id,
+            url: r.url,
+            isPrimary: false,
+          }));
+          setImages((prev) => [...prev, ...newImgs]);
+        } else if (type === "video" && data.data) {
+          const newVids = data.data.map((r: { id: string; url: string }) => ({
+            id: r.id,
+            url: r.url,
+            sortOrder: 0,
+          }));
+          setVideos((prev) => [...prev, ...newVids]);
+        }
         setTimeout(() => {
-          router.refresh(); // 刷新页面显示新图片/视频
           setUploadStatus(null);
-        }, 1000);
+        }, 2000);
       } else {
         setUploadStatus(`❌ 上传失败: ${data.error || "未知错误"}`);
       }
@@ -563,7 +628,7 @@ export function ProductEditForm({ product, brands, categories }: Props) {
       {/* Images + Upload */}
       <div className="rounded-xl border bg-white shadow-sm">
         <div className="flex items-center justify-between border-b px-6 py-4">
-          <h2 className="font-semibold text-gray-900">产品图片 ({product.images.length})</h2>
+          <h2 className="font-semibold text-gray-900">产品图片 ({images.length})</h2>
           <label
             className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-medium transition-colors ${
               uploading === "image"
@@ -583,11 +648,11 @@ export function ProductEditForm({ product, brands, categories }: Props) {
           </label>
         </div>
         <div className="flex flex-wrap gap-3 p-6">
-          {product.images.length > 0 ? (
-            product.images.map((img) => (
+          {images.length > 0 ? (
+            images.map((img) => (
               <div
                 key={img.id}
-                className="relative h-24 w-32 overflow-hidden rounded-lg border bg-gray-50"
+                className="group relative h-24 w-32 overflow-hidden rounded-lg border bg-gray-50"
               >
                 <img
                   src={getDetailImageUrl(img.url)}
@@ -600,6 +665,15 @@ export function ProductEditForm({ product, brands, categories }: Props) {
                     主图
                   </span>
                 )}
+                {/* 删除按钮 */}
+                <button
+                  type="button"
+                  onClick={() => handleDeleteImage(img.id)}
+                  className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] text-white opacity-0 shadow transition-opacity hover:bg-red-600 group-hover:opacity-100"
+                  title="删除图片"
+                >
+                  ✕
+                </button>
               </div>
             ))
           ) : (
@@ -634,16 +708,27 @@ export function ProductEditForm({ product, brands, categories }: Props) {
           <p className="mb-3 text-xs text-gray-400">
             支持 MP4、MOV、WebM 格式。视频将展示在产品详情页。
           </p>
-          {product.videos.length > 0 && (
+          {videos.length > 0 ? (
             <div className="space-y-2">
-              {product.videos.map((vid) => (
-                <div key={vid.id} className="flex items-center gap-3 rounded-lg border bg-gray-50 p-3">
+              {videos.map((vid) => (
+                <div key={vid.id} className="group flex items-center gap-3 rounded-lg border bg-gray-50 p-3">
                   <span className="text-xl">🎬</span>
                   <video src={getVideoUrl(vid.url)} controls className="max-h-24 max-w-xs rounded" preload="metadata" />
-                  <span className="truncate text-xs text-gray-500">{vid.url.split("/").pop()}</span>
+                  <span className="flex-1 truncate text-xs text-gray-500">{vid.url.split("/").pop()}</span>
+                  {/* 删除按钮 */}
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteVideo(vid.id)}
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-red-500 text-[11px] text-white opacity-0 shadow transition-opacity hover:bg-red-600 group-hover:opacity-100"
+                    title="删除视频"
+                  >
+                    ✕
+                  </button>
                 </div>
               ))}
             </div>
+          ) : (
+            <p className="text-sm text-gray-400">暂无视频，点击「添加视频」上传</p>
           )}
         </div>
       </div>
