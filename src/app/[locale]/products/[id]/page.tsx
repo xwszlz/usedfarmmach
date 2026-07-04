@@ -22,6 +22,9 @@ import { getHreflangLanguages } from "@/components/seo/hreflang-head";
 import { ProductStructuredData, BreadcrumbStructuredData } from "@/components/seo/structured-data";
 import { FloatingChat } from "@/components/chat/floating-chat";
 import { MachineryIdentityCard } from "@/components/machinery/machinery-identity-card";
+import { InspectionReportCard } from "@/components/inspection/inspection-report-card";
+import { FavoriteButton } from "@/components/favorite/favorite-button";
+import { SellerTrustCard } from "@/components/seller/seller-trust-card";
 import Link from "next/link";
 import { Wrench } from "lucide-react";
 
@@ -333,12 +336,15 @@ export default async function ProductDetailPage({
             </Card>
           )}
 
-          {/* Buy Intent Button */}
-          <BuyIntentButton
-            productId={product.id}
-            productName={`${brandName} ${product.modelName}`}
-            locale={locale}
-          />
+          {/* Buy Intent Button + Favorite */}
+          <div className="flex items-center gap-3">
+            <BuyIntentButton
+              productId={product.id}
+              productName={`${brandName} ${product.modelName}`}
+              locale={locale}
+            />
+            <FavoriteButton productId={product.id} locale={locale} />
+          </div>
         </div>
 
         {/* Right Column: Video + Contact */}
@@ -449,6 +455,20 @@ export default async function ProductDetailPage({
       {/* Machinery Identity & Traceability (一机一码) */}
       <div className="mt-6">
         <MachineryIdentityCard productId={product.id} locale={locale} />
+      </div>
+
+      {/* Inspection Report (设备检验报告) */}
+      <div className="mt-6">
+        <InspectionReportCard productId={product.id} locale={locale} />
+      </div>
+
+      {/* Seller Trust Card (卖家信任体系) */}
+      <div className="mt-6">
+        <SellerTrustCard
+          sellerId={product.seller.id}
+          sellerName={product.seller.companyName ?? undefined}
+          locale={locale}
+        />
       </div>
 
       {/* Offline Service Appointment */}

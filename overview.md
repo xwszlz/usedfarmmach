@@ -1,12 +1,12 @@
 # 第一阶段核心功能 — 交付概览
 
-> 交付日期：2026-07-04
-> Commit: `8c71178`
-> 状态：✅ 已push到GitHub，Vercel部署中
+> 交付日期：2026-07-02（第二批）/ 2026-07-04（第一批）
+> Commit: `8c71178`（第一批）→ `3698413`（第二批）
+> 状态：✅ 全部push到GitHub，Vercel自动部署
 
 ---
 
-## 交付清单
+## 第一批交付（commit 8c71178）
 
 ### 1. 买家需求匹配 API + 网站表单 ✅
 
@@ -26,90 +26,153 @@
 - 询价API: 已有 `POST /api/inquiries`（保持不变）
 - 询价表单: 已有 `InquiryForm` 组件（产品详情页，保持不变）
 - **新增**: 卖家询价管理页面 `/seller/inquiries`
-  - 状态筛选(全部/待回复/已回复/已关闭)
-  - 询价卡片展示(产品链接+买家信息+留言)
 - **新增**: 卖家询价API `GET /api/seller/inquiries`
-  - 按sellerId查询该卖家所有产品的询价
 
 **小程序端**:
-- 详情页底部栏新增"💬 询价"按钮（橙色）
+- 详情页底部栏新增"💬 询价"按钮
 - 询价弹窗：姓名+手机+邮箱+留言 → 提交到 `/api/inquiries`
-- 提交成功后Toast提示并关闭弹窗
 
 ### 3. 标准规范展示页 ✅
 
 **新页面**: `/standards`
 - 6项行业标准展示（已发布3项 + 制定中2项 + 规划中1项）
 - 三重认证流程图（机构认证→人员认证→车辆认证→平台审核）
-- 平合规承诺声明
+- 平台合规承诺声明
 
 ### 4. 小程序搜索筛选增强 ✅
 
-**filter-bar组件增强**:
-- 品类：5项 → 12项（新增收割机/割草机/裹包机/拖拉机/搂草机/播种机/捡拾台/收获机）
-- 品牌：8项 → 12项（新增克拉斯/克罗尼/库恩/奥库/麦赛弗格森/格立莫/牧农）
-- 价格：新增"30-100万"和"100万以上"区间
-- 排序：新增"套利空间最大"选项
-- **新增年份筛选**: 5个档位（2022+/2018-2022/2013-2018/2010前/不限）
-- **新增产地筛选**: 13个省份选择
-- **新增"更多"筛选**: 仅看有图开关 + 仅看有视频开关
-- 筛选栏改为横向滚动（支持7个tab不挤）
+- 品类：5项 → 12项
+- 品牌：8项 → 12项
+- 新增年份/产地/更多筛选维度
+- 筛选栏改为横向滚动
 
 ### 5. 导航更新
 
-- "买农机"下拉新增"买家需求"入口
-- "卖农机"下拉新增"询价管理"入口
-- "服务支持"下拉新增"标准规范"入口
 - 8语言i18n同步新增nav keys
 
 ---
 
-## 文件清单
+## 第二批交付（commit 3698413）
 
-| 类型 | 文件路径 | 说明 |
-|------|---------|------|
-| 新建 | `src/app/api/buyer-match/suggest/route.ts` | 买家需求匹配API |
-| 新建 | `src/components/buyer/buyer-match-card.tsx` | 买家需求匹配表单组件 |
-| 新建 | `src/app/[locale]/standards/page.tsx` | 标准规范展示页 |
-| 新建 | `src/app/[locale]/seller/inquiries/page.tsx` | 卖家询价管理页 |
-| 新建 | `src/app/api/seller/inquiries/route.ts` | 卖家询价API |
-| 修改 | `src/app/[locale]/products/ProductsClient.tsx` | 集成BuyerMatchCard |
-| 修改 | `src/config/navigation.ts` | 导航新增3个入口 |
-| 修改 | `messages/zh.json` | 新增standards/inquiryManagement |
-| 修改 | `messages/en.json` | 同步 |
-| 修改 | `shendiao-miniprogram/pages/detail/detail.wxml` | 询价弹窗 |
-| 修改 | `shendiao-miniprogram/pages/detail/detail.js` | 询价逻辑 |
-| 修改 | `shendiao-miniprogram/pages/detail/detail.wxss` | 询价样式 |
-| 修改 | `shendiao-miniprogram/components/filter-bar/filter-bar.js` | 筛选增强 |
-| 修改 | `shendiao-miniprogram/components/filter-bar/filter-bar.wxml` | 筛选UI |
-| 修改 | `shendiao-miniprogram/components/filter-bar/filter-bar.wxss` | 筛选样式 |
-| 修改 | `shendiao-miniprogram/pages/list/list.wxml` | 横向滚动筛选栏 |
-| 修改 | `shendiao-miniprogram/pages/list/list.js` | 新筛选逻辑 |
-| 修改 | `shendiao-miniprogram/pages/list/list.wxss` | 滚动筛选样式 |
+### 6. 一机一码身份溯源系统 ✅
+
+**数据库**: `MachineryIdentity` + `MachineryEvent` 模型
+**API**:
+- `POST /api/machinery/identity` — 为产品生成唯一QR码（格式：SD-YYYY-XXXXXXX）
+- `GET /api/machinery/identity?productId=xxx` — 查询产品身份档案
+- `GET /api/machinery/[qrCode]` — 扫码公开查询农机全生命周期档案
+- `POST /api/machinery/event` — 添加生命周期事件（7种类型）
+
+**UI**: 产品详情页新增"农机档案"卡片
+- QR码展示 + 验证状态标识
+- 生命周期时间线（出厂→上架→检测→交易→出口→维保→过户）
+- 自动生成"上架"事件
+
+### 7. 三重认证体系 ✅
+
+**数据库**: `Certification` 模型（institution/personnel/vehicle 三种类型）
+**API**:
+- `POST /api/certification/apply` — 提交认证申请
+- `GET /api/certification` — 公开查询卖家认证标识
+- `GET /api/certification/apply` — 查询当前用户认证列表
+
+**UI**: `/seller/certification` 认证申请页面
+- 三种认证类型卡片选择（机构/人员/车辆）
+- 各类型独立表单字段
+- 认证流程引导
+
+### 8. 线下服务网络目录 ✅
+
+**数据库**: `ServiceCenter` 模型（province/city/county 三级）
+**API**: `GET /api/service-centers` — 按省份/级别查询服务网点
+
+**UI**: `/service-network` 服务网点目录页
+- 按省份分组展示
+- 搜索功能
+- 统计摘要（总数/覆盖省份/各级别数量）
+- 网点卡片（地址/电话/营业时间/服务项目）
+
+**Seed数据**: 11个服务网点，覆盖7个省份
+- 省级中心7个（河北/山东/河南/内蒙古/黑龙江/江苏/新疆）
+- 县域网点4个
+
+**产品详情页**: 新增"预约线下检测"入口链接
+
+### 9. 小程序买家需求匹配表单 ✅
+
+**list页面增强**:
+- 列表页顶部新增"🎯 智能需求匹配"入口
+- 表单：作物类型(14种) + 农场规模(4档) + 期望机型(10种) + 预算区间
+- 调用 `/api/buyer-match/suggest` API
+- 结果展示：采购建议 + 市场行情4格 + Top5推荐卡片（含匹配分数和理由标签）
+- 点击推荐卡片跳转详情页
 
 ---
+
+## 新增API路由汇总
+
+| 路由 | 方法 | 说明 |
+|------|------|------|
+| `/api/machinery/identity` | POST/GET | 一机一码生成/查询 |
+| `/api/machinery/[qrCode]` | GET | 扫码查询农机档案（公开） |
+| `/api/machinery/event` | POST | 添加生命周期事件 |
+| `/api/certification/apply` | POST/GET | 认证申请提交/查询 |
+| `/api/certification` | GET | 公开查询卖家认证标识 |
+| `/api/service-centers` | GET/POST | 服务网点查询/创建 |
+
+## 新增页面汇总
+
+| 页面路径 | 说明 |
+|---------|------|
+| `/[locale]/seller/certification` | 三重认证申请页 |
+| `/[locale]/service-network` | 线下服务网络目录 |
+
+## 数据库迁移
+
+| 模型 | 说明 |
+|------|------|
+| `MachineryIdentity` | 一机一码身份档案（QR码+出厂信息+验证状态） |
+| `MachineryEvent` | 生命周期事件（7种类型+时间线） |
+| `Certification` | 三重认证（机构/人员/车辆+审核流程） |
+| `ServiceCenter` | 服务网点（三级+服务项目+地理位置） |
 
 ## 验证结果
 
 | 检查项 | 结果 |
 |--------|------|
 | next build | ✅ 0错误 |
-| git push | ✅ commit 8c71178 |
+| prisma db push | ✅ 数据库已同步 |
+| git push | ✅ commit 3698413 |
 | Vercel部署 | 自动进行中 |
-| 新API路由 | /api/buyer-match/suggest + /api/seller/inquiries |
+| Seed数据 | ✅ 11个服务网点已入库 |
+
+## 第一阶段完成状态
+
+| 序号 | 任务 | 状态 |
+|------|------|------|
+| 5 | 买家需求匹配 API + 网站表单 | ✅ |
+| 6 | 买家需求匹配 小程序表单 | ✅ |
+| 7 | 一机一码系统 | ✅ |
+| 8 | 询价流程闭环 | ✅ |
+| 9 | 三重认证数据模型+申请页面 | ✅ |
+| 10 | 线下服务网络目录 | ✅ |
+| 11 | 标准规范展示页 | ✅ |
+| 12 | 小程序搜索筛选增强 | ✅ |
+
+**第一阶段全部12项任务已完成。**
 
 ---
 
-## 下一步建议
+## 下一步：第二阶段（第3-9周）
 
-1. 等Vercel部署完(约2-3分钟)，线上验证：
-   - 访问 `/products` 页面测试买家需求匹配
-   - 访问 `/standards` 页面查看标准规范
-   - 登录卖家账号访问 `/seller/inquiries`
-2. 小程序在微信开发者工具中重新编译，验证：
-   - 详情页询价弹窗
-   - 列表页新增筛选维度
-3. 准备进入第一阶段剩余任务：
-   - 一机一码系统（Prisma migration）
-   - 三重认证数据模型（Prisma migration）
-   - 线下服务网络目录（Prisma migration）
+| 序号 | 任务 | 依赖 |
+|------|------|------|
+| 13 | 设备检验报告模块 | #9 |
+| 14 | 收藏/关注功能完善 | 无 |
+| 15 | 卖家信任体系展示 | #9 |
+| 16 | 推送通知体系 | #14 |
+| 17 | 担保交易基础流程 | 支付接口 |
+| 18 | 零配件专区 | 无 |
+| 19 | 行业解决方案页 | 无 |
+| 20 | 物流在线询价 | 无 |
+| 21 | 多货币价格展示 | 无 |

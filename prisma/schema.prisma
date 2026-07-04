@@ -34,6 +34,13 @@ model User {
   inquiries  Inquiry[]
   creditTransactions CreditTransaction[]
   certifications Certification[]
+  favorites  Favorite[]
+  savedSearches SavedSearch[]
+  sellerRatingsReceived SellerRating[] @relation("SellerRatingsReceived")
+  sellerRatingsGiven  SellerRating[]   @relation("SellerRatingsGiven")
+  inspectionReports InspectionReport[]
+  following   Follow[]  @relation("FollowFollower")
+  followers   Follow[]  @relation("FollowSeller")
 }
 
 model Brand {
@@ -119,6 +126,8 @@ model Product {
   inquiries           Inquiry[]
   arbitrageTopCaches   ArbitrageTopCache[]
   machineryIdentity   MachineryIdentity?
+  inspectionReports   InspectionReport[]
+  favorites           Favorite[]
 }
 
 model ProductImage {
@@ -634,4 +643,113 @@ model ServiceCenter {
   @@index([province, level])
   @@index([isActive])
   @@index([level, isActive])
+}
+
+// ═══════════════════════════════════════════════════════
+// 设备检验报告
+// ═══════════════════════════════════════════════════════
+
+model InspectionReport {
+  id              String   @id @default(cuid())
+  productId       String
+  inspectorId     String?  // 检验员ID（平台人员）
+  inspectorName   String   // 检验员姓名
+  inspectionOrg   String?  // 检验机构
+  inspectionDate  DateTime @default(now())
+  overallGrade    String   // A(优秀) / B(良好) / C(一般) / D(需维修)
+  overallScore    Int      // 0-100 综合评分
+  // 5大类检测项（JSON数组）
+  // [
+  //   { category: "engine", items: [{ name, result, score, note }] },
+  //   { category: "transmission", items: [...] },
+  //   { category: "hydraulics", items: [...] },
+  //   { category: "electrical", items: [...] },
+  //   { category: "exterior", items: [...] }
+  // ]
+  inspectionItems String   // JSON: 5大类20项检测结果
+  summary         String?  // 检验总结
+  recommendations String?  // 维修建议
+  photos          String?  // JSON: 检验照片URL数组
+  reportPdfUrl    String?  // PDF报告URL
+  status          String   @default("published") // draft, published, archived
+  validUntil      DateTime? // 报告有效期
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  inspector User?   @relation(fields: [inspectorId], references: [id])
+
+  @@index([productId])
+  @@index([overallGrade])
+  @@index([status, inspectionDate])
+}
+
+// ═══════════════════════════════════════════════════════
+// 收藏 / 关注 / 保存搜索
+// ═══════════════════════════════════════════════════════
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([userId, createdAt])
+}
+
+model Follow {
+  id        String   @id @default(cuid())
+  userId    String   // 关注者
+  sellerId  String   // 被关注的卖家
+  createdAt DateTime @default(now())
+
+  user   User @relation("FollowFollower", fields: [userId], references: [id], onDelete: Cascade)
+  seller User @relation("FollowSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, sellerId])
+  @@index([userId, createdAt])
+  @@index([sellerId])
+}
+
+model SavedSearch {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String   // 搜索名称
+  filters   String   // JSON: 筛选条件
+  notifyOnNew Boolean @default(false) // 新品上架通知
+  lastNotifiedAt DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+// ═══════════════════════════════════════════════════════
+// 卖家信任体系 — 评分
+// ═══════════════════════════════════════════════════════
+
+model SellerRating {
+  id          String   @id @default(cuid())
+  sellerId    String   // 被评价的卖家
+  raterId     String   // 评价人
+  productId   String?  // 关联产品（交易后评价）
+  score       Int      // 1-5 星
+  comment     String?
+  // 评价维度
+  itemMatchScore  Int? // 物品相符度 1-5
+  serviceScore    Int? // 服务态度 1-5
+  logisticsScore  Int? // 物流速度 1-5
+  createdAt   DateTime @default(now())
+
+  seller User @relation("SellerRatingsReceived", fields: [sellerId], references: [id], onDelete: Cascade)
+  rater  User @relation("SellerRatingsGiven", fields: [raterId], references: [id], onDelete: Cascade)
+
+  @@unique([sellerId, raterId, productId])
+  @@index([sellerId, createdAt])
+  @@index([raterId])
 }

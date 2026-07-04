@@ -36,6 +36,7 @@ export const mainNavEn: NavItem[] = [
       { href: "/seller/products", label: "Seller Center" },
       { href: "/seller/inquiries", label: "Inquiries" },
       { href: "/seller/certification", label: "Certification" },
+      { href: "/user/favorites", label: "My Favorites" },
     ],
   },
   {
@@ -91,6 +92,7 @@ export const mainNav: NavItem[] = [
       { href: "/seller/products", labelKey: "nav.sellerCenter" },
       { href: "/seller/inquiries", labelKey: "nav.inquiryManagement" },
       { href: "/seller/certification", labelKey: "nav.certification" },
+      { href: "/user/favorites", labelKey: "nav.myFavorites" },
     ],
   },
   {
