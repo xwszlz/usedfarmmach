@@ -305,8 +305,110 @@ const localizedMeta: Record<string, Record<string, { title: string; description:
       description: "AgriTrade — plateforme mondiale de machines agricoles d'occasion par Shijiazhuang Shendiao Tech. Connectant la Chine aux marchés mondiaux via évaluation IA et logistique.",
     },
     hi: {
-      title: "AgriTrade के बारे में | वैश्विक प्रयुक्त कृषि मशीनरी ट्रेडिंग प्लेटफॉर्म",
+      title: "AgriTrade के बारे में | वैश्विक प्रयुक्त कृषि मशीनरी ट्रडिंग प्लेटफॉर्म",
       description: "AgriTrade — Shijiazhuang Shendiao Tech का वैश्विक प्रयुक्त कृषि मशीनरी प्लेटफॉर्म। AI मूल्यांकन, आर्बिट्राज और लॉजिस्टिक्स के माध्यम से चीन को वैश्विक बाजारों से जोड़ना।",
+    },
+  },
+  "api-docs": {
+    zh: {
+      title: "开放API平台_农机数据接口_政府研究经销商数据服务_神雕农机",
+      description: "神雕农机开放API：为政府、研究机构、经销商提供产品列表、价格指数、行业统计等数据接口。API Key管理、速率限制、完整文档。",
+    },
+    en: {
+      title: "Open API Platform | Farm Machinery Data API | AgriTrade",
+      description: "AgriTrade Open API: product listings, price index, industry statistics for government, research, distributors. API key management, rate limiting, full documentation.",
+    },
+    ru: {
+      title: "Открытый API | API данных сельхозтехники | AgriTrade",
+      description: "Открытый API AgriTrade: списки продуктов, индекс цен, отраслевая статистика для правительства и дистрибьюторов.",
+    },
+    es: {
+      title: "API Abierta | API de Datos de Maquinaria | AgriTrade",
+      description: "API abierta de AgriTrade: listas de productos, índice de precios, estadísticas para gobierno y distribuidores.",
+    },
+    pt: {
+      title: "API Aberta | API de Dados de Máquinas | AgriTrade",
+      description: "API aberta da AgriTrade: listas de produtos, índice de preços, estatísticas para governo e distribuidores.",
+    },
+    ar: {
+      title: "API المفتوحة | واجهة بيانات الآلات الزراعية | AgriTrade",
+      description: "API المفتوحة من AgriTrade: قوائم المنتجات، مؤشر الأسعار، الإحصائيات للحكومة والموزعين.",
+    },
+    fr: {
+      title: "API Ouverte | API de Données | AgriTrade",
+      description: "API ouverte AgriTrade: listes de produits, indice de prix, statistiques pour gouvernement et distributeurs.",
+    },
+    hi: {
+      title: "ओपन API | कृषि मशीनरी डेटा API | AgriTrade",
+      description: "AgriTrade ओपन API: उत्पाद सूची, मूल्य सूचकांक, उद्योग सांख्यिकी।",
+    },
+  },
+  "gov-data": {
+    zh: {
+      title: "政府农机数据_补贴政策查询_设备登记信息_神雕农机",
+      description: "查询政府农机补贴政策、设备登记信息。购机补贴、报废补贴、作业补贴、贷款贴息等政策实时更新。",
+    },
+    en: {
+      title: "Government Machinery Data | Subsidy Policies | AgriTrade",
+      description: "Query government agricultural machinery subsidy policies and equipment registration data. Purchase, scrap, operation subsidies updated in real-time.",
+    },
+    ru: {
+      title: "Государственные данные | Субсидии | AgriTrade",
+      description: "Запрос государственных субсидий на сельхозтехнику и данных регистрации оборудования.",
+    },
+    es: {
+      title: "Datos Gubernamentales | Subsidios | AgriTrade",
+      description: "Consulta de políticas de subsidios y datos de registro de maquinaria agrícola.",
+    },
+    pt: {
+      title: "Dados Governamentais | Subsídios | AgriTrade",
+      description: "Consulta de políticas de subsídios e dados de registro de máquinas agrícolas.",
+    },
+    ar: {
+      title: "البيانات الحكومية | سياسات الدعم | AgriTrade",
+      description: "الاستعلام عن سياسات دعم الآلات الزراعية وبيانات تسجيل المعدات.",
+    },
+    fr: {
+      title: "Données Gouvernementales | Subventions | AgriTrade",
+      description: "Recherche de politiques de subvention et données d'enregistrement de machines agricoles.",
+    },
+    hi: {
+      title: "सरकारी डेटा | सब्सिडी नीतियाँ | AgriTrade",
+      description: "सरकारी कृषि मशीनरी सब्सिडी नीतियाँ और उपकरण पंजीकरण डेटा।",
+    },
+  },
+  warehouses: {
+    zh: {
+      title: "海外仓信息_全球仓储资源_跨境物流节点_神雕农机",
+      description: "神雕农机海外仓信息：保税仓、普通仓、冷链仓，覆盖全球主要国家。仓储位置、容量、联系方式一目了然。",
+    },
+    en: {
+      title: "Overseas Warehouses | Global Storage | AgriTrade",
+      description: "AgriTrade overseas warehouse info: bonded, standard, cold storage across major countries worldwide. Locations, capacity, contacts.",
+    },
+    ru: {
+      title: "Зарубежные склады | Глобальное хранение | AgriTrade",
+      description: "Информация о зарубежных складах AgriTrade: бондед, стандартные, холодильные.",
+    },
+    es: {
+      title: "Almacenes en el Extranjero | Almacenamiento Global | AgriTrade",
+      description: "Información de almacenes en el extranjero de AgriTrade: bonded, estándar, frigorífico.",
+    },
+    pt: {
+      title: "Armazéns no Exterior | Armazenamento Global | AgriTrade",
+      description: "Informações de armazéns no exterior da AgriTrade: bonded, padrão, frio.",
+    },
+    ar: {
+      title: "المستودعات الخارجية | التخزين العالمي | AgriTrade",
+      description: "معلومات المستودعات الخارجية AgriTrade: bonded، قياسي، بارد.",
+    },
+    fr: {
+      title: "Entrepôts à l'Étranger | Stockage Global | AgriTrade",
+      description: "Informations sur les entrepôts à l'étranger d'AgriTrade: bonded, standard, froid.",
+    },
+    hi: {
+      title: "विदेशी गोदामें | वैश्विक भंडारण | AgriTrade",
+      description: "AgriTrade विदेशी गोदाम जानकारी: bonded, मानक, कोल्ड स्टोरेज।",
     },
   },
   arbitrageCalculator: {

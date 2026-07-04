@@ -48,6 +48,8 @@ model User {
   auctionsAsWinner  Auction[] @relation("AuctionWinner")
   auctionBids       Bid[]     @relation("AuctionBidder")
   loanApplications  LoanApplication[]
+  apiKeys           ApiKey[]
+  rentalListings    RentalListing[]
 }
 
 model Brand {
@@ -140,6 +142,9 @@ model Product {
   loanApplications    LoanApplication[]
   warranties          Warranty[]
   maintenanceRecords  MaintenanceRecord[]
+  govMachineryData    GovMachineryData?
+  blockchainRecords   BlockchainRecord[]
+  rentalListing       RentalListing?
 }
 
 model ProductImage {
@@ -1059,4 +1064,179 @@ model MaintenanceRecord {
 
   @@index([productId, status])
   @@index([status, scheduledDate])
+}
+
+// ═══════════════════════════════════════════════════════
+// 第四阶段：开放API + 政府数据 + 海外仓 + 区块链 + 租赁
+// ═══════════════════════════════════════════════════════
+
+// 开放API Key管理
+model ApiKey {
+  id              String   @id @default(cuid())
+  key             String   @unique // 实际API Key
+  userId          String   // 所属用户
+  name            String   // Key名称（如"农业部数据接口"）
+  organization    String?  // 机构名称
+  scope           String   @default("read") // read, read_write, admin
+  // 速率限制
+  rateLimitPerHour Int     @default(100)
+  rateLimitPerDay  Int     @default(1000)
+  // 使用统计
+  totalRequests   Int      @default(0)
+  lastUsedAt      DateTime?
+  // 状态
+  status          String   @default("active") // active, suspended, revoked
+  expiresAt       DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([status])
+}
+
+// 政府农机补贴政策
+model GovSubsidyPolicy {
+  id              String   @id @default(cuid())
+  title           String   // 政策标题
+  policyNumber    String?  // 政策文号
+  region          String   // 适用地区（省份/全国）
+  // 补贴详情
+  category        String   // 补贴类别: purchase(购机), scrap(报废), operation(作业), loan(贷款贴息)
+  machineryTypes  String?  // 适用机型（JSON数组）
+  subsidyAmount   Float?   // 补贴金额（元）
+  subsidyRatio    Float?   // 补贴比例（如0.3 = 30%）
+  maxSubsidy      Float?   // 最高补贴额
+  // 时间
+  effectiveDate   DateTime
+  expiryDate      DateTime?
+  // 内容
+  description     String   @db.Text
+  requirements    String?  @db.Text // 申请条件
+  applicationUrl  String?  // 官方申请链接
+  source          String?  // 数据来源
+  status          String   @default("active") // active, expired, repealed
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([region, status])
+  @@index([category, status])
+  @@index([effectiveDate])
+}
+
+// 政府农机登记数据
+model GovMachineryData {
+  id              String   @id @default(cuid())
+  productId       String?  @unique // 关联平台产品（可选）
+  // 登记信息
+  registrationNo  String?  // 登记编号
+  plateNumber     String?  // 牌照号
+  ownerName       String?  // 登记所有人
+  // 设备信息
+  brandName       String
+  modelName       String
+  category        String   // 设备类别
+  enginePower     Float?   // 发动机功率
+  // 合规信息
+  emissionStandard String? // 排放标准
+  inspectionDate   DateTime? // 年检日期
+  inspectionResult String?  // 检验结果
+  // 状态
+  registrationStatus String? @default("active") // active, transferred, scrapped
+  // 元数据
+  dataSource      String   @default("gov_registry")
+  verifiedAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  product Product? @relation(fields: [productId], references: [id])
+
+  @@index([brandName, category])
+  @@index([registrationNo])
+}
+
+// 海外仓信息
+model OverseasWarehouse {
+  id              String   @id @default(cuid())
+  name            String   // 仓库名称
+  nameEn          String   @default("")
+  country         String   // 所在国家
+  city            String   // 所在城市
+  address         String   // 详细地址
+  // 仓库属性
+  warehouseType   String   // bonded(保税仓), standard(普通仓), cold(冷链仓)
+  capacity        Float?   // 容量（立方米）
+  area            Float?   // 面积（平方米）
+  // 服务
+  services        String?  @db.Text // 服务内容（JSON数组）
+  // 联系
+  contactName     String?
+  contactPhone    String?
+  contactEmail    String?
+  // 位置
+  latitude        Float?
+  longitude       Float?
+  // 状态
+  status          String   @default("active") // active, inactive, full
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([country, status])
+  @@index([warehouseType, status])
+}
+
+// 区块链溯源记录
+model BlockchainRecord {
+  id              String   @id @default(cuid())
+  productId       String   // 关联产品
+  // 区块信息
+  blockIndex      Int      // 区块序号
+  previousHash    String   // 前一区块哈希
+  currentHash     String   // 当前区块哈希
+  // 事件数据
+  eventType       String   // created, inspected, transferred, maintained, sold, exported
+  eventData       String   @db.Text // JSON: 事件详细数据
+  timestamp       DateTime @default(now())
+  // 签名
+  operatorId      String?  // 操作人ID
+  operatorName    String?  // 操作人名称
+  // 验证
+  isVerified      Boolean  @default(false)
+  verifiedAt      DateTime?
+  createdAt       DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, blockIndex])
+  @@index([currentHash])
+}
+
+// 租赁信息
+model RentalListing {
+  id              String   @id @default(cuid())
+  productId       String   @unique // 关联产品
+  ownerId         String   // 出租方（卖家）
+  // 租赁模式
+  rentalType      String   // daily(日租), monthly(月租), yearly(年租)
+  pricePerDay     Float?   // 日租金（CNY）
+  pricePerMonth   Float?   // 月租金（CNY）
+  pricePerYear    Float?   // 年租金（CNY）
+  deposit         Float?   // 押金（CNY）
+  // 租赁条件
+  minRentalPeriod Int?     // 最短租赁周期
+  maxRentalPeriod Int?     // 最长租赁周期
+  // 配送
+  deliveryAvailable Boolean @default(false)
+  deliveryFee       Float?  // 配送费
+  // 状态
+  status          String   @default("available") // available, rented, unavailable
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  owner   User    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([status, rentalType])
+  @@index([ownerId, status])
 }

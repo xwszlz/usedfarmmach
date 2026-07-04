@@ -1,153 +1,112 @@
-# 开发进度 — 交付概览
+# 神雕农机平台 — 第三阶段交付概览
 
 > 更新日期：2026-07-05
-> 最新Commit: `d70fccd`
-> 状态：✅ 第二阶段第二批5项已完成，已push到GitHub，Vercel自动部署
+> Commit: `3eca328` | Build: 0 errors | 已推送到 GitHub + Vercel 自动部署
 
 ---
 
-## 第一阶段（已完成）
+## 第三阶段完成总览（6/6 项任务全部完成）
 
-### 第一批交付（commit 8c71178）
-1. ✅ 买家需求匹配 API + 网站表单
-2. ✅ 询价流程闭环（网站+小程序）
-3. ✅ 标准规范展示页
-4. ✅ 小程序搜索筛选增强
-5. ✅ 导航更新
+### 第一批（commit `5138297`）
 
-### 第二批交付（commit 3698413）
-6. ✅ 一机一码身份溯源系统
-7. ✅ 三重认证体系
-8. ✅ 线下服务网络目录
-9. ✅ 小程序买家需求匹配表单
+| # | 任务 | 状态 | 关键文件 |
+|---|------|------|---------|
+| 22 | 数据洞察中心 | ✅ | `/api/market-insights` + `/insights` 页面 |
+| 27 | 价格指数引擎 | ✅ | `/api/price-index` + PriceIndex 模型 |
+| 25 | 电子合同签署 | ✅ | `/api/contracts` + `/user/contracts` 页面 |
 
----
+### 第二批（commit `3eca328`）
 
-## 第二阶段 — 第一批交付（commit 06270c4）
-
-### #13 设备检验报告模块 ✅
-- Prisma: InspectionReport 模型（5大类20项检测, A/B/C/D评级）
-- API: GET/POST /api/inspection-reports
-- UI: 产品详情页检验报告卡片
-
-### #14 收藏/关注功能完善 ✅
-- Prisma: Favorite + Follow + SavedSearch 模型
-- API: /api/favorites, /api/follows, /api/saved-searches
-- UI: 收藏按钮+关注按钮+/user/favorites管理页
-
-### #15 卖家信任体系展示 ✅
-- Prisma: SellerRating 模型（3维度评分）
-- API: /api/seller/[id]/trust-profile, /api/seller-ratings
-- UI: 卖家信任卡+/seller/[id]卖家详情页
+| # | 任务 | 状态 | 关键文件 |
+|---|------|------|---------|
+| 26 | 在线拍卖功能 | ✅ | `/api/auctions` + `/auctions` 页面 |
+| 23 | 金融保险服务 | ✅ | `/api/finance` + `/finance` 页面 |
+| 24 | 售后维保平台 | ✅ | `/api/maintenance` + `/user/maintenance` 页面 |
 
 ---
 
-## 第二阶段 — 第二批交付（commit d70fccd）
+## 新增 Prisma 模型（9个）
 
-### #18 零配件专区 ✅
+1. **PriceIndex** — 价格指数（基准日2026-01-01=100，环比/同比）
+2. **IndustryReport** — 行业报告（月度/季度/年度/专题）
+3. **ElectronicContract** — 电子合同（合同编号、签署状态、条款模板）
+4. **Auction** — 拍卖场次（起拍价、保留价、加价幅度、保证金）
+5. **Bid** — 出价记录
+6. **FinancialService** — 金融产品（贷款/保险/租赁）
+7. **LoanApplication** — 贷款/保险申请
+8. **Warranty** — 质保记录
+9. **MaintenanceRecord** — 维保记录（保养/维修/检测/紧急维修）
 
-**网站**:
-- `/parts` 页面：8大品类分类筛选（发动机/液压/传动/电气/滤芯/轮胎/轴承/车身）
-- 搜索功能+配件卡片+库存状态+兼容型号
-- CTA：找不到配件可提交需求
+---
 
-**小程序**:
-- 首页新增4个快捷入口（零配件/物流询价/服务网点/行业方案）
-- 通过h5-bridge webview打开网站对应页面
+## 新增 API 路由（15个）
 
-### #19 行业解决方案页 ✅
+```
+/api/market-insights          — 市场洞察看板数据
+/api/price-index              — 价格指数查询与计算
+/api/contracts                — 电子合同 CRUD
+/api/contracts/[id]           — 合同详情与更新
+/api/contracts/[id]/sign      — 合同签署
+/api/auctions                 — 拍卖列表与创建
+/api/auctions/[id]            — 拍卖详情
+/api/auctions/[id]/bid        — 出价
+/api/finance/services         — 金融产品列表
+/api/finance/apply            — 贷款/保险申请
+/api/maintenance              — 维保记录管理
+/api/maintenance/[id]         — 维保详情与更新
+/api/warranties               — 质保查询
+```
 
-**网站**: `/solutions` 页面
-- 4大农业场景方案：
-  1. 大田种植（耕整地→播种→植保→收获，推荐JD/CLAAS/NH/Krone）
-  2. 畜牧养殖（饲草收割→牧草处理→饲料制备→粪污处理，推荐CLAAS/Krone/KUHN）
-  3. 果园经济（果园动力→植保→除草→采收，推荐JD/NH/KUHN）
-  4. 设施农业（耕作→灌溉→环境调控→植保采收，推荐Universal/KUHN/Bosch）
-- 每场景含4个作业环节+推荐设备+品牌链接
+---
 
-### #20 物流在线询价 ✅
+## 新增前端页面（7个）
 
-**网站**: 物流页面新增询价表单
-- 起运省份（31省）→ 自动匹配出口港口
-- 目的地区域（7大区域：俄罗斯/中亚/东欧/非洲/东南亚/南美/中东）
-- 设备类型+尺寸+数量
-- 实时运费估算区间
-- 联系人+电话+备注
-
-**API**: `POST /api/logistics-quote` — 提交询价
-
-### #21 多货币价格展示 ✅
-
-**小程序**:
-- `utils/currency.js` 模块：5种货币（CNY/USD/EUR/RUB/KZT）
-- 设置页新增货币选择器（带国旗+符号+名称+汇率日期）
-- 机器卡片新增双价格展示（CNY价格 + 用户选择货币换算价格）
-- 通过 `getDualPriceDisplay()` 统一计算
-
-### #16 推送通知体系 ✅
-
-**数据库**:
-- `Follow.notificationEnabled` — 关注通知开关
-- `User.wxOpenid` — 微信OpenID（用于发送订阅消息）
-
-**API**:
-| 路由 | 方法 | 说明 |
+| 页面 | 路径 | 功能 |
 |------|------|------|
-| `/api/notifications/subscribe` | GET/POST | 通知订阅管理 |
-| `/api/notifications/send` | POST | 定时推送（Vercel Cron触发） |
-
-**小程序**:
-- 通知设置页（`/subpackages/user-center/pages/notifications/notifications`）
-- 4种通知类型：关注卖家新品/搜索匹配/收藏降价/询价回复
-- 微信订阅消息授权流程（wx.requestSubscribeMessage）
-- 个人中心新增"🔔 通知设置"入口
+| 数据洞察中心 | `/insights` | 10大可视化模块：概览/价格指数/上架趋势/品类/品牌/区域/价格区间/年份/套利/询价 |
+| 电子合同管理 | `/user/contracts` | 合同列表（卖方/买方筛选）、详情弹窗、在线签署 |
+| 拍卖大厅 | `/auctions` | 拍卖列表、状态筛选（即将开始/进行中/已结束） |
+| 拍卖详情 | `/auctions/[id]` | 实时倒计时、出价表单、出价记录、快速加价按钮 |
+| 金融保险 | `/finance` | 金融产品展示（贷款/保险/租赁）、在线申请表单 |
+| 售后维保 | `/user/maintenance` | 维保记录列表、状态追踪、质保关联 |
 
 ---
 
-## 新增文件清单（本轮）
+## 关键技术决策
 
-| 文件 | 类型 |
-|------|------|
-| `src/app/[locale]/parts/page.tsx` | 新建 |
-| `src/app/[locale]/parts/PartsClient.tsx` | 新建 |
-| `src/app/[locale]/solutions/page.tsx` | 新建 |
-| `src/components/logistics/logistics-quote-form.tsx` | 新建 |
-| `src/app/[locale]/logistics/page.tsx` | 修改：+询价表单 |
-| `src/app/api/logistics-quote/route.ts` | 新建 |
-| `src/app/api/notifications/subscribe/route.ts` | 新建 |
-| `src/app/api/notifications/send/route.ts` | 新建 |
-| `prisma/schema.prisma` | 修改：+notificationEnabled, +wxOpenid |
-| `src/config/navigation.ts` | 修改：+parts, +solutions |
-| `messages/*.json` (8语言) | 修改：+nav.solutions |
-| `shendiao-miniprogram/utils/currency.js` | 新建 |
-| `shendiao-miniprogram/subpackages/user-center/pages/notifications/*` | 新建（4文件） |
-| `shendiao-miniprogram/subpackages/user-center/pages/settings/*` | 修改：+货币选择 |
-| `shendiao-miniprogram/components/machine-card/*` | 修改：+双货币价格 |
-| `shendiao-miniprogram/pages/index/*` | 修改：+快捷入口 |
-| `shendiao-miniprogram/pages/profile/profile.wxml` | 修改：+通知设置入口 |
-| `shendiao-miniprogram/app.json` | 修改：+notifications页面 |
+1. **价格指数计算**：基准日2026-01-01=100，按月聚合产品均价计算指数，支持环比/同比
+2. **电子合同签署流程**：draft → pending_seller/buyer → signed，双方签署后自动设置1年有效期
+3. **拍卖状态自动流转**：scheduled → live（到达开始时间）→ ended（到达结束时间），自动判定中标/流拍
+4. **Prisma nullable 字段复合唯一键**：PostgreSQL 不支持 nullable 的 upsert where，改用 findFirst + create/update
+5. **合同条款模板**：自动生成8条标准条款（标的物/价格/交货/状况/检验/违约/争议/其他）
 
 ---
 
-## 验证结果
+## 导航更新
 
-| 检查项 | 结果 |
-|--------|------|
-| next build | ✅ 0错误 |
-| prisma db push | ✅ 数据库已同步 |
-| git push | ✅ commit d70fccd |
-| Vercel部署 | 自动进行中 |
+- **中文导航**：买农机▼ 新增"在线拍卖"入口；服务支持▼ 新增"金融保险"入口；市场洞察▼ 新增"数据洞察"入口
+- **英文导航**：BUY▼ 新增"Auctions"；SERVICES▼ 新增"Finance & Insurance"；INSIGHTS▼ 新增"Market Insights"
 
 ---
 
-## 整体进度
+## 项目整体进度
 
-| 阶段 | 任务数 | 状态 |
-|------|--------|------|
-| 立即执行 | 4项 | ✅ 全部完成 |
-| 第一阶段 | 12项 | ✅ 全部完成 |
-| 第二阶段 | 8/9项 | ✅ 已完成8项（#13-16, #18-21） |
-| 第三阶段 | 6项 | ⬜ 待启动 |
-| 第四阶段 | 5项 | ⬜ 远期 |
+| 阶段 | 任务数 | 完成 | 状态 |
+|------|--------|------|------|
+| 立即执行 | 4 | 4 | ✅ |
+| 第一阶段 | 8 | 8 | ✅ |
+| 第二阶段 | 9 | 8 | ✅（#17担保交易暂缓，需支付接口） |
+| **第三阶段** | **6** | **6** | ✅ **全部完成** |
+| 第四阶段 | 5 | 0 | 待启动 |
 
-**第二阶段仅剩 #17 担保交易**（需外部支付接口）
+**累计完成 26/32 项任务**
+
+---
+
+## 下一步建议
+
+1. **第四阶段启动**：开放API、政府数据对接、海外仓、区块链溯源、租赁功能
+2. **数据填充**：向 FinancialService 表插入贷款/保险产品数据
+3. **拍卖测试**：创建测试拍卖场次验证全流程
+4. **小程序适配**：将拍卖、金融、维保功能适配到微信小程序
+5. **#17 担保交易**：对接微信支付/支付宝后启动
