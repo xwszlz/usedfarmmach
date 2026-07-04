@@ -7,9 +7,19 @@ interface AiRecognizedData {
   brand: string | null;
   modelName: string | null;
   year: number | null;
+  enginePower: string | null;
+  engineType: string | null;
+  driveSystem: string | null;
+  overallLength: string | null;
+  overallWidth: string | null;
+  overallHeight: string | null;
+  netWeight: string | null;
+  mainConfig: string | null;
   workingHours: number | null;
   condition: string | null;
-  features: string | null;
+  priceMode: string | null;
+  tradeTerm: string | null;
+  tradePort: string | null;
   confidence: number;
 }
 
@@ -18,10 +28,32 @@ interface SellerAiAssistantProps {
     brandName: string;
     modelName: string;
     year: number;
+    enginePower: string;
+    engineType: string;
+    driveSystem: string;
+    overallLength: string;
+    overallWidth: string;
+    overallHeight: string;
+    netWeight: string;
+    mainConfig: string;
     workingHours: string;
     condition: string;
+    priceMode: string;
+    tradeTerm: string;
+    tradePort: string;
   }) => void;
 }
+
+const DRIVE_SYSTEM_MAP: Record<string, string> = {
+  "2WD": "二驱",
+  "4WD": "四驱",
+  "Full Hydraulic": "全液压驱动",
+};
+
+const PRICE_MODE_MAP: Record<string, string> = {
+  fob: "FOB（离岸价）",
+  por: "询价(POR)",
+};
 
 export default function SellerAiAssistant({ onFill }: SellerAiAssistantProps) {
   const [imageFiles, setImageFiles] = useState<File[]>([]);
@@ -35,10 +67,10 @@ export default function SellerAiAssistant({ onFill }: SellerAiAssistantProps) {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
-    // 最多 3 张用于 AI 识别
+    // 最多 5 张用于 AI 识别（与网站发布页上限一致）
     const total = imageFiles.length + files.length;
-    if (total > 3) {
-      setError("AI 识别最多上传 3 张图片");
+    if (total > 5) {
+      setError("AI 识别最多上传 5 张图片");
       return;
     }
 
@@ -63,7 +95,7 @@ export default function SellerAiAssistant({ onFill }: SellerAiAssistantProps) {
     setRecognized(null);
 
     try {
-      // 将图片转为 base64 data URL（避免 OSS 依赖，更可靠）
+      // 将图片转为 base64 data URL
       const imageDataUrls = await Promise.all(
         imageFiles.map(async (file) => {
           return new Promise<string>((resolve, reject) => {
@@ -75,7 +107,6 @@ export default function SellerAiAssistant({ onFill }: SellerAiAssistantProps) {
         })
       );
 
-      // 调用 AI 识别 API（直接传 base64 图片）
       const res = await fetch("/api/agents/seller-helper/recognize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -102,8 +133,19 @@ export default function SellerAiAssistant({ onFill }: SellerAiAssistantProps) {
       brandName: recognized.brand || "",
       modelName: recognized.modelName || "",
       year: recognized.year || 2020,
+      enginePower: recognized.enginePower || "",
+      engineType: recognized.engineType || "Diesel Engine",
+      driveSystem: recognized.driveSystem || "2WD",
+      overallLength: recognized.overallLength || "",
+      overallWidth: recognized.overallWidth || "",
+      overallHeight: recognized.overallHeight || "",
+      netWeight: recognized.netWeight || "",
+      mainConfig: recognized.mainConfig || "",
       workingHours: recognized.workingHours ? String(recognized.workingHours) : "",
       condition: recognized.condition || "good",
+      priceMode: recognized.priceMode || "por",
+      tradeTerm: recognized.tradeTerm || "FOB",
+      tradePort: recognized.tradePort || "Qingdao",
     });
   };
 
@@ -114,27 +156,37 @@ export default function SellerAiAssistant({ onFill }: SellerAiAssistantProps) {
     poor: "较差/需维修",
   };
 
+  const renderField = (label: string, value: string | null | undefined, unit?: string) => {
+    if (!value) return null;
+    return (
+      <div className="flex justify-between">
+        <span className="text-gray-500">{label}</span>
+        <span className="font-medium text-gray-900">{value}{unit || ""}</span>
+      </div>
+    );
+  };
+
   return (
     <div className="rounded-xl border border-primary-200 bg-gradient-to-br from-primary-50 to-white p-5 shadow-sm">
       <div className="mb-4 flex items-center gap-2">
         <Sparkles className="h-5 w-5 text-primary-600" />
-        <h3 className="text-base font-bold text-gray-900">AI 拍照识别</h3>
+        <h3 className="text-base font-bold text-gray-900">AI 智能识车</h3>
         <span className="rounded-full bg-primary-100 px-2 py-0.5 text-[10px] font-medium text-primary-700">
           Beta
         </span>
       </div>
 
       <p className="mb-4 text-sm text-gray-500">
-        上传农机照片，AI 自动识别品牌、型号、年份等信息，一键填充表单
+        上传农机照片（整机全貌、铭牌、驾驶室），AI 自动识别全部规格字段，一键填充表单
       </p>
 
       {/* 图片上传区域 */}
       <div className="mb-4">
         {imagePreviews.length > 0 && (
-          <div className="mb-3 grid grid-cols-3 gap-2">
+          <div className="mb-3 grid grid-cols-5 gap-2">
             {imagePreviews.map((url, idx) => (
               <div key={idx} className="relative rounded-lg border border-gray-200 bg-gray-50 p-1">
-                <img src={url} alt="" className="h-20 w-full rounded object-cover" />
+                <img src={url} alt="" className="h-16 w-full rounded object-cover" />
                 <button
                   onClick={() => removeImage(idx)}
                   className="absolute -right-1 -top-1 rounded-full bg-red-500 p-0.5 text-white hover:bg-red-600"
@@ -146,7 +198,7 @@ export default function SellerAiAssistant({ onFill }: SellerAiAssistantProps) {
           </div>
         )}
 
-        {imagePreviews.length < 3 && (
+        {imagePreviews.length < 5 && (
           <div
             onClick={() => imageInputRef.current?.click()}
             className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-primary-300 bg-primary-50/50 p-4 transition-colors hover:border-primary-500 hover:bg-primary-50"
@@ -155,7 +207,7 @@ export default function SellerAiAssistant({ onFill }: SellerAiAssistantProps) {
             <p className="text-xs font-medium text-primary-700">
               {imagePreviews.length === 0 ? "点击上传农机照片" : "继续添加"}
             </p>
-            <p className="text-[11px] text-primary-400">建议：整机全貌、型号铭牌、驾驶室</p>
+            <p className="text-[11px] text-primary-400">建议：整机全貌、型号铭牌、驾驶室、轮胎/底盘</p>
           </div>
         )}
 
@@ -207,44 +259,22 @@ export default function SellerAiAssistant({ onFill }: SellerAiAssistantProps) {
           </div>
 
           <div className="space-y-2 text-sm">
-            {recognized.brand && (
-              <div className="flex justify-between">
-                <span className="text-gray-500">品牌</span>
-                <span className="font-medium text-gray-900">{recognized.brand}</span>
-              </div>
-            )}
-            {recognized.modelName && (
-              <div className="flex justify-between">
-                <span className="text-gray-500">型号</span>
-                <span className="font-medium text-gray-900">{recognized.modelName}</span>
-              </div>
-            )}
-            {recognized.year && (
-              <div className="flex justify-between">
-                <span className="text-gray-500">年份</span>
-                <span className="font-medium text-gray-900">{recognized.year} 年</span>
-              </div>
-            )}
-            {recognized.workingHours && (
-              <div className="flex justify-between">
-                <span className="text-gray-500">工作小时</span>
-                <span className="font-medium text-gray-900">{recognized.workingHours} h</span>
-              </div>
-            )}
-            {recognized.condition && (
-              <div className="flex justify-between">
-                <span className="text-gray-500">状况</span>
-                <span className="font-medium text-gray-900">
-                  {conditionMap[recognized.condition] || recognized.condition}
-                </span>
-              </div>
-            )}
-            {recognized.features && (
-              <div className="flex justify-between">
-                <span className="text-gray-500">特征</span>
-                <span className="font-medium text-gray-900">{recognized.features}</span>
-              </div>
-            )}
+            {renderField("品牌", recognized.brand)}
+            {renderField("型号", recognized.modelName)}
+            {recognized.year && renderField("年份", `${recognized.year} 年`)}
+            {renderField("马力(HP)", recognized.enginePower)}
+            {renderField("发动机类型", recognized.engineType)}
+            {renderField("驱动方式", DRIVE_SYSTEM_MAP[recognized.driveSystem || ""] || recognized.driveSystem)}
+            {renderField("总长(mm)", recognized.overallLength)}
+            {renderField("总宽(mm)", recognized.overallWidth)}
+            {renderField("总高(mm)", recognized.overallHeight)}
+            {renderField("整机净重(kg)", recognized.netWeight)}
+            {renderField("主要配置", recognized.mainConfig)}
+            {recognized.workingHours && renderField("工作小时", `${recognized.workingHours} h`)}
+            {recognized.condition && renderField("成色", conditionMap[recognized.condition] || recognized.condition)}
+            {renderField("价格模式", PRICE_MODE_MAP[recognized.priceMode || ""] || recognized.priceMode)}
+            {renderField("贸易条款", recognized.tradeTerm)}
+            {renderField("发货港口", recognized.tradePort)}
           </div>
 
           <button
