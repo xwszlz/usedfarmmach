@@ -202,6 +202,11 @@ async function analyzeWithOpenRouter(imageUrl: string): Promise<ImageAnalysisRes
   console.log(`[ImageAnalyzer] 调用 OpenRouter API...`);
   console.log(`[ImageAnalyzer] API Endpoint: ${OPENROUTER_BASE}/chat/completions`);
   
+  // 下载图片并转为 base64（provider 可能无法直接访问 OSS URL）
+  console.log(`[ImageAnalyzer] 下载图片并转为 base64...`);
+  const base64Image = await fetchImageAsBase64(imageUrl);
+  console.log(`[ImageAnalyzer] 图片 base64 长度: ${base64Image.length}`);
+  
   const requestBody = {
     model: "meta-llama/llama-3.2-11b-vision-instruct",
     messages: [
@@ -240,7 +245,7 @@ JSON字段说明：
           },
           {
             type: "image_url",
-            image_url: { url: imageUrl },
+            image_url: { url: `data:image/jpeg;base64,${base64Image}` },
           },
         ],
       },
