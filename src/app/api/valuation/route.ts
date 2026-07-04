@@ -77,6 +77,14 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: false, error: "产品不存在" }, { status: 404 });
       }
 
+      console.log("[Valuation V4] 产品数据:", {
+        productId,
+        imageCount: product.images?.length || 0,
+        videoCount: product.videos?.length || 0,
+        hasEnginePower: !!product.enginePower,
+        hasDriveSystem: !!product.driveSystem,
+      });
+
       const intlPrice = product.internationalPrices[0] || null;
 
       // 合并数据库字段和请求体字段（请求体优先）
@@ -139,12 +147,28 @@ export async function POST(request: NextRequest) {
       
       // 1. 图片分析（如果提供了图片且未跳过）
       let visualResult = undefined;
+      console.log("[Valuation V4] 图片分析检查:", {
+        skipImageAnalysis,
+        imageUrlsCount: input.imageUrls?.length || 0,
+        imageUrls: input.imageUrls?.slice(0, 2), // 只打印前2个URL
+      });
+      
       if (!skipImageAnalysis && input.imageUrls && input.imageUrls.length > 0) {
         try {
+          console.log("[Valuation V4] 开始图片分析, URLs:", input.imageUrls.length);
           visualResult = await analyzeProductImages(input.imageUrls);
+          console.log("[Valuation V4] 图片分析完成:", {
+            visualConditionScore: visualResult.visualConditionScore,
+            usedV4Condition: visualResult.usedV4Condition,
+            imageConfidence: visualResult.imageConfidence,
+          });
         } catch (error) {
           console.warn("[Valuation V4] 图片分析失败，降级到V2:", error);
         }
+      } else {
+        console.log("[Valuation V4] 跳过图片分析:", {
+          reason: skipImageAnalysis ? "用户跳过" : "无图片URL",
+        });
       }
 
       // 2. 视频分析（如果提供了视频URL）
@@ -237,6 +261,14 @@ export async function GET(request: NextRequest) {
     if (!product) {
       return NextResponse.json({ success: false, error: "产品不存在" }, { status: 404 });
     }
+
+    console.log("[Valuation V4 GET] 产品数据:", {
+      productId,
+      imageCount: product.images?.length || 0,
+      videoCount: product.videos?.length || 0,
+      hasEnginePower: !!product.enginePower,
+      hasDriveSystem: !!product.driveSystem,
+    });
 
     const intlPrice = product.internationalPrices[0] || null;
 

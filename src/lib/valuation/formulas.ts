@@ -72,6 +72,17 @@ export interface ValuationDetail {
 }
 
 /**
+ * V4新增：规格详情接口
+ * 用于API响应中的 specDetails 字段
+ */
+export interface SpecDetail {
+  field: string;      // 规格字段名（如 enginePower, driveSystem）
+  value: string;       // 字段值（如 "480HP", "四驱(4WD)"）
+  weight: number;      // 权重（0-1）
+  score: number;       // 评分（1-10）
+}
+
+/**
  * V4估值结果接口（扩展V2）
  */
 export interface ValuationResult {
@@ -101,7 +112,7 @@ export interface ValuationResult {
 
   // V4 新增：规格因子
   specFactor?: number;            // 规格综合因子
-  specDetails?: ValuationDetail[]; // 规格影响详情
+  specDetails?: SpecDetail[];    // 规格影响详情（包含 field, value, weight, score）
 
   // V4 新增：多模态信息
   imageCount?: number;           // 图片数量
@@ -239,35 +250,58 @@ function calcMarketFactor(foreignPriceCny: number | undefined, baseValue: number
  */
 function calcSpecFactor(input: ValuationInput): {
   specFactor: number;
-  specDetails: ValuationDetail[];
+  specDetails: SpecDetail[];
+  specValuationDetails: ValuationDetail[]; // 用于详情展示
 } {
-  const specDetails: ValuationDetail[] = [];
+  const specDetails: SpecDetail[] = [];
+  const specValuationDetails: ValuationDetail[] = [];
   let specFactor = 1.0;
 
   // 1. 马力因子
   let enginePowerFactor = 1.0;
   if (input.enginePower && input.enginePower > 0) {
-    // 获取同类产品平均马力（估算）
     const avgPower = getAveragePowerForCategory(input.category);
+    let score = 5; // 默认评分
     
     if (input.enginePower > avgPower * 1.2) {
-      enginePowerFactor = 1.08; // 马力明显高于平均 → 加分
+      enginePowerFactor = 1.08;
+      score = 8;
       specDetails.push({
+        field: "enginePower",
+        value: `${input.enginePower}HP`,
+        weight: 0.3,
+        score: score,
+      });
+      specValuationDetails.push({
         label: "马力优势",
         value: `+${Math.round((input.enginePower / avgPower - 1) * 100)}%`,
         impact: "positive",
         description: `${input.enginePower}HP，高于同类平均${avgPower}HP`,
       });
     } else if (input.enginePower < avgPower * 0.8) {
-      enginePowerFactor = 0.95; // 马力偏低 → 扣分
+      enginePowerFactor = 0.95;
+      score = 4;
       specDetails.push({
+        field: "enginePower",
+        value: `${input.enginePower}HP`,
+        weight: 0.3,
+        score: score,
+      });
+      specValuationDetails.push({
         label: "马力偏低",
         value: `-${Math.round((1 - input.enginePower / avgPower) * 100)}%`,
         impact: "negative",
         description: `${input.enginePower}HP，低于同类平均${avgPower}HP`,
       });
     } else {
+      score = 6;
       specDetails.push({
+        field: "enginePower",
+        value: `${input.enginePower}HP`,
+        weight: 0.3,
+        score: score,
+      });
+      specValuationDetails.push({
         label: "马力标准",
         value: "标准",
         impact: "neutral",
@@ -284,6 +318,12 @@ function calcSpecFactor(input: ValuationInput): {
     if (driveUpper.includes("4WD") || driveUpper.includes("四驱")) {
       driveSystemFactor = 1.05;
       specDetails.push({
+        field: "driveSystem",
+        value: "四驱(4WD)",
+        weight: 0.2,
+        score: 9,
+      });
+      specValuationDetails.push({
         label: "驱动方式",
         value: "四驱(4WD)",
         impact: "positive",
@@ -292,6 +332,12 @@ function calcSpecFactor(input: ValuationInput): {
     } else if (driveUpper.includes("FULL HYDRAULIC") || driveUpper.includes("全液压")) {
       driveSystemFactor = 1.03;
       specDetails.push({
+        field: "driveSystem",
+        value: "全液压",
+        weight: 0.2,
+        score: 7,
+      });
+      specValuationDetails.push({
         label: "驱动方式",
         value: "全液压",
         impact: "positive",
@@ -300,6 +346,12 @@ function calcSpecFactor(input: ValuationInput): {
     } else if (driveUpper.includes("2WD") || driveUpper.includes("二驱")) {
       driveSystemFactor = 1.0;
       specDetails.push({
+        field: "driveSystem",
+        value: "二驱(2WD)",
+        weight: 0.2,
+        score: 5,
+      });
+      specValuationDetails.push({
         label: "驱动方式",
         value: "二驱(2WD)",
         impact: "neutral",
@@ -307,6 +359,12 @@ function calcSpecFactor(input: ValuationInput): {
       });
     } else {
       specDetails.push({
+        field: "driveSystem",
+        value: input.driveSystem,
+        weight: 0.2,
+        score: 5,
+      });
+      specValuationDetails.push({
         label: "驱动方式",
         value: input.driveSystem,
         impact: "neutral",
@@ -319,8 +377,14 @@ function calcSpecFactor(input: ValuationInput): {
   // 3. 主要配置因子
   let mainConfigFactor = 1.0;
   if (input.mainConfig && input.mainConfig.trim().length > 0) {
-    mainConfigFactor = 1.02; // 有配置描述 → 轻微加分
+    mainConfigFactor = 1.02;
     specDetails.push({
+      field: "mainConfig",
+      value: input.mainConfig.substring(0, 50),
+      weight: 0.15,
+      score: 6,
+    });
+    specValuationDetails.push({
       label: "主要配置",
       value: "有配置描述",
       impact: "positive",
@@ -334,6 +398,12 @@ function calcSpecFactor(input: ValuationInput): {
     const avgWeight = getAverageWeightForCategory(input.category);
     if (input.netWeight > avgWeight * 1.1) {
       specDetails.push({
+        field: "netWeight",
+        value: `${Math.round(input.netWeight / 1000)}吨`,
+        weight: 0.1,
+        score: 7,
+      });
+      specValuationDetails.push({
         label: "整机重量",
         value: `${Math.round(input.netWeight / 1000)}吨`,
         impact: "positive",
@@ -341,6 +411,12 @@ function calcSpecFactor(input: ValuationInput): {
       });
     } else {
       specDetails.push({
+        field: "netWeight",
+        value: `${Math.round(input.netWeight / 1000)}吨`,
+        weight: 0.1,
+        score: 5,
+      });
+      specValuationDetails.push({
         label: "整机重量",
         value: `${Math.round(input.netWeight / 1000)}吨`,
         impact: "neutral",
@@ -351,15 +427,22 @@ function calcSpecFactor(input: ValuationInput): {
 
   // 5. 尺寸因子（可选，用于记录）
   if (input.overallLength || input.overallWidth || input.overallHeight) {
+    const dimValue = `${input.overallLength ? `${Math.round(input.overallLength / 1000)}m ` : ""}${input.overallWidth ? `${Math.round(input.overallWidth / 1000)}m ` : ""}${input.overallHeight ? `${Math.round(input.overallHeight / 1000)}m` : ""}`.trim();
     specDetails.push({
+      field: "dimensions",
+      value: dimValue,
+      weight: 0.05,
+      score: 5,
+    });
+    specValuationDetails.push({
       label: "外形尺寸",
       value: "已记录",
       impact: "neutral",
-      description: `${input.overallLength ? `长${Math.round(input.overallLength / 1000)}m ` : ""}${input.overallWidth ? `宽${Math.round(input.overallWidth / 1000)}m ` : ""}${input.overallHeight ? `高${Math.round(input.overallHeight / 1000)}m` : ""}`,
+      description: dimValue,
     });
   }
 
-  return { specFactor, specDetails };
+  return { specFactor, specDetails, specValuationDetails };
 }
 
 /**
@@ -531,7 +614,7 @@ export async function calculateValuationV4(
 
   // === V4 新增：规格因子 ===
   
-  const { specFactor, specDetails } = calcSpecFactor(input);
+  const { specFactor, specDetails, specValuationDetails } = calcSpecFactor(input);
   estimatedValue = Math.round(estimatedValue * specFactor);
 
   // === V4 新增：视频因子 ===
@@ -613,8 +696,8 @@ export async function calculateValuationV4(
   ];
 
   // 添加规格详情
-  if (specDetails.length > 0) {
-    details.push(...specDetails);
+  if (specValuationDetails.length > 0) {
+    details.push(...specValuationDetails);
   }
 
   // 添加视频因子详情
