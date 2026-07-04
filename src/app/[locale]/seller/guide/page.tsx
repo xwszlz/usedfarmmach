@@ -17,7 +17,7 @@ export default function PublishGuidePage() {
           {[
             { step: "1", icon: FileText, title: "注册并登录", desc: "点击右上角「注册」创建卖家账号，或直接登录已有账号。登录后导航栏会出现「卖家中心」入口。" },
             { step: "2", icon: CheckCircle, title: "进入卖家中心", desc: "点击导航栏「卖家中心」进入产品管理页面，点击「发布新产品」按钮开始填写产品信息。" },
-            { step: "3", icon: Camera, title: "填写产品信息", desc: "准确填写品牌、型号、年份、工时、成色、价格、位置等信息。越详细越容易成交。" },
+            { step: "3", icon: Camera, title: "填写产品信息", desc: "准确填写品牌、型号、年份、工时、成色、价格、位置等信息。越详细越容易成交。也可以使用AI拍照识别功能，上传照片后自动填充规格字段。小程序用户可拍8张定向照片+1个运转视频，系统自动识别并估值。" },
             { step: "4", icon: DollarSign, title: "消耗积分发布", desc: "每发布一台产品消耗 1 积分。首次注册赠送 1 积分，积分不足时联系管理员充值。" },
             { step: "5", icon: MessageCircle, title: "等待买家询盘", desc: "产品上线后买家将能看到并联系您。您可以在卖家中心查看收到的询盘信息。" },
           ].map((item) => (
@@ -69,6 +69,14 @@ export default function PublishGuidePage() {
           <div className="flex gap-2">
             <span className="flex-shrink-0 rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">描述</span>
             <span className="text-gray-600">可补充产品配置、维修历史、亮点说明等。内容越详细，买家询盘率越高。</span>
+          </div>
+          <div className="flex gap-2">
+            <span className="flex-shrink-0 rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">视频</span>
+            <span className="text-gray-600">上传运转视频可提升买家信任度，并纳入估值参考。建议MP4格式，15-120秒，包含：绕机全景、发动机启动、作业演示、仪表展示、铭牌特写。</span>
+          </div>
+          <div className="flex gap-2">
+            <span className="flex-shrink-0 rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">港口</span>
+            <span className="text-gray-600">发货港口根据您的位置自动匹配最近港口（如河北→天津港，山东→青岛港），可手动修改。</span>
           </div>
         </div>
       </div>

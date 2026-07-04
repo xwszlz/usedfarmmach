@@ -12,6 +12,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { uploadBufferToOSS } from "@/lib/oss-upload";
 import { hashPassword } from "@/lib/auth";
+import { matchPortByLocation } from "@/lib/port-matcher";
+import { calculateValuationV4, type ValuationInput } from "@/lib/valuation/formulas";
+import { analyzeProductImages } from "@/lib/valuation/image-analyzer";
+import { analyzeVideo, calculateVideoFactor } from "@/lib/valuation/video-analyzer";
+import { getDetailImageUrl, getVideoUrl } from "@/lib/image-url";
+import axios from "axios";
 import crypto from "crypto";
 
 // Vercel Serverless Function 超时延长至300秒（Pro计划上限）
@@ -269,7 +275,7 @@ export async function POST(request: NextRequest) {
       // 贸易信息
       priceMode = 'por',
       tradeTerm = 'FOB',
-      tradePort = '青岛',
+      tradePort = '',
       // 旧字段名（向后兼容，优先级低于新字段名）
       descPower,
       descDrive,
@@ -281,9 +287,13 @@ export async function POST(request: NextRequest) {
       location,
       images = [],
       video,
+      // autoAI: 小程序提交时设为true，触发服务端自动AI识别+估值
+      autoAI = false,
+      photoLabels,
     } = body;
 
-    // 新旧字段兼容映射
+    // 港口自动匹配：如果未指定港口，根据位置自动匹配
+    const finalTradePort = tradePort || (location ? matchPortByLocation(location) : '青岛');
     const finalEnginePower = enginePower ?? descPower;
     const finalEngineType = engineType ?? null;
     const finalDriveSystem = driveSystem ?? descDrive ?? null;
@@ -360,8 +370,8 @@ export async function POST(request: NextRequest) {
     if (overallLength || overallWidth || overallHeight) {
       descParts.push(`尺寸：${overallLength || '-'}×${overallWidth || '-'}×${overallHeight || '-'} mm`);
     }
-    if (priceMode || tradeTerm || tradePort) {
-      descParts.push(`贸易：${priceMode?.toUpperCase() || ''}/${tradeTerm || ''}/${tradePort || ''}`);
+    if (priceMode || tradeTerm || finalTradePort) {
+      descParts.push(`贸易：${priceMode?.toUpperCase() || ''}/${tradeTerm || ''}/${finalTradePort || ''}`);
     }
     if (descOther) descParts.push(descOther);
     const descriptionZh = descParts.join("\n") || null;
@@ -395,7 +405,7 @@ export async function POST(request: NextRequest) {
         // 贸易信息
         priceMode,
         tradeTerm,
-        tradePort,
+        tradePort: finalTradePort,
       },
     });
     createdProductId = product.id;
@@ -512,6 +522,213 @@ export async function POST(request: NextRequest) {
     });
     console.log(`[internal/products] step-6 credits deducted in ${Date.now() - t6}ms`);
 
+    // ── Step 7: autoAI 处理（小程序提交时触发）──
+    let aiEnhanced = false;
+    let aiValuationResult: any = null;
+
+    if (autoAI) {
+      const t7 = Date.now();
+      console.log(`[internal/products] step-7 autoAI started for product ${product.id}`);
+
+      try {
+        // 7a. 获取已上传图片的完整URL
+        const productImages = await prisma.productImage.findMany({
+          where: { productId: product.id },
+          orderBy: { sortOrder: "asc" },
+        });
+        const imageFullUrls = productImages.map(img => getDetailImageUrl(img.url));
+
+        // 7b. AI 识别（调用 GPT-4o-mini 多模态识别）
+        let recognizedData: Record<string, any> | null = null;
+        const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+        if (OPENROUTER_API_KEY && imageFullUrls.length > 0) {
+          try {
+            const recognizeResponse = await axios.post(
+              "https://openrouter.ai/api/v1/chat/completions",
+              {
+                model: "openai/gpt-4o-mini",
+                messages: [{
+                  role: "user",
+                  content: [
+                    {
+                      type: "text",
+                      text: `你是一位资深二手农业机械专家。请根据提供的农机图片，识别以下信息，以 JSON 格式返回。
+返回字段：brand, modelName, year, enginePower, engineType, driveSystem, overallLength, overallWidth, overallHeight, netWeight, mainConfig, workingHours, condition, confidence
+无法识别的字段设为 null。只返回 JSON。`,
+                    },
+                    ...imageFullUrls.slice(0, 8).map(url => ({
+                      type: "image_url" as const,
+                      image_url: { url },
+                    })),
+                  ],
+                }],
+                response_format: { type: "json_object" },
+                max_tokens: 800,
+              },
+              {
+                headers: {
+                  Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+                  "Content-Type": "application/json",
+                  "HTTP-Referer": "https://usedfarmmach.com",
+                  "X-Title": "Internal Product AutoAI",
+                },
+                timeout: 45000,
+              }
+            );
+
+            const aiText = (recognizeResponse.data as any).choices?.[0]?.message?.content || "";
+            try {
+              recognizedData = JSON.parse(aiText);
+            } catch {
+              const jsonMatch = aiText.match(/\{[\s\S]*\}/);
+              if (jsonMatch) recognizedData = JSON.parse(jsonMatch[0]);
+            }
+            console.log(`[internal/products] step-7a AI recognized: brand=${recognizedData?.brand}, model=${recognizedData?.modelName}, confidence=${recognizedData?.confidence}`);
+          } catch (aiErr) {
+            console.warn(`[internal/products] step-7a AI recognition failed (non-blocking):`, aiErr instanceof Error ? aiErr.message : String(aiErr));
+          }
+        }
+
+        // 7c. 字段合并（用户优先 > AI补空）
+        if (recognizedData) {
+          const mergedUpdate: Record<string, any> = {};
+
+          // AI补空：用户没填的字段用AI识别结果填充
+          if (!modelName && recognizedData.modelName) mergedUpdate.modelName = recognizedData.modelName;
+          if (!year && recognizedData.year) mergedUpdate.year = Number(recognizedData.year);
+          if (!finalEnginePower && recognizedData.enginePower) mergedUpdate.enginePower = Number(recognizedData.enginePower);
+          if (!finalEngineType && recognizedData.engineType) mergedUpdate.engineType = recognizedData.engineType;
+          if (!finalDriveSystem && recognizedData.driveSystem) mergedUpdate.driveSystem = recognizedData.driveSystem;
+          if (!overallLength && recognizedData.overallLength) mergedUpdate.overallLength = Number(recognizedData.overallLength);
+          if (!overallWidth && recognizedData.overallWidth) mergedUpdate.overallWidth = Number(recognizedData.overallWidth);
+          if (!overallHeight && recognizedData.overallHeight) mergedUpdate.overallHeight = Number(recognizedData.overallHeight);
+          if (!finalNetWeight && recognizedData.netWeight) mergedUpdate.netWeight = Number(recognizedData.netWeight);
+          if (!finalMainConfig && recognizedData.mainConfig) mergedUpdate.mainConfig = recognizedData.mainConfig;
+          if (condition === "good" && recognizedData.condition && recognizedData.condition !== "good") {
+            mergedUpdate.condition = recognizedData.condition;
+          }
+
+          // 标记为AI增强
+          if (Object.keys(mergedUpdate).length > 0) {
+            mergedUpdate.aiGenerated = true;
+            await prisma.product.update({
+              where: { id: product.id },
+              data: mergedUpdate,
+            });
+            aiEnhanced = true;
+            console.log(`[internal/products] step-7c product updated with AI fields:`, Object.keys(mergedUpdate).join(", "));
+          }
+        }
+
+        // 7d. AI 估值（图片分析 + 视频分析 + 估值公式）
+        try {
+          // 获取更新后的产品数据
+          const updatedProduct = await prisma.product.findUnique({
+            where: { id: product.id },
+            include: {
+              brand: true,
+              category: true,
+              images: { orderBy: { sortOrder: "asc" } },
+              videos: { orderBy: { sortOrder: "asc" } },
+            },
+          });
+
+          if (updatedProduct) {
+            // 图片分析
+            let visualResult = undefined;
+            if (imageFullUrls.length > 0) {
+              try {
+                visualResult = await analyzeProductImages(imageFullUrls);
+              } catch (e) {
+                console.warn("[internal/products] step-7d image analysis failed:", e);
+              }
+            }
+
+            // 视频分析
+            let videoAnalysisResult = undefined;
+            if (updatedProduct.videos.length > 0) {
+              try {
+                const videoFullUrl = getVideoUrl(updatedProduct.videos[0].url);
+                if (videoFullUrl) {
+                  videoAnalysisResult = await analyzeVideo(videoFullUrl);
+                  console.log("[internal/products] step-7d video analysis done:", videoAnalysisResult.engineSoundStatus);
+                }
+              } catch (e) {
+                console.warn("[internal/products] step-7d video analysis failed:", e);
+              }
+            }
+
+            // 估值计算
+            const valuationInput: ValuationInput = {
+              brand: updatedProduct.brand?.nameZh || brandName || "",
+              modelName: updatedProduct.modelName,
+              category: updatedProduct.category?.nameZh || categoryName || "",
+              year: updatedProduct.year,
+              workingHours: updatedProduct.workingHours ?? undefined,
+              condition: updatedProduct.condition,
+              priceCny: updatedProduct.priceCny,
+              location: updatedProduct.location,
+              imageUrls: imageFullUrls,
+              videoUrls: updatedProduct.videos.map(v => v.url),
+              enginePower: updatedProduct.enginePower ?? undefined,
+              driveSystem: updatedProduct.driveSystem ?? undefined,
+              mainConfig: updatedProduct.mainConfig ?? undefined,
+              netWeight: updatedProduct.netWeight ?? undefined,
+              overallLength: updatedProduct.overallLength ?? undefined,
+              overallWidth: updatedProduct.overallWidth ?? undefined,
+              overallHeight: updatedProduct.overallHeight ?? undefined,
+            };
+
+            if (videoAnalysisResult) {
+              valuationInput.videoAnalysisResult = videoAnalysisResult;
+            }
+
+            const valuationResult = await calculateValuationV4(valuationInput, visualResult);
+            aiValuationResult = {
+              estimatedValue: valuationResult.estimatedValue,
+              priceRange: valuationResult.priceRange,
+              confidenceScore: valuationResult.confidenceScore,
+              analysis: valuationResult.analysis,
+              videoFactor: valuationResult.videoFactor,
+            };
+
+            // 保存估值记录
+            await prisma.valuation.create({
+              data: {
+                productId: product.id,
+                brandId: updatedProduct.brandId,
+                modelName: updatedProduct.modelName,
+                year: updatedProduct.year,
+                workingHours: updatedProduct.workingHours,
+                estimatedPriceCny: valuationResult.estimatedValue,
+                estimatedPriceUsd: Math.round(valuationResult.estimatedValue / 7.25),
+                confidenceScore: valuationResult.confidenceScore,
+                factors: JSON.stringify({
+                  brandFactor: valuationResult.brandFactor,
+                  yearFactor: valuationResult.yearFactor,
+                  hoursFactor: valuationResult.hoursFactor,
+                  conditionFactor: valuationResult.conditionFactor,
+                  marketFactor: valuationResult.marketFactor,
+                  specFactor: valuationResult.specFactor,
+                  videoFactor: valuationResult.videoFactor,
+                  details: valuationResult.details,
+                }),
+              },
+            });
+
+            console.log(`[internal/products] step-7d valuation done: ¥${Math.round(valuationResult.estimatedValue / 10000)}万 (confidence: ${valuationResult.confidenceScore})`);
+          }
+        } catch (valErr) {
+          console.warn("[internal/products] step-7d valuation failed (non-blocking):", valErr instanceof Error ? valErr.message : String(valErr));
+        }
+
+        console.log(`[internal/products] step-7 autoAI completed in ${Date.now() - t7}ms, aiEnhanced=${aiEnhanced}`);
+      } catch (autoAiErr) {
+        // autoAI 整体失败不阻塞产品发布
+        console.warn(`[internal/products] step-7 autoAI failed (non-blocking):`, autoAiErr instanceof Error ? autoAiErr.message : String(autoAiErr));
+      }
+    }
+
     // ── 完成 ──
     const totalMs = Date.now() - requestStartTime;
     console.log(
@@ -528,6 +745,8 @@ export async function POST(request: NextRequest) {
         creditsRemaining: user.credits - PUBLISH_COST,
         status: productStatus,
         isImported,
+        aiEnhanced,
+        aiValuation: aiValuationResult,
         message: isImported
           ? "国际品牌，手机+网站同时展示"
           : "国产品牌，仅在小程序展示",

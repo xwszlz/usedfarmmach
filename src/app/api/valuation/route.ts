@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { calculateValuation, calculateValuationV4, type ValuationInput, type ValuationResult } from "@/lib/valuation/formulas";
 import { analyzeProductImages } from "@/lib/valuation/image-analyzer";
+import { analyzeVideo } from "@/lib/valuation/video-analyzer";
+import { getVideoUrl } from "@/lib/image-url";
 
 export const dynamic = "force-dynamic";
 
@@ -145,7 +147,30 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // 2. 调用 V4 估值函数
+      // 2. 视频分析（如果提供了视频URL）
+      let videoAnalysisResult = undefined;
+      if (input.videoUrls && input.videoUrls.length > 0) {
+        try {
+          const videoFullUrl = getVideoUrl(input.videoUrls[0]);
+          if (videoFullUrl) {
+            videoAnalysisResult = await analyzeVideo(videoFullUrl);
+            console.log("[Valuation V4] 视频分析完成:", {
+              qualityScore: videoAnalysisResult.qualityScore,
+              engineSoundStatus: videoAnalysisResult.engineSoundStatus,
+              mechanismSmoothness: videoAnalysisResult.mechanismSmoothness,
+            });
+          }
+        } catch (error) {
+          console.warn("[Valuation V4] 视频分析失败，降级到无视频:", error);
+        }
+      }
+
+      // 3. 将视频分析结果注入input
+      if (videoAnalysisResult) {
+        input.videoAnalysisResult = videoAnalysisResult;
+      }
+
+      // 4. 调用 V4 估值函数
       result = await calculateValuationV4(input, visualResult);
     } else {
       // V2 引擎：传统估值
@@ -255,6 +280,22 @@ export async function GET(request: NextRequest) {
         } catch (error) {
           console.warn("[Valuation V4 GET] 图片分析失败，降级到V2:", error);
         }
+      }
+
+      // V4: 视频分析
+      let videoAnalysisResult = undefined;
+      if (input.videoUrls && input.videoUrls.length > 0) {
+        try {
+          const videoFullUrl = getVideoUrl(input.videoUrls[0]);
+          if (videoFullUrl) {
+            videoAnalysisResult = await analyzeVideo(videoFullUrl);
+          }
+        } catch (error) {
+          console.warn("[Valuation V4 GET] 视频分析失败:", error);
+        }
+      }
+      if (videoAnalysisResult) {
+        input.videoAnalysisResult = videoAnalysisResult;
       }
 
       result = await calculateValuationV4(input, visualResult);

@@ -27,6 +27,9 @@ import {
 // V4: 导入图片分析模块
 import { type VisualValuationResult, visualScoreToConditionFactor } from "./image-analyzer";
 
+// V4: 导入视频分析模块
+import { type VideoAnalysisResult, calculateVideoFactor } from "./video-analyzer";
+
 /**
  * V4估值输入接口（扩展V2）
  */
@@ -56,6 +59,9 @@ export interface ValuationInput {
 
   // V4 新增：预分析的视觉结果（避免重复调用LLM）
   visualResult?: VisualValuationResult;
+
+  // V4 新增：预分析的视频结果
+  videoAnalysisResult?: VideoAnalysisResult;
 }
 
 export interface ValuationDetail {
@@ -101,6 +107,10 @@ export interface ValuationResult {
   imageCount?: number;           // 图片数量
   videoCount?: number;           // 视频数量
   usedV4Condition?: boolean;    // 是否使用了V4视觉成色
+
+  // V4 新增：视频因子
+  videoFactor?: number;           // 视频因子 0.92~1.08
+  videoAnalysis?: string;         // 视频分析摘要
 }
 
 /**
@@ -524,6 +534,11 @@ export async function calculateValuationV4(
   const { specFactor, specDetails } = calcSpecFactor(input);
   estimatedValue = Math.round(estimatedValue * specFactor);
 
+  // === V4 新增：视频因子 ===
+  const videoAnalysisResult = input.videoAnalysisResult;
+  const videoFactor = videoAnalysisResult ? calculateVideoFactor(videoAnalysisResult) : 1.0;
+  estimatedValue = Math.round(estimatedValue * videoFactor);
+
   // 7. 折旧率
   const depreciationPercent = Math.round((1 - estimatedValue / basePrice) * 100);
 
@@ -602,6 +617,16 @@ export async function calculateValuationV4(
     details.push(...specDetails);
   }
 
+  // 添加视频因子详情
+  if (videoFactor !== 1.0) {
+    details.push({
+      label: "视频评估",
+      value: videoFactor > 1 ? `+${Math.round((videoFactor - 1) * 100)}%` : `${Math.round((videoFactor - 1) * 100)}%`,
+      impact: videoFactor > 1 ? "positive" : "negative",
+      description: videoAnalysisResult?.analysis || "视频分析完成",
+    });
+  }
+
   // 12. 一句话分析
   let analysis = "";
   const v4Tag = conditionInfo.usedV4 ? "🎯 V4多模态" : "📊 V2传统";
@@ -619,6 +644,11 @@ export async function calculateValuationV4(
   // 添加规格因子说明
   if (specFactor !== 1.0) {
     analysis += ` 规格调整${specFactor > 1 ? "+" : ""}${Math.round((specFactor - 1) * 100)}%。`;
+  }
+
+  // 添加视频因子说明
+  if (videoFactor !== 1.0) {
+    analysis += ` 视频评估${videoFactor > 1 ? "+" : ""}${Math.round((videoFactor - 1) * 100)}%。`;
   }
 
   return {
@@ -648,6 +678,10 @@ export async function calculateValuationV4(
     imageCount: input.imageUrls?.length || 0,
     videoCount: input.videoUrls?.length || 0,
     usedV4Condition: conditionInfo.usedV4,
+
+    // V4 新增：视频因子
+    videoFactor,
+    videoAnalysis: videoAnalysisResult?.analysis,
   };
 }
 

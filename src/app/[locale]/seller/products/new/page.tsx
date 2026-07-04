@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, CheckCircle, AlertCircle, Upload, Camera, Video, Image, Plus, X } from "lucide-react";
 import Link from "next/link";
 import SellerAiAssistant from "@/components/seller/ai-assistant";
+import SalesStrategyCard from "@/components/seller/sales-strategy-card";
+import { matchPortByLocation } from "@/lib/port-matcher";
 
 const CONDITIONS = [
   { value: "excellent", label: "优秀/全新" },
@@ -52,7 +54,14 @@ export default function NewProductPage() {
     });
   }, []);
 
-  const update = (key: string, value: any) => setForm(f => ({ ...f, [key]: value }));
+  const update = (key: string, value: any) => {
+    setForm(f => ({ ...f, [key]: value }));
+    // 位置变化时，自动匹配最近的港口
+    if (key === "location" && value) {
+      const matchedPort = matchPortByLocation(value);
+      setForm(f => ({ ...f, tradePort: matchedPort }));
+    }
+  };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -298,6 +307,18 @@ export default function NewProductPage() {
           </div>
         </div>
 
+        {/* ====== 销售策略参考卡（品牌+品类填写后自动显示）====== */}
+        <SalesStrategyCard
+          brand={brandMode === "select" ? brands.find(b => b.id === form.brandId)?.nameZh || "" : form.brandName}
+          category={catMode === "select" ? categories.find(c => c.id === form.categoryId)?.nameZh || "" : form.categoryName}
+          modelName={form.modelName}
+          year={Number(form.year) || undefined}
+          priceCny={form.priceCny ? Number(form.priceCny) : undefined}
+          condition={form.condition}
+          workingHours={form.workingHours ? parseInt(form.workingHours) : undefined}
+          location={form.location}
+        />
+
         {/* ====== 产品图片 ====== */}
         <h2 className="text-base font-bold text-gray-800 border-b pb-2">产品图片（整机和关键部位）</h2>
 
@@ -372,7 +393,14 @@ export default function NewProductPage() {
             <>
               <Video className="mb-2 h-10 w-10 text-gray-300" />
               <p className="text-sm font-medium text-gray-600">点击上传运转视频</p>
-              <p className="mt-1 text-xs text-gray-400">MP4 格式，100MB 以内。拍摄整机全貌和运转状态</p>
+              <p className="mt-1 text-xs text-gray-400">MP4格式, 100MB内, 15-120秒。建议包含: 绕机全景+发动机启动+作业演示+仪表展示</p>
+              <div className="mt-2 grid grid-cols-5 gap-1 text-[10px] text-gray-400">
+                <span>1.绕机全景</span>
+                <span>2.发动机启动</span>
+                <span>3.作业演示</span>
+                <span>4.仪表展示</span>
+                <span>5.铭牌特写</span>
+              </div>
             </>
           )}
           <input ref={videoInputRef} type="file" accept="video/*" onChange={handleVideoSelect} className="hidden" />

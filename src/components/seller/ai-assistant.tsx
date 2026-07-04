@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { Camera, Sparkles, Wand2, CheckCircle, AlertCircle, Loader2, Upload } from "lucide-react";
+import { matchPortByLocation } from "@/lib/port-matcher";
 
 interface AiRecognizedData {
   brand: string | null;
@@ -145,7 +146,7 @@ export default function SellerAiAssistant({ onFill }: SellerAiAssistantProps) {
       condition: recognized.condition || "good",
       priceMode: recognized.priceMode || "por",
       tradeTerm: recognized.tradeTerm || "FOB",
-      tradePort: recognized.tradePort || "Qingdao",
+      tradePort: recognized.tradePort || matchPortByLocation(""),
     });
   };
 
