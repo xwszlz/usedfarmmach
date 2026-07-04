@@ -17,6 +17,7 @@ export const mainNavEn: NavItem[] = [
     label: "BUY",
     children: [
       { href: "/products", label: "Browse Equipment" },
+      { href: "/products?match=true", label: "Buyer Request" },
       { href: "/brand/claas", label: "CLAAS" },
       { href: "/brand/new-holland", label: "New Holland" },
       { href: "/brand/john-deere", label: "John Deere" },
@@ -33,6 +34,7 @@ export const mainNavEn: NavItem[] = [
       { href: "/seller/products/new", label: "List Equipment" },
       { href: "/seller/guide", label: "Listing Guide" },
       { href: "/seller/products", label: "Seller Center" },
+      { href: "/seller/inquiries", label: "Inquiries" },
     ],
   },
   {
@@ -47,6 +49,7 @@ export const mainNavEn: NavItem[] = [
     label: "SERVICES",
     children: [
       { href: "/logistics", label: "Logistics" },
+      { href: "/standards", label: "Standards" },
       { href: "/about#contact", label: "Contact Us" },
     ],
   },
@@ -63,6 +66,7 @@ export const mainNav: NavItem[] = [
     labelKey: "nav.buyMachinery",
     children: [
       { href: "/products", labelKey: "nav.browseEquipment" },
+      { href: "/products?match=true", labelKey: "nav.buyerRequest" },
       { href: "/brand/claas", label: "CLAAS" },
       { href: "/brand/new-holland", label: "New Holland" },
       { href: "/brand/krone", label: "Krone" },
@@ -83,6 +87,7 @@ export const mainNav: NavItem[] = [
       { href: "/seller/products/new", labelKey: "nav.publishProduct" },
       { href: "/seller/guide", labelKey: "nav.publishGuide" },
       { href: "/seller/products", labelKey: "nav.sellerCenter" },
+      { href: "/seller/inquiries", labelKey: "nav.inquiryManagement" },
     ],
   },
   {
@@ -97,6 +102,7 @@ export const mainNav: NavItem[] = [
     labelKey: "nav.serviceSupport",
     children: [
       { href: "/logistics", labelKey: "nav.logistics" },
+      { href: "/standards", labelKey: "nav.standards" },
       { href: "/about#contact", labelKey: "nav.contactUs" },
     ],
   },

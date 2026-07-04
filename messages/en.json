@@ -53,12 +53,14 @@
     "publishProduct": "List Equipment",
     "publishGuide": "Listing Guide",
     "sellerCenter": "Seller Center",
+    "inquiryManagement": "Inquiries",
     "buyerRequest": "Buyer Requests",
     "dailyReport": "Daily Report",
     "arbitrageAnalysis": "Arbitrage Analysis",
     "industryReport": "Industry Report",
     "inspectionService": "Inspection",
     "parts": "Parts",
+    "standards": "Standards",
     "contactUs": "Contact Us"
   },
   "home": {

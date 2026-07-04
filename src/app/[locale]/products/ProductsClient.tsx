@@ -6,6 +6,7 @@ import { ProductGrid } from "@/components/product/product-grid";
 import { ProductFilters } from "@/components/product/product-filters";
 import { Pagination } from "@/components/ui/pagination";
 import { ProductGridSkeleton } from "@/components/ui/skeleton";
+import { BuyerMatchCard } from "@/components/buyer/buyer-match-card";
 import type { Product, ProductFilters as Filters, PaginatedResponse } from "@/types";
 
 interface Props {
@@ -138,6 +139,9 @@ export default function ProductsClient({
         </h1>
         <p className="mt-1 text-gray-500">{t("subtitle")}</p>
       </div>
+
+      {/* Buyer Match Card */}
+      <BuyerMatchCard locale={locale} />
 
       <ProductFilters
         filters={filters}
