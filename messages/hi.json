@@ -44,7 +44,22 @@
     "intelligence": "बाजार खुफिया",
     "blog": "ब्लॉग",
     "brands": "ब्रांड",
-    "categories": "श्रेणियाँ"
+    "categories": "श्रेणियाँ",
+    "buyMachinery": "खरीदें",
+    "sellMachinery": "बेचें",
+    "marketInsights": "विश्लेषण",
+    "serviceSupport": "सेवाएं",
+    "browseEquipment": "उपकरण देखें",
+    "publishProduct": "प्रकाशित करें",
+    "publishGuide": "गाइड",
+    "sellerCenter": "विक्रेता केंद्र",
+    "buyerRequest": "खरीदार अनुरोध",
+    "dailyReport": "दैनिक रिपोर्ट",
+    "arbitrageAnalysis": "आर्बिट्राज विश्लेषण",
+    "industryReport": "उद्योग रिपोर्ट",
+    "inspectionService": "निरीक्षण",
+    "parts": "पुर्जे",
+    "contactUs": "संपर्क"
   },
   "home": {
     "heroTitle": "वैश्विक कृषि मशीनरी, एक ही मंच",

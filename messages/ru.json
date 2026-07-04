@@ -44,7 +44,22 @@
     "intelligence": "Разведка рынка",
     "blog": "Новости отрасли",
     "brands": "Бренды",
-    "categories": "Категории"
+    "categories": "Категории",
+    "buyMachinery": "Купить",
+    "sellMachinery": "Продать",
+    "marketInsights": "Аналитика",
+    "serviceSupport": "Услуги",
+    "browseEquipment": "Обзор оборудования",
+    "publishProduct": "Разместить",
+    "publishGuide": "Руководство",
+    "sellerCenter": "Центр продавца",
+    "buyerRequest": "Запросы покупателей",
+    "dailyReport": "Ежедневный отчёт",
+    "arbitrageAnalysis": "Арбитражный анализ",
+    "industryReport": "Отчёт по отрасли",
+    "inspectionService": "Инспекция",
+    "parts": "Запчасти",
+    "contactUs": "Связаться"
   },
   "home": {
     "heroTitle": "Глобальная торговля подержанной сельхозтехникой на одной платформе",

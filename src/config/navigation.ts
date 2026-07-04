@@ -7,33 +7,66 @@ export interface NavItem {
   children?: NavItem[];
 }
 
-/** English navigation: category-first layout for international buyers */
+/**
+ * English navigation: structured dropdowns for international buyers
+ * HOME | BUY▼ | SELL▼ | INSIGHTS▼ | SERVICES▼ | ABOUT
+ */
 export const mainNavEn: NavItem[] = [
   { href: "/", label: "HOME" },
-  { href: "/products?category=forage-harvester", label: "USED SILAGE HARVESTERS" },
-  { href: "/products?category=baler", label: "USED BALERS" },
-  { href: "/products?category=header", label: "HEADER & PICKUP HEADS" },
-  { href: "/products?category=implement", label: "IMPLEMENTS" },
-  { href: "/about", label: "ABOUT US" },
-  { href: "/about#contact", label: "CONTACT US" },
+  {
+    label: "BUY",
+    children: [
+      { href: "/products", label: "Browse Equipment" },
+      { href: "/brand/claas", label: "CLAAS" },
+      { href: "/brand/new-holland", label: "New Holland" },
+      { href: "/brand/john-deere", label: "John Deere" },
+      { href: "/brand/krone", label: "Krone" },
+      { href: "/products?category=forage-harvester", label: "Silage Harvesters" },
+      { href: "/products?category=baler", label: "Balers" },
+      { href: "/products?category=header", label: "Headers & Pickup Heads" },
+      { href: "/products?category=implement", label: "Implements" },
+    ],
+  },
+  {
+    label: "SELL",
+    children: [
+      { href: "/seller/products/new", label: "List Equipment" },
+      { href: "/seller/guide", label: "Listing Guide" },
+      { href: "/seller/products", label: "Seller Center" },
+    ],
+  },
+  {
+    label: "INSIGHTS",
+    children: [
+      { href: "/intelligence", label: "Market Intel" },
+      { href: "/arbitrage", label: "Arbitrage Rankings" },
+      { href: "/blog", label: "Industry News" },
+    ],
+  },
+  {
+    label: "SERVICES",
+    children: [
+      { href: "/logistics", label: "Logistics" },
+      { href: "/about#contact", label: "Contact Us" },
+    ],
+  },
+  { href: "/about", label: "ABOUT" },
 ];
 
-/** Chinese / default navigation: brand + category dropdowns for Chinese users */
+/**
+ * Chinese / default navigation: structured dropdowns
+ * 首页 | 买农机▼ | 卖农机▼ | 市场洞察▼ | 服务支持▼ | 关于我们
+ */
 export const mainNav: NavItem[] = [
   { href: "/", labelKey: "nav.home" },
-  { href: "/products", labelKey: "nav.products" },
   {
-    labelKey: "nav.brands",
+    labelKey: "nav.buyMachinery",
     children: [
+      { href: "/products", labelKey: "nav.browseEquipment" },
       { href: "/brand/claas", label: "CLAAS" },
       { href: "/brand/new-holland", label: "New Holland" },
       { href: "/brand/krone", label: "Krone" },
       { href: "/brand/john-deere", label: "John Deere" },
-    ],
-  },
-  {
-    labelKey: "nav.categories",
-    children: [
       { href: "/category/forage-harvester", label: "青储机" },
       { href: "/category/baler", label: "打捆机" },
       { href: "/category/mower", label: "割草机" },
@@ -42,12 +75,31 @@ export const mainNav: NavItem[] = [
       { href: "/category/pickup-header", label: "捡拾割台" },
       { href: "/category/rake", label: "搂草机" },
       { href: "/category/tedder", label: "摊晒机" },
-      { href: "/category/spare-parts", label: "配件" },
     ],
   },
-  { href: "/blog", labelKey: "nav.blog" },
-  { href: "/intelligence", labelKey: "nav.intelligence" },
-  { href: "/logistics", labelKey: "nav.logistics" },
+  {
+    labelKey: "nav.sellMachinery",
+    children: [
+      { href: "/seller/products/new", labelKey: "nav.publishProduct" },
+      { href: "/seller/guide", labelKey: "nav.publishGuide" },
+      { href: "/seller/products", labelKey: "nav.sellerCenter" },
+    ],
+  },
+  {
+    labelKey: "nav.marketInsights",
+    children: [
+      { href: "/intelligence", labelKey: "nav.intelligence" },
+      { href: "/arbitrage", labelKey: "nav.arbitrageAnalysis" },
+      { href: "/blog", labelKey: "nav.blog" },
+    ],
+  },
+  {
+    labelKey: "nav.serviceSupport",
+    children: [
+      { href: "/logistics", labelKey: "nav.logistics" },
+      { href: "/about#contact", labelKey: "nav.contactUs" },
+    ],
+  },
   { href: "/about", labelKey: "nav.about" },
 ];
 

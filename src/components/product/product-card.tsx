@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { MapPin, Clock, Play } from "lucide-react";
+import { MapPin, Clock, Play, ShieldCheck, Ship } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArbitrageBadge } from "./arbitrage-badge";
@@ -115,23 +115,38 @@ export function ProductCard({ product, locale }: ProductCardProps) {
       <Card className="group cursor-pointer overflow-hidden transition-shadow hover:shadow-lg">
         {/* Image */}
         <div className="relative h-48 overflow-hidden bg-gray-100">
-          <img
-            src={primaryImage}
-            alt={generateImageAlt(brandName, product.modelName, product.year, categoryName, locale, {
-              location: product.location || undefined,
-              condition: product.condition,
-            })}
-            className="h-full w-full object-cover transition-transform group-hover:scale-105"
-            loading="lazy"
-            onError={(e) => {
-              const img = e.currentTarget;
-              // 重试一次（可能是 OSS 偶发超时）
-              if (!img.dataset.retried) {
-                img.dataset.retried = '1';
-                img.src = primaryImage + (primaryImage.includes('?') ? '&' : '?') + '_r=' + Date.now();
-              }
-            }}
-          />
+          {primaryImage ? (
+            <img
+              src={primaryImage}
+              alt={generateImageAlt(brandName, product.modelName, product.year, categoryName, locale, {
+                location: product.location || undefined,
+                condition: product.condition,
+              })}
+              className="h-full w-full object-cover transition-transform group-hover:scale-105"
+              loading="lazy"
+              onError={(e) => {
+                const img = e.currentTarget;
+                // 重试一次（可能是 OSS 偶发超时）
+                if (!img.dataset.retried) {
+                  img.dataset.retried = '1';
+                  img.src = primaryImage + (primaryImage.includes('?') ? '&' : '?') + '_r=' + Date.now();
+                } else {
+                  // 重试失败，显示占位图
+                  img.style.display = 'none';
+                }
+              }}
+            />
+          ) : (
+            // 无图占位：显示品牌名+品类图标
+            <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+              <span className="mb-1 text-3xl font-bold text-gray-300">
+                {brandName?.charAt(0) || "?"}
+              </span>
+              <span className="text-xs text-gray-400">
+                {locale === "zh" ? "暂无图片" : locale === "ru" ? "Нет фото" : "No Image"}
+              </span>
+            </div>
+          )}
           {realArbitrage !== null && Math.abs(realArbitrage) > 10 && (
             <div className="absolute right-2 top-2">
               <ArbitrageBadge percent={realArbitrage} source={intlPrice?.source} />
@@ -218,6 +233,41 @@ export function ProductCard({ product, locale }: ProductCardProps) {
             <MapPin className="h-3 w-3" />
             {product.location}
           </div>
+
+          {/* Status tags */}
+          <div className="mt-2 flex flex-wrap items-center gap-1">
+            {(product as any).videos?.length > 0 && (
+              <Badge variant="secondary" className="flex items-center gap-0.5 bg-blue-50 text-xs text-blue-600">
+                <Play className="h-2.5 w-2.5" />
+                {locale === "zh" ? "有视频" : "Video"}
+              </Badge>
+            )}
+            {(product as any).tradePort && (
+              <Badge variant="secondary" className="flex items-center gap-0.5 bg-green-50 text-xs text-green-600">
+                <Ship className="h-2.5 w-2.5" />
+                {locale === "zh" ? "可出口" : "Export"}
+              </Badge>
+            )}
+            {product.brand?.isImported && (
+              <Badge variant="secondary" className="flex items-center gap-0.5 bg-purple-50 text-xs text-purple-600">
+                <ShieldCheck className="h-2.5 w-2.5" />
+                {locale === "zh" ? "进口" : locale === "ru" ? "Импорт" : "Imported"}
+              </Badge>
+            )}
+          </div>
+
+          {/* Seller info */}
+          {product.seller?.companyName && (
+            <div className="mt-2 border-t pt-2 text-xs text-gray-500">
+              <span className="inline-flex items-center gap-1">
+                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                {product.seller.companyName}
+                {product.seller.country && <span className="text-gray-400">· {product.seller.country}</span>}
+              </span>
+            </div>
+          )}
         </div>
       </Card>
     </Link>

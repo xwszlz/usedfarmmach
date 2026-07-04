@@ -44,7 +44,22 @@
     "intelligence": "Veille de Marché",
     "blog": "Actualités",
     "brands": "Marques",
-    "categories": "Catégories"
+    "categories": "Catégories",
+    "buyMachinery": "Acheter",
+    "sellMachinery": "Vendre",
+    "marketInsights": "Analyses",
+    "serviceSupport": "Services",
+    "browseEquipment": "Parcourir",
+    "publishProduct": "Publier",
+    "publishGuide": "Guide",
+    "sellerCenter": "Espace vendeur",
+    "buyerRequest": "Demandes d'achat",
+    "dailyReport": "Rapport quotidien",
+    "arbitrageAnalysis": "Analyse arbitrage",
+    "industryReport": "Rapport secteur",
+    "inspectionService": "Inspection",
+    "parts": "Pièces",
+    "contactUs": "Contact"
   },
   "home": {
     "heroTitle": "Machines agricoles mondiales, une seule plateforme",

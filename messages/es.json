@@ -44,7 +44,22 @@
     "intelligence": "Inteligencia mercado",
     "blog": "Noticias",
     "brands": "Marcas",
-    "categories": "Categor as"
+    "categories": "Categor as",
+    "buyMachinery": "Comprar",
+    "sellMachinery": "Vender",
+    "marketInsights": "Análisis",
+    "serviceSupport": "Servicios",
+    "browseEquipment": "Ver equipos",
+    "publishProduct": "Publicar",
+    "publishGuide": "Guía",
+    "sellerCenter": "Centro vendedor",
+    "buyerRequest": "Solicitudes",
+    "dailyReport": "Informe diario",
+    "arbitrageAnalysis": "Análisis arbitraje",
+    "industryReport": "Informe sector",
+    "inspectionService": "Inspección",
+    "parts": "Recambios",
+    "contactUs": "Contacto"
   },
   "home": {
     "heroTitle": "Maquinaria agr cola global, un solo lugar",

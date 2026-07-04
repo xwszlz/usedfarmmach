@@ -44,7 +44,22 @@
     "intelligence": "استخبارات السوق",
     "blog": "المدونة",
     "brands": "العلامات التجارية",
-    "categories": "الفئات"
+    "categories": "الفئات",
+    "buyMachinery": "شراء",
+    "sellMachinery": "بيع",
+    "marketInsights": "تحليلات",
+    "serviceSupport": "خدمات",
+    "browseEquipment": "تصفح المعدات",
+    "publishProduct": "نشر",
+    "publishGuide": "دليل",
+    "sellerCenter": "مركز البائع",
+    "buyerRequest": "طلبات الشراء",
+    "dailyReport": "تقرير يومي",
+    "arbitrageAnalysis": "تحليل المراجحة",
+    "industryReport": "تقرير القطاع",
+    "inspectionService": "فحص",
+    "parts": "قطع غيار",
+    "contactUs": "اتصل بنا"
   },
   "home": {
     "heroTitle": "الآلات الزراعية العالمية، منصة واحدة",

@@ -44,7 +44,22 @@
     "intelligence": "Intelig ncia mercado",
     "blog": "Not cias",
     "brands": "Marcas",
-    "categories": "Categorias"
+    "categories": "Categorias",
+    "buyMachinery": "Comprar",
+    "sellMachinery": "Vender",
+    "marketInsights": "Análises",
+    "serviceSupport": "Serviços",
+    "browseEquipment": "Ver equipamentos",
+    "publishProduct": "Publicar",
+    "publishGuide": "Guia",
+    "sellerCenter": "Centro vendedor",
+    "buyerRequest": "Solicitações",
+    "dailyReport": "Relatório diário",
+    "arbitrageAnalysis": "Análise arbitragem",
+    "industryReport": "Relatório setor",
+    "inspectionService": "Inspeção",
+    "parts": "Peças",
+    "contactUs": "Contato"
   },
   "home": {
     "heroTitle": "M quinas agr colas globais, em um s lugar",

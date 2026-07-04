@@ -58,9 +58,9 @@ replacements.txt
 .tmp-*
 temp-*
 
-# scripts that should not be in repo (temporary utilities)
-scripts/compare-inventory.js
-scripts/upload-covers-oss.js
+# scripts that should not be in repo (temporary utilities + secrets)
+scripts/
+/test-*.js
 
 # windows special files
 nul
