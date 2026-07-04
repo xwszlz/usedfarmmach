@@ -1,77 +1,115 @@
-# 立即执行阶段 — 交付概览
+# 第一阶段核心功能 — 交付概览
 
-> 执行日期：2026-07-04
-> 对应方案：final-master-plan.md 第四部分「立即执行（第1周）」
+> 交付日期：2026-07-04
+> Commit: `8c71178`
+> 状态：✅ 已push到GitHub，Vercel部署中
 
 ---
 
-## TL;DR
+## 交付清单
 
-完成4项立即执行任务：文案修改、导航重构、封面图修复、产品卡片增强。`next build` 0错误，已commit+push触发Vercel部署。
+### 1. 买家需求匹配 API + 网站表单 ✅
 
-## 交付概览
+**新API**: `POST /api/buyer-match/suggest`
+- 输入：作物类型(14种) + 农场规模(4档) + 期望机型 + 预算区间
+- 逻辑：作物→品类智能映射 → 数据库匹配 → 匹配评分(0-100) → 采购建议生成
+- 数据源：Prisma Product表 + strategy_latest.json日报情报
 
-| 指标 | 值 |
-|------|-----|
-| 交付状态 | ✅ 代码完成，push进行中 |
-| Build | 0错误 |
-| 涉及文件 | 19个 |
-| 平台 | 网站 + 小程序 |
+**新组件**: `BuyerMatchCard`
+- 集成位置：设备列表页(`/products`)顶部
+- 可折叠卡片，4个输入维度
+- 结果展示：采购建议 + 市场行情(均价/最低/最高/在售数) + Top 5推荐卡片(含匹配分数和匹配理由)
 
-## 修改清单
+### 2. 询价流程闭环 ✅
 
-### 1. 小程序文案修改 ✅
-- `app.json` tabBar: "找农机"→"买农机", "发布"→"卖农机"
-- `app.json` navigationBarTitleText: "神雕农机"→"神雕农机全球交易"
-- `index.js` 分享标题同步更新
+**网站端**:
+- 询价API: 已有 `POST /api/inquiries`（保持不变）
+- 询价表单: 已有 `InquiryForm` 组件（产品详情页，保持不变）
+- **新增**: 卖家询价管理页面 `/seller/inquiries`
+  - 状态筛选(全部/待回复/已回复/已关闭)
+  - 询价卡片展示(产品链接+买家信息+留言)
+- **新增**: 卖家询价API `GET /api/seller/inquiries`
+  - 按sellerId查询该卖家所有产品的询价
 
-### 2. 网站i18n文案修改 ✅（8语言）
-- `zh.json` heroTitle: "神雕农机全球交易", heroSubtitle: "智能估价 · 跨境物流 · 安全交易"
-- `en.json` heroTitle: "Shendiao Farm Machinery Global Trading"
-- `ru/es/fr/ar/hi/pt.json` 同步17个新nav keys
-- 新增nav keys: buyMachinery, sellMachinery, marketInsights, serviceSupport, browseEquipment, publishProduct, publishGuide, sellerCenter, buyerRequest, dailyReport, arbitrageAnalysis, industryReport, inspectionService, parts, contactUs
+**小程序端**:
+- 详情页底部栏新增"💬 询价"按钮（橙色）
+- 询价弹窗：姓名+手机+邮箱+留言 → 提交到 `/api/inquiries`
+- 提交成功后Toast提示并关闭弹窗
 
-### 3. 网站导航重构 ✅
-- `navigation.ts` 重构为5个主菜单+下拉子菜单：
-  - 首页 | 买农机▼ | 卖农机▼ | 市场洞察▼ | 服务支持▼ | 关于我们
-- 英文导航同步重构：HOME | BUY▼ | SELL▼ | INSIGHTS▼ | SERVICES▼ | ABOUT
-- navbar.tsx 无需修改（已支持children下拉）
+### 3. 标准规范展示页 ✅
 
-### 4. 封面图修复 ✅
-- `mock.js` 8条mock数据全部补上coverUrl（Unsplash农机图）
-- `index.js` loadHomeData新增sortByName函数：无图产品排到末尾
+**新页面**: `/standards`
+- 6项行业标准展示（已发布3项 + 制定中2项 + 规划中1项）
+- 三重认证流程图（机构认证→人员认证→车辆认证→平台审核）
+- 平合规承诺声明
 
-### 5. 产品卡片增强 ✅
-- **网站** `product-card.tsx`：
-  - 无图占位：品牌首字母+提示文字
-  - 状态标签：有视频(蓝)/可出口(绿)/进口(紫)
-  - 卖家信息：公司名+国家
-- **小程序** `machine-card.wxml/wxss`：
-  - 状态标签：🎬视频/🚢可出口/✅进口
-  - 卖家信息行
+### 4. 小程序搜索筛选增强 ✅
+
+**filter-bar组件增强**:
+- 品类：5项 → 12项（新增收割机/割草机/裹包机/拖拉机/搂草机/播种机/捡拾台/收获机）
+- 品牌：8项 → 12项（新增克拉斯/克罗尼/库恩/奥库/麦赛弗格森/格立莫/牧农）
+- 价格：新增"30-100万"和"100万以上"区间
+- 排序：新增"套利空间最大"选项
+- **新增年份筛选**: 5个档位（2022+/2018-2022/2013-2018/2010前/不限）
+- **新增产地筛选**: 13个省份选择
+- **新增"更多"筛选**: 仅看有图开关 + 仅看有视频开关
+- 筛选栏改为横向滚动（支持7个tab不挤）
+
+### 5. 导航更新
+
+- "买农机"下拉新增"买家需求"入口
+- "卖农机"下拉新增"询价管理"入口
+- "服务支持"下拉新增"标准规范"入口
+- 8语言i18n同步新增nav keys
+
+---
 
 ## 文件清单
 
-| 文件 | 改动类型 |
-|------|---------|
-| `shendiao-miniprogram/app.json` | 修改 |
-| `shendiao-miniprogram/pages/index/index.js` | 修改 |
-| `shendiao-miniprogram/utils/mock.js` | 修改 |
-| `shendiao-miniprogram/components/machine-card/machine-card.wxml` | 修改 |
-| `shendiao-miniprogram/components/machine-card/machine-card.wxss` | 修改 |
-| `messages/zh.json` | 修改 |
-| `messages/en.json` | 修改 |
-| `messages/ru.json` | 修改 |
-| `messages/es.json` | 修改 |
-| `messages/fr.json` | 修改 |
-| `messages/ar.json` | 修改 |
-| `messages/hi.json` | 修改 |
-| `messages/pt.json` | 修改 |
-| `src/config/navigation.ts` | 重写 |
-| `src/components/product/product-card.tsx` | 修改 |
+| 类型 | 文件路径 | 说明 |
+|------|---------|------|
+| 新建 | `src/app/api/buyer-match/suggest/route.ts` | 买家需求匹配API |
+| 新建 | `src/components/buyer/buyer-match-card.tsx` | 买家需求匹配表单组件 |
+| 新建 | `src/app/[locale]/standards/page.tsx` | 标准规范展示页 |
+| 新建 | `src/app/[locale]/seller/inquiries/page.tsx` | 卖家询价管理页 |
+| 新建 | `src/app/api/seller/inquiries/route.ts` | 卖家询价API |
+| 修改 | `src/app/[locale]/products/ProductsClient.tsx` | 集成BuyerMatchCard |
+| 修改 | `src/config/navigation.ts` | 导航新增3个入口 |
+| 修改 | `messages/zh.json` | 新增standards/inquiryManagement |
+| 修改 | `messages/en.json` | 同步 |
+| 修改 | `shendiao-miniprogram/pages/detail/detail.wxml` | 询价弹窗 |
+| 修改 | `shendiao-miniprogram/pages/detail/detail.js` | 询价逻辑 |
+| 修改 | `shendiao-miniprogram/pages/detail/detail.wxss` | 询价样式 |
+| 修改 | `shendiao-miniprogram/components/filter-bar/filter-bar.js` | 筛选增强 |
+| 修改 | `shendiao-miniprogram/components/filter-bar/filter-bar.wxml` | 筛选UI |
+| 修改 | `shendiao-miniprogram/components/filter-bar/filter-bar.wxss` | 筛选样式 |
+| 修改 | `shendiao-miniprogram/pages/list/list.wxml` | 横向滚动筛选栏 |
+| 修改 | `shendiao-miniprogram/pages/list/list.js` | 新筛选逻辑 |
+| 修改 | `shendiao-miniprogram/pages/list/list.wxss` | 滚动筛选样式 |
 
-## 下一步
+---
 
-1. 等待Vercel部署完成，线上验证导航和文案
-2. 小程序需在微信开发者工具中重新编译验证
-3. 进入第一阶段：买家需求匹配API + 一机一码系统
+## 验证结果
+
+| 检查项 | 结果 |
+|--------|------|
+| next build | ✅ 0错误 |
+| git push | ✅ commit 8c71178 |
+| Vercel部署 | 自动进行中 |
+| 新API路由 | /api/buyer-match/suggest + /api/seller/inquiries |
+
+---
+
+## 下一步建议
+
+1. 等Vercel部署完(约2-3分钟)，线上验证：
+   - 访问 `/products` 页面测试买家需求匹配
+   - 访问 `/standards` 页面查看标准规范
+   - 登录卖家账号访问 `/seller/inquiries`
+2. 小程序在微信开发者工具中重新编译，验证：
+   - 详情页询价弹窗
+   - 列表页新增筛选维度
+3. 准备进入第一阶段剩余任务：
+   - 一机一码系统（Prisma migration）
+   - 三重认证数据模型（Prisma migration）
+   - 线下服务网络目录（Prisma migration）

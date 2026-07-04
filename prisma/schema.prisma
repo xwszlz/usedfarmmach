@@ -33,6 +33,7 @@ model User {
   demands    Demand[]
   inquiries  Inquiry[]
   creditTransactions CreditTransaction[]
+  certifications Certification[]
 }
 
 model Brand {
@@ -117,6 +118,7 @@ model Product {
   internationalPrices InternationalPrice[]
   inquiries           Inquiry[]
   arbitrageTopCaches   ArbitrageTopCache[]
+  machineryIdentity   MachineryIdentity?
 }
 
 model ProductImage {
@@ -508,4 +510,128 @@ model AgentRunLog {
   
   @@index([agentId, startedAt])
   @@index([status, startedAt])
+}
+
+// ═══════════════════════════════════════════════════════
+// 一机一码身份溯源系统
+// ═══════════════════════════════════════════════════════
+
+model MachineryIdentity {
+  id          String   @id @default(cuid())
+  productId   String   @unique
+  qrCode      String   @unique // 唯一QR码标识：SD-YYYY-XXXXXXX
+  serialNo    String?  // 出厂编号/铭牌编号
+  manufactureDate String? // 出厂日期
+  factoryName String?  // 制造商
+  factoryLocation String? // 产地
+  verifyHash  String?  // 防伪校验哈希
+  isVerified  Boolean  @default(false) // 是否已验证
+  verifiedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  events  MachineryEvent[]
+
+  @@index([qrCode])
+}
+
+model MachineryEvent {
+  id          String   @id @default(cuid())
+  identityId  String
+  eventType   String   // manufactured, listed, inspected, traded, exported, maintained, transferred
+  title       String
+  description String?
+  operator    String?  // 操作人/机构
+  location    String?  // 事件发生地
+  evidence    String?  // JSON: 证据文件URL数组
+  metadata    String?  // JSON: 额外元数据
+  eventDate   DateTime @default(now()) // 事件发生时间
+  createdAt   DateTime @default(now())
+
+  identity MachineryIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@index([identityId, eventDate])
+  @@index([eventType])
+}
+
+// ═══════════════════════════════════════════════════════
+// 三重认证体系
+// ═══════════════════════════════════════════════════════
+
+model Certification {
+  id              String   @id @default(cuid())
+  userId          String   // 申请用户ID
+  certType        String   // institution(机构认证), personnel(人员认证), vehicle(车辆认证)
+  status          String   @default("pending") // pending, approved, rejected, expired
+  // 通用字段
+  applicantName   String   // 申请人/机构名称
+  contactPhone    String
+  contactEmail    String?
+
+  // 机构认证字段
+  businessLicenseNo  String?  // 营业执照号
+  businessLicenseImg String?  // 营业执照图片URL
+  legalPerson     String?  // 法人代表
+  registeredCapital String? // 注册资本
+  businessScope   String?  // 经营范围
+
+  // 人员认证字段
+  personnelName   String?  // 评估师姓名
+  personnelCertNo String?  // 证书编号
+  personnelCertImg String? // 证书图片URL
+  personnelLevel  String?  // 评估师等级：初级/中级/高级
+
+  // 车辆认证字段
+  productId       String?  // 关联产品ID
+  inspectionReportNo String? // 检测报告编号
+  inspectionReportImg String? // 检测报告图片URL
+  inspectionGrade String?  // 检测等级：A/B/C/D
+  inspectionDate  DateTime? // 检测日期
+  inspectionOrg   String?  // 检测机构
+
+  // 审核信息
+  reviewedBy      String?  // 审核人ID
+  reviewedAt      DateTime?
+  reviewNote      String?  // 审核备注
+  validUntil      DateTime? // 认证有效期
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, certType])
+  @@index([status])
+  @@index([certType, status])
+}
+
+// ═══════════════════════════════════════════════════════
+// 线下服务网络
+// ═══════════════════════════════════════════════════════
+
+model ServiceCenter {
+  id            String   @id @default(cuid())
+  name          String   // 网点名称
+  level         String   @default("county") // province(省级中心), city(市级), county(县域网点)
+  province      String   // 省份
+  city          String?  // 城市
+  district      String?  // 区县
+  address       String   // 详细地址
+  longitude     Float?   // 经度
+  latitude      Float?   // 纬度
+  contactPerson String?  // 联系人
+  contactPhone  String?  // 联系电话
+  services      String?  // JSON: 服务项目数组 ["检测","维修","评估","交易"]
+  businessHours String?  // 营业时间
+  images        String?  // JSON: 网点图片URL数组
+  description   String?  // 网点描述
+  isActive      Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([province, level])
+  @@index([isActive])
+  @@index([level, isActive])
 }

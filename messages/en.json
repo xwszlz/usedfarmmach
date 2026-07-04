@@ -61,6 +61,8 @@
     "inspectionService": "Inspection",
     "parts": "Parts",
     "standards": "Standards",
+    "serviceNetwork": "Service Network",
+    "certification": "Certification",
     "contactUs": "Contact Us"
   },
   "home": {

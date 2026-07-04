@@ -35,6 +35,7 @@ export const mainNavEn: NavItem[] = [
       { href: "/seller/guide", label: "Listing Guide" },
       { href: "/seller/products", label: "Seller Center" },
       { href: "/seller/inquiries", label: "Inquiries" },
+      { href: "/seller/certification", label: "Certification" },
     ],
   },
   {
@@ -49,6 +50,7 @@ export const mainNavEn: NavItem[] = [
     label: "SERVICES",
     children: [
       { href: "/logistics", label: "Logistics" },
+      { href: "/service-network", label: "Service Network" },
       { href: "/standards", label: "Standards" },
       { href: "/about#contact", label: "Contact Us" },
     ],
@@ -88,6 +90,7 @@ export const mainNav: NavItem[] = [
       { href: "/seller/guide", labelKey: "nav.publishGuide" },
       { href: "/seller/products", labelKey: "nav.sellerCenter" },
       { href: "/seller/inquiries", labelKey: "nav.inquiryManagement" },
+      { href: "/seller/certification", labelKey: "nav.certification" },
     ],
   },
   {
@@ -102,6 +105,7 @@ export const mainNav: NavItem[] = [
     labelKey: "nav.serviceSupport",
     children: [
       { href: "/logistics", labelKey: "nav.logistics" },
+      { href: "/service-network", labelKey: "nav.serviceNetwork" },
       { href: "/standards", labelKey: "nav.standards" },
       { href: "/about#contact", labelKey: "nav.contactUs" },
     ],

@@ -21,6 +21,9 @@ import { DAILY_REPORT_RANKING } from "@/config/daily-report-ranking";
 import { getHreflangLanguages } from "@/components/seo/hreflang-head";
 import { ProductStructuredData, BreadcrumbStructuredData } from "@/components/seo/structured-data";
 import { FloatingChat } from "@/components/chat/floating-chat";
+import { MachineryIdentityCard } from "@/components/machinery/machinery-identity-card";
+import Link from "next/link";
+import { Wrench } from "lucide-react";
 
 export const revalidate = 300;
 
@@ -441,6 +444,25 @@ export default async function ProductDetailPage({
           productName={`${brandName} ${product.modelName}`}
           locale={locale}
         />
+      </div>
+
+      {/* Machinery Identity & Traceability (一机一码) */}
+      <div className="mt-6">
+        <MachineryIdentityCard productId={product.id} locale={locale} />
+      </div>
+
+      {/* Offline Service Appointment */}
+      <div className="mt-4 flex items-center justify-center gap-3 rounded-lg bg-gray-50 p-4">
+        <Wrench className="h-5 w-5 text-primary-500" />
+        <span className="text-sm text-gray-600">
+          {locale === "zh" ? "需要线下检测？" : "Need offline inspection?"}
+        </span>
+        <Link
+          href={`/${locale}/service-network`}
+          className="text-sm font-medium text-primary-600 hover:text-primary-700"
+        >
+          {locale === "zh" ? "查看附近服务网点 →" : "Find nearby service centers →"}
+        </Link>
       </div>
 
       {/* AI Multi-language Chat Floating Window */}
