@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { getDetailImageUrl, getVideoUrl } from "@/lib/image-url";
 
 interface Brand {
   id: string;
@@ -22,6 +23,12 @@ interface ProductImage {
   isPrimary: boolean;
 }
 
+interface ProductVideo {
+  id: string;
+  url: string;
+  sortOrder: number;
+}
+
 interface ProductData {
   id: string;
   modelName: string;
@@ -38,6 +45,7 @@ interface ProductData {
   brand: Brand;
   category: Category;
   images: ProductImage[];
+  videos: ProductVideo[];
   enginePower: number | null;
   engineType: string | null;
   driveSystem: string | null;
@@ -582,9 +590,10 @@ export function ProductEditForm({ product, brands, categories }: Props) {
                 className="relative h-24 w-32 overflow-hidden rounded-lg border bg-gray-50"
               >
                 <img
-                  src={`https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com${img.url}`}
+                  src={getDetailImageUrl(img.url)}
                   alt=""
                   className="h-full w-full object-cover"
+                  onError={(e) => { (e.target as HTMLImageElement).src = "/images/placeholders/tractor.svg"; }}
                 />
                 {img.isPrimary && (
                   <span className="absolute bottom-1 left-1 rounded bg-primary-600 px-1.5 py-0.5 text-[10px] text-white">
@@ -622,9 +631,20 @@ export function ProductEditForm({ product, brands, categories }: Props) {
           </label>
         </div>
         <div className="p-6">
-          <p className="text-xs text-gray-400">
+          <p className="mb-3 text-xs text-gray-400">
             支持 MP4、MOV、WebM 格式。视频将展示在产品详情页。
           </p>
+          {product.videos.length > 0 && (
+            <div className="space-y-2">
+              {product.videos.map((vid) => (
+                <div key={vid.id} className="flex items-center gap-3 rounded-lg border bg-gray-50 p-3">
+                  <span className="text-xl">🎬</span>
+                  <video src={getVideoUrl(vid.url)} controls className="max-h-24 max-w-xs rounded" preload="metadata" />
+                  <span className="truncate text-xs text-gray-500">{vid.url.split("/").pop()}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

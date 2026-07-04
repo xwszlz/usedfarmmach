@@ -57,6 +57,7 @@ export default async function ProductEditPage({
           brand: product.brand,
           category: product.category,
           images: product.images.map((img) => ({ id: img.id, url: img.url, isPrimary: img.isPrimary })),
+          videos: product.videos.map((v) => ({ id: v.id, url: v.url, sortOrder: v.sortOrder })),
           enginePower: product.enginePower,
           engineType: product.engineType,
           driveSystem: product.driveSystem,
