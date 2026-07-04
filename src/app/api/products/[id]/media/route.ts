@@ -102,9 +102,7 @@ export async function POST(
           data: {
             productId: id,
             url: `/${ossKey}`,
-            thumbnail: null,
-            duration: null,
-            createdAt: new Date(),
+            sortOrder: now + results.length,
           },
         });
         results.push({ id: vid.id, url: vid.url, name: file.name });
