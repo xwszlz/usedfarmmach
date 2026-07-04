@@ -116,6 +116,9 @@ export function ProductEditForm({ product, brands, categories }: Props) {
   });
 
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [uploading, setUploading] = useState<"image" | "video" | null>(null);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const handleChange = (field: string, value: string | number | null) => {
@@ -175,6 +178,71 @@ export function ProductEditForm({ product, brands, categories }: Props) {
   };
 
   const displayYear = form.year.toString() === "0" ? "" : form.year.toString();
+
+  async function handleDelete() {
+    const confirmed = window.confirm(
+      `⚠️ 确定要删除产品「${form.modelName}」吗？\n\n此操作不可撤销，关联的图片和视频记录也将被永久删除。`
+    );
+    if (!confirmed) return;
+
+    setDeleting(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/products/${product.id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(data.message || "删除成功");
+        router.push("../products"); // 返回产品列表
+      } else {
+        alert(`❌ 删除失败: ${data.error || "未知错误"}`);
+      }
+    } catch {
+      alert("❌ 网络错误，请重试");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  async function handleMediaUpload(type: "image" | "video", e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(type);
+    setUploadStatus(`正在上传 ${files.length} 个 ${type === "image" ? "图片" : "视频"}...`);
+
+    try {
+      const formData = new FormData();
+      formData.append("type", type);
+      Array.from(files).forEach((f) => formData.append("files", f));
+
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/products/${product.id}/media`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setUploadStatus(`✅ ${data.message}`);
+        e.target.value = ""; // 清空 input，允许重复上传同一文件
+        setTimeout(() => {
+          router.refresh(); // 刷新页面显示新图片/视频
+          setUploadStatus(null);
+        }, 1000);
+      } else {
+        setUploadStatus(`❌ 上传失败: ${data.error || "未知错误"}`);
+      }
+    } catch {
+      setUploadStatus("❌ 网络错误，请重试");
+    } finally {
+      setUploading(null);
+      e.target.value = "";
+    }
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -484,14 +552,31 @@ export function ProductEditForm({ product, brands, categories }: Props) {
         </div>
       </div>
 
-      {/* Images Preview */}
-      {product.images.length > 0 && (
-        <div className="rounded-xl border bg-white shadow-sm">
-          <div className="border-b px-6 py-4">
-            <h2 className="font-semibold text-gray-900">产品图片 ({product.images.length})</h2>
-          </div>
-          <div className="flex flex-wrap gap-3 p-6">
-            {product.images.map((img) => (
+      {/* Images + Upload */}
+      <div className="rounded-xl border bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b px-6 py-4">
+          <h2 className="font-semibold text-gray-900">产品图片 ({product.images.length})</h2>
+          <label
+            className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-medium transition-colors ${
+              uploading === "image"
+                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                : "bg-blue-50 text-blue-600 hover:bg-blue-100"
+            }`}
+          >
+            {uploading === "image" ? "⏳ 上传中..." : "📷 添加图片"}
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              disabled={uploading !== null}
+              onChange={(e) => handleMediaUpload("image", e)}
+              className="hidden"
+            />
+          </label>
+        </div>
+        <div className="flex flex-wrap gap-3 p-6">
+          {product.images.length > 0 ? (
+            product.images.map((img) => (
               <div
                 key={img.id}
                 className="relative h-24 w-32 overflow-hidden rounded-lg border bg-gray-50"
@@ -507,8 +592,54 @@ export function ProductEditForm({ product, brands, categories }: Props) {
                   </span>
                 )}
               </div>
-            ))}
-          </div>
+            ))
+          ) : (
+            <p className="text-sm text-gray-400">暂无图片，点击「添加图片」上传</p>
+          )}
+        </div>
+      </div>
+
+      {/* Video Upload */}
+      <div className="rounded-xl border bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b px-6 py-4">
+          <h2 className="font-semibold text-gray-900">产品视频</h2>
+          <label
+            className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-medium transition-colors ${
+              uploading === "video"
+                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                : "bg-orange-50 text-orange-600 hover:bg-orange-100"
+            }`}
+          >
+            {uploading === "video" ? "⏳ 上传中..." : "🎬 添加视频"}
+            <input
+              type="file"
+              accept="video/*"
+              multiple
+              disabled={uploading !== null}
+              onChange={(e) => handleMediaUpload("video", e)}
+              className="hidden"
+            />
+          </label>
+        </div>
+        <div className="p-6">
+          <p className="text-xs text-gray-400">
+            支持 MP4、MOV、WebM 格式。视频将展示在产品详情页。
+          </p>
+        </div>
+      </div>
+
+      {/* Upload Status */}
+      {uploadStatus && (
+        <div
+          className={`rounded-lg px-4 py-3 text-sm font-medium ${
+            uploadStatus.startsWith("✅")
+              ? "bg-green-50 text-green-700 border border-green-200"
+              : uploadStatus.startsWith("❌")
+                ? "bg-red-50 text-red-700 border border-red-200"
+                : "bg-blue-50 text-blue-700 border border-blue-200"
+          }`}
+        >
+          {uploadStatus}
         </div>
       )}
 
@@ -527,6 +658,14 @@ export function ProductEditForm({ product, brands, categories }: Props) {
         >
           返回列表
         </Link>
+        <button
+          type="button"
+          onClick={handleDelete}
+          disabled={deleting || saving}
+          className="ml-auto rounded-lg bg-red-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
+        >
+          {deleting ? "删除中..." : "🗑 删除此产品"}
+        </button>
       </div>
     </form>
   );

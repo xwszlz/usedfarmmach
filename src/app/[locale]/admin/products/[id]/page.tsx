@@ -18,6 +18,7 @@ export default async function ProductEditPage({
         brand: true,
         category: true,
         images: { orderBy: { sortOrder: "asc" } },
+        videos: true,
         seller: { select: { id: true, email: true, companyName: true } },
       },
     }),

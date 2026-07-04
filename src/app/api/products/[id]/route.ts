@@ -101,6 +101,66 @@ export async function GET(
 }
 
 /**
+ * DELETE: 删除产品（admin / super_admin / editor 可操作）
+ * 同时清理关联的图片和视频记录
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const token = getTokenFromHeaders(request.headers);
+  if (!token) {
+    return NextResponse.json({ success: false, error: "未登录" }, { status: 401 });
+  }
+  const payload = verifyToken(token);
+  if (!payload) {
+    return NextResponse.json({ success: false, error: "Token 无效" }, { status: 401 });
+  }
+  const user = await prisma.user.findUnique({
+    where: { id: payload.userId },
+    select: { role: true },
+  });
+  if (!user || !["admin", "super_admin", "editor"].includes(user.role)) {
+    return NextResponse.json({ success: false, error: "无权限" }, { status: 403 });
+  }
+
+  try {
+    const { id } = await params;
+
+    const existing = await prisma.product.findUnique({
+      where: { id },
+      select: { id: true, modelName: true },
+    });
+    if (!existing) {
+      return NextResponse.json({ success: false, error: "产品不存在" }, { status: 404 });
+    }
+
+    // 删除关联数据（级联或手动）
+    await prisma.$transaction([
+      prisma.productImage.deleteMany({ where: { productId: id } }),
+      prisma.productVideo.deleteMany({ where: { productId: id } }),
+      prisma.internationalPrice.deleteMany({ where: { productId: id } }),
+      prisma.product.delete({ where: { id } }),
+    ]);
+
+    // 清除缓存
+    await cache.del(cacheKey("product", id));
+    await cache.del(cacheKey("product", `${id}:arbitrage`));
+
+    return NextResponse.json({
+      success: true,
+      message: `产品「${existing.modelName}」已删除`,
+    });
+  } catch (error) {
+    console.error("Product delete error:", error);
+    return NextResponse.json(
+      { success: false, error: "删除失败" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
  * PATCH: 编辑产品（admin / super_admin / editor 可操作）
  * 支持修改：modelName, year, workingHours, condition, priceCny, location, descriptionZh, brandId, categoryId, status
  */

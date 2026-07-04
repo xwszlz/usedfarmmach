@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import Link from "next/link";
+import { DeleteProductButton } from "@/components/admin/delete-product-button";
 
 export const dynamic = "force-dynamic";
 
@@ -140,6 +141,7 @@ export default async function AdminProductsPage({
                     >
                       编辑
                     </Link>
+                    <DeleteProductButton productId={product.id} productName={product.modelName} />
                   </td>
                 </tr>
               ))}
