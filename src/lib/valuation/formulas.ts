@@ -24,8 +24,8 @@ import {
   MIN_RESIDUAL_RATIO,
 } from "./brand-data";
 
-// V4: 导入图片分析模块（可选，客户端调用避免服务端绑定）
-import type { VisualValuationResult } from "./image-analyzer";
+// V4: 导入图片分析模块
+import { type VisualValuationResult, visualScoreToConditionFactor } from "./image-analyzer";
 
 /**
  * V4估值输入接口（扩展V2）
@@ -470,22 +470,6 @@ function getConditionFactorV4(
   };
 }
 
-/**
- * V4: 将视觉成色评分转换为成色因子
- * 
- * @param visualScore 视觉成色评分 1-10
- * @returns 成色因子 0.7-1.05
- */
-function visualScoreToConditionFactor(visualScore: number): number {
-  if (visualScore >= 9) return 1.05;
-  if (visualScore >= 8) return 1.0;
-  if (visualScore >= 7) return 0.98;
-  if (visualScore >= 6) return 0.95;
-  if (visualScore >= 5) return 0.90;
-  if (visualScore >= 4) return 0.85;
-  if (visualScore >= 3) return 0.78;
-  return 0.70;
-}
 
 /**
  * V4 主估值函数（兼容V2）

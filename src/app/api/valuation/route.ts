@@ -161,7 +161,15 @@ export async function POST(request: NextRequest) {
       meta: {
         engine: shouldUseV4 ? "v4" : "v2",
         imageAnalyzed: shouldUseV4 && result.usedV4Condition,
-        specFieldsCount: input.imageUrls?.length || 0,
+        specFieldsCount: [
+          input.enginePower,
+          input.driveSystem,
+          input.mainConfig,
+          input.netWeight,
+          input.overallLength,
+          input.overallWidth,
+          input.overallHeight
+        ].filter(f => f !== undefined && f !== null && f !== "").length,
       },
     });
   } catch (error) {

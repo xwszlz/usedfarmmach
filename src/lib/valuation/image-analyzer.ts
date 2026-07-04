@@ -5,7 +5,7 @@
  * 输出视觉成色评分，替代V2的conditionFactor固定表。
  */
 
-import * as axios from "axios";
+import axios from "axios";
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
 const OPENROUTER_BASE = "https://openrouter.ai/api/v1";
@@ -16,6 +16,7 @@ export interface ImageAnalysisResult {
   conditionLabel: string;       // 成色标签：优秀/良好/一般/较差
   analysis: string;             // 评估依据
   confidence: number;           // 置信度 0-1
+  isDefault?: boolean;          // 是否为默认分析结果（未调用LLM）
 }
 
 export interface VisualValuationResult {
@@ -147,6 +148,9 @@ export async function analyzeProductImages(
     const analysisPromises = urlsToAnalyze.map((url) => analyzeProductImage(url));
     const results = await Promise.all(analysisPromises);
 
+    // 检查是否有任何真实LLM分析结果（非默认）
+    const hasRealAnalysis = results.some((r) => !r.isDefault);
+
     // 综合多张图片的分析结果
     // 取最高分（最乐观评估）作为参考，但考虑置信度
     let bestScore = 0;
@@ -171,7 +175,7 @@ export async function analyzeProductImages(
       visualConditionScore: Math.round(avgScore * 10) / 10, // 保留1位小数
       visualConditionAnalysis: bestAnalysis,
       imageConfidence: avgConfidence,
-      usedV4Condition: true,
+      usedV4Condition: hasRealAnalysis, // 只有真实LLM分析才标记为V4
     };
   } catch (error) {
     console.error("[ImageAnalyzer] 批量图片分析失败:", error);
@@ -193,6 +197,7 @@ function getDefaultAnalysis(): ImageAnalysisResult {
     conditionLabel: "一般",
     analysis: "未提供图片，无法视觉评估，使用默认成色",
     confidence: 0.3,
+    isDefault: true, // 标记为默认分析结果
   };
 }
 
