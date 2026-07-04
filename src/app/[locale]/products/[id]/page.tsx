@@ -25,6 +25,7 @@ import { MachineryIdentityCard } from "@/components/machinery/machinery-identity
 import { InspectionReportCard } from "@/components/inspection/inspection-report-card";
 import { FavoriteButton } from "@/components/favorite/favorite-button";
 import { SellerTrustCard } from "@/components/seller/seller-trust-card";
+import BlockchainTrace from "@/components/blockchain/blockchain-trace";
 import Link from "next/link";
 import { Wrench } from "lucide-react";
 
@@ -469,6 +470,11 @@ export default async function ProductDetailPage({
           sellerName={product.seller.companyName ?? undefined}
           locale={locale}
         />
+      </div>
+
+      {/* Blockchain Traceability (区块链溯源) */}
+      <div className="mt-6">
+        <BlockchainTrace productId={product.id} locale={locale} />
       </div>
 
       {/* Offline Service Appointment */}

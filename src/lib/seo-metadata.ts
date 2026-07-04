@@ -411,6 +411,40 @@ const localizedMeta: Record<string, Record<string, { title: string; description:
       description: "AgriTrade विदेशी गोदाम जानकारी: bonded, मानक, कोल्ड स्टोरेज।",
     },
   },
+  rentals: {
+    zh: {
+      title: "农机租赁_日租月租年租_二手农机出租_神雕农机",
+      description: "神雕农机租赁平台：灵活的农机租赁方案，日租、月租、年租，含配送服务。约翰迪尔、CLAAS、凯斯等品牌拖拉机、收割机出租。",
+    },
+    en: {
+      title: "Farm Machinery Rental | Daily Monthly Yearly | AgriTrade",
+      description: "AgriTrade machinery rental: flexible daily, monthly, yearly rental with delivery. John Deere, CLAAS, Case tractors and harvesters for rent.",
+    },
+    ru: {
+      title: "Аренда сельхозтехники | Посуточно Помесячно | AgriTrade",
+      description: "Аренда сельхозтехники AgriTrade: гибкая аренда по дням, месяцам, годам с доставкой.",
+    },
+    es: {
+      title: "Alquiler de Maquinaria | Diario Mensual | AgriTrade",
+      description: "Alquiler de maquinaria AgriTrade: alquiler flexible diario, mensual, anual con entrega.",
+    },
+    pt: {
+      title: "Aluguel de Máquinas | Diário Mensal | AgriTrade",
+      description: "Aluguel de máquinas AgriTrade: aluguel flexível diário, mensal, anual com entrega.",
+    },
+    ar: {
+      title: "تأجير الآلات الزراعية | يومي شهري | AgriTrade",
+      description: "تأجير الآلات الزراعية AgriTrade: تأجير مرن يومي وشهري وسنوي مع توصيل.",
+    },
+    fr: {
+      title: "Location de Machines | Journalier Mensuel | AgriTrade",
+      description: "Location AgriTrade: location flexible journalière, mensuelle, annuelle avec livraison.",
+    },
+    hi: {
+      title: "मशीनरी किराया | दैनिक मासिक | AgriTrade",
+      description: "AgriTrade मशीनरी किराया: लचीला दैनिक, मासिक, वार्षिक किराया।",
+    },
+  },
   arbitrageCalculator: {
     zh: {
       title: "二手农机跨境套利计算器_农机出口利润测算工具_神雕农机",
