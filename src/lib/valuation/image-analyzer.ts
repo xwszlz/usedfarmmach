@@ -9,7 +9,7 @@ import axios from "axios";
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
 const OPENROUTER_BASE = "https://openrouter.ai/api/v1";
-const MODEL = "openai/gpt-4o"; // 支持多模态的高质量模型
+const MODEL = "meta-llama/llama-3.2-11b-vision-instruct"; // 免费多模态模型（OpenRouter）
 
 export interface ImageAnalysisResult {
   conditionScore: number;      // 成色评分 1-10
@@ -52,9 +52,14 @@ export async function analyzeProductImage(
               {
                 type: "text",
                 text: `你是一位资深二手农业机械评估专家，熟悉各类农机设备的成色评估标准。
-请仔细分析这张农机设备图片，评估设备的成色状态，以 JSON 格式返回。
+请仔细分析这张农机设备图片，评估设备的成色状态。
 
-返回字段说明：
+重要要求：
+1. 必须以纯JSON格式返回结果，不要有任何其他文字、说明或markdown标记
+2. 返回格式必须是有效的JSON，可以被JSON.parse()解析
+3. 不要使用\`\`\`json\`\`\`包装，直接返回JSON对象
+
+JSON字段说明：
 {
   "conditionScore": 成色评分（1-10分，10分为全新状态）,
   "conditionLabel": "成色标签（优秀/良好/一般/较差）",
@@ -69,10 +74,10 @@ export async function analyzeProductImage(
 - 3-4分：设备磨损较重，可能有明显锈蚀或需要维修的部分
 - 1-2分：设备状况很差，可能需要大修或已接近报废
 
-注意：
-1. 只返回 JSON，不要任何其他文字说明
-2. 评估要客观公正，基于图片实际状况
-3. confidence取决于图片清晰度和可见范围`,
+示例输出：
+{"conditionScore": 7, "conditionLabel": "良好", "analysis": "设备整体状况良好，有轻微使用痕迹，油漆完整，无重大锈蚀", "confidence": 0.85}
+
+注意：评估要客观公正，基于图片实际状况，confidence取决于图片清晰度和可见范围`,
               },
               {
                 type: "image_url",
@@ -81,7 +86,6 @@ export async function analyzeProductImage(
             ],
           },
         ],
-        response_format: { type: "json_object" },
         max_tokens: 800,
       },
       {

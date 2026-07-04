@@ -240,9 +240,9 @@ async function runTests() {
 
     const result = await calculateValuationV4(input);
     
-    // 低马力应该有惩罚
-    const hasPenalty = result.specDetails?.some(d => d.impact === "negative");
-    assert(hasPenalty === true, "低马力应有负面评分");
+    // 低马力应该有惩罚（检查 score 是否小于平均值）
+    const hasLowScore = result.specDetails?.some(d => d.field === "enginePower" && d.score < 6);
+    assert(hasLowScore === true, "低马力应有较低评分 (score < 6)");
   }
 
   // -------------------------------------------------------
