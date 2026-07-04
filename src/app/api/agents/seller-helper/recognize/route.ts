@@ -57,22 +57,38 @@ export async function POST(request: NextRequest) {
     const content = [
       {
         type: "text",
-        text: `你是一位二手农业机械专家。请根据提供的图片，识别以下信息并以 JSON 格式返回：
+        text: `你是一位资深二手农业机械专家，熟悉 CLAAS、John Deere、New Holland、Krone、Orkel 等主流品牌的收获机、割台、打捆机。
+请根据提供的农机图片（整机全貌、铭牌、驾驶室、轮胎/底盘），识别以下信息，以 JSON 格式返回。
+
+返回字段说明：
 {
-  "brand": "品牌名称（如 CLAAS, John Deere, Krone 等）",
-  "modelName": "型号（如 JAGUAR 970, 5300RC 等）",
-  "year": 年份数字（如 2018），如果无法识别则为 null,
-  "workingHours": 工作小时数（如 3500），如果无法识别则为 null,
-  "condition": "状况描述（excellent/good/fair/poor 之一）",
-  "features": "其他可识别特征（如四轮驱动、割台类型等）",
+  "brand": "品牌英文名（如 CLAAS, John Deere, New Holland, Krone, Orkel）",
+  "modelName": "型号（如 JAGUAR 970, FR9040, 5300RC）",
+  "year": 年份数字（如 2018），无法识别则为 null,
+  "enginePower": "发动机额定马力(HP)，数字字符串，如 \"480\"，无法识别则为 null",
+  "engineType": "发动机类型（如 Diesel Engine, Gasoline, Other）",
+  "driveSystem": "驱动方式（2WD / 4WD / Full Hydraulic）",
+  "overallLength": "整机总长(mm)，数字字符串，如 \"8900\"，无法识别则为 null",
+  "overallWidth": "整机总宽(mm)，数字字符串，如 \"2990\"，无法识别则为 null",
+  "overallHeight": "整机总高(mm)，数字字符串，如 \"3490\"，无法识别则为 null",
+  "netWeight": "整机净重(kg)，数字字符串，如 \"12500\"，无法识别则为 null",
+  "mainConfig": "主要配置（如割台型号、导航系统、打捆机构型等）",
+  "workingHours": "工作小时数，数字，无法识别则为 null",
+  "condition": "成色（excellent / good / fair / poor 之一）",
+  "priceMode": "价格模式（fob / por），无法识别则为 null",
+  "tradeTerm": "贸易条款（FOB / CIF / CFR / EXW / 其他），无法识别则为 null",
+  "tradePort": "发货港口（如 Qingdao, Shanghai），无法识别则为 null",
   "confidence": 0-1 之间的置信度分数
 }
 
-注意事项：
-1. 只返回 JSON，不要任何其他文字
-2. 品牌名用英文标准名
-3. 型号尽可能精确
-4. 如果图片质量差或无法识别，confidence 设为 0.3 以下`,
+识别要点：
+1. 铭牌照片可识别品牌、型号、年份、马力、发动机类型
+2. 整机全貌照片可识别驱动方式（看轮胎/底盘）、尺寸估算
+3. 割台/附件照片可识别 mainConfig
+4. 成色通过漆面、磨损、锈蚀判断
+5. 只返回 JSON，不要任何其他文字
+6. 字段无法识别时设为 null，不要瞎编
+7. 品牌名必须用英文标准名`,
       },
       ...images.map((url: string) => ({
         type: "image_url" as const,
@@ -126,9 +142,19 @@ export async function POST(request: NextRequest) {
         brand: recognized.brand || null,
         modelName: recognized.modelName || null,
         year: recognized.year || null,
+        enginePower: recognized.enginePower || null,
+        engineType: recognized.engineType || null,
+        driveSystem: recognized.driveSystem || null,
+        overallLength: recognized.overallLength || null,
+        overallWidth: recognized.overallWidth || null,
+        overallHeight: recognized.overallHeight || null,
+        netWeight: recognized.netWeight || null,
+        mainConfig: recognized.mainConfig || null,
         workingHours: recognized.workingHours || null,
         condition: recognized.condition || null,
-        features: recognized.features || null,
+        priceMode: recognized.priceMode || null,
+        tradeTerm: recognized.tradeTerm || null,
+        tradePort: recognized.tradePort || null,
         confidence: recognized.confidence || 0.5,
       },
     });

@@ -190,13 +190,24 @@ export default function NewProductPage() {
           onFill={(data) => {
             setForm((f) => ({
               ...f,
-              brandName: data.brandName,
-              modelName: data.modelName,
-              year: data.year,
-              workingHours: data.workingHours,
-              condition: data.condition,
+              brandName: data.brandName || "",
+              modelName: data.modelName || "",
+              year: data.year || 2020,
+              enginePower: data.enginePower || "",
+              engineType: data.engineType || "Diesel Engine",
+              driveSystem: data.driveSystem || "2WD",
+              overallLength: data.overallLength || "",
+              overallWidth: data.overallWidth || "",
+              overallHeight: data.overallHeight || "",
+              netWeight: data.netWeight || "",
+              mainConfig: data.mainConfig || "",
+              workingHours: data.workingHours || "",
+              condition: data.condition || "good",
+              priceMode: data.priceMode || "por",
+              tradeTerm: data.tradeTerm || "FOB",
+              tradePort: data.tradePort || "Qingdao",
             }));
-            // 如果有品牌名，尝试切换到自定义品牌模式
+            // 如果有品牌名，切换到自定义品牌模式
             if (data.brandName) {
               setBrandMode("custom");
             }
