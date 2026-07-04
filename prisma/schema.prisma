@@ -44,6 +44,10 @@ model User {
   followers   Follow[]  @relation("FollowSeller")
   contractsAsSeller ElectronicContract[] @relation("ContractSeller")
   contractsAsBuyer  ElectronicContract[] @relation("ContractBuyer")
+  auctionsAsSeller  Auction[] @relation("AuctionSeller")
+  auctionsAsWinner  Auction[] @relation("AuctionWinner")
+  auctionBids       Bid[]     @relation("AuctionBidder")
+  loanApplications  LoanApplication[]
 }
 
 model Brand {
@@ -132,6 +136,10 @@ model Product {
   inspectionReports   InspectionReport[]
   favorites           Favorite[]
   contracts           ElectronicContract[]
+  auctions            Auction[]
+  loanApplications    LoanApplication[]
+  warranties          Warranty[]
+  maintenanceRecords  MaintenanceRecord[]
 }
 
 model ProductImage {
@@ -647,6 +655,8 @@ model ServiceCenter {
   @@index([province, level])
   @@index([isActive])
   @@index([level, isActive])
+
+  maintenanceRecords MaintenanceRecord[]
 }
 
 // ═══════════════════════════════════════════════════════
@@ -857,9 +867,196 @@ model ElectronicContract {
   product Product @relation(fields: [productId], references: [id])
   seller  User    @relation("ContractSeller", fields: [sellerId], references: [id])
   buyer   User    @relation("ContractBuyer", fields: [buyerId], references: [id])
+  warranties Warranty[]
 
   @@index([sellerId, status])
   @@index([buyerId, status])
   @@index([productId])
   @@index([status, createdAt])
+}
+
+// ═══════════════════════════════════════════════════════
+// 在线拍卖系统
+// ═══════════════════════════════════════════════════════
+
+model Auction {
+  id              String   @id @default(cuid())
+  auctionNo       String   @unique // 拍卖编号：SD-PM-YYYYMMDD-XXXX
+  productId       String   // 拍卖设备
+  sellerId        String   // 卖方
+  title           String   // 拍卖标题
+  description     String?  @db.Text // 拍卖描述
+  // 拍卖参数
+  startPrice      Float    // 起拍价（CNY）
+  reservePrice    Float?   // 保留价（CNY），未达则流拍
+  priceIncrement  Float    @default(1000) // 每次加价幅度
+  deposit         Float    @default(0) // 参拍保证金
+  // 时间
+  startTime       DateTime // 拍卖开始时间
+  endTime         DateTime // 拍卖结束时间
+  // 状态
+  status          String   @default("scheduled") // scheduled, live, ended, cancelled, settled
+  winnerId        String?  // 中标者ID
+  winningBid      Float?   // 中标价
+  totalBids       Int      @default(0) // 总出价次数
+  totalBidders    Int      @default(0) // 参拍人数
+  // 结算
+  settledAt       DateTime?
+  contractId      String?  // 关联合同ID
+  // 元数据
+  coverImage      String?  // 封面图
+  viewCount       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id])
+  seller  User    @relation("AuctionSeller", fields: [sellerId], references: [id])
+  bids    Bid[]
+  winner  User?   @relation("AuctionWinner", fields: [winnerId], references: [id])
+
+  @@index([status, endTime])
+  @@index([sellerId])
+  @@index([productId])
+}
+
+model Bid {
+  id          String   @id @default(cuid())
+  auctionId   String
+  bidderId    String
+  amount      Float    // 出价金额
+  isWinning   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  auction Auction @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+  bidder  User    @relation("AuctionBidder", fields: [bidderId], references: [id], onDelete: Cascade)
+
+  @@index([auctionId, amount])
+  @@index([bidderId])
+}
+
+// ═══════════════════════════════════════════════════════
+// 金融保险服务
+// ═══════════════════════════════════════════════════════
+
+model FinancialService {
+  id              String   @id @default(cuid())
+  serviceName     String   // 产品名称
+  serviceType     String   // loan(贷款), insurance(保险), lease(租赁)
+  provider        String   // 机构名称：银行/保险公司
+  providerLogo    String?  // 机构Logo URL
+  // 产品参数
+  interestRate    Float?   // 利率(%)
+  maxAmount       Float?   // 最高额度（CNY）
+  maxTerm         Int?     // 最长期限（月）
+  downPayment     Float?   // 首付比例(%)
+  coverage        String?  @db.Text // 保险保障范围
+  premium         Float?   // 保费率(%)
+  // 描述
+  description     String?  @db.Text
+  requirements    String?  @db.Text // 申请条件
+  // 状态
+  isActive        Boolean  @default(true)
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  applications LoanApplication[]
+
+  @@index([serviceType, isActive])
+}
+
+model LoanApplication {
+  id              String   @id @default(cuid())
+  userId          String   // 申请人
+  serviceId       String   // 关联金融产品
+  productId       String?  // 关联设备（如购买设备贷款）
+  // 申请信息
+  applicantName   String
+  contactPhone    String
+  contactEmail    String?
+  companyName     String?
+  // 贷款/保险信息
+  appliedAmount   Float    // 申请金额
+  appliedTerm     Int?     // 申请期限（月）
+  purpose         String?  @db.Text // 贷款用途/保险需求
+  // 资料
+  idCardUrl       String?  // 身份证/营业执照URL
+  assetProofUrl   String?  // 资产证明URL
+  // 状态
+  status          String   @default("pending") // pending, reviewing, approved, rejected, disbursed
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  reviewNote      String?
+  approvedAmount  Float?   // 实批金额
+  // 元数据
+  metadata        String?  // JSON
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  service FinancialService @relation(fields: [serviceId], references: [id])
+  product Product?         @relation(fields: [productId], references: [id])
+
+  @@index([userId, status])
+  @@index([status, createdAt])
+}
+
+// ═══════════════════════════════════════════════════════
+// 售后维保平台
+// ═══════════════════════════════════════════════════════
+
+model Warranty {
+  id              String   @id @default(cuid())
+  productId       String   // 关联设备
+  contractId      String?  // 关联合同
+  warrantyType    String   // standard(标准质保), extended(延保), parts(配件质保)
+  coverage        String   @db.Text // 保障范围
+  startDate       DateTime
+  endDate         DateTime
+  status          String   @default("active") // active, expired, claimed
+  provider        String?  // 质保方
+  terms           String?  @db.Text // 质保条款
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  product   Product           @relation(fields: [productId], references: [id])
+  contract  ElectronicContract? @relation(fields: [contractId], references: [id])
+  records   MaintenanceRecord[]
+
+  @@index([productId, status])
+  @@index([endDate])
+}
+
+model MaintenanceRecord {
+  id              String   @id @default(cuid())
+  productId       String   // 关联设备
+  warrantyId      String?  // 关联质保
+  serviceCenterId String?  // 服务网点
+  // 维保信息
+  maintenanceType String   // routine(日常保养), repair(维修), inspection(检测), emergency(紧急维修)
+  title           String   // 维保标题
+  description     String?  @db.Text
+  cost            Float?   // 费用（CNY）
+  // 状态
+  status          String   @default("scheduled") // scheduled, in_progress, completed, cancelled
+  scheduledDate   DateTime?
+  completedDate   DateTime?
+  // 维修人员
+  technician      String?  // 维修技师
+  // 记录
+  partsReplaced   String?  @db.Text // 更换配件（JSON数组）
+  photos          String?  // JSON: 维修照片URL数组
+  notes           String?  @db.Text // 维修备注
+  // 评价
+  rating          Int?     // 1-5 评分
+  ratingComment   String?  // 评价内容
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  product       Product        @relation(fields: [productId], references: [id])
+  warranty      Warranty?      @relation(fields: [warrantyId], references: [id])
+  serviceCenter ServiceCenter? @relation(fields: [serviceCenterId], references: [id])
+
+  @@index([productId, status])
+  @@index([status, scheduledDate])
 }

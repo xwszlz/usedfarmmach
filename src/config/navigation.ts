@@ -17,6 +17,7 @@ export const mainNavEn: NavItem[] = [
     label: "BUY",
     children: [
       { href: "/products", label: "Browse Equipment" },
+      { href: "/auctions", label: "Auctions" },
       { href: "/products?match=true", label: "Buyer Request" },
       { href: "/brand/claas", label: "CLAAS" },
       { href: "/brand/new-holland", label: "New Holland" },
@@ -56,6 +57,7 @@ export const mainNavEn: NavItem[] = [
       { href: "/standards", label: "Standards" },
       { href: "/parts", label: "Parts" },
       { href: "/solutions", label: "Solutions" },
+      { href: "/finance", label: "Finance & Insurance" },
       { href: "/about#contact", label: "Contact Us" },
     ],
   },
@@ -72,6 +74,7 @@ export const mainNav: NavItem[] = [
     labelKey: "nav.buyMachinery",
     children: [
       { href: "/products", labelKey: "nav.browseEquipment" },
+      { href: "/auctions", label: "在线拍卖" },
       { href: "/products?match=true", labelKey: "nav.buyerRequest" },
       { href: "/brand/claas", label: "CLAAS" },
       { href: "/brand/new-holland", label: "New Holland" },
@@ -115,6 +118,7 @@ export const mainNav: NavItem[] = [
       { href: "/standards", labelKey: "nav.standards" },
       { href: "/parts", labelKey: "nav.parts" },
       { href: "/solutions", labelKey: "nav.solutions" },
+      { href: "/finance", label: "金融保险" },
       { href: "/about#contact", labelKey: "nav.contactUs" },
     ],
   },

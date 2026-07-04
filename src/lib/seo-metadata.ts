@@ -207,6 +207,74 @@ const localizedMeta: Record<string, Record<string, { title: string; description:
       description: "AgriTrade विश्लेषण केंद्र: कृषि मशीनरी बाजार का रियल-टाइम डेटा, मूल्य सूचकांक, श्रेणी वितरण और ब्रांड लोकप्रियता सहित।",
     },
   },
+  auctions: {
+    zh: {
+      title: "农机在线拍卖_二手农机竞价_公开透明拍卖平台_神雕农机",
+      description: "神雕农机在线拍卖平台：精选二手农机设备，公开竞价，透明交易。定期拍卖会，保证金制，实时出价。",
+    },
+    en: {
+      title: "Farm Machinery Online Auctions | Used Equipment Bidding | AgriTrade",
+      description: "AgriTrade online auction platform: premium used farm machinery, open bidding, transparent trading. Regular auction events with real-time bidding.",
+    },
+    ru: {
+      title: "Онлайн аукционы сельхозтехники | Торги подержанной техникой | AgriTrade",
+      description: "Онлайн аукцион AgriTrade: премиальная подержанная сельхозтехника, открытые торги, прозрачные сделки.",
+    },
+    es: {
+      title: "Subastas en Línea de Maquinaria Agrícola | AgriTrade",
+      description: "Plataforma de subastas AgriTrade: maquinaria agrícola usada premium, pujas abiertas, comercio transparente.",
+    },
+    pt: {
+      title: "Leilões Online de Máquinas Agrícolas | AgriTrade",
+      description: "Plataforma de leilões AgriTrade: máquinas agrícolas usadas premium, lances abertos, comércio transparente.",
+    },
+    ar: {
+      title: "مزادات الآلات الزراعية عبر الإنترنت | AgriTrade",
+      description: "منصة مزادات AgriTrade: آلات زراعية مستعملة متميزة، مزايدات مفتوحة، تجارة شفافة.",
+    },
+    fr: {
+      title: "Enchères en Ligne de Machines Agricoles | AgriTrade",
+      description: "Plateforme d'enchères AgriTrade: machines agricoles d'occasion premium, enchères ouvertes, commerce transparent.",
+    },
+    hi: {
+      title: "कृषि मशीनरी ऑनलाइन नीलामी | AgriTrade",
+      description: "AgriTrade ऑनलाइन नीलामी प्लेटफॉर्म: प्रीमियम पुरानी कृषि मशीनरी, खुली बोली, पारदर्शी व्यापार।",
+    },
+  },
+  finance: {
+    zh: {
+      title: "农机金融保险服务_农机贷款_交易保险_设备租赁_神雕农机",
+      description: "神雕农机金融服务：农机抵押贷款、交易保险、设备租赁。一站式金融解决方案助力农机交易。",
+    },
+    en: {
+      title: "Farm Machinery Financial Services | Equipment Loans & Insurance | AgriTrade",
+      description: "AgriTrade financial services: equipment loans, trade insurance, leasing. One-stop financial solutions for farm machinery trading.",
+    },
+    ru: {
+      title: "Финансовые услуги для сельхозтехники | Кредиты и страхование | AgriTrade",
+      description: "Финансовые услуги AgriTrade: кредиты на технику, страхование сделок, лизинг.",
+    },
+    es: {
+      title: "Servicios Financieros para Maquinaria Agrícola | AgriTrade",
+      description: "Servicios financieros AgriTrade: préstamos de equipo, seguro comercial, arrendamiento.",
+    },
+    pt: {
+      title: "Serviços Financeiros para Máquinas Agrícolas | AgriTrade",
+      description: "Serviços financeiros AgriTrade: empréstimos de equipamentos, seguro comercial, leasing.",
+    },
+    ar: {
+      title: "الخدمات المالية للآلات الزراعية | AgriTrade",
+      description: "الخدمات المالية AgriTrade: قروض المعدات، التأمين التجاري، التأجير.",
+    },
+    fr: {
+      title: "Services Financiers pour Machines Agricoles | AgriTrade",
+      description: "Services financiers AgriTrade: prêts d'équipement, assurance commerciale, location.",
+    },
+    hi: {
+      title: "कृषि मशीनरी वित्तीय सेवाएं | AgriTrade",
+      description: "AgriTrade वित्तीय सेवाएं: उपकरण ऋण, व्यापार बीमा, लीजिंग।",
+    },
+  },
   about: {
     zh: {
       title: "关于神雕农机_全球二手农机交易平台_跨境农机出口专家",
