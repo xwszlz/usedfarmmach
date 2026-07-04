@@ -173,6 +173,40 @@ const localizedMeta: Record<string, Record<string, { title: string; description:
       description: "पेशेवर कृषि मशीनरी लॉजिस्टिक्स: FCL, LCL और एयर फ्रेट समाधान। निर्यात सीमा शुल्क निकासी, अंतर्राष्ट्रीय शिपिंग और पूर्ण ट्रैकिंग के साथ डोर-टू-डोर डिलीवरी।",
     },
   },
+  insights: {
+    zh: {
+      title: "农机市场数据洞察中心_价格指数_品类分布_品牌热度_神雕农机",
+      description: "神雕农机数据洞察中心：实时掌握农机市场动态，包含价格指数走势、品类分布、品牌热度、区域分布、套利榜单等可视化数据看板。",
+    },
+    en: {
+      title: "Farm Machinery Market Insights | Price Index & Data Dashboard | AgriTrade",
+      description: "AgriTrade Market Insights Center: Real-time farm machinery data including price index trends, category distribution, brand popularity, regional distribution, and arbitrage rankings.",
+    },
+    ru: {
+      title: "Аналитика рынка сельхозтехники | Индекс цен и дашборд | AgriTrade",
+      description: "Центр аналитики AgriTrade: актуальные данные рынка сельхозтехники, включая индекс цен, распределение по категориям и брендам, региональную статистику.",
+    },
+    es: {
+      title: "Información del Mercado de Maquinaria Agrícola | Índice de Precios | AgriTrade",
+      description: "Centro de análisis AgriTrade: datos en tiempo real del mercado de maquinaria agrícola, incluyendo índice de precios, distribución por categorías y marcas.",
+    },
+    pt: {
+      title: "Análise de Mercado de Máquinas Agrícolas | Índice de Preços | AgriTrade",
+      description: "Centro de análise AgriTrade: dados em tempo real do mercado de máquinas agrícolas, incluindo índice de preços, distribuição por categorias e marcas.",
+    },
+    ar: {
+      title: "تحليلات سوق الآلات الزراعية | مؤشر الأسعار | AgriTrade",
+      description: "مركز تحليلات AgriTrade: بيانات لحظية لسوق الآلات الزراعية بما في ذلك مؤشر الأسعار وتوزيع الفئات والعلامات التجارية.",
+    },
+    fr: {
+      title: "Analyses du Marché des Machines Agricoles | Indice des Prix | AgriTrade",
+      description: "Centre d'analyses AgriTrade: données en temps réel du marché des machines agricoles, incluant l'indice des prix, la distribution par catégories et marques.",
+    },
+    hi: {
+      title: "कृषि मशीनरी बाजार विश्लेषण | मूल्य सूचकांक | AgriTrade",
+      description: "AgriTrade विश्लेषण केंद्र: कृषि मशीनरी बाजार का रियल-टाइम डेटा, मूल्य सूचकांक, श्रेणी वितरण और ब्रांड लोकप्रियता सहित।",
+    },
+  },
   about: {
     zh: {
       title: "关于神雕农机_全球二手农机交易平台_跨境农机出口专家",

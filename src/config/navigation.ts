@@ -42,6 +42,7 @@ export const mainNavEn: NavItem[] = [
   {
     label: "INSIGHTS",
     children: [
+      { href: "/insights", label: "Market Insights" },
       { href: "/intelligence", label: "Market Intel" },
       { href: "/arbitrage", label: "Arbitrage Rankings" },
       { href: "/blog", label: "Industry News" },
@@ -100,6 +101,7 @@ export const mainNav: NavItem[] = [
   {
     labelKey: "nav.marketInsights",
     children: [
+      { href: "/insights", label: "数据洞察" },
       { href: "/intelligence", labelKey: "nav.intelligence" },
       { href: "/arbitrage", labelKey: "nav.arbitrageAnalysis" },
       { href: "/blog", labelKey: "nav.blog" },

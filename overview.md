@@ -1,8 +1,8 @@
 # 开发进度 — 交付概览
 
 > 更新日期：2026-07-05
-> 最新Commit: `06270c4`
-> 状态：✅ 第二阶段第一批3项已完成，已push到GitHub，Vercel自动部署
+> 最新Commit: `d70fccd`
+> 状态：✅ 第二阶段第二批5项已完成，已push到GitHub，Vercel自动部署
 
 ---
 
@@ -26,64 +26,81 @@
 ## 第二阶段 — 第一批交付（commit 06270c4）
 
 ### #13 设备检验报告模块 ✅
-
-**数据库**: `InspectionReport` 模型
-- 5大类20项检测（发动机/传动/液压/电气/外观）
-- A/B/C/D 综合评级 + 0-100评分
-- 检验员/机构/有效期/维修建议/照片
-
-**API**:
-- `GET /api/inspection-reports?productId=xxx` — 获取产品检验报告（含检测模板）
-- `POST /api/inspection-reports` — 创建检验报告（卖家/管理员）
-
-**UI**: 产品详情页新增"设备检验报告"卡片
-- 综合评分 + 评级Badge
-- 可展开查看5大类20项详细检测结果
-- 维修建议提示框
-- 多份历史报告对比
+- Prisma: InspectionReport 模型（5大类20项检测, A/B/C/D评级）
+- API: GET/POST /api/inspection-reports
+- UI: 产品详情页检验报告卡片
 
 ### #14 收藏/关注功能完善 ✅
-
-**数据库**: `Favorite` + `Follow` + `SavedSearch` 三个模型
-
-**API**:
-| 路由 | 方法 | 说明 |
-|------|------|------|
-| `/api/favorites` | GET/POST/DELETE | 产品收藏管理 |
-| `/api/follows` | GET/POST/DELETE | 卖家关注管理 |
-| `/api/saved-searches` | GET/POST/DELETE | 搜索条件保存 |
-
-**UI**:
-- 产品详情页：收藏按钮（❤️）+ 关注卖家按钮（⭐）
-- `/user/favorites` 页面：三标签Tab（收藏设备/关注卖家/保存搜索）
-- 未登录跳转登录页
-- 通过 `document.cookie` 读取 token
+- Prisma: Favorite + Follow + SavedSearch 模型
+- API: /api/favorites, /api/follows, /api/saved-searches
+- UI: 收藏按钮+关注按钮+/user/favorites管理页
 
 ### #15 卖家信任体系展示 ✅
+- Prisma: SellerRating 模型（3维度评分）
+- API: /api/seller/[id]/trust-profile, /api/seller-ratings
+- UI: 卖家信任卡+/seller/[id]卖家详情页
 
-**数据库**: `SellerRating` 模型（3维度评分：物品相符/服务态度/物流速度）
+---
+
+## 第二阶段 — 第二批交付（commit d70fccd）
+
+### #18 零配件专区 ✅
+
+**网站**:
+- `/parts` 页面：8大品类分类筛选（发动机/液压/传动/电气/滤芯/轮胎/轴承/车身）
+- 搜索功能+配件卡片+库存状态+兼容型号
+- CTA：找不到配件可提交需求
+
+**小程序**:
+- 首页新增4个快捷入口（零配件/物流询价/服务网点/行业方案）
+- 通过h5-bridge webview打开网站对应页面
+
+### #19 行业解决方案页 ✅
+
+**网站**: `/solutions` 页面
+- 4大农业场景方案：
+  1. 大田种植（耕整地→播种→植保→收获，推荐JD/CLAAS/NH/Krone）
+  2. 畜牧养殖（饲草收割→牧草处理→饲料制备→粪污处理，推荐CLAAS/Krone/KUHN）
+  3. 果园经济（果园动力→植保→除草→采收，推荐JD/NH/KUHN）
+  4. 设施农业（耕作→灌溉→环境调控→植保采收，推荐Universal/KUHN/Bosch）
+- 每场景含4个作业环节+推荐设备+品牌链接
+
+### #20 物流在线询价 ✅
+
+**网站**: 物流页面新增询价表单
+- 起运省份（31省）→ 自动匹配出口港口
+- 目的地区域（7大区域：俄罗斯/中亚/东欧/非洲/东南亚/南美/中东）
+- 设备类型+尺寸+数量
+- 实时运费估算区间
+- 联系人+电话+备注
+
+**API**: `POST /api/logistics-quote` — 提交询价
+
+### #21 多货币价格展示 ✅
+
+**小程序**:
+- `utils/currency.js` 模块：5种货币（CNY/USD/EUR/RUB/KZT）
+- 设置页新增货币选择器（带国旗+符号+名称+汇率日期）
+- 机器卡片新增双价格展示（CNY价格 + 用户选择货币换算价格）
+- 通过 `getDualPriceDisplay()` 统一计算
+
+### #16 推送通知体系 ✅
+
+**数据库**:
+- `Follow.notificationEnabled` — 关注通知开关
+- `User.wxOpenid` — 微信OpenID（用于发送订阅消息）
 
 **API**:
 | 路由 | 方法 | 说明 |
 |------|------|------|
-| `/api/seller/[id]/trust-profile` | GET | 卖家信任档案（聚合认证+评分+产品+信任等级） |
-| `/api/seller-ratings` | GET/POST | 评分查询/提交 |
+| `/api/notifications/subscribe` | GET/POST | 通知订阅管理 |
+| `/api/notifications/send` | POST | 定时推送（Vercel Cron触发） |
 
-**UI**:
-- 产品详情页：卖家信任卡（信任等级Badge+认证标识+评分统计+关注按钮）
-- `/seller/[id]` 卖家详情页：
-  - 卖家头部（Logo+信任等级+入驻时间+关注按钮）
-  - 4格统计（评分/在售/总发布/认证数）
-  - 在售设备网格（12个产品卡片）
-  - 认证信息列表
-  - 评分分布柱状图
-  - 最新评价列表（5条）
-
-**信任等级算法**:
-- `gold` 金牌卖家：3+认证, 4.5+评分, 10+产品
-- `verified` 认证卖家：2+认证, 4.0+评分
-- `certified` 已认证：1+认证
-- `basic` 普通卖家：无认证
+**小程序**:
+- 通知设置页（`/subpackages/user-center/pages/notifications/notifications`）
+- 4种通知类型：关注卖家新品/搜索匹配/收藏降价/询价回复
+- 微信订阅消息授权流程（wx.requestSubscribeMessage）
+- 个人中心新增"🔔 通知设置"入口
 
 ---
 
@@ -91,24 +108,24 @@
 
 | 文件 | 类型 |
 |------|------|
-| `prisma/schema.prisma` | 修改：+5 models (InspectionReport, Favorite, Follow, SavedSearch, SellerRating) |
-| `src/app/api/inspection-reports/route.ts` | 新建 |
-| `src/app/api/favorites/route.ts` | 新建 |
-| `src/app/api/follows/route.ts` | 新建 |
-| `src/app/api/saved-searches/route.ts` | 新建 |
-| `src/app/api/seller/[id]/trust-profile/route.ts` | 新建 |
-| `src/app/api/seller-ratings/route.ts` | 新建 |
-| `src/components/inspection/inspection-report-card.tsx` | 新建 |
-| `src/components/favorite/favorite-button.tsx` | 新建 |
-| `src/components/seller/seller-trust-card.tsx` | 新建 |
-| `src/app/[locale]/products/[id]/page.tsx` | 修改：+3组件 |
-| `src/app/[locale]/user/favorites/page.tsx` | 新建 |
-| `src/app/[locale]/user/favorites/favorites-client.tsx` | 新建 |
-| `src/app/[locale]/seller/[id]/page.tsx` | 新建 |
-| `src/app/[locale]/seller/[id]/seller-profile-client.tsx` | 新建 |
-| `src/config/navigation.ts` | 修改：+myFavorites |
-| `messages/*.json` (8语言) | 修改：+nav.myFavorites |
-| `prisma/migrations/20260705000000_add_inspection_favorites_trust/migration.sql` | 新建 |
+| `src/app/[locale]/parts/page.tsx` | 新建 |
+| `src/app/[locale]/parts/PartsClient.tsx` | 新建 |
+| `src/app/[locale]/solutions/page.tsx` | 新建 |
+| `src/components/logistics/logistics-quote-form.tsx` | 新建 |
+| `src/app/[locale]/logistics/page.tsx` | 修改：+询价表单 |
+| `src/app/api/logistics-quote/route.ts` | 新建 |
+| `src/app/api/notifications/subscribe/route.ts` | 新建 |
+| `src/app/api/notifications/send/route.ts` | 新建 |
+| `prisma/schema.prisma` | 修改：+notificationEnabled, +wxOpenid |
+| `src/config/navigation.ts` | 修改：+parts, +solutions |
+| `messages/*.json` (8语言) | 修改：+nav.solutions |
+| `shendiao-miniprogram/utils/currency.js` | 新建 |
+| `shendiao-miniprogram/subpackages/user-center/pages/notifications/*` | 新建（4文件） |
+| `shendiao-miniprogram/subpackages/user-center/pages/settings/*` | 修改：+货币选择 |
+| `shendiao-miniprogram/components/machine-card/*` | 修改：+双货币价格 |
+| `shendiao-miniprogram/pages/index/*` | 修改：+快捷入口 |
+| `shendiao-miniprogram/pages/profile/profile.wxml` | 修改：+通知设置入口 |
+| `shendiao-miniprogram/app.json` | 修改：+notifications页面 |
 
 ---
 
@@ -118,18 +135,19 @@
 |--------|------|
 | next build | ✅ 0错误 |
 | prisma db push | ✅ 数据库已同步 |
-| git push | ✅ commit 06270c4 |
+| git push | ✅ commit d70fccd |
 | Vercel部署 | 自动进行中 |
 
 ---
 
-## 下一步：第二阶段第二批（独立模块，无依赖）
+## 整体进度
 
-| 序号 | 任务 | 依赖 |
-|------|------|------|
-| #18 | 零配件专区 | 无 |
-| #19 | 行业解决方案页 | 无 |
-| #20 | 物流在线询价 | 无 |
-| #21 | 多货币价格展示 | 无 |
-| #16 | 推送通知 | #14 ✅ 已完成，可启动 |
-| #17 | 担保交易 | 需支付接口 |
+| 阶段 | 任务数 | 状态 |
+|------|--------|------|
+| 立即执行 | 4项 | ✅ 全部完成 |
+| 第一阶段 | 12项 | ✅ 全部完成 |
+| 第二阶段 | 8/9项 | ✅ 已完成8项（#13-16, #18-21） |
+| 第三阶段 | 6项 | ⬜ 待启动 |
+| 第四阶段 | 5项 | ⬜ 远期 |
+
+**第二阶段仅剩 #17 担保交易**（需外部支付接口）

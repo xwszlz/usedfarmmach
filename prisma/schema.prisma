@@ -42,6 +42,8 @@ model User {
   inspectionReports InspectionReport[]
   following   Follow[]  @relation("FollowFollower")
   followers   Follow[]  @relation("FollowSeller")
+  contractsAsSeller ElectronicContract[] @relation("ContractSeller")
+  contractsAsBuyer  ElectronicContract[] @relation("ContractBuyer")
 }
 
 model Brand {
@@ -129,6 +131,7 @@ model Product {
   machineryIdentity   MachineryIdentity?
   inspectionReports   InspectionReport[]
   favorites           Favorite[]
+  contracts           ElectronicContract[]
 }
 
 model ProductImage {
@@ -755,4 +758,108 @@ model SellerRating {
   @@unique([sellerId, raterId, productId])
   @@index([sellerId, createdAt])
   @@index([raterId])
+}
+
+// ═══════════════════════════════════════════════════════
+// 价格指数引擎
+// ═══════════════════════════════════════════════════════
+
+model PriceIndex {
+  id            String   @id @default(cuid())
+  date          DateTime // 数据日期
+  category      String?  // 品类ID（null=综合指数）
+  brand         String?  // 品牌ID（null=品类或综合）
+  region        String?  // 区域（null=全国）
+  indexValue    Float    // 指数值（基准日=100）
+  avgPriceCny   Float    // 平均价格（万元）
+  sampleCount   Int      // 样本数量
+  monthOverMonth Float?  // 环比变化(%)
+  yearOverYear  Float?   // 同比变化(%)
+  metadata      String?  // JSON: 额外元数据
+  createdAt     DateTime @default(now())
+
+  @@unique([date, category, brand, region])
+  @@index([date])
+  @@index([category, date])
+  @@index([brand, date])
+}
+
+// ═══════════════════════════════════════════════════════
+// 行业报告
+// ═══════════════════════════════════════════════════════
+
+model IndustryReport {
+  id            String    @id @default(cuid())
+  title         String    // 报告标题
+  reportType    String    // monthly, quarterly, yearly, special
+  period        String    // 报告期：2026-07, 2026-Q3, 2026
+  summary       String    @db.Text // 报告摘要
+  content       String    @db.Text // Markdown内容
+  coverImage    String?   // 封面图URL
+  // 关键数据摘要
+  keyMetrics    String?   // JSON: [{label, value, change}]
+  topBrands     String?   // JSON: [{brand, share, avgPrice}]
+  topCategories String?   // JSON: [{category, count, avgPrice}]
+  priceTrends   String?   // JSON: [{date, index}]
+  // 状态
+  status        String    @default("draft") // draft, published, archived
+  publishedAt   DateTime?
+  viewCount     Int       @default(0)
+  downloadCount Int       @default(0)
+  // 作者
+  authorId      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([status, publishedAt])
+  @@index([reportType, period])
+}
+
+// ═══════════════════════════════════════════════════════
+// 电子合同
+// ═══════════════════════════════════════════════════════
+
+model ElectronicContract {
+  id              String   @id @default(cuid())
+  contractNo      String   @unique // 合同编号：SD-HT-YYYYMMDD-XXXX
+  productId       String   // 关联产品
+  sellerId        String   // 卖方ID
+  buyerId         String   // 买方ID
+  // 合同信息
+  title           String   // 合同标题
+  contractType    String   @default("sale") // sale(买卖), auction(拍卖), lease(租赁)
+  tradeTerm       String   @default("FOB") // 贸易条款
+  // 交易信息
+  productInfo     String   // JSON: 产品摘要信息
+  priceCny        Float    // 成交价（人民币）
+  priceUsd        Float?   // 成交价（美元）
+  currency        String   @default("CNY")
+  paymentMethod   String?  // 付款方式
+  deliveryDate    DateTime? // 交货日期
+  deliveryAddress String?  // 交货地址
+  // 合同条款
+  terms           String   @db.Text // 合同条款（Markdown）
+  attachments     String?  // JSON: 附件URL数组
+  // 签署状态
+  status          String   @default("draft") // draft, pending_seller, pending_buyer, signed, executed, cancelled, disputed
+  sellerSignedAt  DateTime?
+  buyerSignedAt   DateTime?
+  sellerSignature String?  // 签名图片URL或哈希
+  buyerSignature  String?  // 签名图片URL或哈希
+  // PDF
+  pdfUrl          String?  // 生成的PDF URL
+  // 时间
+  validFrom       DateTime?
+  validUntil      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id])
+  seller  User    @relation("ContractSeller", fields: [sellerId], references: [id])
+  buyer   User    @relation("ContractBuyer", fields: [buyerId], references: [id])
+
+  @@index([sellerId, status])
+  @@index([buyerId, status])
+  @@index([productId])
+  @@index([status, createdAt])
 }
