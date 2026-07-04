@@ -12,6 +12,7 @@ model User {
   email             String?    @unique
   username          String?    @unique
   phone             String?
+  wxOpenid          String?
   passwordHash       String
   role              String    @default("buyer") // buyer, seller, admin, super_admin
   companyName       String?
@@ -702,10 +703,11 @@ model Favorite {
 }
 
 model Follow {
-  id        String   @id @default(cuid())
-  userId    String   // 关注者
-  sellerId  String   // 被关注的卖家
-  createdAt DateTime @default(now())
+  id                  String   @id @default(cuid())
+  userId              String   // 关注者
+  sellerId            String   // 被关注的卖家
+  notificationEnabled Boolean  @default(true)
+  createdAt           DateTime @default(now())
 
   user   User @relation("FollowFollower", fields: [userId], references: [id], onDelete: Cascade)
   seller User @relation("FollowSeller", fields: [sellerId], references: [id], onDelete: Cascade)
@@ -713,6 +715,7 @@ model Follow {
   @@unique([userId, sellerId])
   @@index([userId, createdAt])
   @@index([sellerId])
+  @@index([notificationEnabled])
 }
 
 model SavedSearch {

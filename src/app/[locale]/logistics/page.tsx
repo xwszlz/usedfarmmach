@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { generatePageMetadata } from "@/lib/seo-metadata";
 import { BreadcrumbStructuredData, FaqStructuredData } from "@/components/seo/structured-data";
 import LogisticsClient from "./LogisticsClient";
+import LogisticsQuoteForm from "@/components/logistics/logistics-quote-form";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
 
@@ -59,6 +60,9 @@ export default async function LogisticsPage({
       />
       <FaqStructuredData faqs={logisticsFaqs} />
       <LogisticsClient />
+      <div className="container mx-auto px-4 py-8">
+        <LogisticsQuoteForm locale={locale} />
+      </div>
     </>
   );
 }
