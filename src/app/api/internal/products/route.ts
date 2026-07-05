@@ -429,7 +429,7 @@ export async function POST(request: NextRequest) {
         await prisma.productImage.create({
           data: {
             productId: product.id,
-            url: url.replace("https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com", ""),
+            url: url, // 直接存储 uploadBufferToOSS 返回的完整 OSS URL
             sortOrder: i,
             isPrimary: i === 0,
           },
@@ -487,7 +487,7 @@ export async function POST(request: NextRequest) {
         if (video.startsWith("https://") || video.startsWith("http://")) {
           // ✅ OSS 直传新模式：video 已经是完整的 HTTP(S) URL
           // 直接使用该 URL 创建 ProductVideo 记录，无需下载再上传
-          videoUrlForDb = video.replace("https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com", "");
+          videoUrlForDb = video; // 保持完整 OSS URL
           console.log(`[internal/products] step-5 video is direct OSS URL, reusing: ${videoUrlForDb}`);
         } else {
           // 兼容旧模式：base64 Data URI 格式
@@ -495,7 +495,7 @@ export async function POST(request: NextRequest) {
           const ext = guessExtFromMime(contentType);
           const key = `${folder}/video_${Date.now()}.${ext}`;
           const uploadedUrl = await uploadBufferToOSS(key, buffer, contentType);
-          videoUrlForDb = uploadedUrl.replace("https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com", "");
+          videoUrlForDb = uploadedUrl; // 直接存储完整 OSS URL
         }
 
         await prisma.productVideo.create({
