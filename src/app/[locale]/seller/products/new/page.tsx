@@ -149,6 +149,52 @@ export default function NewProductPage() {
     setResult({ success: true, message: "AI 识别结果已填充到表单，请核对绿色标记的字段" });
   };
 
+  // ===== Canvas 图片压缩（避免超过 Vercel 4.5MB 请求体限制）=====
+  const compressImage = (file: File, maxDim = 1280, quality = 0.7): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      if (file.size < 500 * 1024) {
+        // 小于 500KB 不压缩
+        resolve(file);
+        return;
+      }
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height / width) * maxDim);
+            width = maxDim;
+          } else {
+            width = Math.round((width / height) * maxDim);
+            height = maxDim;
+          }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) { resolve(file); return; }
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            URL.revokeObjectURL(url);
+            if (blob) {
+              const compressed = new File([blob], file.name.replace(/\.\w+$/, ".jpg"), { type: "image/jpeg" });
+              resolve(compressed);
+            } else {
+              resolve(file);
+            }
+          },
+          "image/jpeg",
+          quality
+        );
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+      img.src = url;
+    });
+  };
+
   // ===== 提交 =====
   const handleSubmit = async () => {
     if (!form.modelName || !form.priceCny || !form.location) {
@@ -194,30 +240,65 @@ export default function NewProductPage() {
       fd.append("priceMode", form.priceMode);
       fd.append("tradeTerm", form.tradeTerm);
       fd.append("tradePort", form.tradePort);
-      imageFiles.forEach((f) => fd.append("images", f));
-      if (videoFile) fd.append("video", videoFile);
+
+      // 压缩图片后再上传（避免超过 Vercel 4.5MB 请求体限制）
+      setResult({ success: false, message: "正在压缩图片..." });
+      const compressedImages: File[] = [];
+      for (const f of imageFiles) {
+        const compressed = await compressImage(f);
+        compressedImages.push(compressed);
+      }
+      const totalImageSize = compressedImages.reduce((sum, f) => sum + f.size, 0);
+
+      // 视频超过 3.5MB 不通过 serverless 上传（Vercel 4.5MB 限制）
+      let videoSkipped = false;
+      if (videoFile && videoFile.size > 3.5 * 1024 * 1024) {
+        videoSkipped = true;
+      }
+
+      const totalSize = totalImageSize + (videoSkipped ? 0 : (videoFile?.size || 0));
+      if (totalSize > 4 * 1024 * 1024) {
+        setResult({ success: false, message: `上传数据过大（${(totalSize / 1024 / 1024).toFixed(1)}MB），请减少图片数量或压缩后重试` });
+        return;
+      }
+
+      compressedImages.forEach((f) => fd.append("images", f));
+      if (videoFile && !videoSkipped) fd.append("video", videoFile);
 
       const res = await fetch("/api/seller/products", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: fd,
       });
-      const data = await res.json();
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        data = { success: false, error: `服务器返回异常（HTTP ${res.status}）` };
+      }
 
       if (data.success) {
-        setResult({ success: true, message: `发布成功！剩余 ${data.creditsRemaining} 积分` });
-        setTimeout(() => router.push("/zh/seller/products"), 2000);
+        const videoMsg = videoSkipped ? "（视频过大已跳过，可后续补充）" : "";
+        setResult({ success: true, message: `发布成功！剩余 ${data.creditsRemaining} 积分${videoMsg}` });
+        setTimeout(() => router.push("/zh/seller/products"), 2500);
       } else if (res.status === 401) {
         setResult({ success: false, message: "请先登录后再发布" });
       } else if (res.status === 403) {
         setResult({ success: false, message: `积分不足！当前 ${data.credits} 积分` });
+      } else if (res.status === 413) {
+        setResult({ success: false, message: "上传数据过大，请减少图片数量或压缩后重试" });
       } else {
-        setResult({ success: false, message: data.error || "发布失败" });
+        setResult({ success: false, message: data.error || `发布失败（HTTP ${res.status}）` });
       }
     } catch (err: any) {
       console.error("[Publish] 发布失败:", err);
-      const errMsg = err?.message || err?.toString() || "网络连接失败，请检查网络后重试";
-      setResult({ success: false, message: errMsg.includes("fetch") ? "网络连接失败，请检查网络" : errMsg });
+      const errMsg = err?.message || String(err) || "未知错误";
+      setResult({
+        success: false,
+        message: errMsg.includes("fetch") || errMsg.includes("Failed to fetch")
+          ? "网络连接失败，请检查网络后重试（若反复出现，可能是上传文件过大）"
+          : `发布异常：${errMsg.substring(0, 100)}`,
+      });
     } finally {
       setSubmitting(false);
     }
