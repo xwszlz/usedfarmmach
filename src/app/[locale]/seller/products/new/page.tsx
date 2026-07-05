@@ -214,8 +214,10 @@ export default function NewProductPage() {
       } else {
         setResult({ success: false, message: data.error || "发布失败" });
       }
-    } catch {
-      setResult({ success: false, message: "网络错误" });
+    } catch (err: any) {
+      console.error("[Publish] 发布失败:", err);
+      const errMsg = err?.message || err?.toString() || "网络连接失败，请检查网络后重试";
+      setResult({ success: false, message: errMsg.includes("fetch") ? "网络连接失败，请检查网络" : errMsg });
     } finally {
       setSubmitting(false);
     }
