@@ -160,11 +160,11 @@ export async function POST(request: NextRequest) {
     if (validImages.length > 0) {
       const folder = `uploads/products/${product.id}`;
       for (let i = 0; i < validImages.length; i++) {
-        const { key } = await uploadFileToOSS(validImages[i], folder);
+        const { url, key } = await uploadFileToOSS(validImages[i], folder);
         await prisma.productImage.create({
           data: {
             productId: product.id,
-            url: `/${key}`,
+            url: url, // 存储完整OSS URL，确保前端<img>可直接访问
             sortOrder: i === 0 ? -1 : i,
             isPrimary: i === 0,
           },
@@ -178,7 +178,7 @@ export async function POST(request: NextRequest) {
       const folder = `uploads/products/${product.id}`;
       const { url: videoUrl, key: videoKey } = await uploadFileToOSS(videoFile, folder);
       await prisma.productVideo.create({
-        data: { productId: product.id, url: `/${videoKey}`, sortOrder: 0, title: `${modelName} 运转视频` },
+        data: { productId: product.id, url: videoUrl, sortOrder: 0, title: `${modelName} 运转视频` },
       });
     }
 
