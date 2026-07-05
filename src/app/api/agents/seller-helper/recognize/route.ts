@@ -4,12 +4,13 @@
 // POST /api/agents/seller-helper/recognize
 // Body: { imageUrls?: string[], imageDataUris?: string[] }
 //
-// 🔧 Round4 修复（2026-07-05）：
-//   1. 新增 fallback 模型链：gpt-4o-mini → gemini-2.0-flash（免费多模态）
-//   2. OpenRouter 403/401 时自动降级到 Google Gemini
-//   3. 支持 GOOGLE_API_KEY 作为第二 AI 提供商
-//   4. 所有错误统一引导手动填写（code=MANUAL_FALLBACK）
+// 🔧 Round5 修复（2026-07-05）：
+//   1. 修正 Gemini 模型名：gemini-2.0-flash-exp(404) → gemini-2.5-flash(可用)
+//   2. 新增 OpenRouter 多模型备选链（gpt-4o-mini 被 ToS 封禁时自动切换）
+//   3. Gemini 升级为第一优先（免费+稳定），OpenRouter 降为备选
 //
+// ⚠️ Round4 修复（2026-07-05）保留：
+//   fallback 模型链、GOOGLE_API_KEY 支持、MANUAL_FALLBACK 统一错误码
 // ⚠️ Round3 修复（2026-01-25）保留：
 //   maxDuration=60、精细化错误分类、axios 超时45s
 // ───────────────────────────────────────────────
@@ -22,17 +23,29 @@ const OPENROUTER_BASE = "https://openrouter.ai/api/v1";
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || "";
 const GOOGLE_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
-// 模型优先级链：主模型 → 备选模型（免费）
+// 模型优先级链：Gemini（免费主力）→ OpenRouter 多模型备选
 const MODEL_CHAIN = [
+  // ── 第一优先：Google Gemini（免费、稳定） ──
+  {
+    provider: "google" as const,
+    model: "gemini-2.5-flash",
+    label: "Gemini 2.5 Flash（免费）",
+  },
+  // ── 第二优先：OpenRouter 备选模型链 ──
+  {
+    provider: "openrouter" as const,
+    model: "google/gemini-2.0-flash-001:free",
+    label: "Gemini Flash via OpenRouter（免费）",
+  },
   {
     provider: "openrouter" as const,
     model: "openai/gpt-4o-mini",
-    label: "GPT-4o-mini",
+    label: "GPT-4o-mini via OpenRouter",
   },
   {
-    provider: "google" as const,
-    model: "gemini-2.0-flash-exp",
-    label: "Gemini 2.0 Flash（免费）",
+    provider: "openrouter" as const,
+    model: "anthropic/claude-haiku",
+    label: "Claude Haiku via OpenRouter",
   },
 ];
 
@@ -110,6 +123,8 @@ async function callOpenRouter(
   model: string,
   content: Array<Record<string, unknown>>
 ): Promise<string> {
+  console.log(`[SellerHelper] OpenRouter 调用: ${model}，图片数: ${content.length - 1}`);
+
   const response = await axios.post(
     `${OPENROUTER_BASE}/chat/completions`,
     {
@@ -128,7 +143,16 @@ async function callOpenRouter(
       timeout: 45000,
     }
   );
-  return (response.data as any).choices?.[0]?.message?.content || "";
+
+  const result = response.data as any;
+  const text = result.choices?.[0]?.message?.content || "";
+
+  // 检查 OpenRouter 错误包装
+  if (result.error) {
+    throw new Error(`OpenRouter API 错误: ${result.error.message || JSON.stringify(result.error)}`);
+  }
+
+  return text;
 }
 
 // ── 调用 Gemini API ──
@@ -136,8 +160,11 @@ async function callGemini(
   model: string,
   parts: Array<Record<string, unknown>>
 ): Promise<string> {
+  const url = `${GOOGLE_BASE}/${model}:generateContent?key=${GOOGLE_API_KEY}`;
+  console.log(`[SellerHelper] Gemini 调用: ${url.substring(0, 60)}...，图片数: ${parts.length - 1}`);
+
   const response = await axios.post(
-    `${GOOGLE_BASE}/${model}:generateContent?key=${GOOGLE_API_KEY}`,
+    url,
     {
       contents: [{ role: "user", parts }],
       generationConfig: {
@@ -150,9 +177,24 @@ async function callGemini(
       timeout: 45000,
     }
   );
-  return (
-    (response.data as any).candidates?.[0]?.content?.parts?.[0]?.text || ""
-  );
+
+  const result = response.data as any;
+  // 检查安全过滤
+  if (result.promptFeedback?.blockReason) {
+    throw new Error(`Gemini 安全过滤: ${result.promptFeedback.blockReason}`);
+  }
+
+  const candidate = result.candidates?.[0];
+  if (!candidate) {
+    throw new Error("Gemini 无候选结果");
+  }
+
+  // 检查 finishReason
+  if (candidate.finishReason === "SAFETY") {
+    throw new Error("Gemini 安全拦截响应内容");
+  }
+
+  return candidate.content?.parts?.[0]?.text || "";
 }
 
 // ── 解析 AI 响应为结构化数据 ──
