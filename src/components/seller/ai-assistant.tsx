@@ -85,6 +85,36 @@ export default function SellerAiAssistant({ onFill }: SellerAiAssistantProps) {
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // 压缩图片到合理尺寸（AI识别不需要原图精度）
+  // 最大尺寸 1280px，JPEG 质量 0.7，确保总 payload 不超 4MB（Vercel 限制）
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const MAX_DIM = 1280;
+        let { width, height } = img;
+        if (width > MAX_DIM || height > MAX_DIM) {
+          if (width > height) {
+            height = Math.round((height * MAX_DIM) / width);
+            width = MAX_DIM;
+          } else {
+            width = Math.round((width * MAX_DIM) / height);
+            height = MAX_DIM;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+        resolve(dataUrl);
+      };
+      img.onerror = () => reject(new Error("图片加载失败"));
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   const handleRecognize = async () => {
     if (imageFiles.length === 0) {
       setError("请先上传至少一张图片");
@@ -96,25 +126,57 @@ export default function SellerAiAssistant({ onFill }: SellerAiAssistantProps) {
     setRecognized(null);
 
     try {
-      // 将图片转为 base64 data URL
+      // 压缩图片 + 转 base64 data URL
       const imageDataUrls = await Promise.all(
         imageFiles.map(async (file) => {
-          return new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = () => reject(new Error("图片读取失败"));
-            reader.readAsDataURL(file);
-          });
+          try {
+            return await compressImage(file);
+          } catch {
+            // 压缩失败时降级为原始 FileReader
+            return new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = () => reject(new Error("图片读取失败"));
+              reader.readAsDataURL(file);
+            });
+          }
         })
       );
+
+      // 检查总 payload 大小（base64 约为原始的 4/3 倍，JSON 包装后再膨胀）
+      const bodyStr = JSON.stringify({ imageDataUris: imageDataUrls });
+      if (bodyStr.length > 3.5 * 1024 * 1024) {
+        setError(`图片数据过大(${(bodyStr.length / 1024 / 1024).toFixed(1)}MB)，请减少图片数量或选择更清晰的图片后重试`);
+        return;
+      }
 
       const res = await fetch("/api/agents/seller-helper/recognize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageUrls: imageDataUrls }),
+        body: bodyStr,
       });
 
-      const data = await res.json();
+      // 防御性解析：服务端可能返回非 JSON（Vercel 错误页、网关错误等）
+      let data: any;
+      const contentType = res.headers.get("content-type") || "";
+      if (contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text().catch(() => "");
+        if (res.status === 413 || text.includes("Entity") || text.includes("Large") || text.includes("payload")) {
+          throw new Error("上传图片过大，请减少到2-3张或选择分辨率更低的图片");
+        }
+        if (!res.ok) {
+          throw new Error(text || `服务器返回异常(HTTP ${res.status})，请稍后重试`);
+        }
+        // 尝试从文本中提取 JSON
+        try {
+          data = JSON.parse(text);
+        } catch {
+          throw new Error(text?.substring(0, 200) || "服务器响应格式异常，请稍后重试");
+        }
+      }
+
       if (!data.success) {
         throw new Error(data.error || "识别失败");
       }

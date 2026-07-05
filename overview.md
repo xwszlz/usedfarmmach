@@ -1,112 +1,131 @@
-# 神雕农机平台 — 第三阶段交付概览
+# 神雕农机平台 — 交付概览
 
-> 更新日期：2026-07-05
-> Commit: `3eca328` | Build: 0 errors | 已推送到 GitHub + Vercel 自动部署
-
----
-
-## 第三阶段完成总览（6/6 项任务全部完成）
-
-### 第一批（commit `5138297`）
-
-| # | 任务 | 状态 | 关键文件 |
-|---|------|------|---------|
-| 22 | 数据洞察中心 | ✅ | `/api/market-insights` + `/insights` 页面 |
-| 27 | 价格指数引擎 | ✅ | `/api/price-index` + PriceIndex 模型 |
-| 25 | 电子合同签署 | ✅ | `/api/contracts` + `/user/contracts` 页面 |
-
-### 第二批（commit `3eca328`）
-
-| # | 任务 | 状态 | 关键文件 |
-|---|------|------|---------|
-| 26 | 在线拍卖功能 | ✅ | `/api/auctions` + `/auctions` 页面 |
-| 23 | 金融保险服务 | ✅ | `/api/finance` + `/finance` 页面 |
-| 24 | 售后维保平台 | ✅ | `/api/maintenance` + `/user/maintenance` 页面 |
+## 项目状态
+- **代码仓库**: https://github.com/xwszlz/usedfarmmach
+- **自动部署**: Vercel (每次 push 自动构建部署)
+- **数据库**: PostgreSQL (Neon) — Prisma ORM
+- **最后更新**: 2026-07-05
 
 ---
 
-## 新增 Prisma 模型（9个）
-
-1. **PriceIndex** — 价格指数（基准日2026-01-01=100，环比/同比）
-2. **IndustryReport** — 行业报告（月度/季度/年度/专题）
-3. **ElectronicContract** — 电子合同（合同编号、签署状态、条款模板）
-4. **Auction** — 拍卖场次（起拍价、保留价、加价幅度、保证金）
-5. **Bid** — 出价记录
-6. **FinancialService** — 金融产品（贷款/保险/租赁）
-7. **LoanApplication** — 贷款/保险申请
-8. **Warranty** — 质保记录
-9. **MaintenanceRecord** — 维保记录（保养/维修/检测/紧急维修）
-
----
-
-## 新增 API 路由（15个）
-
-```
-/api/market-insights          — 市场洞察看板数据
-/api/price-index              — 价格指数查询与计算
-/api/contracts                — 电子合同 CRUD
-/api/contracts/[id]           — 合同详情与更新
-/api/contracts/[id]/sign      — 合同签署
-/api/auctions                 — 拍卖列表与创建
-/api/auctions/[id]            — 拍卖详情
-/api/auctions/[id]/bid        — 出价
-/api/finance/services         — 金融产品列表
-/api/finance/apply            — 贷款/保险申请
-/api/maintenance              — 维保记录管理
-/api/maintenance/[id]         — 维保详情与更新
-/api/warranties               — 质保查询
-```
-
----
-
-## 新增前端页面（7个）
-
-| 页面 | 路径 | 功能 |
-|------|------|------|
-| 数据洞察中心 | `/insights` | 10大可视化模块：概览/价格指数/上架趋势/品类/品牌/区域/价格区间/年份/套利/询价 |
-| 电子合同管理 | `/user/contracts` | 合同列表（卖方/买方筛选）、详情弹窗、在线签署 |
-| 拍卖大厅 | `/auctions` | 拍卖列表、状态筛选（即将开始/进行中/已结束） |
-| 拍卖详情 | `/auctions/[id]` | 实时倒计时、出价表单、出价记录、快速加价按钮 |
-| 金融保险 | `/finance` | 金融产品展示（贷款/保险/租赁）、在线申请表单 |
-| 售后维保 | `/user/maintenance` | 维保记录列表、状态追踪、质保关联 |
-
----
-
-## 关键技术决策
-
-1. **价格指数计算**：基准日2026-01-01=100，按月聚合产品均价计算指数，支持环比/同比
-2. **电子合同签署流程**：draft → pending_seller/buyer → signed，双方签署后自动设置1年有效期
-3. **拍卖状态自动流转**：scheduled → live（到达开始时间）→ ended（到达结束时间），自动判定中标/流拍
-4. **Prisma nullable 字段复合唯一键**：PostgreSQL 不支持 nullable 的 upsert where，改用 findFirst + create/update
-5. **合同条款模板**：自动生成8条标准条款（标的物/价格/交货/状况/检验/违约/争议/其他）
-
----
-
-## 导航更新
-
-- **中文导航**：买农机▼ 新增"在线拍卖"入口；服务支持▼ 新增"金融保险"入口；市场洞察▼ 新增"数据洞察"入口
-- **英文导航**：BUY▼ 新增"Auctions"；SERVICES▼ 新增"Finance & Insurance"；INSIGHTS▼ 新增"Market Insights"
-
----
-
-## 项目整体进度
+## 完成进度总览
 
 | 阶段 | 任务数 | 完成 | 状态 |
 |------|--------|------|------|
 | 立即执行 | 4 | 4 | ✅ |
 | 第一阶段 | 8 | 8 | ✅ |
-| 第二阶段 | 9 | 8 | ✅（#17担保交易暂缓，需支付接口） |
-| **第三阶段** | **6** | **6** | ✅ **全部完成** |
-| 第四阶段 | 5 | 0 | 待启动 |
-
-**累计完成 26/32 项任务**
+| 第二阶段 | 9 | 8 | ✅ (#17担保交易暂缓) |
+| 第三阶段 | 6 | 6 | ✅ |
+| 第四阶段 | 5 | 5 | ✅ |
+| **合计** | **32** | **31** | **97%** |
 
 ---
 
-## 下一步建议
+## 第四阶段交付详情（2026-07-05）
 
-1. **第四阶段启动**：开放API、政府数据对接、海外仓、区块链溯源、租赁功能
-2. **数据填充**：向 FinancialService 表插入贷款/保险产品数据
-3. **拍卖测试**：创建测试拍卖场次验证全流程
-4. **小程序适配**：将拍卖、金融、维保功能适配到微信小程序
-5. **#17 担保交易**：对接微信支付/支付宝后启动
+### 第一批 (commit `4b029ee`)
+
+#### #28 开放API平台
+- **API Key管理**: CRUD接口，每用户最多5个Key，支持read/read_write权限
+- **公开端点**: 
+  - `GET /api/open/products` — 产品列表（分页/品类/品牌/国家筛选）
+  - `GET /api/open/market-index` — 价格指数（按品类/品牌/区域，可选天数）
+  - `GET /api/open/industry-data` — 行业统计（总览/分布/价格统计）
+- **认证**: Bearer Token (sk_开头)
+- **速率限制**: 默认100次/小时、1000次/天
+- **API文档页**: `/api-docs` — 双Tab（Key管理 + 接口文档）
+
+#### #29 政府农机数据对接
+- **补贴政策API**: `GET /api/gov-data/policies` — 按地区/类别筛选
+- **登记数据API**: `GET /api/gov-data/machinery` — 按品牌/类别/登记号查询
+- **前端页面**: `/gov-data` — 双Tab（补贴政策 + 登记信息）
+- **政策类别**: 购机补贴/报废补贴/作业补贴/贷款贴息
+
+#### #30 海外仓信息展示
+- **仓库API**: `GET /api/warehouses` — 按国家/类型筛选
+- **仓库详情**: `GET /api/warehouses/:id`
+- **前端页面**: `/warehouses` — 卡片式展示，含类型图标/服务标签/联系方式
+- **仓库类型**: 保税仓/普通仓/冷链仓
+
+### 第二批 (commit `e58815e`)
+
+#### #31 区块链溯源
+- **哈希链机制**: SHA-256哈希链，每个区块包含previousHash + currentHash
+- **事件类型**: created/inspected/transferred/maintained/sold/exported
+- **验证API**: `GET /api/blockchain/verify?productId=xxx` — 完整链验证
+- **记录写入**: `POST /api/blockchain/record` — 自动接链
+- **前端组件**: `<BlockchainTrace productId locale />` — 时间线展示，含哈希验证状态
+- **集成**: 已在产品详情页展示溯源链
+
+#### #32 租赁功能
+- **租赁API**: CRUD — `GET/POST /api/rentals`, `GET/PATCH/DELETE /api/rentals/:id`
+- **租赁模式**: 日租/月租/年租，支持押金/最短周期/配送
+- **前端页面**: `/rentals` — 卡片式展示，含类型筛选/价格/配送标签
+- **导航入口**: 买农机▼ 新增"农机租赁"
+
+---
+
+## 新增Prisma模型（第四阶段）
+| 模型 | 用途 |
+|------|------|
+| ApiKey | 开放API密钥管理 |
+| GovSubsidyPolicy | 政府补贴政策 |
+| GovMachineryData | 政府农机登记数据 |
+| OverseasWarehouse | 海外仓信息 |
+| BlockchainRecord | 区块链溯源记录 |
+| RentalListing | 租赁信息 |
+
+## 新增API路由（第四阶段）
+| 路由 | 功能 |
+|------|------|
+| `/api/api-keys` | API Key CRUD |
+| `/api/open/products` | 开放产品列表 |
+| `/api/open/market-index` | 开放价格指数 |
+| `/api/open/industry-data` | 开放行业统计 |
+| `/api/gov-data/policies` | 政府补贴政策 |
+| `/api/gov-data/machinery` | 政府登记数据 |
+| `/api/warehouses` | 海外仓列表 |
+| `/api/warehouses/[id]` | 海外仓详情 |
+| `/api/blockchain/verify` | 区块链验证 |
+| `/api/blockchain/record` | 区块链记录写入 |
+| `/api/rentals` | 租赁CRUD |
+| `/api/rentals/[id]` | 租赁详情/更新/删除 |
+
+## 新增前端页面（第四阶段）
+| 页面 | 路径 |
+|------|------|
+| 开放API文档 | `/api-docs` |
+| 政府数据 | `/gov-data` |
+| 海外仓信息 | `/warehouses` |
+| 农机租赁 | `/rentals` |
+| 区块链溯源组件 | 产品详情页内嵌 |
+
+---
+
+## 历史阶段完成情况
+
+### 第三阶段（6项 ✅）
+- 数据洞察中心 / 价格指数引擎 / 电子合同 / 在线拍卖 / 金融保险 / 售后维保
+
+### 第二阶段（8/9项 ✅）
+- 设备检验 / 收藏关注 / 卖家信任 / 推送通知 / 零配件 / 行业方案 / 物流询价 / 多货币
+- (#17担保交易暂缓 — 需支付接口)
+
+### 第一阶段（8项 ✅）
+- 买家匹配 / 询价闭环 / 一机一码 / 三重认证 / 服务网络 / 标准规范 / 小程序搜索增强 / 导航重构
+
+### 立即执行（4项 ✅）
+- 文案修改 / 导航重构 / 封面图修复 / 产品卡片增强
+
+---
+
+## 技术栈
+- **前端**: Next.js 15 (App Router) + React 18 + Tailwind CSS
+- **后端**: Next.js API Routes + Prisma ORM (PostgreSQL)
+- **小程序**: 微信小程序原生开发
+- **i18n**: 8语言 (zh/en/ru/es/pt/ar/fr/hi)
+- **部署**: Vercel + GitHub Actions
+- **存储**: 阿里云OSS (图片/视频)
+
+## 唯一未完成
+- **#17 担保交易** — 需要接入第三方支付接口（微信支付/支付宝），暂缓
