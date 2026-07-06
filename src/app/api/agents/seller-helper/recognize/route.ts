@@ -131,7 +131,6 @@ async function callDoubao(content: Array<Record<string, unknown>>): Promise<stri
     {
       model: ARK_MODEL_ID,
       messages: [{ role: "user", content }],
-      response_format: { type: "json_object" },
       max_tokens: 800,
     },
     {
