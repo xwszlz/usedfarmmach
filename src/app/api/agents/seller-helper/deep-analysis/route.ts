@@ -9,6 +9,11 @@
  * 4. 输出详细Markdown分析报告（不限于JSON）
  * 5. 覆盖：品牌型号识别、技术参数解读、操作维修要点、市场参考价、购买建议
  *
+ * 图片输入方式：
+ *   小程序已改为先上传 OSS 再传 HTTP URL（imageUrls）
+ *   豆包支持 HTTP URL 图片，不支持 base64 data URI
+ *   如果收到 base64（兼容旧版），豆包会快速失败，自动降级到 Gemini
+ *
  * 环境变量：
  *   ARK_API_KEY     - 火山引擎ARK API Key
  *   ARK_MODEL_ID    - 模型ID（默认 doubao-1-5-vision-pro-32k）
@@ -278,7 +283,6 @@ export async function POST(request: NextRequest) {
     const videoUrls: string[] = body.videoUrls || [];
 
     const images = [...imageUrls, ...imageDataUris];
-    const hasBase64Images = imageDataUris.some((u) => u.startsWith("data:"));
 
     if (images.length === 0 && videoUrls.length === 0) {
       return NextResponse.json(
@@ -290,14 +294,12 @@ export async function POST(request: NextRequest) {
     let analysisText = "";
     let modelUsed = "";
 
-    // ===== 智能路由：根据图片类型选择模型 =====
-    // 豆包(doubao-seed-evolving)不支持base64图片输入，仅支持HTTP URL图片
-    // 因此：有base64图片时 → 首选Gemini；仅有URL图片/无图片时 → 首选豆包
+    // ===== 模型优先级：豆包（免费）→ Gemini（备用）→ OpenRouter（兜底）=====
+    // 豆包支持 HTTP URL 图片（小程序已改为先上传 OSS 再传 URL）
+    // 豆包不支持 base64 data URI（如果收到 base64 会快速失败，自动降级到 Gemini）
 
-    const preferDoubao = !hasBase64Images && ARK_API_KEY;
-
-    // 首选模型
-    if (preferDoubao) {
+    // 首选：豆包
+    if (ARK_API_KEY) {
       try {
         console.log("[DeepAnalysis] 首选豆包:", ARK_MODEL_ID, "图片数:", images.length);
         const content = buildDoubaoContent(images, videoUrls);
@@ -308,17 +310,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 备用1: Gemini（支持base64图片，视觉能力最稳定）
+    // 备用1: Gemini（豆包失败时降级）
     if (!analysisText && GOOGLE_API_KEY) {
       try {
-        console.log(
-          "[DeepAnalysis]",
-          preferDoubao ? "豆包失败，降级到Gemini" : "首选Gemini(有base64图片)"
-        );
+        console.log("[DeepAnalysis] 豆包失败，降级到 Gemini");
         analysisText = await callGeminiDeep(images, videoUrls);
-        modelUsed = preferDoubao
-          ? "Gemini 2.5 Flash（豆包备用）"
-          : "Gemini 2.5 Flash（首选）";
+        modelUsed = "Gemini 2.5 Flash（豆包备用）";
       } catch (error: any) {
         console.warn("[DeepAnalysis] Gemini 失败:", (error.message || "").substring(0, 120));
       }

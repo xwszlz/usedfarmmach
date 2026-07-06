@@ -85,13 +85,13 @@ export default async function ProductsPage({
         locale={locale}
         items={[
           { name: locale === "zh" ? "首页" : "Home", url: `${BASE_URL}/${locale}` },
-          { name: locale === "zh" ? "设备市场" : "Products", url: `${BASE_URL}/${locale}/products` },
+          { name: locale === "zh" ? "农机市场" : "Products", url: `${BASE_URL}/${locale}/products` },
         ]}
       />
       <ItemListStructuredData
         locale={locale}
         items={listItems}
-        listName={locale === "zh" ? "二手农机设备市场" : "Used Farm Machinery Market"}
+        listName={locale === "zh" ? "二手农机市场" : "Used Farm Machinery Market"}
       />
       <ProductsClient
         initialProducts={products}

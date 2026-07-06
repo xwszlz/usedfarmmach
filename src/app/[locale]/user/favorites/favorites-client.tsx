@@ -297,7 +297,7 @@ function EmptyState({ icon: Icon, text, isZh }: { icon: typeof Heart; text: stri
         href={isZh ? "/zh/products" : "/en/products"}
         className="mt-4 text-sm text-primary-600 hover:text-primary-700"
       >
-        {isZh ? "去浏览设备 →" : "Browse equipment →"}
+        {isZh ? "去浏览农机 →" : "Browse equipment →"}
       </Link>
     </div>
   );

@@ -139,7 +139,7 @@ export function BuyerMatchCard({ locale }: { locale: string }) {
             </h3>
             <p className="text-xs text-gray-500">
               {isZh 
-                ? "输入作物+规模+预算，智能推荐最合适的设备" 
+                ? "输入作物+规模+预算，智能推荐最合适的农机" 
                 : "Enter crop + size + budget, get smart recommendations"}
             </p>
           </div>
@@ -284,7 +284,7 @@ export function BuyerMatchCard({ locale }: { locale: string }) {
               {result.recommendations.length > 0 ? (
                 <div className="space-y-3">
                   <h4 className="font-semibold text-gray-900 text-sm">
-                    {isZh ? `为您推荐 ${result.recommendations.length} 条匹配设备` : `${result.recommendations.length} Matches Found`}
+                    {isZh ? `为您推荐 ${result.recommendations.length} 条匹配农机` : `${result.recommendations.length} Matches Found`}
                   </h4>
                   {result.recommendations.map((p, idx) => (
                     <Link
@@ -353,7 +353,7 @@ export function BuyerMatchCard({ locale }: { locale: string }) {
               ) : (
                 <div className="rounded-lg border border-dashed border-gray-300 p-6 text-center">
                   <p className="text-gray-400">
-                    {isZh ? "暂无匹配设备，建议调整筛选条件" : "No matches found, try adjusting filters"}
+                    {isZh ? "暂无匹配农机，建议调整筛选条件" : "No matches found, try adjusting filters"}
                   </p>
                 </div>
               )}
