@@ -37,6 +37,40 @@ const localizedMeta: Record<string, Record<string, { title: string; description:
       description: "AgriTrade — वैश्विक प्रयुक्त कृषि मशीनरी ट्रेडिंग प्लेटफॉर्म। CLAAS फोरेज हार्वेस्टर, John Deere ट्रैक्टर और अधिक। AI मूल्यांकन, आर्बिट्राज और एकीकृत लॉजिस्टिक्स।",
     },
   },
+  expo: {
+    zh: {
+      title: "永不落幕的农机世界展会_365天在线展厅_二手农机跨境展_神雕农机",
+      description: "永不落幕的农机世界展会 — 全球首个365天在线农机展会平台。虚拟展位、AI供需匹配、跨境交易担保。中国二手农机源头直达全球买家。",
+    },
+    en: {
+      title: "The Always-On Global Farm Machinery Expo | 365-Day Online Exhibition | AgriTrade",
+      description: "The world's first 365-day online farm machinery expo. Virtual booths, AI supply-demand matching, cross-border escrow. Chinese used machinery sources direct to global buyers.",
+    },
+    ru: {
+      title: "Всемирная выставка сельхозтехники без выходных | АгриТрейд",
+      description: "Первая круглогодичная онлайн-выставка сельхозтехники. Виртуальные стенды, AI-подбор, эскроу-сервис. Китайская б/у техника напрямую мировым покупателям.",
+    },
+    es: {
+      title: "Expo Global de Maquinaria Agrícola 365 Días | AgriTrade",
+      description: "La primera expo online de maquinaria agrícola 365 días al año. Stands virtuales, matching con IA, escrow transfronterizo.",
+    },
+    pt: {
+      title: "Expo Global de Máquinas Agrícolas 365 Dias | AgriTrade",
+      description: "A primeira expo online de máquinas agrícolas 365 dias por ano. Stands virtuais, matching com IA, escrow transfronteiriço.",
+    },
+    ar: {
+      title: "معرض الآلات الزراعية العالمي على مدار العام | AgriTrade",
+      description: "أول معرض عبر الإنترنت على مدار 365 يومًا للآلات الزراعية. أجنحة افتراضية، مطابقة بالذكاء الاصطناعي، ضمان عبر الحدود.",
+    },
+    fr: {
+      title: "Expo Mondiale de Machines Agricoles 365 Jours | AgriTrade",
+      description: "La première expo en ligne de machines agricoles 365 jours par an. Stands virtuels, matching IA, escrow transfrontalier.",
+    },
+    hi: {
+      title: "365-दिन वैश्विक कृषि मशीनरी एक्सपो | AgriTrade",
+      description: "पहली वर्षभर ऑनलाइन कृषि मशीनरी एक्सपो। वर्चुअल बूथ, AI मैचिंग, क्रॉस-बॉर्डर एस्क्रो।",
+    },
+  },
   products: {
     zh: {
       title: "二手农机设备市场_CLAAS青储机_约翰迪尔拖拉机_品牌二手农机选购_神雕农机",

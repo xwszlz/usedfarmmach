@@ -16,9 +16,6 @@ export const mainNavEn: NavItem[] = [
   {
     label: "BUY",
     children: [
-      { href: "/products", label: "Browse Equipment" },
-      { href: "/auctions", label: "Auctions" },
-      { href: "/rentals", label: "Rentals" },
       { href: "/products?match=true", label: "Buyer Request" },
       { href: "/brand/claas", label: "CLAAS" },
       { href: "/brand/new-holland", label: "New Holland" },
@@ -29,6 +26,8 @@ export const mainNavEn: NavItem[] = [
       { href: "/products?category=baler", label: "Balers" },
       { href: "/products?category=header", label: "Headers & Pickup Heads" },
       { href: "/products?category=implement", label: "Implements" },
+      { href: "/auctions", label: "Auctions" },
+      { href: "/rentals", label: "Rentals" },
     ],
   },
   {
@@ -79,9 +78,6 @@ export const mainNav: NavItem[] = [
   {
     labelKey: "nav.buyMachinery",
     children: [
-      { href: "/products", labelKey: "nav.browseEquipment" },
-      { href: "/auctions", label: "在线竞拍" },
-      { href: "/rentals", label: "农机租赁" },
       { href: "/products?match=true", labelKey: "nav.buyerRequest" },
       { href: "/brand/claas", label: "CLAAS" },
       { href: "/brand/new-holland", label: "New Holland" },
@@ -96,6 +92,8 @@ export const mainNav: NavItem[] = [
       { href: "/category/pickup-header", label: "捡拾割台" },
       { href: "/category/rake", label: "搂草机" },
       { href: "/category/tedder", label: "摊晒机" },
+      { href: "/auctions", label: "在线竞拍" },
+      { href: "/rentals", label: "农机租赁" },
     ],
   },
   {
