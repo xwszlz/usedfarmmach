@@ -17,9 +17,87 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    // 基本字段校验
-    const { company, contact, phone, email, country, category, boothType, message, locale } = body;
+    const { type, company, contact, phone, email, country, category, boothType, message, locale } = body;
 
+    // === 展品询盘（来自展厅详情页）===
+    if (type === "item_inquiry") {
+      const { showcaseItemId, buyerName, buyerPhone, buyerEmail, country: buyerCountry, message: buyerMessage } = body;
+      if (!buyerName || !buyerPhone) {
+        return NextResponse.json(
+          { success: false, error: "Missing required fields: buyerName, buyerPhone" },
+          { status: 400 }
+        );
+      }
+
+      // 获取展品和展位信息
+      let boothId: string | null = null;
+      let merchantId: string | null = null;
+      let itemInfo = "";
+      try {
+        const item = await prisma.showcaseItem.findUnique({
+          where: { id: showcaseItemId },
+          include: { booth: true },
+        });
+        if (item) {
+          boothId = item.boothId;
+          merchantId = item.booth?.merchantId || null;
+          itemInfo = `${item.brand || ""} ${item.model || ""}`.trim() || item.deviceType;
+          // Increment inquiry count
+          await prisma.showcaseItem.update({
+            where: { id: showcaseItemId },
+            data: { inquiryCount: { increment: 1 } },
+          });
+        }
+      } catch (e) {
+        console.error("[Expo ItemInquiry] Failed to lookup item:", e);
+      }
+
+      // 写入 ExpoInquiry 表
+      let inquiryRecord = null;
+      try {
+        inquiryRecord = await prisma.expoInquiry.create({
+          data: {
+            showcaseItemId: showcaseItemId || null,
+            boothId,
+            merchantId,
+            buyerId: null,
+            buyerName,
+            buyerPhone,
+            buyerEmail: buyerEmail || null,
+            buyerCountry: buyerCountry || null,
+            message: buyerMessage || `Inquiry about ${itemInfo}`,
+            intent: "inquiry",
+            status: "new",
+          },
+        });
+      } catch (dbErr) {
+        console.error("[Expo ItemInquiry DB Error]", dbErr);
+      }
+
+      // 发邮件
+      const subject = `[展会询盘] ${buyerName} - ${itemInfo}`;
+      const html = `
+        <h2>农机博览会 - 展品询盘</h2>
+        <table style="border-collapse:collapse;width:100%;font-size:14px;">
+          <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;">展品</td><td style="padding:8px;border:1px solid #ddd;">${itemInfo}</td></tr>
+          <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;">买家姓名</td><td style="padding:8px;border:1px solid #ddd;">${buyerName}</td></tr>
+          <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;">电话/WhatsApp</td><td style="padding:8px;border:1px solid #ddd;">${buyerPhone}</td></tr>
+          <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;">邮箱</td><td style="padding:8px;border:1px solid #ddd;">${buyerEmail || "-"}</td></tr>
+          <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;">国家</td><td style="padding:8px;border:1px solid #ddd;">${buyerCountry || "-"}</td></tr>
+          <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;">留言</td><td style="padding:8px;border:1px solid #ddd;">${buyerMessage || "-"}</td></tr>
+          <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;">数据库ID</td><td style="padding:8px;border:1px solid #ddd;">${inquiryRecord?.id || "未写入"}</td></tr>
+        </table>
+      `;
+      try {
+        await sendEmail({ to: ADMIN_EMAIL, subject, html, text: subject });
+      } catch (e) {
+        console.error("[Expo ItemInquiry Email Error]", e);
+      }
+
+      return NextResponse.json({ success: true, id: inquiryRecord?.id });
+    }
+
+    // === 招商意向（来自落地页表单）===
     if (!contact || !phone || !country) {
       return NextResponse.json(
         { success: false, error: "Missing required fields: contact, phone, country" },

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -395,9 +396,14 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </a>
+            <Link href={`/${locale}/expo/showroom`}>
+              <Button size="lg" variant="outline" className="w-full border-amber-600 text-amber-700 hover:bg-amber-50 sm:w-auto">
+                {locale === "zh" ? "进入线上展厅" : locale === "ru" ? "Войти в шоурум" : "Enter Showroom"}
+              </Button>
+            </Link>
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <CheckCircle2 className="h-4 w-4 text-green-500" />
-              {locale === "zh" ? "已有 85+ 家展商入驻" : locale === "ru" ? "85+ участников" : "85+ exhibitors on board"}
+              {locale === "zh" ? "91台设备在线展示" : locale === "ru" ? "91 единиц техники" : "91 machines on display"}
             </div>
           </div>
         </div>
