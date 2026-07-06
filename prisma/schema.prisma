@@ -50,6 +50,8 @@ model User {
   loanApplications  LoanApplication[]
   apiKeys           ApiKey[]
   rentalListings    RentalListing[]
+  escrowAsBuyer     EscrowOrder[] @relation("EscrowBuyer")
+  escrowAsSeller    EscrowOrder[] @relation("EscrowSeller")
 }
 
 model Brand {
@@ -145,6 +147,7 @@ model Product {
   govMachineryData    GovMachineryData?
   blockchainRecords   BlockchainRecord[]
   rentalListing       RentalListing?
+  escrowOrders        EscrowOrder[]
 }
 
 model ProductImage {
@@ -1239,4 +1242,87 @@ model RentalListing {
 
   @@index([status, rentalType])
   @@index([ownerId, status])
+}
+
+// ═══════════════════════════════════════════════════════
+// 担保交易系统（Escrow）
+// ═══════════════════════════════════════════════════════
+
+model EscrowOrder {
+  id              String   @id @default(cuid())
+  orderNo         String   @unique // 订单号：SD-ESC-YYYYMMDD-XXXXXX
+  productId       String   // 关联产品
+  buyerId         String   // 买方
+  sellerId        String   // 卖方
+  // 金额信息
+  amount          Float    // 交易总额（CNY）
+  platformFee     Float    @default(0) // 平台手续费
+  sellerAmount    Float    @default(0) // 卖家实际到账
+  // 支付信息
+  paymentMethod   String   // wechat, alipay
+  paymentStatus   String   @default("pending") // pending, paid, escrow, released, refunded, cancelled
+  // 时间线
+  paidAt          DateTime?
+  escrowStartedAt DateTime?
+  releasedAt      DateTime?
+  refundedAt      DateTime?
+  cancelledAt     DateTime?
+  // 确认收货
+  buyerConfirmed  Boolean  @default(false)
+  buyerConfirmedAt DateTime?
+  // 自动放款倒计时（确认收货后X天自动放款）
+  autoReleaseAt   DateTime?
+  // 物流
+  deliveryAddress String?  @db.Text
+  deliveryCompany String?
+  trackingNo      String?
+  shippedAt       DateTime?
+  // 争议
+  disputeStatus   String?  // null, opened, resolved_buyer, resolved_seller
+  disputeReason   String?  @db.Text
+  disputeOpenedAt DateTime?
+  // 元数据
+  metadata        String?  @db.Text // JSON
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  product   Product       @relation(fields: [productId], references: [id])
+  buyer     User          @relation("EscrowBuyer", fields: [buyerId], references: [id])
+  seller    User          @relation("EscrowSeller", fields: [sellerId], references: [id])
+  payments  PaymentRecord[]
+
+  @@index([buyerId, paymentStatus])
+  @@index([sellerId, paymentStatus])
+  @@index([productId])
+  @@index([paymentStatus, createdAt])
+  @@index([autoReleaseAt])
+}
+
+model PaymentRecord {
+  id              String   @id @default(cuid())
+  orderId         String   // 关联担保订单
+  paymentMethod   String   // wechat, alipay
+  // 第三方流水
+  transactionId   String?  // 微信/支付宝流水号
+  prepayId        String?  // 微信预支付ID
+  tradeNo         String?  // 支付宝交易号
+  // 金额
+  amount          Float    // 支付金额（CNY）
+  // 状态
+  status          String   @default("pending") // pending, success, failed, refunded
+  // 原始数据
+  rawRequest      String?  @db.Text // JSON: 请求参数
+  rawResponse     String?  @db.Text // JSON: 响应数据
+  rawCallback     String?  @db.Text // JSON: 回调数据
+  // 时间
+  paidAt          DateTime?
+  callbackAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  order EscrowOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([transactionId])
+  @@index([status])
 }

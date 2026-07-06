@@ -8,6 +8,7 @@ import { SpecificationTable } from "@/components/product/specification-table";
 import { PriceTradeSection } from "@/components/product/price-trade-section";
 import { StandardDescription } from "@/components/product/standard-description";
 import { InquiryForm } from "@/components/product/inquiry-form";
+import { EscrowPurchaseButton } from "@/components/escrow/escrow-purchase-button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin, ArrowLeftRight, Info, Mail, ExternalLink } from "lucide-react";
@@ -397,6 +398,16 @@ export default async function ProductDetailPage({
                   info@shendiaomach.com
                 </a>
               </div>
+
+              {/* Escrow Purchase */}
+              {product.status === "active" && (
+                <EscrowPurchaseButton
+                  productId={product.id}
+                  productName={product.modelName}
+                  price={product.priceCny}
+                  sellerId={product.sellerId}
+                />
+              )}
 
               {/* Inquiry Form */}
               <InquiryForm productId={product.id} />
