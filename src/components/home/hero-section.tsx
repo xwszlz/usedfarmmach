@@ -63,7 +63,7 @@ export function HeroSection({ locale, topProduct, topReportData, heroCoverImage 
             {t("heroSubtitle")}
           </p>
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-center md:justify-start">
-            <Link href={`/${locale}/products`}>
+            <Link href={`/${locale}/expo`}>
               <Button size="lg" className="w-full sm:w-auto">
                 {t("heroCta")}
                 <ArrowRight className="ml-2 h-4 w-4" />

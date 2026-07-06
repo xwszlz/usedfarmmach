@@ -13,7 +13,6 @@ export interface NavItem {
  */
 export const mainNavEn: NavItem[] = [
   { href: "/", label: "HOME" },
-  { href: "/expo", label: "EXPO" },
   {
     label: "BUY",
     children: [
@@ -76,7 +75,6 @@ export const mainNavEn: NavItem[] = [
  */
 export const mainNav: NavItem[] = [
   { href: "/", labelKey: "nav.home" },
-  { href: "/expo", label: "农机博览会" },
   {
     labelKey: "nav.buyMachinery",
     children: [
