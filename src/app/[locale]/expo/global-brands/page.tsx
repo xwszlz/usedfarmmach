@@ -35,7 +35,6 @@ export default async function GlobalBrandsPage({
       brandTier: true,
       expoSlug: true,
       expoLogoUrl: true,
-      coreCategory: true,
       establishedYear: true,
       exportVolume: true,
       expoStory: true,

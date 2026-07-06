@@ -7,7 +7,7 @@ import {
   Tractor,
   Wheat,
   Sprout,
-  Drone,
+  Plane,
   Layers,
   ExternalLink,
   ChevronRight,
@@ -23,7 +23,7 @@ interface Brand {
   brandTier: string;
   expoSlug: string;
   expoLogoUrl: string | null;
-  coreCategory: string;
+  coreCategory?: string;
   establishedYear: number | null;
   exportVolume: string;
   expoStory: string;
@@ -98,7 +98,7 @@ const categoryIcons: Record<string, typeof Tractor> = {
   玉米收获机: Wheat,
   牧草机械: Sprout,
   播种: Sprout,
-  植保无人机: Drone,
+  植保无人机: Plane,
   综合农机: Layers,
 };
 

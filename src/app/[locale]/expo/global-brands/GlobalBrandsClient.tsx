@@ -21,7 +21,7 @@ interface Brand {
   brandTier: string;
   expoSlug: string;
   expoLogoUrl: string | null;
-  coreCategory: string;
+  coreCategory?: string;
   establishedYear: number | null;
   exportVolume: string;
   expoStory: string;
@@ -167,7 +167,9 @@ export default function GlobalBrandsClient({
                     {isZh ? "创立" : "Est."} {brand.establishedYear}
                   </span>
                 )}
-                <span className="rounded bg-gray-50 px-2 py-0.5">{brand.coreCategory}</span>
+                {brand.coreCategory && (
+                  <span className="rounded bg-gray-50 px-2 py-0.5">{brand.coreCategory}</span>
+                )}
               </div>
 
               <p className="mb-4 line-clamp-3 text-sm leading-relaxed text-gray-600">
@@ -216,7 +218,7 @@ export default function GlobalBrandsClient({
                   </div>
                   {brand.establishedYear && (
                     <p className="mb-2 text-xs text-gray-500">
-                      {isZh ? "创立" : "Founded"} {brand.establishedYear} · {brand.coreCategory}
+                      {isZh ? "创立" : "Founded"} {brand.establishedYear}{brand.coreCategory ? ` · ${brand.coreCategory}` : ""}
                     </p>
                   )}
                   <p className="line-clamp-2 text-xs leading-relaxed text-gray-500">
