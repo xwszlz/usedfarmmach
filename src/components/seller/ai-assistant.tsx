@@ -71,14 +71,38 @@ function selectBestImages(files: File[], maxCount = 6): File[] {
 }
 
 /**
- * 压缩图片到合理尺寸（最大 800px，JPEG 质量 0.6）
+ * 将 base64 图片上传到临时存储，获取 HTTP URL（供豆包 API 使用）
+ * 豆包不支持 base64 data URI，只支持 HTTP URL
+ */
+async function uploadImageForAI(imageDataUrl: string): Promise<string | null> {
+  try {
+    const res = await fetch("/api/ai-image-upload", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ imageData: imageDataUrl, folder: "ai-recognize" }),
+    });
+    const data = await res.json();
+    if (data.success && data.data?.url) {
+      return data.data.url;
+    }
+    console.warn("[AI] 上传失败:", data.error);
+    return null;
+  } catch (e) {
+    console.warn("[AI] 上传异常:", e);
+    return null;
+  }
+}
+
+/**
+ * 压缩图片到合理尺寸（最大 1280px，JPEG 质量 0.75）
+ * 比之前 800px/0.6 稍微提高质量，让豆包识别更准确
  */
 function compressImage(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement("canvas");
-      const MAX_DIM = 800;
+      const MAX_DIM = 1280; // 提高到1280px（豆包识别更准）
       let { width, height } = img;
       if (width > MAX_DIM || height > MAX_DIM) {
         if (width > height) {
@@ -93,7 +117,7 @@ function compressImage(file: File): Promise<string> {
       canvas.height = height;
       const ctx = canvas.getContext("2d");
       ctx?.drawImage(img, 0, 0, width, height);
-      resolve(canvas.toDataURL("image/jpeg", 0.6));
+      resolve(canvas.toDataURL("image/jpeg", 0.75)); // 提高到0.75质量
     };
     img.onerror = () => reject(new Error("图片加载失败"));
     img.src = URL.createObjectURL(file);
@@ -117,9 +141,9 @@ export default function SellerAiAssistant({ imageFiles, onFill }: SellerAiAssist
     setRecognized(null);
 
     try {
-      // 1. 智能选图 + 压缩
+      // 1. 智能选图 + 压缩（提高质量：1280px / 75%）
       setPhase("正在压缩图片...");
-      const bestImages = selectBestImages(imageFiles, 6);
+      const bestImages = selectBestImages(imageFiles, 8); // 增加到最多8张（之前6张）
       const imageDataUrls = await Promise.all(
         bestImages.map(async (file) => {
           try {
@@ -135,19 +159,36 @@ export default function SellerAiAssistant({ imageFiles, onFill }: SellerAiAssist
         })
       );
 
-      // 2. Payload 大小检查
-      const bodyStr = JSON.stringify({ imageDataUris: imageDataUrls });
-      if (bodyStr.length > 3.5 * 1024 * 1024) {
-        setError(`图片数据过大(${(bodyStr.length / 1024 / 1024).toFixed(1)}MB)，请减少图片数量`);
-        return;
+      // 2. 上传每张图片到 OSS，获取 HTTP URL（豆包只支持HTTP URL，不支持base64）
+      setPhase("正在上传图片到AI服务器...");
+      const uploadPromises = imageDataUrls.map((dataUrl) => uploadImageForAI(dataUrl));
+      const uploadResults = await Promise.allSettled(uploadPromises);
+
+      const imageUrls: string[] = [];
+      let uploadFailCount = 0;
+      uploadResults.forEach((result, idx) => {
+        if (result.status === "fulfilled" && result.value) {
+          imageUrls.push(result.value);
+        } else {
+          console.warn(`[AI] 第${idx + 1}张图片上传失败`);
+          uploadFailCount++;
+        }
+      });
+
+      if (imageUrls.length === 0) {
+        throw new Error("所有图片上传失败，请检查网络后重试");
       }
 
-      // 3. 调用识别 API
-      setPhase("AI 识别中...");
+      if (uploadFailCount > 0) {
+        console.warn(`[AI] ${uploadFailCount}/${imageDataUrls.length} 张图片上传失败，剩余 ${imageUrls.length} 张继续识别`);
+      }
+
+      // 3. 调用识别 API（使用 HTTP URL，走豆包主模型）
+      setPhase(`AI 智能识别中...(${imageUrls.length}张图片)`);
       const res = await fetch("/api/agents/seller-helper/recognize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: bodyStr,
+        body: JSON.stringify({ imageUrls }), // ← 关键改动：用 imageUrls 替代 imageDataUris
       });
 
       let data: any;

@@ -350,7 +350,7 @@ export default async function ProductDetailPage({
           </div>
         </div>
 
-        {/* Right Column: Video + Contact */}
+        {/* Right Column: Video + AI Deep Analysis */}
         <div className="space-y-6">
           {/* ================================================================ */}
           {/*  SECTION 4 — Video Area                                         */}
@@ -382,42 +382,15 @@ export default async function ProductDetailPage({
           )}
 
           {/* ================================================================ */}
-          {/*  SECTION 7 — Contact & Inquiry (+ Email)                        */}
+          {/*  AI 深度分析（豆包大模型）— 原在下方，与联系卖家对调后移到这里        */}
           {/* ================================================================ */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("contactSeller")}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Email */}
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Mail className="h-4 w-4 text-gray-400" />
-                <span>Email: </span>
-                <a
-                  href="mailto:932133255@qq.com"
-                  className="text-primary-600 hover:text-primary-700 font-medium"
-                >
-                  932133255@qq.com
-                </a>
-              </div>
-
-              {/* Escrow Purchase */}
-              {product.status === "active" && (
-                <EscrowPurchaseButton
-                  productId={product.id}
-                  productName={product.modelName}
-                  price={product.priceCny}
-                  sellerId={product.sellerId}
-                />
-              )}
-
-              {/* Inquiry Form */}
-              <InquiryForm productId={product.id} />
-
-              {/* Quick Contact: QR Codes */}
-              <QuickContact locale={locale} />
-            </CardContent>
-          </Card>
+          <DeepAnalysisCard
+            productId={product.id}
+            productName={`${brandName} ${product.modelName}`}
+            imageUrls={product.images.map((img) => getImageUrl(img.url))}
+            videoUrls={product.videos.length > 0 ? product.videos.map((v) => getVideoUrl(v.url)) : []}
+            locale={locale}
+          />
         </div>
       </div>
 
@@ -466,15 +439,44 @@ export default async function ProductDetailPage({
         />
       </div>
 
-      {/* AI Deep Analysis (豆包大模型) */}
+      {/* ================================================================ */}
+      {/*  联系卖家 & 询价（原在右侧栏，与AI深度分析对调后移到这里）          */}
+      {/* ================================================================ */}
       <div className="mt-6">
-        <DeepAnalysisCard
-          productId={product.id}
-          productName={`${brandName} ${product.modelName}`}
-          imageUrls={product.images.map((img) => getImageUrl(img.url))}
-          videoUrls={product.videos.length > 0 ? product.videos.map((v) => getVideoUrl(v.url)) : []}
-          locale={locale}
-        />
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("contactSeller")}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Email */}
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Mail className="h-4 w-4 text-gray-400" />
+              <span>Email: </span>
+              <a
+                href="mailto:932133255@qq.com"
+                className="text-primary-600 hover:text-primary-700 font-medium"
+              >
+                932133255@qq.com
+              </a>
+            </div>
+
+            {/* Escrow Purchase */}
+            {product.status === "active" && (
+              <EscrowPurchaseButton
+                productId={product.id}
+                productName={product.modelName}
+                price={product.priceCny}
+                sellerId={product.sellerId}
+              />
+            )}
+
+            {/* Inquiry Form */}
+            <InquiryForm productId={product.id} />
+
+            {/* Quick Contact: QR Codes */}
+            <QuickContact locale={locale} />
+          </CardContent>
+        </Card>
       </div>
 
       {/* Machinery Identity & Traceability (一机一码) */}

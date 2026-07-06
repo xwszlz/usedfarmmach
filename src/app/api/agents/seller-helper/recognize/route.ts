@@ -62,37 +62,45 @@ export const maxDuration = 60;
 
 // ── 系统提示词（所有模型共用） ──
 const SYSTEM_PROMPT = `你是一位资深二手农业机械专家，熟悉 CLAAS、John Deere, New Holland、Krone、Orkel 等主流品牌的收获机、割台、打捆机。
-请根据提供的农机图片（整机全貌、铭牌、驾驶室、轮胎/底盘），识别以下信息，以 JSON 格式返回。
+请根据提供的农机图片（整机全貌、铭牌、驾驶室、轮胎/底盘），**仔细识别每一个字段**，以 JSON 格式返回。
+
+⚠️ 重要要求：
+- 必须尝试识别并填写 ALL 以下 17+1 个字段，不要遗漏任何一个！
+- 即使某个字段在图片上不完全清晰，也要根据可见线索给出最可能的推断值
+- 只有在完全没有任何线索时才设为 null
+- 图片中通常包含的信息：铭牌（品牌/型号/年份/马力）、外观（成色/尺寸/重量）、配置（驱动方式/发动机类型/主要配置）
 
 返回字段说明：
 {
-  "brand": "品牌英文名（如 CLAAS, John Deere, New Holland, Krone, Orkel）",
-  "modelName": "型号（如 JAGUAR 970, FR9040, 5300RC）",
-  "year": 年份数字（如 2018），无法识别则为 null,
-  "enginePower": "发动机额定马力(HP)，数字字符串，如 \"480\"，无法识别则为 null",
-  "engineType": "发动机类型（如 Diesel Engine, Gasoline, Other）",
-  "driveSystem": "驱动方式（2WD / 4WD / Full Hydraulic）",
-  "overallLength": "整机总长(mm)，数字字符串，如 \"8900\"，无法识别则为 null",
-  "overallWidth": "整机总宽(mm)，数字字符串，如 \"2990\"，无法识别则为 null,
-  "overallHeight": "整机总高(mm)，数字字符串，如 \"3490\"，无法识别则为 null,
-  "netWeight": "整机净重(kg)，数字字符串，如 \"12500\"，无法识别则为 null,
-  "mainConfig": "主要配置（如割台型号、导航系统、打捆机构型等）",
-  "workingHours": "工作小时数，数字，无法识别则为 null,
-  "condition": "成色（excellent / good / fair / poor 之一）",
-  "priceMode": "价格模式（fob / por），无法识别则为 null,
-  "tradeTerm": "贸易条款（FOB / CIF / CFR / EXW / 其他），无法识别则为 null,
-  "tradePort": "发货港口（如 Qingdao, Shanghai），无法识别则为 null,
-  "confidence": 0-1 之间的置信度分数
+  "brand": "品牌英文名（如 CLAAS, John Deere, New Holland, Krone, Orkel, 克罗尼）— 从铭牌或外观判断，必填",
+  "modelName": "型号（如 JAGUAR 970, FR9040, 5300RC, 600）— 从铭牌读取，必填",
+  "year": 年份数字（如 2018, 2014）— 铭牌或注册信息，必填",
+  "enginePower": "发动机额定马力(HP)，如 \"480\" — 铭牌常见字段",
+  "engineType": "发动机类型（Diesel Engine / Gasoline / Other）— 根据机型推断",
+  "driveSystem": "驱动方式（2WD / 4WD / Full Hydraulic）— 从轮胎布局判断",
+  "overallLength": "整机总长(mm)，如 \"8900\" — 从整机全貌估算",
+  "overallWidth": "整机总宽(mm)，如 \"2990\" — 从整机全貌估算",
+  "overallHeight": "整机总高(mm)，如 \"3490\" — 从整车高度估算",
+  "netWeight": "整机净重(kg)，如 \"12500\" — 该级别农机的典型重量",
+  "mainConfig": "主要配置（如 割台型号、导航系统、打捆机构型、轮胎规格等）— 从附件照片识别",
+  "workingHours": "工作小时数 — 仪表盘或卖家描述中可能提到",
+  "condition": "成色（excellent / good / fair / poor）— 从漆面磨损/锈蚀/轮胎状态综合判断",
+  "priceMode": "价格模式（fob / por）— 默认 fob",
+  "tradeTerm": "贸易条款（FOB / CIF / CFR / EXW）— 默认 FOB",
+  "tradePort": "发货港口（Qingdao / Shanghai 等）— 默认 Qingdao",
+  "confidence": 0-1 之间的置信度分数（基于图片质量和识别确定性）
 }
 
-识别要点：
-1. 铭牌照片可识别品牌、型号、年份、马力、发动机类型
-2. 整机全貌照片可识别驱动方式（看轮胎/底盘）、尺寸估算
-3. 割台/附件照片可识别 mainConfig
-4. 成色通过漆面、磨损、锈蚀判断
-5. 只返回 JSON，不要任何其他文字
-6. 字段无法识别时设为 null，不要瞎编
-7. 品牌名必须用英文标准名`;
+识别要点（按优先级排序）：
+1. 🔍 铭牌照片是金标准 → 品牌/型号/年份/马力几乎都在铭牌上
+2. 📐 整机全貌 → 驱动方式(看轮胎数量)、尺寸估算(长宽高)、大致重量级
+3. ⚙️ 发动机舱 → 发动机类型(Diesel居多)、马力标签
+4. 🛞 轮胎/底盘 → 驱动方式确认(2WD=两轮/4WD=四轮)
+5. 🎛️ 仪表盘 → 工作小时数有时会显示
+6. 📎 附件照片(割台/打捆机) → 主要配置
+7. 🎨 漆面+锈蚀+轮胎磨损 → 成色判断
+8. 只返回 JSON，不要任何其他文字
+9. 品牌名用英文标准名，如果看到中文品牌名则翻译为英文`;
 
 // ── 构建豆包(ARK)格式的消息内容（OpenAI兼容）──
 function buildDoubaoContent(images: string[], videoUrls: string[] = []) {
@@ -131,14 +139,14 @@ async function callDoubao(content: Array<Record<string, unknown>>): Promise<stri
     {
       model: ARK_MODEL_ID,
       messages: [{ role: "user", content }],
-      max_tokens: 800,
+      max_tokens: 1200, // 提升到1200：17个字段的JSON需要更多输出空间
     },
     {
       headers: {
         Authorization: `Bearer ${ARK_API_KEY}`,
         "Content-Type": "application/json",
       },
-      timeout: 30000, // 豆包通常很快
+      timeout: 60000, // 60秒（图片下载~20s + 8张图片处理 + 17字段JSON生成）
     }
   );
 
