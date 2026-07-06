@@ -119,7 +119,7 @@ function BrandRow({ brand, onUpdate }: { brand: BrandData; onUpdate: (id: string
     if (form.expoStory !== (brand.expoStory || "")) data.expoStory = form.expoStory;
     if (form.officialWebsite !== (brand.officialWebsite || "")) data.officialWebsite = form.officialWebsite;
     if (form.exportVolume !== (brand.exportVolume || "")) data.exportVolume = form.exportVolume;
-    if (form.establishedYear !== (brand.establishedYear || "")) data.establishedYear = parseInt(form.establishedYear) || null;
+    if (form.establishedYear !== (brand.establishedYear || "")) data.establishedYear = parseInt(String(form.establishedYear)) || null;
 
     const ok = await onUpdate(brand.id, data);
     setSaveState(ok ? "saved" : "error");
