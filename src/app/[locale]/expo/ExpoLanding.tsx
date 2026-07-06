@@ -56,7 +56,7 @@ const TEXTS: Record<string, {
     badge: "中国农机 · 走向世界",
     title: "永不落幕的农机世界展会",
     subtitle:
-      "32+中国农机品牌旗舰机型365天在线展示，从东方红到大疆，从拖拉机到植保无人机，让中国制造走向全球田间。",
+      "42个中国农机品牌旗舰机型365天在线展示，从东方红到大疆，从拖拉机到植保无人机，让中国制造走向全球田间。",
     cta: "立即申请参展",
     introTitle: "中国农机的世界舞台",
     introBody:
@@ -143,7 +143,7 @@ const TEXTS: Record<string, {
     badge: "Chinese Machinery · Global Stage",
     title: "The Always-On Global Farm Machinery Expo",
     subtitle:
-      "32+ Chinese farm machinery brands with flagship models on display 365 days a year. From Dongfanghong to DJI, from tractors to drones — bringing Chinese manufacturing to fields worldwide.",
+      "42 Chinese farm machinery brands with flagship models on display 365 days a year. From Dongfanghong to DJI, from tractors to drones — bringing Chinese manufacturing to fields worldwide.",
     cta: "Apply to Exhibit",
     introTitle: "The World Stage for Chinese Farm Machinery",
     introBody:
@@ -403,7 +403,7 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
             </Link>
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <CheckCircle2 className="h-4 w-4 text-green-500" />
-              {locale === "zh" ? "45台中国精品农机在线展示" : locale === "ru" ? "45 китайских машин" : "45 Chinese machines on display"}
+              {locale === "zh" ? "98台中外精品农机在线展示" : locale === "ru" ? "98 китайских и мировых машин" : "98 Chinese & global machines on display"}
             </div>
           </div>
         </div>
@@ -421,7 +421,7 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {/* China Pavilion */}
             <Link
-              href={`/${locale}/expo/showroom?pavilion=china`}
+              href={`/${locale}/expo/china-brands`}
               className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-600 to-red-700 p-8 text-white shadow-lg transition-all hover:shadow-2xl hover:scale-[1.02]"
             >
               <div className="absolute top-4 right-4 text-6xl opacity-20">🇨🇳</div>
@@ -443,7 +443,7 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
 
             {/* Global Pavilion */}
             <Link
-              href={`/${locale}/expo/showroom?pavilion=global`}
+              href={`/${locale}/expo/global-brands`}
               className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-600 to-orange-700 p-8 text-white shadow-lg transition-all hover:shadow-2xl hover:scale-[1.02]"
             >
               <div className="absolute top-4 right-4 text-6xl opacity-20">🌍</div>
@@ -465,7 +465,7 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
 
             {/* Category Comparison */}
             <Link
-              href={`/${locale}/expo/showroom`}
+              href={`/${locale}/expo/compare`}
               className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 p-8 text-white shadow-lg transition-all hover:shadow-2xl hover:scale-[1.02]"
             >
               <div className="absolute top-4 right-4 text-6xl opacity-20">⚖️</div>
