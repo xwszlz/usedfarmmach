@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import ExhibitionMap from "@/components/expo/ExhibitionMap";
 
 interface ShowroomItem {
   id: string;
@@ -35,12 +36,14 @@ export default function ShowroomClient({
   initialTotal,
   initialHalls,
   initialBrands,
+  mapBooths,
   locale,
 }: {
   initialItems: ShowroomItem[];
   initialTotal: number;
   initialHalls: FilterOption[];
   initialBrands: FilterOption[];
+  mapBooths: unknown[];
   locale: string;
 }) {
   const [items, setItems] = useState(initialItems);
@@ -50,6 +53,7 @@ export default function ShowroomClient({
   const [selectedBrand, setSelectedBrand] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
+  const [viewMode, setViewMode] = useState<"list" | "map">("list");
 
   const t = (zh: string, en: string, ru?: string) => {
     if (locale === "zh") return zh;
@@ -171,6 +175,35 @@ export default function ShowroomClient({
         </div>
       </div>
 
+      {/* View Toggle */}
+      <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setViewMode("list")}
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+              viewMode === "list" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            {t("列表视图", "List View", "Список")}
+          </button>
+          <button
+            onClick={() => setViewMode("map")}
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+              viewMode === "map" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            {t("展馆地图", "Map View", "Карта")}
+          </button>
+        </div>
+      </div>
+
+      {/* Map View */}
+      {viewMode === "map" && (
+        <div className="mx-auto max-w-7xl px-4 pb-8 sm:px-6 lg:px-8">
+          <ExhibitionMap booths={mapBooths as any} locale={locale} />
+        </div>
+      )}
+
       {/* Filter Bar */}
       <div className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-gray-200 shadow-sm">
         <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
@@ -243,7 +276,8 @@ export default function ShowroomClient({
         </div>
       </div>
 
-      {/* Items Grid */}
+      {/* Items Grid - only in list view */}
+      {viewMode === "list" && (
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         {items.length === 0 ? (
           <div className="text-center py-20">
@@ -353,6 +387,7 @@ export default function ShowroomClient({
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }

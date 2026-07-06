@@ -39,10 +39,12 @@ export default function ServiceNetworkClient({
   grouped,
   summary,
   locale,
+  error = false,
 }: {
   grouped: Record<string, ServiceCenter[]>;
   summary: { total: number; provinceCount: number; provinceLevel: number; cityLevel: number; countyLevel: number };
   locale: string;
+  error?: boolean;
 }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
@@ -127,7 +129,9 @@ export default function ServiceNetworkClient({
           <CardContent className="flex flex-col items-center py-12 text-center">
             <Wrench className="h-12 w-12 text-gray-300" />
             <p className="mt-4 text-gray-500">
-              {isZh ? "服务网点正在建设中，敬请期待" : "Service centers are being set up. Stay tuned."}
+              {error
+                ? (isZh ? "服务网点数据暂时无法加载，请稍后重试" : "Service center data is temporarily unavailable. Please try again later.")
+                : (isZh ? "服务网点正在建设中，敬请期待" : "Service centers are being set up. Stay tuned.")}
             </p>
             <p className="mt-2 text-sm text-gray-400">
               {isZh ? "如需线下服务，请拨打客服热线：400-888-XXXX" : "For offline service, call: 400-888-XXXX"}

@@ -18,7 +18,7 @@ import ArbitrageCalculatorSection from "@/components/product/arbitrage-calculato
 import { QuickContact } from "@/components/product/quick-contact";
 import { BuyIntentButton } from "@/components/product/buy-intent-button";
 import { ValuationCard } from "@/components/valuation/valuation-card";
-import { DeepAnalysisCard } from "@/components/product/deep-analysis-card";
+import DeepAnalysisCard from "@/components/product/deep-analysis-card";
 import { DAILY_REPORT_RANKING } from "@/config/daily-report-ranking";
 import { getHreflangLanguages } from "@/components/seo/hreflang-head";
 import { ProductStructuredData, BreadcrumbStructuredData } from "@/components/seo/structured-data";

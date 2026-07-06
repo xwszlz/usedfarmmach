@@ -47,6 +47,21 @@ export default async function ShowroomPage({
     orderBy: { sortIndex: "asc" },
   });
 
+  // Fetch booths with counts for map view
+  const mapBooths = await prisma.booth.findMany({
+    where: { status: { in: ["published", "configured"] } },
+    select: {
+      id: true,
+      name: true,
+      hall: true,
+      template: true,
+      status: true,
+      merchant: { select: { username: true, companyName: true } },
+      _count: { select: { showcaseItems: true } },
+    },
+    orderBy: { sortIndex: "asc" },
+  });
+
   // Fetch brands from showcase items
   const brandSet = new Set<string>();
   rawItems.forEach((item) => {
@@ -127,6 +142,7 @@ export default async function ShowroomPage({
         initialTotal={total}
         initialHalls={halls}
         initialBrands={brands}
+        mapBooths={JSON.parse(JSON.stringify(mapBooths))}
         locale={locale}
       />
     </>

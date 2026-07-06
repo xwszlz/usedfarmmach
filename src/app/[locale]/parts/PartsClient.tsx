@@ -9,16 +9,19 @@ import { getImageUrl } from "@/lib/image-url";
 
 interface PartItem {
   id: string;
-  name: string;
-  nameEn?: string;
-  brand?: string;
+  nameZh: string;
+  nameEn: string;
+  nameRu: string;
+  brand: string;
   category: string;
   price: number;
-  priceUnit: string;
-  image?: string;
-  description?: string;
-  inStock: boolean;
-  compatibleModels?: string[];
+  currency: string;
+  stockStatus: string; // in_stock, low_stock, out_of_stock
+  compatibleModels: string[];
+  images: string[];
+  descriptionZh: string | null;
+  descriptionEn: string | null;
+  descriptionRu: string | null;
 }
 
 // 零配件分类
@@ -33,32 +36,68 @@ const PART_CATEGORIES = [
   { id: "body", nameZh: "车身外观", nameEn: "Body Parts", icon: "🚜" },
 ];
 
-// 示例零配件数据（后续对接数据库）
-const SAMPLE_PARTS: PartItem[] = [
-  { id: "p1", name: "约翰迪尔发动机滤芯组", nameEn: "John Deere Engine Filter Kit", brand: "John Deere", category: "filters", price: 380, priceUnit: "CNY", inStock: true, compatibleModels: ["5045E", "5055E", "5065E"] },
-  { id: "p2", name: "克拉斯液压泵", nameEn: "CLAAS Hydraulic Pump", brand: "CLAAS", category: "hydraulic", price: 12500, priceUnit: "CNY", inStock: true, compatibleModels: ["LEXION 770", "LEXION 780"] },
-  { id: "p3", name: "纽荷兰离合器片", nameEn: "New Holland Clutch Disc", brand: "New Holland", category: "transmission", price: 2800, priceUnit: "CNY", inStock: true, compatibleModels: ["TD5.90", "TD5.110"] },
-  { id: "p4", name: "库恩割刀总成", nameEn: "KUHN Cutter Bar Assembly", brand: "KUHN", category: "body", price: 8500, priceUnit: "CNY", inStock: false, compatibleModels: ["FC 313", "FC 316"] },
-  { id: "p5", name: "通用发电机总成", nameEn: "Universal Alternator Assembly", brand: "Bosch", category: "electrical", price: 1600, priceUnit: "CNY", inStock: true, compatibleModels: ["通用12V/24V"] },
-  { id: "p6", name: "拖拉机前轮胎 11.2-24", nameEn: "Tractor Front Tire 11.2-24", brand: "Apollo", category: "tires", price: 1200, priceUnit: "CNY", inStock: true },
-  { id: "p7", name: "收割机链条 50-H", nameEn: "Harvester Chain 50-H", brand: "Universal", category: "transmission", price: 450, priceUnit: "CNY", inStock: true },
-  { id: "p8", name: "液压油缸密封件组", nameEn: "Hydraulic Cylinder Seal Kit", brand: "Parker", category: "bearings", price: 320, priceUnit: "CNY", inStock: true },
-];
+const STOCK_LABELS: Record<string, { zh: string; en: string; className: string }> = {
+  in_stock: { zh: "有货", en: "In Stock", className: "bg-green-100 text-green-700" },
+  low_stock: { zh: "库存紧张", en: "Low Stock", className: "bg-amber-100 text-amber-700" },
+  out_of_stock: { zh: "缺货", en: "Out of Stock", className: "bg-gray-100 text-gray-500" },
+};
 
 export default function PartsClient({ locale }: { locale: string }) {
   const isZh = locale === "zh";
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [parts] = useState<PartItem[]>(SAMPLE_PARTS);
+  const [parts, setParts] = useState<PartItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
+  useEffect(() => {
+    fetchParts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCategory]);
+
+  const fetchParts = async () => {
+    setLoading(true);
+    setError(false);
+    try {
+      const params = new URLSearchParams();
+      if (selectedCategory !== "all") params.set("category", selectedCategory);
+      if (searchQuery.trim()) params.set("keyword", searchQuery.trim());
+      const res = await fetch(`/api/parts?${params.toString()}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success) {
+          setParts(json.data || []);
+        } else {
+          setParts([]);
+          setError(true);
+        }
+      } else {
+        setParts([]);
+        setError(true);
+      }
+    } catch (e) {
+      console.error("Failed to fetch parts:", e);
+      setParts([]);
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 搜索时触发请求
+  const handleSearch = () => {
+    fetchParts();
+  };
+
+  // 客户端二次筛选（搜索词在服务端也做了，这里确保即时过滤）
   const filteredParts = parts.filter((part) => {
-    const matchCategory = selectedCategory === "all" || part.category === selectedCategory;
-    const matchSearch =
-      !searchQuery ||
-      part.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (part.nameEn || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (part.brand || "").toLowerCase().includes(searchQuery.toLowerCase());
-    return matchCategory && matchSearch;
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      part.nameZh.toLowerCase().includes(q) ||
+      part.nameEn.toLowerCase().includes(q) ||
+      part.brand.toLowerCase().includes(q)
+    );
   });
 
   return (
@@ -104,6 +143,7 @@ export default function PartsClient({ locale }: { locale: string }) {
               placeholder={isZh ? "搜索配件名称、品牌、型号..." : "Search parts, brands, models..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); }}
               className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100"
             />
           </div>
@@ -139,70 +179,79 @@ export default function PartsClient({ locale }: { locale: string }) {
 
         {/* Results count */}
         <div className="mb-4 text-sm text-gray-500">
-          {isZh ? `共 ${filteredParts.length} 个配件` : `${filteredParts.length} parts found`}
+          {loading
+            ? (isZh ? "加载中..." : "Loading...")
+            : (isZh ? `共 ${filteredParts.length} 个配件` : `${filteredParts.length} parts found`)}
         </div>
 
         {/* Parts grid */}
-        {filteredParts.length === 0 ? (
+        {loading ? (
+          <div className="flex justify-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+          </div>
+        ) : error ? (
+          <div className="text-center py-20 text-gray-400">
+            <Wrench className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>{isZh ? "配件数据暂时无法加载，请稍后重试" : "Parts data is temporarily unavailable"}</p>
+          </div>
+        ) : filteredParts.length === 0 ? (
           <div className="text-center py-20 text-gray-400">
             <Wrench className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>{isZh ? "暂无匹配的配件" : "No matching parts found"}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredParts.map((part) => (
-              <Card key={part.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                <div className="aspect-square bg-gray-100 flex items-center justify-center">
-                  {part.image ? (
-                    <img
-                      src={getImageUrl(part.image)}
-                      alt={isZh ? part.name : part.nameEn || part.name}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <Wrench className="h-12 w-12 text-gray-300" />
-                  )}
-                </div>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    {part.brand && (
-                      <Badge variant="secondary" className="text-xs">{part.brand}</Badge>
-                    )}
-                    {part.inStock ? (
-                      <Badge className="text-xs bg-green-100 text-green-700">
-                        {isZh ? "有货" : "In Stock"}
-                      </Badge>
+            {filteredParts.map((part) => {
+              const stockInfo = STOCK_LABELS[part.stockStatus] || STOCK_LABELS.in_stock;
+              const partName = isZh ? part.nameZh : (part.nameEn || part.nameZh);
+              return (
+                <Card key={part.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                  <div className="aspect-square bg-gray-100 flex items-center justify-center">
+                    {part.images && part.images.length > 0 ? (
+                      <img
+                        src={getImageUrl(part.images[0])}
+                        alt={partName}
+                        className="h-full w-full object-cover"
+                      />
                     ) : (
-                      <Badge className="text-xs bg-gray-100 text-gray-500">
-                        {isZh ? "缺货" : "Out of Stock"}
-                      </Badge>
+                      <Wrench className="h-12 w-12 text-gray-300" />
                     )}
                   </div>
-                  <h3 className="font-medium text-gray-900 text-sm line-clamp-2 mb-2">
-                    {isZh ? part.name : part.nameEn || part.name}
-                  </h3>
-                  {part.compatibleModels && part.compatibleModels.length > 0 && (
-                    <p className="text-xs text-gray-400 mb-2">
-                      {isZh ? "兼容型号" : "Compatible"}: {part.compatibleModels.join(", ")}
-                    </p>
-                  )}
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-lg font-bold text-orange-600">
-                        ¥{part.price.toLocaleString()}
-                      </span>
-                      <span className="text-xs text-gray-400 ml-1">/{part.priceUnit}</span>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      {part.brand && (
+                        <Badge variant="secondary" className="text-xs">{part.brand}</Badge>
+                      )}
+                      <Badge className={`text-xs ${stockInfo.className}`}>
+                        {isZh ? stockInfo.zh : stockInfo.en}
+                      </Badge>
                     </div>
-                    <Link
-                      href={`/parts/${part.id}`}
-                      className="text-xs text-orange-500 hover:underline"
-                    >
-                      {isZh ? "询价" : "Inquiry"}
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    <h3 className="font-medium text-gray-900 text-sm line-clamp-2 mb-2">
+                      {partName}
+                    </h3>
+                    {part.compatibleModels && part.compatibleModels.length > 0 && (
+                      <p className="text-xs text-gray-400 mb-2">
+                        {isZh ? "兼容型号" : "Compatible"}: {part.compatibleModels.join(", ")}
+                      </p>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-lg font-bold text-orange-600">
+                          ¥{part.price.toLocaleString()}
+                        </span>
+                        <span className="text-xs text-gray-400 ml-1">/{part.currency}</span>
+                      </div>
+                      <Link
+                        href={`/parts/${part.id}`}
+                        className="text-xs text-orange-500 hover:underline"
+                      >
+                        {isZh ? "询价" : "Inquiry"}
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
 

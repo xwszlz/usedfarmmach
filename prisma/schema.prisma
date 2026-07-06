@@ -1583,3 +1583,31 @@ model Review {
   @@index([reviewerId])
   @@index([orderId])
 }
+
+// ═══════════════════════════════════════════════════════
+// 零配件信息
+// ═══════════════════════════════════════════════════════
+
+model Part {
+  id               String   @id @default(cuid())
+  nameZh           String   // 中文名称
+  nameEn           String   @default("") // 英文名称
+  nameRu           String   @default("") // 俄文名称
+  brand            String   // 品牌
+  category         String   // 品类: engine, hydraulic, transmission, electrical, filters, tires, bearings, body
+  price            Float    // 价格
+  currency         String   @default("CNY")
+  stockStatus      String   @default("in_stock") // in_stock, low_stock, out_of_stock
+  compatibleModels String[] // 兼容机型数组
+  images           String[] // 图片URL数组
+  descriptionZh    String?  @db.Text
+  descriptionEn    String?  @db.Text
+  descriptionRu    String?  @db.Text
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([category, isActive])
+  @@index([brand, isActive])
+  @@index([stockStatus])
+}

@@ -17,30 +17,39 @@ export default async function ServiceNetworkPage({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  // 查询所有活跃的服务网点
-  const centers = await prisma.serviceCenter.findMany({
-    where: { isActive: true },
-    orderBy: [{ sortOrder: "asc" }, { province: "asc" }, { level: "asc" }],
-  });
-
-  // 如果没有数据，提供默认种子数据用于展示
-  const seedCenters = centers.length > 0 ? centers : [];
+  // 查询所有活跃的服务网点（包裹 try-catch 防止数据库异常导致 500）
+  let centers: any[] = [];
+  let queryError = false;
+  try {
+    centers = await prisma.serviceCenter.findMany({
+      where: { isActive: true },
+      orderBy: [{ sortOrder: "asc" }, { province: "asc" }, { level: "asc" }],
+    });
+  } catch (err) {
+    console.error("ServiceNetworkPage: 查询服务网点失败:", err);
+    queryError = true;
+  }
 
   // 按省份分组
   const grouped: Record<string, any[]> = {};
-  for (const c of seedCenters) {
+  for (const c of centers) {
     if (!grouped[c.province]) grouped[c.province] = [];
-    const services = c.services ? JSON.parse(c.services as string) : [];
+    let services: string[] = [];
+    try {
+      services = c.services ? JSON.parse(c.services as string) : [];
+    } catch {
+      services = [];
+    }
     grouped[c.province].push({ ...c, services });
   }
 
   const summary = {
-    total: seedCenters.length,
+    total: centers.length,
     provinceCount: Object.keys(grouped).length,
-    provinceLevel: seedCenters.filter((c) => c.level === "province").length,
-    cityLevel: seedCenters.filter((c) => c.level === "city").length,
-    countyLevel: seedCenters.filter((c) => c.level === "county").length,
+    provinceLevel: centers.filter((c) => c.level === "province").length,
+    cityLevel: centers.filter((c) => c.level === "city").length,
+    countyLevel: centers.filter((c) => c.level === "county").length,
   };
 
-  return <ServiceNetworkClient grouped={grouped} summary={summary} locale={locale} />;
+  return <ServiceNetworkClient grouped={grouped} summary={summary} locale={locale} error={queryError} />;
 }

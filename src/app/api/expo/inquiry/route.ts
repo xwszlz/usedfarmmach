@@ -19,6 +19,85 @@ export async function POST(request: NextRequest) {
 
     const { type, company, contact, phone, email, country, category, boothType, message, locale } = body;
 
+    // === 展位询盘（来自展位详情页）===
+    if (type === "booth_inquiry") {
+      const { boothId, merchantId, showcaseItemId, buyerName, buyerPhone, buyerEmail, buyerWechat, buyerCountry, message, intent } = body;
+      if (!buyerName || !buyerPhone) {
+        return NextResponse.json(
+          { success: false, error: "Missing required fields: buyerName, buyerPhone" },
+          { status: 400 }
+        );
+      }
+
+      // Get booth info for email
+      let boothName = "";
+      try {
+        const booth = await prisma.booth.findUnique({
+          where: { id: boothId },
+          include: { merchant: { select: { username: true, companyName: true, email: true, phone: true } } },
+        });
+        if (booth) {
+          boothName = booth.name;
+          // If showcaseItemId provided, increment inquiry count
+          if (showcaseItemId) {
+            await prisma.showcaseItem.update({
+              where: { id: showcaseItemId },
+              data: { inquiryCount: { increment: 1 } },
+            });
+          }
+        }
+      } catch (e) {
+        console.error("[Expo BoothInquiry] Failed to lookup booth:", e);
+      }
+
+      // Write to ExpoInquiry table
+      let inquiryRecord = null;
+      try {
+        inquiryRecord = await prisma.expoInquiry.create({
+          data: {
+            showcaseItemId: showcaseItemId || null,
+            boothId: boothId || null,
+            merchantId: merchantId || null,
+            buyerId: null,
+            buyerName,
+            buyerPhone,
+            buyerEmail: buyerEmail || null,
+            buyerWechat: buyerWechat || null,
+            buyerCountry: buyerCountry || null,
+            message: message || `Inquiry about booth: ${boothName}`,
+            intent: intent || "inquiry",
+            status: "new",
+          },
+        });
+      } catch (dbErr) {
+        console.error("[Expo BoothInquiry DB Error]", dbErr);
+      }
+
+      // Send email
+      const subject = `[展位询盘] ${buyerName} - ${boothName}`;
+      const html = `
+        <h2>农机博览会 - 展位询盘</h2>
+        <table style="border-collapse:collapse;width:100%;font-size:14px;">
+          <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;">展位</td><td style="padding:8px;border:1px solid #ddd;">${boothName}</td></tr>
+          <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;">买家姓名</td><td style="padding:8px;border:1px solid #ddd;">${buyerName}</td></tr>
+          <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;">电话/WhatsApp</td><td style="padding:8px;border:1px solid #ddd;">${buyerPhone}</td></tr>
+          <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;">邮箱</td><td style="padding:8px;border:1px solid #ddd;">${buyerEmail || "-"}</td></tr>
+          <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;">微信</td><td style="padding:8px;border:1px solid #ddd;">${buyerWechat || "-"}</td></tr>
+          <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;">国家</td><td style="padding:8px;border:1px solid #ddd;">${buyerCountry || "-"}</td></tr>
+          <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;">意向</td><td style="padding:8px;border:1px solid #ddd;">${intent || "inquiry"}</td></tr>
+          <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;">留言</td><td style="padding:8px;border:1px solid #ddd;">${message || "-"}</td></tr>
+          <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;">数据库ID</td><td style="padding:8px;border:1px solid #ddd;">${inquiryRecord?.id || "未写入"}</td></tr>
+        </table>
+      `;
+      try {
+        await sendEmail({ to: ADMIN_EMAIL, subject, html, text: subject });
+      } catch (e) {
+        console.error("[Expo BoothInquiry Email Error]", e);
+      }
+
+      return NextResponse.json({ success: true, id: inquiryRecord?.id });
+    }
+
     // === 展品询盘（来自展厅详情页）===
     if (type === "item_inquiry") {
       const { showcaseItemId, buyerName, buyerPhone, buyerEmail, country: buyerCountry, message: buyerMessage } = body;
