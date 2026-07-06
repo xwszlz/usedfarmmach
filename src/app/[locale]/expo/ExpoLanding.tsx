@@ -53,14 +53,14 @@ const TEXTS: Record<string, {
   selectPlaceholder: string;
 }> = {
   zh: {
-    badge: "365天永不落幕",
+    badge: "中国农机 · 走向世界",
     title: "永不落幕的农机世界展会",
     subtitle:
-      "全球首个专注二手农机跨境交易的365天线上展会平台。从中国源头到一带一路买家，从展示到交易，全年无休。",
+      "32+中国农机品牌旗舰机型365天在线展示，从东方红到大疆，从拖拉机到植保无人机，让中国制造走向全球田间。",
     cta: "立即申请参展",
-    introTitle: "什么是永不落幕的农机世界展会？",
+    introTitle: "中国农机的世界舞台",
     introBody:
-      "传统展会一年3天，错过等一年。我们用数字化手段将展会搬到线上，让您的产品365天24小时向全球买家展示。结合AI供需匹配、跨境交易担保和国际物流服务，打造从展示到成交的完整闭环。线下地头展定期引爆流量，线上展厅持续沉淀价值——灯塔模型，始终亮着。",
+      "传统展会一年3天，错过等一年。我们将展会搬到线上，让中国农机品牌365天24小时向全球买家展示。中国品牌馆为主角，国际标杆馆为参照，品类对比厅为决策助手——三馆联动，从展示到成交的完整闭环。结合AI供需匹配、跨境交易担保和国际物流服务，让中国农机走向一带一路每一个田间。",
     featuresTitle: "核心亮点",
     features: [
       {
@@ -140,14 +140,14 @@ const TEXTS: Record<string, {
     selectPlaceholder: "请选择",
   },
   en: {
-    badge: "365 Days Always-On",
+    badge: "Chinese Machinery · Global Stage",
     title: "The Always-On Global Farm Machinery Expo",
     subtitle:
-      "The world's first 365-day online expo dedicated to cross-border used farm machinery trade. From Chinese sources to Belt & Road buyers — from display to deal, all year round.",
+      "32+ Chinese farm machinery brands with flagship models on display 365 days a year. From Dongfanghong to DJI, from tractors to drones — bringing Chinese manufacturing to fields worldwide.",
     cta: "Apply to Exhibit",
-    introTitle: "What is the Always-On Expo?",
+    introTitle: "The World Stage for Chinese Farm Machinery",
     introBody:
-      "Traditional expos last 3 days a year — miss it and wait another year. We bring the expo online, showcasing your products to global buyers 24/7/365. Combined with AI supply-demand matching, cross-border escrow, and international logistics, we close the loop from display to deal. Offline field expos drive peak traffic; the online hall sustains value — the Lighthouse Model, always shining.",
+      "Traditional expos last 3 days a year — miss it and wait another year. We bring the expo online, showcasing Chinese farm machinery brands to global buyers 24/7/365. The China Pavilion takes center stage, the Global Pavilion provides benchmarks, and the Category Comparison Hall helps buyers decide — three halls working together from display to deal. Combined with AI matching, cross-border escrow, and international logistics, we bring Chinese machinery to every field along the Belt & Road.",
     featuresTitle: "Key Highlights",
     features: [
       {
@@ -227,14 +227,14 @@ const TEXTS: Record<string, {
     selectPlaceholder: "Please select",
   },
   ru: {
-    badge: "365 дней без выходных",
+    badge: "Китайская техника · Мировая сцена",
     title: "Всемирная выставка сельхозтехники без выходных",
     subtitle:
-      "Первая в мире круглогодичная онлайн-выставка трансграничной торговли б/у сельхозтехникой. От китайских источников до покупателей стран Шёлкового пути.",
+      "32+ китайских брендов сельхозтехники на витрине 365 дней в году. От Dongfanghong до DJI, от тракторов до дронов — китайское производство для полей всего мира.",
     cta: "Подать заявку",
-    introTitle: "Что такое выставка без выходных?",
+    introTitle: "Мировая сцена для китайской сельхозтехники",
     introBody:
-      "Традиционные выставки длятся 3 дня в году — пропустили, ждите ещё год. Мы перенесли выставку онлайн: ваша техника доступна покупателям 24/7/365. AI-подбор, эскроу-сервис и международная логистика замыкают цикл от показа до сделки.",
+      "Традиционные выставки длятся 3 дня в году — пропустили, ждите ещё год. Мы перенесли выставку онлайн: китайские бренды доступны покупателям 24/7/365. Китайский зал — главная сцена, Международный зал — ориентир, Зал сравнения — помощник в выборе. Три зала вместе: от показа до сделки. AI-подбор, эскроу-сервис и международная логистика довозят китайскую технику до каждого поля вдоль Шёлкового пути.",
     featuresTitle: "Ключевые преимущества",
     features: [
       {
@@ -373,14 +373,14 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
+      <section className="relative overflow-hidden bg-gradient-to-br from-red-50 via-amber-50 to-yellow-50">
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-10 left-10 h-40 w-40 rounded-full bg-orange-300 blur-3xl" />
+          <div className="absolute top-10 left-10 h-40 w-40 rounded-full bg-red-300 blur-3xl" />
           <div className="absolute bottom-10 right-10 h-60 w-60 rounded-full bg-amber-300 blur-3xl" />
         </div>
         <div className="relative mx-auto max-w-5xl px-4 py-20 text-center sm:px-6 md:py-28 lg:px-8">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-orange-100 px-4 py-1.5 text-sm font-medium text-orange-700">
-            <span className="flex h-2 w-2 animate-pulse rounded-full bg-orange-500" />
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-red-100 px-4 py-1.5 text-sm font-medium text-red-700">
+            <span className="flex h-2 w-2 animate-pulse rounded-full bg-red-500" />
             {t.badge}
           </div>
           <h1 className="mb-6 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl md:text-6xl">
@@ -391,19 +391,19 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
           </p>
           <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <a href="#inquiry-form">
-              <Button size="lg" className="w-full bg-orange-600 hover:bg-orange-700 sm:w-auto">
+              <Button size="lg" className="w-full bg-red-600 hover:bg-red-700 sm:w-auto">
                 {t.cta}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </a>
             <Link href={`/${locale}/expo/showroom`}>
-              <Button size="lg" variant="outline" className="w-full border-amber-600 text-amber-700 hover:bg-amber-50 sm:w-auto">
+              <Button size="lg" variant="outline" className="w-full border-red-600 text-red-700 hover:bg-red-50 sm:w-auto">
                 {locale === "zh" ? "进入线上展厅" : locale === "ru" ? "Войти в шоурум" : "Enter Showroom"}
               </Button>
             </Link>
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <CheckCircle2 className="h-4 w-4 text-green-500" />
-              {locale === "zh" ? "91台设备在线展示" : locale === "ru" ? "91 единиц техники" : "91 machines on display"}
+              {locale === "zh" ? "45台中国精品农机在线展示" : locale === "ru" ? "45 китайских машин" : "45 Chinese machines on display"}
             </div>
           </div>
         </div>
@@ -413,6 +413,79 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
       <section className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
         <h2 className="mb-6 text-3xl font-bold text-gray-900">{t.introTitle}</h2>
         <p className="text-lg leading-relaxed text-gray-600">{t.introBody}</p>
+      </section>
+
+      {/* Three Pavilions Entry */}
+      <section className="bg-gradient-to-b from-gray-50 to-white py-12">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            {/* China Pavilion */}
+            <Link
+              href={`/${locale}/expo/showroom?pavilion=china`}
+              className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-600 to-red-700 p-8 text-white shadow-lg transition-all hover:shadow-2xl hover:scale-[1.02]"
+            >
+              <div className="absolute top-4 right-4 text-6xl opacity-20">🇨🇳</div>
+              <h3 className="mb-2 text-2xl font-bold">
+                {locale === "zh" ? "中国品牌馆" : locale === "ru" ? "Китайский зал" : "China Pavilion"}
+              </h3>
+              <p className="text-sm text-red-100">
+                {locale === "zh"
+                  ? "32+中国农机品牌旗舰机型，从东方红、雷沃到沃得、中联、大疆"
+                  : locale === "ru"
+                    ? "32+ китайских брендов: от Dongfanghong до DJI"
+                    : "32+ Chinese brands: Dongfanghong, Lovol, World, Zoomlion, DJI"}
+              </p>
+              <div className="mt-4 flex items-center gap-2 text-sm font-medium">
+                {locale === "zh" ? "进入中国馆" : locale === "ru" ? "Войти" : "Enter"}
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </div>
+            </Link>
+
+            {/* Global Pavilion */}
+            <Link
+              href={`/${locale}/expo/showroom?pavilion=global`}
+              className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-600 to-orange-700 p-8 text-white shadow-lg transition-all hover:shadow-2xl hover:scale-[1.02]"
+            >
+              <div className="absolute top-4 right-4 text-6xl opacity-20">🌍</div>
+              <h3 className="mb-2 text-2xl font-bold">
+                {locale === "zh" ? "国际标杆馆" : locale === "ru" ? "Международный зал" : "Global Pavilion"}
+              </h3>
+              <p className="text-sm text-amber-100">
+                {locale === "zh"
+                  ? "John Deere、CLAAS、Fendt等全球知名品牌标杆机型参照对比"
+                  : locale === "ru"
+                    ? "John Deere, CLAAS, Fendt — мировые эталоны"
+                    : "John Deere, CLAAS, Fendt — global benchmarks for comparison"}
+              </p>
+              <div className="mt-4 flex items-center gap-2 text-sm font-medium">
+                {locale === "zh" ? "进入国际馆" : locale === "ru" ? "Войти" : "Enter"}
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </div>
+            </Link>
+
+            {/* Category Comparison */}
+            <Link
+              href={`/${locale}/expo/showroom`}
+              className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 p-8 text-white shadow-lg transition-all hover:shadow-2xl hover:scale-[1.02]"
+            >
+              <div className="absolute top-4 right-4 text-6xl opacity-20">⚖️</div>
+              <h3 className="mb-2 text-2xl font-bold">
+                {locale === "zh" ? "品类对比厅" : locale === "ru" ? "Зал сравнения" : "Comparison Hall"}
+              </h3>
+              <p className="text-sm text-blue-100">
+                {locale === "zh"
+                  ? "同品类中外机型参数对比，价格性能一目了然"
+                  : locale === "ru"
+                    ? "Сравнение параметров китайских и мировых моделей"
+                    : "Compare Chinese vs global models side by side"}
+              </p>
+              <div className="mt-4 flex items-center gap-2 text-sm font-medium">
+                {locale === "zh" ? "进入对比厅" : locale === "ru" ? "Войти" : "Enter"}
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </div>
+            </Link>
+          </div>
+        </div>
       </section>
 
       {/* Features Grid */}
@@ -447,7 +520,7 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
       </section>
 
       {/* Pricing Teaser */}
-      <section className="bg-gradient-to-r from-orange-600 to-amber-600 py-12">
+      <section className="bg-gradient-to-r from-red-600 to-amber-600 py-12">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {[
@@ -620,7 +693,7 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
                   type="submit"
                   size="lg"
                   disabled={status === "submitting"}
-                  className="w-full bg-orange-600 hover:bg-orange-700"
+                  className="w-full bg-red-600 hover:bg-red-700"
                 >
                   {status === "submitting" ? (
                     <>

@@ -18,15 +18,20 @@ export async function generateMetadata({
   const { locale, id } = await params;
   const item = await prisma.showcaseItem.findUnique({
     where: { id },
-    include: { booth: { select: { name: true, hall: true } } },
+    include: { booth: { select: { name: true, hall: true } }, brandRel: { select: { nameZh: true, nameEn: true, brandTier: true } } },
   });
   if (!item) return generatePageMetadata("expo", locale, "/expo/showroom");
 
   const title = `${item.brand || ""} ${item.model || ""}`.trim() || item.deviceType;
+  const isNew = item.itemType === "new";
+  const priceText = isNew
+    ? (item.msrpCny ? `¥${item.msrpCny.toLocaleString()}` : item.msrpUsd ? `$${item.msrpUsd.toLocaleString()}` : "询价")
+    : (item.price ? `¥${item.price.toLocaleString()}` : "询价");
+
   const description =
     locale === "zh"
-      ? `${title} - ${item.year || ""}年 | ${item.condition || ""} | 价格 ¥${item.price?.toLocaleString() || "询价"} | 永不落幕的农机世界展会线上展厅`
-      : `${title} - ${item.year || ""} | ${item.condition || ""} | Price ¥${item.price?.toLocaleString() || "Inquire"} | Always-On Global Farm Machinery Expo`;
+      ? `${title} - ${item.launchYear || item.year || ""} | ${item.machineTier || ""} | 厂商指导价 ${priceText} | 永不落幕的农机世界展会线上展厅`
+      : `${title} - ${item.launchYear || item.year || ""} | ${item.machineTier || ""} | MSRP ${priceText} | Always-On Global Farm Machinery Expo`;
 
   return {
     title,
@@ -49,7 +54,21 @@ export default async function ShowcaseDetailPage({
   const item = await prisma.showcaseItem.findUnique({
     where: { id },
     include: {
-      booth: { select: { id: true, name: true, hall: true } },
+      booth: { select: { id: true, name: true, hall: true, pavilion: true, tier: true } },
+      brandRel: {
+        select: {
+          id: true,
+          nameZh: true,
+          nameEn: true,
+          isChineseBrand: true,
+          brandTier: true,
+          expoLogoUrl: true,
+          expoStory: true,
+          officialWebsite: true,
+          establishedYear: true,
+          exportVolume: true,
+        },
+      },
     },
   });
 

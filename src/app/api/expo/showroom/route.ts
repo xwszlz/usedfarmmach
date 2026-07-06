@@ -9,6 +9,9 @@ export async function GET(req: NextRequest) {
   const hall = searchParams.get("hall") || "";
   const brand = searchParams.get("brand") || "";
   const q = searchParams.get("q") || "";
+  const pavilion = searchParams.get("pavilion") || "";
+  const itemType = searchParams.get("itemType") || "";
+  const tier = searchParams.get("tier") || "";
 
   const where: any = { status: "published" };
 
@@ -17,6 +20,15 @@ export async function GET(req: NextRequest) {
   }
   if (brand) {
     where.brand = brand;
+  }
+  if (itemType) {
+    where.itemType = itemType;
+  }
+  if (pavilion) {
+    where.booth = { ...where.booth, pavilion };
+  }
+  if (tier) {
+    where.booth = { ...where.booth, tier };
   }
   if (q) {
     where.OR = [
@@ -34,7 +46,22 @@ export async function GET(req: NextRequest) {
       skip: (page - 1) * limit,
       take: limit,
       include: {
-        booth: { select: { id: true, name: true, hall: true } },
+        booth: {
+          select: { id: true, name: true, hall: true, pavilion: true, tier: true },
+        },
+        brandRel: {
+          select: {
+            id: true,
+            nameZh: true,
+            nameEn: true,
+            isChineseBrand: true,
+            brandTier: true,
+            expoLogoUrl: true,
+            expoStory: true,
+            establishedYear: true,
+            exportVolume: true,
+          },
+        },
       },
     }),
     prisma.showcaseItem.count({ where }),

@@ -25,25 +25,38 @@ export default async function ShowroomPage({
 }) {
   const { locale } = await params;
 
-  // Fetch all published showcase items with booth info
+  // Fetch all published new-machine showcase items with booth + brand info
   const [rawItems, total] = await Promise.all([
     prisma.showcaseItem.findMany({
-      where: { status: "published" },
+      where: { status: "published", itemType: "new" },
       orderBy: [{ sortIndex: "asc" }, { createdAt: "desc" }],
       take: 24,
       include: {
         booth: {
-          select: { id: true, name: true, hall: true },
+          select: { id: true, name: true, hall: true, pavilion: true, tier: true },
+        },
+        brandRel: {
+          select: {
+            id: true,
+            nameZh: true,
+            nameEn: true,
+            isChineseBrand: true,
+            brandTier: true,
+            expoLogoUrl: true,
+            expoStory: true,
+            establishedYear: true,
+            exportVolume: true,
+          },
         },
       },
     }),
-    prisma.showcaseItem.count({ where: { status: "published" } }),
+    prisma.showcaseItem.count({ where: { status: "published", itemType: "new" } }),
   ]);
 
-  // Fetch halls for filter
+  // Fetch halls for filter (from published booths)
   const booths = await prisma.booth.findMany({
     where: { status: "published" },
-    select: { id: true, name: true, hall: true },
+    select: { id: true, name: true, hall: true, pavilion: true, tier: true },
     orderBy: { sortIndex: "asc" },
   });
 
@@ -54,6 +67,8 @@ export default async function ShowroomPage({
       id: true,
       name: true,
       hall: true,
+      pavilion: true,
+      tier: true,
       template: true,
       status: true,
       merchant: { select: { username: true, companyName: true } },
@@ -67,12 +82,22 @@ export default async function ShowroomPage({
   rawItems.forEach((item) => {
     if (item.brand) brandSet.add(item.brand);
   });
-  // Also get all brands from all items (not just first 24)
+  // Also get all brands from all published new items
   const allBrands = await prisma.showcaseItem.findMany({
-    where: { status: "published", brand: { not: null } },
+    where: { status: "published", itemType: "new", brand: { not: null } },
     select: { brand: true },
     distinct: ["brand"],
   });
+
+  // Pavilion counts for tab badges
+  const [chinaCount, globalCount] = await Promise.all([
+    prisma.showcaseItem.count({
+      where: { status: "published", itemType: "new", booth: { pavilion: "china" } },
+    }),
+    prisma.showcaseItem.count({
+      where: { status: "published", itemType: "new", booth: { pavilion: "global" } },
+    }),
+  ]);
 
   // Serialize for client
   const items = rawItems.map((item: any) => ({
@@ -88,7 +113,7 @@ export default async function ShowroomPage({
     name: `${item.brand || ""} ${item.model || ""}`.trim() || item.deviceType,
     url: `${BASE_URL}/${locale}/expo/showroom/${item.id}`,
     imageUrl: item.coverImage || undefined,
-    priceCny: item.price || 0,
+    priceCny: item.msrpCny || item.price || 0,
     brand: item.brand || "",
   }));
 
@@ -97,6 +122,8 @@ export default async function ShowroomPage({
     harvester: { zh: "收获机械馆", en: "Harvester Hall", ru: "Зал комбайнов" },
     planter: { zh: "播种种植馆", en: "Planter Hall", ru: "Посевной зал" },
     sprayer: { zh: "植保机械馆", en: "Sprayer Hall", ru: "Опрыскиватель зал" },
+    forage: { zh: "牧草机械馆", en: "Forage Hall", ru: "Кормовой зал" },
+    material: { zh: "物料搬运馆", en: "Material Hall", ru: "Материал зал" },
     comprehensive: { zh: "综合机械馆", en: "Comprehensive Hall", ru: "Комплексный зал" },
   };
 
@@ -133,8 +160,8 @@ export default async function ShowroomPage({
         items={listItems}
         listName={
           locale === "zh"
-            ? "永不落幕的农机世界展会 · 线上展厅"
-            : "Always-On Global Farm Machinery Expo · Showroom"
+            ? "中国农机·走向世界 · 线上展厅"
+            : "Chinese Farm Machinery Goes Global · Online Showroom"
         }
       />
       <ShowroomClient
@@ -144,6 +171,8 @@ export default async function ShowroomPage({
         initialBrands={brands}
         mapBooths={JSON.parse(JSON.stringify(mapBooths))}
         locale={locale}
+        chinaCount={chinaCount}
+        globalCount={globalCount}
       />
     </>
   );

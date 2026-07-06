@@ -4,6 +4,19 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
+interface BrandRel {
+  id: string;
+  nameZh: string;
+  nameEn: string;
+  isChineseBrand: boolean;
+  brandTier: string | null;
+  expoLogoUrl: string | null;
+  expoStory: string | null;
+  officialWebsite: string | null;
+  establishedYear: number | null;
+  exportVolume: string | null;
+}
+
 interface ShowcaseItemData {
   id: string;
   deviceType: string;
@@ -20,8 +33,19 @@ interface ShowcaseItemData {
   status: string;
   viewCount: number;
   inquiryCount: number;
-  booth: { id: string; name: string; hall: string };
+  booth: { id: string; name: string; hall: string; pavilion?: string; tier?: string };
+  brandRel: BrandRel | null;
   specs: Record<string, any>;
+  itemType: string;
+  country: string | null;
+  isChineseMade: boolean | null;
+  launchYear: number | null;
+  machineTier: string | null;
+  msrpUsd: number | null;
+  msrpCny: number | null;
+  priceRange: string | null;
+  isFeatured: boolean;
+  isNewLaunch: boolean;
   createdAt: string;
 }
 
@@ -52,17 +76,45 @@ export default function ShowcaseDetail({
     return en;
   };
 
-  const conditionLabels: Record<string, { zh: string; en: string; ru: string }> = {
-    excellent: { zh: "优秀", en: "Excellent", ru: "Отличное" },
-    good: { zh: "良好", en: "Good", ru: "Хорошее" },
-    fair: { zh: "一般", en: "Fair", ru: "Удовлетворительное" },
-    poor: { zh: "差", en: "Poor", ru: "Плохое" },
+  const isNew = item.itemType === "new";
+
+  const machineTierLabels: Record<string, { zh: string; en: string; ru: string }> = {
+    flagship: { zh: "旗舰机型", en: "Flagship", ru: "Флагман" },
+    premium: { zh: "高端机型", en: "Premium", ru: "Премиум" },
+    standard: { zh: "标准机型", en: "Standard", ru: "Стандарт" },
+    entry: { zh: "入门机型", en: "Entry", ru: "Базовый" },
   };
 
-  const getConditionLabel = (cond: string | null) => {
-    if (!cond) return "";
-    const c = conditionLabels[cond];
-    return c ? t(c.zh, c.en, c.ru) : cond;
+  const getMachineTierLabel = (tier: string | null) => {
+    if (!tier) return "";
+    const c = machineTierLabels[tier];
+    return c ? t(c.zh, c.en, c.ru) : tier;
+  };
+
+  const getMachineTierColor = (tier: string | null) => {
+    if (!tier) return "bg-gray-100 text-gray-600";
+    switch (tier) {
+      case "flagship":
+        return "bg-red-100 text-red-700";
+      case "premium":
+        return "bg-purple-100 text-purple-700";
+      case "standard":
+        return "bg-blue-100 text-blue-700";
+      default:
+        return "bg-gray-100 text-gray-600";
+    }
+  };
+
+  const brandTierLabels: Record<string, { zh: string; en: string; ru: string }> = {
+    flagship: { zh: "旗舰品牌", en: "Flagship Brand", ru: "Флагман" },
+    premium: { zh: "核心品牌", en: "Core Brand", ru: "Ядро" },
+    standard: { zh: "精选品牌", en: "Selected Brand", ru: "Отбор" },
+  };
+
+  const getBrandTierLabel = (tier: string | null) => {
+    if (!tier) return "";
+    const c = brandTierLabels[tier];
+    return c ? t(c.zh, c.en, c.ru) : tier;
   };
 
   const hallLabels: Record<string, { zh: string; en: string; ru: string }> = {
@@ -70,6 +122,8 @@ export default function ShowcaseDetail({
     harvester: { zh: "收获机械馆", en: "Harvester Hall", ru: "Зал комбайнов" },
     planter: { zh: "播种种植馆", en: "Planter Hall", ru: "Посевной зал" },
     sprayer: { zh: "植保机械馆", en: "Sprayer Hall", ru: "Опрыскиватель зал" },
+    forage: { zh: "牧草机械馆", en: "Forage Hall", ru: "Кормовой зал" },
+    material: { zh: "物料搬运馆", en: "Material Hall", ru: "Материал зал" },
     comprehensive: { zh: "综合机械馆", en: "Comprehensive Hall", ru: "Комплексный зал" },
   };
 
@@ -78,10 +132,16 @@ export default function ShowcaseDetail({
     return h ? t(h.zh, h.en, h.ru) : hall;
   };
 
-  const formatPrice = (price: number | null, currency: string) => {
-    if (!price) return t("询价", "Inquire", "По запросу");
-    const symbol = currency === "CNY" ? "¥" : currency === "USD" ? "$" : "";
-    return `${symbol}${price.toLocaleString()}`;
+  const formatPrice = () => {
+    if (isNew) {
+      if (item.msrpCny) return `¥${item.msrpCny.toLocaleString()}`;
+      if (item.msrpUsd) return `$${item.msrpUsd.toLocaleString()}`;
+      if (item.priceRange) return item.priceRange;
+      return t("询价", "Inquire", "По запросу");
+    }
+    if (!item.price) return t("询价", "Inquire", "По запросу");
+    const symbol = item.currency === "CNY" ? "¥" : item.currency === "USD" ? "$" : "";
+    return `${symbol}${item.price.toLocaleString()}`;
   };
 
   const specsList: { label: string; value: string | null }[] = [
@@ -132,15 +192,15 @@ export default function ShowcaseDetail({
       <div className="border-b bg-white">
         <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2 text-sm text-gray-500">
-            <Link href={`/${locale}`} className="hover:text-amber-600">
+            <Link href={`/${locale}`} className="hover:text-red-600">
               {t("首页", "Home", "Главная")}
             </Link>
             <span>›</span>
-            <Link href={`/${locale}/expo`} className="hover:text-amber-600">
+            <Link href={`/${locale}/expo`} className="hover:text-red-600">
               {t("农机博览会", "EXPO", "Выставка")}
             </Link>
             <span>›</span>
-            <Link href={`/${locale}/expo/showroom`} className="hover:text-amber-600">
+            <Link href={`/${locale}/expo/showroom`} className="hover:text-red-600">
               {t("线上展厅", "Showroom", "Шоурум")}
             </Link>
             <span>›</span>
@@ -171,6 +231,12 @@ export default function ShowcaseDetail({
                   </svg>
                 </div>
               )}
+              {/* New Launch Badge */}
+              {item.isNewLaunch && (
+                <span className="absolute right-3 top-3 rounded-md bg-green-500 px-3 py-1 text-sm font-bold text-white">
+                  {t("新品上市", "NEW", "NEW")}
+                </span>
+              )}
             </div>
 
             {/* Thumbnail Gallery */}
@@ -181,7 +247,7 @@ export default function ShowcaseDetail({
                     key={idx}
                     onClick={() => setActiveImage(idx)}
                     className={`relative h-20 w-24 flex-shrink-0 overflow-hidden rounded-lg border-2 transition-all ${
-                      activeImage === idx ? "border-amber-500 ring-2 ring-amber-200" : "border-gray-200"
+                      activeImage === idx ? "border-red-500 ring-2 ring-red-200" : "border-gray-200"
                     }`}
                   >
                     <Image src={img} alt={`${title} ${idx + 1}`} fill sizes="96px" className="object-cover" />
@@ -206,6 +272,50 @@ export default function ShowcaseDetail({
                     />
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Brand Story (for new machines with brand relation) */}
+            {isNew && item.brandRel?.expoStory && (
+              <div className="mt-6 rounded-xl bg-gradient-to-br from-red-50 to-amber-50 p-6 shadow-sm">
+                <div className="mb-3 flex items-center gap-3">
+                  {item.brandRel.expoLogoUrl && (
+                    <Image
+                      src={item.brandRel.expoLogoUrl}
+                      alt={item.brandRel.nameZh}
+                      width={48}
+                      height={48}
+                      className="rounded-lg"
+                    />
+                  )}
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900">
+                      {locale === "zh" ? item.brandRel.nameZh : item.brandRel.nameEn}
+                    </h3>
+                    {item.brandRel.establishedYear && (
+                      <p className="text-xs text-gray-500">
+                        {t("创立于", "Established", "Основан")} {item.brandRel.establishedYear}
+                        {item.brandRel.exportVolume && ` · ${t("出口量", "Export", "Экспорт")}: ${item.brandRel.exportVolume}`}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-600">
+                  {item.brandRel.expoStory}
+                </p>
+                {item.brandRel.officialWebsite && (
+                  <a
+                    href={item.brandRel.officialWebsite}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-red-600 hover:underline"
+                  >
+                    {t("品牌官网", "Official Website", "Официальный сайт")}
+                    <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                )}
               </div>
             )}
 
@@ -242,48 +352,91 @@ export default function ShowcaseDetail({
           {/* Right: Info & Inquiry */}
           <div className="lg:col-span-2">
             <div className="sticky top-4 rounded-xl bg-white p-6 shadow-sm">
-              {/* Title */}
-              <div className="mb-1 flex items-center gap-2">
+              {/* Brand + Badges */}
+              <div className="mb-2 flex flex-wrap items-center gap-2">
                 {item.brand && (
                   <span className="rounded-md bg-amber-100 px-2 py-0.5 text-sm font-medium text-amber-700">
                     {item.brand}
                   </span>
                 )}
+                {item.brandRel?.brandTier && (
+                  <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${
+                    item.brandRel.brandTier === "flagship"
+                      ? "bg-red-100 text-red-700"
+                      : item.brandRel.brandTier === "premium"
+                        ? "bg-purple-100 text-purple-700"
+                        : "bg-blue-100 text-blue-700"
+                  }`}>
+                    {getBrandTierLabel(item.brandRel.brandTier)}
+                  </span>
+                )}
                 <span className="rounded-md bg-blue-100 px-2 py-0.5 text-sm font-medium text-blue-700">
                   {getHallLabel(item.booth.hall)}
                 </span>
+                {item.machineTier && (
+                  <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${getMachineTierColor(item.machineTier)}`}>
+                    {getMachineTierLabel(item.machineTier)}
+                  </span>
+                )}
               </div>
-              <h1 className="mb-2 text-2xl font-bold text-gray-900">{title}</h1>
+
+              {/* China Made Badge */}
+              {item.isChineseMade && (
+                <div className="mb-2 inline-flex items-center gap-1 rounded-md bg-red-600 px-2 py-0.5 text-xs font-bold text-white">
+                  🇨🇳 {t("中国制造", "Made in China", "Сделано в Китае")}
+                </div>
+              )}
+
+              <h1 className="mb-3 text-2xl font-bold text-gray-900">{title}</h1>
 
               {/* Key Info */}
               <div className="mb-4 flex flex-wrap gap-3 text-sm text-gray-600">
-                {item.year && (
+                {isNew && item.launchYear && (
+                  <span className="flex items-center gap-1">
+                    <span className="text-gray-400">{t("上市年份", "Launch Year", "Год выпуска")}:</span>
+                    <span className="font-medium">{item.launchYear}</span>
+                  </span>
+                )}
+                {!isNew && item.year && (
                   <span className="flex items-center gap-1">
                     <span className="text-gray-400">{t("年份", "Year", "Год")}:</span>
                     <span className="font-medium">{item.year}</span>
                   </span>
                 )}
-                {item.workingHours != null && (
+                {!isNew && item.workingHours != null && (
                   <span className="flex items-center gap-1">
                     <span className="text-gray-400">{t("工时", "Hours", "Часы")}:</span>
                     <span className="font-medium">{item.workingHours.toLocaleString()}h</span>
                   </span>
                 )}
-                {item.condition && (
+                {!isNew && item.condition && (
                   <span className="flex items-center gap-1">
                     <span className="text-gray-400">{t("状况", "Condition", "Сост.")}:</span>
-                    <span className="font-medium">{getConditionLabel(item.condition)}</span>
+                    <span className="font-medium">{item.condition}</span>
+                  </span>
+                )}
+                {item.country && (
+                  <span className="flex items-center gap-1">
+                    <span className="text-gray-400">{t("产地", "Origin", "Происх.")}:</span>
+                    <span className="font-medium">{item.country}</span>
                   </span>
                 )}
               </div>
 
               {/* Price */}
-              <div className="mb-5 rounded-lg bg-gradient-to-r from-amber-50 to-orange-50 p-4">
-                <div className="text-sm text-gray-500">{t("展会展价", "Expo Price", "Цена")}</div>
-                <div className="text-3xl font-bold text-amber-700">
-                  {formatPrice(item.price, item.currency)}
+              <div className="mb-5 rounded-lg bg-gradient-to-r from-red-50 to-amber-50 p-4">
+                <div className="text-sm text-gray-500">
+                  {isNew ? t("厂商指导价", "MSRP", "Рекоменд. цена") : t("展会展价", "Expo Price", "Цена")}
                 </div>
-                {item.price && (
+                <div className="text-3xl font-bold text-red-700">
+                  {formatPrice()}
+                </div>
+                {isNew && item.msrpUsd && item.msrpCny && (
+                  <div className="mt-1 text-xs text-gray-400">
+                    ≈ ${item.msrpUsd.toLocaleString()} USD
+                  </div>
+                )}
+                {!isNew && item.price && (
                   <div className="mt-1 text-xs text-gray-400">
                     {item.currency === "CNY"
                       ? t("人民币含税", "CNY tax included", "RMB с налогом")
@@ -302,7 +455,7 @@ export default function ShowcaseDetail({
               {!showInquiryForm && !submitted && (
                 <button
                   onClick={() => setShowInquiryForm(true)}
-                  className="w-full rounded-lg bg-amber-600 py-3 text-center font-medium text-white transition-colors hover:bg-amber-700"
+                  className="w-full rounded-lg bg-red-600 py-3 text-center font-medium text-white transition-colors hover:bg-red-700"
                 >
                   {t("立即询盘", "Inquire Now", "Запросить сейчас")}
                 </button>
@@ -320,7 +473,7 @@ export default function ShowcaseDetail({
                     placeholder={t("您的姓名 *", "Your Name *", "Ваше имя *")}
                     value={form.buyerName}
                     onChange={(e) => setForm({ ...form, buyerName: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-red-500"
                   />
                   <input
                     required
@@ -328,33 +481,33 @@ export default function ShowcaseDetail({
                     placeholder={t("电话/WhatsApp *", "Phone/WhatsApp *", "Телефон/WhatsApp *")}
                     value={form.buyerPhone}
                     onChange={(e) => setForm({ ...form, buyerPhone: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-red-500"
                   />
                   <input
                     type="email"
                     placeholder={t("邮箱 Email", "Email", "Email")}
                     value={form.buyerEmail}
                     onChange={(e) => setForm({ ...form, buyerEmail: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-red-500"
                   />
                   <input
                     type="text"
                     placeholder={t("国家/地区", "Country/Region", "Страна/Регион")}
                     value={form.country}
                     onChange={(e) => setForm({ ...form, country: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-red-500"
                   />
                   <textarea
                     placeholder={t("留言（可选）", "Message (optional)", "Сообщение (необязательно)")}
                     value={form.message}
                     onChange={(e) => setForm({ ...form, message: e.target.value })}
                     rows={3}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-amber-500"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-red-500"
                   />
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="w-full rounded-lg bg-amber-600 py-3 font-medium text-white transition-colors hover:bg-amber-700 disabled:opacity-50"
+                    className="w-full rounded-lg bg-red-600 py-3 font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
                   >
                     {submitting ? t("提交中...", "Submitting...", "Отправка...") : t("发送询盘", "Send Inquiry", "Отправить")}
                   </button>
