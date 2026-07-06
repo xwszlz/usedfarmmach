@@ -18,6 +18,7 @@ import ArbitrageCalculatorSection from "@/components/product/arbitrage-calculato
 import { QuickContact } from "@/components/product/quick-contact";
 import { BuyIntentButton } from "@/components/product/buy-intent-button";
 import { ValuationCard } from "@/components/valuation/valuation-card";
+import { DeepAnalysisCard } from "@/components/product/deep-analysis-card";
 import { DAILY_REPORT_RANKING } from "@/config/daily-report-ranking";
 import { getHreflangLanguages } from "@/components/seo/hreflang-head";
 import { ProductStructuredData, BreadcrumbStructuredData } from "@/components/seo/structured-data";
@@ -461,6 +462,17 @@ export default async function ProductDetailPage({
         <ValuationCard
           productId={product.id}
           productName={`${brandName} ${product.modelName}`}
+          locale={locale}
+        />
+      </div>
+
+      {/* AI Deep Analysis (豆包大模型) */}
+      <div className="mt-6">
+        <DeepAnalysisCard
+          productId={product.id}
+          productName={`${brandName} ${product.modelName}`}
+          imageUrls={product.images.map((img) => getImageUrl(img.url))}
+          videoUrls={product.videos.length > 0 ? product.videos.map((v) => getVideoUrl(v.url)) : []}
           locale={locale}
         />
       </div>

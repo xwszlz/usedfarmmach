@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, Wand2, CheckCircle, AlertCircle, Loader2, Upload, TrendingUp } from "lucide-react";
-import { matchPortByLocation } from "@/lib/port-matcher";
+import { Sparkles, Wand2, CheckCircle, AlertCircle, Loader2, Upload } from "lucide-react";
 
 interface AiRecognizedData {
   brand: string | null;
@@ -22,15 +21,6 @@ interface AiRecognizedData {
   tradeTerm: string | null;
   tradePort: string | null;
   confidence: number;
-}
-
-interface ValuationData {
-  estimatedValue: number;
-  lowEstimate: number;
-  highEstimate: number;
-  confidence: number;
-  factors: string[];
-  currency: string;
 }
 
 interface SellerAiAssistantProps {
@@ -53,7 +43,6 @@ interface SellerAiAssistantProps {
     tradeTerm: string;
     tradePort: string;
   }) => void;
-  onValuation?: (data: ValuationData | null) => void;
 }
 
 const DRIVE_SYSTEM_MAP: Record<string, string> = {
@@ -69,7 +58,6 @@ const PRICE_MODE_MAP: Record<string, string> = {
 
 /**
  * 从 N 张图片中智能选取最有代表性的 maxCount 张
- * 策略：取首张(封面) + 末张(通常是铭牌) + 中间均匀取样
  */
 function selectBestImages(files: File[], maxCount = 6): File[] {
   if (files.length <= maxCount) return files;
@@ -83,8 +71,7 @@ function selectBestImages(files: File[], maxCount = 6): File[] {
 }
 
 /**
- * 压缩图片到合理尺寸
- * 最大 800px，JPEG 质量 0.6，确保 12 张总 payload < 3MB
+ * 压缩图片到合理尺寸（最大 800px，JPEG 质量 0.6）
  */
 function compressImage(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -113,10 +100,9 @@ function compressImage(file: File): Promise<string> {
   });
 }
 
-export default function SellerAiAssistant({ imageFiles, onFill, onValuation }: SellerAiAssistantProps) {
+export default function SellerAiAssistant({ imageFiles, onFill }: SellerAiAssistantProps) {
   const [recognizing, setRecognizing] = useState(false);
   const [recognized, setRecognized] = useState<AiRecognizedData | null>(null);
-  const [valuation, setValuation] = useState<ValuationData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [phase, setPhase] = useState<string>("");
 
@@ -129,8 +115,6 @@ export default function SellerAiAssistant({ imageFiles, onFill, onValuation }: S
     setRecognizing(true);
     setError(null);
     setRecognized(null);
-    setValuation(null);
-    onValuation?.(null);
 
     try {
       // 1. 智能选图 + 压缩
@@ -188,50 +172,6 @@ export default function SellerAiAssistant({ imageFiles, onFill, onValuation }: S
       }
 
       setRecognized(data.data);
-
-      // 4. 并行调用估值 API（用识别到的参数，跳过图片分析因为图还没上传）
-      setPhase("正在生成估值报告...");
-      try {
-        const recog = data.data as AiRecognizedData;
-        const valRes = await fetch("/api/valuation", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            brand: recog.brand || undefined,
-            category: recog.brand || undefined, // 识别API不返回category，用brand兜底
-            year: recog.year || undefined,
-            condition: recog.condition || undefined,
-            enginePower: recog.enginePower ? Number(recog.enginePower) : undefined,
-            driveSystem: recog.driveSystem || undefined,
-            mainConfig: recog.mainConfig || undefined,
-            netWeight: recog.netWeight ? Number(recog.netWeight) : undefined,
-            overallLength: recog.overallLength ? Number(recog.overallLength) : undefined,
-            overallWidth: recog.overallWidth ? Number(recog.overallWidth) : undefined,
-            overallHeight: recog.overallHeight ? Number(recog.overallHeight) : undefined,
-            useV4: true,
-            skipImageAnalysis: true,
-          }),
-        });
-
-        if (valRes.ok) {
-          const valData = await valRes.json();
-          if (valData.success || valData.estimatedValue) {
-            const valResult: ValuationData = {
-              estimatedValue: valData.estimatedValue || valData.data?.estimatedValue || 0,
-              lowEstimate: valData.lowEstimate || valData.data?.lowEstimate || 0,
-              highEstimate: valData.highEstimate || valData.data?.highEstimate || 0,
-              confidence: valData.confidence || valData.data?.confidence || 0,
-              factors: valData.factors || valData.data?.factors || [],
-              currency: valData.currency || valData.data?.currency || "CNY",
-            };
-            setValuation(valResult);
-            onValuation?.(valResult);
-          }
-        }
-      } catch {
-        // 估值失败不影响识别流程
-        console.warn("估值获取失败，不影响识别");
-      }
     } catch (err: any) {
       setError(err.message || "识别失败，请稍后重试");
     } finally {
@@ -258,7 +198,7 @@ export default function SellerAiAssistant({ imageFiles, onFill, onValuation }: S
       condition: recognized.condition || "good",
       priceMode: recognized.priceMode || "por",
       tradeTerm: recognized.tradeTerm || "FOB",
-      tradePort: recognized.tradePort || matchPortByLocation(""),
+      tradePort: recognized.tradePort || "",
     });
   };
 
@@ -283,14 +223,14 @@ export default function SellerAiAssistant({ imageFiles, onFill, onValuation }: S
     <div className="rounded-xl border border-primary-200 bg-gradient-to-br from-primary-50 to-white p-5 shadow-sm">
       <div className="mb-4 flex items-center gap-2">
         <Sparkles className="h-5 w-5 text-primary-600" />
-        <h3 className="text-base font-bold text-gray-900">智能识别 + 估值</h3>
+        <h3 className="text-base font-bold text-gray-900">AI 智能识别</h3>
         <span className="rounded-full bg-primary-100 px-2 py-0.5 text-[10px] font-medium text-primary-700">
           已上传 {imageFiles.length} 张
         </span>
       </div>
 
       <p className="mb-4 text-sm text-gray-500">
-        基于已上传的 {imageFiles.length} 张图片，自动识别农机参数并生成估值报告。图片越多识别越准。
+        基于已上传的 {imageFiles.length} 张图片，自动识别农机品牌、型号、参数等信息。图片越多识别越准。
       </p>
 
       {/* 识别按钮 */}
@@ -348,41 +288,6 @@ export default function SellerAiAssistant({ imageFiles, onFill, onValuation }: S
             {renderField("贸易条款", recognized.tradeTerm)}
             {renderField("发货港口", recognized.tradePort)}
           </div>
-
-          {/* 估值结果 */}
-          {valuation && (
-            <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50/50 p-3">
-              <div className="mb-2 flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-medium text-blue-800">AI 估值参考</span>
-              </div>
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div>
-                  <p className="text-xs text-gray-500">最低估值</p>
-                  <p className="text-sm font-bold text-gray-700">
-                    {valuation.lowEstimate > 0 ? `¥${(valuation.lowEstimate / 10000).toFixed(1)}万` : "--"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-primary-600">参考估值</p>
-                  <p className="text-base font-bold text-primary-700">
-                    {valuation.estimatedValue > 0 ? `¥${(valuation.estimatedValue / 10000).toFixed(1)}万` : "--"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">最高估值</p>
-                  <p className="text-sm font-bold text-gray-700">
-                    {valuation.highEstimate > 0 ? `¥${(valuation.highEstimate / 10000).toFixed(1)}万` : "--"}
-                  </p>
-                </div>
-              </div>
-              {valuation.factors.length > 0 && (
-                <p className="mt-2 text-xs text-gray-400">
-                  影响因素：{valuation.factors.slice(0, 3).join("、")}
-                </p>
-              )}
-            </div>
-          )}
 
           <button
             onClick={handleFill}

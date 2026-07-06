@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, CheckCircle, AlertCircle, Camera, Video, Plus, X, Sparkles } from "lucide-react";
 import Link from "next/link";
 import SellerAiAssistant from "@/components/seller/ai-assistant";
-import SalesStrategyCard from "@/components/seller/sales-strategy-card";
 import { matchPortByLocation } from "@/lib/port-matcher";
 
 const CONDITIONS = [
@@ -50,7 +49,6 @@ export default function NewProductPage() {
   const [videoPreview, setVideoPreview] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
-  const [aiValuation, setAiValuation] = useState<any>(null);
   const [aiFilledFields, setAiFilledFields] = useState<Set<string>>(new Set());
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -318,7 +316,7 @@ export default function NewProductPage() {
 
       <h1 className="mb-2 text-2xl font-bold text-gray-900">发布新产品</h1>
       <p className="mb-8 text-sm text-gray-500">
-        先传图片 → 传视频 → 智能识别 → 确认参数 → 查看估值 → 发布（消耗 1 积分）
+        先传图片 → 传视频 → 智能识别 → 确认参数 → 发布（消耗 1 积分）
       </p>
 
       {/* ===== Step 1: 上传图片 ===== */}
@@ -420,19 +418,18 @@ export default function NewProductPage() {
         </div>
       </div>
 
-      {/* ===== Step 3: 智能识别 + 估值 ===== */}
+      {/* ===== Step 3: 智能识别 ===== */}
       <div className="mb-6">
         <div className="mb-4 flex items-center gap-2">
           <span className={`flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold text-white ${
             imageFiles.length > 0 ? "bg-primary-600" : "bg-gray-300"
           }`}>3</span>
-          <h2 className="text-base font-bold text-gray-800">智能识别 + 估值</h2>
+          <h2 className="text-base font-bold text-gray-800">AI 智能识别</h2>
         </div>
 
         <SellerAiAssistant
           imageFiles={imageFiles}
           onFill={handleAiFill}
-          onValuation={setAiValuation}
         />
       </div>
 
@@ -626,69 +623,6 @@ export default function NewProductPage() {
         <textarea value={form.descOther} onChange={e => update("descOther", e.target.value)}
           rows={3} placeholder="其他需要补充的信息：维修历史、附带配件、特殊配置等"
           className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-primary-500 focus:outline-none" />
-      </div>
-
-      {/* ===== Step 5: 估值与销售建议 ===== */}
-      <div className="mb-6">
-        <div className="mb-4 flex items-center gap-2">
-          <span className={`flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold text-white ${
-            form.brandName && form.priceCny ? "bg-primary-600" : "bg-gray-300"
-          }`}>5</span>
-          <h2 className="text-base font-bold text-gray-800">估值报告 + 销售建议</h2>
-        </div>
-
-        {/* AI 估值卡片 */}
-        {aiValuation && (
-          <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50/50 p-4">
-            <div className="mb-2 flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-blue-600" />
-              <span className="text-sm font-bold text-blue-800">AI 估值参考</span>
-            </div>
-            <div className="grid grid-cols-3 gap-3 text-center">
-              <div className="rounded-lg bg-white p-2">
-                <p className="text-xs text-gray-500">最低</p>
-                <p className="text-sm font-bold text-gray-700">
-                  {aiValuation.lowEstimate > 0 ? `¥${(aiValuation.lowEstimate / 10000).toFixed(1)}万` : "--"}
-                </p>
-              </div>
-              <div className="rounded-lg bg-primary-50 p-2">
-                <p className="text-xs text-primary-600">参考价</p>
-                <p className="text-base font-bold text-primary-700">
-                  {aiValuation.estimatedValue > 0 ? `¥${(aiValuation.estimatedValue / 10000).toFixed(1)}万` : "--"}
-                </p>
-              </div>
-              <div className="rounded-lg bg-white p-2">
-                <p className="text-xs text-gray-500">最高</p>
-                <p className="text-sm font-bold text-gray-700">
-                  {aiValuation.highEstimate > 0 ? `¥${(aiValuation.highEstimate / 10000).toFixed(1)}万` : "--"}
-                </p>
-              </div>
-            </div>
-            {form.priceCny && aiValuation.estimatedValue > 0 && (
-              <p className="mt-2 text-center text-xs">
-                <span className={Number(form.priceCny) > aiValuation.estimatedValue * 1.1 ? "text-red-500" : Number(form.priceCny) < aiValuation.estimatedValue * 0.9 ? "text-green-500" : "text-gray-500"}>
-                  {Number(form.priceCny) > aiValuation.estimatedValue * 1.1
-                    ? "您的报价高于估值 10%+，建议适当下调"
-                    : Number(form.priceCny) < aiValuation.estimatedValue * 0.9
-                    ? "您的报价低于估值 10%+，定价有竞争力"
-                    : "您的报价在合理估值范围内"}
-                </span>
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* 销售策略卡片 */}
-        <SalesStrategyCard
-          brand={brandMode === "select" ? brands.find(b => b.id === form.brandId)?.nameZh || "" : form.brandName}
-          category={catMode === "select" ? categories.find(c => c.id === form.categoryId)?.nameZh || "" : form.categoryName}
-          modelName={form.modelName}
-          year={Number(form.year) || undefined}
-          priceCny={form.priceCny ? Number(form.priceCny) : undefined}
-          condition={form.condition}
-          workingHours={form.workingHours ? parseInt(form.workingHours) : undefined}
-          location={form.location}
-        />
       </div>
 
       {/* ===== 结果提示 ===== */}

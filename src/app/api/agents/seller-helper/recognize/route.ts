@@ -4,15 +4,13 @@
 // POST /api/agents/seller-helper/recognize
 // Body: { imageUrls?: string[], imageDataUris?: string[] }
 //
-// 🔧 Round5 修复（2026-07-05）：
-//   1. 修正 Gemini 模型名：gemini-2.0-flash-exp(404) → gemini-2.5-flash(可用)
-//   2. 新增 OpenRouter 多模型备选链（gpt-4o-mini 被 ToS 封禁时自动切换）
-//   3. Gemini 升级为第一优先（免费+稳定），OpenRouter 降为备选
+// 🔧 Round6 更新（2026-07-06）：
+//   1. 新增豆包（火山引擎ARK）为第一优先模型（免费+快速）
+//   2. 支持 imageUrls（HTTP URL）输入格式（与 deep-analysis 一致）
+//   3. Gemini 降为第二备用，OpenRouter 保持第三备选
 //
-// ⚠️ Round4 修复（2026-07-05）保留：
-//   fallback 模型链、GOOGLE_API_KEY 支持、MANUAL_FALLBACK 统一错误码
-// ⚠️ Round3 修复（2026-01-25）保留：
-//   maxDuration=60、精细化错误分类、axios 超时45s
+// ⚠️ Round5 修复（2026-07-05）保留：
+//   Gemini 模型名修正、OpenRouter 多模型备选链
 // ───────────────────────────────────────────────
 
 import { NextRequest, NextResponse } from "next/server";
@@ -23,15 +21,25 @@ const OPENROUTER_BASE = "https://openrouter.ai/api/v1";
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || "";
 const GOOGLE_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
-// 模型优先级链：Gemini（免费主力）→ OpenRouter 多模型备选
+// 豆包（火山引擎ARK）
+const ARK_API_KEY = process.env.ARK_API_KEY || "";
+const ARK_BASE_URL = process.env.ARK_BASE_URL || "https://ark.cn-beijing.volces.com/api/v3";
+const ARK_MODEL_ID = process.env.ARK_MODEL_ID || "doubao-seed-evolving";
+
+// 模型优先级链：豆包（免费主力）→ Gemini → OpenRouter 备选
 const MODEL_CHAIN = [
-  // ── 第一优先：Google Gemini（免费、稳定） ──
+  // ── 第一优先：豆包（火山引擎ARK，免费、快速） ──
+  {
+    provider: "ark" as const,
+    label: `豆包 ${ARK_MODEL_ID}`,
+  },
+  // ── 第二优先：Google Gemini（免费、稳定） ──
   {
     provider: "google" as const,
     model: "gemini-2.5-flash",
     label: "Gemini 2.5 Flash（免费）",
   },
-  // ── 第二优先：OpenRouter 备选模型链 ──
+  // ── 第三优先：OpenRouter 备选模型链 ──
   {
     provider: "openrouter" as const,
     model: "google/gemini-2.0-flash-001:free",
@@ -53,7 +61,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 // ── 系统提示词（所有模型共用） ──
-const SYSTEM_PROMPT = `你是一位资深二手农业机械专家，熟悉 CLAAS、John Deere、New Holland、Krone、Orkel 等主流品牌的收获机、割台、打捆机。
+const SYSTEM_PROMPT = `你是一位资深二手农业机械专家，熟悉 CLAAS、John Deere, New Holland、Krone、Orkel 等主流品牌的收获机、割台、打捆机。
 请根据提供的农机图片（整机全貌、铭牌、驾驶室、轮胎/底盘），识别以下信息，以 JSON 格式返回。
 
 返回字段说明：
@@ -65,7 +73,7 @@ const SYSTEM_PROMPT = `你是一位资深二手农业机械专家，熟悉 CLAAS
   "engineType": "发动机类型（如 Diesel Engine, Gasoline, Other）",
   "driveSystem": "驱动方式（2WD / 4WD / Full Hydraulic）",
   "overallLength": "整机总长(mm)，数字字符串，如 \"8900\"，无法识别则为 null",
-  "overallWidth": "整机总宽(mm)，数字字符串，如 \"2990\"，无法识别则为 null",
+  "overallWidth": "整机总宽(mm)，数字字符串，如 \"2990\"，无法识别则为 null,
   "overallHeight": "整机总高(mm)，数字字符串，如 \"3490\"，无法识别则为 null,
   "netWeight": "整机净重(kg)，数字字符串，如 \"12500\"，无法识别则为 null,
   "mainConfig": "主要配置（如割台型号、导航系统、打捆机构型等）",
@@ -86,6 +94,65 @@ const SYSTEM_PROMPT = `你是一位资深二手农业机械专家，熟悉 CLAAS
 6. 字段无法识别时设为 null，不要瞎编
 7. 品牌名必须用英文标准名`;
 
+// ── 构建豆包(ARK)格式的消息内容（OpenAI兼容）──
+function buildDoubaoContent(images: string[], videoUrls: string[] = []) {
+  const content: Array<Record<string, unknown>> = [
+    { type: "text", text: SYSTEM_PROMPT },
+  ];
+  for (const url of images) {
+    if (url.startsWith("data:")) {
+      // base64 → 豆包不支持，跳过（会降级到Gemini）
+      console.warn("[SellerHelper] 豆包不支持base64图片，该图片将被跳过");
+      continue;
+    }
+    // HTTP URL → image_url 格式
+    content.push({
+      type: "image_url",
+      image_url: { url },
+    });
+  }
+  // 视频URL作为文本描述传入（多模态模型可参考）
+  for (const vUrl of videoUrls) {
+    content.push({
+      type: "text",
+      text: `[视频] ${vUrl}`,
+    });
+  }
+  return content;
+}
+
+// ── 调用豆包 API（OpenAI 兼容格式）──
+async function callDoubao(content: Array<Record<string, unknown>>): Promise<string> {
+  const url = `${ARK_BASE_URL}/chat/completions`;
+  console.log(`[SellerHelper] 豆包调用: ${ARK_MODEL_ID}，图片数: ${content.length - 1}`);
+
+  const response = await axios.post(
+    url,
+    {
+      model: ARK_MODEL_ID,
+      messages: [{ role: "user", content }],
+      response_format: { type: "json_object" },
+      max_tokens: 800,
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${ARK_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      timeout: 30000, // 豆包通常很快
+    }
+  );
+
+  const result = response.data as any;
+  const text = result.choices?.[0]?.message?.content || "";
+
+  if (result.error) {
+    throw new Error(`豆包API错误: ${result.error.message || JSON.stringify(result.error)}`);
+  }
+
+  return text;
+}
+
 // ── 构建 OpenRouter 格式的消息内容 ──
 function buildOpenRouterContent(images: string[]) {
   return [
@@ -103,7 +170,6 @@ function buildGeminiContent(images: string[]) {
     { text: SYSTEM_PROMPT },
   ];
   for (const url of images) {
-    // data URI → base64 data
     if (url.startsWith("data:")) {
       const [mimeInfo, base64Data] = url.split(",");
       const mimeType = mimeInfo.replace("data:", "").split(";")[0] || "image/jpeg";
@@ -111,7 +177,6 @@ function buildGeminiContent(images: string[]) {
         inline_data: { mime_type: mimeType, data: base64Data },
       });
     } else {
-      // URL → fetch as image
       parts.push({ file_data: { file_url: url, mime_type: "image/jpeg" } });
     }
   }
@@ -147,7 +212,6 @@ async function callOpenRouter(
   const result = response.data as any;
   const text = result.choices?.[0]?.message?.content || "";
 
-  // 检查 OpenRouter 错误包装
   if (result.error) {
     throw new Error(`OpenRouter API 错误: ${result.error.message || JSON.stringify(result.error)}`);
   }
@@ -179,7 +243,6 @@ async function callGemini(
   );
 
   const result = response.data as any;
-  // 检查安全过滤
   if (result.promptFeedback?.blockReason) {
     throw new Error(`Gemini 安全过滤: ${result.promptFeedback.blockReason}`);
   }
@@ -189,7 +252,6 @@ async function callGemini(
     throw new Error("Gemini 无候选结果");
   }
 
-  // 检查 finishReason
   if (candidate.finishReason === "SAFETY") {
     throw new Error("Gemini 安全拦截响应内容");
   }
@@ -203,7 +265,6 @@ function parseAIResponse(aiText: string): Record<string, any> {
   try {
     recognized = JSON.parse(aiText);
   } catch (e) {
-    // 尝试从文本中提取 JSON
     const jsonMatch = aiText.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       recognized = JSON.parse(jsonMatch[0]);
@@ -245,7 +306,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const imageUrls: string[] = body.imageUrls || [];
     const imageDataUris: string[] = body.imageDataUris || [];
+    const videoUrls: string[] = body.videoUrls || [];
     const images = [...imageUrls, ...imageDataUris];
+    const hasBase64Images = imageDataUris.some((u) => u.startsWith("data:"));
 
     if (!images || !Array.isArray(images) || images.length === 0) {
       return NextResponse.json(
@@ -254,25 +317,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 尝试模型链中的每个模型
     let lastError: Error | null = null;
 
     for (const entry of MODEL_CHAIN) {
-      // 检查该模型的 API Key 是否可用
+      // 检查 API Key 是否可用
+      if (entry.provider === "ark" && !ARK_API_KEY) continue;
       if (entry.provider === "openrouter" && !OPENROUTER_API_KEY) continue;
       if (entry.provider === "google" && !GOOGLE_API_KEY) continue;
+
+      // 豆包不支持 base64 图片 → 如果只有base64则跳过豆包
+      if (entry.provider === "ark" && hasBase64Images) {
+        console.log("[SellerHelper] 有base64图片，跳过豆包（不支持base64）");
+        continue;
+      }
 
       console.log(`[SellerHelper] 尝试模型: ${entry.label}`);
 
       try {
         let aiText: string;
 
-        if (entry.provider === "openrouter") {
+        if (entry.provider === "ark") {
+          // 豆包：使用 OpenAI 兼容格式
+          const content = buildDoubaoContent(imageUrls, videoUrls);
+          if (content.length <= 1) {
+            // 只有文字没有有效图片
+            lastError = new Error("豆包无有效图片输入");
+            continue;
+          }
+          aiText = await callDoubao(content);
+        } else if (entry.provider === "openrouter") {
           const content = buildOpenRouterContent(images);
-          aiText = await callOpenRouter(entry.model, content);
+          aiText = await callOpenRouter(entry.model!, content);
         } else {
           const parts = buildGeminiContent(images);
-          aiText = await callGemini(entry.model, parts);
+          aiText = await callGemini(entry.model!, parts);
         }
 
         if (!aiText || aiText.trim().length < 10) {
@@ -290,23 +368,17 @@ export async function POST(request: NextRequest) {
         console.warn(`[SellerHelper] ${entry.label} 失败 (HTTP ${statusCode}):`, error.message?.substring(0, 100));
         lastError = error;
 
-        // 401/403/402 是认证/权限问题，换下一个模型试试
         if (statusCode === 401 || statusCode === 403 || statusCode === 402) {
           console.log(`[SellerHelper] ${entry.label} 权限不足(HTTP ${statusCode})，自动降级...`);
           continue;
         }
-
-        // 429 限流 → 等一下再试或换模型
         if (statusCode === 429) {
           continue;
         }
-
-        // 其他错误（网络超时等）也尝试下一个
         continue;
       }
     }
 
-    // 所有模型都失败了
     console.error("[SellerHelper] 所有模型均失败，最后一个错误:", lastError?.message);
 
     return NextResponse.json({
@@ -317,7 +389,6 @@ export async function POST(request: NextRequest) {
     }, { status: 503 });
 
   } catch (error: any) {
-    // 非预期错误（请求体解析失败等）
     console.error("[SellerHelper] 未处理异常:", error?.message);
 
     return NextResponse.json({
