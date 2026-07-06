@@ -361,11 +361,12 @@ export default async function ProductDetailPage({
                   <video
                     src={getVideoUrl(video.url)}
                     controls
+                    playsInline
+                    crossOrigin="anonymous"
                     className="h-auto w-full"
                     preload="metadata"
                     poster={getImageUrl(product.images[0]?.url)}
                   >
-                    <track kind="captions" />
                     {locale === "zh" ? "您的浏览器不支持视频播放" : locale === "ru" ? "Ваш браузер не поддерживает воспроизведение видео" : "Your browser does not support video playback"}
                   </video>
                   {product.videos.length > 1 && (
@@ -392,10 +393,10 @@ export default async function ProductDetailPage({
                 <Mail className="h-4 w-4 text-gray-400" />
                 <span>Email: </span>
                 <a
-                  href="mailto:info@shendiaomach.com"
+                  href="mailto:932133255@qq.com"
                   className="text-primary-600 hover:text-primary-700 font-medium"
                 >
-                  info@shendiaomach.com
+                  932133255@qq.com
                 </a>
               </div>
 

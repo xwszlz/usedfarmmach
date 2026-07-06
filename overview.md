@@ -1,53 +1,96 @@
-# 产品发布表单重构 — 交付概览
+# 交付概览：担保交易 + AI深度分析
 
 ## TL;DR
-网站和小程序产品发布页统一重构为6步流程：图片先行(12张) → 视频 → 智能识别+估值 → 确认参数 → 估值报告 → 发布。
+担保交易系统（微信支付+支付宝双通道）和AI深度分析（豆包大模型接入）已全部完成并部署。
 
-## 改动文件清单
+## 交付状态
+- ✅ 网站 commit `d4b8d3d` 已 push 到 Vercel，构建通过
+- ✅ 小程序 commit `4cb8643`（本地，需微信开发者工具编译）
+- ✅ Prisma schema 已同步到数据库（2个新模型）
+- ⚠️ 需配置环境变量才能启用支付和豆包功能
 
-### 网站（Next.js）— commit `66da2b5`，已推送
-| 文件 | 改动 |
+## 文件清单（19个新文件 + 2个修改文件）
+
+### 担保交易系统
+| 文件 | 说明 |
 |------|------|
-| `src/app/[locale]/seller/products/new/page.tsx` | 完全重写为6步垂直流程 |
-| `src/components/seller/ai-assistant.tsx` | 重构：接收imageFiles prop，新增智能选图+并行估值 |
+| `prisma/schema.prisma` | 新增 EscrowOrder + PaymentRecord 模型 |
+| `src/lib/wechat-pay.ts` | 微信支付V3（纯crypto，无文件依赖） |
+| `src/lib/alipay.ts` | 支付宝RSA2（纯crypto，无文件依赖） |
+| `src/lib/escrow.ts` | 担保交易共享工具库 |
+| `src/app/api/escrow/create/route.ts` | 创建担保交易订单 |
+| `src/app/api/escrow/pay/wechat/route.ts` | 微信Native支付下单 |
+| `src/app/api/escrow/pay/alipay/route.ts` | 支付宝电脑网站支付 |
+| `src/app/api/escrow/wechat/notify/route.ts` | 微信支付回调验签+解密 |
+| `src/app/api/escrow/alipay/notify/route.ts` | 支付宝异步回调验签 |
+| `src/app/api/escrow/orders/route.ts` | 订单列表（角色筛选） |
+| `src/app/api/escrow/orders/[id]/route.ts` | 订单详情 |
+| `src/app/api/escrow/orders/[id]/confirm/route.ts` | 买家确认收货 |
+| `src/app/api/escrow/orders/[id]/dispute/route.ts` | 发起交易争议 |
+| `src/app/api/escrow/orders/[id]/ship/route.ts` | 卖家发货 |
+| `src/components/escrow/escrow-purchase-button.tsx` | 担保购买按钮组件 |
+| `src/app/[locale]/escrow/page.tsx` | 担保交易列表页 |
+| `src/app/[locale]/escrow/[id]/page.tsx` | 订单详情页（时间线+操作） |
+| `src/app/[locale]/products/[id]/page.tsx` | 产品页增加担保购买按钮 |
 
-### 小程序（微信）— commit `5ff871b`，本地提交
-| 文件 | 改动 |
+### AI深度分析
+| 文件 | 说明 |
 |------|------|
-| `pages/publish/publish.wxml` | 完全重写为6步流程 |
-| `pages/publish/publish.js` | 新增智能识别+估值+表单填充逻辑 |
-| `pages/publish/publish.wxss` | 新增步骤指示器/智能识别区/估值卡片/AI高亮样式 |
+| `src/app/api/agents/seller-helper/deep-analysis/route.ts` | 豆包深度分析API |
+| `shendiao-miniprogram/pages/publish/publish.js` | 新增 onDeepAnalysis() |
+| `shendiao-miniprogram/pages/publish/publish.wxml` | 深度分析UI区域 |
+| `shendiao-miniprogram/pages/publish/publish.wxss` | 深度分析样式 |
 
-## 新6步流程
+## 需配置的环境变量
 
+### 微信支付（6个）
 ```
-Step 1: 上传图片（12张自由上传，拍摄建议标签但不强制）
-         ↓ 建议拍摄：整机全貌、铭牌、驾驶室、发动机舱...
-Step 2: 上传视频（可选，有视频估值更准）
-         ↓
-Step 3: 智能识别（手动点击 → 压缩选6张 → AI识别 → 并行估值）
-         ↓ 识别结果展示 + "一键填充到表单"按钮
-Step 4: 确认参数（AI填充字段绿色高亮，用户可修改）
-         ├─ 基本信息：品牌、品类、型号、年份、成色
-         ├─ 核心参数：马力、发动机、驱动、重量、配置
-         ├─ 外形尺寸：长宽高
-         ├─ 贸易信息：价格模式、贸易条款、港口
-         └─ 补充描述
-Step 5: 估值报告 + 销售建议
-         ├─ AI估值：最低/参考/最高三档价格 + 报价合理性提示
-         └─ 市场参考：同品类均价、国际报价、汇率出口
-Step 6: 发布（消耗1积分）
+WECHAT_APP_ID=微信应用ID
+WECHAT_MCH_ID=商户号
+WECHAT_API_V3_KEY=API V3密钥（32字节）
+WECHAT_SERIAL_NO=商户证书序列号
+WECHAT_PRIVATE_KEY=商户私钥PEM
+WECHAT_NOTIFY_URL=https://usedfarmmach.com/api/escrow/wechat/notify
 ```
 
-## 关键技术点
+### 支付宝（4个）
+```
+ALIPAY_APP_ID=支付宝应用ID
+ALIPAY_PRIVATE_KEY=应用私钥
+ALIPAY_PUBLIC_KEY=支付宝公钥
+ALIPAY_NOTIFY_URL=https://usedfarmmach.com/api/escrow/alipay/notify
+```
 
-1. **智能选图**：12张中取首+末+中间均匀采样=6张，压缩到800px/JPEG 0.6，payload<3.5MB
-2. **小程序识别**：wx.compressImage → readFile(base64) → data URI → POST recognize API
-3. **并行估值**：识别完成后立即用参数调 /api/valuation（skipImageAnalysis=true）
-4. **AI填充高亮**：网站用绿色边框+背景，小程序用 .ai-filled class
-5. **小程序不体现"AI"**：UI文案用"智能识别"/"智能填充"
+### 豆包大模型（2个）
+```
+ARK_API_KEY=火山引擎ARK API Key
+ARK_MODEL_ID=doubao-1-5-vision-pro-32k
+```
 
-## 构建
-- next build: 0 errors
-- 网站已推送 GitHub，Vercel 自动部署中
-- 小程序已本地提交（无远程仓库配置）
+## 交易流程
+```
+买家点击"担保交易购买"
+  → 选择支付方式（微信/支付宝）
+  → 创建担保交易订单（pending）
+  → 调用支付接口
+    → 微信: 返回二维码 code_url
+    → 支付宝: 跳转到支付宝支付页面
+  → 支付完成
+    → 第三方回调 /api/escrow/{wechat|alipay}/notify
+    → 订单状态 → escrow（担保中）
+  → 卖家发货（填写物流信息）
+  → 买家确认收货
+    → 3天后自动放款给卖家 → released
+  → 或买家发起争议 → 平台介入
+```
+
+## AI深度分析对比
+| 维度 | 旧版智能识别 | 新版深度分析 |
+|------|------------|------------|
+| 模型 | Gemini 2.5 Flash | 豆包 doubao-1-5-vision-pro-32k |
+| 视频支持 | ❌ | ✅ |
+| max_tokens | 800 | 4096 |
+| Prompt限制 | "不要瞎编" | 允许调用训练知识 |
+| 输出格式 | 纯JSON | Markdown报告+JSON |
+| 内容深度 | 仅照片信息 | 设备识别+技术参数+操作维修+市场参考价+购买建议 |
+| 字数 | ~200字 | 2000+字 |

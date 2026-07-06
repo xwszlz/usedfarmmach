@@ -56,7 +56,7 @@ function buildPriceLine(
   }
 
   if (priceMode === "por") {
-    return { primary: "Price on Request (POR)", secondary: null };
+    return { primary: "Contact for Price", secondary: null };
   }
 
   // Fixed price mode
