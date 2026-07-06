@@ -64,7 +64,8 @@
     "serviceNetwork": "सेवा नेटवर्क",
     "certification": "प्रमाणन",
     "myFavorites": "पसंदीदा",
-    "contactUs": "संपर्क"
+    "contactUs": "संपर्क",
+    "inquiryManagement": "पूछताछ"
   },
   "home": {
     "heroTitle": "वैश्विक कृषि मशीनरी, एक ही मंच",
@@ -197,7 +198,8 @@
       "noAccount": "खाता नहीं है?",
       "registerLink": "अभी रजिस्टर करें",
       "error": "गलत यूज़रनेम/ईमेल या पासवर्ड",
-      "success": "सफल लॉगिन"
+      "success": "सफल लॉगिन",
+      "forgotPassword": "पासवर्ड भूल गए?"
     },
     "register": {
       "title": "रजिस्टर",
@@ -227,6 +229,33 @@
       "error": "पंजीकरण विफल",
       "success": "पंजीकरण सफल",
       "passwordMismatch": "पासवर्ड मेल नहीं खाते"
+    },
+    "forgotPassword": {
+      "title": "पासवर्ड भूल गए",
+      "subtitle": "रीसेट लिंक प्राप्त करने के लिए अपना यूज़रनेम या ईमेल दर्ज करें",
+      "identifier": "यूज़रनेम या ईमेल",
+      "identifierPlaceholder": "अपना पंजीकृत यूज़रनेम या ईमेल दर्ज करें",
+      "hint": "हम आपके पंजीकृत ईमेल पर पासवर्ड रीसेट लिंक भेजेंगे",
+      "submit": "रीसेट लिंक भेजें",
+      "errorEmpty": "कृपया यूज़रनेम या ईमेल दर्ज करें",
+      "sentMessage": "यदि खाता ईमेल के साथ मौजूद है, तो रीसेट लिंक भेज दिया गया है। कृपया अपना इनबॉक्स (और स्पैम फोल्डर) जांचें।",
+      "backToLogin": "लॉगिन पर वापस",
+      "error": "ऑपरेशन विफल, कृपया बाद में पुनः प्रयास करें"
+    },
+    "resetPassword": {
+      "title": "पासवर्ड रीसेट करें",
+      "subtitle": "अपना नया पासवर्ड दर्ज करें",
+      "newPassword": "नया पासवर्ड",
+      "passwordPlaceholder": "कम से कम 6 अक्षर",
+      "confirmPassword": "नए पासवर्ड की पुष्टि करें",
+      "confirmPlaceholder": "नया पासवर्ड फिर से दर्ज करें",
+      "submit": "पासवर्ड रीसेट करें",
+      "tooShort": "पासवर्ड कम से कम 6 अक्षरों का होना चाहिए",
+      "mismatch": "पासवर्ड मेल नहीं खाते",
+      "successMessage": "पासवर्ड रीसेट सफल! लॉगिन पेज पर रीडायरेक्ट हो रहा है...",
+      "noToken": "रीसेट टोकन गायब है। कृपया अपने ईमेल में लिंक के माध्यम से इस पेज तक पहुंचें।",
+      "requestNew": "नया रीसेट लिंक अनुरोध करें",
+      "error": "रीसेट विफल, कृपया बाद में पुनः प्रयास करें"
     }
   },
   "logistics": {
@@ -351,11 +380,7 @@
   },
   "footer": {
     "description": "वैश्विक पुरानी कृषि मशीनरी प्लेटफॉर्म, चीन को दुनिया से जोड़ता है",
-    "quickLinks": "त्वरित लिंक",
-    "quickLinkForage": "चारा हार्वेस्टर",
-    "quickLinkClaas": "CLAAS ब्रांड",
-    "quickLinkValuation": "AI मूल्यांकन",
-    "quickLinkArbitrage": "अंतर्राष्ट्रीय आर्बिट्राज",
+    "quickLinks": "उद्योग भागीदार",
     "contactUs": "संपर्क करें",
     "legal": "कानूनी",
     "privacy": "गोपनीयता नीति",
@@ -366,7 +391,11 @@
     "email": "ईमेल",
     "phone": "फ़ोन",
     "address": "पता",
-    "copyright": "© 2024 शिजियाझुआंग शेनॉन्ग टेक्नोलॉजी। सर्वाधिकार सुरक्षित।"
+    "copyright": "© 2024 शिजियाझुआंग शेनॉन्ग टेक्नोलॉजी। सर्वाधिकार सुरक्षित।",
+    "quickLinkRb": "Ritchie Bros Auctioneers",
+    "quickLinkCamda": "चीन कृषि मशीनरी वितरण संघ",
+    "quickLinkTractorHouse": "TractorHouse",
+    "quickLinkAgriaffaires": "Agriaffaires"
   },
   "intelligence": {
     "title": "बाजार खुफिया",

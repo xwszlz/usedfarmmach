@@ -64,7 +64,8 @@
     "serviceNetwork": "Сервисная сеть",
     "certification": "Сертификация",
     "myFavorites": "Избранное",
-    "contactUs": "Связаться"
+    "contactUs": "Связаться",
+    "inquiryManagement": "Запросы"
   },
   "home": {
     "heroTitle": "Глобальная торговля подержанной сельхозтехникой на одной платформе",

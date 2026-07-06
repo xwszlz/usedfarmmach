@@ -64,7 +64,8 @@
     "serviceNetwork": "Réseau de service",
     "certification": "Certification",
     "myFavorites": "Favoris",
-    "contactUs": "Contact"
+    "contactUs": "Contact",
+    "inquiryManagement": "Demandes"
   },
   "home": {
     "heroTitle": "Machines agricoles mondiales, une seule plateforme",
@@ -197,7 +198,8 @@
       "noAccount": "Pas encore de compte ?",
       "registerLink": "S'inscrire maintenant",
       "error": "Identifiant ou mot de passe incorrect",
-      "success": "Connexion réussie"
+      "success": "Connexion réussie",
+      "forgotPassword": "Mot de passe oublié ?"
     },
     "register": {
       "title": "Inscription",
@@ -227,6 +229,33 @@
       "error": "Échec de l'inscription",
       "success": "Inscription réussie",
       "passwordMismatch": "Les mots de passe ne correspondent pas"
+    },
+    "forgotPassword": {
+      "title": "Mot de passe oublié",
+      "subtitle": "Entrez votre nom d'utilisateur ou e-mail pour recevoir un lien de réinitialisation",
+      "identifier": "Nom d'utilisateur ou e-mail",
+      "identifierPlaceholder": "Entrez votre nom d'utilisateur ou e-mail enregistré",
+      "hint": "Nous enverrons un lien de réinitialisation à votre e-mail enregistré",
+      "submit": "Envoyer le lien",
+      "errorEmpty": "Veuillez entrer votre nom d'utilisateur ou e-mail",
+      "sentMessage": "Si le compte existe avec un e-mail, un lien de réinitialisation a été envoyé. Vérifiez votre boîte de réception (et dossier spam).",
+      "backToLogin": "Retour à la connexion",
+      "error": "Échec de l'opération, veuillez réessayer plus tard"
+    },
+    "resetPassword": {
+      "title": "Réinitialiser le mot de passe",
+      "subtitle": "Entrez votre nouveau mot de passe",
+      "newPassword": "Nouveau mot de passe",
+      "passwordPlaceholder": "Au moins 6 caractères",
+      "confirmPassword": "Confirmer le nouveau mot de passe",
+      "confirmPlaceholder": "Entrez à nouveau le mot de passe",
+      "submit": "Réinitialiser",
+      "tooShort": "Le mot de passe doit comporter au moins 6 caractères",
+      "mismatch": "Les mots de passe ne correspondent pas",
+      "successMessage": "Mot de passe réinitialisé ! Redirection vers la connexion...",
+      "noToken": "Jeton de réinitialisation manquant. Accédez à cette page via le lien dans votre e-mail.",
+      "requestNew": "Demander un nouveau lien",
+      "error": "Échec de la réinitialisation, réessayez plus tard"
     }
   },
   "logistics": {
@@ -351,11 +380,7 @@
   },
   "footer": {
     "description": "Plateforme mondiale de machines agricoles d'occasion, connectant la Chine au monde",
-    "quickLinks": "Liens rapides",
-    "quickLinkForage": "Ensileuses",
-    "quickLinkClaas": "Marque CLAAS",
-    "quickLinkValuation": "Estimation IA",
-    "quickLinkArbitrage": "Arbitrage international",
+    "quickLinks": "Partenaires de l'industrie",
     "contactUs": "Contact",
     "legal": "Mentions légales",
     "privacy": "Confidentialité",
@@ -366,7 +391,11 @@
     "email": "E-mail",
     "phone": "Téléphone",
     "address": "Adresse",
-    "copyright": "© 2024 Shijiazhuang Shendiao Agricultural Machinery Technology Co., Ltd. Tous droits réservés."
+    "copyright": "© 2024 Shijiazhuang Shendiao Agricultural Machinery Technology Co., Ltd. Tous droits réservés.",
+    "quickLinkRb": "Ritchie Bros Auctioneers",
+    "quickLinkCamda": "Association chinoise de distribution de machines agricoles",
+    "quickLinkTractorHouse": "TractorHouse",
+    "quickLinkAgriaffaires": "Agriaffaires"
   },
   "intelligence": {
     "title": "Veille de marché",
