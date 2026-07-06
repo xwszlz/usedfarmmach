@@ -166,7 +166,7 @@ async function callDoubao(
         Authorization: `Bearer ${ARK_API_KEY}`,
         "Content-Type": "application/json",
       },
-      timeout: 30000, // 30秒超时（豆包不支持base64时需快速失败）
+      timeout: 90000, // 90秒超时（图片下载~20s + 长prompt + 大量生成）
     }
   );
 
