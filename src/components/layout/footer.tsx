@@ -1,11 +1,10 @@
 import { useTranslations } from "next-intl";
-import Link from "next/link";
 
 interface FooterProps {
   locale: string;
 }
 
-export function Footer({ locale }: FooterProps) {
+export function Footer({ locale: _locale }: FooterProps) {
   const t = useTranslations("footer");
 
   return (
@@ -24,43 +23,51 @@ export function Footer({ locale }: FooterProps) {
             <p className="mt-3 text-sm text-gray-500">{t("description")}</p>
           </div>
 
-          {/* Quick Links */}
+          {/* Quick Links — 行业权威平台 */}
           <div>
             <h3 className="text-sm font-semibold text-gray-900">
               {t("quickLinks")}
             </h3>
             <ul className="mt-3 space-y-2">
               <li>
-                <Link
-                  href={`/${locale}/category/forage-harvester`}
+                <a
+                  href="https://www.rbauction.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-sm text-gray-500 hover:text-primary-600"
                 >
-                  {t("quickLinkForage")}
-                </Link>
+                  {t("quickLinkRb")}
+                </a>
               </li>
               <li>
-                <Link
-                  href={`/${locale}/brand/claas`}
+                <a
+                  href="https://www.camda.org.cn/"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-sm text-gray-500 hover:text-primary-600"
                 >
-                  {t("quickLinkClaas")}
-                </Link>
+                  {t("quickLinkCamda")}
+                </a>
               </li>
               <li>
-                <Link
-                  href={`/${locale}/`}
+                <a
+                  href="https://www.tractorhouse.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-sm text-gray-500 hover:text-primary-600"
                 >
-                  {t("quickLinkValuation")}
-                </Link>
+                  {t("quickLinkTractorHouse")}
+                </a>
               </li>
               <li>
-                <Link
-                  href={`/${locale}/intelligence`}
+                <a
+                  href="https://www.agriaffaires.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-sm text-gray-500 hover:text-primary-600"
                 >
-                  {t("quickLinkArbitrage")}
-                </Link>
+                  {t("quickLinkAgriaffaires")}
+                </a>
               </li>
             </ul>
           </div>
