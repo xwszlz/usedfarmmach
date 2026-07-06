@@ -80,7 +80,7 @@ export const mainNav: NavItem[] = [
     labelKey: "nav.buyMachinery",
     children: [
       { href: "/products", labelKey: "nav.browseEquipment" },
-      { href: "/auctions", label: "在线拍卖" },
+      { href: "/auctions", label: "在线竞拍" },
       { href: "/rentals", label: "农机租赁" },
       { href: "/products?match=true", labelKey: "nav.buyerRequest" },
       { href: "/brand/claas", label: "CLAAS" },

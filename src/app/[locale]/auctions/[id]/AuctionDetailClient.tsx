@@ -125,7 +125,7 @@ export default function AuctionDetailClient() {
   if (!auction) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <p className="text-gray-500">{isZh ? "拍卖不存在" : "Auction not found"}</p>
+        <p className="text-gray-500">{isZh ? "竞拍不存在" : "Auction not found"}</p>
       </div>
     );
   }
@@ -203,7 +203,7 @@ export default function AuctionDetailClient() {
           {/* Countdown */}
           {isLive && timeLeft > 0 && (
             <div className="bg-red-50 rounded-xl p-4 mt-3 text-center">
-              <p className="text-sm text-red-600 font-medium">{isZh ? "距拍卖结束" : "Time Left"}</p>
+              <p className="text-sm text-red-600 font-medium">{isZh ? "距竞拍结束" : "Time Left"}</p>
               <p className="text-2xl font-bold text-red-600 mt-1 font-mono">
                 {days > 0 && `${days}d `}
                 {String(hours).padStart(2, "0")}:{String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
@@ -264,7 +264,7 @@ export default function AuctionDetailClient() {
               {auction.winningBid ? (
                 <>
                   <p className="text-green-600 font-medium">
-                    {isZh ? "拍卖成交" : "Auction Won"}
+                    {isZh ? "竞拍成交" : "Auction Won"}
                   </p>
                   <p className="text-2xl font-bold text-green-700 mt-1">
                     ¥{auction.winningBid.toLocaleString()}
@@ -272,7 +272,7 @@ export default function AuctionDetailClient() {
                 </>
               ) : (
                 <p className="text-gray-500 font-medium">
-                  {isZh ? "拍卖流拍（未达保留价）" : "Auction ended without meeting reserve"}
+                  {isZh ? "竞拍流拍（未达保留价）" : "Auction ended without meeting reserve"}
                 </p>
               )}
             </div>

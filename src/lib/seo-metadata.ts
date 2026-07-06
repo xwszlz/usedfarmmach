@@ -209,8 +209,8 @@ const localizedMeta: Record<string, Record<string, { title: string; description:
   },
   auctions: {
     zh: {
-      title: "农机在线拍卖_二手农机竞价_公开透明拍卖平台_神雕农机",
-      description: "神雕农机在线拍卖平台：精选二手农机设备，公开竞价，透明交易。定期拍卖会，保证金制，实时出价。",
+      title: "农机在线竞拍_二手农机竞价_公开透明竞拍平台_神雕农机",
+      description: "神雕农机在线竞拍平台：精选二手农机设备，公开竞价，透明交易。定期竞拍卖场，保证金制，实时出价。",
     },
     en: {
       title: "Farm Machinery Online Auctions | Used Equipment Bidding | AgriTrade",

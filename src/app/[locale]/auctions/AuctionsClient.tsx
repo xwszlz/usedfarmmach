@@ -81,7 +81,7 @@ export default function AuctionsClient() {
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">
-          {isZh ? "在线拍卖" : "Online Auctions"}
+          {isZh ? "在线竞拍" : "Online Auctions"}
         </h1>
         <p className="text-gray-500 mt-1">
           {isZh ? "精选农机设备，公开竞价，透明交易" : "Premium equipment, open bidding, transparent trading"}
@@ -113,7 +113,7 @@ export default function AuctionsClient() {
       {filtered.length === 0 ? (
         <div className="text-center py-16 bg-gray-50 rounded-xl">
           <p className="text-gray-400 text-lg">
-            {isZh ? "暂无拍卖场次" : "No auctions available"}
+            {isZh ? "暂无竞拍卖场" : "No auctions available"}
           </p>
         </div>
       ) : (
