@@ -52,6 +52,16 @@ model User {
   rentalListings    RentalListing[]
   escrowAsBuyer     EscrowOrder[] @relation("EscrowBuyer")
   escrowAsSeller    EscrowOrder[] @relation("EscrowSeller")
+
+  // Expo 模块关系
+  expoBooths          Booth[]
+  expoInquiries       ExpoInquiry[]
+  expoQuotesAsBuyer   Quote[]    @relation("QuoteBuyer")
+  expoQuotesAsSeller  Quote[]    @relation("QuoteSeller")
+  expoOrdersAsBuyer   Order[]    @relation("OrderBuyer")
+  expoOrdersAsSeller  Order[]    @relation("OrderSeller")
+  expoReviewsGiven    Review[]   @relation("ReviewReviewer")
+  expoReviewsReceived Review[]   @relation("ReviewReviewee")
 }
 
 model Brand {
@@ -1325,4 +1335,251 @@ model PaymentRecord {
   @@index([orderId])
   @@index([transactionId])
   @@index([status])
+}
+
+// ═══════════════════════════════════════════════════════
+// 永不落幕的农机世界展会 — Expo 模块
+// Phase 0~5 新增模型（8个）
+// ═══════════════════════════════════════════════════════
+
+// Phase 0: 展会报名/招商意向登记
+model ExpoRegistration {
+  id           String   @id @default(cuid())
+  // 报名人信息
+  name         String   // 联系人姓名
+  phone        String   // 手机号
+  wechat       String?  // 微信号
+  email        String?  // 邮箱
+  company      String?  // 公司名
+  country      String?  // 国家/地区
+  category     String?  // 主营品类
+  boothType    String?  // 意向展位类型：standard | premium | flagship
+  intentDevice String?  // 意向设备
+  visitDate    String?  // 参观日期
+  message      String?  @db.Text // 留言
+  // 来源
+  source       String   @default("website") // website | miniprogram | wechat
+  expoType     String   @default("virtual") // field | virtual
+  locale       String?  // 提交语言 zh/en/ru
+  // 状态
+  status       String   @default("pending") // pending | confirmed | attended | rejected
+  // 时间
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@index([expoType, status])
+  @@index([source])
+}
+
+// Phase 1: 展会信息
+model Expo {
+  id          String    @id @default(cuid())
+  name        String    // 展会名称
+  slug        String    @unique // URL标识
+  type        String    // virtual | field
+  status      String    @default("active") // active | ended | upcoming
+  startDate   DateTime
+  endDate     DateTime?
+  location    String?   // 线下展会地点
+  description String?   @db.Text
+  bannerUrl   String?   // 展会横幅图
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  booths Booth[]
+
+  @@index([status, startDate])
+  @@index([type, status])
+}
+
+// Phase 1: 展位
+model Booth {
+  id          String   @id @default(cuid())
+  expoId      String
+  merchantId  String?  // 关联展商(User)，null=未分配
+  name        String   // 展位名称
+  hall        String   // 展馆：tractor | harvester | planter | sprayer | comprehensive
+  template    String   @default("standard") // standard | premium | flagship
+  status      String   @default("empty") // empty | configured | published | offline
+  sortIndex   Int      @default(0)
+  // 展位装修信息
+  coverImage  String?  // 展位封面图
+  intro       String?  @db.Text // 展商简介
+  logoUrl     String?  // 展商Logo
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  expo          Expo          @relation(fields: [expoId], references: [id], onDelete: Cascade)
+  merchant      User?         @relation(fields: [merchantId], references: [id])
+  showcaseItems ShowcaseItem[]
+  expoInquiries ExpoInquiry[]
+
+  @@index([expoId, status])
+  @@index([hall, status])
+  @@index([merchantId])
+}
+
+// Phase 1: 展品（展厅展示的设备）
+model ShowcaseItem {
+  id          String   @id @default(cuid())
+  boothId     String
+  // 设备信息
+  deviceType  String   // 设备类型/品类
+  brand       String?  // 品牌
+  model       String?  // 型号
+  year        Int?     // 年份
+  workingHours Int?    // 工作小时
+  condition   String?  // 状况
+  // 价格
+  price       Float?   // 价格
+  currency    String   @default("CNY")
+  // 媒体
+  images      String[] // OSS图片URL数组
+  videos      String[] // OSS视频URL数组
+  // 规格
+  specs       String?  @db.Text // 设备参数JSON字符串
+  description String?  @db.Text
+  // 关联平台产品（可选）
+  productId   String?  // 关联Product表的产品
+  // 状态
+  status      String   @default("draft") // draft | published | archived
+  sortIndex   Int      @default(0)
+  viewCount   Int      @default(0)
+  inquiryCount Int     @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  booth    Booth    @relation(fields: [boothId], references: [id], onDelete: Cascade)
+  inquiries ExpoInquiry[]
+
+  @@index([boothId, status])
+  @@index([deviceType, status])
+  @@index([brand, status])
+}
+
+// Phase 1: 展会询盘（区别于现有Inquiry模型）
+model ExpoInquiry {
+  id             String   @id @default(cuid())
+  showcaseItemId String?  // 关联展品
+  boothId        String?  // 关联展位
+  merchantId     String?  // 关联展商(User)
+  buyerId        String?  // 关联买家(User)，匿名则null
+  // 买家信息
+  buyerName      String
+  buyerPhone     String
+  buyerEmail     String?
+  buyerWechat    String?
+  buyerCountry   String?  // 买家国家
+  // 询盘内容
+  message        String   @db.Text
+  intent         String?  // 意向类型：purchase | inquiry |代理合作
+  // 状态
+  status         String   @default("new") // new | contacted | closed | converted
+  // 时间
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  showcaseItem ShowcaseItem? @relation(fields: [showcaseItemId], references: [id], onDelete: SetNull)
+  booth        Booth?        @relation(fields: [boothId], references: [id], onDelete: SetNull)
+  buyer        User?         @relation(fields: [buyerId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([boothId, status])
+  @@index([showcaseItemId])
+  @@index([buyerId])
+}
+
+// Phase 5: 报价单
+model Quote {
+  id             String   @id @default(cuid())
+  inquiryId      String?  // 关联ExpoInquiry
+  showcaseItemId String?  // 关联展品
+  buyerId        String   // 买方(User)
+  sellerId       String   // 卖方(User)
+  // 报价信息
+  price          Float    // 报价金额
+  currency       String   @default("CNY")
+  quantity       Int      @default(1)
+  deliveryTime   String?  // 交货周期
+  paymentTerms   String?  // 付款方式
+  validUntil     DateTime // 报价有效期
+  // 还价
+  counterPrice   Float?   // 买方还价
+  // 状态
+  status         String   @default("pending") // pending | accepted | rejected | expired | counterOffered
+  // 时间
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  buyer  User @relation("QuoteBuyer", fields: [buyerId], references: [id])
+  seller User @relation("QuoteSeller", fields: [sellerId], references: [id])
+
+  @@index([buyerId, status])
+  @@index([sellerId, status])
+  @@index([status, validUntil])
+}
+
+// Phase 5: 订单
+model Order {
+  id            String   @id @default(cuid())
+  orderNo       String   @unique // 订单号：SD-EXPO-YYYYMMDD-XXXXXX
+  quoteId       String?  // 关联报价单
+  buyerId       String   // 买方(User)
+  sellerId      String   // 卖方(User)
+  // 订单内容
+  items         String   @db.Text // JSON: [{showcaseItemId, name, price, quantity}]
+  totalAmount   Float    // 总金额
+  currency      String   @default("CNY")
+  // 状态
+  status        String   @default("pending_payment") // pending_payment | paid | shipped | delivered | completed | cancelled | disputed
+  // 支付
+  paymentMethod String?  // wechat | alipay | paypal | bank_transfer
+  paymentId     String?  // 第三方支付流水号
+  escrowStatus  String?  // holding | released | refunded
+  // 物流
+  trackingNumber String?
+  shippingCompany String?
+  // 合同
+  contractUrl   String?  // 电子合同PDF URL
+  // 时间
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  buyer  User @relation("OrderBuyer", fields: [buyerId], references: [id])
+  seller User @relation("OrderSeller", fields: [sellerId], references: [id])
+
+  @@index([buyerId, status])
+  @@index([sellerId, status])
+  @@index([status, createdAt])
+  @@index([orderNo])
+}
+
+// Phase 5: 评价
+model Review {
+  id          String   @id @default(cuid())
+  orderId     String   // 关联订单（用orderNo关联）
+  reviewerId  String   // 评价人(User)
+  revieweeId  String   // 被评价人(User)
+  // 评价内容
+  rating      Int      // 1-5星
+  content     String?  @db.Text
+  images      String[] // 评价图片URL数组
+  // 维度评分
+  itemMatchScore Int?  // 物品相符 1-5
+  serviceScore   Int?  // 服务态度 1-5
+  logisticsScore Int?  // 物流速度 1-5
+  // 商家回复
+  reply       String?  @db.Text
+  repliedAt   DateTime?
+  // 状态
+  status      String   @default("published") // published | hidden | reported
+  createdAt   DateTime @default(now())
+
+  reviewer User @relation("ReviewReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+  reviewee User @relation("ReviewReviewee", fields: [revieweeId], references: [id], onDelete: Cascade)
+
+  @@index([revieweeId, status])
+  @@index([reviewerId])
+  @@index([orderId])
 }

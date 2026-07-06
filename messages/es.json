@@ -1,7 +1,7 @@
 {
   "common": {
     "appName": "Shennong AgriTrade",
-    "appSlogan": "Plataforma Global de Maquinaria Agr cola Usada",
+    "appSlogan": "Plataforma Global de Maquinaria Agrícola Usada",
     "loading": "Cargando...",
     "error": "Algo salió mal",
     "retry": "Reintentar",
@@ -85,9 +85,9 @@
     "feature2Title": "Arbitraje transfronterizo",
     "feature2Desc": "Comparativa de precios China vs extranjero en tiempo real",
     "feature3Title": "Transacciones seguras",
-    "feature3Desc": "Depósito en garant a de terceros, protección total",
+    "feature3Desc": "Depósito en garantía de terceros, protección total",
     "feature4Title": "Logística global",
-    "feature4Desc": "Transporte mar timo y aéreo, servicio puerta a puerta",
+    "feature4Desc": "Transporte marítimo y aéreo, servicio puerta a puerta",
     "testimonialsTitle": "Clientes reales",
     "testimonialsDesc": "Maquinaria agrícola en uso real por todo el mundo"
   },
@@ -104,11 +104,11 @@
   "categoryPage": {
     "home": "Inicio",
     "products": "Maquinaria",
-    "notFound": "Categor a no encontrada",
+    "notFound": "Categoría no encontrada",
     "backToProducts": "Volver a maquinaria",
     "productCount": "{count} equipos disponibles",
     "subCategories": "Subcategorías",
-    "noProducts": "Sin equipos en esta categor a"
+    "noProducts": "Sin equipos en esta categoría"
   },
   "products": {
     "title": "Maquinaria",
@@ -132,7 +132,7 @@
       "sortNewest": "Más reciente",
       "sortPriceLow": "Precio: menor a mayor",
       "sortPriceHigh": "Precio: mayor a menor",
-      "sortYearNew": "Año m s reciente",
+      "sortYearNew": "Año más reciente",
       "sortHoursLow": "Menos horas"
     },
     "card": {
@@ -171,7 +171,7 @@
   },
   "inquiry": {
     "title": "Enviar consulta",
-    "subtitle": "Complete la informaci n y el vendedor le contactar pronto",
+    "subtitle": "Complete la información y el vendedor le contactar pronto",
     "name": "Nombre",
     "namePlaceholder": "Ingrese su nombre",
     "email": "Correo",
@@ -205,13 +205,13 @@
       "title": "Registrarse",
       "subtitle": "Crear una cuenta",
       "username": "Nombre de usuario",
-      "usernamePlaceholder": "M n. 3 caracteres (letras/números/gui n bajo)",
-      "usernameTooShort": "M nimo 3 caracteres",
+      "usernamePlaceholder": "Mín. 3 caracteres (letras/números/guion bajo)",
+      "usernameTooShort": "Mínimo 3 caracteres",
       "email": "Correo (opcional)",
       "emailPlaceholder": "Opcional, para recuperar contraseña",
       "password": "Contraseña",
-      "passwordPlaceholder": "M n. 8 caracteres, mayúsculas+minúsculas+números",
-      "passwordTooShort": "M nimo 8 caracteres",
+      "passwordPlaceholder": "Mín. 8 caracteres, mayúsculas+minúsculas+números",
+      "passwordTooShort": "Mínimo 8 caracteres",
       "confirmPassword": "Confirmar contraseña",
       "confirmPasswordPlaceholder": "Repita la contraseña",
       "phone": "Teléfono",
@@ -219,7 +219,7 @@
       "companyName": "Empresa",
       "companyNamePlaceholder": "Ingrese nombre de empresa (opcional)",
       "country": "País",
-      "countryPlaceholder": "Seleccione pa s",
+      "countryPlaceholder": "Seleccione país",
       "role": "Rol",
       "roleBuyer": "Comprador",
       "roleSeller": "Vendedor",
@@ -260,23 +260,23 @@
   },
   "logistics": {
     "title": "Logística transfronteriza",
-    "subtitle": "M ltiples modalidades de transporte, entrega segura a nivel mundial",
+    "subtitle": "Múltiples modalidades de transporte, entrega segura a nivel mundial",
     "timeline": {
       "title": "Proceso de transporte",
       "step1": "Inspección",
       "step1Desc": "Equipo técnico verifica en sitio",
       "step2": "Embalaje",
       "step2Desc": "Embalaje profesional anti-daños",
-      "step3": "Despacho exportaci n",
-      "step3Desc": "Gesti n de trámites aduaneros",
+      "step3": "Despacho exportación",
+      "step3Desc": "Gestión de trámites aduaneros",
       "step4": "Transporte internacional",
       "step4Desc": "Marítimo/aéreo al puerto destino",
       "step5": "Despacho y entrega",
-      "step5Desc": "Despacho importaci n + entrega puerta a puerta"
+      "step5Desc": "Despacho importación + entrega puerta a puerta"
     },
     "fcl": {
       "title": "Contenedor completo FCL",
-      "desc": "Ideal para grandes volúmenes, m s económico por unidad",
+      "desc": "Ideal para grandes volúmenes, más económico por unidad",
       "price": "Desde $2,500-4,000/contenedor",
       "time": "25-35 días",
       "features": "Grandes volúmenes|Menor costo|Contenedor exclusivo|Seguimiento total"
@@ -300,12 +300,12 @@
     "title": "Acerca de Shennong AgriTrade",
     "subtitle": "El puente hacia el mercado global de maquinaria agrícola",
     "mission": "Nuestra misión",
-    "missionText": "Hacer el comercio global de maquinaria agrícola usada m s transparente, eficiente y seguro. Mediante valoraci n IA, análisis de arbitraje y logística integral, maximizamos el valor para compradores y vendedores.",
+    "missionText": "Hacer el comercio global de maquinaria agrícola usada más transparente, eficiente y seguro. Mediante valoraci n IA, análisis de arbitraje y logística integral, maximizamos el valor para compradores y vendedores.",
     "values": "Valores fundamentales",
     "value1Title": "Transparencia",
     "value1Desc": "Valoración precisa IA, eliminando asimetría informativa",
     "value2Title": "Seguridad",
-    "value2Desc": "Depósito en garant a, protección total de transacciones",
+    "value2Desc": "Depósito en garantía, protección total de transacciones",
     "value3Title": "Eficiencia",
     "value3Desc": "Servicio integral, simplificando comercio transfronterizo",
     "value4Title": "Ganar-ganar",
@@ -324,7 +324,7 @@
   },
   "arbitrageTop": {
     "title": "Ranking de arbitraje",
-    "description": "Descubra las mejores oportunidades de arbitraje en maquinaria agrícola. Clasificamos seg n diferencial de precios, costos de transporte y aranceles.",
+    "description": "Descubra las mejores oportunidades de arbitraje en maquinaria agrícola. Clasificamos según diferencial de precios, costos de transporte y aranceles.",
     "liveRanking": "Ranking en tiempo real",
     "dataUpdatedAt": "Datos actualizados",
     "showCount": "Mostrar cantidad",
@@ -332,12 +332,12 @@
     "refresh": "Actualizar ranking",
     "reload": "Recargar",
     "noData": "Sin datos de arbitraje",
-    "noDataHint": "Intente m s tarde o verifique los datos de precios internacionales",
+    "noDataHint": "Intente más tarde o verifique los datos de precios internacionales",
     "loadError": "Error al cargar. Refresque la página.",
     "loading": "Cargando ranking...",
     "rankingExplanationTitle": "Explicación",
     "explanation1": "Ranking actualizado cada 30 minutos",
-    "explanation2": "Puntuaci n basada en diferencial, margen, riesgo y políticas",
+    "explanation2": "Puntuación basada en diferencial, margen, riesgo y políticas",
     "explanation3": "Oportunidad alta: margen >30%, riesgo controlado",
     "explanation4": "Oportunidad media: margen 15-30%, requiere análisis",
     "explanation5": "Oportunidad baja: margen <15% o riesgo elevado",
@@ -345,8 +345,8 @@
       "rank": "Ranking",
       "productInfo": "Producto",
       "priceInfo": "Precios",
-      "arbitrageEval": "Evaluaci n",
-      "action": "Acci n",
+      "arbitrageEval": "Evaluación",
+      "action": "Acción",
       "domesticPrice": "Precio nacional",
       "foreignPrice": "Precio exterior (CNY)",
       "priceDiff": "Diferencial",
@@ -369,7 +369,7 @@
     },
     "stats": {
       "totalProducts": "Total productos",
-      "highOpportunity": "Altañoportunidad",
+      "highOpportunity": "Alta oportunidad",
       "profitMargin": "Margen promedio",
       "totalProfit": "Ganancia estimada total",
       "avgArbitrage": "Margen arbitraje promedio"
@@ -400,13 +400,13 @@
   "intelligence": {
     "title": "Inteligencia de mercado",
     "subtitle": "Dinámica global, oportunidades de arbitraje y tendencias del sector",
-    "latest": "Úúltima actualización",
+    "latest": "Última actualización",
     "items": "noticias",
     "arbitrageHighlights": "Destacados arbitraje",
     "loading": "Cargando...",
     "empty": "Sin noticias",
     "count": "{count} noticias",
-    "actionTips": "Recomendaci n"
+    "actionTips": "Recomendación"
   },
   "blog": {
     "title": "Noticias del sector",
@@ -424,11 +424,11 @@
     },
     "recentPosts": "Reciente",
     "relatedPosts": "Artículos relacionados",
-    "noPosts": "Sin art culos",
+    "noPosts": "Sin artículos",
     "backToList": "Volver a lista",
     "shareArticle": "Compartir",
     "tags": "Etiquetas",
     "source": "Fuente",
-    "searchPlaceholder": "Buscar art culos..."
+    "searchPlaceholder": "Buscar artículos..."
   }
 }
