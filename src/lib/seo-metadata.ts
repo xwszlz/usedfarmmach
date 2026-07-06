@@ -547,6 +547,108 @@ const localizedMeta: Record<string, Record<string, { title: string; description:
       description: "रीयल-टाइम आर्बिट्राज रैंकिंग: मूल्य अंतर, शिपिंग लागत और टैरिफ विश्लेषण द्वारा क्रमबद्ध। उच्च-मार्जिन अवसर खोजें। हर 30 मिनट में अपडेट।",
     },
   },
+  standards: {
+    zh: {
+      title: "农机标准规范_二手农机检测评估_企业行业标准_神雕农机",
+      description: "神雕农机标准规范中心：企业标准、行业标准、国际标准三级体系。涵盖二手农机检测评估规范、跨境交易服务规范、ISO 4254安全标准、OECD拖拉机试验规范等。",
+    },
+    en: {
+      title: "Farm Machinery Standards | Inspection & Assessment | AgriTrade",
+      description: "AgriTrade standards center: enterprise, industry, and international standards. Used machinery inspection specs, cross-border trade standards, ISO 4254, OECD tractor codes.",
+    },
+    ru: {
+      title: "Стандарты сельхозтехники | Проверка и оценка | AgriTrade",
+      description: "Центр стандартов AgriTrade: корпоративные, отраслевые и международные стандарты. Спецификации проверки б/у техники, стандарты трансграничной торговли, ISO 4254, коды OECD для тракторов.",
+    },
+    es: {
+      title: "Estándares de Maquinaria Agrícola | Inspección y Evaluación | AgriTrade",
+      description: "Centro de estándares AgriTrade: estándares empresariales, industriales e internacionales. Especificaciones de inspección de maquinaria usada, estándares de comercio transfronterizo, ISO 4254, códigos OECD de tractores.",
+    },
+    pt: {
+      title: "Padrões de Máquinas Agrícolas | Inspeção e Avaliação | AgriTrade",
+      description: "Centro de padrões AgriTrade: padrões empresariais, industriais e internacionais. Especificações de inspeção de máquinas usadas, padrões de comércio transfronteiriço, ISO 4254, códigos OECD de tratores.",
+    },
+    ar: {
+      title: "معايير الآلات الزراعية | الفحص والتقييم | AgriTrade",
+      description: "مركز المعايير AgriTrade: معايير المؤسسات والصناعة والدولية. مواصفات فحص الآلات المستعملة، معايير التجارة عبر الحدود، ISO 4254، رموز OECD للجرارات.",
+    },
+    fr: {
+      title: "Normes des Machines Agricoles | Inspection et Évaluation | AgriTrade",
+      description: "Centre des normes AgriTrade: normes d'entreprise, d'industrie et internationales. Spécifications d'inspection des machines d'occasion, normes de commerce transfrontalier, ISO 4254, codes OECD des tracteurs.",
+    },
+    hi: {
+      title: "कृषि मशीनरी मानक | निरीक्षण और मूल्यांकन | AgriTrade",
+      description: "AgriTrade मानक केंद्र: उद्यम, उद्योग और अंतर्राष्ट्रीय मानक। प्रयुक्त मशीनरी निरीक्षण विनिर्देश, सीमा पार व्यापार मानक, ISO 4254, OECD ट्रैक्टर कोड।",
+    },
+  },
+  solutions: {
+    zh: {
+      title: "农机行业解决方案_大田种植_畜牧养殖_出口方案_神雕农机",
+      description: "神雕农机行业解决方案：大田种植、畜牧养殖、果园经济、设施农业四大方案，加中亚、俄罗斯、东南亚三大出口方案。结合气候作物推荐设备。",
+    },
+    en: {
+      title: "Farm Machinery Solutions | Field Crops, Livestock, Export | AgriTrade",
+      description: "AgriTrade industry solutions: field crops, livestock, orchard, greenhouse solutions plus Central Asia, Russia, Southeast Asia export plans with equipment recommendations.",
+    },
+    ru: {
+      title: "Решения для сельского хозяйства | Полевые культуры, животноводство, экспорт | AgriTrade",
+      description: "Отраслевые решения AgriTrade: полевые культуры, животноводство, садоводство, тепличное хозяйство плюс экспортные планы для Центральной Азии, России, Юго-Восточной Азии с рекомендациями по оборудованию.",
+    },
+    es: {
+      title: "Soluciones Agrícolas | Cultivos, Ganadería, Exportación | AgriTrade",
+      description: "Soluciones industriales AgriTrade: cultivos de campo, ganadería, huertos, invernaderos más planes de exportación para Asia Central, Rusia y Sudeste Asiático con recomendaciones de equipos.",
+    },
+    pt: {
+      title: "Soluções Agrícolas | Culturas, Pecuária, Exportação | AgriTrade",
+      description: "Soluções industriais AgriTrade: culturas de campo, pecuária, pomares, estufas mais planos de exportação para Ásia Central, Rússia e Sudeste Asiático com recomendações de equipamentos.",
+    },
+    ar: {
+      title: "حلول الزراعة | المحاصيل الحقلية، الثروة الحيوانية، التصدير | AgriTrade",
+      description: "حلول صناعية AgriTrade: محاصيل حقلية، ثروة حيوانية، بساتين، بيوت محمية بالإضافة إلى خطط تصدير لآسيا الوسطى وروسيا وجنوب شرق آسيا مع توصيات المعدات.",
+    },
+    fr: {
+      title: "Solutions Agricoles | Grandes Cultures, Élevage, Exportation | AgriTrade",
+      description: "Solutions industrielles AgriTrade: grandes cultures, élevage, vergers, serres plus plans d'exportation pour l'Asie centrale, la Russie et l'Asie du Sud-Est avec recommandations d'équipements.",
+    },
+    hi: {
+      title: "कृषि समाधान | फसल, पशुपालन, निर्यात | AgriTrade",
+      description: "AgriTrade उद्योग समाधान: फसल, पशुपालन, बागवानी, ग्रीनहाउस समाधान प्लस मध्य एशिया, रूस, दक्षिण पूर्व एशिया निर्यात योजनाएँ उपकरण अनुशंसाओं के साथ।",
+    },
+  },
+  parts: {
+    zh: {
+      title: "农机零配件_发动机液压传动_滤芯轮胎轴承_神雕农机",
+      description: "神雕农机零配件中心：发动机、液压、传动、电气、滤芯、轮胎、轴承、车身八大品类。约翰迪尔、克拉斯、纽荷兰等品牌配件，支持搜索筛选。",
+    },
+    en: {
+      title: "Farm Machinery Parts | Engine, Hydraulic, Filters | AgriTrade",
+      description: "AgriTrade parts center: 8 categories including engine, hydraulic, transmission, electrical, filters, tires, bearings, body. John Deere, CLAAS, New Holland parts with search.",
+    },
+    ru: {
+      title: "Запчасти для сельхозтехники | Двигатель, гидравлика, фильтры | AgriTrade",
+      description: "Центр запчастей AgriTrade: 8 категорий, включая двигатель, гидравлику, трансмиссию, электрику, фильтры, шины, подшипники, кузов. Запчасти John Deere, CLAAS, New Holland с поиском.",
+    },
+    es: {
+      title: "Repuestos de Maquinaria Agrícola | Motor, Hidráulica, Filtros | AgriTrade",
+      description: "Centro de repuestos AgriTrade: 8 categorías incluyendo motor, hidráulica, transmisión, eléctrico, filtros, neumáticos, rodamientos, carrocería. Repuestos John Deere, CLAAS, New Holland con búsqueda.",
+    },
+    pt: {
+      title: "Peças de Máquinas Agrícolas | Motor, Hidráulica, Filtros | AgriTrade",
+      description: "Centro de peças AgriTrade: 8 categorias incluindo motor, hidráulica, transmissão, elétrico, filtros, pneus, rolamentos, carroceria. Peças John Deere, CLAAS, New Holland com busca.",
+    },
+    ar: {
+      title: "قطع غيار الآلات الزراعية | محرك، هيدروليك، فلاتر | AgriTrade",
+      description: "مركز قطع الغيار AgriTrade: 8 فئات تشمل المحرك، الهيدروليك، ناقل الحركة، الكهرباء، الفلاتر، الإطارات، المحامل، الهيكل. قطع غيار John Deere، CLAAS، New Holland مع البحث.",
+    },
+    fr: {
+      title: "Pièces de Machines Agricoles | Moteur, Hydraulique, Filtres | AgriTrade",
+      description: "Centre de pièces AgriTrade: 8 catégories incluant moteur, hydraulique, transmission, électrique, filtres, pneus, roulements, carrosserie. Pièces John Deere, CLAAS, New Holland avec recherche.",
+    },
+    hi: {
+      title: "कृषि मशीनरी पार्ट्स | इंजन, हाइड्रोलिक, फिल्टर | AgriTrade",
+      description: "AgriTrade पार्ट्स केंद्र: 8 श्रेणियाँ जिनमें इंजन, हाइड्रोलिक, ट्रांसमिशन, इलेक्ट्रिकल, फिल्टर, टायर, बेयरिंग, बॉडी शामिल हैं। John Deere, CLAAS, New Holland पार्ट्स खोज के साथ।",
+    },
+  },
 };
 
 export const ALL_LOCALES = ["zh", "en", "ru", "es", "pt", "ar", "fr", "hi"] as const;

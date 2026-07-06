@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
   const [rawItems, total] = await Promise.all([
     prisma.showcaseItem.findMany({
       where,
-      orderBy: [{ sortIndex: "asc" }, { createdAt: "desc" }],
+      orderBy: [{ hotScore: "desc" }, { sortIndex: "asc" }, { createdAt: "desc" }],
       skip: (page - 1) * limit,
       take: limit,
       include: {

@@ -29,7 +29,7 @@ export default async function ShowroomPage({
   const [rawItems, total] = await Promise.all([
     prisma.showcaseItem.findMany({
       where: { status: "published", itemType: "new" },
-      orderBy: [{ sortIndex: "asc" }, { createdAt: "desc" }],
+      orderBy: [{ hotScore: "desc" }, { sortIndex: "asc" }, { createdAt: "desc" }],
       take: 24,
       include: {
         booth: {
