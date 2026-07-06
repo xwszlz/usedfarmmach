@@ -161,7 +161,7 @@ async function callDoubao(
         Authorization: `Bearer ${ARK_API_KEY}`,
         "Content-Type": "application/json",
       },
-      timeout: 90000, // 90秒超时
+      timeout: 30000, // 30秒超时（豆包不支持base64时需快速失败）
     }
   );
 
@@ -278,6 +278,7 @@ export async function POST(request: NextRequest) {
     const videoUrls: string[] = body.videoUrls || [];
 
     const images = [...imageUrls, ...imageDataUris];
+    const hasBase64Images = imageDataUris.some((u) => u.startsWith("data:"));
 
     if (images.length === 0 && videoUrls.length === 0) {
       return NextResponse.json(
@@ -289,27 +290,37 @@ export async function POST(request: NextRequest) {
     let analysisText = "";
     let modelUsed = "";
 
-    // 优先使用豆包
-    if (ARK_API_KEY) {
+    // ===== 智能路由：根据图片类型选择模型 =====
+    // 豆包(doubao-seed-evolving)不支持base64图片输入，仅支持HTTP URL图片
+    // 因此：有base64图片时 → 首选Gemini；仅有URL图片/无图片时 → 首选豆包
+
+    const preferDoubao = !hasBase64Images && ARK_API_KEY;
+
+    // 首选模型
+    if (preferDoubao) {
       try {
-        console.log("[DeepAnalysis] 尝试豆包模型:", ARK_MODEL_ID);
+        console.log("[DeepAnalysis] 首选豆包:", ARK_MODEL_ID, "图片数:", images.length);
         const content = buildDoubaoContent(images, videoUrls);
         analysisText = await callDoubao(content);
         modelUsed = `豆包 ${ARK_MODEL_ID}`;
       } catch (error: any) {
-        console.warn("[DeepAnalysis] 豆包失败:", error.message?.substring(0, 150));
-        // 降级到 Gemini
+        console.warn("[DeepAnalysis] 豆包失败:", (error.message || "").substring(0, 120));
       }
     }
 
-    // 备用：Gemini
+    // 备用1: Gemini（支持base64图片，视觉能力最稳定）
     if (!analysisText && GOOGLE_API_KEY) {
       try {
-        console.log("[DeepAnalysis] 降级到 Gemini");
+        console.log(
+          "[DeepAnalysis]",
+          preferDoubao ? "豆包失败，降级到Gemini" : "首选Gemini(有base64图片)"
+        );
         analysisText = await callGeminiDeep(images, videoUrls);
-        modelUsed = "Gemini 2.5 Flash（备用）";
+        modelUsed = preferDoubao
+          ? "Gemini 2.5 Flash（豆包备用）"
+          : "Gemini 2.5 Flash（首选）";
       } catch (error: any) {
-        console.warn("[DeepAnalysis] Gemini 失败:", error.message?.substring(0, 150));
+        console.warn("[DeepAnalysis] Gemini 失败:", (error.message || "").substring(0, 120));
       }
     }
 

@@ -28,7 +28,7 @@ async function main() {
       email: "seller@agritrade.com",
       passwordHash: sellerHash,
       role: "seller",
-      companyName: "华北农机有限公司",
+      companyName: "神雕农机科技有限公司",
       country: "CN",
       preferredLanguage: "zh",
     },
