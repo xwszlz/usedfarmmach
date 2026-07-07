@@ -71,6 +71,18 @@ export default async function GlobalBrandsPage({
     },
   });
 
+  // Category counts for international items
+  const categoryCounts = await prisma.showcaseItem.groupBy({
+    by: ["deviceType"],
+    where: {
+      status: "published",
+      itemType: "new",
+      isChineseMade: false,
+    },
+    _count: { id: true },
+    orderBy: { _count: { id: "desc" } },
+  });
+
   // Serialize
   const serializedBrands = brands.map((b: any) => ({
     ...b,
@@ -98,7 +110,7 @@ export default async function GlobalBrandsPage({
           { name: locale === "zh" ? "首页" : "Home", url: `${BASE_URL}/${locale}` },
           { name: locale === "zh" ? "农机博览会" : "EXPO", url: `${BASE_URL}/${locale}/expo` },
           {
-            name: locale === "zh" ? "国际标杆馆" : "Global Pavilion",
+            name: locale === "zh" ? "全球标杆馆" : "Global Pavilion",
             url: `${BASE_URL}/${locale}/expo/global-brands`,
           },
         ]}
@@ -106,6 +118,10 @@ export default async function GlobalBrandsPage({
       <GlobalBrandsClient
         brands={serializedBrands}
         items={serializedItems}
+        categoryCounts={categoryCounts.map((c: any) => ({
+          category: c.deviceType,
+          count: c._count.id,
+        }))}
         tierCounts={tierCounts}
         locale={locale}
       />

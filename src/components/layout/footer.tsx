@@ -1,10 +1,11 @@
 import { useTranslations } from "next-intl";
+import { DisclaimerBanner } from "@/components/expo/DisclaimerBanner";
 
 interface FooterProps {
   locale: string;
 }
 
-export function Footer({ locale: _locale }: FooterProps) {
+export function Footer({ locale }: FooterProps) {
   const t = useTranslations("footer");
 
   return (
@@ -95,6 +96,11 @@ export function Footer({ locale: _locale }: FooterProps) {
               </li>
             </ul>
           </div>
+        </div>
+
+        {/* Disclaimer */}
+        <div className="mt-8">
+          <DisclaimerBanner locale={locale} variant="full" />
         </div>
 
         <div className="mt-8 border-t pt-8 text-center text-sm text-gray-400">

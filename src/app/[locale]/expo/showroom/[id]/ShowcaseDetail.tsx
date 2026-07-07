@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { DisclaimerBanner } from "@/components/expo/DisclaimerBanner";
 
 interface BrandRel {
   id: string;
@@ -237,6 +238,10 @@ export default function ShowcaseDetail({
                   {t("新品上市", "NEW", "NEW")}
                 </span>
               )}
+              {/* AI Generated Badge */}
+              <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-md bg-black/60 px-2 py-0.5 text-xs font-medium text-white backdrop-blur-sm">
+                {t("AI生成图", "AI Rendered", "AI рендер")}
+              </span>
             </div>
 
             {/* Thumbnail Gallery */}
@@ -351,8 +356,7 @@ export default function ShowcaseDetail({
 
           {/* Right: Info & Inquiry */}
           <div className="lg:col-span-2">
-            <div className="sticky top-4 rounded-xl bg-white p-6 shadow-sm">
-              {/* Brand + Badges */}
+            <div className="sticky top-4 rounded-xl bg-white p-6 shadow-sm">              {/* Brand + Badges */}
               <div className="mb-2 flex flex-wrap items-center gap-2">
                 {item.brand && (
                   <span className="rounded-md bg-amber-100 px-2 py-0.5 text-sm font-medium text-amber-700">
@@ -552,6 +556,11 @@ export default function ShowcaseDetail({
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Disclaimer */}
+        <div className="mt-8">
+          <DisclaimerBanner locale={locale} variant="compact" />
         </div>
       </div>
     </div>

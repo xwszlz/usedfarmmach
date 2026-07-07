@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { X, Send, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
+import { X, Send, CheckCircle2, ShieldCheck } from "lucide-react";
 import StandardBooth from "@/components/expo/booth-templates/StandardBooth";
 import PremiumBooth from "@/components/expo/booth-templates/PremiumBooth";
 import FlagshipBooth from "@/components/expo/booth-templates/FlagshipBooth";
+import { DisclaimerBanner } from "@/components/expo/DisclaimerBanner";
 import type { BoothData } from "@/components/expo/types";
 
 export default function BoothDetailClient({ booth, locale }: { booth: BoothData; locale: string }) {
@@ -62,6 +64,29 @@ export default function BoothDetailClient({ booth, locale }: { booth: BoothData;
   return (
     <>
       <Template booth={booth} locale={locale} onInquiry={handleInquiry} />
+
+      {/* Disclaimer */}
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <DisclaimerBanner locale={locale} variant="compact" />
+      </div>
+
+      {/* Brand Claim Floating CTA */}
+      <div className="sticky bottom-0 z-40 border-t border-gray-200 bg-white/95 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+          <p className="text-xs text-gray-500">
+            {locale === "zh"
+              ? "本页面信息基于公开资料整理，如需更新请联系我们"
+              : "Information based on public sources. Contact us to update."}
+          </p>
+          <Link
+            href={`/${locale}/expo/brand-claim?brand=${encodeURIComponent(booth.name)}&slug=${encodeURIComponent(booth.id)}`}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-md transition hover:bg-blue-700"
+          >
+            <ShieldCheck className="h-4 w-4" />
+            {locale === "zh" ? "品牌方认领" : "Brand Claim"}
+          </Link>
+        </div>
+      </div>
 
       {/* Inquiry Modal */}
       {showInquiry && (
