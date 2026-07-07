@@ -143,7 +143,7 @@ export default function SellerAiAssistant({ imageFiles, onFill }: SellerAiAssist
     try {
       // 1. 智能选图 + 压缩（提高质量：1280px / 75%）
       setPhase("正在压缩图片...");
-      const bestImages = selectBestImages(imageFiles, 8); // 增加到最多8张（之前6张）
+      const bestImages = selectBestImages(imageFiles, 3); // 限制3张（与小程序一致），避免豆包下载超时
       const imageDataUrls = await Promise.all(
         bestImages.map(async (file) => {
           try {

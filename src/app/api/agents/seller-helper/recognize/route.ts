@@ -58,7 +58,7 @@ const MODEL_CHAIN = [
 ];
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+export const maxDuration = 90; // Vercel PRO 最大 120s，90s 确保 3 张图片下载+识别不超时
 
 // ── 系统提示词（所有模型共用） ──
 const SYSTEM_PROMPT = `你是一位资深二手农业机械专家，熟悉 CLAAS、John Deere, New Holland、Krone、Orkel 等主流品牌的收获机、割台、打捆机。
