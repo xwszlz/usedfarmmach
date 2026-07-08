@@ -1,26 +1,87 @@
 sequenceDiagram
-    participant User as 用户
-    participant Page as 产品详情页
-    participant Calculator as ArbitrageCalculator组件
-    participant API as 套利计算API
-    participant Service as ArbitrageCalculator服务
-    participant DB as 数据库
-    participant Exchange as 汇率服务
-    
-    User->>Page: 访问产品详情页
-    Page->>DB: 查询产品基本信息
-    DB-->>Page: 返回产品数据
-    Page->>Calculator: 渲染套利计算器组件
-    
-    User->>Calculator: 输入/调整计算参数
-    Calculator->>API: 发送计算请求(带参数)
-    API->>Service: 调用计算服务
-    Service->>DB: 查询产品最新价格
-    DB-->>Service: 返回价格数据
-    Service->>Exchange: 获取最新汇率
-    Exchange-->>Service: 返回汇率
-    Service->>Service: 执行套利计算
-    Service-->>API: 返回计算结果
-    API-->>Calculator: 返回API响应
-    Calculator->>Calculator: 更新UI显示结果
-    Calculator-->>User: 展示计算结果
+    participant User
+    participant PartsClient as PartsClient.tsx
+    participant CatalogAPI as /api/parts/catalog
+    participant PartsAPI as /api/parts
+    participant DetailAPI as /api/parts/[id]
+    participant CatalogSvc as parts-catalog.ts
+    participant DB as Prisma (PostgreSQL)
+
+    %% ═══ Flow 1: 页面初次加载 ═══
+    rect rgb(255, 245, 230)
+        Note over User, DB: Flow 1: 页面初次加载
+        User->>PartsClient: 访问 /parts
+        PartsClient->>CatalogAPI: GET /api/parts/catalog
+        CatalogAPI->>CatalogSvc: getCatalogTree()
+        CatalogSvc->>DB: findMany MachineType { include: SubSystem { include: ComponentGroup } }
+        DB-->>CatalogSvc: 14 MachineTypes (tractor有子节点)
+        CatalogSvc-->>CatalogAPI: CatalogTreeNode[]
+        CatalogAPI-->>PartsClient: { success, data: tree } (ISR cached 1h)
+
+        PartsClient->>PartsAPI: GET /api/parts?page=1&pageSize=24
+        PartsAPI->>CatalogSvc: getParts({ page: 1 })
+        CatalogSvc->>DB: findMany Part { where: { isActive: true } }
+        DB-->>CatalogSvc: Part[] (first 24)
+        CatalogSvc-->>PartsAPI: { parts, total, brands }
+        PartsAPI-->>PartsClient: { success, data, pagination, filters }
+
+        PartsClient-->>User: 渲染导航树 + 配件网格
+    end
+
+    %% ═══ Flow 2: 四级导航选择 ═══
+    rect rgb(230, 245, 255)
+        Note over User, DB: Flow 2: 选择 拖拉机 → 液压系统 → 液压泵
+        User->>PartsClient: 点击"拖拉机"
+        PartsClient->>PartsAPI: GET /api/parts?machineType=tractor
+        PartsAPI->>CatalogSvc: getParts({ machineType: "tractor" })
+        CatalogSvc->>DB: findMany Part { where: { componentGroup: { subSystem: { machineType: { code: "tractor" } } } } }
+        DB-->>CatalogSvc: Part[] (tractor配件)
+        CatalogSvc-->>PartsAPI: { parts, total, brands }
+        PartsAPI-->>PartsClient: { success, data, pagination }
+        PartsClient-->>User: 展开子系统列表 + 更新网格
+
+        User->>PartsClient: 点击"液压系统"
+        PartsClient->>PartsAPI: GET /api/parts?machineType=tractor&subSystem=hydraulic_system
+        PartsAPI->>CatalogSvc: getParts({ machineType, subSystem })
+        CatalogSvc->>DB: findMany Part { where: { componentGroup: { subSystem: { code: "hydraulic_system", machineType: { code: "tractor" } } } } }
+        DB-->>CatalogSvc: Part[] (液压配件)
+        PartsAPI-->>PartsClient: { success, data, pagination }
+        PartsClient-->>User: 展开部件组列表 + 更新网格
+
+        User->>PartsClient: 点击"液压泵"
+        PartsClient->>PartsAPI: GET /api/parts?machineType=tractor&subSystem=hydraulic_system&componentGroup=hydraulic_pump
+        PartsAPI->>CatalogSvc: getParts({ machineType, subSystem, componentGroup })
+        CatalogSvc->>DB: findMany Part { where: { componentGroup: { code: "hydraulic_pump", subSystem: { code: "hydraulic_system" } } } }
+        DB-->>CatalogSvc: Part[] (液压泵配件)
+        PartsAPI-->>PartsClient: { success, data, pagination }
+        PartsClient-->>User: 面包屑更新 + 网格更新
+    end
+
+    %% ═══ Flow 3: 搜索 ═══
+    rect rgb(240, 255, 230)
+        Note over User, DB: Flow 3: 关键词搜索 (300ms防抖)
+        User->>PartsClient: 输入 "hydraulic pump"
+        PartsClient->>PartsClient: debounce 300ms
+        PartsClient->>PartsAPI: GET /api/parts?keyword=hydraulic+pump&page=1
+        PartsAPI->>CatalogSvc: getParts({ keyword: "hydraulic pump" })
+        CatalogSvc->>DB: findMany Part { where: { OR: [{ nameEn: { contains, insensitive } }, { brand: { contains } }, { oemNumber: { contains } }] } }
+        DB-->>CatalogSvc: Part[] (匹配配件)
+        PartsAPI-->>PartsClient: { success, data, pagination }
+        PartsClient-->>User: 网格更新为搜索结果
+    end
+
+    %% ═══ Flow 4: 查看配件详情 ═══
+    rect rgb(255, 230, 255)
+        Note over User, DB: Flow 4: 查看配件详情
+        User->>PartsClient: 点击配件卡片
+        PartsClient->>User: 跳转 /parts/[id]
+
+        User->>DetailAPI: GET /api/parts/[id]
+        DetailAPI->>CatalogSvc: getPartById(id)
+        CatalogSvc->>DB: findUnique Part { include: { componentGroup: { include: { subSystem: { include: { machineType: true } } } }, compatibleMachines: true } }
+        DB-->>CatalogSvc: PartDetail (含层级+兼容机型)
+        CatalogSvc-->>DetailAPI: PartDetail
+        DetailAPI-->>User: { success, data: partDetail } (ISR cached 1h)
+
+        User-->>User: 渲染详情页 (图片+参数表+兼容机型+询价)
+    end

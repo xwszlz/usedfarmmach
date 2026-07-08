@@ -404,7 +404,7 @@ export default function ChinaBrandsClient({
             <span className="text-2xl">🇨🇳</span>
             <span>中国品牌馆 · 主馆</span>
             <span className="ml-1 rounded-full bg-white/20 px-2 py-0.5 text-xs">
-              70品牌
+              105品牌
             </span>
           </div>
 

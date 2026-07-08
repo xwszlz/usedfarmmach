@@ -52,7 +52,7 @@ export default async function GlobalBrandsPage({
       isChineseMade: false,
     },
     orderBy: [{ hotScore: "desc" }, { createdAt: "desc" }],
-    take: 24,
+    take: 48,
     include: {
       booth: {
         select: { id: true, name: true, hall: true, pavilion: true, tier: true },
@@ -83,10 +83,30 @@ export default async function GlobalBrandsPage({
     orderBy: { _count: { id: "desc" } },
   });
 
+  // Build brand -> categories map from ALL international showcase items
+  const allIntlItems = await prisma.showcaseItem.findMany({
+    where: {
+      status: "published",
+      itemType: "new",
+      isChineseMade: false,
+    },
+    select: { brandId: true, deviceType: true },
+  });
+  const brandCategoriesMap = new Map<string, string[]>();
+  for (const item of allIntlItems) {
+    if (!item.brandId) continue;
+    const existing = brandCategoriesMap.get(item.brandId) || [];
+    if (!existing.includes(item.deviceType)) {
+      existing.push(item.deviceType);
+      brandCategoriesMap.set(item.brandId, existing);
+    }
+  }
+
   // Serialize
   const serializedBrands = brands.map((b: any) => ({
     ...b,
     expoLogoUrl: b.expoLogoUrl ? getImageUrl(b.expoLogoUrl) : null,
+    categories: brandCategoriesMap.get(b.id) || [],
   }));
 
   const serializedItems = items.map((item: any) => ({
@@ -100,6 +120,7 @@ export default async function GlobalBrandsPage({
     flagship: brands.filter((b: any) => b.brandTier === "flagship").length,
     premium: brands.filter((b: any) => b.brandTier === "premium").length,
     standard: brands.filter((b: any) => b.brandTier === "standard").length,
+    showcase: brands.filter((b: any) => b.brandTier === "showcase").length,
   };
 
   return (

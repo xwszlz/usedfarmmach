@@ -67,3 +67,5 @@ scripts/
 nul
 .npm-cache/
 .workbuddy/
+.vercel-env-check.txt
+.vercel-env-verify.txt

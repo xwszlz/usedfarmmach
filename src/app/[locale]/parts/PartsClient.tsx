@@ -1,72 +1,83 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Wrench, Search, Package, Truck, ShieldCheck, Tag, Boxes, Zap, CheckCircle2, ArrowRight, Star } from "lucide-react";
-import Link from "next/link";
-import { getImageUrl } from "@/lib/image-url";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Wrench, Search, Package, Truck, ShieldCheck, Tag, Boxes, Zap, CheckCircle2, ArrowRight, Star, X, Filter } from "lucide-react";
+import PartsCatalogNav, { type CatalogTreeNode } from "@/components/parts/PartsCatalogNav";
+import PartsGrid from "@/components/parts/PartsGrid";
+import PartsBreadcrumb from "@/components/parts/PartsBreadcrumb";
+import type { PartCardData } from "@/components/parts/PartCard";
 
-interface PartItem {
-  id: string;
-  nameZh: string;
-  nameEn: string;
-  nameRu: string;
-  brand: string;
-  category: string;
-  price: number;
-  currency: string;
-  stockStatus: string; // in_stock, low_stock, out_of_stock
-  compatibleModels: string[];
-  images: string[];
-  descriptionZh: string | null;
-  descriptionEn: string | null;
-  descriptionRu: string | null;
+interface PartsClientProps {
+  locale: string;
+  initialCatalogTree: CatalogTreeNode[];
 }
 
-// 零配件分类
-const PART_CATEGORIES = [
-  { id: "engine", nameZh: "发动机配件", nameEn: "Engine Parts", icon: "🔧" },
-  { id: "hydraulic", nameZh: "液压系统", nameEn: "Hydraulic System", icon: "⚙️" },
-  { id: "transmission", nameZh: "传动系统", nameEn: "Transmission", icon: "🔩" },
-  { id: "electrical", nameZh: "电气系统", nameEn: "Electrical", icon: "⚡" },
-  { id: "filters", nameZh: "滤芯滤清", nameEn: "Filters", icon: "🧹" },
-  { id: "tires", nameZh: "轮胎轮毂", nameEn: "Tires & Wheels", icon: "🛞" },
-  { id: "bearings", nameZh: "轴承密封", nameEn: "Bearings & Seals", icon: "🔵" },
-  { id: "body", nameZh: "车身外观", nameEn: "Body Parts", icon: "🚜" },
-];
+interface PartsApiResponse {
+  success: boolean;
+  data: PartCardData[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+  filters: {
+    brands: string[];
+  };
+}
 
-const STOCK_LABELS: Record<string, { zh: string; en: string; className: string }> = {
-  in_stock: { zh: "有货", en: "In Stock", className: "bg-green-100 text-green-700" },
-  low_stock: { zh: "库存紧张", en: "Low Stock", className: "bg-amber-100 text-amber-700" },
-  out_of_stock: { zh: "缺货", en: "Out of Stock", className: "bg-gray-100 text-gray-500" },
-};
-
-export default function PartsClient({ locale }: { locale: string }) {
+export default function PartsClient({ locale, initialCatalogTree }: PartsClientProps) {
   const isZh = locale === "zh";
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+
+  // Navigation state
+  const [catalogTree] = useState<CatalogTreeNode[]>(initialCatalogTree);
+  const [selectedMachineType, setSelectedMachineType] = useState<string | null>(null);
+  const [selectedSubSystem, setSelectedSubSystem] = useState<string | null>(null);
+  const [selectedComponentGroup, setSelectedComponentGroup] = useState<string | null>(null);
+
+  // Filter state
   const [searchQuery, setSearchQuery] = useState("");
-  const [parts, setParts] = useState<PartItem[]>([]);
+  const [selectedBrand, setSelectedBrand] = useState<string>("");
+  const [selectedStockStatus, setSelectedStockStatus] = useState<string>("all");
+  const [availableBrands, setAvailableBrands] = useState<string[]>([]);
+
+  // Data state
+  const [parts, setParts] = useState<PartCardData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
 
-  useEffect(() => {
-    fetchParts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCategory]);
+  // Mobile nav toggle
+  const [showMobileNav, setShowMobileNav] = useState(false);
 
-  const fetchParts = async () => {
+  // Debounce ref
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Fetch parts from API
+  const fetchParts = useCallback(async () => {
     setLoading(true);
     setError(false);
     try {
       const params = new URLSearchParams();
-      if (selectedCategory !== "all") params.set("category", selectedCategory);
+      if (selectedMachineType) params.set("machineType", selectedMachineType);
+      if (selectedSubSystem) params.set("subSystem", selectedSubSystem);
+      if (selectedComponentGroup) params.set("componentGroup", selectedComponentGroup);
+      if (selectedBrand) params.set("brand", selectedBrand);
+      if (selectedStockStatus && selectedStockStatus !== "all") params.set("stockStatus", selectedStockStatus);
       if (searchQuery.trim()) params.set("keyword", searchQuery.trim());
+      params.set("page", String(page));
+      params.set("pageSize", "12");
+
       const res = await fetch(`/api/parts?${params.toString()}`);
       if (res.ok) {
-        const json = await res.json();
+        const json: PartsApiResponse = await res.json();
         if (json.success) {
           setParts(json.data || []);
+          setTotalPages(json.pagination?.totalPages || 1);
+          setTotal(json.pagination?.total || 0);
+          setAvailableBrands(json.filters?.brands || []);
         } else {
           setParts([]);
           setError(true);
@@ -82,23 +93,86 @@ export default function PartsClient({ locale }: { locale: string }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedMachineType, selectedSubSystem, selectedComponentGroup, selectedBrand, selectedStockStatus, searchQuery, page]);
 
-  // 搜索时触发请求
-  const handleSearch = () => {
+  // Fetch parts when filters change
+  useEffect(() => {
     fetchParts();
+  }, [fetchParts]);
+
+  // Debounced search
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setPage(1);
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
   };
 
-  // 客户端二次筛选（搜索词在服务端也做了，这里确保即时过滤）
-  const filteredParts = parts.filter((part) => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      part.nameZh.toLowerCase().includes(q) ||
-      part.nameEn.toLowerCase().includes(q) ||
-      part.brand.toLowerCase().includes(q)
-    );
-  });
+  // Navigation selection handler
+  const handleNavSelect = (
+    mt: string | null,
+    ss: string | null,
+    cg: string | null
+  ) => {
+    setSelectedMachineType(mt);
+    setSelectedSubSystem(ss);
+    setSelectedComponentGroup(cg);
+    setSelectedBrand(""); // Reset brand filter when navigation changes
+    setPage(1);
+    setShowMobileNav(false);
+  };
+
+  // Brand filter handler
+  const handleBrandChange = (brand: string) => {
+    setSelectedBrand(brand);
+    setPage(1);
+  };
+
+  // Stock status filter handler
+  const handleStockStatusChange = (status: string) => {
+    setSelectedStockStatus(status);
+    setPage(1);
+  };
+
+  // Page change handler
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    // Scroll to top of parts grid
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 300, behavior: "smooth" });
+    }
+  };
+
+  // Get breadcrumb names
+  const getBreadcrumbNames = () => {
+    let mtName: string | undefined;
+    let ssName: string | undefined;
+    let cgName: string | undefined;
+
+    if (selectedMachineType && catalogTree.length > 0) {
+      const mt = catalogTree.find((m) => m.code === selectedMachineType);
+      if (mt) {
+        mtName = isZh ? mt.nameZh : mt.nameEn;
+        if (selectedSubSystem) {
+          const ss = mt.subSystems.find((s) => s.code === selectedSubSystem);
+          if (ss) {
+            ssName = isZh ? ss.nameZh : ss.nameEn;
+            if (selectedComponentGroup) {
+              const cg = ss.componentGroups.find((c) => c.code === selectedComponentGroup);
+              if (cg) {
+                cgName = isZh ? cg.nameZh : cg.nameEn;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return { mtName, ssName, cgName };
+  };
+
+  const { mtName, ssName, cgName } = getBreadcrumbNames();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -117,19 +191,19 @@ export default function PartsClient({ locale }: { locale: string }) {
             </div>
             <p className="text-white/90 text-lg max-w-2xl mb-6">
               {isZh
-                ? "原厂配件 · 品牌兼容件 · 全国配送 · 质量保证 — 为您的农机提供全生命周期配件保障"
-                : "OEM Parts · Compatible Components · Nationwide Delivery · Quality Guaranteed — Full lifecycle parts support for your machinery"}
+                ? "四级分类导航 · 原厂配件 · 品牌兼容件 · 全国配送 — 为您的农机提供全生命周期配件保障"
+                : "Four-Level Catalog · OEM Parts · Compatible Components · Nationwide Delivery — Full lifecycle parts support"}
             </p>
 
             {/* Stats */}
             <div className="flex flex-wrap gap-6 mb-6">
               <div className="flex items-center gap-2">
                 <Boxes className="h-5 w-5 text-white/80" />
-                <span className="text-sm font-medium">{isZh ? "8大品类" : "8 Categories"}</span>
+                <span className="text-sm font-medium">{isZh ? "14大品类" : "14 Categories"}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Tag className="h-5 w-5 text-white/80" />
-                <span className="text-sm font-medium">{isZh ? "25+ SKU" : "25+ SKUs"}</span>
+                <span className="text-sm font-medium">{isZh ? "60+ SKU" : "60+ SKUs"}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Truck className="h-5 w-5 text-white/80" />
@@ -146,18 +220,19 @@ export default function PartsClient({ locale }: { locale: string }) {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
                 type="text"
-                placeholder={isZh ? "搜索配件名称、品牌、型号..." : "Search parts, brands, models..."}
+                placeholder={isZh ? "搜索配件名称、品牌、OEM编号..." : "Search parts, brands, OEM numbers..."}
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); }}
-                className="w-full pl-12 pr-32 py-4 rounded-xl text-gray-900 bg-white shadow-lg focus:outline-none focus:ring-4 focus:ring-white/30"
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="w-full pl-12 pr-4 py-4 rounded-xl text-gray-900 bg-white shadow-lg focus:outline-none focus:ring-4 focus:ring-white/30"
               />
-              <button
-                onClick={handleSearch}
-                className="absolute right-2 top-1/2 -translate-y-1/2 bg-orange-600 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-orange-700 transition-colors"
-              >
-                {isZh ? "搜索" : "Search"}
-              </button>
+              {searchQuery && (
+                <button
+                  onClick={() => handleSearchChange("")}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -179,144 +254,114 @@ export default function PartsClient({ locale }: { locale: string }) {
           ))}
         </div>
 
-        {/* Category tabs */}
-        <div className="mb-4 flex flex-wrap gap-2">
-          <button
-            onClick={() => setSelectedCategory("all")}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-              selectedCategory === "all"
-                ? "bg-orange-500 text-white shadow-md"
-                : "bg-white text-gray-600 hover:bg-orange-50 border border-gray-200"
-            }`}
-          >
-            {isZh ? "全部" : "All"}
-          </button>
-          {PART_CATEGORIES.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(cat.id)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                selectedCategory === cat.id
-                  ? "bg-orange-500 text-white shadow-md"
-                  : "bg-white text-gray-600 hover:bg-orange-50 border border-gray-200"
-              }`}
-            >
-              <span className="mr-1">{cat.icon}</span>
-              {isZh ? cat.nameZh : cat.nameEn}
-            </button>
-          ))}
-        </div>
+        {/* Breadcrumb */}
+        <PartsBreadcrumb
+          locale={locale}
+          machineTypeName={mtName}
+          subSystemName={ssName}
+          componentGroupName={cgName}
+        />
 
-        {/* Results count */}
-        <div className="mb-4 text-sm text-gray-500">
-          {loading
-            ? (isZh ? "加载中..." : "Loading...")
-            : (isZh ? `共 ${filteredParts.length} 个配件` : `${filteredParts.length} parts found`)}
-        </div>
+        {/* Mobile nav toggle */}
+        <button
+          onClick={() => setShowMobileNav(!showMobileNav)}
+          className="lg:hidden mb-4 w-full flex items-center justify-between px-4 py-3 bg-white rounded-xl border border-gray-200 text-sm font-medium text-gray-700"
+        >
+          <span className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-orange-600" />
+            {isZh ? "配件分类导航" : "Parts Catalog"}
+          </span>
+          {showMobileNav ? <X className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}
+        </button>
 
-        {/* Parts grid */}
-        {loading ? (
-          <div className="flex justify-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+        {/* Main layout: left nav + right content */}
+        <div className="flex gap-6">
+          {/* Left navigation - desktop */}
+          <div className={`w-64 flex-shrink-0 ${showMobileNav ? "block fixed inset-0 z-50 bg-black/50 lg:bg-transparent lg:static lg:z-auto" : "hidden lg:block"}`}>
+            <div className={`lg:sticky lg:top-4 ${showMobileNav ? "h-full overflow-y-auto p-4 lg:p-0" : ""}`}>
+              {showMobileNav && (
+                <div className="lg:hidden flex justify-end mb-2">
+                  <button onClick={() => setShowMobileNav(false)} className="text-gray-400 hover:text-gray-600">
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+              )}
+              <PartsCatalogNav
+                catalogTree={catalogTree}
+                selectedMachineType={selectedMachineType}
+                selectedSubSystem={selectedSubSystem}
+                selectedComponentGroup={selectedComponentGroup}
+                onSelect={handleNavSelect}
+                locale={locale}
+              />
+            </div>
           </div>
-        ) : error ? (
-          <div className="text-center py-20 text-gray-400">
-            <Wrench className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>{isZh ? "配件数据暂时无法加载，请稍后重试" : "Parts data is temporarily unavailable"}</p>
+
+          {/* Right content */}
+          <div className="flex-1 min-w-0">
+            {/* Filter bar */}
+            <div className="mb-4 flex flex-wrap items-center gap-3 bg-white rounded-xl border border-gray-200 p-3">
+              {/* Brand filter */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500 font-medium">{isZh ? "品牌:" : "Brand:"}</span>
+                <select
+                  value={selectedBrand}
+                  onChange={(e) => handleBrandChange(e.target.value)}
+                  className="text-sm border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+                >
+                  <option value="">{isZh ? "全部" : "All"}</option>
+                  {availableBrands.map((brand) => (
+                    <option key={brand} value={brand}>
+                      {brand}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Stock status filter */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500 font-medium">{isZh ? "库存:" : "Stock:"}</span>
+                <select
+                  value={selectedStockStatus}
+                  onChange={(e) => handleStockStatusChange(e.target.value)}
+                  className="text-sm border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+                >
+                  <option value="all">{isZh ? "全部" : "All"}</option>
+                  <option value="in_stock">{isZh ? "有货" : "In Stock"}</option>
+                  <option value="low_stock">{isZh ? "库存紧张" : "Low Stock"}</option>
+                  <option value="out_of_stock">{isZh ? "缺货" : "Out of Stock"}</option>
+                </select>
+              </div>
+
+              {/* Clear filters */}
+              {(selectedBrand || selectedMachineType || selectedSubSystem || selectedComponentGroup || searchQuery) && (
+                <button
+                  onClick={() => {
+                    setSelectedBrand("");
+                    setSearchQuery("");
+                    handleNavSelect(null, null, null);
+                    setSelectedStockStatus("all");
+                  }}
+                  className="text-xs text-orange-600 hover:text-orange-700 font-medium ml-auto"
+                >
+                  {isZh ? "清除筛选" : "Clear Filters"}
+                </button>
+              )}
+            </div>
+
+            {/* Parts grid */}
+            <PartsGrid
+              parts={parts}
+              loading={loading}
+              error={error}
+              locale={locale}
+              page={page}
+              totalPages={totalPages}
+              total={total}
+              onPageChange={handlePageChange}
+            />
           </div>
-        ) : filteredParts.length === 0 ? (
-          <div className="text-center py-20 text-gray-400">
-            <Wrench className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>{isZh ? "暂无匹配的配件" : "No matching parts found"}</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredParts.map((part) => {
-              const stockInfo = STOCK_LABELS[part.stockStatus] || STOCK_LABELS.in_stock;
-              const partName = isZh ? part.nameZh : (part.nameEn || part.nameZh);
-              const partDesc = isZh ? part.descriptionZh : (part.descriptionEn || part.descriptionZh);
-              const catInfo = PART_CATEGORIES.find(c => c.id === part.category);
-              return (
-                <Card key={part.id} className="overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
-                  {/* Image */}
-                  <div className="aspect-[4/3] bg-gray-100 relative overflow-hidden">
-                    {part.images && part.images.length > 0 ? (
-                      <img
-                        src={getImageUrl(part.images[0])}
-                        alt={partName}
-                        className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center h-full">
-                        <Wrench className="h-12 w-12 text-gray-300" />
-                      </div>
-                    )}
-                    {/* Stock badge overlay */}
-                    <div className="absolute top-2 left-2">
-                      <Badge className={`text-xs ${stockInfo.className} shadow-sm`}>
-                        {isZh ? stockInfo.zh : stockInfo.en}
-                      </Badge>
-                    </div>
-                    {/* Category tag overlay */}
-                    {catInfo && (
-                      <div className="absolute top-2 right-2">
-                        <Badge variant="secondary" className="text-xs bg-white/90 backdrop-blur shadow-sm">
-                          {catInfo.icon} {isZh ? catInfo.nameZh : catInfo.nameEn}
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
-                  <CardContent className="p-4">
-                    {/* Brand */}
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <span className="text-xs font-semibold text-orange-600 uppercase tracking-wide">{part.brand}</span>
-                    </div>
-                    {/* Name */}
-                    <h3 className="font-semibold text-gray-900 text-sm line-clamp-2 mb-1.5 min-h-[2.5rem]">
-                      {partName}
-                    </h3>
-                    {/* Description */}
-                    {partDesc && (
-                      <p className="text-xs text-gray-500 line-clamp-2 mb-2 min-h-[2rem]">
-                        {partDesc}
-                      </p>
-                    )}
-                    {/* Compatible models */}
-                    {part.compatibleModels && part.compatibleModels.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mb-3">
-                        {part.compatibleModels.slice(0, 3).map((model, i) => (
-                          <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">
-                            {model}
-                          </span>
-                        ))}
-                        {part.compatibleModels.length > 3 && (
-                          <span className="text-[10px] px-1.5 py-0.5 text-gray-400">
-                            +{part.compatibleModels.length - 3}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    {/* Price + CTA */}
-                    <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                      <div>
-                        <span className="text-xl font-bold text-orange-600">
-                          ¥{part.price.toLocaleString()}
-                        </span>
-                      </div>
-                      <Link
-                        href={`/parts/${part.id}`}
-                        className="inline-flex items-center gap-1 text-xs text-white bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg font-medium transition-colors"
-                      >
-                        {isZh ? "询价" : "Inquiry"}
-                        <ArrowRight className="h-3 w-3" />
-                      </Link>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
+        </div>
 
         {/* CTA section */}
         <div className="mt-12 rounded-2xl bg-gradient-to-r from-orange-600 to-red-500 p-8 md:p-12 text-white text-center relative overflow-hidden">
@@ -332,19 +377,19 @@ export default function PartsClient({ locale }: { locale: string }) {
                 : "Tell us your equipment model and requirements. Our team will source globally and quote within 48 hours"}
             </p>
             <div className="flex flex-wrap justify-center gap-3">
-              <Link
+              <a
                 href="/about#contact"
                 className="inline-flex items-center gap-2 rounded-xl bg-white text-orange-600 px-7 py-3.5 font-bold hover:bg-orange-50 transition-colors shadow-lg"
               >
                 {isZh ? "提交需求" : "Submit Request"}
                 <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
+              </a>
+              <a
                 href="/products"
                 className="inline-flex items-center gap-2 rounded-xl bg-white/20 backdrop-blur text-white px-7 py-3.5 font-medium hover:bg-white/30 transition-colors border border-white/30"
               >
                 {isZh ? "浏览农机" : "Browse Machinery"}
-              </Link>
+              </a>
             </div>
           </div>
         </div>

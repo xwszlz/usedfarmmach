@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { generatePageMetadata } from "@/lib/seo-metadata";
 import { BreadcrumbStructuredData } from "@/components/seo/structured-data";
 import PartsClient from "./PartsClient";
+import { getCatalogTree } from "@/lib/parts-catalog";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
 
@@ -21,6 +22,14 @@ export default async function PartsPage({
 }) {
   const { locale } = await params;
 
+  // Server-side fetch initial catalog tree for SSR
+  let initialCatalogTree: any[] = [];
+  try {
+    initialCatalogTree = await getCatalogTree();
+  } catch (e) {
+    console.error("Failed to fetch catalog tree on server:", e);
+  }
+
   return (
     <>
       <BreadcrumbStructuredData
@@ -30,7 +39,7 @@ export default async function PartsPage({
           { name: locale === "zh" ? "零配件专区" : "Parts", url: `${BASE_URL}/${locale}/parts` },
         ]}
       />
-      <PartsClient locale={locale} />
+      <PartsClient locale={locale} initialCatalogTree={initialCatalogTree} />
     </>
   );
 }

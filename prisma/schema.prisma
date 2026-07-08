@@ -1639,21 +1639,142 @@ model Review {
 }
 
 // ═══════════════════════════════════════════════════════
-// 零配件信息
+// 配件专区V2 — 四级分类体系
 // ═══════════════════════════════════════════════════════
 
+/// Level 1: 整机品类（拖拉机、收割机等14大类）
+model MachineType {
+  id          String      @id @default(cuid())
+  code        String      @unique // "tractor", "combine_harvester"
+  nameZh      String
+  nameEn      String
+  nameRu      String      @default("")
+  nameEs      String      @default("")
+  namePt      String      @default("")
+  nameAr      String      @default("")
+  nameFr      String      @default("")
+  nameHi      String      @default("")
+  imageUrl    String?
+  sortOrder   Int         @default(0)
+  isActive    Boolean     @default(true)
+  subSystems  SubSystem[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
+/// Level 2: 子系统（动力、液压、传动等9大系统，按整机品类分组）
+model SubSystem {
+  id              String          @id @default(cuid())
+  code            String // "powertrain", "hydraulic"
+  nameZh          String
+  nameEn          String
+  nameRu          String          @default("")
+  nameEs          String          @default("")
+  namePt          String          @default("")
+  nameAr          String          @default("")
+  nameFr          String          @default("")
+  nameHi          String          @default("")
+  machineType     MachineType     @relation(fields: [machineTypeId], references: [id])
+  machineTypeId   String
+  componentGroups ComponentGroup[]
+  sortOrder       Int             @default(0)
+  isActive        Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@unique([machineTypeId, code])
+  @@index([machineTypeId, isActive])
+}
+
+/// Level 3: 部件组（液压泵、滤芯等，按子系统分组）
+model ComponentGroup {
+  id          String   @id @default(cuid())
+  code        String   // "hydraulic_pump", "air_filter"
+  nameZh      String
+  nameEn      String
+  nameRu      String   @default("")
+  nameEs      String   @default("")
+  namePt      String   @default("")
+  nameAr      String   @default("")
+  nameFr      String   @default("")
+  nameHi      String   @default("")
+  subSystem   SubSystem @relation(fields: [subSystemId], references: [id])
+  subSystemId String
+  parts       Part[]
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([subSystemId, code])
+  @@index([subSystemId, isActive])
+}
+
+/// Level 4: 配件（具体SKU，关联到部件组）
 model Part {
+  id                 String              @id @default(cuid())
+  sku                String              @unique // SD-TRACTOR-HYD-001
+  nameZh             String
+  nameEn             String
+  nameRu             String              @default("")
+  nameEs             String              @default("")
+  brand              String              // 配件品牌（Bosch Rexroth, SKF等）
+  oemNumber          String?             // 原厂编号
+  componentGroup     ComponentGroup      @relation(fields: [componentGroupId], references: [id])
+  componentGroupId   String
+  compatibleMachines CompatibleMachine[]
+  price              Float
+  currency           String              @default("CNY")
+  stockStatus        String              @default("in_stock") // in_stock, low_stock, out_of_stock, preorder
+  images             String[]
+  descriptionZh      String?             @db.Text
+  descriptionEn      String?             @db.Text
+  descriptionRu      String?             @db.Text
+  specs              Json?               // {material, weight, dimensions, warranty, ...}
+  isActive           Boolean             @default(true)
+  isOEM              Boolean             @default(false)
+  isAftermarket      Boolean             @default(false)
+  dataSource         String              @default("manual") // manual, scraped, ai_generated
+  dataQuality        String              @default("verified") // verified, unverified, draft
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  @@index([componentGroupId, isActive])
+  @@index([brand, isActive])
+  @@index([sku])
+  @@index([oemNumber])
+  @@index([stockStatus, isActive])
+}
+
+/// 配件兼容机型（多对多，一个配件可兼容多个整机型号）
+model CompatibleMachine {
+  id        String   @id @default(cuid())
+  part      Part     @relation(fields: [partId], references: [id], onDelete: Cascade)
+  partId    String
+  brand     String   // 整机品牌（John Deere, CLAAS等）
+  model     String   // 整机型号（6155R, LEXION 770等）
+  yearRange String?  // "2015-2020"
+  notes     String?
+
+  @@index([partId])
+  @@index([brand, model])
+}
+
+/// 旧配件数据备份（原Part模型，不再使用，仅保留数据）
+model PartLegacy {
   id               String   @id @default(cuid())
-  nameZh           String // 中文名称
-  nameEn           String   @default("") // 英文名称
-  nameRu           String   @default("") // 俄文名称
-  brand            String // 品牌
-  category         String // 品类: engine, hydraulic, transmission, electrical, filters, tires, bearings, body
-  price            Float // 价格
+  nameZh           String
+  nameEn           String   @default("")
+  nameRu           String   @default("")
+  brand            String
+  category         String
+  price            Float
   currency         String   @default("CNY")
-  stockStatus      String   @default("in_stock") // in_stock, low_stock, out_of_stock
-  compatibleModels String[] // 兼容机型数组
-  images           String[] // 图片URL数组
+  stockStatus      String   @default("in_stock")
+  compatibleModels String[]
+  images           String[]
   descriptionZh    String?  @db.Text
   descriptionEn    String?  @db.Text
   descriptionRu    String?  @db.Text
@@ -1663,5 +1784,6 @@ model Part {
 
   @@index([category, isActive])
   @@index([brand, isActive])
-  @@index([stockStatus])
+
+  @@map("part_legacy")
 }

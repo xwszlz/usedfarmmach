@@ -1,696 +1,849 @@
-# 神雕农机平台跨境套利功能 - 系统架构设计
+# 农机配件专区V2 — 系统设计与任务分解
 
-**架构师**: 高见远  
-**日期**: 2026-XX-XX  
-**版本**: 1.0
+> 项目：神雕农机 usedfarmmach
+> 技术栈：Next.js 14 App Router + Prisma + Neon PostgreSQL + Tailwind CSS
+> 日期：2026-07-08
+> 架构师：Bob (software-architect)
 
-## 1. 实现方案 + 框架选型
+---
 
-### 1.1 核心技术挑战分析
+## Part A: 系统设计
 
-| 挑战点 | 解决方案 | 选型依据 |
-|--------|----------|----------|
-| **实时价格数据获取** | 多源爬虫 + API集成 + 手动导入三轨并行 | 现有脚本已支持JSON/Markdown导入，扩展为定时任务 |
-| **汇率动态更新** | 集成公开汇率API + 本地缓存 + 失败回退机制 | 选择稳定免费的汇率API，缓存机制保证可用性 |
-| **套利计算复杂度** | 分层计算引擎：基础价差 → 运输成本 → 关税保险 → 净利 | 模块化设计，参数可配置，支持What-if分析 |
-| **榜单性能优化** | 预计算物化视图 + 缓存策略 + 增量更新 | 避免实时计算Top N，通过预处理提升首页加载速度 |
-| **数据质量管理** | 数据验证规则 + 异常检测 + 过期数据清理 | 确保套利计算基础的准确性和可靠性 |
+### 1. 实现方案
 
-### 1.2 框架/库选型
+#### 1.1 核心技术挑战
 
-| 类型 | 选型 | 版本 | 理由 |
-|------|------|------|------|
-| **前端UI组件** | MUI (Material-UI) | ^5.14.0 | 项目已集成，组件丰富，与Tailwind兼容性好 |
-| **数据可视化** | Recharts | ^2.10.3 | 轻量级、React原生支持，适合价格趋势图表 |
-| **定时任务** | node-cron | ^3.0.3 | 简单可靠的cron调度，适合Vercel Serverless环境 |
-| **HTTP请求** | axios | ^1.6.0 | 项目已使用，稳定可靠，支持拦截器 |
-| **汇率API** | exchangerate-api | 公开API | 免费、稳定、支持170+货币 |
-| **数据验证** | Zod (已集成) | ^3.23.0 | 已有依赖，用于API输入验证和类型安全 |
-| **环境配置** | dotenv (已集成) | N/A | Next.js内置支持 |
+| 挑战 | 分析 | 方案 |
+|------|------|------|
+| 四级分类体系 | 14整机品类 × 9子系统 × N部件组 × M配件，层级深、数据量大 | 三张分类表 + 一张配件表，通过外键关联，导航树API预加载缓存 |
+| 旧数据兼容 | 现有Part表有25条测试数据，字段结构与新模型不兼容 | 旧Part模型重命名为PartLegacy（`@@map("part_legacy")`），新Part模型重建，旧数据保留备份 |
+| 前端导航复杂度 | 从扁平8分类升级为4级级联导航，需要流畅的交互体验 | 三级级联选择器（整机品类→子系统→部件组）+ 面包屑 + 配件网格，客户端状态管理 |
+| 配件数据量增长 | 首批50-100条，最终目标3-5万条，需要分页和缓存 | API层分页（默认24条/页）+ 导航树ISR缓存（1小时）+ 配件列表force-dynamic |
+| AI图片生成 | 每个拖拉机配件需要白底工业摄影风格产品图 | 独立脚本批量调用ImageGen，图片上传至OSS，URL写入Part.images字段 |
+| 可扩展性 | 拖拉机跑通后，其余13品类需快速复制 | 种子数据结构化设计，分类数据与配件数据分离，新增品类只需追加种子数据 |
 
-### 1.3 架构模式
+#### 1.2 框架与库选型
 
-采用 **分层架构 + 服务层模式**：
+| 组件 | 选型 | 理由 |
+|------|------|------|
+| ORM | Prisma (已用) | 项目已深度集成，支持PostgreSQL全部特性 |
+| 数据库 | Neon PostgreSQL (已用) | 支持数组字段(String[])、JSON字段、全文索引 |
+| 前端框架 | Next.js 14 App Router (已用) | ISR缓存、Server Components、API Routes一体化 |
+| UI组件库 | shadcn/ui + Tailwind (已用) | 项目已有Card/Badge/Input/Pagination等组件 |
+| 图标 | lucide-react (已用) | 项目已集成 |
+| 图片存储 | 阿里云OSS (已用) | 已有getImageUrl工具函数处理OSS路径 |
+| AI图片生成 | ImageGen (通过ToolSearch调用) | 方案指定，白底工业摄影风格 |
 
-```
-┌─────────────────────────────────────────────┐
-│              Presentation Layer              │
-│  ┌─────────┐ ┌──────────┐ ┌─────────────┐  │
-│  │ 页面组件 │ │ 计算器组件│ │ 榜单组件    │  │
-│  └─────────┘ └──────────┘ └─────────────┘  │
-└─────────────────────────────────────────────┘
-┌─────────────────────────────────────────────┐
-│                Service Layer                 │
-│  ┌─────────┐ ┌──────────┐ ┌─────────────┐  │
-│  │套利计算服务│ │价格获取服务│ │汇率服务    │  │
-│  └─────────┘ └──────────┘ └─────────────┘  │
-└─────────────────────────────────────────────┘
-┌─────────────────────────────────────────────┐
-│             Data Access Layer                │
-│  ┌─────────────────┐ ┌───────────────────┐  │
-│  │  Prisma Client  │ │ 外部API/爬虫      │  │
-│  └─────────────────┘ └───────────────────┘  │
-└─────────────────────────────────────────────┘
-┌─────────────────────────────────────────────┐
-│                 Data Layer                   │
-│  ┌─────────────┐ ┌────────────┐ ┌────────┐  │
-│  │ PostgreSQL  │ │  缓存(Redis) │ │ 文件存储 │  │
-│  └─────────────┘ └────────────┘ └────────┘  │
-└─────────────────────────────────────────────┘
-```
+#### 1.3 架构模式
 
-**关键设计决策**：
-1. **服务层抽象**：业务逻辑集中在服务层，便于测试和维护
-2. **缓存策略**：首页榜单使用Redis缓存，减少数据库压力
-3. **增量更新**：价格监控脚本只抓取变化的数据，避免全量更新
-4. **优雅降级**：汇率API失败时使用上次成功值，保证功能可用
+采用 **分层架构**：
+- **数据层**：Prisma schema + 种子数据脚本
+- **数据访问层**：`src/lib/parts-catalog.ts` 封装分类树查询、配件查询逻辑
+- **API层**：Next.js Route Handlers（REST风格）
+- **前端层**：React Client Components + 级联导航 + 响应式网格
 
-## 2. 文件列表及相对路径
+---
 
-### 2.1 新增文件
+### 2. 文件列表
 
-#### API路由 (App Router)
-- `src/app/api/arbitrage/calculator/route.ts` - 套利计算API
-- `src/app/api/arbitrage/top-products/route.ts` - 套利榜单API
-- `src/app/api/arbitrage/trends/[productId]/route.ts` - 价格趋势API
-- `src/app/api/exchange-rates/route.ts` - 汇率管理API
-- `src/app/api/cron/update-prices/route.ts` - 定时价格更新API（公开）
-- `src/app/api/cron/update-exchange-rates/route.ts` - 定时汇率更新API
+#### 新建文件
 
-#### 服务层
-- `src/lib/services/arbitrage-calculator.ts` - 套利计算核心引擎
-- `src/lib/services/price-monitor.ts` - 价格监控服务
-- `src/lib/services/exchange-rate-service.ts` - 汇率服务
-- `src/lib/services/top-arbitrage-service.ts` - 榜单计算服务
+| 文件路径 | 说明 |
+|----------|------|
+| `src/types/parts-v2.ts` | 新配件系统TypeScript类型定义 |
+| `src/lib/parts-catalog.ts` | 配件分类数据访问层（查询封装、缓存逻辑） |
+| `src/app/api/parts/catalog/route.ts` | 导航树API（四级分类结构，ISR缓存） |
+| `src/app/api/parts/[id]/route.ts` | 配件详情API |
+| `src/components/parts/PartsCatalogNav.tsx` | 四级级联导航组件 |
+| `src/components/parts/PartsGrid.tsx` | 配件网格组件（含分页） |
+| `src/components/parts/PartCard.tsx` | 配件卡片组件 |
+| `src/components/parts/PartsBreadcrumb.tsx` | 面包屑导航组件 |
+| `src/components/parts/PartDetailClient.tsx` | 配件详情页客户端组件 |
+| `src/components/parts/PartSpecsTable.tsx` | 技术参数表格组件 |
+| `src/app/[locale]/parts/[id]/page.tsx` | 配件详情页（Server Component） |
+| `prisma/seed-parts-v2.ts` | V2种子数据：14品类+9子系统+拖拉机部件组+50-100条配件 |
+| `scripts/migrate-old-parts.ts` | 旧Part数据迁移到PartLegacy的脚本 |
+| `scripts/generate-part-images.ts` | AI图片批量生成脚本（ImageGen调用） |
 
-#### 组件层
-- `src/components/arbitrage/calculator/ArbitrageCalculator.tsx` - 套利计算器主组件
-- `src/components/arbitrage/calculator/CalculatorInputs.tsx` - 输入参数组件
-- `src/components/arbitrage/calculator/CalculatorResults.tsx` - 计算结果组件
-- `src/components/arbitrage/calculator/CostBreakdown.tsx` - 成本分解组件
-- `src/components/arbitrage/top-list/TopArbitrageList.tsx` - 首页榜单组件
-- `src/components/arbitrage/top-list/TopArbitrageCard.tsx` - 榜单卡片组件
-- `src/components/arbitrage/top-list/TopArbitrageFilters.tsx` - 榜单筛选组件
-- `src/components/arbitrage/trends/PriceTrendChart.tsx` - 价格趋势图表组件
-- `src/components/arbitrage/shared/ArbitrageBadgeEnhanced.tsx` - 增强版套利徽章
+#### 修改文件
 
-#### 工具类/类型定义
-- `src/lib/arbitrage/calculations.ts` - 套利计算工具函数
-- `src/lib/arbitrage/formulas.ts` - 套利计算公式常量
-- `src/lib/arbitrage/validation.ts` - 套利数据验证
-- `src/types/arbitrage.ts` - 套利相关类型定义
-- `src/types/exchange-rates.ts` - 汇率类型定义
+| 文件路径 | 修改内容 |
+|----------|----------|
+| `prisma/schema.prisma` | 旧Part重命名为PartLegacy；新增MachineType/SubSystem/ComponentGroup/Part/CompatibleMachine |
+| `src/app/api/parts/route.ts` | 重写为多级筛选API（machineType/subSystem/componentGroup/brand/keyword/page） |
+| `src/app/[locale]/parts/PartsClient.tsx` | 从扁平8分类重构为四级级联导航 |
+| `src/app/[locale]/parts/page.tsx` | 更新SEO元数据，适配新结构 |
 
-#### 定时任务脚本
-- `src/scripts/cron/update-prices.ts` - 价格更新定时脚本
-- `src/scripts/cron/update-exchange-rates.ts` - 汇率更新定时脚本
-- `src/scripts/cron/cleanup-expired-prices.ts` - 过期数据清理脚本
+---
 
-#### 配置/常量
-- `src/config/arbitrage.ts` - 套利功能配置（阈值、默认参数等）
-- `src/config/exchange-rates.ts` - 汇率API配置
-- `src/config/price-sources.ts` - 价格数据源配置
+### 3. 数据结构与接口
 
-#### 数据库扩展
-- `prisma/migrations/[timestamp]_add_arbitrage_related_fields/` - 数据库迁移
-- `prisma/seed-arbitrage-data.ts` - 套利测试数据种子
-
-### 2.2 修改文件
-
-#### 页面组件
-- `src/app/[locale]/products/[id]/page.tsx` - 集成套利计算器组件
-- `src/app/[locale]/page.tsx` - 集成首页套利榜单组件
-
-#### 现有组件增强
-- `src/components/product/arbitrage-badge.tsx` - 增强为支持更多状态
-- `src/lib/utils.ts` - 添加套利计算相关工具函数
-
-#### API路由
-- `src/app/api/products/[id]/route.ts` - 添加套利相关数据字段
-
-#### 数据库模型
-- `prisma/schema.prisma` - 添加汇率表、套利计算结果缓存表
-
-## 3. 数据结构和接口（类图）
-
-### 3.1 数据库模型扩展
+#### 3.1 Prisma模型最终版
 
 ```prisma
-// 汇率表 - 存储最新和历史汇率
-model ExchangeRate {
-  id            String   @id @default(cuid())
-  baseCurrency  String   @default("CNY")  // 基础货币
-  targetCurrency String  // 目标货币: USD, EUR, GBP等
-  rate          Float    // 汇率值 (1 CNY = X USD)
-  source        String   @default("exchangerate-api") // 数据来源
-  lastUpdated   DateTime @default(now()) // 最后更新时间
-  effectiveDate DateTime // 汇率生效日期
-  
-  @@unique([baseCurrency, targetCurrency, effectiveDate])
-  @@index([baseCurrency, targetCurrency])
+// ═══════════════════════════════════════════════════════
+// 配件专区V2 — 四级分类体系
+// ═══════════════════════════════════════════════════════
+
+/// Level 1: 整机品类（拖拉机、收割机等14大类）
+model MachineType {
+  id          String      @id @default(cuid())
+  code        String      @unique // "tractor", "combine_harvester"
+  nameZh      String
+  nameEn      String
+  nameRu      String      @default("")
+  nameEs      String      @default("")
+  namePt      String      @default("")
+  nameAr      String      @default("")
+  nameFr      String      @default("")
+  nameHi      String      @default("")
+  imageUrl    String?
+  sortOrder   Int         @default(0)
+  isActive    Boolean     @default(true)
+  subSystems  SubSystem[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([isActive, sortOrder])
 }
 
-// 套利计算结果缓存表 - 预计算Top N设备
-model ArbitrageTopCache {
-  id            String   @id @default(cuid())
-  productId     String   // 产品ID
-  rank          Int      // 排名 (1-10)
-  domesticPrice Float    // 国内价格(CNY)
-  foreignPrice  Float    // 国外价格(CNY)
-  priceDiff     Float    // 价差(CNY)
-  priceDiffPercent Float // 价差百分比(%)
-  profitMargin  Float?   // 利润率(%)
-  lastCalculated DateTime @default(now()) // 最后计算时间
-  validUntil    DateTime // 有效期至
-  
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  
-  @@unique([productId, rank])
-  @@index([rank])
-  @@index([validUntil])
+/// Level 2: 子系统（动力、液压、传动等9大系统，按整机品类分组）
+model SubSystem {
+  id              String          @id @default(cuid())
+  code            String          // "powertrain", "hydraulic"
+  nameZh          String
+  nameEn          String
+  nameRu          String          @default("")
+  nameEs          String          @default("")
+  namePt          String          @default("")
+  nameAr          String          @default("")
+  nameFr          String          @default("")
+  nameHi          String          @default("")
+  machineType     MachineType     @relation(fields: [machineTypeId], references: [id])
+  machineTypeId   String
+  componentGroups ComponentGroup[]
+  sortOrder       Int             @default(0)
+  isActive        Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@unique([machineTypeId, code])
+  @@index([machineTypeId, isActive])
 }
 
-// InternationalPrice模型扩展（现有模型添加字段）
-// 在现有InternationalPrice模型中添加：
-// - isActive: Boolean @default(true) // 数据是否有效
-// - confidenceScore: Float @default(0.5) // 数据置信度 (0-1)
-// - lastVerified: DateTime? // 最后验证时间
+/// Level 3: 部件组（液压泵、滤芯等，按子系统分组）
+model ComponentGroup {
+  id          String   @id @default(cuid())
+  code        String   // "hydraulic_pump", "air_filter"
+  nameZh      String
+  nameEn      String
+  nameRu      String   @default("")
+  nameEs      String   @default("")
+  namePt      String   @default("")
+  nameAr      String   @default("")
+  nameFr      String   @default("")
+  nameHi      String   @default("")
+  subSystem   SubSystem @relation(fields: [subSystemId], references: [id])
+  subSystemId String
+  parts       Part[]
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([subSystemId, code])
+  @@index([subSystemId, isActive])
+}
+
+/// Level 4: 配件（具体SKU，关联到部件组）
+model Part {
+  id                String              @id @default(cuid())
+  sku               String              @unique // SD-TRACTOR-HYD-001
+  nameZh            String
+  nameEn            String
+  nameRu            String              @default("")
+  nameEs            String              @default("")
+  brand             String              // 配件品牌（Bosch Rexroth, SKF等）
+  oemNumber         String?             // 原厂编号
+  componentGroup    ComponentGroup      @relation(fields: [componentGroupId], references: [id])
+  componentGroupId  String
+  compatibleMachines CompatibleMachine[]
+  price             Float
+  currency          String              @default("CNY")
+  stockStatus       String              @default("in_stock") // in_stock, low_stock, out_of_stock, preorder
+  images            String[]
+  descriptionZh     String?             @db.Text
+  descriptionEn     String?             @db.Text
+  descriptionRu     String?             @db.Text
+  specs             Json?               // {material, weight, dimensions, warranty, ...}
+  isActive          Boolean             @default(true)
+  isOEM             Boolean             @default(false)
+  isAftermarket     Boolean             @default(false)
+  dataSource        String              @default("manual") // manual, scraped, ai_generated
+  dataQuality       String              @default("verified") // verified, unverified, draft
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@index([componentGroupId, isActive])
+  @@index([brand, isActive])
+  @@index([sku])
+  @@index([oemNumber])
+  @@index([stockStatus, isActive])
+}
+
+/// 配件兼容机型（多对多，一个配件可兼容多个整机型号）
+model CompatibleMachine {
+  id        String   @id @default(cuid())
+  part      Part     @relation(fields: [partId], references: [id], onDelete: Cascade)
+  partId    String
+  brand     String   // 整机品牌（John Deere, CLAAS等）
+  model     String   // 整机型号（6155R, LEXION 770等）
+  yearRange String?  // "2015-2020"
+  notes     String?
+
+  @@index([partId])
+  @@index([brand, model])
+}
+
+/// 旧配件数据备份（原Part模型，不再使用，仅保留数据）
+model PartLegacy {
+  id               String   @id @default(cuid())
+  nameZh           String
+  nameEn           String   @default("")
+  nameRu           String   @default("")
+  brand            String
+  category         String
+  price            Float
+  currency         String   @default("CNY")
+  stockStatus      String   @default("in_stock")
+  compatibleModels String[]
+  images           String[]
+  descriptionZh    String?  @db.Text
+  descriptionEn    String?  @db.Text
+  descriptionRu    String?  @db.Text
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([category, isActive])
+  @@index([brand, isActive])
+
+  @@map("part_legacy")
+}
 ```
 
-### 3.2 服务类设计
+#### 3.2 旧数据处理策略
 
-```mermaid
-classDiagram
-    class ArbitrageCalculator {
-        +calculateArbitrage(params: ArbitrageParams): ArbitrageResult
-        +calculateBreakdown(params: ArbitrageParams): CostBreakdown
-        +simulateScenarios(baseParams: ArbitrageParams, variations: Variation[]): ScenarioResult[]
+| 步骤 | 操作 | 说明 |
+|------|------|------|
+| 1 | schema.prisma中旧Part重命名为PartLegacy，加`@@map("part_legacy")` | Prisma生成迁移时将旧Part表重命名为part_legacy |
+| 2 | 新建MachineType/SubSystem/ComponentGroup/Part/CompatibleMachine模型 | 新Part表与旧表完全独立 |
+| 3 | `prisma migrate dev --name parts_v2` 生成迁移 | 工程师需检查迁移SQL，确保是ALTER TABLE RENAME而非DROP+CREATE |
+| 4 | 运行`scripts/migrate-old-parts.ts`（可选） | 将旧25条数据映射到新模型（category→componentGroup的映射规则） |
+| 5 | 运行`prisma/seed-parts-v2.ts` | 播种14品类+9子系统+拖拉机部件组+50-100条配件 |
+
+**旧→新分类映射规则**（用于迁移脚本）：
+
+| 旧category | → 新MachineType | → 新SubSystem | → 新ComponentGroup |
+|------------|----------------|---------------|-------------------|
+| engine | tractor | powertrain | engine_assembly |
+| hydraulic | tractor | hydraulic_system | hydraulic_pump |
+| transmission | tractor | transmission_system | clutch |
+| electrical | tractor | electrical_system | alternator |
+| filters | tractor | filter_system | oil_filter |
+| tires | tractor | chassis_system | tire |
+| bearings | tractor | bearing_seal_system | ball_bearing |
+| body | tractor | body_cab | cab |
+
+#### 3.3 与现有Product/Brand表的关联决策
+
+| 问题 | 决策 | 理由 |
+|------|------|------|
+| MachineType是否关联Brand表？ | **不关联** | MachineType是品类（拖拉机/收割机），Brand是品牌（约翰迪尔/克拉斯）。一个品类有多个品牌，属于多对多关系，无需在MachineType上建FK |
+| CompatibleMachine.brand是否关联Brand表？ | **暂不关联，保留为String** | CompatibleMachine.brand记录的是整机品牌名（如"John Deere"），与Brand表可能不完全匹配（Brand表可能没有所有农机品牌）。保持String灵活性，后续可增加brandId可选FK |
+| Part.brand是否关联Brand表？ | **暂不关联，保留为String** | 同上。配件品牌（如Bosch Rexroth、SKF、Parker）不一定在Brand表中（Brand表主要存农机整机品牌） |
+
+#### 3.4 种子数据结构说明
+
+**种子文件**：`prisma/seed-parts-v2.ts`
+
+数据分三层写入：
+
+```
+Layer 1: 14个MachineType（全量，但只有tractor有子节点）
+  ├─ tractor (code: "tractor", sortOrder: 1)
+  ├─ combine_harvester (code: "combine_harvester", sortOrder: 2)
+  ├─ forage_harvester (sortOrder: 3)
+  ├─ ... 其余11个品类（只有名称，无子系统）
+
+Layer 2: 拖拉机下的9个SubSystem
+  ├─ powertrain (动力系统)
+  ├─ hydraulic_system (液压系统)
+  ├─ electrical_system (电气系统)
+  ├─ transmission_system (传动系统)
+  ├─ chassis_system (行走系统)
+  ├─ working_implement (工作装置)
+  ├─ body_cab (车身/驾驶室)
+  ├─ filter_system (过滤系统)
+  └─ bearing_seal_system (轴承密封系统)
+
+Layer 3: 拖拉机9子系统下的部件组（约60-70个）
+  每个子系统下6-10个部件组，参考方案3.3节拖拉机拆解表
+
+Layer 4: 50-100条拖拉机配件数据
+  覆盖9大子系统的核心部件组，每条包含：
+  - SKU (SD-TRACTOR-{SUB}-{SEQ})
+  - 中英俄西四语名称
+  - 品牌 + OEM编号
+  - 价格 + 库存状态
+  - 技术参数 (specs JSON)
+  - 兼容机型 (CompatibleMachine数组)
+  - 描述（中英俄三语）
+```
+
+**SKU编码规则**：`SD-{MACHINE_CODE}-{SUB_CODE_PREFIX}-{SEQ3}`
+
+| 示例 | 含义 |
+|------|------|
+| SD-TRACTOR-PWR-001 | 拖拉机-动力系统-第001号 |
+| SD-TRACTOR-HYD-001 | 拖拉机-液压系统-第001号 |
+| SD-TRACTOR-ELE-001 | 拖拉机-电气系统-第001号 |
+
+子系统编码前缀映射：
+
+| SubSystem code | SKU前缀 |
+|----------------|---------|
+| powertrain | PWR |
+| hydraulic_system | HYD |
+| electrical_system | ELE |
+| transmission_system | TRN |
+| chassis_system | CHS |
+| working_implement | WIM |
+| body_cab | BCB |
+| filter_system | FLT |
+| bearing_seal_system | BRS |
+
+---
+
+### 4. API设计方案
+
+#### 4.1 接口总览
+
+| 接口 | 方法 | 缓存策略 | 说明 |
+|------|------|---------|------|
+| `/api/parts/catalog` | GET | ISR 3600s | 导航树（14品类→子系统→部件组，含配件计数） |
+| `/api/parts` | GET | force-dynamic | 配件列表（多级筛选+分页+搜索） |
+| `/api/parts/[id]` | GET | ISR 3600s | 配件详情（含兼容机型、技术参数） |
+
+#### 4.2 导航树API
+
+```
+GET /api/parts/catalog
+```
+
+**响应结构**：
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "cuid",
+      "code": "tractor",
+      "nameZh": "拖拉机",
+      "nameEn": "Tractor",
+      "sortOrder": 1,
+      "subSystems": [
+        {
+          "id": "cuid",
+          "code": "hydraulic_system",
+          "nameZh": "液压系统",
+          "nameEn": "Hydraulic System",
+          "sortOrder": 2,
+          "componentGroups": [
+            {
+              "id": "cuid",
+              "code": "hydraulic_pump",
+              "nameZh": "液压泵",
+              "nameEn": "Hydraulic Pump",
+              "sortOrder": 1,
+              "partCount": 5
+            }
+          ]
+        }
+      ]
     }
-    
-    class PriceMonitorService {
-        +fetchLatestPrices(): Promise~PriceUpdateResult~
-        +validatePriceData(price: InternationalPrice): ValidationResult
-        +cleanupExpiredPrices(days: number): Promise~number~
+  ]
+}
+```
+
+**设计要点**：
+- 使用 `export const revalidate = 3600` 实现ISR缓存
+- 只返回 `isActive: true` 的节点
+- 每个ComponentGroup附带 `partCount`（该部件组下活跃配件数）
+- 只有拖拉机返回完整子树，其余13品类 `subSystems` 为空数组
+
+#### 4.3 配件列表API
+
+```
+GET /api/parts?machineType=tractor&subSystem=hydraulic_system&componentGroup=hydraulic_pump&brand=Bosch&keyword=pump&page=1&pageSize=24
+```
+
+**查询参数**：
+
+| 参数 | 类型 | 默认 | 说明 |
+|------|------|------|------|
+| machineType | string | - | 整机品类code（如 "tractor"） |
+| subSystem | string | - | 子系统code（如 "hydraulic_system"） |
+| componentGroup | string | - | 部件组code（如 "hydraulic_pump"） |
+| brand | string | - | 配件品牌（精确匹配） |
+| keyword | string | - | 搜索词（匹配nameZh/nameEn/nameRu/oemNumber/brand） |
+| page | int | 1 | 页码 |
+| pageSize | int | 24 | 每页条数（最大100） |
+
+**响应结构**：
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "cuid",
+      "sku": "SD-TRACTOR-HYD-001",
+      "nameZh": "博世力士乐液压齿轮泵",
+      "nameEn": "Bosch Rexroth Hydraulic Gear Pump",
+      "brand": "Bosch Rexroth",
+      "oemNumber": "A10VSO45DFR/31R",
+      "price": 8500,
+      "currency": "CNY",
+      "stockStatus": "in_stock",
+      "images": ["https://oss.../parts/tractor/hydraulic/SD-TRACTOR-HYD-001.jpg"],
+      "isOEM": true,
+      "componentGroup": { "code": "hydraulic_pump", "nameZh": "液压泵" },
+      "subSystem": { "code": "hydraulic_system", "nameZh": "液压系统" },
+      "machineType": { "code": "tractor", "nameZh": "拖拉机" }
     }
-    
-    class ExchangeRateService {
-        -cache: Map~string, ExchangeRate~
-        +getLatestRate(base: string, target: string): Promise~ExchangeRate~
-        +convertAmount(amount: number, from: string, to: string): Promise~number~
-        +updateRates(): Promise~UpdateResult~
-    }
-    
-    class TopArbitrageService {
-        +calculateTopProducts(limit: number, minPriceDiff: number): Promise~ArbitrageTopItem[]~
-        +refreshCache(): Promise~void~
-        +getCachedTop(limit: number): Promise~ArbitrageTopItem[]~
-    }
-    
-    class CronScheduler {
-        +schedulePriceUpdates(cronExpression: string): void
-        +scheduleRateUpdates(cronExpression: string): void
-        +scheduleCacheRefresh(cronExpression: string): void
-    }
-    
-    ArbitrageCalculator --> ExchangeRateService : 使用汇率转换
-    ArbitrageCalculator --> PriceMonitorService : 验证价格数据
-    TopArbitrageService --> ArbitrageCalculator : 计算套利结果
-    CronScheduler --> PriceMonitorService : 触发更新
-    CronScheduler --> ExchangeRateService : 触发更新
-    CronScheduler --> TopArbitrageService : 触发缓存刷新
-```
-
-### 3.3 API接口定义
-
-#### GET `/api/arbitrage/calculator`
-```typescript
-// 请求参数
-interface ArbitrageCalculatorQuery {
-  productId: string;           // 产品ID
-  domesticPrice?: number;      // 国内价格(CNY) - 可选，默认用数据库值
-  foreignPrice?: number;       // 国外价格(CNY) - 可选，默认用最新国际价
-  foreignCurrency?: string;    // 国外货币 - 可选，默认用记录货币
-  shippingCost?: number;       // 运输成本(CNY)
-  importTaxRate?: number;      // 进口关税率(%)
-  insuranceRate?: number;      // 保险费率(%)
-  otherCosts?: number;         // 其他成本(CNY)
-  exchangeRate?: number;       // 汇率 - 可选，默认用最新汇率
-}
-
-// 响应
-interface ArbitrageCalculatorResponse {
-  success: boolean;
-  data?: {
-    productInfo: ProductBasicInfo;
-    domesticPrice: number;     // 国内价格(CNY)
-    foreignPrice: number;      // 国外价格(原货币)
-    foreignPriceCny: number;   // 国外价格(CNY)
-    priceDifference: number;   // 价差(CNY)
-    priceDiffPercent: number;  // 价差百分比(%)
-    
-    // 成本分解
-    costs: {
-      shipping: number;        // 运输成本
-      importTax: number;       // 进口关税
-      insurance: number;       // 保险费用
-      other: number;          // 其他成本
-      totalAdditional: number; // 总附加成本
-    };
-    
-    // 利润分析
-    profit: {
-      grossProfit: number;     // 毛利润
-      grossMargin: number;     // 毛利率(%)
-      netProfit: number;       // 净利润
-      netMargin: number;       // 净利率(%)
-      breakEvenPrice: number;  // 盈亏平衡价
-    };
-    
-    // 套利等级评估
-    assessment: {
-      level: 'high' | 'medium' | 'low'; // 套利等级
-      score: number;           // 套利评分(0-100)
-      opportunity: string;     // 机会描述
-      riskFactors: string[];   // 风险因素
-    };
-    
-    // 数据源信息
-    sources: {
-      domesticPriceSource: string;     // 国内价格来源
-      foreignPriceSource: string;      // 国外价格来源
-      exchangeRateSource: string;      // 汇率来源
-      lastUpdated: string;             // 数据更新时间
-    };
-  };
-  error?: string;
+  ],
+  "pagination": {
+    "page": 1,
+    "pageSize": 24,
+    "total": 87,
+    "totalPages": 4
+  },
+  "filters": {
+    "brands": ["Bosch Rexroth", "Parker", "SKF"],
+    "stockStatuses": ["in_stock", "low_stock"]
+  }
 }
 ```
 
-#### GET `/api/arbitrage/top-products`
-```typescript
-// 请求参数
-interface TopArbitrageQuery {
-  limit?: number;              // 返回数量，默认10
-  minPriceDiff?: number;       // 最小价差%，默认15
-  sortBy?: 'priceDiff' | 'profitMargin' | 'totalSaving'; // 排序字段
-  includeDetails?: boolean;    // 是否包含详细信息
+**设计要点**：
+- `force-dynamic` 确保库存状态实时性
+- 多级筛选通过 Prisma relation查询：`where: { componentGroup: { subSystem: { machineType: { code: "tractor" } } } }`
+- keyword搜索使用 `OR` + `contains` + `mode: "insensitive"`
+- 响应附带 `filters` 聚合数据（当前筛选条件下的可用品牌列表），供前端渲染筛选面板
+- 列表只返回摘要字段（不含specs/description），减少传输量
+
+#### 4.4 配件详情API
+
+```
+GET /api/parts/[id]
+```
+
+**响应结构**：
+```json
+{
+  "success": true,
+  "data": {
+    "id": "cuid",
+    "sku": "SD-TRACTOR-HYD-001",
+    "nameZh": "...",
+    "nameEn": "...",
+    "nameRu": "...",
+    "brand": "Bosch Rexroth",
+    "oemNumber": "A10VSO45DFR/31R",
+    "price": 8500,
+    "currency": "CNY",
+    "stockStatus": "in_stock",
+    "images": ["url1", "url2"],
+    "descriptionZh": "...",
+    "descriptionEn": "...",
+    "descriptionRu": "...",
+    "specs": {
+      "material": "Cast Iron",
+      "weight": "12kg",
+      "dimensions": "200×150×180mm",
+      "warranty": "12 months",
+      "pressure": "250 bar",
+      "flowRate": "45 L/min"
+    },
+    "isOEM": true,
+    "isAftermarket": false,
+    "dataQuality": "verified",
+    "componentGroup": { "code": "hydraulic_pump", "nameZh": "液压泵", "nameEn": "Hydraulic Pump" },
+    "subSystem": { "code": "hydraulic_system", "nameZh": "液压系统", "nameEn": "Hydraulic System" },
+    "machineType": { "code": "tractor", "nameZh": "拖拉机", "nameEn": "Tractor" },
+    "compatibleMachines": [
+      { "brand": "John Deere", "model": "6155R", "yearRange": "2014-2020" },
+      { "brand": "John Deere", "model": "6175R", "yearRange": "2014-2020" }
+    ]
+  }
 }
-
-// 响应
-interface TopArbitrageResponse {
-  success: boolean;
-  data?: {
-    generatedAt: string;       // 生成时间
-    products: ArbitrageTopItem[];
-    summary: {
-      totalProducts: number;   // 总产品数
-      averagePriceDiff: number;// 平均价差%
-      maxPriceDiff: number;    // 最大价差%
-      minPriceDiff: number;    // 最小价差%
-    };
-  };
-  error?: string;
-}
-
-interface ArbitrageTopItem {
-  rank: number;                // 排名
-  productId: string;          // 产品ID
-  productName: string;        // 产品名称
-  brandName: string;          // 品牌名称
-  year: number;               // 年份
-  
-  // 价格信息
-  domesticPrice: number;      // 国内价格(CNY)
-  foreignPrice: number;       // 国外价格(CNY)
-  priceDiff: number;          // 价差(CNY)
-  priceDiffPercent: number;   // 价差百分比(%)
-  
-  // 套利评估
-  arbitrageLevel: 'high' | 'medium' | 'low';
-  opportunityScore: number;   // 机会评分(0-100)
-  
-  // 链接
-  productUrl: string;         // 产品详情页链接
-  foreignSourceUrl?: string;  // 国外价格来源链接
-}
 ```
 
-## 4. 程序调用流程（时序图）
+**设计要点**：
+- 使用 `export const revalidate = 3600` ISR缓存
+- 包含完整层级关系（componentGroup → subSystem → machineType），用于面包屑
+- 包含compatibleMachines数组，用于兼容机型展示
 
-### 4.1 套利计算器组件工作流程
+---
 
-```mermaid
-sequenceDiagram
-    participant User as 用户
-    participant Page as 产品详情页
-    participant Calculator as ArbitrageCalculator组件
-    participant API as 套利计算API
-    participant Service as ArbitrageCalculator服务
-    participant DB as 数据库
-    participant Exchange as 汇率服务
-    
-    User->>Page: 访问产品详情页
-    Page->>DB: 查询产品基本信息
-    DB-->>Page: 返回产品数据
-    Page->>Calculator: 渲染套利计算器组件
-    
-    User->>Calculator: 输入/调整计算参数
-    Calculator->>API: 发送计算请求(带参数)
-    API->>Service: 调用计算服务
-    Service->>DB: 查询产品最新价格
-    DB-->>Service: 返回价格数据
-    Service->>Exchange: 获取最新汇率
-    Exchange-->>Service: 返回汇率
-    Service->>Service: 执行套利计算
-    Service-->>API: 返回计算结果
-    API-->>Calculator: 返回API响应
-    Calculator->>Calculator: 更新UI显示结果
-    Calculator-->>User: 展示计算结果
+### 5. 前端导航设计
+
+#### 5.1 页面布局
+
+```
+┌─────────────────────────────────────────────────┐
+│  Hero区域（保留现有橙色渐变 + 搜索框）              │
+├─────────────────────────────────────────────────┤
+│  面包屑：首页 > 配件专区 > 拖拉机 > 液压系统 > 液压泵  │
+├──────────┬──────────────────────────────────────┤
+│          │  筛选栏：品牌下拉 | 库存状态 | 排序     │
+│  左侧    ├──────────────────────────────────────┤
+│  导航树  │                                      │
+│          │  配件网格（4列响应式）                  │
+│  拖拉机 ► │  ┌────┐ ┌────┐ ┌────┐ ┌────┐       │
+│   ├动力  │  │卡片│ │卡片│ │卡片│ │卡片│       │
+│   ├液压 ►│  └────┘ └────┘ └────┘ └────┘       │
+│   │├液压泵│  ┌────┐ ┌────┐ ┌────┐ ┌────┐       │
+│   │├油缸  │  │卡片│ │卡片│ │卡片│ │卡片│       │
+│   │└阀门  │  └────┘ └────┘ └────┘ └────┘       │
+│   ├传动  │                                      │
+│   └...   │  分页：< 1 2 3 4 >                   │
+│  收割机  │                                      │
+│  青储机  │                                      │
+│  ...     │                                      │
+└──────────┴──────────────────────────────────────┘
 ```
 
-### 4.2 首页套利榜单生成流程
+#### 5.2 交互流程
 
-```mermaid
-sequenceDiagram
-    participant User as 用户
-    participant HomePage as 首页
-    participant TopList as TopArbitrageList组件
-    participant API as 套利榜单API
-    participant Cache as 缓存层
-    participant Service as TopArbitrage服务
-    participant DB as 数据库
-    
-    User->>HomePage: 访问首页
-    HomePage->>TopList: 渲染榜单组件
-    
-    alt 缓存命中
-        TopList->>API: 请求榜单数据
-        API->>Cache: 查询缓存数据
-        Cache-->>API: 返回缓存结果
-        API-->>TopList: 返回缓存数据
-    else 缓存未命中或过期
-        TopList->>API: 请求榜单数据
-        API->>Service: 调用榜单计算服务
-        Service->>DB: 查询所有活跃产品
-        DB-->>Service: 返回产品列表
-        Service->>Service: 计算每个产品的套利数据
-        Service->>Service: 排序取Top N
-        Service->>Cache: 存储结果到缓存
-        Cache-->>Service: 确认存储
-        Service-->>API: 返回计算结果
-        API-->>TopList: 返回榜单数据
-    end
-    
-    TopList->>TopList: 渲染榜单UI
-    TopList-->>User: 展示套利榜单
+1. **页面初次加载**：
+   - 调用 `/api/parts/catalog` 获取完整导航树
+   - 调用 `/api/parts`（无筛选）获取第一页配件
+   - 左侧导航树渲染14个整机品类，拖拉机展开显示9个子系统
+   - 默认显示全部配件（或拖拉机配件）
+
+2. **选择整机品类**（如点击"拖拉机"）：
+   - 展开子系统列表
+   - 调用 `/api/parts?machineType=tractor` 获取拖拉机配件
+   - 面包屑更新：配件专区 > 拖拉机
+
+3. **选择子系统**（如点击"液压系统"）：
+   - 展开部件组列表
+   - 调用 `/api/parts?machineType=tractor&subSystem=hydraulic_system`
+   - 面包屑更新：配件专区 > 拖拉机 > 液压系统
+
+4. **选择部件组**（如点击"液压泵"）：
+   - 调用 `/api/parts?machineType=tractor&subSystem=hydraulic_system&componentGroup=hydraulic_pump`
+   - 面包屑更新：配件专区 > 拖拉机 > 液压系统 > 液压泵
+
+5. **搜索**：
+   - 输入关键词，300ms防抖
+   - 调用 `/api/parts?keyword=xxx`（保留当前层级筛选）
+   - 网格更新
+
+6. **点击配件卡片**：
+   - 跳转到 `/[locale]/parts/[id]`
+   - 展示配件详情（图片轮播、技术参数表、兼容机型列表、询价按钮）
+
+#### 5.3 响应式设计
+
+| 断点 | 布局 |
+|------|------|
+| < 768px (mobile) | 导航树收起为顶部下拉选择器，网格1-2列 |
+| 768px-1024px (tablet) | 导航树收起为顶部级联选择器，网格2-3列 |
+| > 1024px (desktop) | 左侧导航树常驻，网格3-4列 |
+
+---
+
+### 6. 待明确事项
+
+| # | 问题 | 当前假设 | 需确认方 |
+|---|------|---------|---------|
+| 1 | 旧Part表25条数据是否需要迁移到新模型？ | 假设：不迁移，旧数据仅保留备份（PartLegacy表），新数据全部重新录入 | 产品/用户 |
+| 2 | CompatibleMachine.brand是否需要关联Brand表？ | 假设：暂不关联，保留为String，后续可扩展 | 架构 |
+| 3 | AI图片生成用ImageGen还是其他工具？ | 假设：使用ImageGen（通过ToolSearch调用），图片上传至OSS | 产品 |
+| 4 | 首批50-100条拖拉机配件数据来源？ | 假设：手动整理真实OEM数据（品牌官网+配件平台），非爬虫自动采集 | 产品/数据 |
+| 5 | 其余13品类是否需要预填9个子系统名称？ | 假设：否，只填整机品类名称（14个MachineType记录），子系统等后续扩展时再填 | 产品 |
+| 6 | 配件详情页是否需要询价表单？ | 假设：是，复用现有Inquiry机制或简单mailto链接 | 产品 |
+| 7 | 配件图片是否需要多角度？ | 假设：首批每配件1张（正视图），后续可扩展到2-3张 | 产品 |
+
+---
+
+## Part B: 任务分解
+
+### 7. 依赖包列表
+
+本项目无需新增第三方依赖包，所有功能基于现有技术栈实现：
+
+```
+# 已有依赖（无需新增）
+- next@^14.2.0: App Router + API Routes + ISR缓存
+- @prisma/client@^5.14.0: ORM
+- prisma@^5.14.0: Schema管理 + 迁移
+- react@^18.3.0: UI框架
+- tailwindcss@^3.4.0: 样式
+- lucide-react@^0.378.0: 图标
+- tsx@^4.10.0: 种子脚本执行
+- ali-oss@^6.23.0: OSS图片上传（devDependency，脚本用）
+
+# AI图片生成
+- ImageGen: 通过ToolSearch/DeferExecuteTool调用，无需npm安装
 ```
 
-### 4.3 定时价格更新流程
+---
 
-```mermaid
-sequenceDiagram
-    participant Cron as Cron调度器
-    participant Script as 价格更新脚本
-    participant Monitor as PriceMonitor服务
-    participant External as 外部数据源
-    participant DB as 数据库
-    participant Cache as 缓存层
-    
-    Cron->>Script: 触发定时执行 (每日2:00 AM)
-    Script->>Monitor: 调用价格更新服务
-    Monitor->>External: 爬取外部价格数据
-    External-->>Monitor: 返回价格信息
-    
-    alt 新数据有效
-        Monitor->>DB: 更新InternationalPrice记录
-        DB-->>Monitor: 确认更新
-        Monitor->>Cache: 使相关缓存失效
-        Cache-->>Monitor: 确认失效
-        Monitor->>Script: 返回更新结果
-    else 无新数据或数据无效
-        Monitor->>Script: 返回无更新
-    end
-    
-    Script->>Script: 记录执行日志
-    Script->>Cron: 返回执行状态
+### 8. 任务列表
+
+#### T01: 项目基础设施（Schema + 类型 + 数据访问层）
+
+| 项 | 内容 |
+|----|------|
+| **任务ID** | T01 |
+| **任务名** | 项目基础设施：Prisma Schema更新 + TypeScript类型 + 数据访问层 |
+| **源文件** | `prisma/schema.prisma`（修改）, `src/types/parts-v2.ts`（新建）, `src/lib/parts-catalog.ts`（新建） |
+| **依赖** | 无 |
+| **优先级** | P0 |
+
+**工作内容**：
+1. 在 `prisma/schema.prisma` 中：
+   - 将旧 `Part` 模型重命名为 `PartLegacy`，添加 `@@map("part_legacy")`
+   - 新增 `MachineType`、`SubSystem`、`ComponentGroup`、`Part`（新）、`CompatibleMachine` 模型
+   - 确保8语言字段、复合唯一约束、索引完整
+2. 创建 `src/types/parts-v2.ts`：
+   - 定义 `MachineType`、`SubSystem`、`ComponentGroup`、`Part`、`CompatibleMachine` 的 TypeScript 接口
+   - 定义 `CatalogTree`、`PartListResponse`、`PartDetailResponse` 等 API 响应类型
+   - 定义 `PartSpecs` 接口（material, weight, dimensions, warranty 等可选字段）
+3. 创建 `src/lib/parts-catalog.ts`：
+   - `getCatalogTree()`: 查询完整导航树（MachineType → SubSystem → ComponentGroup + partCount），使用 Prisma include 嵌套查询
+   - `getParts(filters)`: 多级筛选查询，返回配件列表 + 分页 + 品牌聚合
+   - `getPartById(id)`: 查询配件详情，include componentGroup → subSystem → machineType + compatibleMachines
+   - `getBrandsByComponentGroup(componentGroupId)`: 获取某部件组下的品牌列表（用于筛选面板）
+4. 运行 `npx prisma migrate dev --name parts_v2` 生成迁移
+5. 运行 `npx prisma generate` 更新 Prisma Client
+
+---
+
+#### T02: 种子数据 + 迁移脚本
+
+| 项 | 内容 |
+|----|------|
+| **任务ID** | T02 |
+| **任务名** | 种子数据：14品类架构 + 拖拉机深度填充 + 旧数据迁移脚本 |
+| **源文件** | `prisma/seed-parts-v2.ts`（新建）, `scripts/migrate-old-parts.ts`（新建）, `scripts/generate-part-images.ts`（新建） |
+| **依赖** | T01 |
+| **优先级** | P0 |
+
+**工作内容**：
+1. 创建 `prisma/seed-parts-v2.ts`：
+   - **Layer 1**: 14个MachineType（全量，参考方案3.1节，含8语名称 + sortOrder）
+   - **Layer 2**: 拖拉机下9个SubSystem（powertrain/hydraulic_system/electrical_system/transmission_system/chassis_system/working_implement/body_cab/filter_system/bearing_seal_system）
+   - **Layer 3**: 拖拉机9子系统下的部件组（参考方案3.3节，约60-70个ComponentGroup）
+   - **Layer 4**: 50-100条拖拉机真实OEM配件数据（覆盖9大子系统核心部件组，每条含SKU/四语名称/品牌/OEM编号/价格/库存/specs/兼容机型/描述）
+   - 脚本支持幂等执行（先deleteMany再创建）
+   - 运行命令：`npx tsx prisma/seed-parts-v2.ts`
+2. 创建 `scripts/migrate-old-parts.ts`：
+   - 读取PartLegacy表全部数据
+   - 按3.2节映射规则，将旧category映射到新ComponentGroup
+   - 写入新Part表（补充SKU、componentGroupId等字段）
+   - 运行命令：`npx tsx scripts/migrate-old-parts.ts`（可选执行）
+3. 创建 `scripts/generate-part-images.ts`：
+   - 读取新Part表中images为空的拖拉机配件
+   - 对每个配件，根据nameEn + brand + componentGroup生成ImageGen prompt
+   - 调用ImageGen生成白底工业摄影风格图片
+   - 上传至OSS（路径：`/parts/{machineType}/{componentGroup}/{sku}.jpg`）
+   - 更新Part.images字段
+   - 支持批量处理 + 失败重试
+   - Prompt模板：`"Professional product photography of {nameEn}, {brand} agricultural machinery part, clean white background, studio lighting, 8k resolution, sharp focus, industrial catalog style, metallic texture, precise engineering details"`
+
+---
+
+#### T03: API层（多级筛选 + 导航树 + 详情接口）
+
+| 项 | 内容 |
+|----|------|
+| **任务ID** | T03 |
+| **任务名** | API层：导航树接口 + 配件列表多级筛选接口 + 配件详情接口 |
+| **源文件** | `src/app/api/parts/catalog/route.ts`（新建）, `src/app/api/parts/route.ts`（修改）, `src/app/api/parts/[id]/route.ts`（新建） |
+| **依赖** | T01 |
+| **优先级** | P0 |
+
+**工作内容**：
+1. 创建 `src/app/api/parts/catalog/route.ts`：
+   - `export const revalidate = 3600`（ISR缓存1小时）
+   - 调用 `getCatalogTree()` 返回完整导航树
+   - 响应格式：`{ success: true, data: CatalogTreeNode[] }`
+2. 修改 `src/app/api/parts/route.ts`：
+   - `export const dynamic = "force-dynamic"`
+   - 解析查询参数：machineType, subSystem, componentGroup, brand, keyword, page, pageSize
+   - 调用 `getParts(filters)` 返回配件列表 + 分页 + 品牌聚合
+   - 响应格式：`{ success: true, data: Part[], pagination: {...}, filters: { brands: [...] } }`
+   - 保留现有错误处理模式（try-catch + 500响应）
+3. 创建 `src/app/api/parts/[id]/route.ts`：
+   - `export const revalidate = 3600`（ISR缓存1小时）
+   - 调用 `getPartById(id)` 返回配件详情
+   - 包含完整层级关系 + 兼容机型
+   - 404处理：配件不存在时返回 `{ success: false, error: "Part not found" }`
+
+---
+
+#### T04: 前端列表页（四级导航 + 配件网格 + 面包屑）
+
+| 项 | 内容 |
+|----|------|
+| **任务ID** | T04 |
+| **任务名** | 前端列表页：四级级联导航 + 配件网格 + 卡片 + 面包屑 + 页面集成 |
+| **源文件** | `src/app/[locale]/parts/PartsClient.tsx`（修改）, `src/app/[locale]/parts/page.tsx`（修改）, `src/components/parts/PartsCatalogNav.tsx`（新建）, `src/components/parts/PartsGrid.tsx`（新建）, `src/components/parts/PartCard.tsx`（新建）, `src/components/parts/PartsBreadcrumb.tsx`（新建） |
+| **依赖** | T01, T03 |
+| **优先级** | P0 |
+
+**工作内容**：
+1. 创建 `src/components/parts/PartsCatalogNav.tsx`：
+   - Props: `catalogTree`, `selectedMachineType`, `selectedSubSystem`, `selectedComponentGroup`, `onSelect` 回调
+   - 渲染左侧导航树：14个整机品类（拖拉机展开）
+   - 三级级联：MachineType → SubSystem → ComponentGroup
+   - 每个节点显示配件计数（partCount）
+   - 选中状态高亮
+   - 响应式：移动端收起为级联选择器
+2. 创建 `src/components/parts/PartCard.tsx`：
+   - Props: `part`, `locale`
+   - 渲染：图片 + 品牌Badge + 名称 + 库存状态 + 价格 + 询价按钮
+   - 复用现有 `getImageUrl()` 处理OSS图片
+   - 复用现有 `Card`/`Badge` UI组件
+   - 链接到 `/[locale]/parts/[id]`
+3. 创建 `src/components/parts/PartsGrid.tsx`：
+   - Props: `parts`, `loading`, `error`, `locale`, `pagination`, `onPageChange`
+   - 渲染响应式网格（1/2/3/4列）
+   - 包含分页控件（复用现有Pagination组件）
+   - 加载/错误/空状态处理
+4. 创建 `src/components/parts/PartsBreadcrumb.tsx`：
+   - Props: `machineTypeName`, `subSystemName`, `componentGroupName`, `locale`
+   - 渲染面包屑：首页 > 配件专区 > [整机品类] > [子系统] > [部件组]
+   - 每级可点击返回
+5. 修改 `src/app/[locale]/parts/PartsClient.tsx`：
+   - 移除旧的8分类硬编码（PART_CATEGORIES）
+   - 新增状态：catalogTree, selectedMachineType, selectedSubSystem, selectedComponentGroup
+   - 页面加载时fetch `/api/parts/catalog` 获取导航树
+   - 层级选择时fetch `/api/parts?...` 获取配件列表
+   - 布局：左侧导航树 + 右侧（面包屑 + 筛选栏 + 配件网格）
+   - 保留现有Hero区域和搜索框
+   - 保留现有服务保障区块和CTA区块
+6. 修改 `src/app/[locale]/parts/page.tsx`：
+   - 更新 `generatePageMetadata` 中的关键词（从8分类改为四级分类体系）
+   - 更新面包屑结构化数据
+
+---
+
+#### T05: 前端详情页（配件详情 + 技术参数 + 兼容机型）
+
+| 项 | 内容 |
+|----|------|
+| **任务ID** | T05 |
+| **任务名** | 前端详情页：配件详情展示 + 技术参数表 + 兼容机型列表 + 询价入口 |
+| **源文件** | `src/app/[locale]/parts/[id]/page.tsx`（新建）, `src/components/parts/PartDetailClient.tsx`（新建）, `src/components/parts/PartSpecsTable.tsx`（新建） |
+| **依赖** | T01, T03, T04 |
+| **优先级** | P1 |
+
+**工作内容**：
+1. 创建 `src/app/[locale]/parts/[id]/page.tsx`（Server Component）：
+   - `generateMetadata`: 根据配件名称生成SEO元数据
+   - `generateStaticParams` 预生成首批配件的静态路径
+   - `BreadcrumbStructuredData` 面包屑结构化数据
+   - 渲染 `PartDetailClient`
+2. 创建 `src/components/parts/PartDetailClient.tsx`：
+   - Props: `part`, `locale`
+   - 布局：左侧图片轮播 + 右侧信息区
+   - 信息区：SKU + 品牌 + OEM编号 + 名称 + 价格 + 库存 + 询价按钮
+   - 下方：技术参数表 + 兼容机型列表 + 描述
+   - 面包屑：首页 > 配件专区 > 拖拉机 > 液压系统 > 液压泵 > [配件名]
+   - 询价按钮：跳转到 `/about#contact` 或弹出简单表单
+3. 创建 `src/components/parts/PartSpecsTable.tsx`：
+   - Props: `specs` (JSON对象)
+   - 将specs JSON渲染为键值对表格
+   - 常见字段：材质/重量/尺寸/保修期/压力/流量等
+   - 支持中英文标签映射
+
+---
+
+### 9. 共享知识（跨文件约定）
+
+```
+# 数据库
+- Prisma client导入：import { prisma } from "@/lib/db"
+- 旧Part模型已重命名为PartLegacy（prisma.partLegacy），不再使用
+- 新Part模型通过prisma.part访问
+- 所有分类表使用8语言字段：nameZh/nameEn/nameRu/nameEs/namePt/nameAr/nameFr/nameHi
+- Part表使用4语名称（zh/en/ru/es）+ 3语描述（zh/en/ru），后续可扩展
+
+# SKU编码
+- 格式：SD-{MACHINE_CODE}-{SUB_CODE_PREFIX}-{SEQ3}
+- 示例：SD-TRACTOR-HYD-001
+- 子系统前缀：PWR/HYD/ELE/TRN/CHS/WIM/BCB/FLT/BRS
+- SKU全局唯一（@unique约束）
+
+# API
+- 所有API响应格式：{ success: boolean, data: T, pagination?: {...}, error?: string, filters?: {...} }
+- 导航树API和详情API使用ISR缓存（revalidate = 3600）
+- 列表API使用force-dynamic（库存状态实时性）
+- 分页：默认pageSize=24，最大100，响应包含pagination对象
+- 多级筛选参数：machineType, subSystem, componentGroup（均为code，非id）
+
+# 前端
+- 图片URL处理：使用 getImageUrl() from "@/lib/image-url"（OSS缩略图）
+- 详情大图：使用 getDetailImageUrl() from "@/lib/image-url"
+- UI组件：复用 src/components/ui/ 下的 Card/Badge/Input/Pagination/Skeleton
+- 图标：使用 lucide-react
+- 多语言：通过 locale prop 传递（"zh"/"en"/"ru"等），前端用 isZh = locale === "zh" 判断
+- 导航树状态管理：useState管理选中的 machineType/subSystem/componentGroup
+- 搜索防抖：300ms
+
+# 图片
+- OSS路径规则：/parts/{machineType}/{componentGroup}/{sku}.jpg
+- AI图片风格：白底工业摄影（clean white background, studio lighting, 8k, sharp focus）
+- 图片尺寸：1024×1024，< 200KB，JPG格式
+- 占位图：/images/placeholders/tractor.svg（现有）
+
+# 种子数据
+- 种子文件幂等：先deleteMany再创建
+- 运行命令：npx tsx prisma/seed-parts-v2.ts
+- 14品类中只有tractor有完整子系统+部件组+配件数据
+- 其余13品类只有MachineType记录（名称+code+sortOrder）
 ```
 
-## 5. 任务列表（有序、含依赖关系）
+---
 
-### 任务分解规则
-- **最大任务数**: 5个任务（硬性上限）
-- **最小粒度**: 每个任务至少包含3个相关文件
-- **分组原则**: 按功能模块/层次分组，不按单文件拆分
-- **第一个任务**: 必须是"项目基础设施"（配置文件 + 入口文件 + 依赖声明）
-
-### 任务清单
-
-#### T01: 项目基础设施（P0）
-**任务名称**: 跨境套利功能基础设施搭建  
-**源文件**:
-- `package.json` - 新增依赖包声明
-- `src/config/arbitrage.ts` - 套利功能配置
-- `src/config/exchange-rates.ts` - 汇率API配置
-- `src/config/price-sources.ts` - 价格数据源配置
-- `src/types/arbitrage.ts` - 套利相关TypeScript类型定义
-- `src/types/exchange-rates.ts` - 汇率类型定义
-
-**依赖**: 无  
-**优先级**: P0  
-**描述**: 建立项目基础配置和类型定义，声明所有需要的第三方依赖包。
-
-#### T02: 数据层与核心服务（P0）
-**任务名称**: 数据库扩展与核心服务实现  
-**源文件**:
-- `prisma/schema.prisma` - 新增ExchangeRate、ArbitrageTopCache模型
-- `prisma/migrations/[timestamp]_add_arbitrage_related_fields/` - 数据库迁移文件
-- `src/lib/services/arbitrage-calculator.ts` - 套利计算核心引擎
-- `src/lib/services/exchange-rate-service.ts` - 汇率服务
-- `src/lib/services/top-arbitrage-service.ts` - 榜单计算服务
-- `src/lib/arbitrage/calculations.ts` - 套利计算工具函数
-- `src/lib/arbitrage/formulas.ts` - 套利计算公式常量
-- `src/lib/arbitrage/validation.ts` - 套利数据验证
-
-**依赖**: T01  
-**优先级**: P0  
-**描述**: 扩展数据库模型，实现核心业务逻辑服务层，包含套利计算、汇率转换、榜单计算等核心功能。
-
-#### T03: API路由层（P0）
-**任务名称**: 套利功能API接口实现  
-**源文件**:
-- `src/app/api/arbitrage/calculator/route.ts` - 套利计算API
-- `src/app/api/arbitrage/top-products/route.ts` - 套利榜单API
-- `src/app/api/arbitrage/trends/[productId]/route.ts` - 价格趋势API
-- `src/app/api/exchange-rates/route.ts` - 汇率管理API
-- `src/app/api/cron/update-prices/route.ts` - 定时价格更新API
-- `src/app/api/cron/update-exchange-rates/route.ts` - 定时汇率更新API
-- `src/app/api/products/[id]/route.ts` - 增强现有产品API返回套利数据
-
-**依赖**: T02  
-**优先级**: P0  
-**描述**: 实现所有必要的RESTful API接口，为前端组件提供数据支持，包括计算、榜单、趋势图等接口。
-
-#### T04: 前端核心组件（P0）
-**任务名称**: 套利计算器与榜单组件开发  
-**源文件**:
-- `src/components/arbitrage/calculator/ArbitrageCalculator.tsx` - 套利计算器主组件
-- `src/components/arbitrage/calculator/CalculatorInputs.tsx` - 输入参数组件
-- `src/components/arbitrage/calculator/CalculatorResults.tsx` - 计算结果组件
-- `src/components/arbitrage/calculator/CostBreakdown.tsx` - 成本分解组件
-- `src/components/arbitrage/top-list/TopArbitrageList.tsx` - 首页榜单组件
-- `src/components/arbitrage/top-list/TopArbitrageCard.tsx` - 榜单卡片组件
-- `src/components/arbitrage/top-list/TopArbitrageFilters.tsx` - 榜单筛选组件
-- `src/components/arbitrage/shared/ArbitrageBadgeEnhanced.tsx` - 增强版套利徽章
-- `src/app/[locale]/products/[id]/page.tsx` - 集成计算器到产品详情页
-- `src/app/[locale]/page.tsx` - 集成榜单到首页
-
-**依赖**: T03  
-**优先级**: P0  
-**描述**: 开发所有前端UI组件，包括交互式套利计算器、首页套利榜单，并集成到现有页面中。
-
-#### T05: 定时任务与数据监控（P1）
-**任务名称**: 自动化脚本与监控增强  
-**源文件**:
-- `src/scripts/cron/update-prices.ts` - 价格更新定时脚本
-- `src/scripts/cron/update-exchange-rates.ts` - 汇率更新定时脚本
-- `src/scripts/cron/cleanup-expired-prices.ts` - 过期数据清理脚本
-- `src/lib/services/price-monitor.ts` - 价格监控服务
-- `scripts/import-international-prices.ts` - 增强现有导入脚本
-- `src/components/arbitrage/trends/PriceTrendChart.tsx` - 价格趋势图表组件（P2功能前端）
-- `prisma/seed-arbitrage-data.ts` - 套利测试数据种子
-
-**依赖**: T02, T03  
-**优先级**: P1  
-**描述**: 实现价格监控自动化脚本，增强现有数据导入功能，添加数据清理和趋势可视化组件。
-
-### 任务依赖图
+### 10. 任务依赖图
 
 ```mermaid
 graph TD
-    T01[基础设施] --> T02[数据层与核心服务]
-    T02 --> T03[API路由层]
-    T03 --> T04[前端核心组件]
-    T02 --> T05[定时任务与监控]
+    T01[T01: 项目基础设施<br/>Schema + 类型 + 数据访问层]
+    T02[T02: 种子数据 + 迁移脚本<br/>14品类 + 拖拉机数据 + AI图片]
+    T03[T03: API层<br/>导航树 + 列表筛选 + 详情]
+    T04[T04: 前端列表页<br/>四级导航 + 网格 + 面包屑]
+    T05[T05: 前端详情页<br/>详情 + 参数表 + 兼容机型]
+
+    T01 --> T02
+    T01 --> T03
+    T03 --> T04
+    T01 --> T04
     T03 --> T05
+    T04 --> T05
+
+    style T01 fill:#ff6b6b,color:#fff
+    style T02 fill:#4ecdc4,color:#fff
+    style T03 fill:#45b7d1,color:#fff
+    style T04 fill:#f9ca24,color:#333
+    style T05 fill:#a55eea,color:#fff
 ```
 
-**说明**: 
-- T01是所有任务的基础，必须最先完成
-- T02依赖T01的配置和类型定义
-- T03依赖T02的服务层实现
-- T04依赖T03的API接口
-- T05可以并行开发，但依赖T02和T03的核心功能
-
-## 6. 依赖包列表
-
-### 新增生产依赖
-```
-axios@^1.6.0: HTTP客户端，用于调用外部API
-node-cron@^3.0.3: Cron定时任务调度
-recharts@^2.10.3: 数据可视化图表库
-```
-
-### 新增开发依赖
-```
-@types/node-cron@^3.0.10: Node-cron类型定义
-```
-
-### 现有依赖（已满足需求）
-```
-@prisma/client@^5.14.0: 数据库ORM（已有）
-next@^14.2.0: React框架（已有）
-react@^18.3.0: UI库（已有）
-tailwindcss@^3.4.0: CSS框架（已有）
-zod@^3.23.0: 数据验证（已有）
-```
-
-### 外部服务依赖
-**汇率API服务**:
-- 主服务: exchangerate-api.com (免费层: 1500请求/月)
-- 备用服务: Frankfurter.app (免费、无限制)
-- 本地缓存: 24小时有效期，API失败时使用缓存
-
-**价格数据源**:
-- Agroline.de (德国农机平台)
-- TractorHouse.com (美国农机平台)
-- e-farm.com (欧洲农机平台)
-- 神雕日报/套利报告 (本地数据)
-
-## 7. 共享知识（跨文件约定）
-
-### 7.1 命名规范
-- **组件命名**: PascalCase，如`ArbitrageCalculator`
-- **服务命名**: PascalCase + Service后缀，如`ExchangeRateService`
-- **API路由**: 使用kebab-case路径，如`/api/arbitrage/top-products`
-- **TypeScript接口**: 使用I前缀或PascalCase，如`IArbitrageParams`或`ArbitrageParams`
-- **环境变量**: 使用`ARBITRAGE_`前缀，如`ARBITRAGE_EXCHANGE_API_KEY`
-
-### 7.2 数据格式约定
-- **货币金额**: 统一使用人民币(CNY)为基准，存储单位为"元"
-- **百分比**: 存储为小数(0.15表示15%)，显示时转换为百分比
-- **日期格式**: 数据库存储ISO 8601字符串，前端显示本地化格式
-- **汇率格式**: 1 CNY = X USD，存储X值
-
-### 7.3 API响应格式
-```typescript
-// 统一响应格式
-{
-  success: boolean;      // 请求是否成功
-  data?: any;           // 成功时返回的数据
-  error?: string;       // 失败时的错误信息
-  code?: string;        // 错误代码(可选)
-  timestamp: string;    // 响应时间戳
-}
-```
-
-### 7.4 错误处理约定
-- **客户端错误(4xx)**: 用户输入错误、权限不足等
-- **服务器错误(5xx)**: 服务端内部错误、外部API失败等
-- **业务错误**: 使用特定错误代码，如`ARBITRAGE_INVALID_INPUT`
-- **日志级别**: info(正常操作)、warn(可恢复错误)、error(严重错误)
-
-### 7.5 国际化(i18n)支持
-- **文本提取**: 所有用户可见文本必须通过`next-intl`的`useTranslations`获取
-- **语言文件**: 在`messages/`目录下按语言组织
-- **货币格式化**: 根据用户语言环境格式化货币显示
-- **日期格式化**: 根据用户语言环境格式化日期
-
-### 7.6 性能优化约定
-- **数据库查询**: 使用Prisma的select只查询必要字段
-- **缓存策略**: 首页榜单使用Redis缓存，有效期1小时
-- **图片优化**: 使用Next.js Image组件自动优化
-- **代码分割**: 大型组件使用动态导入(`dynamic import`)
-- **API限流**: 公共API添加限流保护
-
-## 8. 待明确事项
-
-### 基于PRD"Open Questions"的技术澄清点
-
-#### 8.1 国内价格来源确认
-**问题**: 国内价格使用哪个字段？`priceCny`还是其他字段？  
-**假设**: 使用Product模型的`priceCny`字段作为国内价格基准。需要确认该字段是否总是代表当前销售价格。
-**建议**: 添加`priceCnyLastUpdated`字段记录价格更新时间，并建立价格历史追踪。
-
-#### 8.2 汇率更新策略
-**问题**: 实时更新还是每日批量更新？  
-**方案**: 
-1. 每日凌晨2:00批量更新当天汇率（主策略）
-2. 用户请求时如汇率超过24小时则触发异步更新（降级策略）
-3. 提供手动更新接口供管理员使用
-
-#### 8.3 数据更新频率
-**问题**: 国外价格数据更新频率？  
-**方案**:
-- 高优先级数据源(Agroline): 每日更新
-- 中优先级数据源(TractorHouse): 每3日更新
-- 低优先级数据源(e-farm): 每周更新
-- 神雕日报数据: 有新报告时立即导入
-
-#### 8.4 套利计算参数默认值
-**问题**: 运输成本、关税等参数的默认值设定？
-**方案**:
-```typescript
-// src/config/arbitrage.ts
-export const DEFAULT_ARBITRAGE_PARAMS = {
-  shippingCost: 0.1,          // 运输成本占设备价格10%
-  importTaxRate: 0.08,        // 进口关税8%
-  insuranceRate: 0.02,        // 保险费2%
-  otherCosts: 50000,          // 其他杂费5万CNY
-  minProfitMargin: 0.15,      // 最小利润率15%才显示为套利机会
-};
-```
-
-#### 8.5 数据源优先级与置信度
-**问题**: 多个数据源价格冲突时如何处理？
-**方案**:
-1. 建立数据源置信度评分体系（0.0-1.0）
-2. 同一产品多个价格时使用加权平均（权重=置信度）
-3. 提供数据来源透明度展示给用户
-
-#### 8.6 移动端适配策略
-**问题**: 计算器复杂UI在移动端的显示优化？
-**方案**:
-1. 响应式设计：桌面端显示完整计算器，移动端显示简化版
-2. 分步骤引导：复杂操作分解为多个简单步骤
-3. 触摸友好：增大按钮和输入框尺寸
-
-#### 8.7 性能监控指标
-**需要定义的关键指标**:
-- API响应时间P95 < 500ms
-- 首页加载时间 < 3s
-- 价格数据新鲜度 < 24h
-- 汇率数据新鲜度 < 4h
-- 缓存命中率 > 80%
-
-### 技术决策待确认点
-1. **缓存存储选择**: 使用Vercel KV (Redis) 还是内存缓存？建议使用Vercel KV保证跨实例一致性。
-2. **外部API调用频率限制**: 需要明确各数据源的API调用限制和配额。
-3. **错误恢复机制**: 外部服务失败时的降级策略需要详细设计。
-4. **数据备份策略**: 价格历史数据是否需要单独备份以防止丢失？
-5. **监控告警**: 需要设置哪些关键告警指标和阈值？
-
----
-**文档版本控制**
-| 版本 | 日期 | 修改说明 | 修改人 |
-|------|------|----------|--------|
-| 1.0 | 2026-XX-XX | 初始版本 | 高见远 |
+**关键路径**：T01 → T03 → T04 → T05（主线）
+**可并行**：T02 与 T03 可并行（都只依赖 T01）

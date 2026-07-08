@@ -25,12 +25,19 @@ export default async function ShowroomPage({
 }) {
   const { locale } = await params;
 
-  // Fetch all published new-machine showcase items with booth + brand info
-  const [rawItems, total] = await Promise.all([
+  // Brand tier sort order (flagship first, showcase last)
+  const tierOrder: Record<string, number> = {
+    flagship: 0,
+    premium: 1,
+    standard: 2,
+    showcase: 3,
+  };
+
+  // Fetch ALL published new-machine items for tier-aware sorting
+  const [allRawItems, total] = await Promise.all([
     prisma.showcaseItem.findMany({
       where: { status: "published", itemType: "new" },
       orderBy: [{ hotScore: "desc" }, { sortIndex: "asc" }, { createdAt: "desc" }],
-      take: 24,
       include: {
         booth: {
           select: { id: true, name: true, hall: true, pavilion: true, tier: true },
@@ -52,6 +59,18 @@ export default async function ShowroomPage({
     }),
     prisma.showcaseItem.count({ where: { status: "published", itemType: "new" } }),
   ]);
+
+  // Sort by brand tier first, then hotScore, then sortIndex, then createdAt
+  const rawItems = allRawItems
+    .sort((a: any, b: any) => {
+      const ta = tierOrder[a.brandRel?.brandTier ?? ""] ?? 9;
+      const tb = tierOrder[b.brandRel?.brandTier ?? ""] ?? 9;
+      if (ta !== tb) return ta - tb;
+      if (a.hotScore !== b.hotScore) return b.hotScore - a.hotScore;
+      if ((a.sortIndex ?? 0) !== (b.sortIndex ?? 0)) return (a.sortIndex ?? 0) - (b.sortIndex ?? 0);
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    })
+    .slice(0, 24);
 
   // Fetch halls for filter (from published booths)
   const booths = await prisma.booth.findMany({

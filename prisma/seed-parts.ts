@@ -1,8 +1,9 @@
 /**
- * 零配件种子数据
+ * 零配件种子数据（旧版 V1，使用 PartLegacy 模型）
  * 运行: npx tsx prisma/seed-parts.ts
  * 覆盖8大品类：发动机、液压、传动、电气、滤芯、轮胎、轴承、车身
  * 品牌覆盖：约翰迪尔、克拉斯、纽荷兰、久保田、道依茨等
+ * 注意：V2 重构后新数据请使用 prisma/seed-parts-v2.ts（四级分类体系）
  */
 
 import { PrismaClient } from "@prisma/client";
@@ -363,11 +364,11 @@ async function main() {
   console.log("开始播种零配件数据...");
 
   // 先清空旧数据（可重复执行）
-  await prisma.part.deleteMany({});
+  await prisma.partLegacy.deleteMany({});
   console.log("已清空旧数据");
 
   for (const p of PARTS) {
-    await prisma.part.create({
+    await prisma.partLegacy.create({
       data: {
         nameZh: p.nameZh,
         nameEn: p.nameEn,
@@ -388,7 +389,7 @@ async function main() {
     console.log(`  创建: [${p.category}] ${p.nameZh} (${p.brand})`);
   }
 
-  const total = await prisma.part.count();
+  const total = await prisma.partLegacy.count();
   console.log(`\n完成! 共 ${total} 个零配件`);
 }
 

@@ -39,12 +39,19 @@ export async function GET(req: NextRequest) {
     ];
   }
 
-  const [rawItems, total] = await Promise.all([
+  // Brand tier sort order (flagship first, showcase last)
+  const tierOrder: Record<string, number> = {
+    flagship: 0,
+    premium: 1,
+    standard: 2,
+    showcase: 3,
+  };
+
+  // Fetch ALL filtered items for tier-aware sorting, then paginate in JS
+  const [allRawItems, total] = await Promise.all([
     prisma.showcaseItem.findMany({
       where,
       orderBy: [{ hotScore: "desc" }, { sortIndex: "asc" }, { createdAt: "desc" }],
-      skip: (page - 1) * limit,
-      take: limit,
       include: {
         booth: {
           select: { id: true, name: true, hall: true, pavilion: true, tier: true },
@@ -66,6 +73,19 @@ export async function GET(req: NextRequest) {
     }),
     prisma.showcaseItem.count({ where }),
   ]);
+
+  // Sort by brand tier first, then hotScore, then sortIndex, then createdAt
+  const sortedItems = allRawItems.sort((a: any, b: any) => {
+    const ta = tierOrder[a.brandRel?.brandTier ?? ""] ?? 9;
+    const tb = tierOrder[b.brandRel?.brandTier ?? ""] ?? 9;
+    if (ta !== tb) return ta - tb;
+    if (a.hotScore !== b.hotScore) return b.hotScore - a.hotScore;
+    if ((a.sortIndex ?? 0) !== (b.sortIndex ?? 0)) return (a.sortIndex ?? 0) - (b.sortIndex ?? 0);
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
+
+  // Paginate after sorting
+  const rawItems = sortedItems.slice((page - 1) * limit, page * limit);
 
   const items = rawItems.map((item: any) => ({
     ...item,

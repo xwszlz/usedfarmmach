@@ -32,6 +32,7 @@ interface Brand {
   expoSlug: string;
   expoLogoUrl: string | null;
   coreCategory?: string;
+  categories?: string[];
   establishedYear: number | null;
   exportVolume: string;
   expoStory: string;
@@ -73,6 +74,7 @@ interface TierCounts {
   flagship: number;
   premium: number;
   standard: number;
+  showcase?: number;
 }
 
 const tierConfig: Record<
@@ -118,6 +120,16 @@ const tierConfig: Record<
     icon: Award,
     badgeBg: "bg-teal-600",
   },
+  showcase: {
+    label: "特色展示",
+    labelEn: "Showcase",
+    color: "text-violet-600",
+    gradient: "from-violet-500 to-purple-500",
+    borderColor: "border-violet-200",
+    bgColor: "bg-violet-50",
+    icon: Sparkles,
+    badgeBg: "bg-violet-600",
+  },
 };
 
 const countryFlags: Record<string, string> = {
@@ -136,18 +148,46 @@ const countryFlags: Record<string, string> = {
   Sweden: "🇸🇪",
   Brazil: "🇧🇷",
   Czech: "🇨🇿",
+  "Czech Republic": "🇨🇿",
   Canada: "🇨🇦",
+  Poland: "🇵🇱",
+  Belarus: "🇧🇾",
+  "South Korea": "🇰🇷",
+  India: "🇮🇳",
+  UK: "🇬🇧",
 };
 
 const categoryIcons: Record<string, typeof Tractor> = {
   拖拉机: Tractor,
+  紧凑型拖拉机: Tractor,
+  专用拖拉机: Tractor,
   收割机: Wheat,
   收获机械: Wheat,
+  收获机: Wheat,
   玉米收获机: Wheat,
+  玉米割台: Wheat,
+  割台: Wheat,
+  "割台/割晒机": Wheat,
+  特种收获机: Wheat,
+  蔬菜收获机: Wheat,
   牧草机械: Sprout,
+  牧草设备: Sprout,
   播种: Sprout,
+  精量播种机: Sprout,
+  免耕播种机: Sprout,
+  "播种机/耕作机": Sprout,
   植保无人机: Plane,
+  喷雾机: Plane,
+  自走式喷雾机: Plane,
+  精准农业: Sparkles,
+  "动力耙/旋耕机": Layers,
+  旋耕机: Layers,
+  "深松机/耕作机": Layers,
+  弹齿除草机: Sprout,
   综合农机: Layers,
+  马铃薯: Wheat,
+  "马铃薯/甜菜设备": Wheat,
+  打捆机: Sprout,
 };
 
 function StatCard({
@@ -386,7 +426,7 @@ export default function GlobalBrandsClient({
   const filteredBrands = useMemo(() => {
     return brands.filter((b) => {
       if (selectedTier !== "all" && b.brandTier !== selectedTier) return false;
-      if (selectedCategory !== "all" && !b.coreCategory?.includes(selectedCategory))
+      if (selectedCategory !== "all" && !b.categories?.some(c => c.includes(selectedCategory)))
         return false;
       return true;
     });
