@@ -5,18 +5,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 export async function GET() {
-  const results: Record<string, unknown> = {
-    env: {
-      ark_key_exists: !!process.env.ARK_API_KEY,
-      ark_key_length: process.env.ARK_API_KEY?.length || 0,
-      ark_key_prefix: process.env.ARK_API_KEY?.substring(0, 8) || "EMPTY",
-      ark_model: process.env.ARK_MODEL_ID || "EMPTY",
-      google_key_exists: !!process.env.GOOGLE_API_KEY,
-      openrouter_key_exists: !!process.env.OPENROUTER_API_KEY,
-    },
-    tests: {} as Record<string, unknown>,
-    timestamp: new Date().toISOString(),
-  };
+  const tests: Record<string, unknown> = {};
 
   // Test 1: Doubao (ARK) API connectivity — text only, no images
   try {
@@ -37,19 +26,19 @@ export async function GET() {
         timeout: 30000,
       }
     );
-    results.tests.ark = {
+    tests.ark = {
       status: "OK",
       http_status: arkResponse.status,
       time_ms: Date.now() - arkStart,
       response: JSON.stringify(arkResponse.data).substring(0, 300),
     };
-  } catch (error: any) {
-    results.tests.ark = {
+  } catch (error: unknown) {
+    const e = error as { message?: string; response?: { status?: number; data?: unknown } };
+    tests.ark = {
       status: "FAILED",
-      error: error?.message || String(error),
-      http_status: error?.response?.status || null,
-      error_detail: error?.response?.data ? JSON.stringify(error.response.data).substring(0, 300) : null,
-      time_ms: error?.duration || null,
+      error: e?.message || String(error),
+      http_status: e?.response?.status || null,
+      error_detail: e?.response?.data ? JSON.stringify(e.response.data).substring(0, 300) : null,
     };
   }
 
@@ -78,21 +67,30 @@ export async function GET() {
         timeout: 60000,
       }
     );
-    results.tests.ark_with_image = {
+    tests.ark_with_image = {
       status: "OK",
       http_status: imgResponse.status,
       time_ms: Date.now() - imgStart,
       response: JSON.stringify(imgResponse.data).substring(0, 500),
     };
-  } catch (error: any) {
-    results.tests.ark_with_image = {
+  } catch (error: unknown) {
+    const e = error as { message?: string; response?: { status?: number; data?: unknown } };
+    tests.ark_with_image = {
       status: "FAILED",
-      error: error?.message || String(error),
-      http_status: error?.response?.status || null,
-      error_detail: error?.response?.data ? JSON.stringify(error.response.data).substring(0, 300) : null,
-      time_ms: null,
+      error: e?.message || String(error),
+      http_status: e?.response?.status || null,
+      error_detail: e?.response?.data ? JSON.stringify(e.response.data).substring(0, 300) : null,
     };
   }
 
-  return NextResponse.json(results);
+  return NextResponse.json({
+    env: {
+      ark_key_exists: !!process.env.ARK_API_KEY,
+      ark_key_length: process.env.ARK_API_KEY?.length || 0,
+      ark_key_prefix: process.env.ARK_API_KEY?.substring(0, 8) || "EMPTY",
+      ark_model: process.env.ARK_MODEL_ID || "EMPTY",
+    },
+    tests,
+    timestamp: new Date().toISOString(),
+  });
 }
