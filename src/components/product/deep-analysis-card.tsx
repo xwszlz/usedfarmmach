@@ -42,7 +42,7 @@ export default function DeepAnalysisCard({
     setExpanded(true);
 
     try {
-      const res = await fetch("/api/agents/seller-helper/deep-analysis", {
+      const res = await fetch("https://shendiao-ai-api-ybemtmjsna.cn-beijing.fcapp.run/deep-analysis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

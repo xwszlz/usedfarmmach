@@ -183,9 +183,9 @@ export default function SellerAiAssistant({ imageFiles, onFill }: SellerAiAssist
         console.warn(`[AI] ${uploadFailCount}/${imageDataUrls.length} 张图片上传失败，剩余 ${imageUrls.length} 张继续识别`);
       }
 
-      // 3. 调用识别 API（使用 HTTP URL，走豆包主模型）
+      // 3. 调用识别 API（FC 阿里云函数计算，直接对接豆包，避免 Vercel 海外超时）
       setPhase(`AI 智能识别中...(${imageUrls.length}张图片)`);
-      const res = await fetch("/api/agents/seller-helper/recognize", {
+      const res = await fetch("https://shendiao-ai-api-ybemtmjsna.cn-beijing.fcapp.run/recognize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ imageUrls }), // ← 关键改动：用 imageUrls 替代 imageDataUris
