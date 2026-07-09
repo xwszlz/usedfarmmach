@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const adminEmail = process.env.ADMIN_EMAIL || "932133255@qq.com";
+    const adminEmail = process.env.ADMIN_EMAIL || "jiusei0319@gmail.com";
 
     const html = `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">

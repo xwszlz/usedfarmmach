@@ -89,7 +89,7 @@ export function Footer({ locale }: FooterProps) {
                 {t("phone")}: +86 18633878701
               </li>
               <li className="text-sm text-gray-500">
-                {t("email")}: 932133255@qq.com
+                {t("email")}: jiusei0319@gmail.com
               </li>
               <li className="text-sm text-gray-500">
                 {t("address")}: {t("companyAddress")}

@@ -320,8 +320,8 @@ export default function BrandClaimClient({ locale }: { locale: string }) {
 
           <p className="text-center text-xs text-gray-400">
             {t(
-              "提交后我们将在2个工作日内审核。如需加急，请联系 expo@usedfarmmach.com",
-              "We will review within 2 business days. For urgent requests, contact expo@usedfarmmach.com"
+              "提交后我们将在2个工作日内审核。如需加急，请联系 jiusei0319@gmail.com",
+              "We will review within 2 business days. For urgent requests, contact jiusei0319@gmail.com"
             )}
           </p>
         </form>

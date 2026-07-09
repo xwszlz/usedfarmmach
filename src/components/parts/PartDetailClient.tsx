@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Wrench, ShoppingCart, CheckCircle2, Phone, Mail, Package, ArrowRight } from "lucide-react";
+import { Wrench, ShoppingCart, CheckCircle2, Mail, Package, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { getImageUrl, getDetailImageUrl } from "@/lib/image-url";
 import PartsBreadcrumb from "./PartsBreadcrumb";
@@ -401,13 +401,9 @@ export default function PartDetailClient({ part, relatedParts, locale }: PartDet
                       <ArrowRight className="h-4 w-4" />
                     </button>
                     <div className="flex items-center gap-4 text-sm text-gray-500">
-                      <a href="tel:932133255" className="flex items-center gap-1 hover:text-orange-600">
-                        <Phone className="h-4 w-4" />
-                        932133255
-                      </a>
-                      <a href="mailto:932133255@qq.com" className="flex items-center gap-1 hover:text-orange-600">
+                      <a href="mailto:jiusei0319@gmail.com" className="flex items-center gap-1 hover:text-orange-600">
                         <Mail className="h-4 w-4" />
-                        932133255@qq.com
+                        jiusei0319@gmail.com
                       </a>
                     </div>
                   </div>

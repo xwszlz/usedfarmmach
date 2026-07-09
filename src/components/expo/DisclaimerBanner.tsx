@@ -64,8 +64,8 @@ export function DisclaimerBanner({ locale = "zh", variant = "full" }: Disclaimer
         <div className="border-t border-gray-200 px-5 py-4">
           <p className="text-xs leading-relaxed text-gray-500">
             {isZh
-              ? '本网站"世界农机数字展会"为信息展示平台，所展示的品牌名称、产品信息及图片均为基于公开资料的AI生成内容，不代表品牌官方立场，不构成任何商业授权或代理关系。所有产品图片均为AI生成的艺术渲染图，非真实产品照片。品牌Logo为示意性标识，非官方注册商标。如品牌方对本平台展示内容有异议，或希望认领并更新展示信息，请联系：expo@usedfarmmach.com。本平台将在收到通知后48小时内处理相关请求。'
-              : 'This website "World Agricultural Machinery Digital Expo" is an information display platform. Brand names, product information, and images displayed are AI-generated content based on public sources and do not represent official brand positions, nor constitute any commercial authorization or agency relationship. All product images are AI-generated artistic renderings, not real product photos. Brand logos are indicative marks, not official registered trademarks. If a brand has objections to the displayed content or wishes to claim and update its information, please contact: expo@usedfarmmach.com. We will process relevant requests within 48 hours of receipt.'}
+              ? '本网站"世界农机数字展会"为信息展示平台，所展示的品牌名称、产品信息及图片均为基于公开资料的AI生成内容，不代表品牌官方立场，不构成任何商业授权或代理关系。所有产品图片均为AI生成的艺术渲染图，非真实产品照片。品牌Logo为示意性标识，非官方注册商标。如品牌方对本平台展示内容有异议，或希望认领并更新展示信息，请联系：jiusei0319@gmail.com。本平台将在收到通知后48小时内处理相关请求。'
+              : 'This website "World Agricultural Machinery Digital Expo" is an information display platform. Brand names, product information, and images displayed are AI-generated content based on public sources and do not represent official brand positions, nor constitute any commercial authorization or agency relationship. All product images are AI-generated artistic renderings, not real product photos. Brand logos are indicative marks, not official registered trademarks. If a brand has objections to the displayed content or wishes to claim and update its information, please contact: jiusei0319@gmail.com. We will process relevant requests within 48 hours of receipt.'}
           </p>
           <a
             href={`/${locale}/expo/brand-claim`}

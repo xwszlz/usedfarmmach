@@ -223,7 +223,7 @@ const TEXTS: Record<string, {
     submit: "Submit Application",
     submitting: "Submitting...",
     success: "Submitted successfully! We'll contact you within 24 hours.",
-    error: "Submission failed. Please try again or contact WhatsApp: +86 15511395016",
+    error: "Submission failed. Please try again or contact Email: jiusei0319@gmail.com",
     selectPlaceholder: "Please select",
   },
   ru: {
@@ -373,7 +373,7 @@ const TEXTS: Record<string, {
     submit: "Enviar Solicitud",
     submitting: "Enviando...",
     success: "¡Enviado con éxito! Le contactaremos en 24 horas.",
-    error: "Error. Intente de nuevo o contacte WhatsApp: +86 15511395016",
+    error: "Error. Intente de nuevo o contacte Email: jiusei0319@gmail.com",
     selectPlaceholder: "Seleccione",
   },
   pt: {
@@ -562,7 +562,7 @@ const TEXTS: Record<string, {
     submit: "Envoyer la Demande",
     submitting: "Envoi...",
     success: "Envoyé avec succès! Nous vous contacterons sous 24 heures.",
-    error: "Échec de l'envoi. Réessayez ou contactez WhatsApp: +86 15511395016",
+    error: "Échec de l'envoi. Réessayez ou contactez Email: jiusei0319@gmail.com",
     selectPlaceholder: "Sélectionner",
   },
   hi: {
@@ -1030,7 +1030,7 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
         {/* Contact info */}
         <div className="mt-8 text-center text-sm text-gray-500">
           <p>
-            WhatsApp: +86 15511395016 &nbsp;|&nbsp; Email: 932133255@qq.com
+            Email: jiusei0319@gmail.com
           </p>
         </div>
       </section>

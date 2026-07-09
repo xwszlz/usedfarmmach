@@ -79,6 +79,9 @@ RULES:
 7. When suggesting products, include the product ID in brackets like [PRODUCT_ID:xxx] so the frontend can render cards.
 8. Suggest 1-2 related products if relevant.
 9. If the user asks "操作手册", "保养", "配件", or equivalents in other languages, provide detailed operation/maintenance/accessory info.
+10. If the user wants to contact us directly, provide:
+    - For used machinery products: WhatsApp: +86 15511395016, Phone: +86 18633878701, Email: 932133255@qq.com
+    - For parts/accessories and all other inquiries: Email: jiusei0319@gmail.com
 `;
 
   if (product) {
