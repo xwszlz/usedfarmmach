@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
-import { HeroSection } from "@/components/home/hero-section";
-import { DailyReportSection } from "@/components/home/daily-report-section";
+import { ArenaHero } from "@/components/home/arena-hero";
+import { PillarNav } from "@/components/home/pillar-nav";
+import { ExpoEntrance } from "@/components/home/expo-entrance";
 import { HotEquipment } from "@/components/home/hot-equipment";
-import { ArbitrageShowcase } from "@/components/home/arbitrage-showcase";
-import { Testimonials } from "@/components/home/testimonials";
+import { ResearchHubEntry } from "@/components/home/research-hub-entry";
+import { DailyReportSection } from "@/components/home/daily-report-section";
+import { TrustBadges } from "@/components/home/trust-badges";
+import { CTASection } from "@/components/home/cta-section";
 import { DAILY_REPORT_RANKING } from "@/config/daily-report-ranking";
 import { generatePageMetadata } from "@/lib/seo-metadata";
 import { BreadcrumbStructuredData, ItemListStructuredData } from "@/components/seo/structured-data";
@@ -100,11 +103,16 @@ export default async function HomePage({
           brand: locale === "zh" ? p.brand?.nameZh : p.brand?.nameEn,
         }))}
       />
-      <HeroSection locale={locale} topProduct={topProduct} topReportData={topReportData} />
-      <DailyReportSection locale={locale} />
+
+      {/* 8 屏组装 */}
+      <ArenaHero locale={locale} />
+      <PillarNav locale={locale} />
+      <ExpoEntrance locale={locale} />
       <HotEquipment products={hotProducts} locale={locale} />
-      <ArbitrageShowcase />
-      <Testimonials locale={locale} />
+      <ResearchHubEntry locale={locale} />
+      <DailyReportSection locale={locale} />
+      <TrustBadges locale={locale} />
+      <CTASection locale={locale} />
     </div>
   );
 }

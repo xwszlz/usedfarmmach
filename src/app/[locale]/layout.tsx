@@ -3,9 +3,13 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { notFound } from "next/navigation";
 import Script from "next/script";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { OrganizationStructuredData } from "@/components/seo/structured-data";
+import { ThemeProvider } from "@/lib/theme/theme-provider";
+import { SmoothScrollProvider } from "@/lib/lenis/smooth-scroll-provider";
 
 const locales = ["zh", "en", "ru", "es", "pt", "ar", "fr", "hi"] as const;
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
@@ -39,14 +43,26 @@ export default async function LocaleLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale}>
-      <body className="min-h-screen bg-white">
+    <html lang={locale} suppressHydrationWarning>
+      <body
+        className={`${GeistSans.variable} ${GeistMono.variable} min-h-screen`}
+        style={{ backgroundColor: "var(--color-bg-primary)" }}
+      >
         <OrganizationStructuredData locale={locale} />
-        <NextIntlClientProvider messages={messages}>
-          <Navbar locale={locale} />
-          <main className="min-h-[calc(100vh-4rem)]">{children}</main>
-          <Footer locale={locale} />
-        </NextIntlClientProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <NextIntlClientProvider messages={messages}>
+            <SmoothScrollProvider>
+              <Navbar locale={locale} />
+              <main className="min-h-[calc(100vh-4rem)]">{children}</main>
+              <Footer locale={locale} />
+            </SmoothScrollProvider>
+          </NextIntlClientProvider>
+        </ThemeProvider>
 
         {/* Yandex Metrika — 俄罗斯广告流量监控 */}
         <Script

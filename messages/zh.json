@@ -65,7 +65,69 @@
     "serviceNetwork": "服务网络",
     "certification": "认证申请",
     "myFavorites": "我的收藏",
-    "contactUs": "联系我们"
+    "contactUs": "联系我们",
+    "machinery": "二手农机",
+    "arena": "AI竞技场",
+    "expo": "博览会",
+    "services": "增值服务",
+    "research": "研究Hub"
+  },
+  "hero": {
+    "arenaTitle": "AI 农机竞技场",
+    "arenaSubtitle": "选作物、选机型、设预算，让AI为你匹配最优农机方案",
+    "crop": "作物类型",
+    "cropWheat": "小麦",
+    "cropCorn": "玉米",
+    "cropRice": "水稻",
+    "cropSoybean": "大豆",
+    "cropCotton": "棉花",
+    "cropOther": "其他",
+    "machineType": "机型",
+    "machineTractor": "拖拉机",
+    "machineHarvester": "收割机",
+    "machineBaler": "打捆机",
+    "machineWrapper": "裹包机",
+    "machineOther": "其他",
+    "budget": "预算",
+    "startArena": "开始竞技"
+  },
+  "pillar": {
+    "tradeTitle": "二手交易",
+    "tradeDesc": "200+台认证二手农机，全球买卖",
+    "expoTitle": "虚拟博览",
+    "expoDesc": "105个品牌沉浸式在线展示",
+    "partsTitle": "零部件",
+    "partsDesc": "500+SKU原厂及适配配件",
+    "servicesTitle": "增值服务",
+    "servicesDesc": "专业检测、跨境物流、金融保险",
+    "arenaTitle": "AI竞技场",
+    "arenaDesc": "智能匹配最优农机投资方案",
+    "researchTitle": "研究Hub",
+    "researchDesc": "行业报告、政策解读、市场趋势"
+  },
+  "expoHome": {
+    "chinaHall": "中国品牌馆",
+    "chinaHallDesc": "国产主流农机品牌集中展示",
+    "intlHall": "国际标杆馆",
+    "intlHallDesc": "全球知名农机品牌荟萃",
+    "compareHall": "品类对比厅",
+    "compareHallDesc": "跨品牌参数与价格对比",
+    "enterHall": "进入展馆"
+  },
+  "research": {
+    "title": "AI 前沿研究",
+    "viewAll": "查看全部"
+  },
+  "trust": {
+    "camda": "CAMDA副会长单位",
+    "globalCdn": "Vercel全球CDN",
+    "oss": "阿里云OSS",
+    "languages": "8语种服务"
+  },
+  "cta": {
+    "title": "开启你的AI农机竞技",
+    "subtitle": "一键匹配最优农机方案，发现跨境投资机会",
+    "button": "立即开始"
   },
   "home": {
     "heroTitle": "神雕农机全球交易",

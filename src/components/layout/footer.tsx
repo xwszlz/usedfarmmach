@@ -9,7 +9,7 @@ export function Footer({ locale }: FooterProps) {
   const t = useTranslations("footer");
 
   return (
-    <footer className="border-t bg-gray-50">
+    <footer className="border-t border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-950">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           {/* Brand */}
@@ -21,12 +21,12 @@ export function Footer({ locale }: FooterProps) {
                 className="h-8 w-auto object-contain"
               />
             </div>
-            <p className="mt-3 text-sm text-gray-500">{t("description")}</p>
+            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">{t("description")}</p>
           </div>
 
           {/* Quick Links — 行业权威平台 */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-900">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
               {t("quickLinks")}
             </h3>
             <ul className="mt-3 space-y-2">
@@ -35,7 +35,7 @@ export function Footer({ locale }: FooterProps) {
                   href="https://www.rbauction.com/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-gray-500 hover:text-primary-600"
+                  className="text-sm text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400"
                 >
                   {t("quickLinkRb")}
                 </a>
@@ -45,7 +45,7 @@ export function Footer({ locale }: FooterProps) {
                   href="https://www.camda.org.cn/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-gray-500 hover:text-primary-600"
+                  className="text-sm text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400"
                 >
                   {t("quickLinkCamda")}
                 </a>
@@ -55,7 +55,7 @@ export function Footer({ locale }: FooterProps) {
                   href="https://www.tractorhouse.com/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-gray-500 hover:text-primary-600"
+                  className="text-sm text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400"
                 >
                   {t("quickLinkTractorHouse")}
                 </a>
@@ -65,7 +65,7 @@ export function Footer({ locale }: FooterProps) {
                   href="https://www.agriaffaires.com/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-gray-500 hover:text-primary-600"
+                  className="text-sm text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400"
                 >
                   {t("quickLinkAgriaffaires")}
                 </a>
@@ -75,17 +75,17 @@ export function Footer({ locale }: FooterProps) {
 
           {/* Contact */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-900">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
               {t("contactUs")}
             </h3>
             <ul className="mt-3 space-y-2">
-              <li className="text-sm text-gray-500">
+              <li className="text-sm text-gray-500 dark:text-gray-400">
                 {t("company")}: {t("companyName")}
               </li>
-              <li className="text-sm text-gray-500">
+              <li className="text-sm text-gray-500 dark:text-gray-400">
                 {t("email")}: jiusei0319@gmail.com
               </li>
-              <li className="text-sm text-gray-500">
+              <li className="text-sm text-gray-500 dark:text-gray-400">
                 {t("address")}: {t("companyAddress")}
               </li>
             </ul>
@@ -97,7 +97,7 @@ export function Footer({ locale }: FooterProps) {
           <DisclaimerBanner locale={locale} variant="full" />
         </div>
 
-        <div className="mt-8 border-t pt-8 text-center text-sm text-gray-400">
+        <div className="mt-8 border-t border-gray-200 pt-8 text-center text-sm text-gray-400 dark:border-gray-700">
           {t("copyright")}
         </div>
       </div>

@@ -2,20 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-  }
-}
+@import "../lib/theme/design-tokens.css";
 
 @layer base {
   * {
-    @apply border-gray-200;
+    @apply border-gray-200 dark:border-gray-700;
   }
   body {
-    @apply bg-white text-gray-900 antialiased;
+    @apply antialiased;
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
   }
 }

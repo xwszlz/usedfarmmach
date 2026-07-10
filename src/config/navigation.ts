@@ -1,147 +1,31 @@
-import type { Locale } from "../../i18n";
-
 export interface NavItem {
-  href?: string;
-  labelKey?: string;
-  label?: string;
-  children?: NavItem[];
+  href: string;
+  labelKey: string;
+  highlight?: boolean;
 }
 
 /**
- * English navigation: structured dropdowns for international buyers
- * HOME | BUY▼ | SELL▼ | INSIGHTS▼ | SERVICES▼ | ABOUT
- */
-export const mainNavEn: NavItem[] = [
-  { href: "/", label: "HOME" },
-  {
-    label: "BUY",
-    children: [
-      { href: "/products?match=true", label: "Buyer Request" },
-      { href: "/brand/claas", label: "CLAAS" },
-      { href: "/brand/new-holland", label: "New Holland" },
-      { href: "/brand/john-deere", label: "John Deere" },
-      { href: "/brand/krone", label: "Krone" },
-      { href: "/products?category=tractor", label: "Tractor" },
-      { href: "/products?category=forage-harvester", label: "Silage Harvesters" },
-      { href: "/products?category=baler", label: "Balers" },
-      { href: "/products?category=header", label: "Headers & Pickup Heads" },
-      { href: "/products?category=implement", label: "Implements" },
-      { href: "/auctions", label: "Auctions" },
-      { href: "/rentals", label: "Rentals" },
-    ],
-  },
-  {
-    label: "SELL",
-    children: [
-      { href: "/seller/products/new", label: "List Equipment" },
-      { href: "/seller/guide", label: "Listing Guide" },
-      { href: "/seller/products", label: "Seller Center" },
-      { href: "/seller/inquiries", label: "Inquiries" },
-      { href: "/seller/certification", label: "Certification" },
-      { href: "/user/favorites", label: "My Favorites" },
-    ],
-  },
-  {
-    label: "INSIGHTS",
-    children: [
-      { href: "/insights", label: "Market Insights" },
-      { href: "/gov-data", label: "Gov Data" },
-      { href: "/intelligence", label: "Market Intel" },
-      { href: "/arbitrage", label: "Arbitrage Rankings" },
-      { href: "/blog", label: "Industry News" },
-    ],
-  },
-  {
-    label: "SERVICES",
-    children: [
-      { href: "/logistics", label: "Logistics" },
-      { href: "/warehouses", label: "Overseas Warehouses" },
-      { href: "/service-network", label: "Service Network" },
-      { href: "/standards", label: "Standards" },
-      { href: "/parts", label: "Parts" },
-      { href: "/solutions", label: "Solutions" },
-      { href: "/finance", label: "Finance & Insurance" },
-      { href: "/gov-data", label: "Gov Data" },
-      { href: "/api-docs", label: "Open API" },
-      { href: "/about#contact", label: "Contact Us" },
-    ],
-  },
-  { href: "/about", label: "ABOUT" },
-];
-
-/**
- * Chinese / default navigation: structured dropdowns
- * 首页 | 买农机▼ | 卖农机▼ | 市场洞察▼ | 服务支持▼ | 关于我们
+ * Unified 8-item flat navigation (no dropdowns).
+ * Used for both zh and en — labels come from i18n translation keys.
+ *
+ * 首页 | 二手农机 | AI竞技场 | 博览会 | 零部件 | 增值服务 | 研究Hub | 关于我们
  */
 export const mainNav: NavItem[] = [
   { href: "/", labelKey: "nav.home" },
-  {
-    labelKey: "nav.buyMachinery",
-    children: [
-      { href: "/products?match=true", labelKey: "nav.buyerRequest" },
-      { href: "/brand/claas", label: "CLAAS" },
-      { href: "/brand/new-holland", label: "New Holland" },
-      { href: "/brand/krone", label: "Krone" },
-      { href: "/brand/john-deere", label: "John Deere" },
-      { href: "/category/forage-harvester", label: "青储机" },
-      { href: "/category/baler", label: "打捆机" },
-      { href: "/category/tractor", label: "拖拉机" },
-      { href: "/category/mower", label: "割草机" },
-      { href: "/category/bale-wrapper", label: "裹包机" },
-      { href: "/category/forage-header", label: "饲料割台" },
-      { href: "/category/pickup-header", label: "捡拾割台" },
-      { href: "/category/rake", label: "搂草机" },
-      { href: "/category/tedder", label: "摊晒机" },
-      { href: "/auctions", label: "在线竞拍" },
-      { href: "/rentals", label: "农机租赁" },
-    ],
-  },
-  {
-    labelKey: "nav.sellMachinery",
-    children: [
-      { href: "/seller/products/new", labelKey: "nav.publishProduct" },
-      { href: "/seller/guide", labelKey: "nav.publishGuide" },
-      { href: "/seller/products", labelKey: "nav.sellerCenter" },
-      { href: "/seller/inquiries", labelKey: "nav.inquiryManagement" },
-      { href: "/seller/certification", labelKey: "nav.certification" },
-      { href: "/user/favorites", labelKey: "nav.myFavorites" },
-    ],
-  },
-  {
-    labelKey: "nav.marketInsights",
-    children: [
-      { href: "/insights", label: "数据洞察" },
-      { href: "/intelligence", labelKey: "nav.intelligence" },
-      { href: "/arbitrage", labelKey: "nav.arbitrageAnalysis" },
-      { href: "/blog", labelKey: "nav.blog" },
-    ],
-  },
-  {
-    labelKey: "nav.serviceSupport",
-    children: [
-      { href: "/logistics", labelKey: "nav.logistics" },
-      { href: "/warehouses", label: "海外仓" },
-      { href: "/service-network", labelKey: "nav.serviceNetwork" },
-      { href: "/standards", labelKey: "nav.standards" },
-      { href: "/parts", labelKey: "nav.parts" },
-      { href: "/solutions", labelKey: "nav.solutions" },
-      { href: "/finance", label: "金融保险" },
-      { href: "/gov-data", label: "政府数据" },
-      { href: "/api-docs", label: "开放API" },
-      { href: "/about#contact", labelKey: "nav.contactUs" },
-    ],
-  },
+  { href: "/products", labelKey: "nav.machinery" },
+  { href: "/arena", labelKey: "nav.arena", highlight: true },
+  { href: "/expo", labelKey: "nav.expo" },
+  { href: "/parts", labelKey: "nav.parts" },
+  { href: "/services", labelKey: "nav.services" },
+  { href: "/research", labelKey: "nav.research" },
   { href: "/about", labelKey: "nav.about" },
 ];
 
-/** Resolve the appropriate nav items for a given locale */
-export function getNavForLocale(locale: Locale): NavItem[] {
-  if (locale === "en") {
-    return mainNavEn;
-  }
+/** Resolve nav items for a given locale — now unified, same for all locales */
+export function getNavForLocale(_locale: string): NavItem[] {
   return mainNav;
 }
 
-export function getLocalePath(path: string, locale: Locale): string {
+export function getLocalePath(path: string, locale: string): string {
   return `/${locale}${path}`;
 }

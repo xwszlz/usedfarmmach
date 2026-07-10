@@ -65,7 +65,69 @@
     "certification": "Certificación",
     "myFavorites": "Favoritos",
     "contactUs": "Contacto",
-    "inquiryManagement": "Consultas"
+    "inquiryManagement": "Consultas",
+    "machinery": "Machinery",
+    "arena": "AI Arena",
+    "expo": "Expo",
+    "services": "Services",
+    "research": "Research"
+  },
+  "hero": {
+    "arenaTitle": "AI Machinery Arena",
+    "arenaSubtitle": "Pick your crop, machine type and budget — let AI find the best machinery deal",
+    "crop": "Crop Type",
+    "cropWheat": "Wheat",
+    "cropCorn": "Corn",
+    "cropRice": "Rice",
+    "cropSoybean": "Soybean",
+    "cropCotton": "Cotton",
+    "cropOther": "Other",
+    "machineType": "Machine Type",
+    "machineTractor": "Tractor",
+    "machineHarvester": "Harvester",
+    "machineBaler": "Baler",
+    "machineWrapper": "Bale Wrapper",
+    "machineOther": "Other",
+    "budget": "Budget",
+    "startArena": "Start Arena"
+  },
+  "pillar": {
+    "tradeTitle": "Used Trading",
+    "tradeDesc": "200+ certified used machines, global trade",
+    "expoTitle": "Virtual Expo",
+    "expoDesc": "105 brands in immersive online showcase",
+    "partsTitle": "Parts",
+    "partsDesc": "500+ SKU OEM & compatible parts",
+    "servicesTitle": "Value-Added Services",
+    "servicesDesc": "Inspection, cross-border logistics, finance",
+    "arenaTitle": "AI Arena",
+    "arenaDesc": "Smart matching for optimal machinery investment",
+    "researchTitle": "Research Hub",
+    "researchDesc": "Industry reports, policy analysis, market trends"
+  },
+  "expoHome": {
+    "chinaHall": "China Brands Hall",
+    "chinaHallDesc": "Leading Chinese machinery brands showcase",
+    "intlHall": "International Hall",
+    "intlHallDesc": "Global renowned machinery brands",
+    "compareHall": "Comparison Hall",
+    "compareHallDesc": "Cross-brand specs and price comparison",
+    "enterHall": "Enter Hall"
+  },
+  "research": {
+    "title": "AI Frontier Research",
+    "viewAll": "View All"
+  },
+  "trust": {
+    "camda": "CAMDA Vice President Unit",
+    "globalCdn": "Vercel Global CDN",
+    "oss": "Alibaba Cloud OSS",
+    "languages": "8 Language Service"
+  },
+  "cta": {
+    "title": "Start Your AI Machinery Arena",
+    "subtitle": "Match the best machinery deal and discover cross-border investment opportunities",
+    "button": "Get Started"
   },
   "home": {
     "heroTitle": "Maquinaria agrícola global, un solo lugar",

@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
   ],
@@ -31,6 +32,37 @@ const config: Config = {
           800: "#9a3412",
           900: "#7c2d12",
         },
+        bg: {
+          primary: "var(--color-bg-primary)",
+          secondary: "var(--color-bg-secondary)",
+          tertiary: "var(--color-bg-tertiary)",
+        },
+        content: {
+          primary: "var(--color-text-primary)",
+          secondary: "var(--color-text-secondary)",
+          tertiary: "var(--color-text-tertiary)",
+        },
+        brand: {
+          accent: "var(--color-accent)",
+          "accent-hover": "var(--color-accent-hover)",
+          "accent-light": "var(--color-accent-light)",
+        },
+      },
+      fontFamily: {
+        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "monospace"],
+      },
+      borderRadius: {
+        sm: "var(--radius-sm)",
+        md: "var(--radius-md)",
+        lg: "var(--radius-lg)",
+        xl: "var(--radius-xl)",
+      },
+      boxShadow: {
+        sm: "var(--shadow-sm)",
+        md: "var(--shadow-md)",
+        lg: "var(--shadow-lg)",
+        xl: "var(--shadow-xl)",
       },
     },
   },

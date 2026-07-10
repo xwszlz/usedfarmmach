@@ -2,11 +2,12 @@
 
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { Globe, Menu, X, ChevronDown, Store, LayoutDashboard } from "lucide-react";
+import { Globe, Menu, X, Store, LayoutDashboard } from "lucide-react";
 import { useState, useEffect } from "react";
-import { mainNav, mainNavEn, type NavItem } from "@/config/navigation";
+import { mainNav, type NavItem } from "@/config/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/lib/theme/theme-toggle";
 
 interface NavbarProps {
   locale: string;
@@ -22,7 +23,7 @@ export function Navbar({ locale }: NavbarProps) {
   const t = useTranslations();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState<Userinfo>(null);
-  const navItems = locale === "en" ? mainNavEn : mainNav;
+  const navItems = mainNav;
 
   useEffect(() => {
     const userStr = localStorage.getItem("user");
@@ -53,18 +54,18 @@ export function Navbar({ locale }: NavbarProps) {
   };
 
   const tierColor: Record<string, string> = {
-    free: "bg-gray-100 text-gray-500",
-    basic: "bg-blue-100 text-blue-700",
-    premium: "bg-amber-100 text-amber-700",
-    enterprise: "bg-purple-100 text-purple-700",
+    free: "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400",
+    basic: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
+    premium: "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300",
+    enterprise: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300",
   };
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
+      <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 dark:border-gray-700 dark:bg-gray-950/95 dark:supports-[backdrop-filter]:bg-gray-950/80">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
-        <Link href={`/${locale}`} className="flex items-center gap-2">
+        <Link href={`/${locale}`} className="flex shrink-0 items-center gap-2">
           <img
             src="/logo.jpg"
             alt="神雕农机"
@@ -72,40 +73,39 @@ export function Navbar({ locale }: NavbarProps) {
           />
         </Link>
 
-        {/* Desktop nav */}
-        <nav className="hidden items-center gap-6 md:flex">
+        {/* Desktop nav — 8 items flat */}
+        <nav className="hidden items-center gap-1 lg:flex">
           {navItems.map((item) => (
-            <DesktopNavItem key={item.labelKey || item.label || item.href} item={item} locale={locale} t={t} />
+            <DesktopNavItem key={item.href} item={item} locale={locale} t={t} />
           ))}
         </nav>
 
         {/* Right side */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
           <LanguageSwitcher locale={locale} />
           <div className="hidden items-center gap-2 md:flex">
             {user ? (
               <>
-                {/* 会员等级徽章 */}
-                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${tierColor[user.membershipTier] || tierColor.free}`}>
+                <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", tierColor[user.membershipTier] || tierColor.free)}>
                   {tierLabel[user.membershipTier] || "免费"}
                 </span>
-
                 <Link href={`/${locale}/seller/products`}>
                   <Button variant="ghost" size="sm" className="flex items-center gap-1.5">
                     <Store className="h-4 w-4" />
-                    卖家中心
+                    {locale === "en" ? "Seller" : "卖家中心"}
                   </Button>
                 </Link>
                 {["admin", "super_admin"].includes(user.role) && (
                   <Link href={`/${locale}/admin`}>
                     <Button variant="ghost" size="sm" className="flex items-center gap-1.5">
                       <LayoutDashboard className="h-4 w-4" />
-                      管理后台
+                      {locale === "en" ? "Admin" : "管理后台"}
                     </Button>
                   </Link>
                 )}
                 <Button variant="outline" size="sm" onClick={logout}>
-                  退出
+                  {t("nav.logout")}
                 </Button>
               </>
             ) : (
@@ -120,7 +120,7 @@ export function Navbar({ locale }: NavbarProps) {
             )}
           </div>
           <button
-            className="rounded-lg p-2 hover:bg-gray-100 md:hidden"
+            className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 md:hidden"
             onClick={() => setMobileOpen(!mobileOpen)}
           >
             {mobileOpen ? (
@@ -134,27 +134,27 @@ export function Navbar({ locale }: NavbarProps) {
 
       {/* Mobile nav */}
       {mobileOpen && (
-        <div className="border-t md:hidden">
+        <div className="border-t border-gray-200 dark:border-gray-700 md:hidden">
           <div className="space-y-1 px-4 py-3">
             {navItems.map((item) => (
-              <MobileNavItem key={item.labelKey || item.label || item.href} item={item} locale={locale} t={t} setMobileOpen={setMobileOpen} />
+              <MobileNavItem key={item.href} item={item} locale={locale} t={t} setMobileOpen={setMobileOpen} />
             ))}
             <div className="flex gap-2 pt-2">
               {user ? (
                 <>
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${tierColor[user.membershipTier] || tierColor.free}`}>
+                  <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", tierColor[user.membershipTier] || tierColor.free)}>
                     {tierLabel[user.membershipTier] || "免费"}
                   </span>
                   <Link href={`/${locale}/seller/products`} className="flex-1" onClick={() => setMobileOpen(false)}>
-                    <Button size="sm" className="w-full">卖家中心</Button>
+                    <Button size="sm" className="w-full">{locale === "en" ? "Seller" : "卖家中心"}</Button>
                   </Link>
                   {["admin", "super_admin"].includes(user.role) && (
                     <Link href={`/${locale}/admin`} className="flex-1" onClick={() => setMobileOpen(false)}>
-                      <Button variant="outline" size="sm" className="w-full">管理后台</Button>
+                      <Button variant="outline" size="sm" className="w-full">{locale === "en" ? "Admin" : "管理后台"}</Button>
                     </Link>
                   )}
                   <Button variant="outline" size="sm" onClick={() => { logout(); setMobileOpen(false); }}>
-                    退出
+                    {t("nav.logout")}
                   </Button>
                 </>
               ) : (
@@ -190,45 +190,17 @@ interface DesktopNavItemProps {
 }
 
 function DesktopNavItem({ item, locale, t }: DesktopNavItemProps) {
-  const [open, setOpen] = useState(false);
-  const label = item.label || t(item.labelKey || '');
-
-  if (item.children) {
-    return (
-      <div className="relative">
-        <button
-          onClick={() => setOpen(!open)}
-          className="flex items-center gap-1 text-sm font-medium text-gray-600 transition-colors hover:text-primary-600"
-        >
-          {label}
-          <ChevronDown className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`} />
-        </button>
-
-        {open && (
-          <>
-            <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-            <div className="absolute left-0 top-full z-50 mt-2 w-48 rounded-lg border bg-white py-2 shadow-lg">
-              {item.children.map((child) => (
-                <Link
-                  key={child.href}
-                  href={`/${locale}${child.href}`}
-                  onClick={() => setOpen(false)}
-                  className="block px-4 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 hover:text-primary-600"
-                >
-                  {child.label || t(child.labelKey || '')}
-                </Link>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-    );
-  }
+  const label = t(item.labelKey);
 
   return (
     <Link
       href={`/${locale}${item.href}`}
-      className="text-sm font-medium text-gray-600 transition-colors hover:text-primary-600"
+      className={cn(
+        "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+        item.highlight
+          ? "bg-brand-accent-light text-brand-accent dark:text-brand-accent"
+          : "text-gray-600 hover:bg-gray-100 hover:text-primary-600 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-primary-400"
+      )}
     >
       {label}
     </Link>
@@ -243,43 +215,18 @@ interface MobileNavItemProps {
 }
 
 function MobileNavItem({ item, locale, t, setMobileOpen }: MobileNavItemProps) {
-  const [open, setOpen] = useState(false);
-  const label = item.label || t(item.labelKey || '');
-
-  if (item.children) {
-    return (
-      <div className="space-y-1">
-        <button
-          onClick={() => setOpen(!open)}
-          className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
-        >
-          <span>{label}</span>
-          <ChevronDown className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`} />
-        </button>
-
-        {open && (
-          <div className="ml-4 space-y-1 border-l pl-2">
-            {item.children.map((child) => (
-              <Link
-                key={child.href}
-                href={`/${locale}${child.href}`}
-                onClick={() => setMobileOpen(false)}
-                className="block rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
-              >
-                {child.label || t(child.labelKey || '')}
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
+  const label = t(item.labelKey);
 
   return (
     <Link
       href={`/${locale}${item.href}`}
       onClick={() => setMobileOpen(false)}
-      className="block rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
+      className={cn(
+        "block rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+        item.highlight
+          ? "bg-brand-accent-light text-brand-accent dark:text-brand-accent"
+          : "text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
+      )}
     >
       {label}
     </Link>
@@ -306,26 +253,28 @@ function LanguageSwitcher({ locale }: { locale: string }) {
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm text-gray-600 hover:bg-gray-100"
+        className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
       >
         <Globe className="h-4 w-4" />
-        <span>{current.flag} {current.label}</span>
+        <span className="hidden sm:inline">{current.flag} {current.label}</span>
+        <span className="sm:hidden">{current.flag}</span>
       </button>
 
       {open && (
         <>
           <div className="fixed inset-0 z-50" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full z-50 mt-1 w-36 rounded-lg border bg-white py-1 shadow-lg">
+          <div className="absolute right-0 top-full z-50 mt-1 w-36 rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-900">
             {languages.map((lang) => (
               <Link
                 key={lang.code}
                 href={`/${lang.code}`}
                 onClick={() => setOpen(false)}
-                className={`flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 ${
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800",
                   lang.code === locale
-                    ? "font-medium text-primary-600 bg-primary-50"
-                    : "text-gray-600"
-                }`}
+                    ? "font-medium text-primary-600 bg-primary-50 dark:bg-primary-900/30 dark:text-primary-400"
+                    : "text-gray-600 dark:text-gray-300"
+                )}
               >
                 <span>{lang.flag}</span>
                 <span>{lang.label}</span>
