@@ -26,6 +26,11 @@ export const maxDuration = 300;
 
 const PUBLISH_COST = 1;
 
+// 小程序通过 oss-token 直传到该 OSS bucket，URL 形如
+// https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/xxx.jpg
+// 已经是最终地址，后端无需再下载重传
+const OSS_HOST = "https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com";
+
 // 国际农机品牌列表（中英文）
 const INTERNATIONAL_BRANDS = new Set([
   // 欧美品牌
@@ -413,29 +418,41 @@ export async function POST(request: NextRequest) {
 
     const folder = `uploads/products/${product.id}`;
 
-    // ── Step 4: 上传图片（带失败计数 + 全部失败回滚）──
-    // OSS凭据已在uploadBufferToOSS内部通过Fallback机制保证可用，无需预检
+    // ── Step 4: 处理图片（带失败计数 + 全部失败回滚）──
+    // 小程序新版流程：前端已通过 oss-token 直传到 OSS，images 已是完整 OSS URL，
+    // 直接入库即可，无需后端再下载重传（这是 120 秒超时的根因）。
+    // 保留对 base64 Data URI / 外部 URL 旧模式的兼容。
     let uploadedImageCount = 0;
     let firstImageError: string | null = null; // 记录第一个失败的详细原因，用于诊断
     for (let i = 0; i < images.length; i++) {
       const imgStart = Date.now();
       try {
-        // 使用 getDataUriBuffer 同时支持 base64(Data URI) 和 URL
-        const { buffer, contentType } = await getDataUriBuffer(images[i]);
-        const ext = guessExtFromMime(contentType);
-        const key = `${folder}/image_${i}_${Date.now()}.${ext}`;
-        console.log(`[internal/products] step-4 image[${i}] decoding OK, size=${buffer.length}bytes, type=${contentType}, uploading...`);
-        const url = await uploadBufferToOSS(key, buffer, contentType);
+        const src = images[i];
+        let url: string;
+
+        if (src.startsWith(OSS_HOST)) {
+          // ✅ 小程序直传产物：直接复用 OSS URL
+          url = src;
+          console.log(`[internal/products] step-4 image[${i}] is direct OSS URL, skip re-upload: ${url}`);
+        } else {
+          // 兼容旧模式：base64 Data URI 或外部 URL → 下载后上传到 OSS
+          const { buffer, contentType } = await getDataUriBuffer(src);
+          const ext = guessExtFromMime(contentType);
+          const key = `${folder}/image_${i}_${Date.now()}.${ext}`;
+          console.log(`[internal/products] step-4 image[${i}] decoding OK, size=${buffer.length}bytes, type=${contentType}, uploading...`);
+          url = await uploadBufferToOSS(key, buffer, contentType);
+        }
+
         await prisma.productImage.create({
           data: {
             productId: product.id,
-            url: url, // 直接存储 uploadBufferToOSS 返回的完整 OSS URL
+            url: url, // 直接存储完整 OSS URL
             sortOrder: i,
             isPrimary: i === 0,
           },
         });
         uploadedImageCount++;
-        console.log(`[internal/products] step-4 image[${i}] uploaded OK in ${Date.now() - imgStart}ms`);
+        console.log(`[internal/products] step-4 image[${i}] saved OK in ${Date.now() - imgStart}ms`);
       } catch (err) {
         const errDetail = extractErrorMessage(err);
         const srcPreview = String(images[i]).substring(0, 120);
