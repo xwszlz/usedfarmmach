@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
             year: true,
             priceCny: true,
             brand: { select: { nameZh: true, nameEn: true } },
-            images: { where: { isPrimary: true }, take: 1 },
+            images: { orderBy: { sortOrder: "asc" as const }, take: 1 },
           },
         },
         seller: {

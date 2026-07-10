@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     include: {
       brand: { select: { nameZh: true, nameEn: true } },
       category: { select: { nameZh: true, nameEn: true } },
-      images: { where: { isPrimary: true }, take: 1 },
+      images: { orderBy: { sortOrder: "asc" as const }, take: 1 },
       _count: { select: { inquiries: true } },
     },
     orderBy: { createdAt: "desc" },

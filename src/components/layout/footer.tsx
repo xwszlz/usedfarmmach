@@ -83,12 +83,6 @@ export function Footer({ locale }: FooterProps) {
                 {t("company")}: {t("companyName")}
               </li>
               <li className="text-sm text-gray-500">
-                WhatsApp: +86 15511395016
-              </li>
-              <li className="text-sm text-gray-500">
-                {t("phone")}: +86 18633878701
-              </li>
-              <li className="text-sm text-gray-500">
                 {t("email")}: jiusei0319@gmail.com
               </li>
               <li className="text-sm text-gray-500">

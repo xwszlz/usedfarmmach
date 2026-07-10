@@ -11,7 +11,7 @@ import { InquiryForm } from "@/components/product/inquiry-form";
 import { EscrowPurchaseButton } from "@/components/escrow/escrow-purchase-button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin, ArrowLeftRight, Info, Mail, ExternalLink } from "lucide-react";
+import { MapPin, ArrowLeftRight, Info, Mail, ExternalLink, MessageCircle, Phone } from "lucide-react";
 import { getImageUrl, getVideoUrl, generateImageAlt } from "@/lib/image-url";
 import { formatPrice } from "@/lib/utils";
 import ArbitrageCalculatorSection from "@/components/product/arbitrage-calculator-section";
@@ -448,16 +448,40 @@ export default async function ProductDetailPage({
             <CardTitle>{t("contactSeller")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Email */}
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Mail className="h-4 w-4 text-gray-400" />
-              <span>Email: </span>
-              <a
-                href="mailto:932133255@qq.com"
-                className="text-primary-600 hover:text-primary-700 font-medium"
-              >
-                932133255@qq.com
-              </a>
+            {/* Contact Methods — WhatsApp / Phone / Email in one row */}
+            <div className="flex flex-wrap gap-6 text-sm text-gray-600">
+              <div className="flex items-center gap-2">
+                <MessageCircle className="h-4 w-4 text-gray-400" />
+                <span>WhatsApp: </span>
+                <a
+                  href="https://wa.me/8615511395016"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary-600 hover:text-primary-700 font-medium"
+                >
+                  +86 15511395016
+                </a>
+              </div>
+              <div className="flex items-center gap-2">
+                <Phone className="h-4 w-4 text-gray-400" />
+                <span>{locale === "zh" ? "电话" : "Phone"}: </span>
+                <a
+                  href="tel:+8618633878701"
+                  className="text-primary-600 hover:text-primary-700 font-medium"
+                >
+                  +86 18633878701
+                </a>
+              </div>
+              <div className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-gray-400" />
+                <span>Email: </span>
+                <a
+                  href="mailto:932133255@qq.com"
+                  className="text-primary-600 hover:text-primary-700 font-medium"
+                >
+                  932133255@qq.com
+                </a>
+              </div>
             </div>
 
             {/* Escrow Purchase */}

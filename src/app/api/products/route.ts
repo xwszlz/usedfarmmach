@@ -140,7 +140,7 @@ export async function GET(request: NextRequest) {
         include: {
           brand: true,
           category: true,
-          images: { where: { isPrimary: true }, take: 1 },
+          images: { orderBy: { sortOrder: "asc" as const }, take: 1 },
           videos: { select: { id: true, url: true } },
           internationalPrices: { orderBy: { sourceDate: "desc" as const }, take: 1 },
           seller: { select: { id: true, companyName: true, country: true } },
@@ -200,7 +200,7 @@ export async function GET(request: NextRequest) {
           include: {
             brand: true,
             category: true,
-            images: { where: { isPrimary: true }, take: 1 },
+            images: { orderBy: { sortOrder: "asc" as const }, take: 1 },
             videos: { select: { id: true, url: true } },
             internationalPrices: { orderBy: { sourceDate: "desc" }, take: 1 },
             seller: { select: { id: true, companyName: true, country: true } },
@@ -215,7 +215,7 @@ export async function GET(request: NextRequest) {
               include: {
                 brand: true,
                 category: true,
-                images: { where: { isPrimary: true }, take: 1 },
+                images: { orderBy: { sortOrder: "asc" as const }, take: 1 },
                 videos: { select: { id: true, url: true } },
                 internationalPrices: { orderBy: { sourceDate: "desc" }, take: 1 },
                 seller: { select: { id: true, companyName: true, country: true } },
@@ -234,7 +234,7 @@ export async function GET(request: NextRequest) {
         include: {
           brand: true,
           category: true,
-          images: { where: { isPrimary: true }, take: 1 },
+          images: { orderBy: { sortOrder: "asc" as const }, take: 1 },
           videos: { select: { id: true, url: true } },
           internationalPrices: { orderBy: { sourceDate: "desc" }, take: 1 },
           seller: { select: { id: true, companyName: true, country: true } },

@@ -218,7 +218,7 @@ export class TopArbitrageService {
               brand: true,
               category: true,
               images: {
-                where: { isPrimary: true },
+                orderBy: { sortOrder: "asc" as const },
                 take: 1,
               },
             },
@@ -412,7 +412,7 @@ export class TopArbitrageService {
         brand: true,
         category: true,
         images: {
-          where: { isPrimary: true },
+          orderBy: { sortOrder: "asc" as const },
           take: 1,
         },
         internationalPrices: {

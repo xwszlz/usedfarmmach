@@ -254,7 +254,7 @@ export class ArbitrageCalculator {
         brand: true,
         category: true,
         images: {
-          where: { isPrimary: true },
+          orderBy: { sortOrder: "asc" as const },
           take: 1,
         },
       },
