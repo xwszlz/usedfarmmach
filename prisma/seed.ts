@@ -13,7 +13,7 @@ async function main() {
       email: "admin@agritrade.com",
       passwordHash: adminHash,
       role: "admin",
-      companyName: "AgriTrade",
+      companyName: "神雕农机",
       country: "CN",
       preferredLanguage: "zh",
     },
