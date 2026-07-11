@@ -13,6 +13,7 @@ import {
   generateFaqJsonLd,
   generateLocalBusinessJsonLd,
   generateHowToJsonLd,
+  generateCourseJsonLd,
 } from "@/lib/jsonld";
 
 // ─────── Generic JSON-LD Script ───────
@@ -145,4 +146,25 @@ export function HowToStructuredData({
   steps: HowToStepData[];
 }) {
   return <JsonLd data={generateHowToJsonLd(name, description, steps)} />;
+}
+
+// ─────── Course (engineer certification) ───────
+
+interface CourseModuleData {
+  name: string;
+  description: string;
+}
+
+export function CourseStructuredData({
+  locale,
+  courseName,
+  courseDescription,
+  modules,
+}: {
+  locale: string;
+  courseName: string;
+  courseDescription: string;
+  modules: CourseModuleData[];
+}) {
+  return <JsonLd data={generateCourseJsonLd(locale, courseName, courseDescription, modules)} />;
 }

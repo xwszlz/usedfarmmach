@@ -8,6 +8,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
+  themeColor: "#15803d",
 };
 
 export const metadata: Metadata = {
@@ -61,6 +62,12 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "神雕农机 - 全球二手农机交易平台",
     description: "连接中国与全球农机市场，AI估价+跨境套利+一站式物流",
+  },
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "神雕农机",
+    statusBarStyle: "default",
   },
   robots: {
     index: true,

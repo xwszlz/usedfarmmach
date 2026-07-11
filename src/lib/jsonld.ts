@@ -323,3 +323,39 @@ export function generateHowToJsonLd(name: string, description: string, steps: Ho
     })),
   };
 }
+
+// ─────── Course (for engineer certification) ───────
+
+interface CourseModule {
+  name: string;
+  description: string;
+}
+
+export function generateCourseJsonLd(locale: string, courseName: string, courseDescription: string, modules: CourseModule[]) {
+  const isZh = locale === "zh";
+  return {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    name: courseName,
+    description: courseDescription,
+    provider: {
+      "@type": "Organization",
+      name: isZh ? "石家庄神雕农机科技有限公司" : "Shijiazhuang Shendiao Agricultural Machinery Technology Co., Ltd.",
+      sameAs: `${BASE_URL}/${locale}`,
+    },
+    inLanguage: locale,
+    educationalCredentialAwarded: isZh
+      ? ["AI学徒(L1)", "操控员(L2)", "操控师(L3)", "高级操控师(L4)", "首席操控师(L5)"]
+      : ["AI Apprentice (L1)", "Operator (L2)", "Controller (L3)", "Senior Controller (L4)", "Chief Controller (L5)"],
+    hasCourseInstance: {
+      "@type": "CourseInstance",
+      courseMode: isZh ? "在线" : "Online",
+      courseWorkload: isZh ? "PT40H" : "PT40H",
+    },
+    syllabus: modules.map((m) => ({
+      "@type": "Syllabus",
+      name: m.name,
+      description: m.description,
+    })),
+  };
+}

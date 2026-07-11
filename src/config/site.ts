@@ -3,7 +3,7 @@ export const siteConfig = {
   nameZh: "神雕农机",
   description: "Global used farm machinery trading platform",
   descriptionZh: "全球二手农机交易平台",
-  url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+  url: process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com",
   ogImage: "/images/og.png",
   defaultLocale: "zh" as const,
   locales: ["zh", "en", "ru", "es", "pt", "ar", "fr", "hi"] as const,
