@@ -147,6 +147,8 @@ model Product {
   priceMode             String   @default("por") // "fixed" | "por"
   tradeTerm             String   @default("FOB") // FOB / CIF / EXW
   tradePort             String? // 发货港口
+  latitude              Float? // 农机所在地纬度（wx.chooseLocation 选点，用于物流与地图展示）
+  longitude             Float? // 农机所在地经度（wx.chooseLocation 选点，用于物流与地图展示）
   standardDescriptionEn String? // 英文标准描述
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt

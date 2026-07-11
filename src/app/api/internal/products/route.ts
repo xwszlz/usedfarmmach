@@ -19,6 +19,7 @@ import { analyzeVideo, calculateVideoFactor } from "@/lib/valuation/video-analyz
 import { getDetailImageUrl, getVideoUrl } from "@/lib/image-url";
 import axios from "axios";
 import crypto from "crypto";
+import { checkContent, isBlocked } from "@/lib/wechat-sec-check";
 
 // Vercel Serverless Function 超时延长至300秒（Pro计划上限）
 // 小程序可能同时上传多张大图+视频，60秒不够用
@@ -290,6 +291,9 @@ export async function POST(request: NextRequest) {
       descOther,
       priceCny,
       location,
+      // 地图选点坐标（wx.chooseLocation），用于物流与地图展示
+      latitude,
+      longitude,
       images = [],
       video,
       // autoAI: 小程序提交时设为true，触发服务端自动AI识别+估值
@@ -328,6 +332,62 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: "请至少上传一张图片", code: "NO_IMAGES" },
         { status: 400 }
+      );
+    }
+
+    // ── 内容安全检测（微信审核要求：UGC 发布前必须先检测）──
+    const secTextParts = [
+      brandName,
+      categoryName,
+      modelName,
+      descOther,
+      location,
+      finalEnginePower,
+      finalEngineType,
+      finalDriveSystem,
+      finalMainConfig,
+    ].filter(Boolean).join("\n");
+
+    // 只有 HTTPS URL 才检测；本地临时路径、base64 等不检测（上传阶段不应传本地路径）
+    const secImageUrls = (images || []).filter(
+      (src: string) => typeof src === "string" && src.startsWith("https://")
+    );
+
+    try {
+      const { text: textResult, images: imageResult } = await checkContent(
+        secTextParts,
+        secImageUrls,
+        openid
+      );
+
+      if (isBlocked(textResult.suggest)) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "发布内容含违规信息，请修改后重试",
+            code: "CONTENT_SECURITY_VIOLATION",
+            detail: "text",
+          },
+          { status: 400 }
+        );
+      }
+
+      if (!imageResult.allPass) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "图片含违规信息，请修改后重试",
+            code: "CONTENT_SECURITY_VIOLATION",
+            detail: "image",
+          },
+          { status: 400 }
+        );
+      }
+    } catch (secErr) {
+      // 内容安全检测服务本身异常时，记录日志但不阻塞发布（避免微信侧临时问题导致业务完全停摆）
+      console.error(
+        "[internal/products] 内容安全检测异常（非阻塞）:",
+        secErr instanceof Error ? secErr.message : String(secErr)
       );
     }
 
@@ -411,6 +471,9 @@ export async function POST(request: NextRequest) {
         priceMode,
         tradeTerm,
         tradePort: finalTradePort,
+        // 地图选点坐标（用于物流与地图展示；可能为 null）
+        latitude: (typeof latitude === "number" && !Number.isNaN(latitude)) ? latitude : null,
+        longitude: (typeof longitude === "number" && !Number.isNaN(longitude)) ? longitude : null,
       },
     });
     createdProductId = product.id;

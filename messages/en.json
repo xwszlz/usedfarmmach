@@ -115,7 +115,24 @@
     "enterHall": "Enter Hall"
   },
   "research": {
-    "title": "AI Frontier Research",
+    "title": "AI Frontier Research Hub",
+    "subtitle": "Industry Reports · Tech Frontier · Policy Tracking · Company Map",
+    "description": "Deep insights into global agricultural machinery trends, data-driven decisions",
+    "categories": {
+      "all": "All",
+      "research-industry-report": "Industry Reports",
+      "research-tech-frontier": "Tech Frontier",
+      "research-policy-tracking": "Policy Tracking",
+      "research-company-map": "Company Map"
+    },
+    "viewCount": "{count} reads",
+    "publishedOn": "Published on {date}",
+    "relatedReports": "Related Reports",
+    "backToHub": "← Back to Research Hub",
+    "tryArena": "Need AI machinery selection? Try AI Arena →",
+    "noReports": "No reports yet",
+    "readMore": "Read More",
+    "reportCount": "{count} reports",
     "viewAll": "View All"
   },
   "trust": {

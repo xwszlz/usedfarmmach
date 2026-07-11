@@ -115,7 +115,24 @@
     "enterHall": "进入展馆"
   },
   "research": {
-    "title": "AI 前沿研究",
+    "title": "AI前沿研究Hub",
+    "subtitle": "行业报告 · 技术前沿 · 政策跟踪 · 企业图谱",
+    "description": "深度洞察全球农机产业趋势，数据驱动决策",
+    "categories": {
+      "all": "全部",
+      "research-industry-report": "行业报告",
+      "research-tech-frontier": "技术前沿",
+      "research-policy-tracking": "政策跟踪",
+      "research-company-map": "企业图谱"
+    },
+    "viewCount": "{count} 次阅读",
+    "publishedOn": "发布于 {date}",
+    "relatedReports": "相关研究报告",
+    "backToHub": "← 返回研究Hub",
+    "tryArena": "需要进行AI农机选型？试试AI竞技场 →",
+    "noReports": "暂无研究报告",
+    "readMore": "阅读全文",
+    "reportCount": "{count} 篇报告",
     "viewAll": "查看全部"
   },
   "trust": {

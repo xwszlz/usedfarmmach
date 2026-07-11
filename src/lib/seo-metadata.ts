@@ -139,6 +139,40 @@ const localizedMeta: Record<string, Record<string, { title: string; description:
       description: "नवीनतम प्रयुक्त कृषि मशीनरी जानकारी: वैश्विक बाजार विश्लेषण, मूल्य गाइड, CLAAS/John Deere ब्रांड समीक्षा, सीमा पार खरीद युक्तियाँ।",
     },
   },
+  research: {
+    zh: {
+      title: "AI前沿研究Hub_农机行业报告_技术前沿_政策跟踪_神雕农机",
+      description: "AI前沿研究Hub：深度洞察全球农机产业趋势，涵盖行业报告、技术前沿、政策跟踪、企业图谱。数据驱动决策，助力农机投资与选型。",
+    },
+    en: {
+      title: "AI Frontier Research Hub | Industry Reports, Tech & Policy | AgriTrade",
+      description: "AI Frontier Research Hub: Deep insights into global agricultural machinery trends. Industry reports, tech frontier, policy tracking, and company maps. Data-driven decisions.",
+    },
+    ru: {
+      title: "AI Хаб Передовых Исследований | Отраслевые отчёты, технологии | AgriTrade",
+      description: "AI Хаб исследований: глубокий анализ тенденций мирового рынка сельхозтехники. Отчёты, технологии, аналитика политики и карты компаний.",
+    },
+    es: {
+      title: "Hub de Investigación AI Frontier | Informes de la Industria | AgriTrade",
+      description: "Hub de investigación AI Frontier: análisis profundo de tendencias globales de maquinaria agrícola. Informes, tecnología, políticas y mapas de empresas.",
+    },
+    pt: {
+      title: "Hub de Pesquisa AI Frontier | Relatórios da Indústria | AgriTrade",
+      description: "Hub de pesquisa AI Frontier: análise profunda de tendências globais de máquinas agrícolas. Relatórios, tecnologia, políticas e mapas de empresas.",
+    },
+    ar: {
+      title: "محور أبحاث الذكاء الاصطناعي | تقارير الصناعة والتكنولوجيا | AgriTrade",
+      description: "محور أبحاث الذكاء الاصطناعي: رؤى عميقة حول اتجاهات الآلات الزراعية العالمية. تقارير الصناعة، التكنولوجيا، تتبع السياسات وخرائط الشركات.",
+    },
+    fr: {
+      title: "Hub de Recherche AI Frontier | Rapports Industrie & Tech | AgriTrade",
+      description: "Hub de recherche AI Frontier: analyses approfondies des tendances mondiales du machinisme agricole. Rapports, technologie, suivi des politiques et cartographie des entreprises.",
+    },
+    hi: {
+      title: "AI फ्रंटियर रिसर्च हब | उद्योग रिपोर्ट, तकनीक | AgriTrade",
+      description: "AI फ्रंटियर रिसर्च हब: वैश्विक कृषि मशीनरी रुझानों की गहन जानकारी। उद्योग रिपोर्ट, तकनीक, नीति ट्रैकिंग और कंपनी मानचित्र।",
+    },
+  },
   intelligence: {
     zh: {
       title: "二手农机市场情报_跨境套利数据_国际农机价格走势_神雕农机",

@@ -21,7 +21,7 @@ let tokenCache: { token: string; expireAt: number } | null = null;
 /**
  * 获取小程序 access_token（带缓存）
  */
-async function getAccessToken(): Promise<string> {
+export async function getAccessToken(): Promise<string> {
   if (!SECRET) {
     throw new Error("WECHAT_MINI_SECRET 未配置，无法获取 access_token");
   }
