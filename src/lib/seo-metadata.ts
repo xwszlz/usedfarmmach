@@ -173,6 +173,40 @@ const localizedMeta: Record<string, Record<string, { title: string; description:
       description: "AI फ्रंटियर रिसर्च हब: वैश्विक कृषि मशीनरी रुझानों की गहन जानकारी। उद्योग रिपोर्ट, तकनीक, नीति ट्रैकिंग और कंपनी मानचित्र।",
     },
   },
+  engineer: {
+    zh: {
+      title: "AI农机工程师认证_八维技能体系_五级认证_全球首个农机AI认证_神雕农机",
+      description: "全球首个AI农机工程师认证体系：八维技能评分（AI编程/人机协同/多机调度/数据决策），五级认证（AI学徒到首席操控师）。拿到证书，解锁平台派单、验机、竞技加成。",
+    },
+    en: {
+      title: "AI Farm Machinery Engineer Certification | 8-Skill System | AgriTrade",
+      description: "World's first AI farm machinery engineer certification: 8-dimension skills (AI programming, human-machine collaboration, fleet management, data decisions), 5-level certification. Get certified, unlock platform dispatch and arena bonuses.",
+    },
+    ru: {
+      title: "Сертификация AI Инженера Сельхозтехники | 8 Навыков | AgriTrade",
+      description: "Первая в мире сертификация AI инженера сельхозтехники: 8 измерений навыков, 5 уровней. Получите сертификат и доступ к платформе.",
+    },
+    es: {
+      title: "Certificación de Ingeniero en Maquinaria Agrícola AI | AgriTrade",
+      description: "Primera certificación mundial de ingeniero en maquinaria agrícola con IA: 8 dimensiones de habilidades, 5 niveles de certificación.",
+    },
+    pt: {
+      title: "Certificação de Engenheiro de Máquinas Agrícolas AI | AgriTrade",
+      description: "Primeira certificação mundial de engenheiro de máquinas agrícolas com IA: 8 dimensões de habilidades, 5 níveis.",
+    },
+    ar: {
+      title: "شهادة مهندس الآلات الزراعية بالذكاء الاصطناعي | AgriTrade",
+      description: "أول شهادة في العالم لمهندس الآلات الزراعية بالذكاء الاصطناعي: 8 أبعاد للمهارات، 5 مستويات.",
+    },
+    fr: {
+      title: "Certification d'Ingénieur en Machines Agricoles IA | AgriTrade",
+      description: "Première certification mondiale d'ingénieur en machines agricoles IA: 8 dimensions de compétences, 5 niveaux.",
+    },
+    hi: {
+      title: "AI कृषि मशीनरी इंजीनियर प्रमाणन | 8 कौशल | AgriTrade",
+      description: "दुनिया का पहला AI कृषि मशीनरी इंजीनियर प्रमाणन: 8 आयामी कौशल, 5 स्तरीय प्रमाणन।",
+    },
+  },
   intelligence: {
     zh: {
       title: "二手农机市场情报_跨境套利数据_国际农机价格走势_神雕农机",

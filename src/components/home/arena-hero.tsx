@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Sprout, Tractor, DollarSign, ArrowRight, Sparkles } from "lucide-react";
+import { Sprout, Tractor, DollarSign, ArrowRight, Sparkles, Award } from "lucide-react";
 
 interface ArenaHeroProps {
   locale: string;
@@ -16,9 +16,22 @@ export function ArenaHero({ locale }: ArenaHeroProps) {
   const [crop, setCrop] = useState("wheat");
   const [machineType, setMachineType] = useState("tractor");
   const [budget, setBudget] = useState(30);
+  const [engineerLevel, setEngineerLevel] = useState("none");
 
   const handleSubmit = () => {
-    router.push(`/${locale}/arena?crop=${crop}&type=${machineType}&budget=${budget}`);
+    const params = new URLSearchParams({
+      crop,
+      type: machineType,
+      budget: String(budget),
+    });
+    if (engineerLevel !== "none") {
+      params.set("level", engineerLevel);
+    }
+    router.push(`/${locale}/arena?${params.toString()}`);
+  };
+
+  const handleCertClick = () => {
+    router.push(`/${locale}/engineer`);
   };
 
   const cropOptions = [
@@ -36,6 +49,15 @@ export function ArenaHero({ locale }: ArenaHeroProps) {
     { value: "baler", key: "hero.machineBaler" },
     { value: "wrapper", key: "hero.machineWrapper" },
     { value: "other", key: "hero.machineOther" },
+  ];
+
+  const engineerOptions = [
+    { value: "none", key: "hero.engineerNone" },
+    { value: "L1", key: "hero.engineerL1" },
+    { value: "L2", key: "hero.engineerL2" },
+    { value: "L3", key: "hero.engineerL3" },
+    { value: "L4", key: "hero.engineerL4" },
+    { value: "L5", key: "hero.engineerL5" },
   ];
 
   return (
@@ -100,7 +122,7 @@ export function ArenaHero({ locale }: ArenaHeroProps) {
               </div>
 
               {/* Budget Slider */}
-              <div className="mb-6">
+              <div className="mb-5">
                 <label className="mb-2 flex items-center justify-between text-sm font-medium text-gray-700 dark:text-gray-300">
                   <span className="flex items-center gap-2">
                     <DollarSign className="h-4 w-4 text-primary-500" />
@@ -125,6 +147,25 @@ export function ArenaHero({ locale }: ArenaHeroProps) {
                 </div>
               </div>
 
+              {/* Engineer Level */}
+              <div className="mb-6">
+                <label className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <Award className="h-4 w-4 text-amber-500" />
+                  {t("hero.engineerLevel")}
+                </label>
+                <select
+                  value={engineerLevel}
+                  onChange={(e) => setEngineerLevel(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                >
+                  {engineerOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {t(opt.key)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {/* Submit Button */}
               <button
                 onClick={handleSubmit}
@@ -132,6 +173,15 @@ export function ArenaHero({ locale }: ArenaHeroProps) {
               >
                 {t("hero.startArena")}
                 <ArrowRight className="h-5 w-5" />
+              </button>
+
+              {/* Secondary CTA — Certification */}
+              <button
+                onClick={handleCertClick}
+                className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-6 py-2.5 text-sm font-medium text-amber-700 transition-all hover:bg-amber-100 hover:border-amber-400 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/30"
+              >
+                <Award className="h-4 w-4" />
+                {t("hero.learnCert")}
               </button>
             </div>
           </div>

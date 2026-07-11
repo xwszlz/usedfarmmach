@@ -14,6 +14,7 @@ export const mainNav: NavItem[] = [
   { href: "/", labelKey: "nav.home" },
   { href: "/products", labelKey: "nav.machinery" },
   { href: "/arena", labelKey: "nav.arena", highlight: true },
+  { href: "/engineer", labelKey: "nav.engineer" },
   { href: "/expo", labelKey: "nav.expo" },
   { href: "/parts", labelKey: "nav.parts" },
   { href: "/services", labelKey: "nav.services" },
