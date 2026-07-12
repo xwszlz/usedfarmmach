@@ -44,7 +44,10 @@ export const productQuerySchema = z.object({
   yearMax: z.coerce.number().int().optional(),
   priceMin: z.coerce.number().optional(),
   priceMax: z.coerce.number().optional(),
-  location: z.string().optional(),
+  location: z.string().optional(), // 兼容旧参数：位置文本筛选
+  country: z.string().optional(), // 新参数：国家代码筛选，如 "CN" / "DE"
+  province: z.string().optional(), // 新参数：省份筛选，如 "河北"
+  city: z.string().optional(), // 新参数：城市筛选，如 "石家庄"
   condition: z.enum(["excellent", "good", "fair", "poor"]).optional(),
   page: z.coerce.number().int().positive().default(1),
   pageSize: z.coerce.number().int().positive().max(50).default(12),

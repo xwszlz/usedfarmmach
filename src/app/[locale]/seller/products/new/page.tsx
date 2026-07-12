@@ -6,6 +6,8 @@ import { ArrowLeft, Loader2, CheckCircle, AlertCircle, Camera, Video, Plus, X, S
 import Link from "next/link";
 import SellerAiAssistant from "@/components/seller/ai-assistant";
 import { matchPortByLocation } from "@/lib/port-matcher";
+import { CHINA_PROVINCES, INTERNATIONAL_COUNTRIES } from "@/lib/location-data";
+import { buildLocationText } from "@/lib/location-parser";
 
 const CONDITIONS = [
   { value: "excellent", label: "优秀/全新" },
@@ -32,11 +34,13 @@ export default function NewProductPage() {
 
   const [brandMode, setBrandMode] = useState<"select" | "custom">("select");
   const [catMode, setCatMode] = useState<"select" | "custom">("custom");
+  const [locationMode, setLocationMode] = useState<"domestic" | "international">("domestic");
 
   const [form, setForm] = useState({
     brandId: "", brandName: "", categoryId: "", categoryName: "",
     modelName: "", year: 2020, workingHours: "", condition: "good",
     priceCny: "", location: "",
+    country: "CN" as string, province: "" as string, city: "" as string,
     enginePower: "", engineType: "柴油发动机", driveSystem: "二驱",
     overallLength: "", overallWidth: "", overallHeight: "", netWeight: "",
     mainConfig: "", descOther: "",
@@ -61,14 +65,88 @@ export default function NewProductPage() {
   }, []);
 
   const update = (key: string, value: any) => {
-    setForm(f => ({ ...f, [key]: value }));
-    if (key === "location" && value) {
-      const matchedPort = matchPortByLocation(value);
-      setForm(f => ({ ...f, tradePort: matchedPort }));
-    }
+    setForm(f => {
+      const newForm = { ...f, [key]: value };
+      // 当产地结构化字段变化时，自动拼接 location 显示文本
+      if (key === "country" || key === "province" || key === "city") {
+        const locText = buildLocationText(
+          key === "country" ? value : newForm.country,
+          key === "province" ? value : newForm.province,
+          key === "city" ? value : newForm.city
+        );
+        if (locText) {
+          newForm.location = locText;
+          // 自动匹配发货港口
+          const matchedPort = matchPortByLocation(locText);
+          if (matchedPort) newForm.tradePort = matchedPort;
+        }
+      }
+      // 旧的 location 直接输入时也匹配港口
+      if (key === "location" && value) {
+        const matchedPort = matchPortByLocation(value);
+        newForm.tradePort = matchedPort;
+      }
+      return newForm;
+    });
     // 清除AI填充标记（用户手动修改了）
     setAiFilledFields(prev => { const n = new Set(prev); n.delete(key); return n; });
   };
+
+  // 切换产地模式时重置相关字段
+  const handleLocationModeChange = (mode: "domestic" | "international") => {
+    setLocationMode(mode);
+    if (mode === "domestic") {
+      setForm(f => ({ ...f, country: "CN", province: "", city: "", location: "" }));
+    } else {
+      setForm(f => ({ ...f, country: "", province: "", city: "", location: "" }));
+    }
+  };
+
+  // 省份变更时更新城市列表和 location 文本
+  const handleProvinceChange = (provinceName: string) => {
+    setForm(f => {
+      const newForm = { ...f, province: provinceName, city: "" };
+      const locText = buildLocationText("CN", provinceName, "");
+      if (locText) {
+        newForm.location = locText;
+        const matchedPort = matchPortByLocation(locText);
+        if (matchedPort) newForm.tradePort = matchedPort;
+      }
+      return newForm;
+    });
+    setAiFilledFields(prev => { const n = new Set(prev); n.delete("province"); return n; });
+  };
+
+  // 城市变更时更新 location 文本
+  const handleCityChange = (cityName: string) => {
+    setForm(f => {
+      const newForm = { ...f, city: cityName };
+      const locText = buildLocationText("CN", newForm.province, cityName);
+      if (locText) {
+        newForm.location = locText;
+        const matchedPort = matchPortByLocation(locText);
+        if (matchedPort) newForm.tradePort = matchedPort;
+      }
+      return newForm;
+    });
+    setAiFilledFields(prev => { const n = new Set(prev); n.delete("city"); return n; });
+  };
+
+  // 国际国家变更时更新 location 文本
+  const handleCountryChange = (countryCode: string) => {
+    setForm(f => {
+      const newForm = { ...f, country: countryCode };
+      const locText = buildLocationText(countryCode, "", "");
+      if (locText) {
+        newForm.location = locText;
+      }
+      return newForm;
+    });
+    setAiFilledFields(prev => { const n = new Set(prev); n.delete("country"); return n; });
+  };
+
+  // 获取当前选中省份的城市列表
+  const currentProvinceCities = CHINA_PROVINCES.find(p => p.nameZh === form.province)?.cities || [];
 
   // ===== Step 1: 图片上传 =====
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -197,8 +275,21 @@ export default function NewProductPage() {
 
   // ===== 提交 =====
   const handleSubmit = async () => {
-    if (!form.modelName || !form.priceCny || !form.location) {
-      setResult({ success: false, message: "请填写完整信息（型号、价格、位置为必填）" });
+    if (!form.modelName || !form.priceCny) {
+      setResult({ success: false, message: "请填写完整信息（型号、价格为必填）" });
+      return;
+    }
+    // 产地校验：国内需选择省份，国际需选择国家
+    if (locationMode === "domestic" && !form.province) {
+      setResult({ success: false, message: "请选择产地省份" });
+      return;
+    }
+    if (locationMode === "international" && !form.country) {
+      setResult({ success: false, message: "请选择产地国家" });
+      return;
+    }
+    if (!form.location) {
+      setResult({ success: false, message: "产地信息不完整" });
       return;
     }
     if (brandMode === "select" && !form.brandId) {
@@ -228,6 +319,9 @@ export default function NewProductPage() {
       fd.append("condition", form.condition);
       fd.append("priceCny", form.priceCny);
       fd.append("location", form.location);
+      fd.append("country", form.country);
+      fd.append("province", form.province);
+      fd.append("city", form.city);
       fd.append("enginePower", form.enginePower);
       fd.append("engineType", form.engineType);
       fd.append("driveSystem", form.driveSystem);
@@ -525,9 +619,74 @@ export default function NewProductPage() {
             <p className="mt-1 text-xs text-gray-400">¥{form.priceCny ? (Number(form.priceCny) / 10000).toFixed(1) : "0"}万</p>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">位置 *</label>
-            <input value={form.location} onChange={e => update("location", e.target.value)}
-              placeholder="如: 河北石家庄" className={fieldClass("location")} />
+            <label className="mb-1 block text-sm font-medium text-gray-700">产地 *</label>
+            {/* 国内/国际切换 */}
+            <div className="mb-2 flex gap-2">
+              <button
+                type="button"
+                onClick={() => handleLocationModeChange("domestic")}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                  locationMode === "domestic"
+                    ? "bg-primary-600 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                国内
+              </button>
+              <button
+                type="button"
+                onClick={() => handleLocationModeChange("international")}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                  locationMode === "international"
+                    ? "bg-primary-600 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                国际
+              </button>
+            </div>
+            {/* 国内：省/市选择器 */}
+            {locationMode === "domestic" ? (
+              <div className="grid grid-cols-2 gap-2">
+                <select
+                  value={form.province}
+                  onChange={e => handleProvinceChange(e.target.value)}
+                  className={fieldClass("province")}
+                >
+                  <option value="">选择省份</option>
+                  {CHINA_PROVINCES.map(p => (
+                    <option key={p.nameZh} value={p.nameZh}>{p.nameZh}</option>
+                  ))}
+                </select>
+                <select
+                  value={form.city}
+                  onChange={e => handleCityChange(e.target.value)}
+                  disabled={!form.province}
+                  className={fieldClass("city")}
+                >
+                  <option value="">选择城市</option>
+                  {currentProvinceCities.map(c => (
+                    <option key={c.nameZh} value={c.nameZh}>{c.nameZh}</option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              /* 国际：国家选择器 */
+              <select
+                value={form.country}
+                onChange={e => handleCountryChange(e.target.value)}
+                className={fieldClass("country")}
+              >
+                <option value="">选择国家</option>
+                {INTERNATIONAL_COUNTRIES.map(c => (
+                  <option key={c.code} value={c.code}>{c.nameZh}</option>
+                ))}
+              </select>
+            )}
+            {/* 显示自动生成的 location 文本 */}
+            {form.location && (
+              <p className="mt-1 text-xs text-gray-400">产地：{form.location}</p>
+            )}
           </div>
         </div>
 

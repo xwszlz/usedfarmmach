@@ -49,6 +49,9 @@ export async function GET(request: NextRequest) {
       priceMin,
       priceMax,
       location,
+      country,
+      province,
+      city,
       condition,
       page,
       pageSize,
@@ -104,7 +107,32 @@ export async function GET(request: NextRequest) {
       });
     }
     if (condition) where.condition = condition;
+    // 兼容旧参数：location 文本模糊匹配
     if (location) where.location = { contains: location, mode: "insensitive" };
+    // 新参数：结构化产地筛选（country/province/city）
+    if (country) {
+      (where.AND as unknown[]) = (where.AND as unknown[]) || [];
+      (where.AND as unknown[]).push({ country });
+    }
+    if (province) {
+      (where.AND as unknown[]) = (where.AND as unknown[]) || [];
+      (where.AND as unknown[]).push({
+        OR: [
+          { province: { equals: province, mode: "insensitive" } },
+          // 兼容：如果 province 为 null，回退到 location 文本匹配
+          { AND: [{ province: null }, { location: { contains: province, mode: "insensitive" } }] },
+        ],
+      });
+    }
+    if (city) {
+      (where.AND as unknown[]) = (where.AND as unknown[]) || [];
+      (where.AND as unknown[]).push({
+        OR: [
+          { city: { equals: city, mode: "insensitive" } },
+          { AND: [{ city: null }, { location: { contains: city, mode: "insensitive" } }] },
+        ],
+      });
+    }
     if (yearMin || yearMax) {
       where.year = {};
       if (yearMin) (where.year as Record<string, number>).gte = yearMin;

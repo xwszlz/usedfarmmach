@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyToken, getTokenFromHeaders } from "@/lib/auth";
 import { uploadFileToOSS } from "@/lib/oss-upload";
+import { buildLocationText } from "@/lib/location-parser";
 
 const PUBLISH_COST = 1;
 
@@ -54,6 +55,9 @@ export async function POST(request: NextRequest) {
     const condition = formData.get("condition")?.toString() || "good";
     const priceCnyStr = formData.get("priceCny")?.toString();
     const location = formData.get("location")?.toString();
+    const country = formData.get("country")?.toString() || null;
+    const province = formData.get("province")?.toString() || null;
+    const city = formData.get("city")?.toString() || null;
     const isChineseBrandStr = formData.get("isChineseBrand")?.toString();
     const isChineseBrand = isChineseBrandStr === "true";
 
@@ -78,8 +82,14 @@ export async function POST(request: NextRequest) {
     const tradeTerm = formData.get("tradeTerm")?.toString();
     const tradePort = formData.get("tradePort")?.toString();
 
+    // 自动生成 location 显示文本（如果结构化字段已提供但 location 为空）
+    let finalLocation = location;
+    if ((!finalLocation || finalLocation.trim() === "") && (country || province || city)) {
+      finalLocation = buildLocationText(country, province, city);
+    }
+
     // 校验
-    if (!modelName || !yearStr || !priceCnyStr || !location) {
+    if (!modelName || !yearStr || !priceCnyStr || !finalLocation) {
       return NextResponse.json({ success: false, error: "请填写完整信息（型号、年份、价格、位置为必填）" }, { status: 400 });
     }
     if (!brandId && !brandName) return NextResponse.json({ success: false, error: "请选择或输入品牌" }, { status: 400 });
@@ -138,7 +148,10 @@ export async function POST(request: NextRequest) {
         condition,
         priceCny: Number(priceCnyStr),
         priceUsd: Math.round(Number(priceCnyStr) / 7.25),
-        location: location || "",
+        location: finalLocation || "",
+        country,
+        province,
+        city,
         descriptionZh: descriptionZh || null,
         status: "active",
         enginePower: enginePower ? Number(enginePower) : null,

@@ -126,6 +126,9 @@ model Product {
   priceCny              Float
   priceUsd              Float?
   location              String
+  country               String? // 国家代码，如 "CN" / "DE" / "US"
+  province              String? // 省/州，如 "河北" / "Bavaria"
+  city                  String? // 城市，如 "石家庄" / "Munich"
   descriptionZh         String?
   descriptionEn         String?
   descriptionRu         String?
