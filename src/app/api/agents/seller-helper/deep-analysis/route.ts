@@ -362,6 +362,16 @@ function extractStructured(analysisText: string): Record<string, any> | null {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    console.log(`[DeepAnalysis] 收到请求: ${JSON.stringify({
+      imageUrls: (body.imageUrls || []).length,
+      imageDataUris: (body.imageDataUris || []).length,
+      videoUrls: (body.videoUrls || []).length,
+      isChineseBrand: body.isChineseBrand,
+      productName: body.productName,
+      brandName: body.brandName,
+      year: body.year,
+      enginePower: body.enginePower,
+    })}`);
     const imageUrls: string[] = body.imageUrls || [];
     const imageDataUris: string[] = body.imageDataUris || [];
     const videoUrls: string[] = body.videoUrls || [];
@@ -399,28 +409,31 @@ export async function POST(request: NextRequest) {
     let modelUsed = "";
     const errors: string[] = [];
 
-    // ===== 模型优先级：豆包（免费）→ Gemini（备用）→ OpenRouter（兜底）=====
-
-    // 首选：豆包
-    if (ARK_API_KEY) {
-      try {
-        console.log(`[DeepAnalysis] 首选豆包: ${ARK_MODEL_ID}, 引擎: ${engineLabel}, 图片数: ${images.length}`);
-        const content = buildDoubaoContent(images, videoUrls, activePrompt);
-        analysisText = await callDoubao(content);
-        modelUsed = `豆包 ${ARK_MODEL_ID} [${engineLabel}]`;
-      } catch (error: any) {
-        const msg = `[豆包] ${error.message || ""}`.substring(0, 150);
-        console.warn("[DeepAnalysis] 豆包失败:", msg);
-        errors.push(msg);
+    // ===== 模型选择：国内→豆包优先；国际→Gemini优先 =====
+    // 国内品牌或未定义时首选豆包；国际品牌跳过豆包直接走Gemini
+    if (isChineseBrand !== false) {
+      // 首选：豆包
+      if (ARK_API_KEY) {
+        try {
+          console.log(`[DeepAnalysis] 首选豆包: ${ARK_MODEL_ID}, 引擎: ${engineLabel}, 图片数: ${images.length}`);
+          const content = buildDoubaoContent(images, videoUrls, activePrompt);
+          analysisText = await callDoubao(content);
+          modelUsed = `豆包 ${ARK_MODEL_ID} [${engineLabel}]`;
+        } catch (error: any) {
+          const msg = `[豆包] ${error.message || ""}`.substring(0, 150);
+          console.warn("[DeepAnalysis] 豆包失败:", msg);
+          errors.push(msg);
+        }
+      } else {
+        errors.push("[豆包] ARK_API_KEY未配置");
       }
-    } else {
-      errors.push("[豆包] ARK_API_KEY未配置");
     }
 
-    // 备用1: Gemini（豆包失败时降级）
+    // Gemini：国际品牌首选 / 国内品牌豆包失败后降级
     if (!analysisText && GOOGLE_API_KEY) {
       try {
-        console.log(`[DeepAnalysis] 豆包失败，降级到 Gemini, 引擎: ${engineLabel}`);
+        const geminiRole = isChineseBrand === false ? "国际首选" : "降级备用";
+        console.log(`[DeepAnalysis] Gemini ${geminiRole}, 引擎: ${engineLabel}`);
         analysisText = await callGeminiDeep(images, videoUrls, activePrompt);
         modelUsed = `Gemini 2.5 Flash [${engineLabel}]`;
       } catch (error: any) {

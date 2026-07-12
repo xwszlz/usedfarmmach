@@ -64,7 +64,19 @@ export default function DeepAnalysisCard({
         }),
       });
 
-      const data = await res.json();
+      let data: any;
+      const contentType = res.headers.get("content-type") || "";
+      if (contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        console.error("[DeepAnalysis] 非JSON响应:", text.substring(0, 200));
+        throw new Error(
+          locale === "zh"
+            ? "AI服务返回异常，请稍后重试"
+            : "AI service returned an unexpected response"
+        );
+      }
 
       if (!res.ok || !data.success) {
         throw new Error(data.error || data.message || `${locale === "zh" ? "分析失败" : "Analysis failed"} (${res.status})`);
