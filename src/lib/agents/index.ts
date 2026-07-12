@@ -7,3 +7,6 @@ export * from "./price-intel/types";
 
 export { buyerChatAgent, BuyerChatAgent } from "./buyer-chat/agent";
 export * from "./buyer-chat/types";
+
+export { exportComplianceAgent, ExportComplianceAgent, AGENT_NAME as EXPORT_COMPLIANCE_NAME, AGENT_VERSION as EXPORT_COMPLIANCE_VERSION } from "./export-compliance/agent";
+export * from "./export-compliance/types";

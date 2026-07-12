@@ -279,6 +279,31 @@ async function executeAgent(
       return { mode: "passive", message: "Seller-helper is a passive agent, triggered per upload" };
     }
 
+    case "export-compliance": {
+      // #10 出口合规 Agent
+      const { exportComplianceAgent } = await import("@/lib/agents/export-compliance/agent");
+      const result = await exportComplianceAgent.run({
+        productId: (params.productId as string) || undefined,
+        brandId: (params.brandId as string) || undefined,
+        brandName: (params.brandName as string) || undefined,
+        modelName: (params.modelName as string) || undefined,
+        purchasePriceCny: (params.purchasePriceCny as number) || undefined,
+        year: (params.year as number) || undefined,
+        category: (params.category as string) || undefined,
+        targetCountries: (params.targetCountries as string[]) || undefined,
+        dryRun: !!params.dryRun,
+      });
+      return {
+        ok: result.ok,
+        ipCheck: result.ipCheck ? { brandName: result.ipCheck.brandName, safeCountries: result.ipCheck.exportSafety.filter((s) => s.isSafe).map((s) => s.countryCode) } : null,
+        certMatchCount: result.certificationMatch.length,
+        costBreakdownCount: result.costBreakdown.length,
+        documentCount: result.documentTemplates.length,
+        bestChoice: result.valuationLink?.bestChoice || null,
+        durationMs: result.durationMs,
+      };
+    }
+
     case "seller-scout": {
       // #1 通过 GitHub Actions workflow_dispatch 触发（真采集）
       const token = process.env.GITHUB_TOKEN;

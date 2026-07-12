@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Package, Settings, FileText, Tent, Boxes } from "lucide-react";
+import { LayoutDashboard, Users, Package, Settings, FileText, Tent, Boxes, Shield, Bot } from "lucide-react";
 
 export function AdminSidebar({ role }: { role: string }) {
   const t = useTranslations("nav");
@@ -19,6 +19,8 @@ export function AdminSidebar({ role }: { role: string }) {
     { href: `/${locale}/seller/products`, label: "卖家产品", icon: FileText, hideForEditor: true },
     { href: `/${locale}/admin/expo`, label: "博览会管理", icon: Tent, hideForEditor: false },
     { href: `/${locale}/admin/expo/manage`, label: "展会内容管理", icon: Boxes, hideForEditor: false },
+    { href: `/${locale}/admin/orchestrator`, label: "智能体调度", icon: Bot, hideForEditor: true },
+    { href: `/${locale}/admin/export-compliance`, label: "出口合规", icon: Shield, hideForEditor: false },
   ];
 
   const visibleLinks = links.filter((l) => !(isEditor && l.hideForEditor));

@@ -169,4 +169,13 @@ export const BUILT_IN_AGENTS: Array<{
     triggerType: "manual", // 被动响应
     endpoint: "/api/agents/seller-helper/recognize",
   },
+  {
+    agentId: "export-compliance",
+    name: "#10 出口合规",
+    description: "品牌知识产权核查、目标国认证匹配、出口全链条成本计算、报关单据模板、估值联动推荐最优出口国",
+    version: "0.1.0",
+    triggerType: "manual", // 按需触发
+    endpoint: "/api/agents/export-compliance",
+    dependencies: ["price-intel"], // 依赖价格数据做利润分析
+  },
 ];
