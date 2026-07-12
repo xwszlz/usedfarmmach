@@ -255,20 +255,33 @@ function buildOpenRouterContent(images: string[], prompt: string) {
   ];
 }
 
+// ── 下载图片并转为 base64 ──
+async function downloadImageAsBase64(url: string): Promise<{ mimeType: string; data: string }> {
+  const response = await axios.get(url, {
+    responseType: "arraybuffer",
+    timeout: 20000,
+  });
+  const contentType = response.headers["content-type"] || "image/jpeg";
+  const base64 = Buffer.from(new Uint8Array(response.data as ArrayBuffer)).toString("base64");
+  return { mimeType: contentType.split(";")[0], data: base64 };
+}
+
 // ── 构建 Gemini 格式的消息内容 ──
-function buildGeminiContent(images: string[], prompt: string) {
-  const parts: Array<Record<string, unknown>> = [
-    { text: prompt },
-  ];
+async function buildGeminiContent(images: string[], prompt: string) {
+  const parts: Array<Record<string, unknown>> = [{ text: prompt }];
   for (const url of images) {
     if (url.startsWith("data:")) {
       const [mimeInfo, base64Data] = url.split(",");
       const mimeType = mimeInfo.replace("data:", "").split(";")[0] || "image/jpeg";
-      parts.push({
-        inline_data: { mime_type: mimeType, data: base64Data },
-      });
+      parts.push({ inline_data: { mime_type: mimeType, data: base64Data } });
     } else {
-      parts.push({ file_data: { file_url: url, mime_type: "image/jpeg" } });
+      // 公开 URL → 下载后转 base64 inline_data（Gemini 不支持 file_url）
+      try {
+        const { mimeType, data } = await downloadImageAsBase64(url);
+        parts.push({ inline_data: { mime_type: mimeType, data } });
+      } catch (err: any) {
+        console.warn(`[SellerHelper] 下载图片失败 ${url}:`, err.message?.substring(0, 80));
+      }
     }
   }
   return parts;
@@ -358,12 +371,65 @@ function parseAIResponse(aiText: string): Record<string, any> {
   } catch (e) {
     const jsonMatch = aiText.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      recognized = JSON.parse(jsonMatch[0]);
+      try {
+        recognized = JSON.parse(jsonMatch[0]);
+      } catch {
+        recognized = { error: "无法解析 AI 响应" };
+      }
     } else {
       recognized = { error: "无法解析 AI 响应" };
     }
   }
-  return recognized;
+  // 中文字段名 → 英文字段名映射（兼容 Gemini 等模型返回中文键的情况）
+  const fieldMap: Record<string, string> = {
+    "品牌": "brand",
+    "型号": "modelName",
+    "生产年份": "year",
+    "年份": "year",
+    "额定马力": "enginePower",
+    "马力": "enginePower",
+    "发动机功率": "enginePower",
+    "功率": "enginePower",
+    "发动机类型": "engineType",
+    "驱动方式": "driveSystem",
+    "驱动": "driveSystem",
+    "整机总长": "overallLength",
+    "总长": "overallLength",
+    "长度": "overallLength",
+    "长": "overallLength",
+    "整机总宽": "overallWidth",
+    "总宽": "overallWidth",
+    "宽度": "overallWidth",
+    "宽": "overallWidth",
+    "整机总高": "overallHeight",
+    "总高": "overallHeight",
+    "高度": "overallHeight",
+    "高": "overallHeight",
+    "整机净重": "netWeight",
+    "净重": "netWeight",
+    "重量": "netWeight",
+    "主要配置": "mainConfig",
+    "配置": "mainConfig",
+    "工作小时": "workingHours",
+    "工时": "workingHours",
+    "小时数": "workingHours",
+    "成色": "condition",
+    "状态": "condition",
+    "价格模式": "priceMode",
+    "贸易条款": "tradeTerm",
+    "发货港口": "tradePort",
+    "港口": "tradePort",
+    "港口城市": "tradePort",
+    "是否国内品牌": "isChineseBrand",
+    "国内品牌": "isChineseBrand",
+    "置信度": "confidence",
+  };
+  const mapped: Record<string, any> = {};
+  for (const [key, value] of Object.entries(recognized)) {
+    const mappedKey = fieldMap[key] || key;
+    mapped[mappedKey] = value;
+  }
+  return mapped;
 }
 
 // ── 构建成功响应 ──
@@ -421,16 +487,27 @@ export async function POST(request: NextRequest) {
     console.log(`[SellerHelper] 引擎模式: ${useDomestic ? "国内(DOMESTIC)" : "国际(INTERNATIONAL)"}, Prompt长度: ${activePrompt.length}`);
 
     let lastError: Error | null = null;
+    const errors: string[] = [];
 
     for (const entry of MODEL_CHAIN) {
       // 检查 API Key 是否可用
-      if (entry.provider === "ark" && !ARK_API_KEY) continue;
-      if (entry.provider === "openrouter" && !OPENROUTER_API_KEY) continue;
-      if (entry.provider === "google" && !GOOGLE_API_KEY) continue;
+      if (entry.provider === "ark" && !ARK_API_KEY) {
+        errors.push("[豆包] ARK_API_KEY未配置");
+        continue;
+      }
+      if (entry.provider === "openrouter" && !OPENROUTER_API_KEY) {
+        errors.push("[OpenRouter] OPENROUTER_API_KEY未配置");
+        continue;
+      }
+      if (entry.provider === "google" && !GOOGLE_API_KEY) {
+        errors.push("[Gemini] GOOGLE_API_KEY未配置");
+        continue;
+      }
 
       // 豆包不支持 base64 图片 → 如果只有base64则跳过豆包
       if (entry.provider === "ark" && hasBase64Images) {
         console.log("[SellerHelper] 有base64图片，跳过豆包（不支持base64）");
+        errors.push("[豆包] 跳过base64图片");
         continue;
       }
 
@@ -445,6 +522,7 @@ export async function POST(request: NextRequest) {
           if (content.length <= 1) {
             // 只有文字没有有效图片
             lastError = new Error("豆包无有效图片输入");
+            errors.push("[豆包] 无有效图片输入");
             continue;
           }
           aiText = await callDoubao(content);
@@ -452,13 +530,14 @@ export async function POST(request: NextRequest) {
           const content = buildOpenRouterContent(images, activePrompt);
           aiText = await callOpenRouter(entry.model!, content);
         } else {
-          const parts = buildGeminiContent(images, activePrompt);
+          const parts = await buildGeminiContent(images, activePrompt);
           aiText = await callGemini(entry.model!, parts);
         }
 
         if (!aiText || aiText.trim().length < 10) {
           console.warn(`[SellerHelper] ${entry.label} 返回空响应，尝试下一个`);
           lastError = new Error(`${entry.label} 返回空响应`);
+          errors.push(`[${entry.label}] 返回空响应`);
           continue;
         }
 
@@ -468,8 +547,10 @@ export async function POST(request: NextRequest) {
 
       } catch (error: any) {
         const statusCode = error?.response?.status;
-        console.warn(`[SellerHelper] ${entry.label} 失败 (HTTP ${statusCode}):`, error.message?.substring(0, 100));
+        const msg = `[${entry.label}] ${error.message || ""}`.substring(0, 120);
+        console.warn(`[SellerHelper] ${msg} (HTTP ${statusCode})`);
         lastError = error;
+        errors.push(msg);
 
         if (statusCode === 401 || statusCode === 403 || statusCode === 402) {
           console.log(`[SellerHelper] ${entry.label} 权限不足(HTTP ${statusCode})，自动降级...`);
@@ -489,6 +570,7 @@ export async function POST(request: NextRequest) {
       error: "AI识别服务暂时不可用，请直接在下方填写产品参数后发布（不影响使用）",
       code: "MANUAL_FALLBACK",
       retryable: true,
+      debug: errors.length > 0 ? errors : ["未知错误"],
     }, { status: 503 });
 
   } catch (error: any) {
