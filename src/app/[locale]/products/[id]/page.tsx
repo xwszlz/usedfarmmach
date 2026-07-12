@@ -391,6 +391,9 @@ export default async function ProductDetailPage({
             videoUrls={product.videos.length > 0 ? product.videos.map((v) => getVideoUrl(v.url)) : []}
             locale={locale}
             isChineseBrand={(product.brand as any).isChineseBrand}
+            brandName={brandName}
+            year={product.year || undefined}
+            enginePower={product.enginePower ? String(product.enginePower) : undefined}
           />
         </div>
       </div>

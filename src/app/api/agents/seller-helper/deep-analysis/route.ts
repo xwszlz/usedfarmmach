@@ -248,6 +248,17 @@ async function callDoubao(
   return text;
 }
 
+// ── 下载图片并转为 base64 ──
+async function downloadImageAsBase64(url: string): Promise<{ mimeType: string; data: string }> {
+  const response = await axios.get(url, {
+    responseType: "arraybuffer",
+    timeout: 20000,
+  });
+  const contentType = response.headers["content-type"] || "image/jpeg";
+  const base64 = Buffer.from(new Uint8Array(response.data as ArrayBuffer)).toString("base64");
+  return { mimeType: contentType.split(";")[0], data: base64 };
+}
+
 /**
  * 备用：调用 Gemini API（用于深度分析）
  */
@@ -256,9 +267,7 @@ async function callGeminiDeep(
   videos: string[],
   prompt: string
 ): Promise<string> {
-  const parts: Array<Record<string, unknown>> = [
-    { text: prompt },
-  ];
+  const parts: Array<Record<string, unknown>> = [{ text: prompt }];
 
   for (const url of images) {
     if (url.startsWith("data:")) {
@@ -266,13 +275,19 @@ async function callGeminiDeep(
       const mimeType = mimeInfo.replace("data:", "").split(";")[0] || "image/jpeg";
       parts.push({ inline_data: { mime_type: mimeType, data: base64Data } });
     } else {
-      parts.push({ file_data: { file_url: url, mime_type: "image/jpeg" } });
+      // 公开 URL → 下载后转 base64 inline_data
+      try {
+        const { mimeType, data } = await downloadImageAsBase64(url);
+        parts.push({ inline_data: { mime_type: mimeType, data } });
+      } catch (err: any) {
+        console.warn(`[DeepAnalysis] 下载图片失败 ${url}:`, err.message?.substring(0, 80));
+      }
     }
   }
 
-  // Gemini 不直接支持视频，但可以通过 file_data 传视频URL
-  for (const url of videos) {
-    parts.push({ file_data: { file_url: url, mime_type: "video/mp4" } });
+  // Gemini 不直接支持视频，跳过视频（prompt 中已描述视频链接）
+  if (videos.length > 0) {
+    parts.push({ text: `[相关视频] ${videos.join("\n")}` });
   }
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY}`;
@@ -351,6 +366,10 @@ export async function POST(request: NextRequest) {
     const imageDataUris: string[] = body.imageDataUris || [];
     const videoUrls: string[] = body.videoUrls || [];
     const isChineseBrand = body.isChineseBrand as boolean | undefined;
+    const productName = body.productName as string | undefined;
+    const brandName = body.brandName as string | undefined;
+    const year = body.year as number | undefined;
+    const enginePower = body.enginePower as string | undefined;
 
     const images = [...imageUrls, ...imageDataUris];
 
@@ -362,12 +381,23 @@ export async function POST(request: NextRequest) {
     }
 
     // 双引擎Prompt选择
-    const activePrompt = isChineseBrand ? DOMESTIC_ANALYSIS_PROMPT : INTERNATIONAL_ANALYSIS_PROMPT;
+    let activePrompt = isChineseBrand ? DOMESTIC_ANALYSIS_PROMPT : INTERNATIONAL_ANALYSIS_PROMPT;
+
+    // 注入已知参数作为上下文（让AI以已知信息为准，照片作为辅助验证）
+    const knownParams: string[] = [];
+    if (brandName) knownParams.push(`- 品牌：${brandName}`);
+    if (productName) knownParams.push(`- 型号：${productName}`);
+    if (year) knownParams.push(`- 年份：${year}`);
+    if (enginePower) knownParams.push(`- 马力：${enginePower} HP`);
+    if (knownParams.length > 0) {
+      activePrompt += `\n\n⚠️ 已知信息（请以此为准，照片作为辅助验证）：\n${knownParams.join("\n")}`;
+    }
     const engineLabel = isChineseBrand ? "国内(DOMESTIC)" : "国际(INTERNATIONAL)";
     console.log(`[DeepAnalysis] 引擎模式: ${engineLabel}, isChineseBrand: ${isChineseBrand}`);
 
     let analysisText = "";
     let modelUsed = "";
+    const errors: string[] = [];
 
     // ===== 模型优先级：豆包（免费）→ Gemini（备用）→ OpenRouter（兜底）=====
 
@@ -379,8 +409,12 @@ export async function POST(request: NextRequest) {
         analysisText = await callDoubao(content);
         modelUsed = `豆包 ${ARK_MODEL_ID} [${engineLabel}]`;
       } catch (error: any) {
-        console.warn("[DeepAnalysis] 豆包失败:", (error.message || "").substring(0, 120));
+        const msg = `[豆包] ${error.message || ""}`.substring(0, 150);
+        console.warn("[DeepAnalysis] 豆包失败:", msg);
+        errors.push(msg);
       }
+    } else {
+      errors.push("[豆包] ARK_API_KEY未配置");
     }
 
     // 备用1: Gemini（豆包失败时降级）
@@ -390,8 +424,12 @@ export async function POST(request: NextRequest) {
         analysisText = await callGeminiDeep(images, videoUrls, activePrompt);
         modelUsed = `Gemini 2.5 Flash [${engineLabel}]`;
       } catch (error: any) {
-        console.warn("[DeepAnalysis] Gemini 失败:", (error.message || "").substring(0, 120));
+        const msg = `[Gemini] ${error.message || ""}`.substring(0, 150);
+        console.warn("[DeepAnalysis] Gemini 失败:", msg);
+        errors.push(msg);
       }
+    } else if (!analysisText) {
+      errors.push("[Gemini] GOOGLE_API_KEY未配置");
     }
 
     // 备用：OpenRouter
@@ -419,8 +457,12 @@ export async function POST(request: NextRequest) {
         analysisText = (response.data as any)?.choices?.[0]?.message?.content || "";
         modelUsed = `OpenRouter Gemini Flash [${engineLabel}]`;
       } catch (error: any) {
-        console.warn("[DeepAnalysis] OpenRouter 失败:", error.message?.substring(0, 150));
+        const msg = `[OpenRouter] ${error.message || ""}`.substring(0, 150);
+        console.warn("[DeepAnalysis] OpenRouter 失败:", msg);
+        errors.push(msg);
       }
+    } else if (!analysisText) {
+      errors.push("[OpenRouter] OPENROUTER_API_KEY未配置");
     }
 
     if (!analysisText || analysisText.trim().length < 50) {
@@ -429,6 +471,7 @@ export async function POST(request: NextRequest) {
         error: "AI深度分析服务暂时不可用，请稍后重试或使用快速识别功能",
         code: "ALL_MODELS_FAILED",
         retryable: true,
+        debug: errors.length > 0 ? errors.map(e => e.substring(0, 120)) : ["未捕获到模型错误"],
       }, { status: 503 });
     }
 

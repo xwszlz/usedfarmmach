@@ -10,6 +10,9 @@ interface DeepAnalysisCardProps {
   videoUrls?: string[];
   locale?: string;
   isChineseBrand?: boolean;
+  brandName?: string;
+  year?: number;
+  enginePower?: string;
 }
 
 export default function DeepAnalysisCard({
@@ -19,6 +22,9 @@ export default function DeepAnalysisCard({
   videoUrls = [],
   locale = "zh",
   isChineseBrand,
+  brandName,
+  year,
+  enginePower,
 }: DeepAnalysisCardProps) {
   const [analyzing, setAnalyzing] = useState(false);
   const [report, setReport] = useState<string | null>(null);
@@ -51,6 +57,10 @@ export default function DeepAnalysisCard({
           imageUrls: selectedImages,
           videoUrls: videoUrls.length > 0 ? videoUrls : undefined,
           isChineseBrand,
+          productName: productName || undefined,
+          brandName: brandName || undefined,
+          year: year || undefined,
+          enginePower: enginePower || undefined,
         }),
       });
 
@@ -192,10 +202,59 @@ export default function DeepAnalysisCard({
                     {structured.modelName || ""}
                     {structured.year && ` (${structured.year})`}
                   </p>
-                  {structured.estimatedPriceCny && (
+                  {structured.enginePower && (
                     <p className="mt-1 text-green-700">
-                      {locale === "zh" ? "市场参考价" : "Market Reference Price"}：¥
-                      {structured.estimatedPriceCny}
+                      {locale === "zh" ? "马力" : "Engine Power"}：{structured.enginePower} HP
+                    </p>
+                  )}
+                  {/* 国内品牌：补贴参考价区块 */}
+                  {isChineseBrand && (
+                    <>
+                      {structured.subsidyAmount && (
+                        <p className="mt-1 text-green-700">
+                          {locale === "zh" ? "购置补贴" : "Subsidy"}：¥{structured.subsidyAmount}
+                        </p>
+                      )}
+                      {structured.newMachinePrice && (
+                        <p className="mt-1 text-green-700">
+                          {locale === "zh" ? "新机参考价" : "New Machine Price"}：¥{structured.newMachinePrice}
+                        </p>
+                      )}
+                      {structured.estimatedPriceCny && (
+                        <p className="mt-1 font-medium text-green-800">
+                          {locale === "zh" ? "二手参考价" : "Used Market Price"}：¥{structured.estimatedPriceCny}
+                        </p>
+                      )}
+                      {structured.fobPriceUsd && (
+                        <p className="mt-1 text-green-600">
+                          {locale === "zh" ? "出口FOB参考价" : "FOB Export Price"}：${structured.fobPriceUsd}
+                        </p>
+                      )}
+                    </>
+                  )}
+                  {/* 国际品牌：出口参考价区块 */}
+                  {!isChineseBrand && (
+                    <>
+                      {structured.estimatedPriceCny && (
+                        <p className="mt-1 text-green-700">
+                          {locale === "zh" ? "国内参考价" : "China Market Price"}：¥{structured.estimatedPriceCny}
+                        </p>
+                      )}
+                      {structured.estimatedPriceUsd && (
+                        <p className="mt-1 text-green-700">
+                          {locale === "zh" ? "国际参考价" : "Intl Market Price"}：${structured.estimatedPriceUsd}
+                        </p>
+                      )}
+                      {structured.fobPriceUsd && (
+                        <p className="mt-1 font-medium text-green-800">
+                          {locale === "zh" ? "FOB青岛港参考价" : "FOB Qingdao Price"}：${structured.fobPriceUsd}
+                        </p>
+                      )}
+                    </>
+                  )}
+                  {structured.confidence && (
+                    <p className="mt-2 text-xs text-green-500">
+                      {locale === "zh" ? "置信度" : "Confidence"}：{Math.round(structured.confidence * 100)}%
                     </p>
                   )}
                 </div>
