@@ -390,6 +390,7 @@ export default async function ProductDetailPage({
             imageUrls={product.images.map((img) => getImageUrl(img.url))}
             videoUrls={product.videos.length > 0 ? product.videos.map((v) => getVideoUrl(v.url)) : []}
             locale={locale}
+            isChineseBrand={(product.brand as any).isChineseBrand}
           />
         </div>
       </div>

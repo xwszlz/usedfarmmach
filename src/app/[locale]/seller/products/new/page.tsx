@@ -41,6 +41,7 @@ export default function NewProductPage() {
     overallLength: "", overallWidth: "", overallHeight: "", netWeight: "",
     mainConfig: "", descOther: "",
     priceMode: "por", tradeTerm: "FOB", tradePort: "Qingdao",
+    isChineseBrand: false as boolean,
   });
 
   const [imageFiles, setImageFiles] = useState<File[]>([]);
@@ -142,9 +143,10 @@ export default function NewProductPage() {
       priceMode: data.priceMode || f.priceMode,
       tradeTerm: data.tradeTerm || f.tradeTerm,
       tradePort: data.tradePort || f.tradePort,
+      isChineseBrand: data.isChineseBrand ?? f.isChineseBrand,
     }));
     if (data.brandName) setBrandMode("custom");
-    setResult({ success: true, message: "AI 识别结果已填充到表单，请核对绿色标记的字段" });
+    setResult({ success: true, message: `AI 识别结果已填充到表单${data.isChineseBrand ? "（国内农机）" : "（国际农机）"}，请核对绿色标记的字段` });
   };
 
   // ===== Canvas 图片压缩（避免超过 Vercel 4.5MB 请求体限制）=====
@@ -238,6 +240,7 @@ export default function NewProductPage() {
       fd.append("priceMode", form.priceMode);
       fd.append("tradeTerm", form.tradeTerm);
       fd.append("tradePort", form.tradePort);
+      fd.append("isChineseBrand", String(form.isChineseBrand));
 
       // 压缩图片后再上传（避免超过 Vercel 4.5MB 请求体限制）
       setResult({ success: false, message: "正在压缩图片..." });

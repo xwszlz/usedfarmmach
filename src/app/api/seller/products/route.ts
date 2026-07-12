@@ -54,6 +54,8 @@ export async function POST(request: NextRequest) {
     const condition = formData.get("condition")?.toString() || "good";
     const priceCnyStr = formData.get("priceCny")?.toString();
     const location = formData.get("location")?.toString();
+    const isChineseBrandStr = formData.get("isChineseBrand")?.toString();
+    const isChineseBrand = isChineseBrandStr === "true";
 
     // 结构化描述
     const descPower = formData.get("descPower")?.toString();
@@ -90,7 +92,7 @@ export async function POST(request: NextRequest) {
       if (existing) {
         finalBrandId = existing.id;
       } else {
-        const created = await prisma.brand.create({ data: { nameZh: brandName, nameEn: brandName, originCountry: "未知" } });
+        const created = await prisma.brand.create({ data: { nameZh: brandName, nameEn: brandName, originCountry: isChineseBrand ? "中国" : "未知", isChineseBrand } });
         finalBrandId = created.id;
       }
     }

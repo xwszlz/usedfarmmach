@@ -1,16 +1,17 @@
 // ───────────────────────────────────────────────
-// #8 卖家助手 Agent — 图片识别 API
+// #8 卖家助手 Agent — 图片识别 API（双引擎版）
 // 多模态 LLM 识别农机图片 → 品牌/型号/年份/工时/状况
 // POST /api/agents/seller-helper/recognize
-// Body: { imageUrls?: string[], imageDataUris?: string[] }
+// Body: { imageUrls?: string[], imageDataUris?: string[], isChineseBrand?: boolean }
 //
-// 🔧 Round6 更新（2026-07-06）：
-//   1. 新增豆包（火山引擎ARK）为第一优先模型（免费+快速）
-//   2. 支持 imageUrls（HTTP URL）输入格式（与 deep-analysis 一致）
+// 🔧 V2.1 升级（2026-07-12）：
+//   双引擎架构 — 国内农机用豆包(中文铭牌强) / 国际农机用Gemini(英文铭牌强)
+//   自动检测isChineseBrand并返回，贯通到深度分析和估值系统
+//
+// 🔧 Round6 更新（2026-07-06）保留：
+//   1. 豆包（火山引擎ARK）为第一优先模型（免费+快速）
+//   2. 支持 imageUrls（HTTP URL）输入格式
 //   3. Gemini 降为第二备用，OpenRouter 保持第三备选
-//
-// ⚠️ Round5 修复（2026-07-05）保留：
-//   Gemini 模型名修正、OpenRouter 多模型备选链
 // ───────────────────────────────────────────────
 
 import { NextRequest, NextResponse } from "next/server";
@@ -60,8 +61,90 @@ const MODEL_CHAIN = [
 export const dynamic = "force-dynamic";
 export const maxDuration = 90; // Vercel PRO 最大 120s，90s 确保 3 张图片下载+识别不超时
 
-// ── 系统提示词（所有模型共用） ──
-const SYSTEM_PROMPT = `你是一位资深二手农业机械专家，熟悉 CLAAS、John Deere, New Holland、Krone、Orkel 等主流品牌的收获机、割台、打捆机。
+// ── 国内农机品牌关键词（用于自动检测 isChineseBrand） ──
+const CHINESE_BRAND_KEYWORDS = [
+  "东方红", "一拖", "YT", "DONGFANGHONG",
+  "雷沃", "谷神", "LOVOL",
+  "沃得", "WODE",
+  "福田", "FOTON",
+  "久保田", "KUBOTA",  // 国产久保田 vs 进口久保田需结合铭牌语言判断
+  "洋马", "YANMAR",
+  "井关", "ISHIGAKI",
+  "常州", "东风", "DF",
+  "时风", "SHIFENG",
+  "五征", "WUZHENG",
+  "常发", "CHANGFA",
+  "星光", "XINGGUANG",
+  "中联", "ZOOMLION",
+  "牧神", "MUSHEN",
+  "春雨", "CHUNYU",
+  "大疆", "DJI",
+  "极飞", "XAIR",
+  "丰疆", "FENGJIANG",
+  "博创", "BOCHUANG",
+  "华测", "HUACE",
+  "拓普", "TUOPU",
+];
+
+/**
+ * 检测识别结果是否为国内品牌
+ * 基于品牌名关键词匹配
+ */
+function detectChineseBrand(brandName: string): boolean {
+  if (!brandName) return false;
+  const upper = brandName.toUpperCase();
+  return CHINESE_BRAND_KEYWORDS.some((kw) => {
+    const kwUpper = kw.toUpperCase();
+    return upper.includes(kwUpper) || brandName.includes(kw);
+  });
+}
+
+// ── 国内农机识别 Prompt（中文铭牌、中文品牌名、补贴参考价） ──
+const DOMESTIC_PROMPT = `你是一位资深中国农业机械专家，熟悉东方红、雷沃、沃得、福田、久保田（国产）、洋马、井关、时风、五征、常发、星光、中联重科、牧神、春雨、大疆农业、极飞等国内主流品牌的拖拉机、收割机、插秧机、播种机、植保机等各类农机设备。
+
+请根据提供的农机图片（整机全貌、铭牌、驾驶室、轮胎/底盘），**仔细识别每一个字段**，以 JSON 格式返回。
+
+⚠️ 重要要求：
+- 品牌名可以返回中文或拼音（如"东方红"、"雷沃"、"沃得"），系统会自动匹配
+- 型号字段保留铭牌上的原始写法（如"LX1504"、"M1804"、"4LZ-8"）
+- 必须尝试识别并填写 ALL 以下 18 个字段，不要遗漏
+- 即使某个字段在图片上不完全清晰，也要根据可见线索给出最可能的推断值
+- 只有在完全没有任何线索时才设为 null
+
+返回字段说明：
+{
+  "brand": "品牌名（中文或英文均可，如 东方红/雷沃/沃得/福田）— 从铭牌或外观判断，必填",
+  "modelName": "型号（如 LX1504, M1804, 4LZ-8, 2Z-6）— 从铭牌读取，必填",
+  "year": 年份数字（如 2020, 2018）— 铭牌或注册信息",
+  "enginePower": "发动机额定马力(HP)，如 \"150\" — 铭牌常见字段",
+  "engineType": "发动机类型（Diesel Engine / Gasoline / Other）",
+  "driveSystem": "驱动方式（2WD / 4WD / Full Hydraulic）— 从轮胎布局判断",
+  "overallLength": "整机总长(mm)",
+  "overallWidth": "整机总宽(mm)",
+  "overallHeight": "整机总高(mm)",
+  "netWeight": "整机净重(kg)",
+  "mainConfig": "主要配置（如 割幅宽度、旋耕幅宽、插秧行数、药箱容量等）",
+  "workingHours": "工作小时数 — 仪表盘或卖家描述",
+  "condition": "成色（excellent / good / fair / poor）",
+  "priceMode": "价格模式（fob / por）— 默认 por",
+  "tradeTerm": "贸易条款（FOB / CIF / CFR / EXW）— 默认 EXW",
+  "tradePort": "发货港口或城市（Qingdao / Shanghai / Zhengzhou 等）— 默认 Qingdao",
+  "isChineseBrand": true,  // 国内农机固定为true
+  "confidence": 0-1 之间的置信度分数
+}
+
+识别要点（按优先级排序）：
+1. 🔍 铭牌照片是金标准 → 品牌/型号/年份/马力几乎都在铭牌上
+2. 📐 整机全貌 → 驱动方式(看轮胎数量)、尺寸估算
+3. ⚙️ 发动机舱 → 发动机类型、马力标签
+4. 🛞 轮胎/底盘 → 驱动方式确认
+5. 🎛️ 仪表盘 → 工作小时数
+6. 📎 附件照片 → 主要配置
+7. 🎨 漆面+锈蚀+轮胎磨损 → 成色判断
+8. 只返回 JSON，不要任何其他文字`;
+
+// ── 国际农机识别 Prompt（英文铭牌、国际品牌名、FOB定价） ──
+const INTERNATIONAL_PROMPT = `你是一位资深二手农业机械专家，熟悉 CLAAS、John Deere, New Holland、Krone、Orkel、Case IH、Massey Ferguson、Kubota 等主流国际品牌的收获机、割台、打捆机。
 请根据提供的农机图片（整机全貌、铭牌、驾驶室、轮胎/底盘），**仔细识别每一个字段**，以 JSON 格式返回。
 
 ⚠️ 重要要求：
@@ -100,12 +183,13 @@ const SYSTEM_PROMPT = `你是一位资深二手农业机械专家，熟悉 CLAAS
 6. 📎 附件照片(割台/打捆机) → 主要配置
 7. 🎨 漆面+锈蚀+轮胎磨损 → 成色判断
 8. 只返回 JSON，不要任何其他文字
-9. 品牌名用英文标准名，如果看到中文品牌名则翻译为英文`;
+9. 品牌名用英文标准名，如果看到中文品牌名则翻译为英文
+10. isChineseBrand 固定为 false`;
 
 // ── 构建豆包(ARK)格式的消息内容（OpenAI兼容）──
-function buildDoubaoContent(images: string[], videoUrls: string[] = []) {
+function buildDoubaoContent(images: string[], videoUrls: string[] = [], prompt: string) {
   const content: Array<Record<string, unknown>> = [
-    { type: "text", text: SYSTEM_PROMPT },
+    { type: "text", text: prompt },
   ];
   for (const url of images) {
     if (url.startsWith("data:")) {
@@ -161,9 +245,9 @@ async function callDoubao(content: Array<Record<string, unknown>>): Promise<stri
 }
 
 // ── 构建 OpenRouter 格式的消息内容 ──
-function buildOpenRouterContent(images: string[]) {
+function buildOpenRouterContent(images: string[], prompt: string) {
   return [
-    { type: "text" as const, text: SYSTEM_PROMPT },
+    { type: "text" as const, text: prompt },
     ...images.map((url: string) => ({
       type: "image_url" as const,
       image_url: { url },
@@ -172,9 +256,9 @@ function buildOpenRouterContent(images: string[]) {
 }
 
 // ── 构建 Gemini 格式的消息内容 ──
-function buildGeminiContent(images: string[]) {
+function buildGeminiContent(images: string[], prompt: string) {
   const parts: Array<Record<string, unknown>> = [
-    { text: SYSTEM_PROMPT },
+    { text: prompt },
   ];
   for (const url of images) {
     if (url.startsWith("data:")) {
@@ -284,6 +368,11 @@ function parseAIResponse(aiText: string): Record<string, any> {
 
 // ── 构建成功响应 ──
 function buildSuccessResponse(recognized: Record<string, any>) {
+  // 自动检测 isChineseBrand：优先用AI返回值，否则用关键词检测
+  const detectedChinese = recognized.isChineseBrand !== undefined
+    ? Boolean(recognized.isChineseBrand)
+    : detectChineseBrand(recognized.brand || "");
+
   return NextResponse.json({
     success: true,
     data: {
@@ -303,6 +392,7 @@ function buildSuccessResponse(recognized: Record<string, any>) {
       priceMode: recognized.priceMode || null,
       tradeTerm: recognized.tradeTerm || null,
       tradePort: recognized.tradePort || null,
+      isChineseBrand: detectedChinese,
       confidence: recognized.confidence || 0.5,
     },
   });
@@ -314,6 +404,7 @@ export async function POST(request: NextRequest) {
     const imageUrls: string[] = body.imageUrls || [];
     const imageDataUris: string[] = body.imageDataUris || [];
     const videoUrls: string[] = body.videoUrls || [];
+    const forceChineseBrand = body.isChineseBrand as boolean | undefined;
     const images = [...imageUrls, ...imageDataUris];
     const hasBase64Images = imageDataUris.some((u) => u.startsWith("data:"));
 
@@ -323,6 +414,11 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // 双引擎Prompt选择：前端可强制指定，否则使用默认（先走国际，识别后自动检测）
+    const useDomestic = forceChineseBrand === true;
+    const activePrompt = useDomestic ? DOMESTIC_PROMPT : INTERNATIONAL_PROMPT;
+    console.log(`[SellerHelper] 引擎模式: ${useDomestic ? "国内(DOMESTIC)" : "国际(INTERNATIONAL)"}, Prompt长度: ${activePrompt.length}`);
 
     let lastError: Error | null = null;
 
@@ -345,7 +441,7 @@ export async function POST(request: NextRequest) {
 
         if (entry.provider === "ark") {
           // 豆包：使用 OpenAI 兼容格式
-          const content = buildDoubaoContent(imageUrls, videoUrls);
+          const content = buildDoubaoContent(imageUrls, videoUrls, activePrompt);
           if (content.length <= 1) {
             // 只有文字没有有效图片
             lastError = new Error("豆包无有效图片输入");
@@ -353,10 +449,10 @@ export async function POST(request: NextRequest) {
           }
           aiText = await callDoubao(content);
         } else if (entry.provider === "openrouter") {
-          const content = buildOpenRouterContent(images);
+          const content = buildOpenRouterContent(images, activePrompt);
           aiText = await callOpenRouter(entry.model!, content);
         } else {
-          const parts = buildGeminiContent(images);
+          const parts = buildGeminiContent(images, activePrompt);
           aiText = await callGemini(entry.model!, parts);
         }
 

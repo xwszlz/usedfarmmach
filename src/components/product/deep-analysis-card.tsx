@@ -9,6 +9,7 @@ interface DeepAnalysisCardProps {
   imageUrls: string[];
   videoUrls?: string[];
   locale?: string;
+  isChineseBrand?: boolean;
 }
 
 export default function DeepAnalysisCard({
@@ -17,6 +18,7 @@ export default function DeepAnalysisCard({
   imageUrls,
   videoUrls = [],
   locale = "zh",
+  isChineseBrand,
 }: DeepAnalysisCardProps) {
   const [analyzing, setAnalyzing] = useState(false);
   const [report, setReport] = useState<string | null>(null);
@@ -42,12 +44,13 @@ export default function DeepAnalysisCard({
     setExpanded(true);
 
     try {
-      const res = await fetch("https://shendiao-ai-api-ybemtmjsna.cn-beijing.fcapp.run/deep-analysis", {
+      const res = await fetch("/api/agents/seller-helper/deep-analysis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           imageUrls: selectedImages,
           videoUrls: videoUrls.length > 0 ? videoUrls : undefined,
+          isChineseBrand,
         }),
       });
 
@@ -68,9 +71,16 @@ export default function DeepAnalysisCard({
   };
 
   const title = locale === "zh" ? "AI 深度分析" : "AI Deep Analysis";
-  const desc = locale === "zh"
-    ? `接入豆包大模型，对 ${productName} 进行详尽的设备分析（技术参数、操作维修、市场参考价、购买建议）`
-    : `Powered by Doubao AI — comprehensive equipment analysis for ${productName}`;
+  const engineTag = isChineseBrand
+    ? (locale === "zh" ? "国内农机引擎" : "Domestic Engine")
+    : (locale === "zh" ? "国际农机引擎" : "International Engine");
+  const desc = isChineseBrand
+    ? (locale === "zh"
+      ? `接入豆包大模型，对 ${productName} 进行详尽的国内设备分析（技术参数、操作维修、补贴参考价、地区行情、购买建议）`
+      : `Powered by Doubao AI — comprehensive domestic equipment analysis for ${productName}`)
+    : (locale === "zh"
+      ? `接入豆包大模型，对 ${productName} 进行详尽的设备分析（技术参数、操作维修、市场参考价、FOB出口价、购买建议）`
+      : `Powered by Doubao AI — comprehensive equipment analysis for ${productName}`);
   const btnText = analyzing
     ? (locale === "zh" ? "分析中（约15-30秒）..." : "Analyzing...")
     : (locale === "zh" ? "开始深度分析" : "Start Deep Analysis");
@@ -85,6 +95,15 @@ export default function DeepAnalysisCard({
       <div className="mb-3 flex items-center gap-2">
         <Bot className="h-5 w-5 text-purple-600" />
         <h3 className="text-base font-bold text-gray-900">{title}</h3>
+        {isChineseBrand !== undefined && (
+          <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+            isChineseBrand
+              ? "bg-red-100 text-red-700"
+              : "bg-blue-100 text-blue-700"
+          }`}>
+            {engineTag}
+          </span>
+        )}
         {modelUsed && (
           <span className="rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-medium text-purple-700">
             {modelUsed}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, Wand2, CheckCircle, AlertCircle, Loader2, Upload } from "lucide-react";
+import { Sparkles, Wand2, CheckCircle, AlertCircle, Loader2, Upload, Globe, Flag } from "lucide-react";
 
 interface AiRecognizedData {
   brand: string | null;
@@ -20,6 +20,7 @@ interface AiRecognizedData {
   priceMode: string | null;
   tradeTerm: string | null;
   tradePort: string | null;
+  isChineseBrand: boolean;
   confidence: number;
 }
 
@@ -42,6 +43,7 @@ interface SellerAiAssistantProps {
     priceMode: string;
     tradeTerm: string;
     tradePort: string;
+    isChineseBrand: boolean;
   }) => void;
 }
 
@@ -129,6 +131,7 @@ export default function SellerAiAssistant({ imageFiles, onFill }: SellerAiAssist
   const [recognized, setRecognized] = useState<AiRecognizedData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [phase, setPhase] = useState<string>("");
+  const [engineMode, setEngineMode] = useState<"auto" | "domestic" | "international">("auto");
 
   const handleRecognize = async () => {
     if (imageFiles.length === 0) {
@@ -183,12 +186,15 @@ export default function SellerAiAssistant({ imageFiles, onFill }: SellerAiAssist
         console.warn(`[AI] ${uploadFailCount}/${imageDataUrls.length} 张图片上传失败，剩余 ${imageUrls.length} 张继续识别`);
       }
 
-      // 3. 调用识别 API（FC 阿里云函数计算，直接对接豆包，避免 Vercel 海外超时）
+      // 3. 调用识别 API（内部API路由，豆包→Gemini→OpenRouter 三级降级）
       setPhase(`AI 智能识别中...(${imageUrls.length}张图片)`);
-      const res = await fetch("https://shendiao-ai-api-ybemtmjsna.cn-beijing.fcapp.run/recognize", {
+      const res = await fetch("/api/agents/seller-helper/recognize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageUrls }), // ← 关键改动：用 imageUrls 替代 imageDataUris
+        body: JSON.stringify({
+          imageUrls,
+          isChineseBrand: engineMode === "domestic" ? true : undefined,
+        }),
       });
 
       let data: any;
@@ -240,6 +246,7 @@ export default function SellerAiAssistant({ imageFiles, onFill }: SellerAiAssist
       priceMode: recognized.priceMode || "por",
       tradeTerm: recognized.tradeTerm || "FOB",
       tradePort: recognized.tradePort || "",
+      isChineseBrand: recognized.isChineseBrand ?? false,
     });
   };
 
@@ -273,6 +280,46 @@ export default function SellerAiAssistant({ imageFiles, onFill }: SellerAiAssist
       <p className="mb-4 text-sm text-gray-500">
         基于已上传的 {imageFiles.length} 张图片，自动识别农机品牌、型号、参数等信息。图片越多识别越准。
       </p>
+
+      {/* 引擎模式选择器 */}
+      <div className="mb-4 flex items-center gap-2">
+        <span className="text-xs font-medium text-gray-600">识别引擎：</span>
+        <div className="flex gap-1.5">
+          <button
+            onClick={() => setEngineMode("auto")}
+            className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+              engineMode === "auto"
+                ? "bg-primary-600 text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            <Globe className="mr-1 inline h-3 w-3" />
+            自动
+          </button>
+          <button
+            onClick={() => setEngineMode("domestic")}
+            className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+              engineMode === "domestic"
+                ? "bg-red-600 text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            <Flag className="mr-1 inline h-3 w-3" />
+            国内农机
+          </button>
+          <button
+            onClick={() => setEngineMode("international")}
+            className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+              engineMode === "international"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            <Globe className="mr-1 inline h-3 w-3" />
+            国际农机
+          </button>
+        </div>
+      </div>
 
       {/* 识别按钮 */}
       <button
@@ -309,6 +356,15 @@ export default function SellerAiAssistant({ imageFiles, onFill }: SellerAiAssist
             <span className="text-sm font-medium text-green-800">
               识别成功（置信度 {Math.round(recognized.confidence * 100)}%）
             </span>
+            {recognized.isChineseBrand !== undefined && (
+              <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                recognized.isChineseBrand
+                  ? "bg-red-100 text-red-700"
+                  : "bg-blue-100 text-blue-700"
+              }`}>
+                {recognized.isChineseBrand ? "国内品牌" : "国际品牌"}
+              </span>
+            )}
           </div>
 
           <div className="space-y-2 text-sm">

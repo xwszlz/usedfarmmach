@@ -1,25 +1,12 @@
 /**
  * POST /api/agents/seller-helper/deep-analysis
- * AI深度分析 — 接入字节跳动豆包大模型
+ * AI深度分析 — 双引擎版（国内农机/国际农机）
  *
- * 与 recognize/route.ts 的区别：
- * 1. 使用豆包（火山引擎ARK）模型，支持图片+视频
- * 2. 放开prompt限制：允许AI调用训练知识，不限于照片信息
- * 3. max_tokens = 4096（vs 旧版 800）
- * 4. 输出详细Markdown分析报告（不限于JSON）
- * 5. 覆盖：品牌型号识别、技术参数解读、操作维修要点、市场参考价、购买建议
+ * V2.1 升级（2026-07-12）：
+ *   双引擎架构 — 国内农机走豆包(补贴参考价) / 国际农机走Gemini(FOB出口价)
+ *   接受 isChineseBrand 参数，自动切换分析prompt
  *
- * 图片输入方式：
- *   小程序已改为先上传 OSS 再传 HTTP URL（imageUrls）
- *   豆包支持 HTTP URL 图片，不支持 base64 data URI
- *   如果收到 base64（兼容旧版），豆包会快速失败，自动降级到 Gemini
- *
- * 环境变量：
- *   ARK_API_KEY     - 火山引擎ARK API Key
- *   ARK_MODEL_ID    - 模型ID（默认 doubao-1-5-vision-pro-32k）
- *   ARK_BASE_URL    - API地址（默认 https://ark.cn-beijing.volces.com/api/v3）
- *
- * Body: { imageUrls?: string[], imageDataUris?: string[], videoUrls?: string[] }
+ * Body: { imageUrls?: string[], imageDataUris?: string[], videoUrls?: string[], isChineseBrand?: boolean }
  * Response: { success: true, data: { analysis: "Markdown报告", structured: {...}, model: "..." } }
  */
 
@@ -38,9 +25,9 @@ const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || "";
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
 
 /**
- * 深度分析系统提示词 — 放开限制，允许AI调用训练知识
+ * 国际农机深度分析 Prompt — FOB出口价、全球市场
  */
-const DEEP_ANALYSIS_PROMPT = `你是一位拥有20年经验的资深二手农业机械专家和评估师，精通 John Deere、CLAAS、New Holland、Kubota、Massey Ferguson、Case IH 等全球主流品牌的拖拉机、收获机、打捆机、播种机等各类农机设备。
+const INTERNATIONAL_ANALYSIS_PROMPT = `你是一位拥有20年经验的资深二手农业机械专家和评估师，精通 John Deere、CLAAS、New Holland、Kubota、Massey Ferguson、Case IH 等全球主流品牌的拖拉机、收获机、打捆机、播种机等各类农机设备。
 
 请根据用户提供的农机照片和视频（可能包含整机全貌、铭牌、驾驶室、发动机、轮胎底盘、工作视频等），结合你的专业知识库，给出一份**详尽的深度分析报告**。
 
@@ -72,6 +59,7 @@ const DEEP_ANALYSIS_PROMPT = `你是一位拥有20年经验的资深二手农业
 ## 四、市场参考价格
 - 国内二手市场参考价（人民币）
 - 国际二手市场参考价（美元）
+- FOB青岛港出口参考价（美元）
 - 影响价格的关键因素分析
 - 该型号在当前市场的供需情况
 
@@ -99,26 +87,106 @@ const DEEP_ANALYSIS_PROMPT = `你是一位拥有20年经验的资深二手农业
   "condition": "excellent|good|fair|poor",
   "estimatedPriceCny": 估值人民币,
   "estimatedPriceUsd": 估值美元,
+  "fobPriceUsd": FOB美元,
+  "isChineseBrand": false,
   "confidence": 0.0-1.0
 }
 \`\`\`
 
 重要提示：
-1. **请充分利用你的专业知识**，不要仅依赖照片信息。对于照片中无法直接看到但属于该型号标准配置的参数，请根据你的知识库补充
+1. **请充分利用你的专业知识**，不要仅依赖照片信息
 2. 报告内容要详实、专业、有深度，至少2000字
-3. 如果无法确定具体型号，请给出最可能的2-3个候选型号并分析
-4. 对于操作维修要点，请给出实用的、可操作的建议
-5. 市场价格请基于你的知识给出合理区间，并说明影响因素`;
+3. 市场价格请基于你的知识给出合理区间，并说明影响因素
+4. FOB价格需考虑设备状况、年份和出口物流成本`;
+
+/**
+ * 国内农机深度分析 Prompt — 补贴参考价、国内市场行情
+ */
+const DOMESTIC_ANALYSIS_PROMPT = `你是一位拥有20年经验的中国资深农业机械专家和评估师，精通东方红、雷沃、沃得、福田、久保田（国产）、洋马、井关、时风、五征、常发、星光、中联重科等国内主流品牌的拖拉机、收割机、插秧机、播种机、植保机、打捆机等各类农机设备。你对中国农机购置补贴政策、各省补贴额度、二手农机交易市场行情有深入了解。
+
+请根据用户提供的农机照片和视频（可能包含整机全貌、铭牌、驾驶室、发动机、轮胎底盘、工作视频等），结合你的专业知识库，给出一份**详尽的深度分析报告**。
+
+报告必须包含以下部分（用 Markdown 格式输出）：
+
+## 一、设备识别
+- 品牌（中文标准名）
+- 具体型号
+- 生产年份（或年份范围）
+- 识别依据（从哪张照片/视频的什么特征判断的）
+
+## 二、技术参数解读
+基于你对该型号的专业知识，列出关键技术参数：
+- 发动机：型号、额定马力(HP)、排量、缸数
+- 传动系统：驱动方式(两驱/四驱)、变速箱档位数
+- 液压系统：提升力、输出流量
+- 尺寸重量：长×宽×高(mm)、整机重量(kg)
+- 燃油箱容量、PTO功率等
+- 如果照片中有铭牌信息，以铭牌为准；否则根据你的专业知识补充
+
+## 三、操作与维修要点
+- 日常操作注意事项
+- 定期保养项目及周期（工作小时数）
+- 常见故障及排除方法
+- 易损件清单及参考价格
+- 关键操作技巧
+
+## 四、补贴与市场参考价格
+- 该型号新机购置补贴额度（中央补贴+地方补贴，如有）
+- 新机市场参考价（含补贴后价格）
+- 二手市场参考价（人民币）
+- 各地区价格差异分析（如山东、河南、东北等主产区）
+- 二手保值率分析（按年份折旧曲线）
+- 出口可行性评估（如有出口潜力，给出FOB参考价）
+
+## 五、购买建议
+- 该设备的优缺点总结
+- 适合的作业场景和地块规模
+- 选购时需要重点检查的部位
+- 议价空间分析
+- 售后服务与配件供应情况
+
+## 六、结构化数据（JSON）
+最后附上一个JSON代码块，包含可被程序解析的结构化数据：
+\`\`\`json
+{
+  "brand": "品牌",
+  "modelName": "型号",
+  "year": 年份,
+  "enginePower": "马力",
+  "engineType": "发动机类型",
+  "driveSystem": "驱动方式",
+  "overallLength": "长mm",
+  "overallWidth": "宽mm",
+  "overallHeight": "高mm",
+  "netWeight": "重量kg",
+  "mainConfig": "主要配置",
+  "condition": "excellent|good|fair|poor",
+  "subsidyAmount": 补贴金额元,
+  "newMachinePrice": 新机价格元,
+  "estimatedPriceCny": 二手估值人民币,
+  "fobPriceUsd": FOB美元或null,
+  "isChineseBrand": true,
+  "confidence": 0.0-1.0
+}
+\`\`\`
+
+重要提示：
+1. **请充分利用你的专业知识**，不要仅依赖照片信息
+2. 报告内容要详实、专业、有深度，至少2000字
+3. 补贴金额请根据你的知识给出合理估算，并注明是中央补贴还是含地方补贴
+4. 二手价格请结合年份、工时、成色综合评估
+5. 如果该型号有出口潜力（如沃得、雷沃在东南亚、中亚有市场），请给出出口参考价`;
 
 /**
  * 构建豆包API的多模态消息内容
  */
 function buildDoubaoContent(
   images: string[],
-  videos: string[]
+  videos: string[],
+  prompt: string
 ): Array<Record<string, unknown>> {
   const content: Array<Record<string, unknown>> = [
-    { type: "text", text: DEEP_ANALYSIS_PROMPT },
+    { type: "text", text: prompt },
   ];
 
   // 图片
@@ -185,10 +253,11 @@ async function callDoubao(
  */
 async function callGeminiDeep(
   images: string[],
-  videos: string[]
+  videos: string[],
+  prompt: string
 ): Promise<string> {
   const parts: Array<Record<string, unknown>> = [
-    { text: DEEP_ANALYSIS_PROMPT },
+    { text: prompt },
   ];
 
   for (const url of images) {
@@ -281,6 +350,7 @@ export async function POST(request: NextRequest) {
     const imageUrls: string[] = body.imageUrls || [];
     const imageDataUris: string[] = body.imageDataUris || [];
     const videoUrls: string[] = body.videoUrls || [];
+    const isChineseBrand = body.isChineseBrand as boolean | undefined;
 
     const images = [...imageUrls, ...imageDataUris];
 
@@ -291,20 +361,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 双引擎Prompt选择
+    const activePrompt = isChineseBrand ? DOMESTIC_ANALYSIS_PROMPT : INTERNATIONAL_ANALYSIS_PROMPT;
+    const engineLabel = isChineseBrand ? "国内(DOMESTIC)" : "国际(INTERNATIONAL)";
+    console.log(`[DeepAnalysis] 引擎模式: ${engineLabel}, isChineseBrand: ${isChineseBrand}`);
+
     let analysisText = "";
     let modelUsed = "";
 
     // ===== 模型优先级：豆包（免费）→ Gemini（备用）→ OpenRouter（兜底）=====
-    // 豆包支持 HTTP URL 图片（小程序已改为先上传 OSS 再传 URL）
-    // 豆包不支持 base64 data URI（如果收到 base64 会快速失败，自动降级到 Gemini）
 
     // 首选：豆包
     if (ARK_API_KEY) {
       try {
-        console.log("[DeepAnalysis] 首选豆包:", ARK_MODEL_ID, "图片数:", images.length);
-        const content = buildDoubaoContent(images, videoUrls);
+        console.log(`[DeepAnalysis] 首选豆包: ${ARK_MODEL_ID}, 引擎: ${engineLabel}, 图片数: ${images.length}`);
+        const content = buildDoubaoContent(images, videoUrls, activePrompt);
         analysisText = await callDoubao(content);
-        modelUsed = `豆包 ${ARK_MODEL_ID}`;
+        modelUsed = `豆包 ${ARK_MODEL_ID} [${engineLabel}]`;
       } catch (error: any) {
         console.warn("[DeepAnalysis] 豆包失败:", (error.message || "").substring(0, 120));
       }
@@ -313,9 +386,9 @@ export async function POST(request: NextRequest) {
     // 备用1: Gemini（豆包失败时降级）
     if (!analysisText && GOOGLE_API_KEY) {
       try {
-        console.log("[DeepAnalysis] 豆包失败，降级到 Gemini");
-        analysisText = await callGeminiDeep(images, videoUrls);
-        modelUsed = "Gemini 2.5 Flash（豆包备用）";
+        console.log(`[DeepAnalysis] 豆包失败，降级到 Gemini, 引擎: ${engineLabel}`);
+        analysisText = await callGeminiDeep(images, videoUrls, activePrompt);
+        modelUsed = `Gemini 2.5 Flash [${engineLabel}]`;
       } catch (error: any) {
         console.warn("[DeepAnalysis] Gemini 失败:", (error.message || "").substring(0, 120));
       }
@@ -324,8 +397,8 @@ export async function POST(request: NextRequest) {
     // 备用：OpenRouter
     if (!analysisText && OPENROUTER_API_KEY) {
       try {
-        console.log("[DeepAnalysis] 降级到 OpenRouter");
-        const content = buildDoubaoContent(images, []); // OpenRouter 不支持 video_url
+        console.log(`[DeepAnalysis] 降级到 OpenRouter, 引擎: ${engineLabel}`);
+        const content = buildDoubaoContent(images, [], activePrompt); // OpenRouter 不支持 video_url
         const response = await axios.post(
           "https://openrouter.ai/api/v1/chat/completions",
           {
@@ -344,7 +417,7 @@ export async function POST(request: NextRequest) {
           }
         );
         analysisText = (response.data as any)?.choices?.[0]?.message?.content || "";
-        modelUsed = "OpenRouter Gemini Flash（备用）";
+        modelUsed = `OpenRouter Gemini Flash [${engineLabel}]`;
       } catch (error: any) {
         console.warn("[DeepAnalysis] OpenRouter 失败:", error.message?.substring(0, 150));
       }

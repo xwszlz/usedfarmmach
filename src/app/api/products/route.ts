@@ -83,8 +83,26 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    if (brand) where.brandId = brand;
-    if (category) where.categoryId = category;
+    if (brand) {
+      (where.AND as unknown[]) = (where.AND as unknown[]) || [];
+      (where.AND as unknown[]).push({
+        OR: [
+          { brandId: brand },
+          { brand: { nameZh: { contains: brand, mode: "insensitive" } } },
+          { brand: { nameEn: { contains: brand, mode: "insensitive" } } },
+        ],
+      });
+    }
+    if (category) {
+      (where.AND as unknown[]) = (where.AND as unknown[]) || [];
+      (where.AND as unknown[]).push({
+        OR: [
+          { categoryId: category },
+          { category: { nameZh: { contains: category, mode: "insensitive" } } },
+          { category: { nameEn: { contains: category, mode: "insensitive" } } },
+        ],
+      });
+    }
     if (condition) where.condition = condition;
     if (location) where.location = { contains: location, mode: "insensitive" };
     if (yearMin || yearMax) {
