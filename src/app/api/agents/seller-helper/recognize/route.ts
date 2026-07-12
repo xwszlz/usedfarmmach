@@ -223,7 +223,7 @@ async function callDoubao(content: Array<Record<string, unknown>>): Promise<stri
     {
       model: ARK_MODEL_ID,
       messages: [{ role: "user", content }],
-      max_tokens: 1200, // 提升到1200：17个字段的JSON需要更多输出空间
+      max_tokens: 2048, // 18个字段完整JSON需要更大输出空间
     },
     {
       headers: {
@@ -300,7 +300,7 @@ async function callOpenRouter(
       model,
       messages: [{ role: "user", content }],
       response_format: { type: "json_object" },
-      max_tokens: 800,
+      max_tokens: 2048,
     },
     {
       headers: {
@@ -337,7 +337,7 @@ async function callGemini(
       contents: [{ role: "user", parts }],
       generationConfig: {
         response_mime_type: "application/json",
-        max_output_tokens: 800,
+        max_output_tokens: 2048,
       },
     },
     {
