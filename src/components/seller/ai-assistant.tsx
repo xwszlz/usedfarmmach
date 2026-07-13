@@ -3,6 +3,15 @@
 import { useState } from "react";
 import { Sparkles, Wand2, CheckCircle, AlertCircle, Loader2, Upload, Globe, Flag } from "lucide-react";
 
+/**
+ * AI 识别结果数据结构（与后端 /api/agents/seller-helper/recognize 返回的 data 一致）
+ *
+ * 字段说明：
+ * - category: 品类名称（如 拖拉机/收割机/打捆机），后端从图片识别得到
+ * - location: 产地显示文本（如 "山东潍坊" / "德国"），后端已解析
+ * - country/province/city: 产地结构化字段（country 为 ISO code，如 CN/DE）
+ * - referencePrice: 参考价格（人民币元），仅展示，不回填表单价格输入框
+ */
 interface AiRecognizedData {
   brand: string | null;
   modelName: string | null;
@@ -22,6 +31,13 @@ interface AiRecognizedData {
   tradePort: string | null;
   isChineseBrand: boolean;
   confidence: number;
+  // ── 新增字段 ──
+  category: string | null;
+  location: string | null;
+  country: string | null;
+  province: string | null;
+  city: string | null;
+  referencePrice: number | null;
 }
 
 interface SellerAiAssistantProps {
@@ -44,6 +60,12 @@ interface SellerAiAssistantProps {
     tradeTerm: string;
     tradePort: string;
     isChineseBrand: boolean;
+    // ── 新增字段 ──
+    category: string;
+    country: string;
+    province: string;
+    city: string;
+    referencePrice: number;
   }) => void;
 }
 
@@ -229,6 +251,9 @@ export default function SellerAiAssistant({ imageFiles, onFill }: SellerAiAssist
 
   const handleFill = () => {
     if (!recognized) return;
+    // 兜底：若后端未给 country 但判定为国内品牌，则默认 CN
+    const fallbackCountry = recognized.country
+      || (recognized.isChineseBrand ? "CN" : "");
     onFill({
       brandName: recognized.brand || "",
       modelName: recognized.modelName || "",
@@ -247,6 +272,13 @@ export default function SellerAiAssistant({ imageFiles, onFill }: SellerAiAssist
       tradeTerm: recognized.tradeTerm || "FOB",
       tradePort: recognized.tradePort || "",
       isChineseBrand: recognized.isChineseBrand ?? false,
+      // ── 新增字段 ──
+      category: recognized.category || "",
+      country: fallbackCountry,
+      province: recognized.province || "",
+      city: recognized.city || "",
+      referencePrice: recognized.referencePrice || 0,
+      // 注意：referencePrice 不回填表单价格输入框，仅在识别结果面板和价格输入框旁展示
     });
   };
 
@@ -368,9 +400,11 @@ export default function SellerAiAssistant({ imageFiles, onFill }: SellerAiAssist
           </div>
 
           <div className="space-y-2 text-sm">
+            {renderField("品类", recognized.category)}
             {renderField("品牌", recognized.brand)}
             {renderField("型号", recognized.modelName)}
             {recognized.year && renderField("年份", `${recognized.year} 年`)}
+            {renderField("产地", recognized.location)}
             {renderField("马力(HP)", recognized.enginePower)}
             {renderField("发动机类型", recognized.engineType)}
             {renderField("驱动方式", DRIVE_SYSTEM_MAP[recognized.driveSystem || ""] || recognized.driveSystem)}
@@ -385,6 +419,17 @@ export default function SellerAiAssistant({ imageFiles, onFill }: SellerAiAssist
             {renderField("贸易条款", recognized.tradeTerm)}
             {renderField("发货港口", recognized.tradePort)}
           </div>
+
+          {/* 参考价格（仅展示，不回填表单价格输入框） */}
+          {recognized.referencePrice != null && recognized.referencePrice > 0 && (
+            <div className="mt-2 flex items-center justify-between rounded-md bg-amber-50 px-3 py-1.5 text-sm">
+              <span className="text-gray-500">参考价格</span>
+              <span className="font-medium text-amber-700">
+                ¥{recognized.referencePrice.toLocaleString()} 元
+                <span className="ml-1 text-[10px] text-gray-400">（仅供参考，需手动填写）</span>
+              </span>
+            </div>
+          )}
 
           <button
             onClick={handleFill}

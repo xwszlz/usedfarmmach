@@ -6,7 +6,7 @@ import { ArrowLeft, Loader2, CheckCircle, AlertCircle, Camera, Video, Plus, X, S
 import Link from "next/link";
 import SellerAiAssistant from "@/components/seller/ai-assistant";
 import { matchPortByLocation } from "@/lib/port-matcher";
-import { CHINA_PROVINCES, INTERNATIONAL_COUNTRIES } from "@/lib/location-data";
+import { CHINA_PROVINCES, INTERNATIONAL_COUNTRIES, findCountryInText } from "@/lib/location-data";
 import { buildLocationText } from "@/lib/location-parser";
 
 const CONDITIONS = [
@@ -44,7 +44,7 @@ export default function NewProductPage() {
     enginePower: "", engineType: "柴油发动机", driveSystem: "二驱",
     overallLength: "", overallWidth: "", overallHeight: "", netWeight: "",
     mainConfig: "", descOther: "",
-    priceMode: "por", tradeTerm: "FOB", tradePort: "Qingdao",
+    priceMode: "por", tradeTerm: "FOB", tradePort: "青岛",
     isChineseBrand: false as boolean,
   });
 
@@ -55,6 +55,7 @@ export default function NewProductPage() {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
   const [aiFilledFields, setAiFilledFields] = useState<Set<string>>(new Set());
+  const [aiReferencePrice, setAiReferencePrice] = useState<number | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
 
@@ -202,27 +203,103 @@ export default function NewProductPage() {
         filledKeys.add(key);
       }
     });
+
+    // ── 品类匹配：优先匹配数据库已有 Category，匹配不到则回退自定义输入 ──
+    let matchedCategoryId = "";
+    let matchedCategoryName = "";
+    let nextCatMode: "select" | "custom" = "custom";
+    if (data.category) {
+      const matched = categories.find((c) => c.nameZh === data.category);
+      if (matched) {
+        matchedCategoryId = matched.id;
+        matchedCategoryName = matched.nameZh;
+        nextCatMode = "select";
+        filledKeys.add("categoryId");
+        filledKeys.add("categoryName");
+      } else {
+        // 模糊匹配（包含关系），提升命中率
+        const fuzzy = categories.find(
+          (c) => c.nameZh.includes(data.category) || data.category.includes(c.nameZh)
+        );
+        if (fuzzy) {
+          matchedCategoryId = fuzzy.id;
+          matchedCategoryName = fuzzy.nameZh;
+          nextCatMode = "select";
+          filledKeys.add("categoryId");
+          filledKeys.add("categoryName");
+        } else {
+          matchedCategoryName = data.category;
+          nextCatMode = "custom";
+          filledKeys.add("categoryName");
+        }
+      }
+    }
     setAiFilledFields(filledKeys);
-    setForm((f) => ({
-      ...f,
-      brandName: data.brandName || f.brandName,
-      modelName: data.modelName || f.modelName,
-      year: data.year || f.year,
-      enginePower: data.enginePower || f.enginePower,
-      engineType: data.engineType || f.engineType,
-      driveSystem: data.driveSystem || f.driveSystem,
-      overallLength: data.overallLength || f.overallLength,
-      overallWidth: data.overallWidth || f.overallWidth,
-      overallHeight: data.overallHeight || f.overallHeight,
-      netWeight: data.netWeight || f.netWeight,
-      mainConfig: data.mainConfig || f.mainConfig,
-      workingHours: data.workingHours || f.workingHours,
-      condition: data.condition || f.condition,
-      priceMode: data.priceMode || f.priceMode,
-      tradeTerm: data.tradeTerm || f.tradeTerm,
-      tradePort: data.tradePort || f.tradePort,
-      isChineseBrand: data.isChineseBrand ?? f.isChineseBrand,
-    }));
+
+    // ── 产地：后端已结构化为 country(ISO code)/province/city ──
+    // 兼容后端偶发返回国家名的情况，统一转为 ISO code
+    let countryCode = data.country || "";
+    if (countryCode && countryCode !== "CN" && countryCode.length > 2) {
+      const countryData = findCountryInText(countryCode);
+      if (countryData) countryCode = countryData.code;
+    }
+    const aiProvince = data.province || "";
+    const aiCity = data.city || "";
+    const isDomestic = countryCode === "CN" || (!countryCode && !!aiProvince);
+    const effectiveCountry = isDomestic ? "CN" : countryCode;
+    const locText = buildLocationText(effectiveCountry, aiProvince, aiCity);
+
+    setForm((f) => {
+      const newForm = {
+        ...f,
+        brandName: data.brandName || f.brandName,
+        modelName: data.modelName || f.modelName,
+        categoryId: matchedCategoryId || f.categoryId,
+        categoryName: matchedCategoryName || f.categoryName,
+        year: data.year || f.year,
+        enginePower: data.enginePower || f.enginePower,
+        engineType: data.engineType || f.engineType,
+        driveSystem: data.driveSystem || f.driveSystem,
+        overallLength: data.overallLength || f.overallLength,
+        overallWidth: data.overallWidth || f.overallWidth,
+        overallHeight: data.overallHeight || f.overallHeight,
+        netWeight: data.netWeight || f.netWeight,
+        mainConfig: data.mainConfig || f.mainConfig,
+        workingHours: data.workingHours || f.workingHours,
+        condition: data.condition || f.condition,
+        priceMode: data.priceMode || f.priceMode,
+        tradeTerm: data.tradeTerm || f.tradeTerm,
+        // 后端已将港口归一化为中文标准港口名
+        tradePort: data.tradePort || f.tradePort,
+        isChineseBrand: data.isChineseBrand ?? f.isChineseBrand,
+        country: effectiveCountry || f.country,
+        province: isDomestic ? aiProvince : "",
+        city: isDomestic ? aiCity : "",
+        location: locText || f.location,
+        // 注意：价格 (priceCny) 不由 AI 填充，参考价格仅在 AI 识别结果面板展示
+      };
+      // 国内且有省份：按省份精确匹配最近港口（优先于后端推断）
+      if (isDomestic && aiProvince && locText) {
+        newForm.tradePort = matchPortByLocation(locText);
+      }
+      return newForm;
+    });
+
+    // 品类模式切换
+    if (data.category) setCatMode(nextCatMode);
+
+    // 参考价格仅存储，不填入价格输入框
+    if (data.referencePrice) {
+      setAiReferencePrice(data.referencePrice);
+    }
+
+    // 产地模式切换
+    if (!isDomestic && effectiveCountry) {
+      setLocationMode("international");
+    } else if (isDomestic) {
+      setLocationMode("domestic");
+    }
+
     if (data.brandName) setBrandMode("custom");
     setResult({ success: true, message: `AI 识别结果已填充到表单${data.isChineseBrand ? "（国内农机）" : "（国际农机）"}，请核对绿色标记的字段` });
   };
@@ -617,6 +694,11 @@ export default function NewProductPage() {
             <input type="number" value={form.priceCny} onChange={e => update("priceCny", e.target.value)}
               placeholder="如: 1630000" className={fieldClass("priceCny")} />
             <p className="mt-1 text-xs text-gray-400">¥{form.priceCny ? (Number(form.priceCny) / 10000).toFixed(1) : "0"}万</p>
+            {aiReferencePrice !== null && aiReferencePrice > 0 && (
+              <p className="mt-1 text-xs text-blue-500">
+                AI参考价格: ¥{aiReferencePrice.toLocaleString()} ({(aiReferencePrice / 10000).toFixed(1)}万)
+              </p>
+            )}
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">产地 *</label>
