@@ -13,19 +13,19 @@ export function ResearchHubEntry({ locale }: ResearchHubEntryProps) {
 
   const articles = [
     {
-      title: locale === "zh" ? "2024全球农机市场趋势报告" : "2024 Global Machinery Market Trends",
+      title: locale === "zh" ? "2026全球农机市场趋势报告" : "2026 Global Machinery Market Trends",
       tag: locale === "zh" ? "市场报告" : "Market Report",
-      date: "2024-12",
+      date: "2026-07",
     },
     {
       title: locale === "zh" ? "AI在农业机械中的应用前景" : "AI Applications in Agricultural Machinery",
       tag: locale === "zh" ? "AI研究" : "AI Research",
-      date: "2024-11",
+      date: "2026-07",
     },
     {
       title: locale === "zh" ? "跨境农机贸易政策解读" : "Cross-border Machinery Trade Policy",
       tag: locale === "zh" ? "政策" : "Policy",
-      date: "2024-10",
+      date: "2026-06",
     },
   ];
 
