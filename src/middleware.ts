@@ -14,7 +14,7 @@ const intlMiddleware = createMiddleware({
 // 需要登录的路径
 const PROTECTED_PATHS = [
   "/api/seller",
-  "/api/inquiries",
+  // "/api/inquiries" 已移除：允许匿名用户提交询价，route 内部仅 try 关联 buyerId
   "/api/demands",
   "/api/agents/orchestrator",
   "/seller",
