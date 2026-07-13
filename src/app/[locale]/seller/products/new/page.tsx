@@ -52,6 +52,7 @@ export default function NewProductPage() {
   const [imagePreviews, setImagePreviews] = useState<{ url: string; name: string }[]>([]);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState<string>("");
+  const [aiTriggerVideo, setAiTriggerVideo] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
   const [aiFilledFields, setAiFilledFields] = useState<Set<string>>(new Set());
@@ -174,6 +175,8 @@ export default function NewProductPage() {
       ...prev,
       ...validFiles.map((f) => ({ url: URL.createObjectURL(f), name: f.name })),
     ]);
+    // 上传图片后清除视频触发（图片优先）
+    if (aiTriggerVideo) setAiTriggerVideo(null);
     // 清除提示
     if (result && !result.success) setResult(null);
   };
@@ -193,6 +196,10 @@ export default function NewProductPage() {
     }
     setVideoFile(f);
     setVideoPreview(URL.createObjectURL(f));
+    // 如果没有图片，设置视频作为AI触发源
+    if (imageFiles.length === 0) {
+      setAiTriggerVideo(f);
+    }
   };
 
   // ===== AI 识别回调 =====
@@ -576,7 +583,7 @@ export default function NewProductPage() {
             <div className="relative w-full">
               <video src={videoPreview} controls className="mx-auto max-h-64 rounded-lg" />
               <p className="mt-2 text-center text-xs text-gray-500">{videoFile?.name} ({(videoFile!.size / 1024 / 1024).toFixed(1)}MB)</p>
-              <button onClick={(e) => { e.stopPropagation(); setVideoFile(null); setVideoPreview(""); }}
+              <button onClick={(e) => { e.stopPropagation(); setVideoFile(null); setVideoPreview(""); setAiTriggerVideo(null); }}
                 className="absolute -right-2 -top-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600">
                 <X className="h-3 w-3" />
               </button>
@@ -603,7 +610,9 @@ export default function NewProductPage() {
 
         <SellerAiAssistant
           imageFiles={imageFiles}
+          videoFile={aiTriggerVideo}
           onFill={handleAiFill}
+          autoTrigger={true}
         />
       </div>
 

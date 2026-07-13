@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Sparkles, Wand2, CheckCircle, AlertCircle, Loader2, Upload, Globe, Flag } from "lucide-react";
 
 /**
@@ -42,6 +42,8 @@ interface AiRecognizedData {
 
 interface SellerAiAssistantProps {
   imageFiles: File[];
+  videoFile?: File | null;
+  autoTrigger?: boolean;
   onFill: (data: {
     brandName: string;
     modelName: string;
@@ -148,12 +150,16 @@ function compressImage(file: File): Promise<string> {
   });
 }
 
-export default function SellerAiAssistant({ imageFiles, onFill }: SellerAiAssistantProps) {
+export default function SellerAiAssistant({ imageFiles, videoFile = null, onFill, autoTrigger = true }: SellerAiAssistantProps) {
   const [recognizing, setRecognizing] = useState(false);
   const [recognized, setRecognized] = useState<AiRecognizedData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [phase, setPhase] = useState<string>("");
   const [engineMode, setEngineMode] = useState<"auto" | "domestic" | "international">("auto");
+  const [autoRecognizing, setAutoRecognizing] = useState(false);
+
+  // 自动触发控制：确保只触发一次
+  const autoTriggeredRef = useRef(false);
 
   const handleRecognize = async () => {
     if (imageFiles.length === 0) {
@@ -168,7 +174,7 @@ export default function SellerAiAssistant({ imageFiles, onFill }: SellerAiAssist
     try {
       // 1. 智能选图 + 压缩（提高质量：1280px / 75%）
       setPhase("正在压缩图片...");
-      const bestImages = selectBestImages(imageFiles, 3); // 限制3张（与小程序一致），避免豆包下载超时
+      const bestImages = selectBestImages(imageFiles, 4); // 4张提高铭牌被选中概率
       const imageDataUrls = await Promise.all(
         bestImages.map(async (file) => {
           try {
@@ -245,9 +251,30 @@ export default function SellerAiAssistant({ imageFiles, onFill }: SellerAiAssist
       setError(err.message || "识别失败，请稍后重试");
     } finally {
       setRecognizing(false);
+      setAutoRecognizing(false);
       setPhase("");
     }
   };
+
+  // 自动触发：上传第一张图片后自动开始识别（只触发一次）
+  // 图片清空后重置 ref，允许下次再次自动触发
+  useEffect(() => {
+    if (imageFiles.length === 0) {
+      autoTriggeredRef.current = false;
+      return;
+    }
+    if (
+      autoTrigger &&
+      !autoTriggeredRef.current &&
+      !recognizing &&
+      !recognized
+    ) {
+      autoTriggeredRef.current = true;
+      setAutoRecognizing(true);
+      handleRecognize();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [imageFiles.length, autoTrigger, recognizing, recognized]);
 
   const handleFill = () => {
     if (!recognized) return;
@@ -353,6 +380,22 @@ export default function SellerAiAssistant({ imageFiles, onFill }: SellerAiAssist
         </div>
       </div>
 
+      {/* 自动识别温和提示条（仅在自动触发且识别中时显示） */}
+      {autoRecognizing && recognizing && (
+        <div className="mb-3 flex items-center gap-2 rounded-lg bg-blue-50 p-3 text-sm text-blue-600">
+          <Sparkles className="h-4 w-4 flex-shrink-0" />
+          已上传图片，AI 正在自动识别参数，您可先填写其他信息
+        </div>
+      )}
+
+      {/* 无图片但有视频时的友好提示 */}
+      {imageFiles.length === 0 && videoFile && (
+        <div className="mb-3 flex items-center gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-600">
+          <AlertCircle className="h-4 w-4 flex-shrink-0" />
+          请上传农机图片以启用 AI 识别（视频可作为补充）
+        </div>
+      )}
+
       {/* 识别按钮 */}
       <button
         onClick={handleRecognize}
@@ -362,7 +405,12 @@ export default function SellerAiAssistant({ imageFiles, onFill }: SellerAiAssist
         {recognizing ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" />
-            {phase || "识别中..."}
+            {autoRecognizing ? (phase || "AI 正在自动识别...") : (phase || "识别中...")}
+          </>
+        ) : recognized ? (
+          <>
+            <Wand2 className="h-4 w-4" />
+            重新识别 ({imageFiles.length} 张图片)
           </>
         ) : (
           <>
