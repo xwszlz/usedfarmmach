@@ -15,7 +15,7 @@ export function RecruitmentBanner({ locale }: RecruitmentBannerProps) {
       <div
         className="absolute inset-0 bg-cover bg-center"
         style={{
-          backgroundImage: `url(/images/banner/banner-global-trading.jpg)`,
+          backgroundImage: `url(/images/banner/banner-chatgpt.jpg)`,
         }}
       />
       {/* 渐变遮罩 */}
