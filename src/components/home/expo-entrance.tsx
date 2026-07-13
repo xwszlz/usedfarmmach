@@ -40,10 +40,10 @@ export function ExpoEntrance({ locale }: ExpoEntranceProps) {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-10 text-center">
           <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
-            {locale === "zh" ? "虚拟博览馆" : "Virtual Expo Halls"}
+            {locale === "zh" ? "世界农机博览会" : "World Agricultural Machinery Expo"}
           </h2>
           <p className="mt-3 text-gray-600 dark:text-gray-400">
-            {locale === "zh" ? "沉浸式品牌与产品展示" : "Immersive brand & product showcase"}
+            {locale === "zh" ? "汇聚全球顶尖农机品牌" : "Bringing Together the World's Top Machinery Brands"}
           </p>
         </div>
 
