@@ -242,7 +242,7 @@ model Inquiry {
   productId String
   buyerId   String?
   name      String
-  email     String
+  email     String?  // 邮箱（选填，兼容匿名用户）
   phone     String?
   company   String?
   message   String?
