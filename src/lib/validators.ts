@@ -30,7 +30,7 @@ export const loginSchema = z.object({
 export const inquirySchema = z.object({
   productId: z.string().min(1, "Product ID is required"),
   name: z.string().min(1, "Name is required"),
-  email: z.string().email("Invalid email address"),
+  email: z.string().email("Invalid email address").optional().or(z.literal("")),
   phone: z.string().optional(),
   company: z.string().optional(),
   message: z.string().max(2000, "Message too long").optional(),
