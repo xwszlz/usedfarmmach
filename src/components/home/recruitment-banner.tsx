@@ -18,21 +18,27 @@ export function RecruitmentBanner({ locale }: RecruitmentBannerProps) {
   ];
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-r from-amber-600 via-orange-600 to-red-600">
-      {/* 装饰元素 */}
-      <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
-      <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-yellow-300/10 blur-3xl" />
+    <section className="relative overflow-hidden">
+      {/* 背景图片 */}
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{
+          backgroundImage: `url(/images/banner/banner-global-trading.jpg)`,
+        }}
+      />
+      {/* 渐变遮罩 */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/55 to-black/75" />
 
-      <div className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
+      <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
         <div className="text-center">
           <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-1.5 text-sm font-medium text-white backdrop-blur">
             <Sparkles className="h-4 w-4" />
             {t("badge")}
           </div>
-          <h2 className="text-2xl font-bold text-white sm:text-3xl lg:text-4xl">
+          <h2 className="text-3xl font-bold text-white drop-shadow-lg sm:text-4xl lg:text-5xl">
             {t("title")}
           </h2>
-          <p className="mx-auto mt-4 max-w-3xl text-base text-white/85 sm:text-lg">
+          <p className="mx-auto mt-4 max-w-3xl text-base text-white/90 drop-shadow sm:text-lg">
             {t("subtitle")}
           </p>
 
