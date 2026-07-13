@@ -20,16 +20,14 @@ export function ServicesEntrance({ locale }: ServicesEntranceProps) {
   return (
     <section className="py-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-8 flex items-end justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
-              {t("title")}
-            </h2>
-            <p className="mt-2 text-gray-500">{t("subtitle")}</p>
-          </div>
+        <div className="mb-8 text-center">
+          <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
+            {t("title")}
+          </h2>
+          <p className="mt-2 text-sm text-gray-500">{t("subtitle")}</p>
           <Link
             href={`/${locale}/services`}
-            className="inline-flex items-center gap-1 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700"
+            className="mt-3 inline-flex items-center gap-1 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700"
           >
             {t("learnMore")}
             <ArrowRight className="h-4 w-4" />

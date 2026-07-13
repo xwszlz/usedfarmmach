@@ -7,6 +7,7 @@ import { getLocalizedData } from "@/config/daily-report-home";
 
 const LABELS: Record<string, {
   title: string;
+  subtitle: string;
   viewReport: string;
   topOpportunities: string;
   marketIntel: string;
@@ -15,6 +16,7 @@ const LABELS: Record<string, {
 }> = {
   zh: {
     title: "跨境套利日报",
+    subtitle: "每日捕捉全球农机价差机会",
     viewReport: "查看完整日报",
     topOpportunities: "今日TOP1 套利机会",
     marketIntel: "市场情报速递",
@@ -23,6 +25,7 @@ const LABELS: Record<string, {
   },
   en: {
     title: "Cross-Border Arbitrage Daily",
+    subtitle: "Daily global machinery price gap opportunities",
     viewReport: "View Full Report",
     topOpportunities: "Today's TOP1 Opportunity",
     marketIntel: "Global Market Intel",
@@ -31,6 +34,7 @@ const LABELS: Record<string, {
   },
   ru: {
     title: "Ежедневный арбитраж",
+    subtitle: "Ежедневные возможности ценового арбитража",
     viewReport: "Полный отчёт",
     topOpportunities: "ТОП-1 возможность",
     marketIntel: "Обзор рынка",
@@ -97,25 +101,18 @@ export function DailyReportSection({ locale }: DailyReportSectionProps) {
     <section className="bg-gradient-to-br from-accent-50 via-white to-primary-50 py-12">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-600 text-white">
-              <BarChart3 className="h-5 w-5" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-gray-900 sm:text-2xl">{l.title}</h2>
-              <div className="flex items-center gap-1 text-sm text-gray-500">
-                <Calendar className="h-3.5 w-3.5" />
-                <span>{data.date}</span>
-                <span className="mx-1">·</span>
-                <span>{data.totalProducts}台设备</span>
-                <span className="mx-1">·</span>
-              </div>
-            </div>
+        <div className="mb-6 text-center">
+          <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">{l.title}</h2>
+          <p className="mt-2 text-sm text-gray-500">{l.subtitle}</p>
+          <div className="mt-1 flex items-center justify-center gap-1 text-sm text-gray-500">
+            <Calendar className="h-3.5 w-3.5" />
+            <span>{data.date}</span>
+            <span className="mx-1">·</span>
+            <span>{data.totalProducts}台设备</span>
           </div>
           <Link
             href={reportUrl}
-            className="hidden items-center gap-1 text-sm font-medium text-accent-600 hover:text-accent-700 sm:flex"
+            className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-accent-600 hover:text-accent-700"
           >
             {l.viewReport}
             <ArrowRight className="h-4 w-4" />

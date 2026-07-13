@@ -32,15 +32,14 @@ export function ResearchHubEntry({ locale }: ResearchHubEntryProps) {
   return (
     <section className="py-16 lg:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
-              {t("research.title")}
-            </h2>
-          </div>
+        <div className="mb-8 text-center">
+          <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-3xl">
+            {t("research.title")}
+          </h2>
+          <p className="mt-2 text-sm text-gray-500">{t("research.subtitle")}</p>
           <Link
             href={`/${locale}/research`}
-            className="flex items-center gap-1 text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400"
+            className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400"
           >
             {t("research.viewAll")}
             <ArrowRight className="h-4 w-4" />

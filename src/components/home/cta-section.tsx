@@ -24,10 +24,10 @@ export function CTASection({ locale }: CTASectionProps) {
               <Sparkles className="h-4 w-4" />
               AI Powered
             </div>
-            <h2 className="text-3xl font-bold text-white sm:text-4xl lg:text-5xl">
+            <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
               {t("cta.title")}
             </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-white/80">
+            <p className="mx-auto mt-2 max-w-2xl text-sm text-white/80">
               {t("cta.subtitle")}
             </p>
             <Link

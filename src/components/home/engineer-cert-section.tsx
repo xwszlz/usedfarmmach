@@ -21,10 +21,10 @@ export function EngineerCertSection({ locale }: EngineerCertSectionProps) {
     <section className="bg-gradient-to-b from-gray-50 to-white py-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8 text-center">
-          <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
+          <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
             {t("title")}
           </h2>
-          <p className="mx-auto mt-3 max-w-2xl text-gray-500">
+          <p className="mx-auto mt-2 max-w-2xl text-sm text-gray-500">
             {t("subtitle")}
           </p>
         </div>

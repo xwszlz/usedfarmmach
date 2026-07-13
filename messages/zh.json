@@ -219,8 +219,8 @@
     "enterHall": "进入展馆"
   },
   "research": {
-    "title": "AI前沿研究Hub",
-    "subtitle": "行业报告 · 技术前沿 · 政策跟踪 · 企业图谱",
+    "title": "AI前沿研究 · 洞察产业趋势",
+    "subtitle": "行业报告 · 技术前沿 · 政策跟踪",
     "description": "深度洞察全球农机产业趋势，数据驱动决策",
     "categories": {
       "all": "全部",
@@ -246,8 +246,8 @@
     "languages": "8语种服务"
   },
   "cta": {
-    "title": "开启你的AI农机竞技",
-    "subtitle": "一键匹配最优农机方案，发现跨境投资机会",
+    "title": "AI农机竞技场",
+    "subtitle": "一键匹配最优农机方案",
     "button": "立即开始"
   },
   "home": {
@@ -260,7 +260,8 @@
     "arbitrageCardDesc": "中外农机价差最高达40%，发现跨境投资机会",
     "arbitrageCardCta": "查看详情",
     "hotEquipment": "热门农机",
-    "hotEquipmentDesc": "精选优质二手农机，来自全球认证卖家",
+    "hotEquipmentDesc": "精选好机 · 全球直供",
+    "hotEquipmentSubtitle": "来自全球认证卖家，台台经过质检",
     "viewAll": "查看全部",
     "features": "平台优势",
     "feature1Title": "AI智能估价",
@@ -295,8 +296,8 @@
       "feature3Desc": "智能匹配系统，快速定位所需配件"
     },
     "services": {
-      "title": "增值服务",
-      "subtitle": "专业检测 · 跨境物流 · 金融保险，一站式解决方案",
+      "title": "增值服务 · 一站式跨境解决方案",
+      "subtitle": "检测 · 物流 · 金融",
       "learnMore": "了解详情",
       "service1Title": "专业检测",
       "service1Desc": "第三方质检报告，交易更安心",
@@ -306,8 +307,8 @@
       "service3Desc": "设备融资、运输保险，降低交易风险"
     },
     "engineerCert": {
-      "title": "AI 农机工程师认证",
-      "subtitle": "从 AI 学徒到首席操控师，五级认证体系赋能农机人才",
+      "title": "AI农机工程师认证 · 五级赋能",
+      "subtitle": "从学徒到首席操控师",
       "level1": "AI 学徒",
       "level3": "操控师",
       "level5": "首席操控师",

@@ -16,14 +16,13 @@ export function HotEquipment({ products, locale }: HotEquipmentProps) {
   return (
     <section className="bg-white py-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-8 flex items-end justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
-              {t("hotEquipmentDesc")}
-            </h2>
-          </div>
+        <div className="mb-8 text-center">
+          <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
+            {t("hotEquipmentDesc")}
+          </h2>
+          <p className="mt-2 text-sm text-gray-500">{t("hotEquipmentSubtitle")}</p>
           <Link href={`/${locale}/products`}>
-            <Button variant="ghost">
+            <Button variant="ghost" className="mt-3">
               {t("viewAll")}
               <ArrowRight className="ml-1 h-4 w-4" />
             </Button>

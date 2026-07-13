@@ -37,9 +37,12 @@ export function TrustBadges({ locale }: TrustBadgesProps) {
     <section className="py-16 lg:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-10 text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
-            {locale === "zh" ? "全球信任标志" : "Global Trust"}
+          <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-3xl">
+            {locale === "zh" ? "全球信任 · 权威认证保障" : "Global Trust · Certified Assurance"}
           </h2>
+          <p className="mt-2 text-sm text-gray-500">
+            {locale === "zh" ? "CAMDA认证 · 全球加速 · 多语言服务" : "CAMDA · Global CDN · Multilingual"}
+          </p>
         </div>
 
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

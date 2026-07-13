@@ -219,8 +219,8 @@
     "enterHall": "Enter Hall"
   },
   "research": {
-    "title": "AI Frontier Research Hub",
-    "subtitle": "Industry Reports · Tech Frontier · Policy Tracking · Company Map",
+    "title": "AI Frontier Research · Industry Insights",
+    "subtitle": "Reports · Tech · Policy · Companies",
     "description": "Deep insights into global agricultural machinery trends, data-driven decisions",
     "categories": {
       "all": "All",
@@ -246,8 +246,8 @@
     "languages": "8 Language Service"
   },
   "cta": {
-    "title": "Start Your AI Machinery Arena",
-    "subtitle": "Match the best machinery deal and discover cross-border investment opportunities",
+    "title": "AI Machinery Arena",
+    "subtitle": "Match the Best Machinery in One Click",
     "button": "Get Started"
   },
   "home": {
@@ -260,7 +260,8 @@
     "arbitrageCardDesc": "Up to 40% price difference between China and international markets. Discover cross-border investment opportunities.",
     "arbitrageCardCta": "Learn More",
     "hotEquipment": "Hot Equipment",
-    "hotEquipmentDesc": "Premium used farm machinery from verified global sellers",
+    "hotEquipmentDesc": "Premium Machines · Global Supply",
+    "hotEquipmentSubtitle": "From verified global sellers, quality inspected",
     "viewAll": "View All",
     "features": "Platform Advantages",
     "feature1Title": "AI Smart Valuation",
@@ -295,8 +296,8 @@
       "feature3Desc": "Smart matching system to find parts fast"
     },
     "services": {
-      "title": "Value-Added Services",
-      "subtitle": "Professional inspection · Cross-border logistics · Financial insurance",
+      "title": "Value-Added Services · One-Stop Cross-Border",
+      "subtitle": "Inspection · Logistics · Finance",
       "learnMore": "Learn More",
       "service1Title": "Professional Inspection",
       "service1Desc": "Third-party quality reports for secure transactions",
@@ -306,8 +307,8 @@
       "service3Desc": "Equipment financing and transport insurance"
     },
     "engineerCert": {
-      "title": "AI Agricultural Engineer Certification",
-      "subtitle": "From AI Apprentice to Chief Operator, a five-level certification system",
+      "title": "AI Engineer Certification · Five Levels",
+      "subtitle": "From Apprentice to Chief Operator",
       "level1": "AI Apprentice",
       "level3": "Operator",
       "level5": "Chief Operator",
