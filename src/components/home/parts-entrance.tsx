@@ -18,7 +18,7 @@ export function PartsEntrance({ locale }: PartsEntranceProps) {
   ];
 
   return (
-    <section className="bg-gray-50 py-16">
+    <section className="bg-gray-50 py-12">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8 text-center">
           <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">

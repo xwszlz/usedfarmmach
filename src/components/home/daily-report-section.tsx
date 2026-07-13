@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { TrendingUp, ArrowRight, Calendar, BarChart3, Globe, Loader2 } from "lucide-react";
+import { TrendingUp, ArrowRight, BarChart3, Globe, Loader2 } from "lucide-react";
 import { getLocalizedData } from "@/config/daily-report-home";
 
 const LABELS: Record<string, {
@@ -104,12 +104,6 @@ export function DailyReportSection({ locale }: DailyReportSectionProps) {
         <div className="mb-6 text-center">
           <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">{l.title}</h2>
           <p className="mt-2 text-sm text-gray-500">{l.subtitle}</p>
-          <div className="mt-1 flex items-center justify-center gap-1 text-sm text-gray-500">
-            <Calendar className="h-3.5 w-3.5" />
-            <span>{data.date}</span>
-            <span className="mx-1">·</span>
-            <span>{data.totalProducts}台设备</span>
-          </div>
           <Link
             href={reportUrl}
             className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-accent-600 hover:text-accent-700"

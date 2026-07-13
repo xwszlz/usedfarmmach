@@ -18,7 +18,7 @@ export function ServicesEntrance({ locale }: ServicesEntranceProps) {
   ];
 
   return (
-    <section className="py-16">
+    <section className="py-12">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8 text-center">
           <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">

@@ -12,7 +12,7 @@ export function CTASection({ locale }: CTASectionProps) {
   const t = useTranslations();
 
   return (
-    <section className="py-16 lg:py-24">
+    <section className="py-12">
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-600 via-brand-accent to-primary-800 px-8 py-16 text-center">
           {/* Decorative elements */}
