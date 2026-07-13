@@ -196,7 +196,9 @@
       "sortPriceLow": "Цена: по возрастанию",
       "sortPriceHigh": "Цена: по убыванию",
       "sortYearNew": "Новее по году",
-      "sortHoursLow": "Меньше наработки"
+      "sortHoursLow": "Меньше наработки",
+      "filter": "Фильтр",
+      "reset": "Сбросить"
     },
     "card": {
       "year": "{year} г.",

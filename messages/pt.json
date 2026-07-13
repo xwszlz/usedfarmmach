@@ -196,7 +196,9 @@
       "sortPriceLow": "Preço: menor a maior",
       "sortPriceHigh": "Preço: maior a menor",
       "sortYearNew": "Ano mais recente",
-      "sortHoursLow": "Menos horas"
+      "sortHoursLow": "Menos horas",
+      "filter": "Filtrar",
+      "reset": "Redefinir"
     },
     "card": {
       "year": "{year}",

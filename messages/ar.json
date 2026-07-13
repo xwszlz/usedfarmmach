@@ -196,7 +196,9 @@
       "sortPriceLow": "السعر: من الأقل",
       "sortPriceHigh": "السعر: من الأعلى",
       "sortYearNew": "الأحدث سنة",
-      "sortHoursLow": "أقل ساعات"
+      "sortHoursLow": "أقل ساعات",
+      "filter": "تصفية",
+      "reset": "إعادة تعيين"
     },
     "card": {
       "year": "{year}",

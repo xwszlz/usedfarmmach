@@ -64,7 +64,7 @@ export function PriceDisplay({
   return (
     <div className={cn("space-y-1", className)}>
       <div className={cn("font-bold text-primary-700", sizeStyles[size])}>
-        {formatPrice(priceCny, "cny")}
+        {!priceCny || (priceCny > 0 && priceCny < 100) ? "价格面议" : formatPrice(priceCny, "cny")}
       </div>
       {(intlPriceCny || priceUsd) && (
         <div className="flex items-center gap-2">

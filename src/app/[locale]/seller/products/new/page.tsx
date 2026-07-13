@@ -44,7 +44,7 @@ export default function NewProductPage() {
     enginePower: "", engineType: "柴油发动机", driveSystem: "二驱",
     overallLength: "", overallWidth: "", overallHeight: "", netWeight: "",
     mainConfig: "", descOther: "",
-    priceMode: "por", tradeTerm: "FOB", tradePort: "青岛",
+    priceMode: "por", tradeTerm: "FOB", tradePort: "天津",
     isChineseBrand: false as boolean,
   });
 
@@ -703,6 +703,11 @@ export default function NewProductPage() {
             <input type="number" value={form.priceCny} onChange={e => update("priceCny", e.target.value)}
               placeholder="如: 1630000" className={fieldClass("priceCny")} />
             <p className="mt-1 text-xs text-gray-400">¥{form.priceCny ? (Number(form.priceCny) / 10000).toFixed(1) : "0"}万</p>
+            {form.priceCny && Number(form.priceCny) > 0 && Number(form.priceCny) < 1000 && (
+              <p className="mt-1 text-xs text-red-500">
+                ⚠️ 价格过低，请确认单位为元（如 16 万请填 160000）
+              </p>
+            )}
             {aiReferencePrice !== null && aiReferencePrice > 0 && (
               <p className="mt-1 text-xs text-blue-500">
                 AI参考价格: ¥{aiReferencePrice.toLocaleString()} ({(aiReferencePrice / 10000).toFixed(1)}万)

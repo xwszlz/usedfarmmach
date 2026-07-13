@@ -196,7 +196,9 @@
       "sortPriceLow": "कीमत: कम से अधिक",
       "sortPriceHigh": "कीमत: अधिक से कम",
       "sortYearNew": "नवीनतम वर्ष",
-      "sortHoursLow": "कम घंटे"
+      "sortHoursLow": "कम घंटे",
+      "filter": "फ़िल्टर",
+      "reset": "रीसेट"
     },
     "card": {
       "year": "{year}",
