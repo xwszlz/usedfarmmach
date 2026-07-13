@@ -58,6 +58,8 @@ function decodeBase64Image(base64Data: string): { buffer: Buffer; mimeType: stri
 
 /**
  * 生成 OSS Authorization 头（签名算法 v1）
+ * 返回 authHeader 和签名时使用的 date，调用方必须把同一 date 放入请求头，
+ * 否则 OSS 服务端用请求头里的 Date 重算签名会与签名时使用的 date 不一致 → 403
  */
 function generateOSSAuth(
   method: string,
@@ -65,7 +67,7 @@ function generateOSSAuth(
   contentType: string,
   accessKeyId: string,
   accessKeySecret: string
-): string {
+): { authHeader: string; date: string } {
   const date = new Date().toUTCString();
   const canonicalResource = `/${OSS_BUCKET}${key.startsWith("/") ? key : "/" + key}`;
 
@@ -73,7 +75,10 @@ function generateOSSAuth(
   const stringToSign = `${method}\n\n${contentType}\n${date}\n${canonicalResource}`;
 
   const signature = crypto.createHmac("sha1", accessKeySecret).update(stringToSign).digest("base64");
-  return `OSS ${accessKeyId}:${signature}`;
+  return {
+    authHeader: `OSS ${accessKeyId}:${signature}`,
+    date,
+  };
 }
 
 export async function POST(request: NextRequest) {
@@ -129,7 +134,7 @@ export async function POST(request: NextRequest) {
 
     // 6. 上传到 OSS（PUT 方法）
     const method = "PUT";
-    const authHeader = generateOSSAuth(method, key, mimeType, accessKeyId, accessKeySecret);
+    const { authHeader, date } = generateOSSAuth(method, key, mimeType, accessKeyId, accessKeySecret);
 
     console.log(`[TempUpload] 上传到 OSS: ${key}, 大小: ${(buffer.length / 1024).toFixed(1)}KB`);
 
@@ -138,7 +143,7 @@ export async function POST(request: NextRequest) {
       headers: {
         Authorization: authHeader,
         "Content-Type": mimeType,
-        Date: new Date().toUTCString(),
+        Date: date,
       },
       body: new Uint8Array(buffer),
     });
@@ -147,7 +152,7 @@ export async function POST(request: NextRequest) {
       const responseText = await uploadResponse.text().catch(() => "");
       console.error("[TempUpload] OSS 上传失败:", uploadResponse.status, responseText.substring(0, 200));
       return NextResponse.json(
-        { success: false, error: `OSS 上传失败 (HTTP ${uploadResponse.status})` },
+        { success: false, error: `OSS 上传失败 (HTTP ${uploadResponse.status}): ${responseText.substring(0, 300)}` },
         { status: 502 }
       );
     }
