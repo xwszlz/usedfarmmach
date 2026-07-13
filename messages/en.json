@@ -272,7 +272,47 @@
     "feature4Title": "Global Logistics",
     "feature4Desc": "Sea freight, air freight and door-to-door services",
     "testimonialsTitle": "Customer Feedback",
-    "testimonialsDesc": "Real usage scenarios from farm machinery users around the world"
+    "testimonialsDesc": "Real usage scenarios from farm machinery users around the world",
+    "recruitment": {
+      "badge": "Platform Under Construction",
+      "title": "Build a One-Stop Agricultural Machinery Ecosystem with Global Partners",
+      "subtitle": "Used trading · Virtual expo · Parts · Value-added services · AI solutions — five pillars ready. Whether you're a seller, parts dealer, or service provider, your global stage awaits.",
+      "sellers": "Machinery Sellers",
+      "partsDealers": "Parts Dealers",
+      "serviceProviders": "Service Providers",
+      "ctaApply": "Apply to Join",
+      "ctaContact": "Contact Us"
+    },
+    "parts": {
+      "title": "Parts Center",
+      "subtitle": "OEM & compatible parts, 500+ SKUs",
+      "viewAll": "View All",
+      "feature1Title": "OEM Parts",
+      "feature1Desc": "Brand-certified original parts with quality guarantee",
+      "feature2Title": "Compatible Parts",
+      "feature2Desc": "Cost-effective compatible parts, multi-brand support",
+      "feature3Title": "Quick Search",
+      "feature3Desc": "Smart matching system to find parts fast"
+    },
+    "services": {
+      "title": "Value-Added Services",
+      "subtitle": "Professional inspection · Cross-border logistics · Financial insurance",
+      "learnMore": "Learn More",
+      "service1Title": "Professional Inspection",
+      "service1Desc": "Third-party quality reports for secure transactions",
+      "service2Title": "Cross-border Logistics",
+      "service2Desc": "Sea and land transport, door-to-door service",
+      "service3Title": "Financial & Insurance",
+      "service3Desc": "Equipment financing and transport insurance"
+    },
+    "engineerCert": {
+      "title": "AI Agricultural Engineer Certification",
+      "subtitle": "From AI Apprentice to Chief Operator, a five-level certification system",
+      "level1": "AI Apprentice",
+      "level3": "Operator",
+      "level5": "Chief Operator",
+      "cta": "Explore Certification"
+    }
   },
   "brandPage": {
     "home": "Home",

@@ -19,9 +19,8 @@ export function HotEquipment({ products, locale }: HotEquipmentProps) {
         <div className="mb-8 flex items-end justify-between">
           <div>
             <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
-              {t("hotEquipment")}
+              {t("hotEquipmentDesc")}
             </h2>
-            <p className="mt-1 text-gray-500">{t("hotEquipmentDesc")}</p>
           </div>
           <Link href={`/${locale}/products`}>
             <Button variant="ghost">

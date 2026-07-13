@@ -272,7 +272,47 @@
     "feature4Title": "全球物流",
     "feature4Desc": "海运、空运多种方案，门到门服务",
     "testimonialsTitle": "客户实拍反馈",
-    "testimonialsDesc": "来自世界各地农机用户的真实使用场景"
+    "testimonialsDesc": "来自世界各地农机用户的真实使用场景",
+    "recruitment": {
+      "badge": "平台建设中",
+      "title": "与全球农机人共建一站式全生态平台",
+      "subtitle": "二手交易 · 虚拟博览 · 零部件 · 增值服务 · AI 解决方案——五大板块已就位，无论您是卖家、配件商还是服务商，这里都有您的全球舞台。",
+      "sellers": "农机卖家",
+      "partsDealers": "配件商",
+      "serviceProviders": "服务商",
+      "ctaApply": "申请入驻",
+      "ctaContact": "联系我们"
+    },
+    "parts": {
+      "title": "零部件中心",
+      "subtitle": "原厂及适配配件，500+ SKU 全面覆盖",
+      "viewAll": "查看全部",
+      "feature1Title": "原厂配件",
+      "feature1Desc": "品牌认证原厂件，品质有保障",
+      "feature2Title": "适配配件",
+      "feature2Desc": "高性价比适配件，多品牌兼容",
+      "feature3Title": "快速找件",
+      "feature3Desc": "智能匹配系统，快速定位所需配件"
+    },
+    "services": {
+      "title": "增值服务",
+      "subtitle": "专业检测 · 跨境物流 · 金融保险，一站式解决方案",
+      "learnMore": "了解详情",
+      "service1Title": "专业检测",
+      "service1Desc": "第三方质检报告，交易更安心",
+      "service2Title": "跨境物流",
+      "service2Desc": "海运、陆运多种方案，门到门服务",
+      "service3Title": "金融保险",
+      "service3Desc": "设备融资、运输保险，降低交易风险"
+    },
+    "engineerCert": {
+      "title": "AI 农机工程师认证",
+      "subtitle": "从 AI 学徒到首席操控师，五级认证体系赋能农机人才",
+      "level1": "AI 学徒",
+      "level3": "操控师",
+      "level5": "首席操控师",
+      "cta": "了解认证体系"
+    }
   },
   "brandPage": {
     "home": "首页",

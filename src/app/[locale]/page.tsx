@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
-import { ArenaHero } from "@/components/home/arena-hero";
-import { PillarNav } from "@/components/home/pillar-nav";
+import { RecruitmentBanner } from "@/components/home/recruitment-banner";
+import { PartsEntrance } from "@/components/home/parts-entrance";
+import { ServicesEntrance } from "@/components/home/services-entrance";
+import { EngineerCertSection } from "@/components/home/engineer-cert-section";
 import { ExpoEntrance } from "@/components/home/expo-entrance";
 import { HotEquipment } from "@/components/home/hot-equipment";
 import { ResearchHubEntry } from "@/components/home/research-hub-entry";
@@ -104,15 +106,17 @@ export default async function HomePage({
         }))}
       />
 
-      {/* 8 屏组装 */}
-      <ArenaHero locale={locale} />
-      <PillarNav locale={locale} />
-      <ExpoEntrance locale={locale} />
+      {/* 10 屏组装 */}
+      <RecruitmentBanner locale={locale} />
       <HotEquipment products={hotProducts} locale={locale} />
-      <ResearchHubEntry locale={locale} />
       <DailyReportSection locale={locale} />
-      <TrustBadges locale={locale} />
+      <PartsEntrance locale={locale} />
+      <ServicesEntrance locale={locale} />
+      <ExpoEntrance locale={locale} />
       <CTASection locale={locale} />
+      <EngineerCertSection locale={locale} />
+      <ResearchHubEntry locale={locale} />
+      <TrustBadges locale={locale} />
     </div>
   );
 }
