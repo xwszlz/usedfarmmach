@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,8 @@ interface LoginFormProps {
 
 export function LoginForm({ locale }: LoginFormProps) {
   const t = useTranslations("auth.login");
-  const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect") || `/${locale}`;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -63,8 +64,8 @@ export function LoginForm({ locale }: LoginFormProps) {
         setLoading(false);
 
         setTimeout(() => {
-          router.push(`/${locale}`);
-          window.location.reload();
+          // 使用 window.location.href 进行完整页面跳转，避免 router.push + reload 竞争
+          window.location.href = redirect;
         }, 800);
       } else {
         // 后端返回了业务错误（如密码错误、账号不存在等）
