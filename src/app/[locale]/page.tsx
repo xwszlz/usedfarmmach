@@ -110,9 +110,9 @@ export default async function HomePage({
       <RecruitmentBanner locale={locale} />
       <HotEquipment products={hotProducts} locale={locale} />
       <DailyReportSection locale={locale} />
+      <ExpoEntrance locale={locale} />
       <PartsEntrance locale={locale} />
       <ServicesEntrance locale={locale} />
-      <ExpoEntrance locale={locale} />
       <CTASection locale={locale} />
       <EngineerCertSection locale={locale} />
       <ResearchHubEntry locale={locale} />
