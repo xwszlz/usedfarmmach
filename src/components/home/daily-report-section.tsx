@@ -16,7 +16,7 @@ const LABELS: Record<string, {
   zh: {
     title: "跨境套利日报",
     viewReport: "查看完整日报",
-    topOpportunities: "今日TOP3 套利机会",
+    topOpportunities: "今日TOP1 套利机会",
     marketIntel: "市场情报速递",
     price: "报价",
     profit: "毛利",
@@ -24,7 +24,7 @@ const LABELS: Record<string, {
   en: {
     title: "Cross-Border Arbitrage Daily",
     viewReport: "View Full Report",
-    topOpportunities: "Today's TOP3 Opportunities",
+    topOpportunities: "Today's TOP1 Opportunity",
     marketIntel: "Global Market Intel",
     price: "Price",
     profit: "Profit",
@@ -32,7 +32,7 @@ const LABELS: Record<string, {
   ru: {
     title: "Ежедневный арбитраж",
     viewReport: "Полный отчёт",
-    topOpportunities: "ТОП-3 возможностей",
+    topOpportunities: "ТОП-1 возможность",
     marketIntel: "Обзор рынка",
     price: "Цена",
     profit: "Прибыль",
@@ -139,14 +139,14 @@ export function DailyReportSection({ locale }: DailyReportSectionProps) {
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* TOP5 套利机会 */}
+          {/* TOP1 套利机会 */}
           <div className="lg:col-span-2 rounded-xl border bg-white p-5 shadow-sm">
             <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
               <TrendingUp className="h-4 w-4 text-accent-600" />
               {l.topOpportunities}
             </h3>
             <div className="space-y-2">
-              {data.topArbitrage.map((item) => (
+              {data.topArbitrage.slice(0, 1).map((item) => (
                 <Link
                   key={item.rank}
                   href={`/${locale}/products/${item.productId}`}
