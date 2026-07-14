@@ -191,6 +191,16 @@ interface DesktopNavItemProps {
 
 function splitNavLabel(label: string): string {
   if (label.length <= 2) return label;
+
+  // 中文+英文混合：在中英文边界处切分
+  // 研究Hub → 研究 \n Hub
+  let m = label.match(/^([\u4e00-\u9fa5]+)([A-Za-z].*)$/);
+  if (m) return m[1] + "\n" + m[2];
+  // AI竞技场 → AI \n 竞技场
+  m = label.match(/^([A-Za-z]+)([\u4e00-\u9fa5].*)$/);
+  if (m) return m[1] + "\n" + m[2];
+
+  // 纯中文：从中间切
   const mid = Math.ceil(label.length / 2);
   return label.slice(0, mid) + "\n" + label.slice(mid);
 }
