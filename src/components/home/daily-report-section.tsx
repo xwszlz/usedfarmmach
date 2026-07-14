@@ -99,15 +99,53 @@ export function DailyReportSection({ locale }: DailyReportSectionProps) {
 
   const intelItems = liveIntel ?? data.marketIntel.map((m) => ({ icon: m.icon, text: m.text }));
 
-  // 行业资讯 - 从 API 拉取最新3篇文章
+  // 行业资讯 - 前两篇固定（buying-guide），第三篇动态拉取最新
+  const PINNED_ARTICLES = [
+    {
+      slug: "claas970-eu-2017-spotlight",
+      titleZh: "¥163万入手CLAAS Jaguar 970（2017）：比国际市场省¥174万的跨境王牌",
+      titleEn: "¥1.63M CLAAS Jaguar 970 (2017): Save ¥1.74M vs Global Market",
+      titleRu: "¥1,63M CLAAS Jaguar 970 (2017): сэкономьте ¥1,74M",
+      publishedAt: "2026-06-11",
+      category: "buying-guide",
+    },
+    {
+      slug: "orkel-densx-2019-spotlight",
+      titleZh: "¥105万入手Orkel DENS-X（2019）：挪威顶级裹包机，青贮赛道独家王牌",
+      titleEn: "¥1.05M Orkel DENS-X (2019): Norway's Top Baler, Silage Ace",
+      titleRu: "¥1,05M Orkel DENS-X (2019): Норвежский пресс-подборщик",
+      publishedAt: "2026-06-11",
+      category: "buying-guide",
+    },
+  ];
+  const PINNED_SLUGS = PINNED_ARTICLES.map((a) => a.slug);
+
   const [articles, setArticles] = useState<ArticleItem[]>([]);
   useEffect(() => {
-    fetch(`/api/articles?status=published&limit=3&category=industry-news`)
+    // 拉取最新文章，排除两篇固定的，取第1篇作为第3条
+    fetch(`/api/articles?status=published&limit=10`)
       .then((r) => r.json())
       .then((d) => {
-        const items = d.articles || [];
-        if (items.length > 0) {
-          setArticles(items.slice(0, 3).map((a: any) => ({
+        const allArticles = d.articles || [];
+        // 固定前两篇
+        const pinned = PINNED_ARTICLES.map((a) => ({
+          slug: a.slug,
+          title: locale === "zh"
+            ? a.titleZh
+            : locale === "ru"
+              ? (a.titleRu || a.titleZh)
+              : (a.titleEn || a.titleZh),
+          date: new Date(a.publishedAt).toLocaleDateString(
+            locale === "zh" ? "zh-CN" : locale === "ru" ? "ru-RU" : "en-US",
+            { month: "short", day: "numeric" }
+          ),
+          category: a.category,
+        }));
+        // 第3篇：从API结果中排除两篇固定的，取第1篇
+        const dynamic = allArticles
+          .filter((a: any) => !PINNED_SLUGS.includes(a.slug))
+          .slice(0, 1)
+          .map((a: any) => ({
             slug: a.slug,
             title: locale === "zh"
               ? a.titleZh
@@ -121,10 +159,25 @@ export function DailyReportSection({ locale }: DailyReportSectionProps) {
                 )
               : "",
             category: a.category || "",
-          })));
-        }
+          }));
+        setArticles([...pinned, ...dynamic]);
       })
-      .catch(() => {});
+      .catch(() => {
+        // API失败时至少展示两篇固定的
+        setArticles(PINNED_ARTICLES.map((a) => ({
+          slug: a.slug,
+          title: locale === "zh"
+            ? a.titleZh
+            : locale === "ru"
+              ? (a.titleRu || a.titleZh)
+              : (a.titleEn || a.titleZh),
+          date: new Date(a.publishedAt).toLocaleDateString(
+            locale === "zh" ? "zh-CN" : locale === "ru" ? "ru-RU" : "en-US",
+            { month: "short", day: "numeric" }
+          ),
+          category: a.category,
+        })));
+      });
   }, [locale]);
 
   const formatPrice = (price: number) => {
