@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { TrendingUp, ArrowRight, Globe, Newspaper } from "lucide-react";
 import { getLocalizedData } from "@/config/daily-report-home";
@@ -20,7 +20,7 @@ const LABELS: Record<string, {
   zh: {
     title: "跨境套利日报",
     subtitle: "每日捕捉全球农机价差机会",
-    topOpportunities: "今日TOP1 套利机会",
+    topOpportunities: "今日TOP3 套利机会",
     marketIntel: "市场情报速递",
     industryNews: "行业资讯",
     price: "报价",
@@ -32,7 +32,7 @@ const LABELS: Record<string, {
   en: {
     title: "Cross-Border Arbitrage Daily",
     subtitle: "Daily global machinery price gap opportunities",
-    topOpportunities: "Today's TOP1 Opportunity",
+    topOpportunities: "Today's TOP3 Opportunities",
     marketIntel: "Global Market Intel",
     industryNews: "Industry News",
     price: "Price",
@@ -44,7 +44,7 @@ const LABELS: Record<string, {
   ru: {
     title: "Ежедневный арбитраж",
     subtitle: "Ежедневные возможности ценового арбитража",
-    topOpportunities: "ТОП-1 возможность",
+    topOpportunities: "ТОП-3 возможности",
     marketIntel: "Обзор рынка",
     industryNews: "Новости отрасли",
     price: "Цена",
@@ -79,9 +79,7 @@ export function DailyReportSection({ locale }: DailyReportSectionProps) {
   const intelUrl = `/${locale}/intelligence`;
   const blogUrl = `/${locale}/blog`;
 
-  const [activeIntel, setActiveIntel] = useState(0);
   const [liveIntel, setLiveIntel] = useState<{ icon: string; text: string }[] | null>(null);
-  const fallbackRef = useRef(data.marketIntel.map((m) => ({ icon: m.icon, text: m.text })));
 
   // 从 API 拉取市场情报前3条
   useEffect(() => {
@@ -99,28 +97,17 @@ export function DailyReportSection({ locale }: DailyReportSectionProps) {
       .catch(() => setLiveIntel(null));
   }, [locale]);
 
-  const intelItems = liveIntel ?? fallbackRef.current;
+  const intelItems = liveIntel ?? data.marketIntel.map((m) => ({ icon: m.icon, text: m.text }));
 
-  const nextIntel = useCallback(() => {
-    setActiveIntel((prev) => (prev + 1) % intelItems.length);
-  }, [intelItems.length]);
-
-  // Auto-rotate market intel every 4 seconds
-  useEffect(() => {
-    if (intelItems.length <= 1) return;
-    const timer = setInterval(nextIntel, 4000);
-    return () => clearInterval(timer);
-  }, [nextIntel, intelItems.length]);
-
-  // 行业资讯 - 从 API 拉取最新4篇文章
+  // 行业资讯 - 从 API 拉取最新3篇文章
   const [articles, setArticles] = useState<ArticleItem[]>([]);
   useEffect(() => {
-    fetch(`/api/articles?status=published&limit=4`)
+    fetch(`/api/articles?status=published&limit=3`)
       .then((r) => r.json())
       .then((d) => {
         const items = d.articles || [];
         if (items.length > 0) {
-          setArticles(items.slice(0, 4).map((a: any) => ({
+          setArticles(items.slice(0, 3).map((a: any) => ({
             slug: a.slug,
             title: locale === "zh"
               ? a.titleZh
@@ -177,7 +164,7 @@ export function DailyReportSection({ locale }: DailyReportSectionProps) {
               <TrendingUp className="h-4 w-4 text-accent-600" />
               {l.topOpportunities}
             </h3>
-            {data.topArbitrage.slice(0, 1).map((item) => (
+            {data.topArbitrage.slice(0, 3).map((item) => (
               <Link
                 key={item.rank}
                 href={`/${locale}/products/${item.productId}`}
@@ -212,51 +199,33 @@ export function DailyReportSection({ locale }: DailyReportSectionProps) {
             ))}
           </div>
 
-          {/* 中栏：市场情报 - 自动滚动 */}
+          {/* 中栏：市场情报 - 静态展示3条 */}
           <div className="rounded-xl border bg-white p-5 shadow-sm">
             <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
               <Globe className="h-4 w-4 text-blue-600" />
               {l.marketIntel}
             </h3>
-            <div className="relative overflow-hidden rounded-lg bg-gray-50" style={{ minHeight: "120px" }}>
-              {intelItems.map((item, idx) => (
+            <div className="space-y-3">
+              {intelItems.slice(0, 3).map((item, idx) => (
                 <Link
                   key={idx}
                   href={intelUrl}
-                  className={`flex items-start gap-2 rounded-lg p-3 transition-all duration-500 ease-in-out absolute inset-0 ${
-                    idx === activeIntel
-                      ? "opacity-100 translate-y-0 pointer-events-auto"
-                      : "opacity-0 translate-y-4 pointer-events-none"
-                  }`}
+                  className="flex items-start gap-2 rounded-lg p-2 transition-colors hover:bg-blue-50/50"
                 >
                   <span className="text-lg flex-shrink-0 mt-0.5">{item.icon}</span>
                   <p className="text-xs text-gray-600 leading-relaxed">{item.text}</p>
                 </Link>
               ))}
             </div>
-            {/* 指示器 */}
-            {intelItems.length > 1 && (
-              <div className="mt-2 flex items-center justify-between">
-                <div className="flex gap-1">
-                  {intelItems.map((_, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setActiveIntel(idx)}
-                      className={`h-1.5 rounded-full transition-all duration-300 ${
-                        idx === activeIntel ? "w-4 bg-blue-600" : "w-1.5 bg-gray-300 hover:bg-gray-400"
-                      }`}
-                    />
-                  ))}
-                </div>
-                <Link
-                  href={intelUrl}
-                  className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-0.5"
-                >
-                  {l.viewAll}
-                  <ArrowRight className="h-3 w-3" />
-                </Link>
-              </div>
-            )}
+            <div className="mt-3 flex items-center justify-end">
+              <Link
+                href={intelUrl}
+                className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-0.5"
+              >
+                {l.viewAll}
+                <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
           </div>
 
           {/* 右栏：行业资讯 */}
