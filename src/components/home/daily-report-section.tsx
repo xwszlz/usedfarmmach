@@ -102,7 +102,7 @@ export function DailyReportSection({ locale }: DailyReportSectionProps) {
   // 行业资讯 - 从 API 拉取最新3篇文章
   const [articles, setArticles] = useState<ArticleItem[]>([]);
   useEffect(() => {
-    fetch(`/api/articles?status=published&limit=3`)
+    fetch(`/api/articles?status=published&limit=3&category=industry-news`)
       .then((r) => r.json())
       .then((d) => {
         const items = d.articles || [];
