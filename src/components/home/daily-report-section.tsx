@@ -102,6 +102,33 @@ export function DailyReportSection({ locale }: DailyReportSectionProps) {
 
   const [liveIntel, setLiveIntel] = useState<{ icon: string; text: string }[] | null>(null);
 
+  // 从 API 动态拉取 TOP3 套利机会（productId 来自数据库，产品删除后自动消失）
+  const [liveTop3, setLiveTop3] = useState<{
+    product: string;
+    price: number;
+    profit: string;
+    margin: string;
+    productId: string;
+  }[] | null>(null);
+
+  useEffect(() => {
+    fetch(`/api/arbitrage/top-products?limit=3`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success && d.data?.products?.length > 0) {
+          const mapped = d.data.products.map((item: any) => ({
+            product: `${item.brandName} ${item.productName}（${item.year}款）`,
+            price: item.domesticPrice,
+            profit: `${Math.round(item.estimatedProfit / 10000)}万`,
+            margin: `${Number(item.priceDiffPercent).toFixed(1)}%`,
+            productId: item.productId,
+          }));
+          setLiveTop3(mapped);
+        }
+      })
+      .catch(() => setLiveTop3(null));
+  }, []);
+
   // 从 API 拉取市场情报前3条
   useEffect(() => {
     fetch(`/api/intelligence?locale=${locale}`)
@@ -182,7 +209,7 @@ export function DailyReportSection({ locale }: DailyReportSectionProps) {
     return `\u00a5${Math.round(price / 10000)}\u4e07`;
   };
 
-  const top3 = data.topArbitrage.slice(0, 3);
+  const top3 = liveTop3 ?? data.topArbitrage.slice(0, 3);
 
   return (
     <section className="bg-gradient-to-br from-amber-50/30 via-white to-blue-50/30 py-12">
