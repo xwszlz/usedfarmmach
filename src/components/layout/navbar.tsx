@@ -74,7 +74,7 @@ export function Navbar({ locale }: NavbarProps) {
         </Link>
 
         {/* Desktop nav — 8 items flat */}
-        <nav className="hidden items-center gap-1 lg:flex">
+        <nav className="hidden items-center gap-2 lg:flex">
           {navItems.map((item) => (
             <DesktopNavItem key={item.href} item={item} locale={locale} t={t} />
           ))}
@@ -189,20 +189,26 @@ interface DesktopNavItemProps {
   t: (key: string) => string;
 }
 
+function splitNavLabel(label: string): string {
+  if (label.length <= 2) return label;
+  const mid = Math.ceil(label.length / 2);
+  return label.slice(0, mid) + "\n" + label.slice(mid);
+}
+
 function DesktopNavItem({ item, locale, t }: DesktopNavItemProps) {
   const label = t(item.labelKey);
 
   return (
     <Link
       href={`/${locale}${item.href}`}
-      className={cn(
-        "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-        item.highlight
+        className={cn(
+          "rounded-lg px-2 py-1.5 text-sm font-medium transition-colors text-center leading-tight min-w-[3.5rem]",
+          item.highlight
           ? "bg-brand-accent-light text-brand-accent dark:text-brand-accent"
           : "text-gray-600 hover:bg-gray-100 hover:text-primary-600 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-primary-400"
       )}
     >
-      {label}
+      <span className="whitespace-pre-line block">{splitNavLabel(label)}</span>
     </Link>
   );
 }
