@@ -19,7 +19,6 @@ import { QuickContact } from "@/components/product/quick-contact";
 import { BuyIntentButton } from "@/components/product/buy-intent-button";
 import { ValuationCard } from "@/components/valuation/valuation-card";
 import DeepAnalysisCard from "@/components/product/deep-analysis-card";
-import { DAILY_REPORT_RANKING } from "@/config/daily-report-ranking";
 import { getHreflangLanguages } from "@/components/seo/hreflang-head";
 import { ProductStructuredData, BreadcrumbStructuredData } from "@/components/seo/structured-data";
 import { FloatingChat } from "@/components/chat/floating-chat";
@@ -106,12 +105,10 @@ export async function generateMetadata({
 }
 
 export async function generateStaticParams() {
-  const topIds = DAILY_REPORT_RANKING.slice(0, 20).map((p) => p.id);
-  return topIds.flatMap((id) => [
-    { locale: "zh", id },
-    { locale: "en", id },
-    { locale: "ru", id },
-  ]);
+  // Disabled — next-intl static prerendering is not compatible with
+  // product detail pages that use dynamic data (getTranslations, prisma).
+  // Products are served via ISR (revalidate=300) at runtime instead.
+  return [];
 }
 
 /** Build the main title (Section 1) per spec */
