@@ -311,12 +311,12 @@ const localizedMeta: Record<string, Record<string, { title: string; description:
   },
   auctions: {
     zh: {
-      title: "农机在线竞拍_二手农机竞价_公开透明竞拍平台_神雕农机",
-      description: "神雕农机在线竞拍平台：精选二手农机设备，公开竞价，透明交易。定期竞拍卖场，保证金制，实时出价。",
+      title: "二手农机在线议价_直接报价_卖家自主决策_神雕农机",
+      description: "神雕农机在线议价平台：精选二手农机设备，买家自由报价，卖家自主选择是否成交。简单透明的交易方式。",
     },
     en: {
-      title: "Farm Machinery Online Auctions | Used Equipment Bidding | AgriTrade",
-      description: "AgriTrade online auction platform: premium used farm machinery, open bidding, transparent trading. Regular auction events with real-time bidding.",
+      title: "Used Farm Machinery Price Negotiation | Make Your Best Offer | AgriTrade",
+      description: "AgriTrade negotiation platform: premium used farm machinery, submit your best offer, seller decides. Simple and transparent trading.",
     },
     ru: {
       title: "Онлайн аукционы сельхозтехники | Торги подержанной техникой | AgriTrade",

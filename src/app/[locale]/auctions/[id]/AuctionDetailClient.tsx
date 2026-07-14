@@ -4,20 +4,15 @@ import { useState, useEffect, useCallback } from "react";
 import { useLocale } from "next-intl";
 import { useParams } from "next/navigation";
 
-interface AuctionDetail {
+interface BargainDetail {
   id: string;
-  auctionNo: string;
+  bargainNo: string;
   title: string;
   description: string | null;
-  startPrice: number;
-  reservePrice: number | null;
-  priceIncrement: number;
-  deposit: number;
-  startTime: string;
-  endTime: string;
+  askingPrice: number;
   status: string;
-  winnerId: string | null;
-  winningBid: number | null;
+  acceptedBidId: string | null;
+  acceptedPrice: number | null;
   totalBids: number;
   totalBidders: number;
   product: {
@@ -44,73 +39,128 @@ interface AuctionDetail {
     id: string;
     amount: number;
     isWinning: boolean;
+    status: string;
     createdAt: string;
     bidder: { id: string; companyName: string | null; username: string | null };
   }[];
 }
 
-export default function AuctionDetailClient() {
+export default function BargainDetailClient() {
   const locale = useLocale();
   const isZh = locale === "zh";
   const params = useParams();
-  const auctionId = params.id as string;
+  const bargainId = params.id as string;
 
-  const [auction, setAuction] = useState<AuctionDetail | null>(null);
+  const [bargain, setBargain] = useState<BargainDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [bidAmount, setBidAmount] = useState("");
-  const [bidding, setBidding] = useState(false);
+  const [offerAmount, setOfferAmount] = useState("");
+  const [offering, setOffering] = useState(false);
   const [message, setMessage] = useState("");
-  const [now, setNow] = useState(new Date());
+  const [sellerActionLoading, setSellerActionLoading] = useState(false);
 
-  const fetchAuction = useCallback(async () => {
+  // 获取当前登录用户（简单 localStorage 读取）
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  useEffect(() => {
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      try {
+        const u = JSON.parse(userStr);
+        setCurrentUserId(u.id || null);
+      } catch {}
+    }
+  }, []);
+
+  const fetchBargain = useCallback(async () => {
     try {
-      const res = await fetch(`/api/auctions/${auctionId}`);
+      const res = await fetch(`/api/auctions/${bargainId}`);
       if (res.ok) {
         const json = await res.json();
-        if (json.success) setAuction(json.data);
+        if (json.success) setBargain(json.data);
       }
     } catch (err) {
-      console.error("Failed to fetch auction:", err);
+      console.error("Failed to fetch bargain:", err);
     } finally {
       setLoading(false);
     }
-  }, [auctionId]);
+  }, [bargainId]);
 
   useEffect(() => {
-    fetchAuction();
-    const interval = setInterval(fetchAuction, 10000); // 10秒刷新
+    fetchBargain();
+    const interval = setInterval(fetchBargain, 15000);
     return () => clearInterval(interval);
-  }, [fetchAuction]);
+  }, [fetchBargain]);
 
-  // 更新当前时间
-  useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const handleBid = async () => {
-    if (!auction) return;
-    setBidding(true);
+  const handleOffer = async () => {
+    if (!bargain) return;
+    setOffering(true);
     setMessage("");
     try {
-      const res = await fetch(`/api/auctions/${auction.id}/bid`, {
+      const res = await fetch(`/api/auctions/${bargain.id}/bid`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ amount: parseFloat(bidAmount) }),
+        body: JSON.stringify({ amount: parseFloat(offerAmount) }),
       });
       const json = await res.json();
       if (json.success) {
-        setMessage(isZh ? "出价成功！" : "Bid placed successfully!");
-        setBidAmount("");
-        fetchAuction();
+        setMessage(isZh ? "报价提交成功！等待卖家回复" : "Offer submitted! Waiting for seller response");
+        setOfferAmount("");
+        fetchBargain();
       } else {
-        setMessage(json.error || (isZh ? "出价失败" : "Bid failed"));
+        setMessage(json.error || (isZh ? "报价失败" : "Offer failed"));
       }
     } catch (err) {
-      setMessage(isZh ? "出价失败，请登录" : "Bid failed, please login");
+      setMessage(isZh ? "提交失败，请先登录" : "Failed, please login first");
     } finally {
-      setBidding(false);
+      setOffering(false);
+    }
+  };
+
+  const handleAccept = async (bidId: string) => {
+    if (!bargain) return;
+    setSellerActionLoading(true);
+    try {
+      const res = await fetch(`/api/auctions/${bargain.id}/accept`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ bidId }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setMessage(isZh ? "已接受报价，议价成交！" : "Offer accepted, deal made!");
+        fetchBargain();
+      } else {
+        setMessage(json.error || (isZh ? "操作失败" : "Action failed"));
+      }
+    } catch (err) {
+      setMessage(isZh ? "操作失败" : "Action failed");
+    } finally {
+      setSellerActionLoading(false);
+    }
+  };
+
+  const handleReject = async (bidId: string) => {
+    if (!bargain) return;
+    setSellerActionLoading(true);
+    try {
+      const res = await fetch(`/api/auctions/${bargain.id}/reject`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ bidId }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setMessage(isZh ? "已拒绝该报价" : "Offer rejected");
+        fetchBargain();
+      } else {
+        setMessage(json.error || (isZh ? "操作失败" : "Action failed"));
+      }
+    } catch (err) {
+      setMessage(isZh ? "操作失败" : "Action failed");
+    } finally {
+      setSellerActionLoading(false);
     }
   };
 
@@ -122,43 +172,42 @@ export default function AuctionDetailClient() {
     );
   }
 
-  if (!auction) {
+  if (!bargain) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <p className="text-gray-500">{isZh ? "竞拍不存在" : "Auction not found"}</p>
+        <p className="text-gray-500">{isZh ? "议价不存在" : "Bargain not found"}</p>
       </div>
     );
   }
 
-  const isLive = auction.status === "live";
-  const endTime = new Date(auction.endTime);
-  const currentBid = auction.bids[0]?.amount || auction.startPrice;
-  const minNextBid = currentBid + auction.priceIncrement;
+  const isActive = bargain.status === "active";
+  const isSeller = currentUserId === bargain.seller.id;
+  const isAccepted = bargain.status === "accepted";
+  const displayPrice = bargain.askingPrice || 0;
 
-  const timeLeft = endTime.getTime() - now.getTime();
-  const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-  const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+  // 分类报价：待处理 / 已接受 / 已拒绝
+  const pendingBids = bargain.bids.filter((b) => b.status === "pending");
+  const acceptedBid = bargain.bids.find((b) => b.status === "accepted" || b.isWinning);
+  const allBidsSorted = [...bargain.bids].sort((a, b) => b.amount - a.amount);
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
       <div className="grid md:grid-cols-2 gap-8">
         {/* Left: Images */}
         <div>
-          {auction.product.images[0] ? (
+          {bargain.product.images[0] ? (
             <img
-              src={auction.product.images[0].url}
-              alt={auction.title}
+              src={bargain.product.images[0].url}
+              alt={bargain.title}
               className="w-full rounded-xl object-cover aspect-square"
             />
           ) : (
             <div className="w-full rounded-xl bg-gray-100 aspect-square flex items-center justify-center">
-              <span className="text-gray-300">No Image</span>
+              <span className="text-gray-300">{isZh ? "暂无图片" : "No Image"}</span>
             </div>
           )}
           <div className="flex gap-2 mt-3 overflow-x-auto">
-            {auction.product.images.slice(1, 6).map((img) => (
+            {bargain.product.images.slice(1, 6).map((img) => (
               <img key={img.id} src={img.url} alt="" className="w-20 h-20 rounded-lg object-cover flex-shrink-0" />
             ))}
           </div>
@@ -168,113 +217,86 @@ export default function AuctionDetailClient() {
         <div>
           <div className="flex items-center gap-2 mb-2">
             <span className={`px-2 py-1 rounded text-xs font-medium ${
-              auction.status === "live" ? "bg-red-100 text-red-700 animate-pulse" :
-              auction.status === "scheduled" ? "bg-blue-100 text-blue-700" :
+              bargain.status === "active" ? "bg-green-100 text-green-700" :
+              bargain.status === "accepted" ? "bg-blue-100 text-blue-700" :
               "bg-gray-100 text-gray-600"
             }`}>
-              {auction.status === "live" ? (isZh ? "进行中" : "LIVE") :
-               auction.status === "scheduled" ? (isZh ? "即将开始" : "Upcoming") :
-               (isZh ? "已结束" : "Ended")}
+              {bargain.status === "active" ? (isZh ? "议价中" : "Open") :
+               bargain.status === "accepted" ? (isZh ? "已成交" : "Sold") :
+               (isZh ? "已取消" : "Cancelled")}
             </span>
-            <span className="text-sm text-gray-400 font-mono">{auction.auctionNo}</span>
+            <span className="text-sm text-gray-400 font-mono">{bargain.bargainNo}</span>
           </div>
 
-          <h1 className="text-2xl font-bold text-gray-900">{auction.title}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{bargain.title}</h1>
           <p className="text-gray-500 mt-1">
-            {auction.product.brand.nameZh} {auction.product.modelName} · {auction.product.year}
-            {auction.product.workingHours && ` · ${auction.product.workingHours}h`}
+            {bargain.product.brand.nameZh} {bargain.product.modelName} · {bargain.product.year}
+            {bargain.product.workingHours && ` · ${bargain.product.workingHours}h`}
           </p>
 
-          {/* Current bid */}
+          {/* Price card */}
           <div className="bg-blue-50 rounded-xl p-4 mt-4">
             <p className="text-sm text-gray-500">
-              {auction.bids.length > 0 ? (isZh ? "当前最高出价" : "Current Highest Bid") : (isZh ? "起拍价" : "Starting Price")}
+              {isAccepted
+                ? (isZh ? "成交价" : "Deal Price")
+                : (isZh ? "卖家要价" : "Asking Price")}
             </p>
             <p className="text-3xl font-bold text-blue-600 mt-1">
-              ¥{currentBid.toLocaleString()}
+              ¥{(bargain.acceptedPrice || displayPrice).toLocaleString()}
             </p>
             <div className="flex gap-4 mt-2 text-sm text-gray-500">
-              <span>{isZh ? "加价幅度" : "Increment"}: ¥{auction.priceIncrement.toLocaleString()}</span>
-              <span>{isZh ? "出价次数" : "Total Bids"}: {auction.totalBids}</span>
-              <span>{isZh ? "参拍人数" : "Bidders"}: {auction.totalBidders}</span>
+              <span>{isZh ? "报价人数" : "Offerers"}: {bargain.totalBidders}</span>
+              <span>{isZh ? "报价次数" : "Total Offers"}: {bargain.totalBids}</span>
             </div>
           </div>
 
-          {/* Countdown */}
-          {isLive && timeLeft > 0 && (
-            <div className="bg-red-50 rounded-xl p-4 mt-3 text-center">
-              <p className="text-sm text-red-600 font-medium">{isZh ? "距竞拍结束" : "Time Left"}</p>
-              <p className="text-2xl font-bold text-red-600 mt-1 font-mono">
-                {days > 0 && `${days}d `}
-                {String(hours).padStart(2, "0")}:{String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
+          {/* Accepted deal info */}
+          {isAccepted && acceptedBid && (
+            <div className="bg-green-50 rounded-xl p-4 mt-3 border border-green-200">
+              <p className="text-green-700 font-medium">
+                {isZh ? "议价成交" : "Deal Made"}
+              </p>
+              <p className="text-2xl font-bold text-green-700 mt-1">
+                ¥{acceptedBid.amount.toLocaleString()}
+              </p>
+              <p className="text-sm text-green-600 mt-1">
+                {isZh ? "买家: " : "Buyer: "}
+                {acceptedBid.bidder.companyName || acceptedBid.bidder.username}
               </p>
             </div>
           )}
 
-          {/* Bid form */}
-          {isLive && timeLeft > 0 && (
+          {/* Offer form — non-seller on active bargain */}
+          {isActive && !isSeller && (
             <div className="mt-4">
               <div className="flex gap-2">
                 <input
                   type="number"
-                  value={bidAmount}
-                  onChange={(e) => setBidAmount(e.target.value)}
-                  placeholder={`${isZh ? "最低出价" : "Min bid"}: ¥${minNextBid.toLocaleString()}`}
+                  value={offerAmount}
+                  onChange={(e) => setOfferAmount(e.target.value)}
+                  placeholder={isZh ? "输入你的报价" : "Enter your offer"}
                   className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                 />
                 <button
-                  onClick={handleBid}
-                  disabled={bidding || !bidAmount}
-                  className="px-6 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:bg-gray-300 transition-colors"
+                  onClick={handleOffer}
+                  disabled={offering || !offerAmount}
+                  className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-300 transition-colors"
                 >
-                  {bidding ? "..." : (isZh ? "出价" : "Bid")}
-                </button>
-              </div>
-              <div className="flex gap-2 mt-2">
-                <button
-                  onClick={() => setBidAmount(String(minNextBid))}
-                  className="px-3 py-1 bg-gray-100 text-gray-600 rounded text-sm hover:bg-gray-200"
-                >
-                  ¥{minNextBid.toLocaleString()}
-                </button>
-                <button
-                  onClick={() => setBidAmount(String(minNextBid + auction.priceIncrement * 2))}
-                  className="px-3 py-1 bg-gray-100 text-gray-600 rounded text-sm hover:bg-gray-200"
-                >
-                  ¥{(minNextBid + auction.priceIncrement * 2).toLocaleString()}
-                </button>
-                <button
-                  onClick={() => setBidAmount(String(minNextBid + auction.priceIncrement * 5))}
-                  className="px-3 py-1 bg-gray-100 text-gray-600 rounded text-sm hover:bg-gray-200"
-                >
-                  ¥{(minNextBid + auction.priceIncrement * 5).toLocaleString()}
+                  {offering ? "..." : (isZh ? "提交报价" : "Make Offer")}
                 </button>
               </div>
               {message && (
-                <p className={`mt-2 text-sm ${message.includes("成功") || message.includes("success") ? "text-green-600" : "text-red-600"}`}>
+                <p className={`mt-2 text-sm ${message.includes("成功") || message.includes("success") || message.includes("已接受") ? "text-green-600" : "text-red-600"}`}>
                   {message}
                 </p>
               )}
             </div>
           )}
 
-          {/* Result */}
-          {auction.status === "ended" && (
-            <div className={`mt-4 rounded-xl p-4 ${auction.winningBid ? "bg-green-50" : "bg-gray-50"}`}>
-              {auction.winningBid ? (
-                <>
-                  <p className="text-green-600 font-medium">
-                    {isZh ? "竞拍成交" : "Auction Won"}
-                  </p>
-                  <p className="text-2xl font-bold text-green-700 mt-1">
-                    ¥{auction.winningBid.toLocaleString()}
-                  </p>
-                </>
-              ) : (
-                <p className="text-gray-500 font-medium">
-                  {isZh ? "竞拍流拍（未达保留价）" : "Auction ended without meeting reserve"}
-                </p>
-              )}
+          {/* Seller info */}
+          {isSeller && isActive && (
+            <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-200 text-sm text-amber-700">
+              {isZh ? "这是你的议价商品。你可以在下方报价记录中选择接受或拒绝每个报价。" : "This is your bargain listing. You can accept or reject each offer below."}
             </div>
           )}
 
@@ -282,48 +304,52 @@ export default function AuctionDetailClient() {
           <div className="mt-6 space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-gray-500">{isZh ? "设备状况" : "Condition"}</span>
-              <span className="text-gray-900">{auction.product.condition}</span>
+              <span className="text-gray-900">{bargain.product.condition}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">{isZh ? "所在地" : "Location"}</span>
-              <span className="text-gray-900">{auction.product.location}</span>
+              <span className="text-gray-900">{bargain.product.location}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500">{isZh ? "原价" : "List Price"}</span>
-              <span className="text-gray-900">¥{auction.product.priceCny.toLocaleString()}</span>
+              <span className="text-gray-500">{isZh ? "原发布价" : "List Price"}</span>
+              <span className="text-gray-900">¥{bargain.product.priceCny.toLocaleString()}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">{isZh ? "卖家" : "Seller"}</span>
-              <span className="text-gray-900">{auction.seller.companyName || auction.seller.username || "—"}</span>
+              <span className="text-gray-900">{bargain.seller.companyName || bargain.seller.username || "—"}</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Description */}
-      {auction.product.descriptionZh && (
+      {bargain.product.descriptionZh && (
         <div className="mt-8 bg-white rounded-xl border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-3">
             {isZh ? "设备描述" : "Description"}
           </h2>
           <p className="text-gray-700 whitespace-pre-wrap">
-            {isZh ? auction.product.descriptionZh : (auction.product.descriptionEn || auction.product.descriptionZh)}
+            {isZh ? bargain.product.descriptionZh : (bargain.product.descriptionEn || bargain.product.descriptionZh)}
           </p>
         </div>
       )}
 
-      {/* Bid history */}
-      {auction.bids.length > 0 && (
+      {/* Bid history — with seller controls */}
+      {allBidsSorted.length > 0 && (
         <div className="mt-6 bg-white rounded-xl border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            {isZh ? "出价记录" : "Bid History"}
+            {isZh ? "报价记录" : "Offer History"}
           </h2>
           <div className="space-y-2">
-            {auction.bids.map((bid, idx) => (
+            {allBidsSorted.map((bid, idx) => (
               <div
                 key={bid.id}
                 className={`flex items-center justify-between p-3 rounded-lg ${
-                  bid.isWinning ? "bg-green-50 border border-green-200" : "bg-gray-50"
+                  bid.status === "accepted" || bid.isWinning
+                    ? "bg-green-50 border border-green-200"
+                    : bid.status === "rejected"
+                    ? "bg-gray-50 border border-gray-200"
+                    : "bg-blue-50"
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -331,15 +357,44 @@ export default function AuctionDetailClient() {
                   <span className="text-sm font-medium text-gray-700">
                     {bid.bidder.companyName || bid.bidder.username || (isZh ? "匿名用户" : "Anonymous")}
                   </span>
-                  {bid.isWinning && (
+                  {(bid.status === "accepted" || bid.isWinning) && (
                     <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium">
-                      {isZh ? "中标" : "Won"}
+                      {isZh ? "已成交" : "Accepted"}
+                    </span>
+                  )}
+                  {bid.status === "rejected" && (
+                    <span className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-xs font-medium">
+                      {isZh ? "已拒绝" : "Rejected"}
+                    </span>
+                  )}
+                  {bid.status === "pending" && isActive && (
+                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium">
+                      {isZh ? "待处理" : "Pending"}
                     </span>
                   )}
                 </div>
-                <div className="text-right">
+                <div className="flex items-center gap-3">
                   <span className="font-semibold text-gray-900">¥{bid.amount.toLocaleString()}</span>
-                  <span className="text-xs text-gray-400 ml-2">
+                  {/* Seller controls for pending offers */}
+                  {isSeller && isActive && bid.status === "pending" && (
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => handleAccept(bid.id)}
+                        disabled={sellerActionLoading}
+                        className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 disabled:opacity-50"
+                      >
+                        {isZh ? "接受" : "Accept"}
+                      </button>
+                      <button
+                        onClick={() => handleReject(bid.id)}
+                        disabled={sellerActionLoading}
+                        className="px-3 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 disabled:opacity-50"
+                      >
+                        {isZh ? "拒绝" : "Reject"}
+                      </button>
+                    </div>
+                  )}
+                  <span className="text-xs text-gray-400">
                     {new Date(bid.createdAt).toLocaleString(isZh ? "zh-CN" : "en-US")}
                   </span>
                 </div>

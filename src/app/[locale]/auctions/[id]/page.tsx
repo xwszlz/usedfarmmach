@@ -1,9 +1,9 @@
-import AuctionDetailClient from "./AuctionDetailClient";
+import BargainDetailClient from "./AuctionDetailClient";
 
-export default async function AuctionDetailPage({
+export default async function BargainDetailPage({
   params,
 }: {
   params: Promise<{ locale: string; id: string }>;
 }) {
-  return <AuctionDetailClient />;
+  return <BargainDetailClient />;
 }

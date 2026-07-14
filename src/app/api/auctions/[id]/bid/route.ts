@@ -1,5 +1,5 @@
 /**
- * 拍卖出价 API
+ * 议价报价 API（原出价改造）
  * POST /api/auctions/[id]/bid
  * { amount: number }
  */
@@ -28,61 +28,34 @@ export async function POST(
     const { amount } = body;
 
     if (!amount || amount <= 0) {
-      return NextResponse.json({ error: "Invalid bid amount" }, { status: 400 });
+      return NextResponse.json({ error: "Invalid offer amount" }, { status: 400 });
     }
 
-    const auction = await prisma.auction.findUnique({
+    const bargain = await prisma.auction.findUnique({
       where: { id: params.id },
     });
 
-    if (!auction) {
-      return NextResponse.json({ error: "Auction not found" }, { status: 404 });
+    if (!bargain) {
+      return NextResponse.json({ error: "Bargain not found" }, { status: 404 });
     }
 
-    // 检查拍卖状态
-    const now = new Date();
-    if (auction.status !== "live") {
-      // 如果 scheduled 到了开始时间，自动激活
-      if (auction.status === "scheduled" && auction.startTime <= now) {
-        await prisma.auction.update({
-          where: { id: params.id },
-          data: { status: "live" },
-        });
-      } else {
-        return NextResponse.json(
-          { error: `Auction is ${auction.status}, cannot bid` },
-          { status: 400 }
-        );
-      }
-    }
-
-    if (auction.endTime <= now) {
-      return NextResponse.json({ error: "Auction has ended" }, { status: 400 });
-    }
-
-    // 不能竞拍自己的设备
-    if (auction.sellerId === user.id) {
-      return NextResponse.json({ error: "Cannot bid on your own auction" }, { status: 403 });
-    }
-
-    // 获取当前最高出价
-    const highestBid = await prisma.bid.findFirst({
-      where: { auctionId: params.id },
-      orderBy: { amount: "desc" },
-    });
-
-    const minBid = highestBid
-      ? highestBid.amount + auction.priceIncrement
-      : auction.startPrice;
-
-    if (amount < minBid) {
+    // 检查议价状态
+    if (bargain.status !== "active") {
       return NextResponse.json(
-        { error: `Minimum bid is ¥${minBid.toLocaleString()}` },
+        { error: "This bargain is no longer active" },
         { status: 400 }
       );
     }
 
-    // 创建出价
+    // 不能给自己的设备报价
+    if (bargain.sellerId === user.id) {
+      return NextResponse.json(
+        { error: "Cannot make an offer on your own product" },
+        { status: 403 }
+      );
+    }
+
+    // 创建报价
     const bid = await prisma.bid.create({
       data: {
         auctionId: params.id,
@@ -91,7 +64,7 @@ export async function POST(
       },
     });
 
-    // 更新拍卖统计
+    // 更新议价统计
     const bidCount = await prisma.bid.count({
       where: { auctionId: params.id },
     });
@@ -111,12 +84,12 @@ export async function POST(
     return NextResponse.json({
       success: true,
       data: bid,
-      message: "Bid placed successfully",
+      message: "Offer submitted successfully",
     });
   } catch (error) {
-    console.error("Bid error:", error);
+    console.error("Offer error:", error);
     return NextResponse.json(
-      { success: false, error: "Failed to place bid" },
+      { success: false, error: "Failed to submit offer" },
       { status: 500 }
     );
   }

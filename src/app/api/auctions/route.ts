@@ -1,10 +1,12 @@
 /**
- * 拍卖 API
+ * 议价 API（原拍卖改造）
  *
- * GET  /api/auctions              — 获取拍卖列表
- * POST /api/auctions              — 创建拍卖（仅seller/admin）
- * GET  /api/auctions/[id]         — 获取拍卖详情
- * POST /api/auctions/[id]/bid     — 出价
+ * GET  /api/auctions              — 获取议价列表
+ * POST /api/auctions              — 创建议价（仅seller/admin）
+ * GET  /api/auctions/[id]         — 获取议价详情
+ * POST /api/auctions/[id]/bid     — 报价
+ * POST /api/auctions/[id]/accept  — 卖家接受报价
+ * POST /api/auctions/[id]/reject  — 卖家拒绝报价
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -13,11 +15,11 @@ import { getTokenFromHeaders, getUserFromToken } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-function generateAuctionNo(): string {
+function generateBargainNo(): string {
   const now = new Date();
   const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
   const random = Math.random().toString(36).slice(2, 6).toUpperCase();
-  return `SD-PM-${dateStr}-${random}`;
+  return `SD-YJ-${dateStr}-${random}`;
 }
 
 export async function GET(request: NextRequest) {
@@ -30,8 +32,7 @@ export async function GET(request: NextRequest) {
     if (status) {
       whereClause.status = status;
     } else {
-      // 默认只展示 scheduled 和 live
-      whereClause.status = { in: ["scheduled", "live"] };
+      whereClause.status = { in: ["active"] };
     }
 
     const auctions = await prisma.auction.findMany({
@@ -51,62 +52,18 @@ export async function GET(request: NextRequest) {
         },
         _count: { select: { bids: true } },
       },
-      orderBy: { endTime: "asc" },
+      orderBy: { createdAt: "desc" },
       take: limit,
     });
-
-    // 检查是否需要更新状态（scheduled → live, live → ended）
-    const now = new Date();
-    for (const auction of auctions) {
-      if (auction.status === "scheduled" && auction.startTime <= now) {
-        await prisma.auction.update({
-          where: { id: auction.id },
-          data: { status: "live" },
-        });
-        auction.status = "live";
-      } else if (auction.status === "live" && auction.endTime <= now) {
-        // 找到最高出价
-        const highestBid = await prisma.bid.findFirst({
-          where: { auctionId: auction.id },
-          orderBy: { amount: "desc" },
-        });
-
-        if (highestBid && (!auction.reservePrice || highestBid.amount >= auction.reservePrice)) {
-          // 有中标者
-          await prisma.auction.update({
-            where: { id: auction.id },
-            data: {
-              status: "ended",
-              winnerId: highestBid.bidderId,
-              winningBid: highestBid.amount,
-            },
-          });
-          await prisma.bid.update({
-            where: { id: highestBid.id },
-            data: { isWinning: true },
-          });
-          auction.status = "ended";
-          auction.winnerId = highestBid.bidderId;
-          auction.winningBid = highestBid.amount;
-        } else {
-          // 流拍
-          await prisma.auction.update({
-            where: { id: auction.id },
-            data: { status: "ended" },
-          });
-          auction.status = "ended";
-        }
-      }
-    }
 
     return NextResponse.json({
       success: true,
       data: auctions,
     });
   } catch (error) {
-    console.error("Auctions GET error:", error);
+    console.error("Bargain list error:", error);
     return NextResponse.json(
-      { success: false, error: "Failed to fetch auctions" },
+      { success: false, error: "Failed to fetch bargains" },
       { status: 500 }
     );
   }
@@ -128,18 +85,13 @@ export async function POST(request: NextRequest) {
       productId,
       title,
       description,
-      startPrice,
-      reservePrice,
-      priceIncrement = 1000,
-      deposit = 0,
-      startTime,
-      endTime,
+      askingPrice,
       coverImage,
     } = body;
 
-    if (!productId || !title || !startPrice || !startTime || !endTime) {
+    if (!productId || !title || !askingPrice) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: "Missing required fields: productId, title, askingPrice" },
         { status: 400 }
       );
     }
@@ -155,24 +107,19 @@ export async function POST(request: NextRequest) {
     }
 
     if (product.sellerId !== user.id && user.role !== "admin" && user.role !== "super_admin") {
-      return NextResponse.json({ error: "You can only auction your own products" }, { status: 403 });
+      return NextResponse.json({ error: "You can only create bargains for your own products" }, { status: 403 });
     }
 
     const auction = await prisma.auction.create({
       data: {
-        auctionNo: generateAuctionNo(),
+        bargainNo: generateBargainNo(),
         productId,
         sellerId: product.sellerId,
         title,
         description,
-        startPrice: parseFloat(startPrice),
-        reservePrice: reservePrice ? parseFloat(reservePrice) : null,
-        priceIncrement: parseFloat(priceIncrement),
-        deposit: parseFloat(deposit),
-        startTime: new Date(startTime),
-        endTime: new Date(endTime),
+        askingPrice: parseFloat(askingPrice),
+        status: "active",
         coverImage,
-        status: "scheduled",
       },
     });
 
@@ -181,9 +128,9 @@ export async function POST(request: NextRequest) {
       data: auction,
     });
   } catch (error) {
-    console.error("Auction POST error:", error);
+    console.error("Bargain POST error:", error);
     return NextResponse.json(
-      { success: false, error: "Failed to create auction" },
+      { success: false, error: "Failed to create bargain" },
       { status: 500 }
     );
   }

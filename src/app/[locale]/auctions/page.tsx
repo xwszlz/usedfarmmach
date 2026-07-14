@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { generatePageMetadata } from "@/lib/seo-metadata";
-import AuctionsClient from "./AuctionsClient";
+import BargainsClient from "./AuctionsClient";
 
 export async function generateMetadata({
   params,
@@ -11,10 +11,10 @@ export async function generateMetadata({
   return generatePageMetadata("auctions", locale, "/auctions");
 }
 
-export default async function AuctionsPage({
+export default async function BargainsPage({
   params,
 }: {
   params: Promise<{ locale: string }>;
 }) {
-  return <AuctionsClient />;
+  return <BargainsClient />;
 }

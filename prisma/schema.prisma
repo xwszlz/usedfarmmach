@@ -926,30 +926,33 @@ model ElectronicContract {
 }
 
 // ═══════════════════════════════════════════════════════
-// 在线拍卖系统
+// 在线议价系统（原拍卖系统改造，去掉时间限制和自动成交）
 // ═══════════════════════════════════════════════════════
 
 model Auction {
   id             String    @id @default(cuid())
-  auctionNo      String    @unique // 拍卖编号：SD-PM-YYYYMMDD-XXXX
-  productId      String // 拍卖设备
+  bargainNo      String    @unique // 议价编号：SD-YJ-YYYYMMDD-XXXX
+  productId      String // 议价设备
   sellerId       String // 卖方
-  title          String // 拍卖标题
-  description    String?   @db.Text // 拍卖描述
-  // 拍卖参数
-  startPrice     Float // 起拍价（CNY）
-  reservePrice   Float? // 保留价（CNY），未达则流拍
-  priceIncrement Float     @default(1000) // 每次加价幅度
-  deposit        Float     @default(0) // 参拍保证金
-  // 时间
-  startTime      DateTime // 拍卖开始时间
-  endTime        DateTime // 拍卖结束时间
+  title          String // 议价标题
+  description    String?   @db.Text // 议价描述
+  // 议价参数
+  askingPrice    Float // 卖家要价（CNY）
+  // — 以下字段保留兼容但不再使用 —
+  startPrice     Float     @default(0) // deprecated
+  reservePrice   Float? // deprecated
+  priceIncrement Float     @default(1000) // deprecated
+  deposit        Float     @default(0) // deprecated
+  startTime      DateTime? // deprecated
+  endTime        DateTime? // deprecated
   // 状态
-  status         String    @default("scheduled") // scheduled, live, ended, cancelled, settled
-  winnerId       String? // 中标者ID
-  winningBid     Float? // 中标价
+  status         String    @default("active") // active(议价中), accepted(已成交), cancelled(已取消)
+  acceptedBidId  String?   @unique // 接受的报价ID
+  acceptedPrice  Float? // 成交价
+  winnerId       String? // deprecated（由acceptedBidId反查）
+  winningBid     Float? // deprecated
   totalBids      Int       @default(0) // 总出价次数
-  totalBidders   Int       @default(0) // 参拍人数
+  totalBidders   Int       @default(0) // 出价人数
   // 结算
   settledAt      DateTime?
   contractId     String? // 关联合同ID
@@ -964,7 +967,7 @@ model Auction {
   bids    Bid[]
   winner  User?   @relation("AuctionWinner", fields: [winnerId], references: [id])
 
-  @@index([status, endTime])
+  @@index([status, createdAt])
   @@index([sellerId])
   @@index([productId])
 }
@@ -973,8 +976,9 @@ model Bid {
   id        String   @id @default(cuid())
   auctionId String
   bidderId  String
-  amount    Float // 出价金额
-  isWinning Boolean  @default(false)
+  amount    Float // 报价金额
+  status    String   @default("pending") // pending(待处理), accepted(已接受), rejected(已拒绝)
+  isWinning Boolean  @default(false) // deprecated
   createdAt DateTime @default(now())
 
   auction Auction @relation(fields: [auctionId], references: [id], onDelete: Cascade)

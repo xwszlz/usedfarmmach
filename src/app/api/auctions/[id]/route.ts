@@ -1,5 +1,5 @@
 /**
- * 拍卖详情 API
+ * 议价详情 API
  * GET /api/auctions/[id]
  */
 
@@ -44,13 +44,12 @@ export async function GET(
             },
           },
           orderBy: { amount: "desc" },
-          take: 20,
         },
       },
     });
 
     if (!auction) {
-      return NextResponse.json({ error: "Auction not found" }, { status: 404 });
+      return NextResponse.json({ error: "Bargain not found" }, { status: 404 });
     }
 
     // 增加浏览量
@@ -59,50 +58,18 @@ export async function GET(
       data: { viewCount: { increment: 1 } },
     });
 
-    // 检查状态更新
-    const now = new Date();
-
-    if (auction.status === "scheduled" && auction.startTime <= now) {
-      await prisma.auction.update({
-        where: { id: params.id },
-        data: { status: "live" },
-      });
-      auction.status = "live";
-    } else if (auction.status === "live" && auction.endTime <= now) {
-      const highestBid = await prisma.bid.findFirst({
-        where: { auctionId: params.id },
-        orderBy: { amount: "desc" },
-      });
-
-      if (highestBid && (!auction.reservePrice || highestBid.amount >= auction.reservePrice)) {
-        await prisma.auction.update({
-          where: { id: params.id },
-          data: { status: "ended", winnerId: highestBid.bidderId, winningBid: highestBid.amount },
-        });
-        await prisma.bid.update({
-          where: { id: highestBid.id },
-          data: { isWinning: true },
-        });
-        auction.status = "ended";
-        auction.winnerId = highestBid.bidderId;
-        auction.winningBid = highestBid.amount;
-      } else {
-        await prisma.auction.update({
-          where: { id: params.id },
-          data: { status: "ended" },
-        });
-        auction.status = "ended";
-      }
-    }
-
     return NextResponse.json({
       success: true,
-      data: auction,
+      data: {
+        ...auction,
+        // 确保前端使用 askingPrice
+        askingPrice: auction.askingPrice || auction.startPrice,
+      },
     });
   } catch (error) {
-    console.error("Auction detail error:", error);
+    console.error("Bargain detail error:", error);
     return NextResponse.json(
-      { success: false, error: "Failed to fetch auction" },
+      { success: false, error: "Failed to fetch bargain" },
       { status: 500 }
     );
   }
