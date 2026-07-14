@@ -1,0 +1,285 @@
+  ▲ Next.js 14.2.35
+  - Environments: .env.local, .env.production, .env
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+ ⚠ Using edge runtime on a page currently disables static generation for that page
+   Generating static pages (0/74) ...
+   Generating static pages (18/74) 
+   Generating static pages (36/74) 
+
+The `locale` parameter in `getRequestConfig` is deprecated, please switch to `await requestLocale`. See https://next-intl.dev/blog/next-intl-3-22#await-request-locale
+
+
+The `locale` parameter in `getRequestConfig` is deprecated, please switch to `await requestLocale`. See https://next-intl.dev/blog/next-intl-3-22#await-request-locale
+
+
+The `locale` parameter in `getRequestConfig` is deprecated, please switch to `await requestLocale`. See https://next-intl.dev/blog/next-intl-3-22#await-request-locale
+
+
+The `locale` parameter in `getRequestConfig` is deprecated, please switch to `await requestLocale`. See https://next-intl.dev/blog/next-intl-3-22#await-request-locale
+
+
+The `locale` parameter in `getRequestConfig` is deprecated, please switch to `await requestLocale`. See https://next-intl.dev/blog/next-intl-3-22#await-request-locale
+
+
+The `locale` parameter in `getRequestConfig` is deprecated, please switch to `await requestLocale`. See https://next-intl.dev/blog/next-intl-3-22#await-request-locale
+
+
+The `locale` parameter in `getRequestConfig` is deprecated, please switch to `await requestLocale`. See https://next-intl.dev/blog/next-intl-3-22#await-request-locale
+
+
+The `locale` parameter in `getRequestConfig` is deprecated, please switch to `await requestLocale`. See https://next-intl.dev/blog/next-intl-3-22#await-request-locale
+
+
+The `locale` parameter in `getRequestConfig` is deprecated, please switch to `await requestLocale`. See https://next-intl.dev/blog/next-intl-3-22#await-request-locale
+
+
+The `locale` parameter in `getRequestConfig` is deprecated, please switch to `await requestLocale`. See https://next-intl.dev/blog/next-intl-3-22#await-request-locale
+
+
+The `locale` parameter in `getRequestConfig` is deprecated, please switch to `await requestLocale`. See https://next-intl.dev/blog/next-intl-3-22#await-request-locale
+
+
+The `locale` parameter in `getRequestConfig` is deprecated, please switch to `await requestLocale`. See https://next-intl.dev/blog/next-intl-3-22#await-request-locale
+
+
+The `locale` parameter in `getRequestConfig` is deprecated, please switch to `await requestLocale`. See https://next-intl.dev/blog/next-intl-3-22#await-request-locale
+
+
+The `locale` parameter in `getRequestConfig` is deprecated, please switch to `await requestLocale`. See https://next-intl.dev/blog/next-intl-3-22#await-request-locale
+
+
+The `locale` parameter in `getRequestConfig` is deprecated, please switch to `await requestLocale`. See https://next-intl.dev/blog/next-intl-3-22#await-request-locale
+
+
+The `locale` parameter in `getRequestConfig` is deprecated, please switch to `await requestLocale`. See https://next-intl.dev/blog/next-intl-3-22#await-request-locale
+
+
+The `locale` parameter in `getRequestConfig` is deprecated, please switch to `await requestLocale`. See https://next-intl.dev/blog/next-intl-3-22#await-request-locale
+
+
+The `locale` parameter in `getRequestConfig` is deprecated, please switch to `await requestLocale`. See https://next-intl.dev/blog/next-intl-3-22#await-request-locale
+
+
+The `locale` parameter in `getRequestConfig` is deprecated, please switch to `await requestLocale`. See https://next-intl.dev/blog/next-intl-3-22#await-request-locale
+
+
+The `locale` parameter in `getRequestConfig` is deprecated, please switch to `await requestLocale`. See https://next-intl.dev/blog/next-intl-3-22#await-request-locale
+
+
+The `locale` parameter in `getRequestConfig` is deprecated, please switch to `await requestLocale`. See https://next-intl.dev/blog/next-intl-3-22#await-request-locale
+
+   Generating static pages (55/74) 
+ ✓ Generating static pages (74/74)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                   Size     First Load JS
+┌ ○ /_not-found                               880 B          88.5 kB
+├ ƒ /[locale]                                 11.8 kB         135 kB
+├ ƒ /[locale]/about                           2.27 kB         113 kB
+├ ƒ /[locale]/admin                           161 B          87.8 kB
+├ ƒ /[locale]/admin/expo                      161 B          87.8 kB
+├ ƒ /[locale]/admin/expo/import               3.94 kB         100 kB
+├ ƒ /[locale]/admin/expo/manage               5.35 kB        92.9 kB
+├ ƒ /[locale]/admin/orchestrator              4.82 kB        92.4 kB
+├ ƒ /[locale]/admin/products                  916 B          97.2 kB
+├ ƒ /[locale]/admin/products/[id]             5.25 kB         102 kB
+├ ƒ /[locale]/admin/users                     986 B          88.6 kB
+├ ƒ /[locale]/api-docs                        3.5 kB         91.1 kB
+├ ƒ /[locale]/arbitrage-calculator            9.94 kB        97.5 kB
+├ ƒ /[locale]/arbitrage-top                   13.1 kB         211 kB
+├ ƒ /[locale]/arena                           13.2 kB         220 kB
+├ ƒ /[locale]/auctions                        2.14 kB         114 kB
+├ ƒ /[locale]/auctions/[id]                   2.95 kB         106 kB
+├ ƒ /[locale]/auth/forgot-password            3.15 kB         122 kB
+├ ƒ /[locale]/auth/login                      2.95 kB         122 kB
+├ ƒ /[locale]/auth/register                   3.71 kB         123 kB
+├ ƒ /[locale]/auth/reset-password             3.27 kB         122 kB
+├ ƒ /[locale]/blog                            2.07 kB         114 kB
+├ ƒ /[locale]/blog/[slug]                     2.7 kB          115 kB
+├ ƒ /[locale]/brand/[slug]                    3.03 kB         126 kB
+├ ƒ /[locale]/category/[slug]                 154 B           126 kB
+├ ƒ /[locale]/category/forage-header          155 B           126 kB
+├ ƒ /[locale]/category/pickup-header          154 B           126 kB
+├ ƒ /[locale]/category/spare-parts            154 B           126 kB
+├ ƒ /[locale]/credits                         3.5 kB          114 kB
+├ ƒ /[locale]/engineer                        4.69 kB         108 kB
+├ ƒ /[locale]/escrow                          3.66 kB          98 kB
+├ ƒ /[locale]/escrow/[id]                     5.27 kB         108 kB
+├ ƒ /[locale]/expo                            17.2 kB         120 kB
+├ ƒ /[locale]/expo/booth/[boothId]            9.21 kB         106 kB
+├ ƒ /[locale]/expo/brand-claim                4.65 kB         101 kB
+├ ƒ /[locale]/expo/china-brands               6.83 kB         103 kB
+├ ƒ /[locale]/expo/compare                    4.56 kB         101 kB
+├ ƒ /[locale]/expo/global-brands              8.11 kB         104 kB
+├ ƒ /[locale]/expo/showroom                   6.62 kB         109 kB
+├ ƒ /[locale]/expo/showroom/[id]              7.12 kB         109 kB
+├ ƒ /[locale]/finance                         2.89 kB         106 kB
+├ ƒ /[locale]/gov-data                        2.52 kB        90.1 kB
+├ ƒ /[locale]/insights                        3.35 kB         107 kB
+├ ƒ /[locale]/intelligence                    4.84 kB         117 kB
+├ ƒ /[locale]/logistics                       5.84 kB         116 kB
+├ ƒ /[locale]/parts                           6.38 kB         113 kB
+├ ƒ /[locale]/parts/[id]                      6.75 kB         114 kB
+├ ƒ /[locale]/products                        7.9 kB          131 kB
+├ ● /[locale]/products/[id]                   33.4 kB         152 kB
+├   ├ /zh/products/cmpdknk4s008111kw3zr8aimf
+├   ├ /en/products/cmpdknk4s008111kw3zr8aimf
+├   ├ /ru/products/cmpdknk4s008111kw3zr8aimf
+├   └ [+30 more paths]
+├ ƒ /[locale]/rentals                         2 kB           89.6 kB
+├ ƒ /[locale]/research                        2.66 kB         115 kB
+├ ƒ /[locale]/research/[slug]                 2.03 kB         114 kB
+├ ƒ /[locale]/seller/[id]                     5.96 kB         109 kB
+├ ƒ /[locale]/seller/booth                    5.83 kB         102 kB
+├ ƒ /[locale]/seller/booth/analytics          3.46 kB        99.8 kB
+├ ƒ /[locale]/seller/certification            5.3 kB         99.7 kB
+├ ƒ /[locale]/seller/guide                    184 B          96.5 kB
+├ ƒ /[locale]/seller/inquiries                2.83 kB         115 kB
+├ ƒ /[locale]/seller/products                 2.43 kB        98.8 kB
+├ ƒ /[locale]/seller/products/new             10.7 kB         107 kB
+├ ƒ /[locale]/service-network                 4.28 kB        98.7 kB
+├ ƒ /[locale]/services                        161 B          87.8 kB
+├ ƒ /[locale]/solutions                       184 B          96.5 kB
+├ ƒ /[locale]/standards                       161 B          87.8 kB
+├ ƒ /[locale]/user/contracts                  3 kB            107 kB
+├ ƒ /[locale]/user/favorites                  4.58 kB         108 kB
+├ ƒ /[locale]/user/maintenance                1.8 kB          105 kB
+├ ƒ /[locale]/warehouses                      1.94 kB        89.5 kB
+├ ƒ /api/admin/credits                        0 B                0 B
+├ ƒ /api/admin/expo/brand/[id]                0 B                0 B
+├ ƒ /api/admin/expo/item/[id]                 0 B                0 B
+├ ƒ /api/admin/role                           0 B                0 B
+├ ƒ /api/agents/buyer-chat                    0 B                0 B
+├ ƒ /api/agents/orchestrator                  0 B                0 B
+├ ƒ /api/agents/price-intel                   0 B                0 B
+├ ƒ /api/agents/seller-helper/deep-analysis   0 B                0 B
+├ ƒ /api/agents/seller-helper/recognize       0 B                0 B
+├ ƒ /api/ai-image-upload                      0 B                0 B
+├ ƒ /api/api-keys                             0 B                0 B
+├ ƒ /api/arbitrage/calculator                 0 B                0 B
+├ ƒ /api/arbitrage/top-products               0 B                0 B
+├ ƒ /api/arbitrage/trends/[productId]         0 B                0 B
+├ ƒ /api/arena/match                          0 B                0 B
+├ ƒ /api/articles                             0 B                0 B
+├ ƒ /api/articles/[id]                        0 B                0 B
+├ ƒ /api/auctions                             0 B                0 B
+├ ƒ /api/auctions/[id]                        0 B                0 B
+├ ƒ /api/auctions/[id]/bid                    0 B                0 B
+├ ƒ /api/auth/forgot-password                 0 B                0 B
+├ ƒ /api/auth/login                           0 B                0 B
+├ ƒ /api/auth/logout                          0 B                0 B
+├ ƒ /api/auth/me                              0 B                0 B
+├ ƒ /api/auth/register                        0 B                0 B
+├ ƒ /api/auth/reset-password                  0 B                0 B
+├ ƒ /api/auth/wx-phone                        0 B                0 B
+├ ƒ /api/blockchain/record                    0 B                0 B
+├ ƒ /api/blockchain/verify                    0 B                0 B
+├ ƒ /api/brands                               0 B                0 B
+├ ○ /api/brands-categories                    0 B                0 B
+├ ƒ /api/buyer-match/suggest                  0 B                0 B
+├ ƒ /api/categories                           0 B                0 B
+├ ƒ /api/certification                        0 B                0 B
+├ ƒ /api/certification/apply                  0 B                0 B
+├ ƒ /api/contracts                            0 B                0 B
+├ ƒ /api/contracts/[id]                       0 B                0 B
+├ ƒ /api/contracts/[id]/sign                  0 B                0 B
+├ ƒ /api/credits/recharge                     0 B                0 B
+├ ƒ /api/cron/keep-alive                      0 B                0 B
+├ ƒ /api/cron/update-exchange-rates           0 B                0 B
+├ ƒ /api/cron/update-prices                   0 B                0 B
+├ ƒ /api/daily-report                         0 B                0 B
+├ ƒ /api/daily-reports                        0 B                0 B
+├ ƒ /api/escrow/alipay/notify                 0 B                0 B
+├ ƒ /api/escrow/create                        0 B                0 B
+├ ƒ /api/escrow/orders                        0 B                0 B
+├ ƒ /api/escrow/orders/[id]                   0 B                0 B
+├ ƒ /api/escrow/orders/[id]/confirm           0 B                0 B
+├ ƒ /api/escrow/orders/[id]/dispute           0 B                0 B
+├ ƒ /api/escrow/orders/[id]/ship              0 B                0 B
+├ ƒ /api/escrow/pay/alipay                    0 B                0 B
+├ ƒ /api/escrow/pay/wechat                    0 B                0 B
+├ ƒ /api/escrow/wechat/notify                 0 B                0 B
+├ ƒ /api/exchange-rates                       0 B                0 B
+├ ƒ /api/expo/batch-import                    0 B                0 B
+├ ƒ /api/expo/booth                           0 B                0 B
+├ ƒ /api/expo/brand-claim                     0 B                0 B
+├ ƒ /api/expo/inquiry                         0 B                0 B
+├ ƒ /api/expo/showroom                        0 B                0 B
+├ ƒ /api/favorites                            0 B                0 B
+├ ƒ /api/finance/apply                        0 B                0 B
+├ ƒ /api/finance/services                     0 B                0 B
+├ ƒ /api/follows                              0 B                0 B
+├ ƒ /api/gov-data/machinery                   0 B                0 B
+├ ƒ /api/gov-data/policies                    0 B                0 B
+├ ƒ /api/image-proxy                          0 B                0 B
+├ ƒ /api/inquiries                            0 B                0 B
+├ ƒ /api/inspection-reports                   0 B                0 B
+├ ƒ /api/intelligence                         0 B                0 B
+├ ƒ /api/internal/product                     0 B                0 B
+├ ƒ /api/internal/products                    0 B                0 B
+├ ƒ /api/logistics-quote                      0 B                0 B
+├ ƒ /api/machinery/[qrCode]                   0 B                0 B
+├ ƒ /api/machinery/event                      0 B                0 B
+├ ƒ /api/machinery/identity                   0 B                0 B
+├ ƒ /api/maintenance                          0 B                0 B
+├ ƒ /api/maintenance/[id]                     0 B                0 B
+├ ƒ /api/market-insights                      0 B                0 B
+├ ƒ /api/miniapp/brands-categories            0 B                0 B
+├ ƒ /api/miniapp/oss-token                    0 B                0 B
+├ ƒ /api/miniapp/products                     0 B                0 B
+├ ƒ /api/miniapp/upload                       0 B                0 B
+├ ƒ /api/notifications/send                   0 B                0 B
+├ ƒ /api/notifications/subscribe              0 B                0 B
+├ ƒ /api/open/industry-data                   0 B                0 B
+├ ƒ /api/open/market-index                    0 B                0 B
+├ ƒ /api/open/products                        0 B                0 B
+├ ƒ /api/parts                                0 B                0 B
+├ ƒ /api/parts/[id]                           0 B                0 B
+├ ○ /api/parts/catalog                        0 B                0 B
+├ ƒ /api/parts/inquiry                        0 B                0 B
+├ ƒ /api/price-index                          0 B                0 B
+├ ƒ /api/products                             0 B                0 B
+├ ƒ /api/products/[id]                        0 B                0 B
+├ ƒ /api/products/[id]/images/[imageId]       0 B                0 B
+├ ƒ /api/products/[id]/media                  0 B                0 B
+├ ƒ /api/products/[id]/videos/[videoId]       0 B                0 B
+├ ○ /api/products/filters                     0 B                0 B
+├ ƒ /api/rentals                              0 B                0 B
+├ ƒ /api/rentals/[id]                         0 B                0 B
+├ ƒ /api/sales-strategy/suggest               0 B                0 B
+├ ƒ /api/saved-searches                       0 B                0 B
+├ ƒ /api/seller-ratings                       0 B                0 B
+├ ƒ /api/seller/[id]/trust-profile            0 B                0 B
+├ ƒ /api/seller/booth                         0 B                0 B
+├ ƒ /api/seller/booth/analytics               0 B                0 B
+├ ƒ /api/seller/booth/items                   0 B                0 B
+├ ƒ /api/seller/inquiries                     0 B                0 B
+├ ƒ /api/seller/products                      0 B                0 B
+├ ƒ /api/service-centers                      0 B                0 B
+├ ƒ /api/subscribe                            0 B                0 B
+├ ƒ /api/upload                               0 B                0 B
+├ ƒ /api/valuation                            0 B                0 B
+├ ƒ /api/warehouses                           0 B                0 B
+├ ƒ /api/warehouses/[id]                      0 B                0 B
+├ ƒ /api/warranties                           0 B                0 B
+├ ƒ /icon                                     0 B                0 B
+├ ○ /manifest.webmanifest                     0 B                0 B
+├ ○ /robots.txt                               0 B                0 B
+└ ○ /sitemap.xml                              0 B                0 B
++ First Load JS shared by all                 87.6 kB
+  ├ chunks/2117-f1a050f341a6b655.js           31.9 kB
+  ├ chunks/fd9d1056-068703cd9daa8692.js       53.6 kB
+  └ other shared chunks (total)               2.05 kB
+
+
+ƒ Middleware                                  40.6 kB
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses getStaticProps)
+ƒ  (Dynamic)  server-rendered on demand
+

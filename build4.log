@@ -1,0 +1,23 @@
+  ▲ Next.js 14.2.35
+  - Environments: .env.local, .env.production, .env
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+Failed to compile.
+
+./src/app/api/agents/seller-helper/deep-analysis/route.ts:258:25
+Type error: No overload matches this call.
+  Overload 1 of 4, '(arrayBuffer: ArrayBuffer, byteOffset?: number | undefined, length?: number | undefined): Buffer<ArrayBuffer>', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'number'.
+  Overload 2 of 4, '(string: WithImplicitCoercion<string>, encoding?: BufferEncoding | undefined): Buffer<ArrayBuffer>', gave the following error.
+    Argument of type 'ArrayBuffer' is not assignable to parameter of type 'WithImplicitCoercion<string>'.
+
+[0m [90m 256 |[39m   })[33m;[39m[0m
+[0m [90m 257 |[39m   [36mconst[39m contentType [33m=[39m response[33m.[39mheaders[[32m"content-type"[39m] [33m||[39m [32m"image/jpeg"[39m[33m;[39m[0m
+[0m[31m[1m>[22m[39m[90m 258 |[39m   [36mconst[39m base64 [33m=[39m [33mBuffer[39m[33m.[39m[36mfrom[39m(response[33m.[39mdata [36mas[39m [33mArrayBuffer[39m[33m,[39m [32m"binary"[39m)[33m.[39mtoString([32m"base64"[39m)[33m;[39m[0m
+[0m [90m     |[39m                         [31m[1m^[22m[39m[0m
+[0m [90m 259 |[39m   [36mreturn[39m { mimeType[33m:[39m contentType[33m.[39msplit([32m";"[39m)[[35m0[39m][33m,[39m data[33m:[39m base64 }[33m;[39m[0m
+[0m [90m 260 |[39m }[0m
+[0m [90m 261 |[39m[0m
+Next.js build worker exited with code: 1 and signal: null

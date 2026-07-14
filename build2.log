@@ -1,0 +1,19 @@
+  ▲ Next.js 14.2.35
+  - Environments: .env.local, .env.production, .env
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+Failed to compile.
+
+./src/app/api/agents/seller-helper/deep-analysis/route.ts:256:5
+Type error: Object literal may only specify known properties, and 'maxContentLength' does not exist in type 'AxiosXHRConfigBase<unknown>'.
+
+[0m [90m 254 |[39m     responseType[33m:[39m [32m"arraybuffer"[39m[33m,[39m[0m
+[0m [90m 255 |[39m     timeout[33m:[39m [35m20000[39m[33m,[39m[0m
+[0m[31m[1m>[22m[39m[90m 256 |[39m     maxContentLength[33m:[39m [35m10[39m [33m*[39m [35m1024[39m [33m*[39m [35m1024[39m[33m,[39m [90m// 10MB[39m[0m
+[0m [90m     |[39m     [31m[1m^[22m[39m[0m
+[0m [90m 257 |[39m   })[33m;[39m[0m
+[0m [90m 258 |[39m   [36mconst[39m contentType [33m=[39m response[33m.[39mheaders[[32m"content-type"[39m] [33m||[39m [32m"image/jpeg"[39m[33m;[39m[0m
+[0m [90m 259 |[39m   [36mconst[39m base64 [33m=[39m [33mBuffer[39m[33m.[39m[36mfrom[39m(response[33m.[39mdata[33m,[39m [32m"binary"[39m)[33m.[39mtoString([32m"base64"[39m)[33m;[39m[0m
+Next.js build worker exited with code: 1 and signal: null

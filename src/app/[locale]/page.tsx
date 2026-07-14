@@ -39,6 +39,12 @@ const baseInclude = {
   images: { orderBy: { sortOrder: "asc" as const }, take: 1 },
   internationalPrices: { orderBy: { sourceDate: "desc" as const }, take: 1 },
   seller: { select: { id: true, companyName: true, country: true } },
+  // 关联活跃议价
+  auctions: {
+    where: { status: "active" },
+    select: { id: true, totalBids: true },
+    take: 1,
+  },
 };
 
 /**

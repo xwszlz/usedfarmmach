@@ -236,6 +236,15 @@ export function ProductCard({ product, locale }: ProductCardProps) {
 
           {/* Status tags */}
           <div className="mt-2 flex flex-wrap items-center gap-1">
+            {(product as any).auctions?.[0] && (
+              <Badge variant="secondary" className="flex items-center gap-0.5 bg-amber-50 text-xs text-amber-600 border border-amber-200">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                {locale === "zh" ? "议价中" : "Negotiating"}
+                {(product as any).auctions[0].totalBids > 0 && (
+                  <span className="ml-0.5 text-amber-700">({(product as any).auctions[0].totalBids})</span>
+                )}
+              </Badge>
+            )}
             {(product as any).videos?.length > 0 && (
               <Badge variant="secondary" className="flex items-center gap-0.5 bg-blue-50 text-xs text-blue-600">
                 <Play className="h-2.5 w-2.5" />

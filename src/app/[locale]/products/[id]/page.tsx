@@ -148,6 +148,12 @@ export default async function ProductDetailPage({
       videos: { orderBy: { sortOrder: "asc" } },
       internationalPrices: { orderBy: { sourceDate: "desc" } },
       seller: { select: { id: true, companyName: true, country: true } },
+      // 查询是否有关联的活跃议价
+      auctions: {
+        where: { status: "active" },
+        select: { id: true, bargainNo: true, askingPrice: true, totalBids: true },
+        take: 1,
+      },
     },
   });
 
@@ -439,6 +445,39 @@ export default async function ProductDetailPage({
           locale={locale}
         />
       </div>
+
+      {/* ================================================================ */}
+      {/*  议价入口 — 如果该产品正在议价中                                */}
+      {/* ================================================================ */}
+      {product.auctions?.[0] && (
+        <div className="mt-6">
+          <Card className="border-2 border-amber-200 bg-amber-50/50">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Badge className="bg-amber-500 text-white">议价中</Badge>
+                    <span className="text-sm text-gray-500">{product.auctions[0].bargainNo}</span>
+                  </div>
+                  <p className="text-lg font-bold text-gray-900">
+                    卖家要价 ¥{product.auctions[0].askingPrice.toLocaleString()}
+                  </p>
+                  <p className="text-sm text-gray-500 mt-0.5">
+                    已有 {product.auctions[0].totalBids} 人报价
+                  </p>
+                </div>
+                <Link
+                  href={`/${locale}/auctions/${product.auctions[0].id}`}
+                  className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-6 py-3 text-sm font-bold text-white shadow-lg transition-all hover:bg-amber-600 hover:shadow-xl active:scale-[0.98]"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  前往议价
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* ================================================================ */}
       {/*  联系卖家 & 询价（原在右侧栏，与AI深度分析对调后移到这里）          */}
