@@ -123,7 +123,8 @@ export function DailyReportSection({ locale }: DailyReportSectionProps) {
   // 行业资讯 - 前两篇固定，第三篇动态拉取
   const [articles, setArticles] = useState<ArticleItem[]>([]);
   useEffect(() => {
-    fetch(`/api/articles?status=published&limit=10`)
+    // 第3篇动态拉取 - 最新一篇 industry-news 文章（排除固定的两篇）
+    fetch(`/api/articles?status=published&category=industry-news&limit=10`)
       .then((r) => r.json())
       .then((d) => {
         const allArticles = d.articles || [];
