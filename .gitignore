@@ -9,6 +9,7 @@
 # next.js
 /.next/
 .next-verify*/
+.next_bak*/
 /out/
 
 # production
@@ -26,6 +27,7 @@ yarn-error.log*
 # local env files
 .env
 .env*.local
+.env.vercel*
 
 # prisma
 prisma/dev.db

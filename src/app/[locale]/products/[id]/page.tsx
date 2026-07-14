@@ -30,7 +30,7 @@ import BlockchainTrace from "@/components/blockchain/blockchain-trace";
 import Link from "next/link";
 import { Wrench } from "lucide-react";
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
 
