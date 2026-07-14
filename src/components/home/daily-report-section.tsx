@@ -2,44 +2,56 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { TrendingUp, ArrowRight, BarChart3, Globe, Loader2 } from "lucide-react";
+import { TrendingUp, ArrowRight, Globe, Newspaper } from "lucide-react";
 import { getLocalizedData } from "@/config/daily-report-home";
 
 const LABELS: Record<string, {
   title: string;
   subtitle: string;
-  viewReport: string;
   topOpportunities: string;
   marketIntel: string;
+  industryNews: string;
   price: string;
   profit: string;
+  margin: string;
+  viewDetail: string;
+  viewAll: string;
 }> = {
   zh: {
     title: "跨境套利日报",
     subtitle: "每日捕捉全球农机价差机会",
-    viewReport: "查看完整日报",
     topOpportunities: "今日TOP1 套利机会",
     marketIntel: "市场情报速递",
+    industryNews: "行业资讯",
     price: "报价",
     profit: "毛利",
+    margin: "毛利率",
+    viewDetail: "查看详情",
+    viewAll: "查看全部",
   },
   en: {
     title: "Cross-Border Arbitrage Daily",
     subtitle: "Daily global machinery price gap opportunities",
-    viewReport: "View Full Report",
     topOpportunities: "Today's TOP1 Opportunity",
     marketIntel: "Global Market Intel",
+    industryNews: "Industry News",
     price: "Price",
     profit: "Profit",
+    margin: "Margin",
+    viewDetail: "View Details",
+    viewAll: "View all",
   },
   ru: {
     title: "Ежедневный арбитраж",
     subtitle: "Ежедневные возможности ценового арбитража",
-    viewReport: "Полный отчёт",
     topOpportunities: "ТОП-1 возможность",
     marketIntel: "Обзор рынка",
+    industryNews: "Новости отрасли",
     price: "Цена",
     profit: "Прибыль",
+    margin: "Маржа",
+    viewDetail: "Подробнее",
+    viewAll: "Все",
   },
 };
 
@@ -54,17 +66,24 @@ interface DailyReportSectionProps {
   locale: string;
 }
 
+interface ArticleItem {
+  slug: string;
+  title: string;
+  date: string;
+  category: string;
+}
+
 export function DailyReportSection({ locale }: DailyReportSectionProps) {
   const l = LABELS[locale] || LABELS.zh;
   const data = getLocalizedData(locale);
-  const reportUrl = `/${locale}/arbitrage-top`;
   const intelUrl = `/${locale}/intelligence`;
+  const blogUrl = `/${locale}/blog`;
 
   const [activeIntel, setActiveIntel] = useState(0);
   const [liveIntel, setLiveIntel] = useState<{ icon: string; text: string }[] | null>(null);
   const fallbackRef = useRef(data.marketIntel.map((m) => ({ icon: m.icon, text: m.text })));
 
-  // 从 API 拉取市场情报前3条（与情报主页同源）
+  // 从 API 拉取市场情报前3条
   useEffect(() => {
     fetch(`/api/intelligence?locale=${locale}`)
       .then((r) => r.json())
@@ -93,8 +112,36 @@ export function DailyReportSection({ locale }: DailyReportSectionProps) {
     return () => clearInterval(timer);
   }, [nextIntel, intelItems.length]);
 
+  // 行业资讯 - 从 API 拉取最新4篇文章
+  const [articles, setArticles] = useState<ArticleItem[]>([]);
+  useEffect(() => {
+    fetch(`/api/articles?status=published&limit=4`)
+      .then((r) => r.json())
+      .then((d) => {
+        const items = d.articles || [];
+        if (items.length > 0) {
+          setArticles(items.slice(0, 4).map((a: any) => ({
+            slug: a.slug,
+            title: locale === "zh"
+              ? a.titleZh
+              : locale === "ru"
+                ? (a.titleRu || a.titleZh)
+                : (a.titleEn || a.titleZh),
+            date: a.publishedAt
+              ? new Date(a.publishedAt).toLocaleDateString(
+                  locale === "zh" ? "zh-CN" : locale === "ru" ? "ru-RU" : "en-US",
+                  { month: "short", day: "numeric" }
+                )
+              : "",
+            category: a.category || "",
+          })));
+        }
+      })
+      .catch(() => {});
+  }, [locale]);
+
   const formatPrice = (price: number) => {
-    return `¥${Math.round(price / 10000)}万`;
+    return `\u00a5${Math.round(price / 10000)}\u4e07`;
   };
 
   return (
@@ -104,13 +151,6 @@ export function DailyReportSection({ locale }: DailyReportSectionProps) {
         <div className="mb-6 text-center">
           <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">{l.title}</h2>
           <p className="mt-2 text-sm text-gray-500">{l.subtitle}</p>
-          <Link
-            href={reportUrl}
-            className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-accent-600 hover:text-accent-700"
-          >
-            {l.viewReport}
-            <ArrowRight className="h-4 w-4" />
-          </Link>
         </div>
 
         {/* Highlights */}
@@ -129,49 +169,56 @@ export function DailyReportSection({ locale }: DailyReportSectionProps) {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* TOP1 套利机会 */}
-          <div className="lg:col-span-2 rounded-xl border bg-white p-5 shadow-sm">
+        {/* 三栏布局：TOP1套利 | 市场情报 | 行业资讯 */}
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          {/* 左栏：TOP1 套利机会 */}
+          <div className="rounded-xl border bg-white p-5 shadow-sm">
             <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
               <TrendingUp className="h-4 w-4 text-accent-600" />
               {l.topOpportunities}
             </h3>
-            <div className="space-y-2">
-              {data.topArbitrage.slice(0, 1).map((item) => (
-                <Link
-                  key={item.rank}
-                  href={`/${locale}/products/${item.productId}`}
-                  className="flex items-center gap-3 rounded-lg border border-gray-100 p-3 transition-colors hover:border-accent-200 hover:bg-accent-50/50"
-                >
-                  {/* 排名 */}
-                  <div className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${
-                    item.rank <= 3 ? "bg-accent-600" : "bg-gray-400"
-                  }`}>
-                    {item.rank}
+            {data.topArbitrage.slice(0, 1).map((item) => (
+              <Link
+                key={item.rank}
+                href={`/${locale}/products/${item.productId}`}
+                className="block rounded-lg border border-gray-100 p-4 transition-colors hover:border-accent-200 hover:bg-accent-50/50"
+              >
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent-600 text-xs font-bold text-white">
+                    {item.rank + 1}
+                  </span>
+                  <span className="text-xs font-medium text-accent-600">TOP {item.rank + 1}</span>
+                </div>
+                <div className="mb-3 text-sm font-medium text-gray-900">{item.product}</div>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-500">{l.price}</span>
+                    <span className="font-semibold text-gray-900">{formatPrice(item.price)}</span>
                   </div>
-                  {/* 产品 */}
-                  <div className="flex-1 min-w-0">
-                    <div className="truncate text-sm font-medium text-gray-900">{item.product}</div>
-                    <div className="text-xs text-gray-500">{l.price}: {formatPrice(item.price)}</div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-500">{l.profit}</span>
+                    <span className="font-semibold text-green-600">{"\u00a5"}{item.profit}</span>
                   </div>
-                  {/* 利润 */}
-                  <div className="flex-shrink-0 text-right">
-                    <div className="text-sm font-bold text-green-600">¥{item.profit}</div>
-                    <div className="text-xs text-green-500">{item.margin}</div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-500">{l.margin}</span>
+                    <span className="font-semibold text-red-600">{item.margin}</span>
                   </div>
-                  <ArrowRight className="hidden h-4 w-4 flex-shrink-0 text-gray-300 sm:block" />
-                </Link>
-              ))}
-            </div>
+                </div>
+                <div className="mt-3 flex items-center justify-end gap-1 text-xs font-medium text-accent-600 hover:text-accent-700">
+                  {l.viewDetail}
+                  <ArrowRight className="h-3 w-3" />
+                </div>
+              </Link>
+            ))}
           </div>
 
-          {/* 市场情报 - 自动滚动 */}
+          {/* 中栏：市场情报 - 自动滚动 */}
           <div className="rounded-xl border bg-white p-5 shadow-sm">
             <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
               <Globe className="h-4 w-4 text-blue-600" />
               {l.marketIntel}
             </h3>
-            <div className="relative overflow-hidden rounded-lg bg-gray-50" style={{ minHeight: "80px" }}>
+            <div className="relative overflow-hidden rounded-lg bg-gray-50" style={{ minHeight: "120px" }}>
               {intelItems.map((item, idx) => (
                 <Link
                   key={idx}
@@ -205,11 +252,57 @@ export function DailyReportSection({ locale }: DailyReportSectionProps) {
                   href={intelUrl}
                   className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-0.5"
                 >
-                  {locale === "zh" ? "查看全部" : locale === "ru" ? "Все" : "View all"}
+                  {l.viewAll}
                   <ArrowRight className="h-3 w-3" />
                 </Link>
               </div>
             )}
+          </div>
+
+          {/* 右栏：行业资讯 */}
+          <div className="rounded-xl border bg-white p-5 shadow-sm">
+            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
+              <Newspaper className="h-4 w-4 text-green-600" />
+              {l.industryNews}
+            </h3>
+            <div className="space-y-3">
+              {articles.length > 0 ? (
+                articles.map((article, idx) => (
+                  <Link
+                    key={idx}
+                    href={`/${locale}/blog/${article.slug}`}
+                    className="block group"
+                  >
+                    <div className="flex items-start gap-2">
+                      <span className="text-xs text-gray-400 flex-shrink-0 mt-0.5">{article.date}</span>
+                      <div className="min-w-0">
+                        <p className="text-xs text-gray-700 leading-relaxed group-hover:text-green-600 line-clamp-2">
+                          {article.title}
+                        </p>
+                        {article.category && (
+                          <span className="mt-1 inline-block rounded bg-green-50 px-1.5 py-0.5 text-[10px] text-green-600">
+                            {article.category}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                ))
+              ) : (
+                <div className="py-8 text-center text-xs text-gray-400">
+                  {locale === "zh" ? "\u6682\u65e0\u6587\u7ae0" : locale === "ru" ? "\u041d\u0435\u0442 \u0441\u0442\u0430\u0442\u0435\u0439" : "No articles"}
+                </div>
+              )}
+            </div>
+            <div className="mt-3 flex items-center justify-end">
+              <Link
+                href={blogUrl}
+                className="text-xs font-medium text-green-600 hover:text-green-700 flex items-center gap-0.5"
+              >
+                {l.viewAll}
+                <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
           </div>
         </div>
       </div>
