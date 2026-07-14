@@ -20,7 +20,7 @@ const LABELS: Record<string, {
   zh: {
     title: "跨境套利日报",
     subtitle: "每日捕捉全球农机价差机会",
-    topOpportunities: "今日TOP1 套利机会",
+    topOpportunities: "今日TOP3 套利机会",
     marketIntel: "市场情报速递",
     industryNews: "行业资讯",
     price: "报价",
@@ -32,7 +32,7 @@ const LABELS: Record<string, {
   en: {
     title: "Cross-Border Arbitrage Daily",
     subtitle: "Daily global machinery price gap opportunities",
-    topOpportunities: "Today's TOP1 Opportunity",
+    topOpportunities: "Today's TOP3 Opportunities",
     marketIntel: "Global Market Intel",
     industryNews: "Industry News",
     price: "Price",
@@ -44,7 +44,7 @@ const LABELS: Record<string, {
   ru: {
     title: "Ежедневный арбитраж",
     subtitle: "Ежедневные возможности ценового арбитража",
-    topOpportunities: "ТОП-1 возможность",
+    topOpportunities: "ТОП-3 возможности",
     marketIntel: "Обзор рынка",
     industryNews: "Новости отрасли",
     price: "Цена",
@@ -209,82 +209,52 @@ export function DailyReportSection({ locale }: DailyReportSectionProps) {
           ))}
         </div>
 
-        {/* 三栏布局：TOP1套利 | 市场情报 | 行业资讯 — 行对齐 */}
+        {/* 三栏布局：TOP3套利 | 市场情报 | 行业资讯 — 行对齐 */}
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          {/* ============ 左栏：TOP1大卡片 + TOP2/TOP3紧凑行 ============ */}
+          {/* ============ 左栏：TOP3 套利机会（三个等高卡片）============ */}
           <div className="flex flex-col rounded-xl border border-amber-200 bg-amber-50/40 p-5 shadow-sm">
             <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
               <TrendingUp className="h-4 w-4 text-amber-600" />
               {l.topOpportunities}
             </h3>
             <div className="grid flex-1 grid-rows-3 gap-2">
-              {/* Row 1: TOP1 大卡片 */}
-              {top3[0] && (
+              {top3.map((item, idx) => (
                 <Link
-                  href={`/${locale}/products/${top3[0].productId}`}
-                  className="block overflow-hidden rounded-lg border border-amber-300 bg-white p-3 transition-colors hover:border-amber-400 hover:bg-amber-50/50"
+                  key={idx}
+                  href={`/${locale}/products/${item.productId}`}
+                  className="flex flex-col overflow-hidden rounded-lg border border-amber-300 bg-white p-2.5 transition-colors hover:border-amber-400 hover:bg-amber-50/50"
                 >
-                  <div className="mb-1.5 flex items-center gap-2">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-white">
-                      1
+                  <div className="mb-1 flex items-center gap-1.5">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white">
+                      {idx + 1}
                     </span>
-                    <span className="text-[10px] font-semibold text-amber-600">TOP 1</span>
+                    <span className="text-[9px] font-semibold text-amber-600">TOP {idx + 1}</span>
                   </div>
-                  <div className="mb-2 text-xs font-semibold text-gray-900 line-clamp-1">{top3[0].product}</div>
-                  <div className="flex items-center gap-3 text-[11px]">
+                  <div className="mb-1.5 text-xs font-semibold text-gray-900 line-clamp-1">{item.product}</div>
+                  <div className="flex items-center gap-2 text-[11px]">
                     <div>
                       <span className="text-gray-400">{l.price}</span>
-                      <span className="ml-1 font-bold text-gray-900">{formatPrice(top3[0].price)}</span>
+                      <span className="ml-0.5 font-bold text-gray-900">{formatPrice(item.price)}</span>
                     </div>
                     <div>
                       <span className="text-gray-400">{l.profit}</span>
-                      <span className="ml-1 font-bold text-green-600">{"\u00a5"}{top3[0].profit}</span>
+                      <span className="ml-0.5 font-bold text-green-600">{"\u00a5"}{item.profit}</span>
                     </div>
                     <div>
                       <span className="text-gray-400">{l.margin}</span>
-                      <span className="ml-1 font-bold text-red-600">{top3[0].margin}</span>
+                      <span className="ml-0.5 font-bold text-red-600">{item.margin}</span>
                     </div>
                   </div>
-                  <div className="mt-1.5 flex items-center justify-end gap-0.5 text-[10px] font-medium text-amber-600">
+                  <div className="mt-auto flex items-center justify-end gap-0.5 pt-1 text-[10px] font-medium text-amber-600">
                     {l.viewDetail}
                     <ArrowRight className="h-2.5 w-2.5" />
                   </div>
                 </Link>
-              )}
-              {/* Row 2: TOP2 紧凑行 */}
-              {top3[1] && (
-                <Link
-                  href={`/${locale}/products/${top3[1].productId}`}
-                  className="flex items-center gap-2 overflow-hidden rounded-lg border border-amber-100 bg-white/70 px-3 py-2 transition-colors hover:border-amber-200 hover:bg-amber-50/50"
-                >
-                  <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-amber-200 text-[10px] font-bold text-amber-800">
-                    2
-                  </span>
-                  <span className="min-w-0 flex-1 truncate text-xs text-gray-700">{top3[1].product}</span>
-                  <span className="flex-shrink-0 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-600">
-                    {top3[1].margin}
-                  </span>
-                </Link>
-              )}
-              {/* Row 3: TOP3 紧凑行 */}
-              {top3[2] && (
-                <Link
-                  href={`/${locale}/products/${top3[2].productId}`}
-                  className="flex items-center gap-2 overflow-hidden rounded-lg border border-amber-100 bg-white/70 px-3 py-2 transition-colors hover:border-amber-200 hover:bg-amber-50/50"
-                >
-                  <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-amber-200 text-[10px] font-bold text-amber-800">
-                    3
-                  </span>
-                  <span className="min-w-0 flex-1 truncate text-xs text-gray-700">{top3[2].product}</span>
-                  <span className="flex-shrink-0 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-600">
-                    {top3[2].margin}
-                  </span>
-                </Link>
-              )}
+              ))}
             </div>
             <div className="mt-2 flex items-center justify-end">
               <Link
-                href={`/${locale}/products?sort=rank`}
+                href={`/${locale}/arbitrage-top`}
                 className="text-xs font-medium text-amber-600 hover:text-amber-700 flex items-center gap-0.5"
               >
                 {l.viewAll}
