@@ -94,22 +94,14 @@ export const DAILY_REPORT_CONFIG: DailyReportConfig = {
     },
     {
       emoji: "📈",
-      labelZh: "5300RC(2020)价差率", labelEn: "5300RC(2020) Spread", labelRu: "Спред 5300RC(2020)",
-      valueZh: "330.0% 全品类第一", valueEn: "330.0% #1 All Categories", valueRu: "330.0% №1 во всех категориях",
+      labelZh: "FR450(2013)价差率", labelEn: "FR450(2013) Spread", labelRu: "Спред FR450(2013)",
+      valueZh: "104.7% 全品类第一", valueEn: "104.7% #1 All Categories", valueRu: "104,7% №1 во всех категориях",
       color: "red",
     },
   ],
   topArbitrage: [
     {
       rank: 0,
-      productZh: "🔥 CLAAS 5300RC（2020款）", productEn: "🔥 CLAAS 5300RC (2020)", productRu: "🔥 CLAAS 5300RC (2020)",
-      price: 180000,
-      profitZh: "59.4万", profitEn: "594K", profitRu: "594 тыс",
-      margin: "330.0%",
-      productId: "cmpdknk4s008111kw3zr8aimf",
-    },
-    {
-      rank: 1,
       productZh: "纽荷兰 FR450（2013款·10台库存）", productEn: "NH FR450 (2013·10 in stock)", productRu: "NH FR450 (2013·10 в наличии)",
       price: 215000,
       profitZh: "22.5万", profitEn: "225K", profitRu: "225 тыс",
@@ -117,7 +109,7 @@ export const DAILY_REPORT_CONFIG: DailyReportConfig = {
       productId: "cmpfohy0n000xkrh5d14tvnqy",
     },
     {
-      rank: 2,
+      rank: 1,
       productZh: "Krone BiG Pack 1290（2020款）", productEn: "Krone BiG Pack 1290 (2020)", productRu: "Krone BiG Pack 1290 (2020)",
       price: 680000,
       profitZh: "64.2万", profitEn: "642K", profitRu: "642 тыс",
@@ -125,7 +117,7 @@ export const DAILY_REPORT_CONFIG: DailyReportConfig = {
       productId: "cmpfohxxe0003krh59h6galr2",
     },
     {
-      rank: 3,
+      rank: 2,
       productZh: "克拉斯 Jaguar 980（2016款）", productEn: "CLAAS Jaguar 980 (2016)", productRu: "CLAAS Jaguar 980 (2016)",
       price: 1430000,
       profitZh: "105.1万", profitEn: "1.051M", profitRu: "1.051 млн",
@@ -150,9 +142,9 @@ export const DAILY_REPORT_CONFIG: DailyReportConfig = {
     },
     {
       icon: "💶",
-      textZh: "5300RC(2020)330.0%全品类第一 + Kuhn 890大方捆337.5%新入榜 | 7月俄线王牌绝对主力",
-      textEn: "5300RC(2020)330.0% #1 + Kuhn 890 337.5% new entry | July Russia line absolute king",
-      textRu: "5300RC(2020)330,0% №1 + Kuhn 890 337,5% новый | Июль линия РФ абсолютный король",
+      textZh: "FR450(2013)104.7%全品类第一 + Kuhn 890大方捆337.5%新入榜 | 7月俄线王牌绝对主力",
+      textEn: "FR450(2013)104.7% #1 + Kuhn 890 337.5% new entry | July Russia line absolute king",
+      textRu: "FR450(2013)104,7% №1 + Kuhn 890 337,5% новый | Июль линия РФ абсолютный король",
       url: "/zh/products?sort=rank",
     },
     {
@@ -163,5 +155,5 @@ export const DAILY_REPORT_CONFIG: DailyReportConfig = {
       url: "/zh/products?sort=rank",
     },
   ],
-  totalProducts: 85,
+  totalProducts: 84,
 };
