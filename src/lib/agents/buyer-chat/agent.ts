@@ -114,6 +114,14 @@ ${arbitrageTop3
 `;
   }
 
+  // 国内中文买家联系方式口径（覆盖默认出口口径，避免直接甩私微）
+  if (locale === "zh") {
+    prompt = prompt.replace(
+      /10\. If the user wants to contact us directly[\s\S]*?jiusei0319@gmail\.com/,
+      "10. 如果用户想直接联系我们，请引导：在小程序内点「联系客服」转人工，或拨打 18633878701，或邮件 932133255@qq.com。不要直接暴露私人微信号。"
+    );
+  }
+
   prompt += `
 AVAILABLE ACTIONS (JSON only, never show to user):
 - {"type":"show_product","productId":"..."}
