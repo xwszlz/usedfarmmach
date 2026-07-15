@@ -304,7 +304,11 @@
       "service2Title": "Financial & Insurance",
       "service2Desc": "Equipment financing and transport insurance",
       "service3Title": "Service Centers",
-      "service3Desc": "Nationwide coverage, inspection and maintenance in one place"
+      "service3Desc": "Nationwide coverage, inspection and maintenance in one place",
+      "serviceAiValuationTitle": "AI Valuation",
+      "serviceAiValuationDesc": "Multi-dimensional pricing based on brand, year, hours",
+      "serviceArbitrageTitle": "Smart Arbitrage",
+      "serviceArbitrageDesc": "Real-time cross-border price comparison"
     },
     "engineerCert": {
       "title": "AI Engineer Certification · Five Levels",

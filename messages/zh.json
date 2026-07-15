@@ -304,7 +304,11 @@
       "service2Title": "金融保险",
       "service2Desc": "设备融资、运输保险，降低交易风险",
       "service3Title": "服务网点",
-      "service3Desc": "覆盖全国主要产区，检测维修一站式"
+      "service3Desc": "覆盖全国主要产区，检测维修一站式",
+      "serviceAiValuationTitle": "AI智能估价",
+      "serviceAiValuationDesc": "基于品牌、年份、工时等多维度精准估价",
+      "serviceArbitrageTitle": "智能跨境套利",
+      "serviceArbitrageDesc": "实时中外价格对比，发现套利投资机会"
     },
     "engineerCert": {
       "title": "AI农机工程师认证 · 五级赋能",

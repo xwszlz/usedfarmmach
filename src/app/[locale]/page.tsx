@@ -116,7 +116,6 @@ export default async function HomePage({
       {/* 10 屏组装 */}
       <RecruitmentBanner locale={locale} />
       <HotEquipment products={hotProducts} locale={locale} />
-      <ArbitrageShowcase />
       <DailyReportSection locale={locale} />
       <ExpoEntrance locale={locale} />
       <PartsEntrance locale={locale} />

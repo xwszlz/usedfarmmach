@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ArrowRight, ClipboardCheck, Landmark, MapPin } from "lucide-react";
+import { ArrowRight, ClipboardCheck, Landmark, MapPin, Brain, TrendingUp } from "lucide-react";
 
 interface ServicesEntranceProps {
   locale: string;
@@ -12,6 +12,8 @@ export function ServicesEntrance({ locale }: ServicesEntranceProps) {
   const t = useTranslations("home.services");
 
   const services = [
+    { icon: Brain, titleKey: "serviceAiValuationTitle", descKey: "serviceAiValuationDesc", href: "/services/valuation" },
+    { icon: TrendingUp, titleKey: "serviceArbitrageTitle", descKey: "serviceArbitrageDesc", href: "/arbitrage-calculator" },
     { icon: ClipboardCheck, titleKey: "service1Title", descKey: "service1Desc", href: "/standards" },
     { icon: Landmark, titleKey: "service2Title", descKey: "service2Desc", href: "/finance" },
     { icon: MapPin, titleKey: "service3Title", descKey: "service3Desc", href: "/service-network" },
@@ -34,7 +36,7 @@ export function ServicesEntrance({ locale }: ServicesEntranceProps) {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
           {services.map(({ icon: Icon, titleKey, descKey, href }) => (
             <Link
               key={titleKey}
