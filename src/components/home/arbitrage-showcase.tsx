@@ -110,7 +110,7 @@ export function ArbitrageShowcase() {
   ];
 
   return (
-    <section className="bg-gray-50 py-16">
+    <section id="ai-valuation" className="bg-gray-50 py-16 scroll-mt-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-10 text-center">
           <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">

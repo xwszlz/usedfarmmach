@@ -72,7 +72,7 @@ const SERVICES: ServiceCard[] = [
     titleEn: "AI Valuation",
     descZh: "基于海量农机交易数据，AI精准评估设备残值与合理交易区间。支持多品牌、多机型对比分析，让每一笔交易都有据可依。",
     descEn: "AI-powered valuation based on massive machinery transaction data. Precise residual value assessment with multi-brand comparison. Data-driven trading decisions.",
-    href: "/arena",
+    href: "/#ai-valuation",
     bgClass: "bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950/30 dark:to-purple-950/30",
     iconClass: "text-violet-600 dark:text-violet-400",
     borderClass: "border-violet-200 dark:border-violet-800",
