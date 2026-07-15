@@ -297,14 +297,14 @@
     },
     "services": {
       "title": "增值服务 · 一站式跨境解决方案",
-      "subtitle": "检测 · 物流 · 金融",
+      "subtitle": "检测 · 金融 · 网点",
       "learnMore": "了解详情",
       "service1Title": "专业检测",
       "service1Desc": "第三方质检报告，交易更安心",
-      "service2Title": "跨境物流",
-      "service2Desc": "海运、陆运多种方案，门到门服务",
-      "service3Title": "金融保险",
-      "service3Desc": "设备融资、运输保险，降低交易风险"
+      "service2Title": "金融保险",
+      "service2Desc": "设备融资、运输保险，降低交易风险",
+      "service3Title": "服务网点",
+      "service3Desc": "覆盖全国主要产区，检测维修一站式"
     },
     "engineerCert": {
       "title": "AI农机工程师认证 · 五级赋能",

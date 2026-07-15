@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ArrowRight, ShieldCheck, Truck, Banknote } from "lucide-react";
+import { ArrowRight, ClipboardCheck, Landmark, MapPin } from "lucide-react";
 
 interface ServicesEntranceProps {
   locale: string;
@@ -12,9 +12,9 @@ export function ServicesEntrance({ locale }: ServicesEntranceProps) {
   const t = useTranslations("home.services");
 
   const services = [
-    { icon: ShieldCheck, titleKey: "service1Title", descKey: "service1Desc" },
-    { icon: Truck, titleKey: "service2Title", descKey: "service2Desc" },
-    { icon: Banknote, titleKey: "service3Title", descKey: "service3Desc" },
+    { icon: ClipboardCheck, titleKey: "service1Title", descKey: "service1Desc", href: "/standards" },
+    { icon: Landmark, titleKey: "service2Title", descKey: "service2Desc", href: "/finance" },
+    { icon: MapPin, titleKey: "service3Title", descKey: "service3Desc", href: "/service-network" },
   ];
 
   return (
@@ -35,10 +35,10 @@ export function ServicesEntrance({ locale }: ServicesEntranceProps) {
         </div>
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-          {services.map(({ icon: Icon, titleKey, descKey }) => (
+          {services.map(({ icon: Icon, titleKey, descKey, href }) => (
             <Link
               key={titleKey}
-              href={`/${locale}/services`}
+              href={`/${locale}${href}`}
               className="group rounded-xl border border-gray-200 bg-white p-6 transition-all hover:border-primary-300 hover:shadow-lg"
             >
               <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-green-50 text-green-600">

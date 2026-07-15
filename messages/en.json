@@ -297,14 +297,14 @@
     },
     "services": {
       "title": "Value-Added Services · One-Stop Cross-Border",
-      "subtitle": "Inspection · Logistics · Finance",
+      "subtitle": "Inspection · Finance · Centers",
       "learnMore": "Learn More",
       "service1Title": "Professional Inspection",
       "service1Desc": "Third-party quality reports for secure transactions",
-      "service2Title": "Cross-border Logistics",
-      "service2Desc": "Sea and land transport, door-to-door service",
-      "service3Title": "Financial & Insurance",
-      "service3Desc": "Equipment financing and transport insurance"
+      "service2Title": "Financial & Insurance",
+      "service2Desc": "Equipment financing and transport insurance",
+      "service3Title": "Service Centers",
+      "service3Desc": "Nationwide coverage, inspection and maintenance in one place"
     },
     "engineerCert": {
       "title": "AI Engineer Certification · Five Levels",
