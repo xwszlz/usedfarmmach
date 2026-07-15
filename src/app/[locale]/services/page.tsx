@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
+  Brain,
   TrendingUp,
   ClipboardCheck,
   Truck,
@@ -27,8 +28,8 @@ export async function generateMetadata({
       ? "增值服务_AI估值_跨境物流_金融保险_一站式农机解决方案_神雕农机"
       : "Value-Added Services | AI Valuation · Logistics · Finance · One-Stop Agri Solutions",
     description: isZh
-      ? "神雕农机增值服务中心：AI智能估值、第三方专业检测、跨境物流运输、金融保险、担保交易、线下服务网点、行业解决方案。一站式农机跨境贸易全链路服务。"
-      : "AgriTrade Value-Added Services: AI valuation, third-party inspection, cross-border logistics, finance & insurance, escrow, service centers, industry solutions. One-stop machinery trade services.",
+      ? "神雕农机增值服务中心：AI智能估价、智能跨境套利、第三方专业检测、跨境物流运输、金融保险、担保交易、线下服务网点、行业解决方案。一站式农机跨境贸易全链路服务。"
+      : "AgriTrade Value-Added Services: AI valuation, smart arbitrage, third-party inspection, cross-border logistics, finance & insurance, escrow, service centers, industry solutions. One-stop machinery trade services.",
     alternates: {
       canonical: `${BASE_URL}/${locale}/services`,
       languages: {
@@ -39,8 +40,8 @@ export async function generateMetadata({
     openGraph: {
       title: isZh ? "增值服务 — 神雕农机一站式跨境解决方案" : "Value-Added Services — AgriTrade One-Stop Solutions",
       description: isZh
-        ? "7大增值服务矩阵：AI估值·专业检测·跨境物流·金融保险·担保交易·服务网点·行业方案。让二手农机跨境贸易更简单、更安全、更高效。"
-        : "7 value-added services: AI Valuation, Inspection, Logistics, Finance, Escrow, Service Centers, Solutions. Making cross-border machinery trade simpler, safer, more efficient.",
+        ? "8大增值服务矩阵：AI估价·跨境套利·专业检测·跨境物流·金融保险·担保交易·服务网点·行业方案。让二手农机跨境贸易更简单、更安全、更高效。"
+        : "8 value-added services: AI Valuation, Smart Arbitrage, Inspection, Logistics, Finance, Escrow, Service Centers, Solutions. Making cross-border machinery trade simpler, safer, more efficient.",
       url: `${BASE_URL}/${locale}/services`,
       siteName: isZh ? "神雕农机" : "AgriTrade",
       locale: locale,
@@ -66,18 +67,32 @@ interface ServiceCard {
 
 const SERVICES: ServiceCard[] = [
   {
-    id: "ai-valuation",
-    icon: TrendingUp,
-    titleZh: "AI 智能估值",
+    id: "ai-valuation-price",
+    icon: Brain,
+    titleZh: "AI智能估价",
     titleEn: "AI Valuation",
-    descZh: "基于海量农机交易数据，AI精准评估设备残值与合理交易区间。支持多品牌、多机型对比分析，让每一笔交易都有据可依。",
-    descEn: "AI-powered valuation based on massive machinery transaction data. Precise residual value assessment with multi-brand comparison. Data-driven trading decisions.",
-    href: "/#ai-valuation",
+    descZh: "基于品牌、年份、工时等多维度精准估价。支持多品牌、多机型对比分析，让每一笔交易都有据可依。",
+    descEn: "Multi-dimensional pricing based on brand, year, and hours. Multi-brand comparison for data-driven trading decisions.",
+    href: "/services/valuation",
     bgClass: "bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950/30 dark:to-purple-950/30",
     iconClass: "text-violet-600 dark:text-violet-400",
     borderClass: "border-violet-200 dark:border-violet-800",
     tagZh: "AI驱动",
     tagEn: "AI-Powered",
+  },
+  {
+    id: "arbitrage",
+    icon: TrendingUp,
+    titleZh: "智能跨境套利",
+    titleEn: "Smart Arbitrage",
+    descZh: "实时中外价格对比，发现套利投资机会。基于全球农机市场行情，智能推荐跨境套利方案。",
+    descEn: "Real-time cross-border price comparison. Smart arbitrage recommendations based on global machinery market data.",
+    href: "/arbitrage-calculator",
+    bgClass: "bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-950/30 dark:to-blue-950/30",
+    iconClass: "text-cyan-600 dark:text-cyan-400",
+    borderClass: "border-cyan-200 dark:border-cyan-800",
+    tagZh: "实时数据",
+    tagEn: "Real-Time",
   },
   {
     id: "inspection",
@@ -196,7 +211,7 @@ export default async function ServicesPage({
           <div className="mx-auto max-w-3xl text-center">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-4 py-1.5 text-sm text-violet-300">
               <Sparkles className="h-4 w-4" />
-              {isZh ? "7大增值服务矩阵" : "7 Value-Added Services"}
+              {isZh ? "8大增值服务矩阵" : "8 Value-Added Services"}
             </div>
             <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl">
               {isZh ? "增值服务" : "Value-Added Services"}
@@ -207,7 +222,8 @@ export default async function ServicesPage({
                 : "From AI valuation to cross-border logistics, from finance to offline service — one-stop full-chain solutions for global machinery trade."}
             </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-sm text-slate-400">
-              <span className="rounded-full bg-slate-800 px-3 py-1">🔍 AI估值</span>
+              <span className="rounded-full bg-slate-800 px-3 py-1">🧠 AI估价</span>
+              <span className="rounded-full bg-slate-800 px-3 py-1">📈 跨境套利</span>
               <span className="rounded-full bg-slate-800 px-3 py-1">📋 检测认证</span>
               <span className="rounded-full bg-slate-800 px-3 py-1">🚚 物流运输</span>
               <span className="rounded-full bg-slate-800 px-3 py-1">💰 金融保险</span>
