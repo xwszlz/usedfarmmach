@@ -63,13 +63,14 @@ jobs:
             fi
           }
 
-          echo "📦 Injecting 5 OSS environment variables..."
+          echo "📦 Injecting OSS + AI environment variables..."
           upsert_env "OSS_REGION" "oss-cn-beijing"
           upsert_env "OSS_ACCESS_KEY_ID" "${OSS_ACCESS_KEY_ID}"
           upsert_env "OSS_ACCESS_KEY_SECRET" "${OSS_ACCESS_KEY_SECRET}"
           upsert_env "OSS_BUCKET" "usedfarmmach-oss"
           upsert_env "OSS_ENDPOINT" "https://oss-cn-beijing.aliyuncs.com"
-          echo "🎉 All 5 OSS vars injected!"
+          upsert_env "GOOGLE_API_KEY" "${{ secrets.GOOGLE_API_KEY }}"
+          echo "🎉 All environment vars injected!"
 
       # Step 2: 部署到 Vercel
       - name: Deploy to Vercel
