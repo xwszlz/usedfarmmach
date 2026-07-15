@@ -22,9 +22,11 @@ import {
 } from "./sources";
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || "";
 const OPENROUTER_BASE = "https://openrouter.ai/api/v1";
 const DEFAULT_MODEL = "openai/gpt-4o-mini";
 const FALLBACK_MODEL = "google/gemini-2.0-flash-001";
+const GEMINI_MODEL = "gemini-2.5-flash";
 
 // ── 意图分类（快速规则层，避免 LLM 延迟）──────
 function ruleBasedIntent(query: string, locale: ChatLocale): ChatIntent | null {
@@ -124,7 +126,65 @@ AVAILABLE ACTIONS (JSON only, never show to user):
   return prompt;
 }
 
-// ── LLM 调用器 ──────────────────────────────────
+// ── Gemini API 调用器（回退方案）────────────────
+async function callGemini(
+  messages: { role: "system" | "user" | "assistant"; content: string }[],
+  model = GEMINI_MODEL
+): Promise<{
+  content: string;
+  model: string;
+  tokens: { prompt: number; completion: number };
+  latencyMs: number;
+}> {
+  const start = Date.now();
+  if (!GOOGLE_API_KEY) {
+    throw new Error("GOOGLE_API_KEY not configured");
+  }
+
+  // 合并 system + user 消息为 Gemini 格式的 contents
+  const systemMsg = messages.find((m) => m.role === "system");
+  const otherMsgs = messages.filter((m) => m.role !== "system");
+
+  const contents = otherMsgs.map((m) => ({
+    role: m.role === "assistant" ? "model" : "user",
+    parts: [{ text: m.content }],
+  }));
+
+  // 如果有 system 消息，加到第一条 user 消息前面
+  if (systemMsg && contents.length > 0 && contents[0].role === "user") {
+    contents[0] = {
+      role: "user",
+      parts: [{ text: `${systemMsg.content}\n\nUser query: ${contents[0].parts[0].text}` }],
+    };
+  }
+
+  const res = await axios.post(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GOOGLE_API_KEY}`,
+    {
+      contents,
+      generationConfig: { temperature: 0.7, maxOutputTokens: 800 },
+    },
+    { timeout: 20000 }
+  );
+
+  const data = res.data as any;
+  const candidate = data.candidates?.[0];
+  if (!candidate?.content?.parts?.[0]?.text) {
+    throw new Error("No Gemini response");
+  }
+
+  return {
+    content: candidate.content.parts[0].text as string,
+    model: model,
+    tokens: {
+      prompt: (data.usageMetadata?.promptTokenCount as number) || 0,
+      completion: (data.usageMetadata?.candidatesTokenCount as number) || 0,
+    },
+    latencyMs: Date.now() - start,
+  };
+}
+
+// ── LLM 调用器（OpenRouter 主用 → Gemini 回退）──
 async function callLLM(
   messages: { role: "system" | "user" | "assistant"; content: string }[],
   model = DEFAULT_MODEL
@@ -134,38 +194,53 @@ async function callLLM(
   tokens: { prompt: number; completion: number };
   latencyMs: number;
 }> {
-  const start = Date.now();
-  if (!OPENROUTER_API_KEY) {
-    throw new Error("OPENROUTER_API_KEY not configured");
+  // 优先尝试 OpenRouter
+  if (OPENROUTER_API_KEY) {
+    try {
+      const start = Date.now();
+      const res = await axios.post(
+        `${OPENROUTER_BASE}/chat/completions`,
+        { model, messages, temperature: 0.7, max_tokens: 800 },
+        {
+          headers: {
+            Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://usedfarmmach.com",
+            "X-Title": "UsedFarmMach Buyer Chat",
+          },
+          timeout: 15000,
+        }
+      );
+
+      const data = res.data as any;
+      const choice = data.choices?.[0];
+      if (!choice) throw new Error("No LLM response choice");
+
+      return {
+        content: choice.message.content as string,
+        model: (data.model as string) || model,
+        tokens: {
+          prompt: (data.usage?.prompt_tokens as number) || 0,
+          completion: (data.usage?.completion_tokens as number) || 0,
+        },
+        latencyMs: Date.now() - start,
+      };
+    } catch (e: any) {
+      const status = e.response?.status;
+      const errMsg = e.response?.data?.error?.message || e.message;
+      console.warn(
+        `[BuyerChatAgent] OpenRouter failed (${status}): ${errMsg}, falling back to Gemini...`
+      );
+      // 403/429/5xx 或超时 → 回退到 Gemini
+    }
   }
 
-  const res = await axios.post(
-    `${OPENROUTER_BASE}/chat/completions`,
-    { model, messages, temperature: 0.7, max_tokens: 800 },
-    {
-      headers: {
-        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://usedfarmmach.com",
-        "X-Title": "UsedFarmMach Buyer Chat",
-      },
-      timeout: 20000,
-    }
-  );
+  // 回退到 Gemini
+  if (GOOGLE_API_KEY) {
+    return callGemini(messages, GEMINI_MODEL);
+  }
 
-  const data = res.data as any;
-  const choice = data.choices?.[0];
-  if (!choice) throw new Error("No LLM response choice");
-
-  return {
-    content: choice.message.content as string,
-    model: (data.model as string) || model,
-    tokens: {
-      prompt: (data.usage?.prompt_tokens as number) || 0,
-      completion: (data.usage?.completion_tokens as number) || 0,
-    },
-    latencyMs: Date.now() - start,
-  };
+  throw new Error("No AI API available (both OpenRouter and Gemini are unavailable)");
 }
 
 // ── 从回复中提取动作 JSON ─────────────────────
