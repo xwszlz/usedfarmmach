@@ -20,6 +20,7 @@ import { getDetailImageUrl, getVideoUrl } from "@/lib/image-url";
 import axios from "axios";
 import crypto from "crypto";
 import { checkContent, isBlocked } from "@/lib/wechat-sec-check";
+import { checkDuplicateProduct, fireVideoModeration, MAX_VIDEOS_PER_PRODUCT, MAX_VIDEO_DURATION_SECONDS, MAX_VIDEO_FILE_SIZE_BYTES } from "@/lib/content-moderation";
 
 // Vercel Serverless Function 超时延长至300秒（Pro计划上限）
 // 小程序可能同时上传多张大图+视频，60秒不够用
@@ -295,11 +296,29 @@ export async function POST(request: NextRequest) {
       latitude,
       longitude,
       images = [],
+      // 兼容旧版单视频字段 + 新版多视频字段
       video,
+      videos = [],
       // autoAI: 小程序提交时设为true，触发服务端自动AI识别+估值
       autoAI = false,
       photoLabels,
     } = body;
+
+    // 合并视频源：新版 videos 数组优先，旧版 video 兼容
+    const allVideos: string[] = [];
+    if (Array.isArray(videos) && videos.length > 0) {
+      allVideos.push(...videos.filter((v: string) => typeof v === "string" && v.length > 0));
+    }
+    if (video && typeof video === "string" && !allVideos.includes(video)) {
+      allVideos.push(video);
+    }
+    // 限制最多 3 个视频
+    if (allVideos.length > MAX_VIDEOS_PER_PRODUCT) {
+      return NextResponse.json(
+        { success: false, error: `最多上传 ${MAX_VIDEOS_PER_PRODUCT} 个视频`, code: "TOO_MANY_VIDEOS" },
+        { status: 400 }
+      );
+    }
 
     // 港口自动匹配：如果未指定港口，根据位置自动匹配
     const finalTradePort = tradePort || (location ? matchPortByLocation(location) : '青岛');
@@ -418,6 +437,25 @@ export async function POST(request: NextRequest) {
     const finalBrandId = brandRecord.id;
     const isImported = brandRecord.isImported || isInternationalBrand(brandName || brandRecord.nameZh);
     console.log(`[internal/products] step-2 brand/category resolved in ${Date.now() - t2}ms, brand=${brandRecord.nameZh}, isImported=${isImported}`);
+
+    // ── Step 2.5: 重复产品检测 ──
+    const dupCheck = await checkDuplicateProduct(
+      finalSellerId,
+      finalBrandId,
+      modelName,
+      Number(year)
+    );
+    if (dupCheck.isDuplicate) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: dupCheck.message || "检测到重复产品，请勿重复发布",
+          code: "DUPLICATE_PRODUCT",
+          existingProductId: dupCheck.existingProductId,
+        },
+        { status: 409 }
+      );
+    }
 
     // 品牌策略：国际品牌→手机+网站同时展示；国产品牌→只在手机端展示，不在网站展示
     // 所有产品统一设为 active（小程序内都能显示），网站端通过 brand.isImported 过滤
@@ -554,44 +592,73 @@ export async function POST(request: NextRequest) {
     }
     console.log(`[internal/products] step-4 images done: ${uploadedImageCount}/${images.length} succeeded`);
 
-    // ── Step 5: 上传视频（如有）──
+    // ── Step 5: 上传视频（支持多个，最多3个）──
     // OSS 直传模式：小程序已通过 wx.uploadFile 把视频直传到 OSS，
-    // 此时 video 字段为完整 HTTPS URL，应直接复用入库，避免在 Vercel
-    // Serverless 内再次下载大文件导致超时/内存溢出（视频静默丢失根因）。
+    // 此时 video 字段为完整 HTTPS URL，应直接复用入库。
     // 同时保留对 base64 Data URI 旧模式的兼容。
-    if (video) {
+    const savedVideoRecords: { id: string; url: string }[] = [];
+
+    for (let vi = 0; vi < allVideos.length; vi++) {
+      const vidSrc = allVideos[vi];
       const vidStart = Date.now();
       try {
         let videoUrlForDb: string;
+        let videoSize: number | null = null;
+        let videoDuration: number | null = null;
 
-        if (video.startsWith("https://") || video.startsWith("http://")) {
+        if (vidSrc.startsWith("https://") || vidSrc.startsWith("http://")) {
           // ✅ OSS 直传新模式：video 已经是完整的 HTTP(S) URL
-          // 直接使用该 URL 创建 ProductVideo 记录，无需下载再上传
-          videoUrlForDb = video; // 保持完整 OSS URL
-          console.log(`[internal/products] step-5 video is direct OSS URL, reusing: ${videoUrlForDb}`);
+          videoUrlForDb = vidSrc;
+          console.log(`[internal/products] step-5 video[${vi}] is direct OSS URL, reusing: ${videoUrlForDb.substring(0, 80)}...`);
         } else {
           // 兼容旧模式：base64 Data URI 格式
-          const { buffer, contentType } = await getDataUriBuffer(video);
+          const { buffer, contentType } = await getDataUriBuffer(vidSrc);
+          videoSize = buffer.length;
+          // 校验文件大小
+          if (videoSize > MAX_VIDEO_FILE_SIZE_BYTES) {
+            console.warn(`[internal/products] step-5 video[${vi}] exceeds size limit: ${videoSize} > ${MAX_VIDEO_FILE_SIZE_BYTES}, skipping`);
+            continue;
+          }
           const ext = guessExtFromMime(contentType);
-          const key = `${folder}/video_${Date.now()}.${ext}`;
+          const key = `${folder}/video_${vi}_${Date.now()}.${ext}`;
           const uploadedUrl = await uploadBufferToOSS(key, buffer, contentType);
-          videoUrlForDb = uploadedUrl; // 直接存储完整 OSS URL
+          videoUrlForDb = uploadedUrl;
         }
 
-        await prisma.productVideo.create({
+        // 读取视频时长（从 body 中的 videoDurations 数组，小程序前端提供）
+        const videoDurations = body.videoDurations;
+        if (Array.isArray(videoDurations) && videoDurations[vi] != null) {
+          videoDuration = Number(videoDurations[vi]);
+          // 校验时长
+          if (videoDuration > MAX_VIDEO_DURATION_SECONDS) {
+            console.warn(`[internal/products] step-5 video[${vi}] exceeds duration limit: ${videoDuration}s > ${MAX_VIDEO_DURATION_SECONDS}s, skipping`);
+            continue;
+          }
+        }
+
+        const videoRecord = await prisma.productVideo.create({
           data: {
             productId: product.id,
             url: videoUrlForDb,
-            sortOrder: 0,
-            title: `${modelName} 运转视频`,
+            sortOrder: vi,
+            title: `${modelName} 视频${allVideos.length > 1 ? vi + 1 : ""}`,
+            duration: videoDuration,
+            fileSize: videoSize,
+            moderationStatus: "pending",
           },
         });
-        console.log(`[internal/products] step-5 video saved OK in ${Date.now() - vidStart}ms, url=${videoUrlForDb}`);
+        savedVideoRecords.push({ id: videoRecord.id, url: videoUrlForDb });
+        console.log(`[internal/products] step-5 video[${vi}] saved OK in ${Date.now() - vidStart}ms`);
       } catch (err) {
-        // 视频失败不阻塞产品发布（非核心功能），仅记录日志
         const vidErrDetail = extractErrorMessage(err);
-        console.error(`[internal/products] step-5 video FAILED in ${Date.now() - vidStart}ms: src=${String(video).substring(0, 100)}, error=${vidErrDetail}`, err);
+        console.error(`[internal/products] step-5 video[${vi}] FAILED in ${Date.now() - vidStart}ms: error=${vidErrDetail}`);
       }
+    }
+
+    // 异步触发视频内容审核（fire-and-forget，不阻塞发布流程）
+    if (savedVideoRecords.length > 0) {
+      fireVideoModeration(savedVideoRecords);
+      console.log(`[internal/products] step-5 fired async moderation for ${savedVideoRecords.length} videos`);
     }
 
     // ── Step 6: 扣除积分 ──

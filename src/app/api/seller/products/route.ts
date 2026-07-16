@@ -2,12 +2,19 @@
  * 卖家产品管理 API
  * - GET: 产品列表
  * - POST: 发布新产品（支持自定义品牌/品类 + 图片/视频上传）
+ *
+ * 审核流程：重复检测 → 上传图片 → 微信内容安全 → AI农机图片审核 → 创建产品
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyToken, getTokenFromHeaders } from "@/lib/auth";
 import { uploadFileToOSS } from "@/lib/oss-upload";
 import { buildLocationText } from "@/lib/location-parser";
+import { checkContent, isBlocked } from "@/lib/wechat-sec-check";
+import { checkDuplicateProduct, fireVideoModeration, MAX_VIDEOS_PER_PRODUCT, MAX_VIDEO_DURATION_SECONDS, MAX_VIDEO_FILE_SIZE_BYTES } from "@/lib/content-moderation";
+
+// 图片上传 + AI审核需要较长时间
+export const maxDuration = 120;
 
 const PUBLISH_COST = 1;
 
@@ -136,6 +143,55 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: `积分不足，当前 ${user.credits} 积分，发布需 ${PUBLISH_COST} 积分`, credits: user.credits, required: PUBLISH_COST }, { status: 403 });
     }
 
+    // === 重复产品检测 ===
+    if (finalBrandId) {
+      const dupCheck = await checkDuplicateProduct(
+        seller.userId,
+        finalBrandId,
+        modelName,
+        Number(yearStr)
+      );
+      if (dupCheck.isDuplicate) {
+        return NextResponse.json(
+          { success: false, error: dupCheck.message || "检测到重复产品，请勿重复发布", code: "DUPLICATE_PRODUCT" },
+          { status: 409 }
+        );
+      }
+    }
+
+    // === 先上传图片到 OSS 临时目录，用于内容审核 ===
+    const imageFiles = formData.getAll("images") as File[];
+    const validImages = imageFiles.filter((f) => f.size > 0);
+
+    const tempFolder = `uploads/tmp/${Date.now()}_${seller.userId}`;
+    const uploadedImageUrls: string[] = [];
+
+    for (let i = 0; i < validImages.length; i++) {
+      const { url } = await uploadFileToOSS(validImages[i], tempFolder);
+      uploadedImageUrls.push(url);
+    }
+
+    // === 内容安全检测（微信 sec-check）===
+    const secTextParts = [brandName, categoryName, modelName, descOther, finalLocation, descPower, descDrive, descHeader]
+      .filter(Boolean).join("\n");
+    try {
+      const { text: textResult, images: imageResult } = await checkContent(secTextParts, uploadedImageUrls);
+      if (isBlocked(textResult.suggest)) {
+        return NextResponse.json(
+          { success: false, error: "发布内容含违规信息，请修改后重试", code: "CONTENT_SECURITY_VIOLATION" },
+          { status: 400 }
+        );
+      }
+      if (!imageResult.allPass) {
+        return NextResponse.json(
+          { success: false, error: "图片含违规信息，请修改后重试", code: "CONTENT_SECURITY_VIOLATION" },
+          { status: 400 }
+        );
+      }
+    } catch (secErr) {
+      console.error("[seller/products] 内容安全检测异常（非阻塞）:", secErr instanceof Error ? secErr.message : String(secErr));
+    }
+
     // === 创建产品 ===
     const product = await prisma.product.create({
       data: {
@@ -168,33 +224,83 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // === 上传产品图片（多张）===
-    const imageFiles = formData.getAll("images") as File[];
-    const validImages = imageFiles.filter((f) => f.size > 0);
-
-    if (validImages.length > 0) {
-      const folder = `uploads/products/${product.id}`;
-      for (let i = 0; i < validImages.length; i++) {
-        const { url, key } = await uploadFileToOSS(validImages[i], folder);
-        await prisma.productImage.create({
-          data: {
-            productId: product.id,
-            url: url, // 存储完整OSS URL，确保前端<img>可直接访问
-            sortOrder: i === 0 ? -1 : i,
-            isPrimary: i === 0,
-          },
-        });
-      }
+    // === 关联已上传的图片到产品 ===
+    for (let i = 0; i < uploadedImageUrls.length; i++) {
+      await prisma.productImage.create({
+        data: {
+          productId: product.id,
+          url: uploadedImageUrls[i],
+          sortOrder: i === 0 ? -1 : i,
+          isPrimary: i === 0,
+        },
+      });
     }
 
-    // === 上传视频 ===
-    const videoFile = formData.get("video") as File | null;
-    if (videoFile && videoFile.size > 0) {
-      const folder = `uploads/products/${product.id}`;
-      const { url: videoUrl, key: videoKey } = await uploadFileToOSS(videoFile, folder);
-      await prisma.productVideo.create({
-        data: { productId: product.id, url: videoUrl, sortOrder: 0, title: `${modelName} 运转视频` },
+    // === 上传视频（支持多个，最多3个）===
+    const videoFiles = formData.getAll("videos") as File[];
+    // 兼容旧版单视频字段
+    const oldVideoFile = formData.get("video") as File | null;
+    const allVideoFiles = [
+      ...videoFiles.filter((f) => f.size > 0),
+      ...(oldVideoFile && oldVideoFile.size > 0 && videoFiles.length === 0 ? [oldVideoFile] : []),
+    ];
+
+    if (allVideoFiles.length > MAX_VIDEOS_PER_PRODUCT) {
+      return NextResponse.json(
+        { success: false, error: `最多上传 ${MAX_VIDEOS_PER_PRODUCT} 个视频`, code: "TOO_MANY_VIDEOS" },
+        { status: 400 }
+      );
+    }
+
+    const savedVideoRecords: { id: string; url: string }[] = [];
+    for (let vi = 0; vi < allVideoFiles.length; vi++) {
+      const vf = allVideoFiles[vi];
+      // 校验文件大小
+      if (vf.size > MAX_VIDEO_FILE_SIZE_BYTES) {
+        return NextResponse.json(
+          { success: false, error: `视频文件不能超过 ${Math.round(MAX_VIDEO_FILE_SIZE_BYTES / 1024 / 1024)}MB（${vf.name}）`, code: "VIDEO_TOO_LARGE" },
+          { status: 400 }
+        );
+      }
+
+      const videoFolder = `uploads/products/${product.id}`;
+      const { url: videoUrl } = await uploadFileToOSS(vf, videoFolder);
+
+      // 读取前端传来的视频时长（秒）
+      const videoDurationsStr = formData.get("videoDurations")?.toString();
+      let videoDuration: number | null = null;
+      if (videoDurationsStr) {
+        try {
+          const durations = JSON.parse(videoDurationsStr) as number[];
+          if (durations[vi] != null) {
+            videoDuration = Number(durations[vi]);
+            if (videoDuration > MAX_VIDEO_DURATION_SECONDS) {
+              return NextResponse.json(
+                { success: false, error: `视频时长不能超过 ${MAX_VIDEO_DURATION_SECONDS} 秒（${vf.name}）`, code: "VIDEO_TOO_LONG" },
+                { status: 400 }
+              );
+            }
+          }
+        } catch { /* ignore parse error */ }
+      }
+
+      const videoRecord = await prisma.productVideo.create({
+        data: {
+          productId: product.id,
+          url: videoUrl,
+          sortOrder: vi,
+          title: `${modelName} 视频${allVideoFiles.length > 1 ? vi + 1 : ""}`,
+          duration: videoDuration,
+          fileSize: vf.size,
+          moderationStatus: "pending",
+        },
       });
+      savedVideoRecords.push({ id: videoRecord.id, url: videoUrl });
+    }
+
+    // 异步触发视频内容审核（fire-and-forget）
+    if (savedVideoRecords.length > 0) {
+      fireVideoModeration(savedVideoRecords);
     }
 
     // === 扣除积分 ===

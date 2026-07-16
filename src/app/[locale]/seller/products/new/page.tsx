@@ -50,8 +50,8 @@ export default function NewProductPage() {
 
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<{ url: string; name: string }[]>([]);
-  const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [videoPreview, setVideoPreview] = useState<string>("");
+  const [videoFiles, setVideoFiles] = useState<File[]>([]);
+  const [videoPreviews, setVideoPreviews] = useState<{ url: string; name: string; duration: number }[]>([]);
   const [aiTriggerVideo, setAiTriggerVideo] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
@@ -186,20 +186,72 @@ export default function NewProductPage() {
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // ===== Step 2: 视频上传 =====
+  // ===== Step 2: 视频上传（多视频，最多3个）=====
+  const MAX_VIDEOS = 3;
+  const MAX_VIDEO_DURATION = 60; // 秒
+  const MAX_VIDEO_SIZE = 20 * 1024 * 1024; // 20MB
+
   const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    if (f.size > 100 * 1024 * 1024) {
-      setResult({ success: false, message: "视频文件过大，请压缩至 100MB 以下" });
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    // 检查总数
+    const remaining = MAX_VIDEOS - videoFiles.length;
+    if (remaining <= 0) {
+      setResult({ success: false, message: `最多上传 ${MAX_VIDEOS} 个视频` });
       return;
     }
-    setVideoFile(f);
-    setVideoPreview(URL.createObjectURL(f));
-    // 如果没有图片，设置视频作为AI触发源
-    if (imageFiles.length === 0) {
-      setAiTriggerVideo(f);
+
+    const toAdd: File[] = [];
+    const previewsToAdd: { url: string; name: string; duration: number }[] = [];
+
+    for (const f of files.slice(0, remaining)) {
+      // 校验文件大小
+      if (f.size > MAX_VIDEO_SIZE) {
+        setResult({ success: false, message: `视频文件不能超过 20MB（${f.name}）` });
+        continue;
+      }
+      toAdd.push(f);
+      previewsToAdd.push({
+        url: URL.createObjectURL(f),
+        name: f.name,
+        duration: 0, // 时长在提交时通过 video 元素读取
+      });
     }
+
+    if (toAdd.length > 0) {
+      setVideoFiles(prev => [...prev, ...toAdd]);
+      setVideoPreviews(prev => [...prev, ...previewsToAdd]);
+      // 如果没有图片，设置第一个视频作为AI触发源
+      if (imageFiles.length === 0 && videoFiles.length === 0) {
+        setAiTriggerVideo(toAdd[0]);
+      }
+    }
+
+    // 清空 input 以便重复选择
+    e.target.value = "";
+  };
+
+  const handleDeleteVideo = (idx: number) => {
+    URL.revokeObjectURL(videoPreviews[idx]?.url);
+    setVideoFiles(prev => prev.filter((_, i) => i !== idx));
+    setVideoPreviews(prev => prev.filter((_, i) => i !== idx));
+    if (idx === 0 && videoFiles.length === 1) {
+      setAiTriggerVideo(null);
+    }
+  };
+
+  // 读取视频时长
+  const getVideoDuration = (url: string): Promise<number> => {
+    return new Promise((resolve) => {
+      const video = document.createElement("video");
+      video.preload = "metadata";
+      video.onloadedmetadata = () => {
+        resolve(Math.round(video.duration) || 0);
+      };
+      video.onerror = () => resolve(0);
+      video.src = url;
+    });
   };
 
   // ===== AI 识别回调 =====
@@ -429,20 +481,31 @@ export default function NewProductPage() {
       }
       const totalImageSize = compressedImages.reduce((sum, f) => sum + f.size, 0);
 
-      // 视频超过 3.5MB 不通过 serverless 上传（Vercel 4.5MB 限制）
-      let videoSkipped = false;
-      if (videoFile && videoFile.size > 3.5 * 1024 * 1024) {
-        videoSkipped = true;
+      // 校验视频文件大小和时长
+      const videoDurations: number[] = [];
+      for (let i = 0; i < videoPreviews.length; i++) {
+        const dur = await getVideoDuration(videoPreviews[i].url);
+        videoDurations.push(dur);
+        if (dur > MAX_VIDEO_DURATION) {
+          setResult({ success: false, message: `视频时长不能超过 ${MAX_VIDEO_DURATION} 秒（${videoPreviews[i].name}）` });
+          return;
+        }
       }
 
-      const totalSize = totalImageSize + (videoSkipped ? 0 : (videoFile?.size || 0));
-      if (totalSize > 4 * 1024 * 1024) {
+      const totalVideoSize = videoFiles.reduce((sum, f) => sum + f.size, 0);
+      const totalSize = totalImageSize + totalVideoSize;
+      // 网站端 Vercel serverless 有 4.5MB body 限制，但新方案改为直接上传到 OSS
+      // 这里暂时保留限制提示，实际由后端处理
+      if (totalSize > 4 * 1024 * 1024 && videoFiles.length === 0) {
         setResult({ success: false, message: `上传数据过大（${(totalSize / 1024 / 1024).toFixed(1)}MB），请减少图片数量或压缩后重试` });
         return;
       }
 
       compressedImages.forEach((f) => fd.append("images", f));
-      if (videoFile && !videoSkipped) fd.append("video", videoFile);
+      videoFiles.forEach((f) => fd.append("videos", f));
+      if (videoDurations.length > 0) {
+        fd.append("videoDurations", JSON.stringify(videoDurations));
+      }
 
       const res = await fetch("/api/seller/products", {
         method: "POST",
@@ -457,8 +520,7 @@ export default function NewProductPage() {
       }
 
       if (data.success) {
-        const videoMsg = videoSkipped ? "（视频过大已跳过，可后续补充）" : "";
-        setResult({ success: true, message: `发布成功！剩余 ${data.creditsRemaining} 积分${videoMsg}` });
+        setResult({ success: true, message: `发布成功！剩余 ${data.creditsRemaining} 积分` });
         setTimeout(() => router.push("/zh/seller/products"), 2500);
       } else if (res.status === 401) {
         setResult({ success: false, message: "请先登录后再发布" });
@@ -567,36 +629,46 @@ export default function NewProductPage() {
         />
       </div>
 
-      {/* ===== Step 2: 上传视频 ===== */}
+      {/* ===== Step 2: 上传运转视频（最多3个）===== */}
       <div className="mb-6 rounded-xl border bg-white p-6 shadow-sm">
         <div className="mb-4 flex items-center gap-2">
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-600 text-sm font-bold text-white">2</span>
           <h2 className="text-base font-bold text-gray-800">上传运转视频</h2>
-          <span className="text-xs text-gray-400">可选，有视频估值更准</span>
+          <span className="text-xs text-gray-400">可选，最多3个，60秒/20MB内</span>
         </div>
 
-        <div
-          onClick={() => videoInputRef.current?.click()}
-          className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-6 transition-colors hover:border-primary-400 hover:bg-primary-50"
-        >
-          {videoPreview ? (
-            <div className="relative w-full">
-              <video src={videoPreview} controls className="mx-auto max-h-64 rounded-lg" />
-              <p className="mt-2 text-center text-xs text-gray-500">{videoFile?.name} ({(videoFile!.size / 1024 / 1024).toFixed(1)}MB)</p>
-              <button onClick={(e) => { e.stopPropagation(); setVideoFile(null); setVideoPreview(""); setAiTriggerVideo(null); }}
-                className="absolute -right-2 -top-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600">
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          ) : (
-            <>
-              <Video className="mb-2 h-10 w-10 text-gray-300" />
-              <p className="text-sm font-medium text-gray-600">点击上传运转视频</p>
-              <p className="mt-1 text-xs text-gray-400">MP4格式, 100MB内。建议: 绕机全景+发动机启动+作业演示+仪表展示</p>
-            </>
-          )}
-          <input ref={videoInputRef} type="file" accept="video/*" onChange={handleVideoSelect} className="hidden" />
-        </div>
+        {/* 已选视频列表 */}
+        {videoPreviews.length > 0 && (
+          <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {videoPreviews.map((vp, idx) => (
+              <div key={idx} className="relative">
+                <video src={vp.url} controls className="w-full max-h-48 rounded-lg" />
+                <p className="mt-1 text-center text-xs text-gray-500">
+                  {vp.name} ({(videoFiles[idx]?.size / 1024 / 1024 || 0).toFixed(1)}MB)
+                </p>
+                <button onClick={() => handleDeleteVideo(idx)}
+                  className="absolute -right-2 -top-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600">
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* 上传按钮（未满3个时显示） */}
+        {videoFiles.length < MAX_VIDEOS && (
+          <div
+            onClick={() => videoInputRef.current?.click()}
+            className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-6 transition-colors hover:border-primary-400 hover:bg-primary-50"
+          >
+            <Video className="mb-2 h-10 w-10 text-gray-300" />
+            <p className="text-sm font-medium text-gray-600">
+              点击上传视频（{videoFiles.length}/{MAX_VIDEOS}）
+            </p>
+            <p className="mt-1 text-xs text-gray-400">MP4格式，60秒内，20MB内。建议: 绕机全景+发动机启动+作业演示</p>
+          </div>
+        )}
+        <input ref={videoInputRef} type="file" accept="video/*" multiple onChange={handleVideoSelect} className="hidden" />
       </div>
 
       {/* ===== Step 3: 智能识别 ===== */}
