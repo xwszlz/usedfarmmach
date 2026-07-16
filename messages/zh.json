@@ -251,6 +251,9 @@
     "button": "立即开始"
   },
   "home": {
+    "bannerBrand": "神雕农机",
+    "bannerMain": "连接全球二手农机交易",
+    "bannerSub": "与世界农机人共建AI农机全生态平台",
     "heroTitle": "神雕农机全球交易",
     "heroSubtitle": "智能估价 · 跨境物流 · 安全交易",
     "heroCta": "农机博览会",

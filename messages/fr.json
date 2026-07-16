@@ -132,6 +132,9 @@
     "button": "Get Started"
   },
   "home": {
+    "bannerBrand": "Shendiao",
+    "bannerMain": "Connecter le commerce mondial de machines agricoles d'occasion",
+    "bannerSub": "Construire l'écosystème IA de machines agricoles avec les agriculteurs du monde",
     "heroTitle": "Machines agricoles mondiales, une seule plateforme",
     "heroSubtitle": "Nous connectons la Chine au marché mondial. Estimation IA, logistique transfrontalière, transactions sécurisées",
     "heroCta": "Explorer les équipements",
