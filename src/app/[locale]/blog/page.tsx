@@ -4,6 +4,9 @@ import { generatePageMetadata } from '@/lib/seo-metadata';
 import { BreadcrumbStructuredData, ItemListStructuredData } from '@/components/seo/structured-data';
 import BlogListClient from './BlogListClient';
 
+// ISR: 每小时自动刷新，新文章入库后自动显示
+export const revalidate = 3600;
+
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
 
 interface Props {

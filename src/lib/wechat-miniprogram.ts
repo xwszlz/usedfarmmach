@@ -14,6 +14,7 @@ const SECRET = process.env.WECHAT_MINI_SECRET || "";
 
 const TOKEN_URL = "https://api.weixin.qq.com/cgi-bin/stable_token";
 const PHONE_URL = "https://api.weixin.qq.com/wxa/business/getuserphonenumber";
+const CODE2SESSION_URL = "https://api.weixin.qq.com/sns/jscode2session";
 
 // 内存缓存（非持久化，Serverless 冷启动会重置）
 let tokenCache: { token: string; expireAt: number } | null = null;
@@ -87,6 +88,38 @@ export async function getPhoneNumber(code: string): Promise<{
     phoneNumber: info.phoneNumber || "",
     purePhoneNumber: info.purePhoneNumber || "",
     countryCode: info.countryCode || "",
+  };
+}
+
+/**
+ * 用 wx.login 返回的 code 换取小程序 openid / session_key
+ * @param code 前端 wx.login() 返回的 code
+ * @returns { openid, sessionKey, unionid? }
+ */
+export async function code2Session(code: string): Promise<{
+  openid: string;
+  sessionKey: string;
+  unionid?: string;
+}> {
+  if (!code) {
+    throw new Error("缺少 code 参数");
+  }
+  if (!SECRET) {
+    throw new Error("WECHAT_MINI_SECRET 未配置，无法调用 code2session");
+  }
+
+  const url = `${CODE2SESSION_URL}?appid=${APP_ID}&secret=${SECRET}&js_code=${code}&grant_type=authorization_code`;
+  const res = await fetch(url);
+  const data = await res.json();
+
+  if (data.errcode) {
+    throw new Error(`code2Session 失败: ${data.errcode} ${data.errmsg}`);
+  }
+
+  return {
+    openid: data.openid,
+    sessionKey: data.session_key,
+    unionid: data.unionid,
   };
 }
 

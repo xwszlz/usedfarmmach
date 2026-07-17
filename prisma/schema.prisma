@@ -13,6 +13,7 @@ model User {
   username              String?   @unique
   phone                 String?
   wxOpenid              String?
+  miniOpenid            String?   @unique // 微信小程序 openid（登录态 + JSAPI 支付 payer.openid）
   passwordHash          String
   role                  String    @default("buyer") // buyer, seller, admin, super_admin
   companyName           String?

@@ -13,6 +13,7 @@
 import crypto from "crypto";
 
 const APP_ID = process.env.WECHAT_APP_ID || "";
+const MINI_APP_ID = process.env.WECHAT_MINI_APPID || APP_ID; // 小程序支付必须用小程序 AppID
 const MCH_ID = process.env.WECHAT_MCH_ID || "";
 const API_V3_KEY = process.env.WECHAT_API_V3_KEY || "";
 const SERIAL_NO = process.env.WECHAT_SERIAL_NO || "";
@@ -184,6 +185,91 @@ export async function refundOrder(
  */
 export function isConfigured(): boolean {
   return !!(APP_ID && MCH_ID && API_V3_KEY && SERIAL_NO && PRIVATE_KEY);
+}
+
+/**
+ * 创建小程序 JSAPI 支付订单（wx.requestPayment）
+ * 神雕自营模型：买家付款直接进入神雕商户号，不做分账/二清。
+ *
+ * @param orderNo       商户订单号
+ * @param amountInCents 金额（分）
+ * @param description   商品描述（含"神雕农机"字样，审核友好）
+ * @param openid        小程序用户 openid（payer.openid）
+ * @returns prepay_id
+ */
+export async function createMiniOrder(
+  orderNo: string,
+  amountInCents: number,
+  description: string,
+  openid: string
+): Promise<{ prepay_id: string }> {
+  if (!openid) {
+    throw new Error("JSAPI 支付缺少 openid");
+  }
+
+  const urlPath = "/v3/pay/transactions/jsapi";
+  const body = JSON.stringify({
+    appid: MINI_APP_ID,
+    mchid: MCH_ID,
+    description,
+    out_trade_no: orderNo,
+    notify_url: NOTIFY_URL,
+    amount: { total: amountInCents, currency: "CNY" },
+    payer: { openid },
+  });
+
+  const authHeader = buildAuthHeader("POST", urlPath, body);
+
+  const response = await fetch(`${BASE_URL}${urlPath}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      Authorization: authHeader,
+    },
+    body,
+  });
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    console.error("[WechatPay] 小程序下单失败:", response.status, result);
+    throw new Error(`微信支付下单失败: ${result.message || response.statusText}`);
+  }
+
+  return { prepay_id: result.prepay_id };
+}
+
+/**
+ * 构造小程序 wx.requestPayment 所需的支付参数
+ * 签名规则（V3）：RSA-SHA256 对 `${appId}\n${timeStamp}\n${nonceStr}\n${package}\n` 签名
+ *
+ * @param prepayId createMiniOrder 返回的 prepay_id
+ * @returns { appId, timeStamp, nonceStr, package, signType, paySign }
+ */
+export function buildMiniPaySign(prepayId: string): {
+  appId: string;
+  timeStamp: string;
+  nonceStr: string;
+  package: string;
+  signType: string;
+  paySign: string;
+} {
+  const timeStamp = Math.floor(Date.now() / 1000).toString();
+  const nonceStr = crypto.randomBytes(16).toString("hex");
+  const pkg = `prepay_id=${prepayId}`;
+
+  const message = `${MINI_APP_ID}\n${timeStamp}\n${nonceStr}\n${pkg}\n`;
+  const paySign = signWithPrivateKey(message);
+
+  return {
+    appId: MINI_APP_ID,
+    timeStamp,
+    nonceStr,
+    package: pkg,
+    signType: "RSA",
+    paySign,
+  };
 }
 
 export { APP_ID, MCH_ID };
