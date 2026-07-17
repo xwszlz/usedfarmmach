@@ -97,7 +97,24 @@ export function Footer({ locale }: FooterProps) {
           <DisclaimerBanner locale={locale} variant="full" />
         </div>
 
-        <div className="mt-8 border-t border-gray-200 pt-8 text-center text-sm text-gray-400 dark:border-gray-700">
+        {/* Legal Links */}
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
+          <a
+            href={locale === "zh" ? "/privacy" : `/${locale}/privacy`}
+            className="text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400"
+          >
+            {t("privacy")}
+          </a>
+          <span className="text-gray-300 dark:text-gray-600">|</span>
+          <a
+            href={locale === "zh" ? "/terms" : `/${locale}/terms`}
+            className="text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400"
+          >
+            {t("terms")}
+          </a>
+        </div>
+
+        <div className="mt-4 border-t border-gray-200 pt-6 text-center text-sm text-gray-400 dark:border-gray-700">
           {t("copyright")}
         </div>
       </div>
