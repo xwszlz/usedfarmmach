@@ -6,7 +6,6 @@ import {
   ClipboardCheck,
   Truck,
   Landmark,
-  ShieldCheck,
   MapPin,
   Lightbulb,
   ArrowRight,
@@ -28,8 +27,8 @@ export async function generateMetadata({
       ? "增值服务_AI估值_跨境物流_金融保险_一站式农机解决方案_神雕农机"
       : "Value-Added Services | AI Valuation · Logistics · Finance · One-Stop Agri Solutions",
     description: isZh
-      ? "神雕农机增值服务中心：AI智能估价、智能跨境套利、第三方专业检测、跨境物流运输、金融保险、担保交易、线下服务网点、行业解决方案。一站式农机跨境贸易全链路服务。"
-      : "AgriTrade Value-Added Services: AI valuation, smart arbitrage, third-party inspection, cross-border logistics, finance & insurance, escrow, service centers, industry solutions. One-stop machinery trade services.",
+      ? "神雕农机增值服务中心：AI智能估价、智能跨境套利、第三方专业检测、跨境物流运输、金融保险、线下服务网点、行业解决方案。一站式农机跨境贸易全链路服务。"
+      : "AgriTrade Value-Added Services: AI valuation, smart arbitrage, third-party inspection, cross-border logistics, finance & insurance, service centers, industry solutions. One-stop machinery trade services.",
     alternates: {
       canonical: `${BASE_URL}/${locale}/services`,
       languages: {
@@ -40,8 +39,8 @@ export async function generateMetadata({
     openGraph: {
       title: isZh ? "增值服务 — 神雕农机一站式跨境解决方案" : "Value-Added Services — AgriTrade One-Stop Solutions",
       description: isZh
-        ? "8大增值服务矩阵：AI估价·跨境套利·专业检测·跨境物流·金融保险·担保交易·服务网点·行业方案。让二手农机跨境贸易更简单、更安全、更高效。"
-        : "8 value-added services: AI Valuation, Smart Arbitrage, Inspection, Logistics, Finance, Escrow, Service Centers, Solutions. Making cross-border machinery trade simpler, safer, more efficient.",
+        ? "7大增值服务矩阵：AI估价·跨境套利·专业检测·跨境物流·金融保险·服务网点·行业方案。让二手农机跨境贸易更简单、更安全、更高效。"
+        : "7 value-added services: AI Valuation, Smart Arbitrage, Inspection, Logistics, Finance, Service Centers, Solutions. Making cross-border machinery trade simpler, safer, more efficient.",
       url: `${BASE_URL}/${locale}/services`,
       siteName: isZh ? "神雕农机" : "AgriTrade",
       locale: locale,
@@ -137,20 +136,6 @@ const SERVICES: ServiceCard[] = [
     tagEn: "Licensed",
   },
   {
-    id: "escrow",
-    icon: ShieldCheck,
-    titleZh: "担保交易",
-    titleEn: "Escrow Service",
-    descZh: "神雕农机作为第三方资金托管方，确保买卖双方权益。先验货后付款，争议仲裁处理，降低跨境交易风险。",
-    descEn: "AgriTrade as neutral third-party escrow agent protecting both buyer and seller. Inspect before payment, dispute resolution included. Risk-free cross-border trade.",
-    href: "/escrow",
-    bgClass: "bg-gradient-to-br from-rose-50 to-red-50 dark:from-rose-950/30 dark:to-red-950/30",
-    iconClass: "text-rose-600 dark:text-rose-400",
-    borderClass: "border-rose-200 dark:border-rose-800",
-    tagZh: "资金安全",
-    tagEn: "Secure",
-  },
-  {
     id: "service-network",
     icon: MapPin,
     titleZh: "服务网点",
@@ -227,7 +212,6 @@ export default async function ServicesPage({
               <span className="rounded-full bg-slate-800 px-3 py-1">📋 检测认证</span>
               <span className="rounded-full bg-slate-800 px-3 py-1">🚚 物流运输</span>
               <span className="rounded-full bg-slate-800 px-3 py-1">💰 金融保险</span>
-              <span className="rounded-full bg-slate-800 px-3 py-1">🛡️ 担保交易</span>
               <span className="rounded-full bg-slate-800 px-3 py-1">🏢 线下网点</span>
               <span className="rounded-full bg-slate-800 px-3 py-1">💡 行业方案</span>
             </div>
