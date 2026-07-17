@@ -38,6 +38,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const sessionId = searchParams.get("sessionId");
     const visitorId = searchParams.get("visitorId");
+    const productId = searchParams.get("productId") || undefined;
 
     if (sessionId) {
       const history = await buyerChatAgent.getHistory(sessionId);
@@ -45,7 +46,8 @@ export async function GET(request: Request) {
     }
 
     if (visitorId) {
-      const sessions = await buyerChatAgent.listSessions(visitorId);
+      // 传入 productId，确保只加载该产品的会话，避免跨产品上下文污染
+      const sessions = await buyerChatAgent.listSessions(visitorId, productId);
       return NextResponse.json({ success: true, visitorId, sessions });
     }
 

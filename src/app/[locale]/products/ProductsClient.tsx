@@ -52,10 +52,9 @@ export default function ProductsClient({
         const res = await fetch("/api/products/filters");
         const json = await res.json();
         if (json.success) {
-          const getLabel = (item: { labelZh: string; labelEn: string; labelRu?: string }) => {
-            if (locale === "en") return item.labelEn;
-            if (locale === "ru" && item.labelRu) return item.labelRu;
-            return item.labelZh;
+          const getLabel = (item: { labelZh: string; labelEn: string; labelRu?: string; labelEs?: string; labelPt?: string; labelAr?: string; labelFr?: string; labelHi?: string }) => {
+            const langField = `label${locale.charAt(0).toUpperCase()}${locale.slice(1)}` as keyof typeof item;
+            return (item[langField] as string) || item.labelEn || item.labelZh;
           };
           setBrands(json.data.brands.map((b: any) => ({ value: b.value, label: getLabel(b) })));
           setCategories(json.data.categories.map((c: any) => ({ value: c.value, label: getLabel(c) })));

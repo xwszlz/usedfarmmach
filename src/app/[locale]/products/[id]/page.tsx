@@ -46,8 +46,8 @@ export async function generateMetadata({
     select: {
       modelName: true,
       year: true,
-      brand: { select: { nameZh: true, nameEn: true } },
-      category: { select: { nameZh: true, nameEn: true } },
+      brand: { select: { nameZh: true, nameEn: true, nameRu: true, nameEs: true, namePt: true, nameAr: true, nameFr: true, nameHi: true } },
+      category: { select: { nameZh: true, nameEn: true, nameRu: true, nameEs: true, namePt: true, nameAr: true, nameFr: true, nameHi: true } },
       images: { select: { url: true }, orderBy: { sortOrder: "asc" }, take: 1 },
       descriptionZh: true,
       descriptionEn: true,
@@ -58,8 +58,9 @@ export async function generateMetadata({
     return { title: "产品未找到" };
   }
 
-  const brandName = locale === "zh" ? product.brand.nameZh : product.brand.nameEn;
-  const categoryName = locale === "zh" ? product.category.nameZh : product.category.nameEn;
+  const langKey = `name${locale.charAt(0).toUpperCase()}${locale.slice(1)}` as keyof typeof product.brand;
+  const brandName = (product.brand as any)[langKey] || product.brand.nameEn || product.brand.nameZh;
+  const categoryName = (product.category as any)[langKey] || product.category.nameEn || product.category.nameZh;
   const imgUrl = product.images[0] ? getImageUrl(product.images[0].url) : null;
 
   const titleMap: Record<string, string> = {
@@ -161,9 +162,10 @@ export default async function ProductDetailPage({
     notFound();
   }
 
-  const brandName = locale === "zh" ? product.brand.nameZh : locale === "ru" ? (product.brand as any).nameRu || product.brand.nameEn : product.brand.nameEn;
-  const categoryName = locale === "zh" ? product.category.nameZh : locale === "ru" ? (product.category as any).nameRu || product.category.nameEn : product.category.nameEn;
-  const description = locale === "zh" ? product.descriptionZh : locale === "ru" ? (product as any).descriptionRu || product.descriptionEn : product.descriptionEn;
+  const langKey2 = `name${locale.charAt(0).toUpperCase()}${locale.slice(1)}` as keyof typeof product.brand;
+  const brandName = (product.brand as any)[langKey2] || product.brand.nameEn || product.brand.nameZh;
+  const categoryName = (product.category as any)[langKey2] || product.category.nameEn || product.category.nameZh;
+  const description = (product as any)[`description${locale.charAt(0).toUpperCase()}${locale.slice(1)}`] || product.descriptionEn;
   const conditionLabel = t(`condition${product.condition.charAt(0).toUpperCase() + product.condition.slice(1)}`);
 
   // Use real international price from 神雕日报 if available, fallback to simple USD conversion

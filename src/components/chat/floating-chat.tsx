@@ -147,12 +147,16 @@ export function FloatingChat({ locale = "en", productId, visitorId }: FloatingCh
     }
   }, [vid]);
 
-  // 加载已有会话历史
+  // 加载已有会话历史（按 productId 过滤，避免跨产品上下文污染）
   useEffect(() => {
     if (!isOpen || !vid) return;
     (async () => {
       try {
-        const res = await fetch(`/api/agents/buyer-chat?visitorId=${vid}`);
+        // 传入 productId，确保只加载当前产品的会话
+        const url = productId
+          ? `/api/agents/buyer-chat?visitorId=${vid}&productId=${productId}`
+          : `/api/agents/buyer-chat?visitorId=${vid}`;
+        const res = await fetch(url);
         const data = await res.json();
         if (data.success && data.sessions && data.sessions.length > 0) {
           const latest = data.sessions[0];
@@ -175,7 +179,7 @@ export function FloatingChat({ locale = "en", productId, visitorId }: FloatingCh
         console.error("[FloatingChat] load history failed", e);
       }
     })();
-  }, [isOpen, vid]);
+  }, [isOpen, vid, productId]);
 
   // 显示浏览器通知
   const showNotification = useCallback((title: string, body: string) => {

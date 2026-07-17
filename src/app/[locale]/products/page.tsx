@@ -34,8 +34,8 @@ export default async function ProductsPage({
       orderBy: { createdAt: "desc" },
       take: 12,
       include: {
-        brand: { select: { nameZh: true, nameEn: true, nameRu: true } },
-        category: { select: { nameZh: true, nameEn: true, nameRu: true } },
+        brand: { select: { nameZh: true, nameEn: true, nameRu: true, nameEs: true, namePt: true, nameAr: true, nameFr: true, nameHi: true } },
+        category: { select: { nameZh: true, nameEn: true, nameRu: true, nameEs: true, namePt: true, nameAr: true, nameFr: true, nameHi: true } },
         images: { orderBy: { sortOrder: "asc" }, take: 1 },
         internationalPrices: { orderBy: { sourceDate: "desc" }, take: 1 },
         seller: { select: { id: true, companyName: true, country: true } },
@@ -63,7 +63,8 @@ export default async function ProductsPage({
 
   // Build ItemList structured data
   const listItems = products.map((p: any) => {
-    const brandName = locale === "zh" ? p.brand?.nameZh : locale === "ru" ? p.brand?.nameRu || p.brand?.nameEn : p.brand?.nameEn;
+    const langKey = `name${locale.charAt(0).toUpperCase()}${locale.slice(1)}` as keyof typeof p.brand;
+    const brandName = p.brand ? (p.brand as any)[langKey] || p.brand?.nameEn || p.brand?.nameZh : "";
     return {
       id: p.id,
       name: `${brandName} ${p.modelName}`,
@@ -75,14 +76,13 @@ export default async function ProductsPage({
   });
 
   // Fetch filter options server-side
-  const brands = await prisma.brand.findMany({ select: { nameZh: true, nameEn: true, nameRu: true }, orderBy: { nameEn: "asc" } });
-  const categories = await prisma.category.findMany({ select: { nameZh: true, nameEn: true, nameRu: true }, orderBy: { nameEn: "asc" } });
+  const brands = await prisma.brand.findMany({ select: { nameZh: true, nameEn: true, nameRu: true, nameEs: true, namePt: true, nameAr: true, nameFr: true, nameHi: true }, orderBy: { nameEn: "asc" } });
+  const categories = await prisma.category.findMany({ select: { nameZh: true, nameEn: true, nameRu: true, nameEs: true, namePt: true, nameAr: true, nameFr: true, nameHi: true }, orderBy: { nameEn: "asc" } });
   const locations = await prisma.product.findMany({ where: { status: "active" }, select: { location: true }, distinct: ["location"] });
 
   const getLabel = (item: any) => {
-    if (locale === "en") return item.nameEn;
-    if (locale === "ru" && item.nameRu) return item.nameRu;
-    return item.nameZh;
+    const langKey = `name${locale.charAt(0).toUpperCase()}${locale.slice(1)}` as keyof typeof item;
+    return item[langKey] || item.nameEn || item.nameZh;
   };
 
   return (

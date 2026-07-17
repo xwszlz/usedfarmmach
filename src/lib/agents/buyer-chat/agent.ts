@@ -510,9 +510,12 @@ export class BuyerChatAgent {
     return messages;
   }
 
-  // 获取会话列表（供管理后台）
-  async listSessions(visitorId?: string) {
-    const where = visitorId ? { visitorId } : {};
+  // 获取会话列表（供管理后台/前端加载）
+  // productId 不为空时只返回该产品关联的会话（避免跨产品上下文污染）
+  async listSessions(visitorId?: string, productId?: string) {
+    const where: Record<string, unknown> = {};
+    if (visitorId) where.visitorId = visitorId;
+    if (productId) where.productId = productId;
     return prisma.chatSession.findMany({
       where,
       orderBy: { updatedAt: "desc" },
