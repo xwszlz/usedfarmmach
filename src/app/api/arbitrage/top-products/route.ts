@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { TopArbitrageService } from "@/lib/services/top-arbitrage-service";
 import type { ArbitrageTopItem, TopArbitrageResponse } from "@/types/arbitrage";
 
-// ISR: 套利榜单每小时更新
+// ISR: 套利榜单每周更新一次
 export const dynamic = 'force-dynamic';
-export const revalidate = 3600;
+export const revalidate = 604800; // 7天 = 604800秒
 
 /**
  * GET /api/arbitrage/top-products

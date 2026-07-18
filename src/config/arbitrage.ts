@@ -119,7 +119,7 @@ export const CACHE_CONFIG = {
   arbitrageResultTtl: 3600, // 1小时
   
   // 榜单缓存时间（秒）
-  topListTtl: 7200, // 2小时
+  topListTtl: 604800, // 7天（每周更新一次）
   
   // 汇率缓存时间（秒）
   exchangeRateTtl: 86400, // 24小时

@@ -149,7 +149,7 @@ export const BUILT_IN_AGENTS: Array<{
     description: "从国际网站采集二手农机价格，更新套利数据",
     version: "0.1.0",
     triggerType: "cron",
-    schedule: "0 7 * * *", // 每天 07:00
+    schedule: "0 7 * * 1", // 每周一 07:00 UTC+8
     endpoint: "/api/cron/update-prices",
     dependencies: ["seller-scout"], // 价格采集依赖卖方数据
   },

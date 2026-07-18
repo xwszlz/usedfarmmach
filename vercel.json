@@ -3,5 +3,11 @@
     "UPSTASH_REDIS_REST_URL": "https://settling-mackerel-151220.upstash.io",
     "UPSTASH_REDIS_REST_TOKEN": "gQAAAAAAAk60AAIgcDJjNzNjZDViNzIxMjc0ZDlmOGUxNDdiYjRhMGM2NjBlYQ",
     "INTERNAL_API_KEY": "2234e4ead3e570c2aa3b0cd3747315367dc6040c42ae74e0749aae480cf2826e"
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/update-prices?token=2234e4ead3e570c2aa3b0cd3747315367dc6040c42ae74e0749aae480cf2826e",
+      "schedule": "0 23 * * 0"
+    }
+  ]
 }
