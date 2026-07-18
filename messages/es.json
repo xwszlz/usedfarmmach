@@ -405,7 +405,7 @@
     "loadError": "Error al cargar. Refresque la página.",
     "loading": "Cargando ranking...",
     "rankingExplanationTitle": "Explicación",
-    "explanation1": "Ranking actualizado cada 30 minutos",
+    "explanation1": "Ranking actualizado cada semana",
     "explanation2": "Puntuación basada en diferencial, margen, riesgo y políticas",
     "explanation3": "Oportunidad alta: margen >30%, riesgo controlado",
     "explanation4": "Oportunidad media: margen 15-30%, requiere análisis",

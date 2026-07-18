@@ -571,7 +571,7 @@
     "loadError": "Failed to load data, please refresh the page",
     "loading": "Loading arbitrage rankings...",
     "rankingExplanationTitle": "Ranking Explanation",
-    "explanation1": "Rankings update automatically every 30 minutes",
+    "explanation1": "Rankings update automatically every week",
     "explanation2": "Scores consider price difference, profit margin, risk assessment and policy factors",
     "explanation3": "High opportunity: Profit margin >30%, manageable risk, strongly recommended",
     "explanation4": "Medium opportunity: Profit margin 15-30%, monitor risk, cautious investment",

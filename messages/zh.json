@@ -569,7 +569,7 @@
     "loadError": "加载数据失败，请刷新页面重试",
     "loading": "加载套利榜单中...",
     "rankingExplanationTitle": "榜单说明",
-    "explanation1": "榜单每30分钟自动更新一次，确保数据时效性",
+    "explanation1": "榜单每周自动更新一次，确保数据时效性",
     "explanation2": "套利得分综合考虑价差、利润率、风险评估和政策因素",
     "explanation3": "高机会：利润率>30%，风险可控，强烈推荐",
     "explanation4": "中机会：利润率15-30%，需关注风险，建议谨慎投资",

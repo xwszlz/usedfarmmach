@@ -405,7 +405,7 @@
     "loadError": "Erreur de chargement. Actualisez la page.",
     "loading": "Chargement du classement...",
     "rankingExplanationTitle": "Explication",
-    "explanation1": "Classement mis à jour toutes les 30 minutes",
+    "explanation1": "Classement mis à jour toutes les semaines",
     "explanation2": "Score basé sur l'écart, la marge, le risque et les politiques",
     "explanation3": "Opportunité élevée : marge >30%, risque maîtrisé",
     "explanation4": "Opportunité moyenne : marge 15-30%, analyse requise",
