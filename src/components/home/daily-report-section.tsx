@@ -215,22 +215,22 @@ export function DailyReportSection({ locale }: DailyReportSectionProps) {
     <section className="bg-gradient-to-br from-amber-50/30 via-white to-blue-50/30 py-12">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-6 text-center">
-          <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">{l.title}</h2>
-          <p className="mt-2 text-sm text-gray-500">{l.subtitle}</p>
+        <div className="mb-8 text-center">
+          <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">{l.title}</h2>
+          <p className="mt-3 text-base text-gray-500">{l.subtitle}</p>
         </div>
 
         {/* Highlights */}
-        <div className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {data.highlights.map((h) => (
             <div
               key={h.label}
-              className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium ${colorMap[h.color] || colorMap.blue}`}
+              className={`flex items-center gap-3 rounded-lg border px-4 py-3 text-sm font-medium ${colorMap[h.color] || colorMap.blue}`}
             >
-              <span className="text-base">{h.emoji}</span>
+              <span className="text-lg">{h.emoji}</span>
               <div>
-                <div className="opacity-70">{h.label}</div>
-                <div className="font-bold">{h.value}</div>
+                <div className="text-xs opacity-70">{h.label}</div>
+                <div className="text-base font-bold">{h.value}</div>
               </div>
             </div>
           ))}
@@ -240,41 +240,41 @@ export function DailyReportSection({ locale }: DailyReportSectionProps) {
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           {/* ============ 左栏：TOP3 套利机会（三个等高卡片）============ */}
           <div className="flex flex-col rounded-xl border border-amber-200 bg-amber-50/40 p-5 shadow-sm">
-            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
-              <TrendingUp className="h-4 w-4 text-amber-600" />
+            <h3 className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-700">
+              <TrendingUp className="h-5 w-5 text-amber-600" />
               {l.topOpportunities}
             </h3>
-            <div className="grid flex-1 grid-rows-3 gap-2">
+            <div className="grid flex-1 grid-rows-3 gap-3">
               {top3.map((item, idx) => (
                 <Link
                   key={idx}
                   href={`/${locale}/products/${item.productId}`}
-                  className="flex flex-col overflow-hidden rounded-lg border border-amber-300 bg-white p-2.5 transition-colors hover:border-amber-400 hover:bg-amber-50/50"
+                  className="flex flex-col overflow-hidden rounded-lg border border-amber-300 bg-white p-3.5 transition-colors hover:border-amber-400 hover:bg-amber-50/50"
                 >
-                  <div className="mb-1 flex items-center gap-1.5">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white">
+                  <div className="mb-2 flex items-center gap-2">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-white">
                       {idx + 1}
                     </span>
-                    <span className="text-[9px] font-semibold text-amber-600">TOP {idx + 1}</span>
+                    <span className="text-xs font-semibold text-amber-600">TOP {idx + 1}</span>
                   </div>
-                  <div className="mb-1.5 text-xs font-semibold text-gray-900 line-clamp-1">{item.product}</div>
-                  <div className="flex items-center gap-2 text-[11px]">
+                  <div className="mb-2 text-sm font-semibold text-gray-900 line-clamp-1">{item.product}</div>
+                  <div className="flex items-center gap-3 text-sm">
                     <div>
                       <span className="text-gray-400">{l.price}</span>
-                      <span className="ml-0.5 font-bold text-gray-900">{formatPrice(item.price)}</span>
+                      <span className="ml-1 font-bold text-gray-900">{formatPrice(item.price)}</span>
                     </div>
                     <div>
                       <span className="text-gray-400">{l.profit}</span>
-                      <span className="ml-0.5 font-bold text-green-600">{"\u00a5"}{item.profit}</span>
+                      <span className="ml-1 font-bold text-green-600">{"\u00a5"}{item.profit}</span>
                     </div>
                     <div>
                       <span className="text-gray-400">{l.margin}</span>
-                      <span className="ml-0.5 font-bold text-red-600">{item.margin}</span>
+                      <span className="ml-1 font-bold text-red-600">{item.margin}</span>
                     </div>
                   </div>
-                  <div className="mt-auto flex items-center justify-end gap-0.5 pt-1 text-[10px] font-medium text-amber-600">
+                  <div className="mt-auto flex items-center justify-end gap-1 pt-2 text-xs font-medium text-amber-600">
                     {l.viewDetail}
-                    <ArrowRight className="h-2.5 w-2.5" />
+                    <ArrowRight className="h-3 w-3" />
                   </div>
                 </Link>
               ))}
@@ -292,19 +292,19 @@ export function DailyReportSection({ locale }: DailyReportSectionProps) {
 
           {/* ============ 中栏：市场情报速递 3条 ============ */}
           <div className="flex flex-col rounded-xl border border-blue-200 bg-blue-50/40 p-5 shadow-sm">
-            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
-              <Globe className="h-4 w-4 text-blue-600" />
+            <h3 className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-700">
+              <Globe className="h-5 w-5 text-blue-600" />
               {l.marketIntel}
             </h3>
-            <div className="grid flex-1 grid-rows-3 gap-2">
+            <div className="grid flex-1 grid-rows-3 gap-3">
               {intelItems.slice(0, 3).map((item, idx) => (
                 <Link
                   key={idx}
                   href={intelUrl}
-                  className="flex items-start gap-2 overflow-hidden rounded-lg border border-blue-100 bg-white p-3 transition-colors hover:border-blue-200 hover:bg-blue-50/50"
+                  className="flex items-start gap-3 overflow-hidden rounded-lg border border-blue-100 bg-white p-3.5 transition-colors hover:border-blue-200 hover:bg-blue-50/50"
                 >
-                  <span className="text-base flex-shrink-0 mt-0.5">{item.icon}</span>
-                  <p className="text-[11px] text-gray-600 leading-relaxed line-clamp-3">{item.text}</p>
+                  <span className="text-lg flex-shrink-0 mt-0.5">{item.icon}</span>
+                  <p className="text-sm text-gray-600 leading-relaxed line-clamp-3">{item.text}</p>
                 </Link>
               ))}
             </div>
@@ -321,34 +321,34 @@ export function DailyReportSection({ locale }: DailyReportSectionProps) {
 
           {/* ============ 右栏：行业资讯 3条 ============ */}
           <div className="flex flex-col rounded-xl border border-green-200 bg-green-50/40 p-5 shadow-sm">
-            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
-              <Newspaper className="h-4 w-4 text-green-600" />
+            <h3 className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-700">
+              <Newspaper className="h-5 w-5 text-green-600" />
               {l.industryNews}
             </h3>
-            <div className="grid flex-1 grid-rows-3 gap-2">
+            <div className="grid flex-1 grid-rows-3 gap-3">
               {articles.length > 0 ? (
                 articles.slice(0, 3).map((article, idx) => (
                   <Link
                     key={idx}
                     href={`/${locale}/blog/${article.slug}`}
-                    className="group block overflow-hidden rounded-lg border border-green-100 bg-white p-3 transition-colors hover:border-green-200 hover:bg-green-50/50"
+                    className="group block overflow-hidden rounded-lg border border-green-100 bg-white p-3.5 transition-colors hover:border-green-200 hover:bg-green-50/50"
                   >
-                    <div className="mb-1 flex items-center gap-2">
-                      <span className="text-[10px] text-gray-400 flex-shrink-0">{article.date}</span>
+                    <div className="mb-1.5 flex items-center gap-2">
+                      <span className="text-xs text-gray-400 flex-shrink-0">{article.date}</span>
                       {article.category && (
-                        <span className="rounded bg-green-50 px-1.5 py-0.5 text-[9px] text-green-600 flex-shrink-0">
+                        <span className="rounded bg-green-50 px-2 py-0.5 text-[10px] text-green-600 flex-shrink-0">
                           {article.category}
                         </span>
                       )}
                     </div>
-                    <p className="text-[11px] text-gray-700 leading-snug line-clamp-2 group-hover:text-green-600">
+                    <p className="text-sm text-gray-700 leading-snug line-clamp-2 group-hover:text-green-600">
                       {article.title}
                     </p>
                   </Link>
                 ))
               ) : (
                 <div className="flex items-center justify-center rounded-lg border border-green-100 bg-white/50">
-                  <span className="text-xs text-gray-400">
+                  <span className="text-sm text-gray-400">
                     {locale === "zh" ? "\u6682\u65e0\u6587\u7ae0" : locale === "ru" ? "\u041d\u0435\u0442 \u0441\u0442\u0430\u0442\u0435\u0439" : "No articles"}
                   </span>
                 </div>
