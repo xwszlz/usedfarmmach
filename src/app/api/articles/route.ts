@@ -12,10 +12,13 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '12');
     const search = searchParams.get('search');
     const lang = searchParams.get('lang') || 'zh';
+    const sort = searchParams.get('sort') || '';
 
     const where: any = { status };
     if (category) where.category = category;
     if (sourcePlatform) where.sourcePlatform = sourcePlatform;
+    // sort=latest: 纯按日期排序，排除置顶文章（首页行业资讯用）
+    if (sort === 'latest') where.isPinned = false;
     if (search) {
       where.OR = [
         { titleZh: { contains: search, mode: 'insensitive' } },
@@ -25,10 +28,14 @@ export async function GET(request: NextRequest) {
       ];
     }
 
+    const orderBy = sort === 'latest'
+      ? [{ publishedAt: 'desc' as const }]
+      : [{ isPinned: 'desc' as const }, { publishedAt: 'desc' as const }];
+
     const [articles, total] = await Promise.all([
       prisma.article.findMany({
         where,
-        orderBy: [{ isPinned: 'desc' }, { publishedAt: 'desc' }],
+        orderBy,
         skip: (page - 1) * limit,
         take: limit,
         select: {

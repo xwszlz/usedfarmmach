@@ -73,26 +73,7 @@ interface ArticleItem {
   category: string;
 }
 
-// 行业资讯 - 前两篇固定（buying-guide），第三篇动态拉取最新
-const PINNED_ARTICLES = [
-  {
-    slug: "claas970-eu-2017-spotlight",
-    titleZh: "¥163万入手CLAAS Jaguar 970（2017）：比国际市场省¥174万的跨境王牌",
-    titleEn: "¥1.63M CLAAS Jaguar 970 (2017): Save ¥1.74M vs Global Market",
-    titleRu: "¥1,63M CLAAS Jaguar 970 (2017): сэкономьте ¥1,74M",
-    publishedAt: "2026-06-11",
-    category: "buying-guide",
-  },
-  {
-    slug: "orkel-densx-2019-spotlight",
-    titleZh: "¥105万入手Orkel DENS-X（2019）：挪威顶级裹包机，青贮赛道独家王牌",
-    titleEn: "¥1.05M Orkel DENS-X (2019): Norway's Top Baler, Silage Ace",
-    titleRu: "¥1,05M Orkel DENS-X (2019): Норвежский пресс-подборщик",
-    publishedAt: "2026-06-11",
-    category: "buying-guide",
-  },
-];
-const PINNED_SLUGS = PINNED_ARTICLES.map((a) => a.slug);
+// 行业资讯 - 全部动态拉取最新3篇（固定文章在博客页面通过 isPinned 置顶）
 
 export function DailyReportSection({ locale }: DailyReportSectionProps) {
   const l = LABELS[locale] || LABELS.zh;
@@ -147,62 +128,30 @@ export function DailyReportSection({ locale }: DailyReportSectionProps) {
 
   const intelItems = liveIntel ?? data.marketIntel.map((m) => ({ icon: m.icon, text: m.text }));
 
-  // 行业资讯 - 前两篇固定，第三篇动态拉取
+  // 行业资讯 - 全部动态拉取最新3篇
   const [articles, setArticles] = useState<ArticleItem[]>([]);
   useEffect(() => {
-    // 第3篇动态拉取 - 最新一篇 industry-news 文章（排除固定的两篇）
-    fetch(`/api/articles?status=published&category=industry-news&limit=10`)
+    fetch(`/api/articles?status=published&limit=3&sort=latest`)
       .then((r) => r.json())
       .then((d) => {
         const allArticles = d.articles || [];
-        const pinned = PINNED_ARTICLES.map((a) => ({
+        setArticles(allArticles.slice(0, 3).map((a: any) => ({
           slug: a.slug,
           title: locale === "zh"
             ? a.titleZh
             : locale === "ru"
               ? (a.titleRu || a.titleZh)
               : (a.titleEn || a.titleZh),
-          date: new Date(a.publishedAt).toLocaleDateString(
-            locale === "zh" ? "zh-CN" : locale === "ru" ? "ru-RU" : "en-US",
-            { month: "short", day: "numeric" }
-          ),
-          category: a.category,
-        }));
-        const dynamic = allArticles
-          .filter((a: any) => !PINNED_SLUGS.includes(a.slug))
-          .slice(0, 1)
-          .map((a: any) => ({
-            slug: a.slug,
-            title: locale === "zh"
-              ? a.titleZh
-              : locale === "ru"
-                ? (a.titleRu || a.titleZh)
-                : (a.titleEn || a.titleZh),
-            date: a.publishedAt
-              ? new Date(a.publishedAt).toLocaleDateString(
-                  locale === "zh" ? "zh-CN" : locale === "ru" ? "ru-RU" : "en-US",
-                  { month: "short", day: "numeric" }
-                )
-              : "",
-            category: a.category || "",
-          }));
-        setArticles([...pinned, ...dynamic]);
-      })
-      .catch(() => {
-        setArticles(PINNED_ARTICLES.map((a) => ({
-          slug: a.slug,
-          title: locale === "zh"
-            ? a.titleZh
-            : locale === "ru"
-              ? (a.titleRu || a.titleZh)
-              : (a.titleEn || a.titleZh),
-          date: new Date(a.publishedAt).toLocaleDateString(
-            locale === "zh" ? "zh-CN" : locale === "ru" ? "ru-RU" : "en-US",
-            { month: "short", day: "numeric" }
-          ),
-          category: a.category,
+          date: a.publishedAt
+            ? new Date(a.publishedAt).toLocaleDateString(
+                locale === "zh" ? "zh-CN" : locale === "ru" ? "ru-RU" : "en-US",
+                { month: "short", day: "numeric" }
+              )
+            : "",
+          category: a.category || "",
         })));
-      });
+      })
+      .catch(() => setArticles([]));
   }, [locale]);
 
   const formatPrice = (price: number) => {
