@@ -34,6 +34,37 @@ export async function generateMetadata({
   });
 }
 
+interface LatestArticle {
+  slug: string;
+  titleZh: string;
+  titleEn: string | null;
+  titleRu: string | null;
+  category: string | null;
+  publishedAt: Date | null;
+}
+
+async function fetchLatestArticles(limit: number = 3): Promise<LatestArticle[]> {
+  try {
+    const articles = await prisma.article.findMany({
+      where: { status: "published", isPinned: false },
+      orderBy: { publishedAt: "desc" },
+      take: limit,
+      select: {
+        slug: true,
+        titleZh: true,
+        titleEn: true,
+        titleRu: true,
+        category: true,
+        publishedAt: true,
+      },
+    });
+    return articles;
+  } catch (err) {
+    console.error("[HomePage] 文章查询失败:", err);
+    return [];
+  }
+}
+
 const baseInclude = {
   brand: true,
   category: true,
@@ -93,6 +124,8 @@ export default async function HomePage({
   // 安全获取产品数据（带容错）
   const { topProduct, hotProducts, rankedProducts } = await fetchHomeProducts();
   const topReportData = DAILY_REPORT_RANKING[0];
+  const initialArticles = await fetchLatestArticles(3);
+
 
   return (
     <div>
@@ -116,7 +149,7 @@ export default async function HomePage({
       {/* 10 屏组装 */}
       <RecruitmentBanner locale={locale} />
       <HotEquipment products={hotProducts} locale={locale} />
-      <DailyReportSection locale={locale} />
+      <DailyReportSection locale={locale} initialArticles={initialArticles} />
       <ExpoEntrance locale={locale} />
       <PartsEntrance locale={locale} />
       <ServicesEntrance locale={locale} />

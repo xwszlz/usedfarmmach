@@ -64,6 +64,7 @@ const colorMap: Record<string, string> = {
 
 interface DailyReportSectionProps {
   locale: string;
+  initialArticles?: { slug: string; titleZh: string; titleEn: string | null; titleRu: string | null; category: string | null; publishedAt: Date | null }[];
 }
 
 interface ArticleItem {
@@ -75,7 +76,7 @@ interface ArticleItem {
 
 // 行业资讯 - 全部动态拉取最新3篇（固定文章在博客页面通过 isPinned 置顶）
 
-export function DailyReportSection({ locale }: DailyReportSectionProps) {
+export function DailyReportSection({ locale, initialArticles = [] }: DailyReportSectionProps) {
   const l = LABELS[locale] || LABELS.zh;
   const data = getLocalizedData(locale);
   const intelUrl = `/${locale}/intelligence`;
@@ -83,7 +84,7 @@ export function DailyReportSection({ locale }: DailyReportSectionProps) {
 
   const [liveIntel, setLiveIntel] = useState<{ icon: string; text: string }[] | null>(null);
 
-  // 从 API 动态拉取 TOP3 套利机会（productId 来自数据库，产品删除后自动消失）
+  // 从 API 动态拉取 TOP3 套利机会
   const [liveTop3, setLiveTop3] = useState<{
     product: string;
     price: number;
@@ -128,30 +129,38 @@ export function DailyReportSection({ locale }: DailyReportSectionProps) {
 
   const intelItems = liveIntel ?? data.marketIntel.map((m) => ({ icon: m.icon, text: m.text }));
 
-  // 行业资讯 - 全部动态拉取最新3篇
-  const [articles, setArticles] = useState<ArticleItem[]>([]);
+  // 行业资讯 - 优先用 SSR 传入的 initialArticles，然后客户端 fetch 覆盖更新
+  const buildArticleItems = (rawList: any[]) =>
+    rawList.slice(0, 3).map((a: any) => ({
+      slug: a.slug,
+      title: locale === "zh"
+        ? a.titleZh
+        : locale === "ru"
+          ? (a.titleRu || a.titleZh)
+          : (a.titleEn || a.titleZh),
+      date: a.publishedAt
+        ? new Date(a.publishedAt).toLocaleDateString(
+            locale === "zh" ? "zh-CN" : locale === "ru" ? "ru-RU" : "en-US",
+            { month: "short", day: "numeric" }
+          )
+        : "",
+      category: a.category || "",
+    }));
+
+  const [articles, setArticles] = useState<ArticleItem[]>(buildArticleItems(initialArticles));
+
   useEffect(() => {
     fetch(`/api/articles?status=published&limit=3&sort=latest`)
       .then((r) => r.json())
       .then((d) => {
         const allArticles = d.articles || [];
-        setArticles(allArticles.slice(0, 3).map((a: any) => ({
-          slug: a.slug,
-          title: locale === "zh"
-            ? a.titleZh
-            : locale === "ru"
-              ? (a.titleRu || a.titleZh)
-              : (a.titleEn || a.titleZh),
-          date: a.publishedAt
-            ? new Date(a.publishedAt).toLocaleDateString(
-                locale === "zh" ? "zh-CN" : locale === "ru" ? "ru-RU" : "en-US",
-                { month: "short", day: "numeric" }
-              )
-            : "",
-          category: a.category || "",
-        })));
+        if (allArticles.length > 0) {
+          setArticles(buildArticleItems(allArticles));
+        }
       })
-      .catch(() => setArticles([]));
+      .catch(() => {
+        // SSR 数据已存在，失败时保持已有数据，不降级到空数组
+      });
   }, [locale]);
 
   const formatPrice = (price: number) => {
