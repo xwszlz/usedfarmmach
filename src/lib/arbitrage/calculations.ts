@@ -13,7 +13,7 @@ import {
   DEFAULT_SHIPPING_RATE,
   DEFAULT_IMPORT_TAX_RATE,
   DEFAULT_INSURANCE_RATE,
-  DEFAULT_OTHER_COSTS,
+  DEFAULT_OTHER_COSTS_RATE,
   MIN_PROFIT_MARGIN_THRESHOLD,
   HIGH_PROFIT_THRESHOLD,
   MEDIUM_PROFIT_THRESHOLD,
@@ -68,7 +68,7 @@ export function calculateTotalCost(params: CostCalculationParams): number {
     shippingCostPercentage = DEFAULT_SHIPPING_RATE,
     importTaxRate = DEFAULT_IMPORT_TAX_RATE,
     insuranceRate = DEFAULT_INSURANCE_RATE,
-    otherCosts = DEFAULT_OTHER_COSTS,
+    otherCosts = foreignPriceCny * DEFAULT_OTHER_COSTS_RATE,
   } = params;
   
   if (foreignPriceCny <= 0) {
@@ -104,7 +104,7 @@ export function calculateCostBreakdown(params: CostCalculationParams): CostBreak
     shippingCostPercentage = DEFAULT_SHIPPING_RATE,
     importTaxRate = DEFAULT_IMPORT_TAX_RATE,
     insuranceRate = DEFAULT_INSURANCE_RATE,
-    otherCosts = DEFAULT_OTHER_COSTS,
+    otherCosts = foreignPriceCny * DEFAULT_OTHER_COSTS_RATE,
   } = params;
   
   // 计算各项成本

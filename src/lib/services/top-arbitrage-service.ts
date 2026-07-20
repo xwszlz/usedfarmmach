@@ -95,8 +95,12 @@ export class TopArbitrageService {
         }
       }
 
-      // 3. 按套利评分排序，取前N个
-      const sortedResults = arbitrageResults.sort((a, b) => b.score - a.score);
+      // 3. 按绝对毛利额排序（利润高的排前面），取前N个
+      const sortedResults = arbitrageResults.sort((a, b) => {
+        const profitA = a.result?.profit.grossProfit || 0;
+        const profitB = b.result?.profit.grossProfit || 0;
+        return profitB - profitA;
+      });
       const topResults = sortedResults.slice(0, limit);
 
       // 4. 转换为榜单项格式
@@ -539,11 +543,11 @@ export class TopArbitrageService {
    * @returns 估算的总成本
    */
   private estimateTotalCosts(domesticPrice: number, foreignPrice: number): number {
-    // 简化的成本估算：运输成本10%，关税8%，保险2%，其他固定费用
+    // 简化的成本估算：运输成本12%，关税8%，保险2%，其他成本5%（均按国外价格百分比）
     const shippingCost = foreignPrice * DEFAULT_ARBITRAGE_PARAMS.shippingCostPercentage;
     const importTax = foreignPrice * DEFAULT_ARBITRAGE_PARAMS.importTaxRate;
     const insurance = foreignPrice * DEFAULT_ARBITRAGE_PARAMS.insuranceRate;
-    const other = DEFAULT_ARBITRAGE_PARAMS.otherCostsFixed;
+    const other = foreignPrice * DEFAULT_ARBITRAGE_PARAMS.otherCostsRate;
     
     return shippingCost + importTax + insurance + other;
   }

@@ -6,7 +6,7 @@
 /**
  * 默认运输成本占设备价格百分比
  */
-export const DEFAULT_SHIPPING_RATE = 0.10;
+export const DEFAULT_SHIPPING_RATE = 0.12;
 
 /**
  * 默认进口关税率
@@ -19,9 +19,9 @@ export const DEFAULT_IMPORT_TAX_RATE = 0.08;
 export const DEFAULT_INSURANCE_RATE = 0.02;
 
 /**
- * 默认其他固定成本（CNY）
+ * 默认其他成本占国外价格百分比（港口/报关/佣金/利息等综合）
  */
-export const DEFAULT_OTHER_COSTS = 50000;
+export const DEFAULT_OTHER_COSTS_RATE = 0.05;
 
 /**
  * 最小利润率阈值（低于此值不显示为套利机会）

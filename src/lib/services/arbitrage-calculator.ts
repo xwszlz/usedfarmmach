@@ -33,7 +33,7 @@ import {
   DEFAULT_SHIPPING_RATE,
   DEFAULT_IMPORT_TAX_RATE,
   DEFAULT_INSURANCE_RATE,
-  DEFAULT_OTHER_COSTS,
+  DEFAULT_OTHER_COSTS_RATE,
   MIN_PROFIT_MARGIN_THRESHOLD,
 } from '../arbitrage/formulas';
 import {
@@ -146,7 +146,7 @@ export class ArbitrageCalculator {
             '运输成本基于默认百分比或用户输入值',
             '关税基于默认税率或用户输入值',
             '保险基于默认费率或用户输入值',
-            '其他成本为固定值或用户输入值',
+            '其他成本基于默认百分比（国外价格5%）或用户输入值',
           ],
           limitations: [
             '未考虑汇率波动风险',
@@ -358,7 +358,7 @@ export class ArbitrageCalculator {
       shippingCostPercentage: params.shippingCostPercentage ?? DEFAULT_SHIPPING_RATE,
       importTaxRate: params.importTaxRate ?? DEFAULT_IMPORT_TAX_RATE,
       insuranceRate: params.insuranceRate ?? DEFAULT_INSURANCE_RATE,
-      otherCosts: params.otherCosts ?? DEFAULT_OTHER_COSTS,
+      otherCosts: params.otherCosts ?? (params.foreignPriceCny * DEFAULT_OTHER_COSTS_RATE),
     });
   }
 
@@ -377,8 +377,8 @@ export class ArbitrageCalculator {
     // 毛利率 = 毛利润 / 国内价格
     const grossMargin = domesticPrice > 0 ? grossProfit / domesticPrice : 0;
     
-    // 净利润（考虑交易成本等，这里简化为毛利润的90%）
-    const netProfit = grossProfit * 0.9;
+    // 净利润 = 毛利润（成本已在成本项中计算，不再额外打折）
+    const netProfit = grossProfit;
     const netMargin = domesticPrice > 0 ? netProfit / domesticPrice : 0;
     
     // 盈亏平衡价格
@@ -479,7 +479,7 @@ export class ArbitrageCalculator {
     }
 
     // 检查其他成本风险
-    if (costs.other > DEFAULT_OTHER_COSTS * 2) {
+    if (costs.other > costs.totalAdditional * 0.3) {
       riskFactors.push({
         type: 'logistics',
         severity: 'low',

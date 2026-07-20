@@ -9,10 +9,10 @@
  */
 export const DEFAULT_ARBITRAGE_PARAMS = {
   // 成本参数（占设备价格百分比，除非另有说明）
-  shippingCostPercentage: 0.10,      // 运输成本占设备价格10%
+  shippingCostPercentage: 0.12,      // 运输成本占设备价格12%（含港口装卸/内陆运输）
   importTaxRate: 0.08,               // 进口关税8%
   insuranceRate: 0.02,               // 保险费2%
-  otherCostsFixed: 50000,            // 其他固定杂费5万CNY
+  otherCostsRate: 0.05,              // 其他成本占国外价格5%（报关/佣金/利息/杂费）
   
   // 利润阈值
   minProfitMargin: 0.15,             // 最小利润率15%才显示为套利机会
