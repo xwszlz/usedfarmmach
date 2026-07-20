@@ -311,36 +311,36 @@ const localizedMeta: Record<string, Record<string, { title: string; description:
   },
   auctions: {
     zh: {
-      title: "二手农机在线议价_直接报价_卖家自主决策_神雕农机",
-      description: "神雕农机在线议价平台：精选二手农机设备，买家自由报价，卖家自主选择是否成交。简单透明的交易方式。",
+      title: "二手农机在线询价_一对一报价_卖家自主决策_神雕农机",
+      description: "神雕农机在线询价平台：精选二手农机设备，买家一对一报价，卖家自主选择是否成交。报价相互不可见，简单透明的交易方式。",
     },
     en: {
-      title: "Used Farm Machinery Price Negotiation | Make Your Best Offer | AgriTrade",
-      description: "AgriTrade negotiation platform: premium used farm machinery, submit your best offer, seller decides. Simple and transparent trading.",
+      title: "Used Farm Machinery Price Inquiry | Make Your Offer | AgriTrade",
+      description: "AgriTrade inquiry platform: premium used farm machinery, submit your private offer, seller decides. Simple and transparent trading.",
     },
     ru: {
-      title: "Онлайн аукционы сельхозтехники | Торги подержанной техникой | AgriTrade",
-      description: "Онлайн аукцион AgriTrade: премиальная подержанная сельхозтехника, открытые торги, прозрачные сделки.",
+      title: "Онлайн запрос цен на сельхозтехнику | AgriTrade",
+      description: "Платформа запроса цен AgriTrade: премиальная подержанная сельхозтехника, индивидуальные предложения, прозрачные сделки.",
     },
     es: {
-      title: "Subastas en Línea de Maquinaria Agrícola | AgriTrade",
-      description: "Plataforma de subastas AgriTrade: maquinaria agrícola usada premium, pujas abiertas, comercio transparente.",
+      title: "Consulta de Precios de Maquinaria Agrícola en Línea | AgriTrade",
+      description: "Plataforma de consulta de precios AgriTrade: maquinaria agrícola usada premium, ofertas privadas, comercio transparente.",
     },
     pt: {
-      title: "Leilões Online de Máquinas Agrícolas | AgriTrade",
-      description: "Plataforma de leilões AgriTrade: máquinas agrícolas usadas premium, lances abertos, comércio transparente.",
+      title: "Consulta de Preços de Máquinas Agrícolas Online | AgriTrade",
+      description: "Plataforma de consulta de preços AgriTrade: máquinas agrícolas usadas premium, ofertas privadas, comércio transparente.",
     },
     ar: {
-      title: "مزادات الآلات الزراعية عبر الإنترنت | AgriTrade",
-      description: "منصة مزادات AgriTrade: آلات زراعية مستعملة متميزة، مزايدات مفتوحة، تجارة شفافة.",
+      title: "استفسار عن أسعار الآلات الزراعية عبر الإنترنت | AgriTrade",
+      description: "منصة استفسار الأسعار AgriTrade: آلات زراعية مستعملة متميزة، عروض خاصة، تجارة شفافة.",
     },
     fr: {
-      title: "Enchères en Ligne de Machines Agricoles | AgriTrade",
-      description: "Plateforme d'enchères AgriTrade: machines agricoles d'occasion premium, enchères ouvertes, commerce transparent.",
+      title: "Demande de Prix de Machines Agricoles en Ligne | AgriTrade",
+      description: "Plateforme de demande de prix AgriTrade: machines agricoles d'occasion premium, offres privées, commerce transparent.",
     },
     hi: {
-      title: "कृषि मशीनरी ऑनलाइन नीलामी | AgriTrade",
-      description: "AgriTrade ऑनलाइन नीलामी प्लेटफॉर्म: प्रीमियम पुरानी कृषि मशीनरी, खुली बोली, पारदर्शी व्यापार।",
+      title: "कृषि मशीनरी ऑनलाइन मूल्य पूछताछ | AgriTrade",
+      description: "AgriTrade मूल्य पूछताछ प्लेटफॉर्म: प्रीमियम पुरानी कृषि मशीनरी, निजी ऑफर, पारदर्शी व्यापार।",
     },
   },
   finance: {

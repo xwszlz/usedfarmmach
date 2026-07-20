@@ -108,12 +108,12 @@ export default function BargainsClient() {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">
-              {isZh ? "在线议价" : "Price Negotiation"}
+              {isZh ? "在线询价" : "Price Inquiry"}
             </h1>
             <p className="text-sm md:text-base text-blue-200 mt-2">
               {isZh
-                ? "与卖家直接沟通，透明议价，高效成交高价值农机设备"
-                : "Communicate directly with sellers, transparent negotiation, efficient deals"}
+                ? "一对一报价，透明询价，高效成交高价值农机设备"
+                : "Private offers, transparent inquiry, efficient deals"}
             </p>
           </div>
           <div className="flex gap-8 md:gap-12">

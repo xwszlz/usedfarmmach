@@ -455,10 +455,10 @@ export default async function ProductDetailPage({
         <div className="mt-6">
           <div className="mb-3 flex items-center gap-2">
             <span className="text-lg font-bold text-gray-900">
-              {locale === "zh" ? "在线议价" : "Price Negotiation"}
+              {locale === "zh" ? "在线询价" : "Price Inquiry"}
             </span>
             <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-xs font-medium">
-              {locale === "zh" ? "实时议价" : "Live"}
+              {locale === "zh" ? "询价中" : "Active"}
             </span>
           </div>
           <BargainSection

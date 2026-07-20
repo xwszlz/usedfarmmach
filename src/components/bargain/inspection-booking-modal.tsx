@@ -204,7 +204,7 @@ export default function InspectionBookingModal({
                   )}
                   {bargain.startPrice != null && bargain.startPrice > 0 && (
                     <div>
-                      <span className="text-gray-500">{isZh ? "起始议价" : "Start Price"}：</span>
+                      <span className="text-gray-500">{isZh ? "参考要价" : "Asking Price"}：</span>
                       <span className="font-semibold text-gray-900">¥{bargain.startPrice.toLocaleString()}</span>
                     </div>
                   )}
@@ -222,7 +222,7 @@ export default function InspectionBookingModal({
                   )}
                   {bargain.startTime && (
                     <div>
-                      <span className="text-gray-500">{isZh ? "议价时间" : "Start Time"}：</span>
+                      <span className="text-gray-500">{isZh ? "询价时间" : "Inquiry Time"}：</span>
                       <span className="font-semibold text-gray-900">
                         {new Date(bargain.startTime).toLocaleString(isZh ? "zh-CN" : "en-US")}
                       </span>
@@ -246,7 +246,7 @@ export default function InspectionBookingModal({
                       className="mt-0.5 w-4 h-4 rounded border-amber-300"
                     />
                     <span className="text-sm text-amber-800">
-                      {isZh ? "我已知晓上述瑕疵，愿意按现状参与议价" : "I acknowledge the above flaws"}
+                      {isZh ? "我已知晓上述瑕疵，愿意按现状参与询价" : "I acknowledge the above flaws"}
                     </span>
                   </label>
                 </div>

@@ -6,14 +6,14 @@ import Link from "next/link";
 import { X, Gavel, ArrowRight, Sparkles } from "lucide-react";
 
 const AD_LABELS: Record<string, { title: string; subtitle: string; cta: string; live: string }> = {
-  zh: { title: "在线议价", subtitle: "精选好机 · 欢迎参与", cta: "立即参与", live: "正在进行" },
-  en: { title: "Online Bargaining", subtitle: "Quality machines · Join now", cta: "Participate", live: "Live now" },
-  ru: { title: "Онлайн-торг", subtitle: "Отборная техника · Присоединяйтесь", cta: "Участвовать", live: "Идёт сейчас" },
-  es: { title: "Negociación en línea", subtitle: "Maquinaria selecta · Únase ahora", cta: "Participar", live: "En vivo" },
-  pt: { title: "Barganha online", subtitle: "Máquinas selecionadas · Participe", cta: "Participar", live: "Agora" },
-  ar: { title: "مساومة عبر الإنترنت", subtitle: "آلات مختارة · انضم الآن", cta: "شارك", live: "مباشر" },
-  fr: { title: "Négociation en ligne", subtitle: "Machines sélectionnées · Rejoignez", cta: "Participer", live: "En direct" },
-  hi: { title: "ऑनलाइन सौदा", subtitle: "चुनी हुई मशीनें · अभी शामिल हों", cta: "भाग लें", live: "अभी चल रहा है" },
+  zh: { title: "在线询价", subtitle: "精选好机 · 欢迎参与", cta: "立即参与", live: "正在进行" },
+  en: { title: "Online Inquiry", subtitle: "Quality machines · Join now", cta: "Participate", live: "Live now" },
+  ru: { title: "Онлайн-запрос цен", subtitle: "Отборная техника · Присоединяйтесь", cta: "Участвовать", live: "Идёт сейчас" },
+  es: { title: "Consulta en línea", subtitle: "Maquinaria selecta · Únase ahora", cta: "Participar", live: "En vivo" },
+  pt: { title: "Consulta online", subtitle: "Máquinas selecionadas · Participe", cta: "Participar", live: "Agora" },
+  ar: { title: "استفسار عبر الإنترنت", subtitle: "آلات مختارة · انضم الآن", cta: "شارك", live: "مباشر" },
+  fr: { title: "Demande en ligne", subtitle: "Machines sélectionnées · Rejoignez", cta: "Participer", live: "En direct" },
+  hi: { title: "ऑनलाइन पूछताछ", subtitle: "चुनी हुई मशीनें · अभी शामिल हों", cta: "भाग लें", live: "अभी चल रहा है" },
 };
 
 const STORAGE_KEY = "ufm_bargain_ad_closed";
