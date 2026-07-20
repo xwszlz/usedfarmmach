@@ -1,19 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getUserFromRequest } from "@/lib/auth";
-import { generateOrderNo, calculateFee } from "@/lib/escrow";
+import { generateOrderNo, calculateFee, calculateDeposit, ESCROW_STATUS, DEPOSIT_TIMEOUT_DAYS } from "@/lib/escrow";
 import { createMiniOrder, buildMiniPaySign, isConfigured } from "@/lib/wechat-pay";
 
 /**
  * POST /api/orders
- * 创建担保交易订单（神雕自营模型）并发起小程序 JSAPI 预支付。
+ * 创建担保交易订单（定金+尾款模式）
  *
- * 神雕自营：买家向神雕农机购买，货款进入神雕商户号；
- * 订单 sellerId 记为寄售方（product.sellerId），神雕按佣金扣减后线下结算给寄售方。
+ * 神雕自营：买家向神雕农机购买，定金进入神雕商户号（微信支付 JSAPI）；
+ * 尾款走线下对公转账（0 费率，绕开微信 0.6%）。
+ *
+ * 定金 = max(¥1,000, 商品价×10%)，封顶 ¥50,000
+ * 尾款 = 商品价 - 定金
  *
  * 入参: { productId, deliveryAddress?, contactPhone? }
- * 出参: { success, data: { orderId, orderNo, payParams } }
- *       payParams 直接传给小程序 wx.requestPayment
+ * 出参: { success, data: { orderId, orderNo, payParams, depositAmount, balanceAmount } }
  */
 export async function POST(request: NextRequest) {
   try {
@@ -67,14 +69,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "商品价格异常" }, { status: 400 });
     }
 
-    // 神雕佣金（1.5% 最低 ¥50），作为与寄售方结算价差
-    const { platformFee, sellerAmount } = calculateFee(amount);
+    // 定金+尾款拆分
+    const depositAmount = calculateDeposit(amount);
+    const balanceAmount = Math.round((amount - depositAmount) * 100) / 100;
+    // 手续费按定金计提（尾款走线下对公，不收平台费）
+    const { platformFee, sellerAmount } = calculateFee(depositAmount);
 
     const orderNo = generateOrderNo();
 
-    // 支付超时（24h 后自动取消）
-    const cancelledAt = new Date();
-    cancelledAt.setHours(cancelledAt.getHours() + 24);
+    // 定金支付截止（7天后）
+    const depositExpiredAt = new Date();
+    depositExpiredAt.setDate(depositExpiredAt.getDate() + DEPOSIT_TIMEOUT_DAYS);
 
     const order = await prisma.escrowOrder.create({
       data: {
@@ -83,26 +88,28 @@ export async function POST(request: NextRequest) {
         buyerId: user.id,
         sellerId: product.sellerId, // 寄售方（神雕线下结算对象）
         amount,
+        depositAmount,
+        balanceAmount,
         platformFee,
         sellerAmount,
         paymentMethod: "wechat",
-        paymentStatus: "pending",
+        paymentStatus: ESCROW_STATUS.PENDING_DEPOSIT,
+        balanceMethod: "offline_bank_transfer",
+        depositExpiredAt,
         deliveryAddress: deliveryAddress || null,
         metadata: JSON.stringify({
-          paymentTimeoutAt: cancelledAt.toISOString(),
           contactPhone: contactPhone || null,
-          // 自营模型标记：神雕为出卖方，货款进入神雕商户号
           model: "self_operated",
         }),
       },
     });
 
-    // 创建待支付流水
+    // 创建待支付流水（金额=定金）
     const paymentRecord = await prisma.paymentRecord.create({
       data: {
         orderId: order.id,
         paymentMethod: "wechat",
-        amount,
+        amount: depositAmount,
         status: "pending",
       },
     });
@@ -115,16 +122,18 @@ export async function POST(request: NextRequest) {
           orderId: order.id,
           orderNo: order.orderNo,
           payParams: null,
+          depositAmount,
+          balanceAmount,
           note: "微信支付未配置，仅创建订单（生产环境将返回 payParams）",
         },
       });
     }
 
-    // JSAPI 预支付
-    const desc = `神雕农机-${product.modelName}`.slice(0, 60);
+    // JSAPI 预支付——金额为定金（非全款）
+    const desc = `神雕农机定金-${product.modelName}`.slice(0, 60);
     const { prepay_id } = await createMiniOrder(
       orderNo,
-      Math.round(amount * 100),
+      Math.round(depositAmount * 100),
       desc,
       buyer.miniOpenid!
     );
@@ -142,6 +151,8 @@ export async function POST(request: NextRequest) {
         orderId: order.id,
         orderNo: order.orderNo,
         payParams,
+        depositAmount,
+        balanceAmount,
       },
     });
   } catch (error) {
@@ -184,11 +195,16 @@ export async function GET(request: NextRequest) {
         id: true,
         orderNo: true,
         amount: true,
+        depositAmount: true,
+        balanceAmount: true,
         platformFee: true,
         sellerAmount: true,
         paymentStatus: true,
         paymentMethod: true,
+        balanceMethod: true,
         createdAt: true,
+        depositPaidAt: true,
+        balancePaidAt: true,
         paidAt: true,
         buyerConfirmed: true,
         product: {

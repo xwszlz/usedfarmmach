@@ -1388,13 +1388,20 @@ model EscrowOrder {
   sellerId         String // 卖方
   // 金额信息
   amount           Float // 交易总额（CNY）
+  depositAmount    Float     @default(0) // 定金金额（线上微信支付）
+  balanceAmount    Float     @default(0) // 尾款金额（线下对公转账）
   platformFee      Float     @default(0) // 平台手续费
   sellerAmount     Float     @default(0) // 卖家实际到账
   // 支付信息
   paymentMethod    String // wechat, alipay
-  paymentStatus    String    @default("pending") // pending, paid, escrow, released, refunded, cancelled
+  paymentStatus    String    @default("pending_deposit") // pending_deposit, deposit_paid, paid, escrow, released, refunded, cancelled
+  balanceMethod    String? // 尾款支付方式：offline_bank_transfer（线下对公转账）
   // 时间线
-  paidAt           DateTime?
+  depositPaidAt    DateTime? // 定金支付时间
+  balancePaidAt    DateTime? // 尾款到账确认时间
+  depositExpiredAt DateTime? // 定金支付截止（创建后7天）
+  balanceExpiredAt DateTime? // 尾款支付截止（定金后30天）
+  paidAt           DateTime? // 全款付清时间（尾款确认后）
   escrowStartedAt  DateTime?
   releasedAt       DateTime?
   refundedAt       DateTime?
