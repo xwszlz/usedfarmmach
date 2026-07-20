@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useLocale } from "next-intl";
+import { openFloatingChat } from "@/components/chat/floating-chat";
+import { Phone, MessageCircle } from "lucide-react";
+
 
 interface BargainData {
   id: string;
@@ -246,19 +249,31 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
           )}
           <div className="flex gap-2">
             <a
-              href="https://wa.me/8615511395016"
+              href={`https://wa.me/8615511395016?text=${encodeURIComponent(
+                isZh
+                  ? `您好，我想预约实地看车：${bargain.title}，议价编号 ${bargain.bargainNo}，卖家要价 ¥${bargain.askingPrice.toLocaleString()}，请安排时间地点。`
+                  : `Hi, I'd like to inspect this machine on-site: ${bargain.title}, Bargain No. ${bargain.bargainNo}, asking price ¥${bargain.askingPrice.toLocaleString()}. Please arrange time and location.`
+              )}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 py-2.5 bg-gray-100 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-200 text-center transition-colors"
+              className="flex-1 py-2.5 bg-gray-100 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-200 text-center transition-colors inline-flex items-center justify-center gap-1.5"
             >
+              <Phone className="h-4 w-4" />
               {isZh ? "实地看车" : "Inspect On-site"}
             </a>
-            <a
-              href="mailto:932133255@qq.com"
-              className="flex-1 py-2.5 bg-gray-100 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-200 text-center transition-colors"
+            <button
+              onClick={() =>
+                openFloatingChat(
+                  isZh
+                    ? `我想咨询这台设备：${bargain.title}，议价编号 ${bargain.bargainNo}，卖家要价 ¥${bargain.askingPrice.toLocaleString()}。`
+                    : `I have a question about: ${bargain.title}, Bargain No. ${bargain.bargainNo}, asking price ¥${bargain.askingPrice.toLocaleString()}.`
+                )
+              }
+              className="flex-1 py-2.5 bg-gray-100 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-200 text-center transition-colors inline-flex items-center justify-center gap-1.5"
             >
+              <MessageCircle className="h-4 w-4" />
               {isZh ? "在线咨询" : "Consult Online"}
-            </a>
+            </button>
           </div>
         </div>
       )}

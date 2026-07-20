@@ -43,6 +43,14 @@ const LABELS: Record<string, { title: string; placeholder: string; send: string;
   hi: { title: "AI सहायक", placeholder: "मूल्य, शिपिंग, विनिर्देशों के बारे में पूछें...", send: "भेजें", loading: "सोच रहा हूँ...", error: "सेवा उपलब्ध नहीं", voiceInput: "वॉयस इनपुट", voiceOutput: "वॉयस आउटपुट" },
 };
 
+const OPEN_CHAT_EVENT = "ufm-open-chat";
+
+export function openFloatingChat(text?: string) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(OPEN_CHAT_EVENT, { detail: { text } }));
+}
+
+
 export function FloatingChat({ locale = "en", productId, visitorId }: FloatingChatProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -72,6 +80,19 @@ export function FloatingChat({ locale = "en", productId, visitorId }: FloatingCh
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
   const t = LABELS[locale] || LABELS.en;
+
+  // 外部触发打开聊天（在线咨询按钮）
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { text?: string } | undefined;
+      setIsOpen(true);
+      if (detail?.text) {
+        setInput(detail.text);
+      }
+    };
+    window.addEventListener(OPEN_CHAT_EVENT, handler);
+    return () => window.removeEventListener(OPEN_CHAT_EVENT, handler);
+  }, []);
 
   // 初始化语音合成
   useEffect(() => {
