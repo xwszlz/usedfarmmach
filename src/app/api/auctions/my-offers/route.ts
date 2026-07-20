@@ -1,6 +1,6 @@
 /**
  * 我的议价 API
- * GET /api/auctions/my-offers — 获取当前用户参与的议价（买家出价 + 卖家发布）
+ * GET /api/auctions/my-offers — 获取当前用户参与的议价（买家出价 + 卖家发布 + 报名预约）
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -23,6 +23,31 @@ export async function GET(request: NextRequest) {
     // 作为买家的议价（出价过的）
     const buyerBids = await prisma.bid.findMany({
       where: { bidderId: user.id },
+      include: {
+        auction: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                modelName: true,
+                year: true,
+                brand: { select: { nameZh: true, nameEn: true } },
+                images: { orderBy: { sortOrder: "asc" as const }, take: 1 },
+              },
+            },
+            seller: {
+              select: { id: true, companyName: true, username: true },
+            },
+            _count: { select: { bids: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    // 作为报名者的议价（预约看车/缴纳保证金）
+    const inspectionBookings = await prisma.inspectionBooking.findMany({
+      where: { userId: user.id },
       include: {
         auction: {
           include: {
@@ -83,6 +108,25 @@ export async function GET(request: NextRequest) {
       seller: bid.auction.seller,
     }));
 
+    const bookingItems = inspectionBookings.map((booking) => ({
+      id: booking.auction.id,
+      bargainNo: booking.auction.bargainNo,
+      title: booking.auction.title,
+      role: "bidder" as const,
+      askingPrice: booking.auction.askingPrice,
+      myOffer: null,
+      bidStatus: null,
+      bargainStatus: booking.auction.status,
+      acceptedPrice: booking.auction.acceptedPrice,
+      totalBids: booking.auction._count.bids,
+      createdAt: booking.createdAt,
+      product: booking.auction.product,
+      seller: booking.auction.seller,
+      bookingStatus: booking.status,
+      depositPaid: booking.depositPaid,
+      depositConfirmedAt: booking.depositConfirmedAt,
+    }));
+
     const sellerItems = sellerAuctions.map((auction) => ({
       id: auction.id,
       bargainNo: auction.bargainNo,
@@ -100,7 +144,7 @@ export async function GET(request: NextRequest) {
     }));
 
     // 合并并按时间排序
-    const allItems = [...buyerItems, ...sellerItems].sort(
+    const allItems = [...buyerItems, ...bookingItems, ...sellerItems].sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
 

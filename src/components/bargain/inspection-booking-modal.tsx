@@ -16,6 +16,7 @@ interface InspectionModalProps {
     startPrice?: number | null;
     priceIncrement?: number | null;
     deposit?: number | null;
+    minParticipants?: number | null;
     evaluationPrice?: number | null;
     knownFlaws?: string | null;
     startTime?: string | null;
@@ -217,6 +218,16 @@ export default function InspectionBookingModal({
                     <div>
                       <span className="text-gray-500">{isZh ? "保证金" : "Deposit"}：</span>
                       <span className="font-semibold text-red-600">¥{bargain.deposit.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {bargain.minParticipants != null && bargain.minParticipants > 0 && (
+                    <div>
+                      <span className="text-gray-500">{isZh ? "启动条件" : "Start Condition"}：</span>
+                      <span className="font-semibold text-gray-900">
+                        {isZh
+                          ? `满 ${bargain.minParticipants} 人确认报名即启动`
+                          : `Starts when ${bargain.minParticipants} bidders confirmed`}
+                      </span>
                     </div>
                   )}
                   {bargain.startTime && (
@@ -438,7 +449,17 @@ export default function InspectionBookingModal({
                       : "报名信息已提交。请尽快缴纳保证金并上传凭证。"
                     : "Registration submitted. Please pay deposit and upload proof as soon as possible."}
                 </p>
-                {bargain.startTime && (
+                {bargain.minParticipants ? (
+                  <p className="text-sm text-blue-600 mt-3">
+                    {isZh ? "议价启动条件：" : "Bargain starts when："}
+                    <br />
+                    <span className="font-bold">
+                      {isZh
+                        ? `确认报名满 ${bargain.minParticipants} 人即启动议价`
+                        : `${bargain.minParticipants} confirmed bidders will start the bargain`}
+                    </span>
+                  </p>
+                ) : bargain.startTime ? (
                   <p className="text-sm text-blue-600 mt-3">
                     {isZh ? "议价开始时间：" : "Bargain starts at："}
                     <br />
@@ -446,7 +467,7 @@ export default function InspectionBookingModal({
                       {new Date(bargain.startTime).toLocaleString(isZh ? "zh-CN" : "en-US")}
                     </span>
                   </p>
-                )}
+                ) : null}
               </div>
               <button
                 onClick={onClose}

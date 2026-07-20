@@ -55,6 +55,40 @@ export async function POST(
       );
     }
 
+    // 检查是否已报名并确认保证金
+    const booking = await prisma.inspectionBooking.findFirst({
+      where: {
+        auctionId: params.id,
+        userId: user.id,
+        depositPaid: true,
+        status: "confirmed",
+      },
+    });
+
+    if (!booking) {
+      return NextResponse.json(
+        { error: "请先报名并缴纳保证金，等待卖家确认后再出价" },
+        { status: 403 }
+      );
+    }
+
+    // 检查是否达到最低启动人数
+    const confirmedCount = await prisma.inspectionBooking.count({
+      where: {
+        auctionId: params.id,
+        depositPaid: true,
+        status: "confirmed",
+      },
+    });
+
+    const minParticipants = bargain.minParticipants || 3;
+    if (confirmedCount < minParticipants) {
+      return NextResponse.json(
+        { error: `议价尚未启动，当前确认报名人数 ${confirmedCount}/${minParticipants}` },
+        { status: 403 }
+      );
+    }
+
     // 创建报价
     const bid = await prisma.bid.create({
       data: {

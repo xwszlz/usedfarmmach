@@ -168,8 +168,15 @@ export default function AuctionBookingsPage() {
               </p>
             </div>
           </div>
-          <div className="text-3xl font-bold text-blue-600 font-mono">
-            {confirmedCount}/{minParticipants}
+          <div className="text-right">
+            <div className="text-3xl font-bold text-blue-600 font-mono">
+              {confirmedCount}/{minParticipants}
+            </div>
+            <p className={`text-xs font-medium mt-1 ${confirmedCount >= minParticipants ? "text-green-600" : "text-amber-600"}`}>
+              {confirmedCount >= minParticipants
+                ? (isZh ? "✓ 已启动议价" : "Bargain started")
+                : (isZh ? "未启动：满人即启动" : "Starts when minimum reached")}
+            </p>
           </div>
         </div>
       )}

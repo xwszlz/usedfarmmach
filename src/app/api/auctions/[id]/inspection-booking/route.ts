@@ -96,9 +96,9 @@ export async function POST(
       },
     });
 
-    // 邮件通知卖家
+    // 邮件通知卖家（二手农机业务使用卖家固定邮箱）
     try {
-      const sellerEmail = auction.seller.email || "jiusei0319@gmail.com";
+      const sellerEmail = "932133255@qq.com";
       const productName = auction.product.brand
         ? `${auction.product.brand.nameZh} ${auction.product.modelName}`
         : auction.product.modelName;

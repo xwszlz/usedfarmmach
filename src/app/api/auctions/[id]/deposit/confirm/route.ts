@@ -86,8 +86,8 @@ export async function POST(
               <p>您的保证金已由卖家确认，议价资格已开通。</p>
               <p><strong>议价编号：</strong>${booking.auction.bargainNo}</p>
               <p><strong>标的物：</strong>${booking.auction.title}</p>
-              ${booking.auction.startTime ? `<p><strong>议价开始时间：</strong>${new Date(booking.auction.startTime).toLocaleString("zh-CN")}</p>` : ""}
-              <p>请在议价开始时间准时参与。</p>
+              ${booking.auction.startTime ? `<p><strong>议价开始时间：</strong>${new Date(booking.auction.startTime).toLocaleString("zh-CN")}</p>` : `<p><strong>启动条件：</strong>确认报名满${booking.auction.minParticipants || 3}人即启动</p>`}
+              <p>请在议价启动后准时参与。</p>
             `,
             text: `保证金已确认，议价资格已开通。议价编号：${booking.auction.bargainNo}`,
           });
@@ -127,12 +127,12 @@ export async function POST(
               to: cb.user.email,
               subject: `[议价启动] 满${minParticipants}人，议价即将开始 - ${auction.title}`,
               html: `
-                <h2>议价即将启动</h2>
-                <p>报名人数已达${confirmedCount}人（最低${minParticipants}人），议价即将启动。</p>
+                <h2>议价已启动</h2>
+                <p>报名人数已达${confirmedCount}人（最低${minParticipants}人），议价已正式启动，您可以立即出价。</p>
                 <p><strong>议价编号：</strong>${auction.bargainNo}</p>
                 <p><strong>标的物：</strong>${auction.title}</p>
                 ${auction.startTime ? `<p><strong>议价开始时间：</strong>${new Date(auction.startTime).toLocaleString("zh-CN")}</p>` : ""}
-                <p>请准时参与议价。</p>
+                <p>请立即登录议价大厅出价。</p>
               `,
               text: `议价启动通知：满${minParticipants}人，议价即将开始。`,
             });

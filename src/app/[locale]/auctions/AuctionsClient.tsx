@@ -22,6 +22,7 @@ interface Bargain {
     workingHours: number | null;
     condition: string;
     location: string;
+    priceCny: number | null;
     enginePower: number | null;
     driveSystem: string | null;
     brand: { nameZh: string; nameEn: string };
@@ -89,7 +90,7 @@ export default function BargainsClient() {
 
   // 统计数据
   const activeCount = bargains.length;
-  const minPrice = bargains.length > 0 ? Math.min(...bargains.map((b) => b.askingPrice)) : 0;
+  const minPrice = bargains.length > 0 ? Math.min(...bargains.map((b) => b.askingPrice || b.product.priceCny || 0)) : 0;
   const totalDeals = allBargains.filter((b) => b.status === "accepted").length;
 
   if (loading) {
@@ -181,7 +182,7 @@ export default function BargainsClient() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map((bargain) => {
               const status = STATUS_MAP[bargain.status] || STATUS_MAP.cancelled;
-              const displayPrice = bargain.acceptedPrice || bargain.askingPrice;
+              const displayPrice = bargain.acceptedPrice || bargain.askingPrice || bargain.product.priceCny || 0;
               const p = bargain.product;
               const subtitleParts = [
                 p.enginePower ? `${p.enginePower}${isZh ? "马力" : "HP"}` : null,

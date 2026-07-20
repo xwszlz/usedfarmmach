@@ -8,7 +8,7 @@ interface MyOfferItem {
   id: string;
   bargainNo: string;
   title: string;
-  role: "buyer" | "seller";
+  role: "buyer" | "seller" | "bidder";
   askingPrice: number;
   myOffer: number | null;
   bidStatus: string | null;
@@ -28,6 +28,9 @@ interface MyOfferItem {
     companyName: string | null;
     username: string | null;
   };
+  bookingStatus?: string | null;
+  depositPaid?: boolean;
+  depositConfirmedAt?: string | null;
 }
 
 const BID_STATUS_MAP: Record<string, { zh: string; en: string; color: string }> = {
@@ -135,6 +138,7 @@ export default function MyOffersClient() {
           {[
             { value: "all", label: isZh ? "全部" : "All" },
             { value: "buyer", label: isZh ? "我出价的" : "My Bids" },
+            { value: "bidder", label: isZh ? "我报名的" : "My Registrations" },
             { value: "seller", label: isZh ? "我发布的" : "My Listings" },
           ].map((t) => (
             <button
@@ -192,18 +196,29 @@ export default function MyOffersClient() {
                       <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                         item.role === "buyer" ? "bg-blue-50 text-blue-600" : "bg-purple-50 text-purple-600"
                       }`}>
-                        {item.role === "buyer" ? (isZh ? "买家" : "Buyer") : (isZh ? "卖家" : "Seller")}
+                      {item.role === "buyer" ? (isZh ? "买家" : "Buyer")
+                        : item.role === "seller" ? (isZh ? "卖家" : "Seller")
+                        : (isZh ? "已报名" : "Registered")}
+                    </span>
+                    {bidStatus && (
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${bidStatus.color}`}>
+                        {isZh ? bidStatus.zh : bidStatus.en}
                       </span>
-                      {bidStatus && (
-                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${bidStatus.color}`}>
-                          {isZh ? bidStatus.zh : bidStatus.en}
-                        </span>
-                      )}
-                      {!bidStatus && (
-                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${bargainStatus.color}`}>
-                          {isZh ? bargainStatus.zh : bargainStatus.en}
-                        </span>
-                      )}
+                    )}
+                    {!bidStatus && item.role === "bidder" && (
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                        item.depositPaid ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
+                      }`}>
+                        {item.depositPaid
+                          ? (isZh ? "保证金已确认" : "Deposit confirmed")
+                          : (isZh ? "待上传保证金" : "Deposit pending")}
+                      </span>
+                    )}
+                    {!bidStatus && item.role !== "bidder" && (
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${bargainStatus.color}`}>
+                        {isZh ? bargainStatus.zh : bargainStatus.en}
+                      </span>
+                    )}
                     </div>
                     <h3 className="font-semibold text-gray-900 truncate">{item.title}</h3>
                     <p className="text-sm text-gray-500">

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useLocale } from "next-intl";
-import { Calendar, Gavel, Clock, FileText, MapPin, TrendingUp, Users, AlertCircle } from "lucide-react";
+import { Calendar, Gavel, Clock, Check, FileText, MapPin, TrendingUp, Users, AlertCircle } from "lucide-react";
 import InspectionBookingModal from "./inspection-booking-modal";
 
 interface BargainData {
@@ -30,6 +30,7 @@ interface BargainData {
   product: {
     id: string;
     workingHours: number | null;
+    priceCny?: number | null;
   };
   // 新增：公告参数
   announcementNo?: string | null;
@@ -44,6 +45,16 @@ interface BargainData {
   knownFlaws?: string | null;
   contractTemplateNo?: string | null;
   description?: string | null;
+  // 新增：报名统计
+  totalBookingsCount?: number;
+  confirmedBookingsCount?: number;
+  currentUserBooking?: {
+    id: string;
+    status: string;
+    depositPaid: boolean;
+    depositProofUrl: string | null;
+    createdAt: string;
+  } | null;
 }
 
 interface BargainSectionProps {
@@ -102,25 +113,11 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
     return () => clearInterval(interval);
   }, [fetchBargain]);
 
-  // 倒计时逻辑
+  // 倒计时逻辑（仅用于付款倒计时；议价开始以确认人数为准）
   useEffect(() => {
     if (!bargain) return;
     const timer = setInterval(() => {
       const now = Date.now();
-      // 议价开始倒计时
-      if (bargain.startTime) {
-        const start = new Date(bargain.startTime).getTime();
-        if (start > now) {
-          const diff = start - now;
-          const days = Math.floor(diff / 86400000);
-          const hours = Math.floor((diff % 86400000) / 3600000);
-          const mins = Math.floor((diff % 3600000) / 60000);
-          const secs = Math.floor((diff % 60000) / 1000);
-          setCountdown(days > 0 ? `${days}天${hours}时${mins}分` : `${hours}时${mins}分${secs}秒`);
-        } else {
-          setCountdown("");
-        }
-      }
       // 付款倒计时
       if (bargain.paymentDeadline && bargain.status === "accepted") {
         const deadline = new Date(bargain.paymentDeadline).getTime();
@@ -172,7 +169,7 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
     if (!bargain) return;
     const highestBid = bargain.bids.length > 0
       ? Math.max(...bargain.bids.map((b) => b.amount))
-      : bargain.startPrice || bargain.askingPrice;
+      : bargain.startPrice || bargain.askingPrice || bargain.product.priceCny || 0;
     const newAmount = highestBid + increment;
     setOffering(true);
     setMessage("");
@@ -258,19 +255,26 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
   const isActive = bargain.status === "active";
   const isAccepted = bargain.status === "accepted";
   const isSeller = currentUserId === bargain.seller.id || currentUserId === sellerId;
-  const displayPrice = bargain.acceptedPrice || bargain.askingPrice;
+  const displayPrice = bargain.acceptedPrice || bargain.askingPrice || bargain.product.priceCny || 0;
   const allBidsSorted = [...bargain.bids].sort((a, b) => b.amount - a.amount);
   const acceptedBid = bargain.bids.find((b) => b.status === "accepted" || b.isWinning);
 
-  // 议价大厅状态感知
-  const now = Date.now();
-  const bargainStartTime = bargain.startTime ? new Date(bargain.startTime).getTime() : 0;
-  const isBeforeStart = bargainStartTime > now && bargainStartTime > 0;
-  const isBargaining = isActive && (!bargainStartTime || bargainStartTime <= now);
+  // 议价大厅状态感知（以确认报名人数为准，不再依赖固定开始时间）
+  const minParticipants = bargain.minParticipants || 3;
+  const confirmedCount = bargain.confirmedBookingsCount || 0;
+  const totalBookingsCount = bargain.totalBookingsCount || 0;
+  const isMinReached = confirmedCount >= minParticipants;
+  const isBeforeStart = isActive && !isMinReached;
+  const isBargaining = isActive && isMinReached;
   const currentHighestBid = bargain.bids.length > 0
     ? Math.max(...bargain.bids.map((b) => b.amount))
-    : bargain.startPrice || bargain.askingPrice;
+    : bargain.startPrice || bargain.askingPrice || bargain.product.priceCny || 0;
   const increment = bargain.priceIncrement || 5000;
+
+  // 当前用户报名状态
+  const hasUserBooking = !!bargain.currentUserBooking;
+  const isUserConfirmed = bargain.currentUserBooking?.depositPaid && bargain.currentUserBooking?.status === "confirmed";
+  const userBookingId = bargain.currentUserBooking?.id;
 
   const statusBadge = (status: string) => {
     const map: Record<string, { zh: string; en: string; bg: string }> = {
@@ -366,14 +370,14 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
           )}
         </h3>
 
-        {/* 公告中（未到议价开始时间） */}
+        {/* 公告中（未达到最低确认人数） */}
         {isBeforeStart && (
           <div className="space-y-3">
             <div className="grid grid-cols-3 gap-3">
               <div className="bg-blue-50 rounded-lg p-3 text-center">
                 <p className="text-xs text-blue-500 mb-1">{isZh ? "起始价" : "Start Price"}</p>
                 <p className="text-lg font-bold text-blue-700 font-mono">
-                  ¥{(bargain.startPrice || bargain.askingPrice).toLocaleString()}
+                  ¥{(bargain.startPrice || bargain.askingPrice || bargain.product.priceCny || 0).toLocaleString()}
                 </p>
               </div>
               <div className="bg-green-50 rounded-lg p-3 text-center">
@@ -388,13 +392,52 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
               </div>
             </div>
 
-            {countdown && (
-              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg p-4 text-center text-white">
-                <p className="text-sm opacity-90 mb-1">{isZh ? "距议价开始" : "Bargain starts in"}</p>
-                <p className="text-2xl font-bold font-mono">{countdown}</p>
-                <p className="text-xs opacity-75 mt-1">
-                  {new Date(bargain.startTime!).toLocaleString(isZh ? "zh-CN" : "en-US")}
-                </p>
+            {/* 报名进度与立即报名按钮 */}
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg p-4 text-white text-center">
+              <p className="text-sm opacity-90 mb-2">
+                {isZh ? "议价启动条件：确认报名满" : "Bargain starts when"} {minParticipants} {isZh ? "人" : "bidders"}
+              </p>
+              <p className="text-2xl font-bold font-mono">
+                {confirmedCount}/{minParticipants}
+              </p>
+              <p className="text-xs opacity-75 mt-1">
+                {isZh
+                  ? `已确认 ${confirmedCount} 人，还需 ${Math.max(0, minParticipants - confirmedCount)} 人`
+                  : `${confirmedCount} confirmed, ${Math.max(0, minParticipants - confirmedCount)} more needed`}
+              </p>
+            </div>
+
+            {!isSeller && (
+              <div className="flex gap-2">
+                {isUserConfirmed ? (
+                  <div className="flex-1 py-3 bg-green-100 text-green-700 rounded-lg font-bold text-center flex items-center justify-center gap-2">
+                    <Check className="h-4 w-4" />
+                    {isZh ? "您已确认报名，议价启动后可出价" : "You are confirmed. Bid once started"}
+                  </div>
+                ) : hasUserBooking ? (
+                  <button
+                    onClick={() => setShowBookingModal(true)}
+                    className="flex-1 py-3 bg-amber-600 text-white rounded-lg font-bold hover:bg-amber-700 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Calendar className="h-4 w-4" />
+                    {isZh ? "您已报名，继续上传保证金凭证" : "Upload deposit proof"}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setShowBookingModal(true)}
+                    className="flex-1 py-3 bg-[#1E40AF] text-white rounded-lg font-bold hover:bg-blue-800 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Calendar className="h-4 w-4" />
+                    {isZh ? "立即报名（预约看车）" : "Register Now"}
+                  </button>
+                )}
+                <a
+                  href={isZh ? "/zh/auctions/my-offers" : "/en/auctions/my-offers"}
+                  className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-lg font-bold hover:bg-gray-200 transition-colors text-center flex items-center justify-center gap-2"
+                >
+                  <Users className="h-4 w-4" />
+                  {isZh ? "我的报名记录" : "My Registrations"}
+                </a>
               </div>
             )}
 
@@ -402,8 +445,8 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
               <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 rounded-lg p-3">
                 <Users className="h-4 w-4 text-gray-400" />
                 {isZh
-                  ? `满 ${bargain.minParticipants} 人报名后启动议价`
-                  : `Bargain starts when ${bargain.minParticipants} bidders registered`}
+                  ? `满 ${bargain.minParticipants} 人确认报名后即启动议价，无需等待固定时间`
+                  : `Bargain starts once ${bargain.minParticipants} bidders are confirmed; no fixed time`}
               </div>
             )}
           </div>
@@ -427,8 +470,16 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
               </div>
             </div>
 
+            {!isSeller && !isUserConfirmed && (
+              <div className="bg-amber-50 rounded-lg p-3 text-sm text-amber-700 text-center">
+                {isZh
+                  ? "您尚未确认报名，无法出价。请先报名并缴纳保证金。"
+                  : "You are not confirmed. Please register and pay deposit."}
+              </div>
+            )}
+
             {/* 加价按钮 */}
-            {!isSeller && (
+            {!isSeller && isUserConfirmed && (
               <div className="flex gap-2">
                 <button
                   onClick={() => handleQuickBid(increment)}
@@ -467,6 +518,24 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
       {isActive && !isSeller && (
         <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
           <h3 className="text-base font-bold text-gray-900">{isZh ? "发起议价" : "Make an Offer"}</h3>
+
+          {/* 报名状态提示 */}
+          {!isBargaining && (
+            <div className={`rounded-lg p-3 text-sm ${
+              isUserConfirmed
+                ? "bg-green-50 text-green-700"
+                : hasUserBooking
+                ? "bg-amber-50 text-amber-700"
+                : "bg-blue-50 text-blue-700"
+            }`}>
+              {isUserConfirmed
+                ? (isZh ? "✓ 您已确认报名，议价满人启动后即可出价。" : "You are confirmed. You can bid once the bargain starts.")
+                : hasUserBooking
+                ? (isZh ? "⚠ 您已提交报名，请尽快上传保证金凭证并等待卖家确认。" : "Please upload deposit proof and wait for seller confirmation.")
+                : (isZh ? "ℹ 参与议价前请先报名并缴纳保证金。" : "Please register and pay deposit before bidding.")}
+            </div>
+          )}
+
           <div className="flex gap-2">
             <input
               type="number"
@@ -477,7 +546,7 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
             />
             <button
               onClick={handleOffer}
-              disabled={offering || !offerAmount}
+              disabled={offering || !offerAmount || !isUserConfirmed || !isBargaining}
               className="px-6 py-3 bg-[#1E40AF] text-white rounded-lg font-bold hover:bg-blue-800 disabled:bg-gray-300 transition-colors whitespace-nowrap"
             >
               {offering ? "..." : (isZh ? "提交报价" : "Submit Offer")}
@@ -494,7 +563,7 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
               className="flex-1 py-2.5 bg-gray-100 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-200 text-center transition-colors inline-flex items-center justify-center gap-1.5"
             >
               <Calendar className="h-4 w-4" />
-              {isZh ? "预约看车" : "Book Inspection"}
+              {isZh ? "报名预约看车" : "Register & Book Inspection"}
             </button>
             <button
               onClick={scrollToHall}
@@ -600,7 +669,7 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
             {isZh ? "购入渠道：江苏金融淘宝司法处置平台（合法合规）" : "Source: Jiangsu Judicial Auction Platform (legal & compliant)"}
           </p>
           <p className="text-sm text-amber-700">
-            {isZh ? "法律依据：附司法拍卖成交确认书、评估报告等全套法律文件" : "Legal docs: Judicial auction confirmation, appraisal report, etc."}
+            {isZh ? "法律依据：附法院处置成交确认书、评估报告等全套法律文件" : "Legal docs: Court disposal confirmation, appraisal report, etc."}
           </p>
         </div>
 
@@ -618,7 +687,7 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
         <div className="bg-green-50 rounded-lg p-4 space-y-2">
           <h4 className="text-sm font-bold text-gray-900">{isZh ? "交付资料清单" : "Delivery Documents"}</h4>
           <ul className="space-y-1 text-sm text-green-700">
-            <li>✓ {isZh ? "司法拍卖成交确认书" : "Judicial auction confirmation"}</li>
+            <li>✓ {isZh ? "法院处置成交确认书" : "Court disposal confirmation"}</li>
             <li>✓ {isZh ? "设备评估报告" : "Equipment appraisal report"}</li>
             <li>✓ {isZh ? "设备交接清单" : "Equipment handover list"}</li>
             <li>✓ {isZh ? "其他法律文件" : "Other legal documents"}</li>
