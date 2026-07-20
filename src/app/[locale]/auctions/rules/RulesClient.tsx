@@ -192,101 +192,89 @@ export default function RulesClient() {
         {/* Fee Schedule */}
         <div className="bg-white rounded-xl p-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">
-            {isZh ? "费用说明" : "Fee Schedule"}
+            {isZh ? "平台服务说明" : "Platform Services"}
           </h2>
-          <div className="bg-amber-50 rounded-xl p-4 space-y-4">
+          <div className="bg-blue-50 rounded-xl p-4 space-y-4">
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-amber-500 text-white text-xs font-bold">
-                {isZh ? "现行费率" : "Current Rate"}
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-500 text-white text-xs font-bold">
+                {isZh ? "信息撮合平台" : "Information Platform"}
               </span>
               <span className="text-sm text-gray-600">
-                {isZh ? "生效日期：2026-07-19" : "Effective: 2026-07-19"}
+                {isZh ? "平台不收取任何交易服务费" : "No transaction fees charged"}
               </span>
+            </div>
+
+            <div className="bg-white rounded-xl p-4 border border-blue-200">
+              <p className="text-sm text-gray-700 leading-relaxed mb-3">
+                {isZh
+                  ? "本平台定位为农机设备信息发布与交流平台，提供信息展示、AI估值参考等增值服务。平台不参与交易撮合、不代收代付任何交易资金、不收取任何与成交相关的服务费或佣金。买卖双方自行完成交易，资金直接往来。"
+                  : "This platform provides equipment information display and AI valuation services. We do not facilitate transactions, handle funds, or charge transaction-based fees. Buyers and sellers transact directly."}
+              </p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-4">
-              <div className="bg-white rounded-xl p-4 border border-amber-200">
-                <p className="text-xs text-gray-500 mb-1">{isZh ? "买家成交费" : "Buyer Fee"}</p>
-                <p className="text-3xl font-bold text-amber-600 font-mono">2%</p>
+              <div className="bg-white rounded-xl p-4 border border-gray-200">
+                <p className="text-xs text-gray-500 mb-1">{isZh ? "会员服务" : "Membership"}</p>
+                <p className="text-lg font-bold text-gray-900">
+                  {isZh ? "免费 / ¥99 / ¥299 / ¥999" : "Free / ¥99 / ¥299 / ¥999"}
+                </p>
                 <p className="text-xs text-gray-500 mt-1">
-                  {isZh ? "按成交价收取，成交后支付" : "Of deal price, paid after closing"}
+                  {isZh
+                    ? "不同等级会员可享受不同的信息查看次数、AI估值次数等增值权益"
+                    : "Tiered access to listing views, AI valuations, and premium features"}
                 </p>
               </div>
-              <div className="bg-white rounded-xl p-4 border border-amber-200">
-                <p className="text-xs text-gray-500 mb-1">{isZh ? "卖家成交费" : "Seller Fee"}</p>
-                <p className="text-3xl font-bold text-amber-600 font-mono">3%</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  {isZh ? "按成交价收取，成交后支付" : "Of deal price, paid after closing"}
+              <div className="bg-white rounded-xl p-4 border border-gray-200">
+                <p className="text-xs text-gray-500 mb-1">{isZh ? "AI智能估值" : "AI Valuation"}</p>
+                <p className="text-lg font-bold text-gray-900">
+                  {isZh ? "按次付费" : "Pay-per-use"}
                 </p>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl p-4 border border-gray-200">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div>
-                  <p className="text-xs text-gray-500">{isZh ? "综合服务费" : "Total Service Fee"}</p>
-                  <p className="text-2xl font-bold text-gray-900 font-mono">5%</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-gray-500">{isZh ? "示例：成交价 ¥200,000" : "Example: ¥200,000 deal"}</p>
-                  <p className="text-sm font-semibold text-gray-700 font-mono">
-                    {isZh ? "服务费 ¥10,000" : "Fee: ¥10,000"}
-                  </p>
-                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  {isZh
+                    ? "基于设备参数、市场行情、使用年限等数据，提供参考估值报告"
+                    : "Data-driven valuation reports based on specs, market data, and usage"}
+                </p>
               </div>
             </div>
 
             <div className="bg-white rounded-xl p-4 border border-gray-200">
               <p className="text-sm font-semibold text-gray-900 mb-2">
-                {isZh ? "费用收取方式" : "How Fees Are Collected"}
+                {isZh ? "重要说明" : "Important Notice"}
               </p>
               <ul className="text-sm text-gray-700 space-y-2 leading-relaxed">
                 <li className="flex items-start gap-2">
-                  <span className="flex-shrink-0 mt-1 w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                  <span className="flex-shrink-0 mt-1 w-1.5 h-1.5 rounded-full bg-blue-500"></span>
                   <span>
                     {isZh
-                      ? "现阶段平台不代收交易款项。买家将设备款直接支付给卖家，买卖双方按成交价各自向平台支付服务费。"
-                      : "Currently the platform does not handle funds. Buyers pay sellers directly; both parties pay the platform separately."}
+                      ? "平台不收取任何与交易相关的服务费、佣金或手续费。交易完全由买卖双方自行协商完成。"
+                      : "The platform charges no transaction-related fees. All transactions are conducted directly between buyers and sellers."}
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="flex-shrink-0 mt-1 w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                  <span className="flex-shrink-0 mt-1 w-1.5 h-1.5 rounded-full bg-blue-500"></span>
                   <span>
                     {isZh
-                      ? "服务费支付方式：对公转账 / 微信支付 / 支付宝。成交后7日内未支付将影响后续使用。"
-                      : "Payment methods: bank transfer, WeChat Pay, or Alipay. Late payment after 7 days affects account access."}
+                      ? "平台不代收代付任何交易资金，不设资金池，不提供资金托管或担保服务。"
+                      : "The platform does not handle, hold, or escrow any transaction funds."}
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="flex-shrink-0 mt-1 w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                  <span className="flex-shrink-0 mt-1 w-1.5 h-1.5 rounded-full bg-blue-500"></span>
                   <span>
                     {isZh
-                      ? "未来接入第三方支付分账后，将自动从成交款中扣除服务费，无需双方主动支付。"
-                      : "Once third-party payment split is integrated, fees will be auto-deducted from the transaction."}
+                      ? "保证金（如有）由买卖双方自行约定和收付，平台不设定金额、不验证凭证、不参与纠纷处理。"
+                      : "Any deposits are agreed and handled solely between parties. The platform does not set amounts, verify payments, or mediate disputes."}
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="flex-shrink-0 mt-1 w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                  <span>
+                    {isZh
+                      ? "会员费和AI估值费属于增值信息服务费，与交易无关，开具增值税发票。"
+                      : "Membership and AI valuation fees are for value-added information services, unrelated to transactions. VAT invoices provided."}
                   </span>
                 </li>
               </ul>
-            </div>
-
-            <div className="bg-amber-100/60 rounded-xl p-4 border border-amber-300">
-              <p className="text-sm font-semibold text-amber-900 mb-2">
-                {isZh ? "与 IronPlanet/Ritchie Bros 对比" : "vs IronPlanet / Ritchie Bros"}
-              </p>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div>
-                  <p className="text-xs text-gray-600">{isZh ? "IronPlanet 综合费率" : "IronPlanet total"}</p>
-                  <p className="font-bold text-red-600 font-mono">15-22%</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600">{isZh ? "神雕农机" : "Shen Diao"}</p>
-                  <p className="font-bold text-green-600 font-mono">5%</p>
-                </div>
-              </div>
-              <p className="text-xs text-gray-600 mt-2">
-                {isZh
-                  ? "一台 ¥20 万的拖拉机：IronPlanet 约 ¥3-4 万，我们 ¥1 万。"
-                  : "A ¥200K tractor: IronPlanet ~¥30-40K, ours ¥10K."}
-              </p>
             </div>
           </div>
         </div>
