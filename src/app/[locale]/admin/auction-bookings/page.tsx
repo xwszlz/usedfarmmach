@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useLocale } from "next-intl";
-import { Users, Check, Clock, Loader2, AlertCircle } from "lucide-react";
+import { Users, Check, Clock, Loader2, AlertCircle, Gavel, FileText, Play, Pause } from "lucide-react";
 
 interface Booking {
   id: string;
@@ -23,9 +23,14 @@ interface AuctionInfo {
   id: string;
   bargainNo: string;
   title: string;
+  status: string;
   announcementNo: string | null;
   minParticipants: number | null;
   deposit: number;
+  startPrice: number | null;
+  askingPrice: number;
+  startTime: string | null;
+  _count?: { bids: number };
 }
 
 export default function AuctionBookingsPage() {
@@ -52,15 +57,17 @@ export default function AuctionBookingsPage() {
     return headers;
   };
 
-  // 获取议价列表
+  // 获取所有议价（不限状态）
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch("/api/auctions?status=active", { headers: getAuthHeaders() });
+        const res = await fetch("/api/auctions?status=all&limit=50", { headers: getAuthHeaders() });
         const json = await res.json();
         if (json.success && json.data?.length > 0) {
+          // 优先选 active 的，没有就选第一个
+          const firstActive = json.data.find((a: AuctionInfo) => a.status === "active");
           setAuctions(json.data);
-          setSelectedAuction(json.data[0].id);
+          setSelectedAuction(firstActive?.id || json.data[0].id);
         }
       } catch (err) {
         console.error("Failed to fetch auctions:", err);
@@ -78,7 +85,7 @@ export default function AuctionBookingsPage() {
         headers: getAuthHeaders(),
       });
       const json = await res.json();
-      if (json.success) setBookings(json.data);
+      if (json.success) setBookings(json.data || []);
     } catch (err) {
       console.error("Failed to fetch bookings:", err);
     }
@@ -121,30 +128,64 @@ export default function AuctionBookingsPage() {
 
   const currentAuction = auctions.find((a) => a.id === selectedAuction);
   const confirmedCount = bookings.filter((b) => b.depositPaid).length;
+  const pendingCount = bookings.filter((b) => b.status === "deposit_paid").length;
   const minParticipants = currentAuction?.minParticipants || 3;
+  const isStarted = confirmedCount >= minParticipants;
 
   return (
     <div className="max-w-5xl mx-auto p-6">
       <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2 mb-6">
-        <Users className="h-7 w-7 text-blue-600" />
+        <Gavel className="h-7 w-7 text-blue-600" />
         {isZh ? "议价报名管理" : "Bargain Bookings"}
       </h1>
 
-      {/* 选择议价 */}
+      {/* 议价列表 - 卡片式展示 */}
       {auctions.length > 0 ? (
-        <div className="mb-6">
-          <label className="text-sm font-medium text-gray-700">{isZh ? "选择议价" : "Select Bargain"}</label>
-          <select
-            value={selectedAuction}
-            onChange={(e) => setSelectedAuction(e.target.value)}
-            className="w-full md:w-96 px-3 py-2 mt-1 border border-gray-300 rounded-lg text-sm"
-          >
-            {auctions.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.title} ({a.bargainNo})
-              </option>
-            ))}
-          </select>
+        <div className="mb-6 space-y-2">
+          <p className="text-sm font-medium text-gray-500 mb-2">{isZh ? "点击选择议价项目" : "Click to select"}</p>
+          {auctions.map((a) => {
+            const selected = a.id === selectedAuction;
+            const isCancelled = a.status === "cancelled";
+            return (
+              <button
+                key={a.id}
+                onClick={() => setSelectedAuction(a.id)}
+                className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+                  selected
+                    ? "border-blue-500 bg-blue-50"
+                    : "border-gray-200 bg-white hover:border-gray-300"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-bold text-gray-900 truncate">{a.title}</span>
+                      {a.announcementNo && (
+                        <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-mono">
+                          {a.announcementNo}
+                        </span>
+                      )}
+                      {isCancelled && (
+                        <span className="px-2 py-0.5 bg-gray-100 text-gray-400 rounded text-xs">
+                          {isZh ? "已取消" : "Cancelled"}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {a.bargainNo} · {isZh ? "保证金" : "Deposit"} ¥{(a.deposit || 0).toLocaleString()}
+                      {a.startPrice && ` · ${isZh ? "起始价" : "Start"} ¥${a.startPrice.toLocaleString()}`}
+                    </div>
+                  </div>
+                  {selected && (
+                    <div className="flex items-center gap-1 text-blue-600 text-sm font-medium ml-2 shrink-0">
+                      <Check className="h-4 w-4" />
+                      {isZh ? "当前查看" : "Selected"}
+                    </div>
+                  )}
+                </div>
+              </button>
+            );
+          })}
         </div>
       ) : (
         <div className="text-center py-12 text-gray-400">
@@ -152,31 +193,65 @@ export default function AuctionBookingsPage() {
         </div>
       )}
 
-      {/* 报名进度 */}
+      {/* 状态卡片 - 最显眼的位置 */}
       {currentAuction && (
-        <div className="bg-blue-50 rounded-xl p-4 mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Users className="h-8 w-8 text-blue-600" />
-            <div>
-              <p className="text-sm font-bold text-blue-900">
-                {isZh ? "报名进度" : "Registration Progress"}
-              </p>
-              <p className="text-sm text-blue-700">
-                {isZh
-                  ? `已确认 ${confirmedCount} / 最低 ${minParticipants} 人`
-                  : `${confirmedCount} confirmed / ${minParticipants} minimum`}
-              </p>
+        <div className={`rounded-2xl p-5 mb-4 ${isStarted ? "bg-green-50 border-2 border-green-300" : "bg-amber-50 border-2 border-amber-300"}`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className={`w-14 h-14 rounded-full flex items-center justify-center ${isStarted ? "bg-green-500" : "bg-amber-500"}`}>
+                {isStarted ? (
+                  <Play className="h-7 w-7 text-white" fill="white" />
+                ) : (
+                  <Pause className="h-7 w-7 text-white" fill="white" />
+                )}
+              </div>
+              <div>
+                <div className={`text-2xl font-bold ${isStarted ? "text-green-700" : "text-amber-700"}`}>
+                  {isStarted
+                    ? (isZh ? "✓ 议价已启动" : "Bargain Started")
+                    : (isZh ? "⏳ 未启动" : "Not Started")}
+                </div>
+                <div className={`text-sm ${isStarted ? "text-green-600" : "text-amber-600"}`}>
+                  {isStarted
+                    ? (isZh ? `已确认 ${confirmedCount} 人，满足最低 ${minParticipants} 人要求，议价已启动` : `${confirmedCount} confirmed, minimum ${minParticipants} reached`)
+                    : (isZh ? `已确认 ${confirmedCount} / ${minParticipants} 人，满 ${minParticipants} 人即自动启动` : `${confirmedCount} / ${minParticipants} confirmed, starts when minimum reached`)}
+                </div>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className={`text-4xl font-bold font-mono ${isStarted ? "text-green-600" : "text-amber-600"}`}>
+                {confirmedCount}/{minParticipants}
+              </div>
+              <div className="text-xs text-gray-400 mt-1">
+                {isZh ? "确认人数/最低人数" : "Confirmed/Min"}
+              </div>
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-3xl font-bold text-blue-600 font-mono">
-              {confirmedCount}/{minParticipants}
+
+          {/* 进度条 */}
+          <div className="mt-4">
+            <div className="w-full h-3 bg-white/60 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${isStarted ? "bg-green-500" : "bg-amber-500"}`}
+                style={{ width: `${Math.min(100, (confirmedCount / minParticipants) * 100)}%` }}
+              />
             </div>
-            <p className={`text-xs font-medium mt-1 ${confirmedCount >= minParticipants ? "text-green-600" : "text-amber-600"}`}>
-              {confirmedCount >= minParticipants
-                ? (isZh ? "✓ 已启动议价" : "Bargain started")
-                : (isZh ? "未启动：满人即启动" : "Starts when minimum reached")}
-            </p>
+          </div>
+
+          {/* 报名统计 */}
+          <div className="mt-4 grid grid-cols-3 gap-3">
+            <div className="bg-white/70 rounded-lg p-3 text-center">
+              <p className="text-xs text-gray-500 mb-1">{isZh ? "总报名" : "Total"}</p>
+              <p className="text-xl font-bold text-gray-700">{bookings.length}</p>
+            </div>
+            <div className="bg-white/70 rounded-lg p-3 text-center">
+              <p className="text-xs text-gray-500 mb-1">{isZh ? "待确认" : "Pending"}</p>
+              <p className="text-xl font-bold text-amber-600">{pendingCount}</p>
+            </div>
+            <div className="bg-white/70 rounded-lg p-3 text-center">
+              <p className="text-xs text-gray-500 mb-1">{isZh ? "已确认" : "Confirmed"}</p>
+              <p className="text-xl font-bold text-green-600">{confirmedCount}</p>
+            </div>
           </div>
         </div>
       )}
@@ -189,8 +264,12 @@ export default function AuctionBookingsPage() {
 
       {/* 报名列表 */}
       <div className="space-y-3">
+        <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2 mb-3">
+          <Users className="h-5 w-5 text-blue-600" />
+          {isZh ? "报名详情" : "Booking Details"}
+        </h2>
         {bookings.length === 0 ? (
-          <div className="text-center py-12 text-gray-400">
+          <div className="text-center py-12 text-gray-400 bg-gray-50 rounded-xl">
             {isZh ? "暂无报名记录" : "No bookings yet"}
           </div>
         ) : (
@@ -198,7 +277,7 @@ export default function AuctionBookingsPage() {
             <div key={b.id} className="bg-white rounded-xl border border-gray-200 p-4">
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-bold text-gray-900">{b.name}</span>
                     <span className="text-sm text-gray-500">{b.phone}</span>
                     {b.status === "confirmed" ? (
@@ -207,7 +286,7 @@ export default function AuctionBookingsPage() {
                       </span>
                     ) : b.status === "deposit_paid" ? (
                       <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-xs font-medium flex items-center gap-1">
-                        <Clock className="h-3 w-3" /> {isZh ? "待确认" : "Pending"}
+                        <Clock className="h-3 w-3" /> {isZh ? "待确认收款" : "Pending"}
                       </span>
                     ) : (
                       <span className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-xs">
@@ -227,16 +306,22 @@ export default function AuctionBookingsPage() {
                   )}
                   {b.depositProofUrl && (
                     <a href={b.depositProofUrl} target="_blank" rel="noopener noreferrer"
-                      className="text-sm text-blue-600 hover:underline">
-                      {isZh ? "查看转账凭证 →" : "View deposit proof →"}
+                      className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1">
+                      <FileText className="h-3 w-3" /> {isZh ? "查看转账凭证 →" : "View deposit proof →"}
                     </a>
                   )}
+                  {/* 确认信息 */}
+                  <div className="text-xs text-gray-400 mt-1">
+                    {b.flawConfirmed ? "✓" : "✗"} {isZh ? "瑕疵已确认" : "Flaw confirmed"}
+                    {" · "}
+                    {b.riskConfirmed ? "✓" : "✗"} {isZh ? "风险已确认" : "Risk confirmed"}
+                  </div>
                 </div>
                 {b.status === "deposit_paid" && (
                   <button
                     onClick={() => handleConfirm(b.id)}
                     disabled={confirming === b.id}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 disabled:bg-gray-300 flex items-center gap-2"
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 disabled:bg-gray-300 flex items-center gap-2 shrink-0"
                   >
                     {confirming === b.id ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
