@@ -44,12 +44,12 @@ export default function RulesClient() {
     {
       icon: "⚖️",
       title: isZh ? "法律保障" : "Legal Protection",
-      desc: isZh ? "附司法拍卖成交确认书等全套法律文件" : "Complete legal documents included",
+      desc: isZh ? "附法院处置成交确认书等全套法律文件" : "Complete legal documents included",
     },
   ];
 
   const risks = [
-    isZh ? "部分设备通过司法处置渠道获得，可能无法办理过户手续" : "Some equipment acquired via judicial auction may not be transferable",
+    isZh ? "部分设备通过司法处置渠道获得，可能无法办理过户手续" : "Some equipment acquired via judicial disposal may not be transferable",
     isZh ? "设备可能存在零部件缺失（如前配重、后悬挂等），需另行配置" : "Equipment may have missing parts requiring separate purchase",
     isZh ? "在线议价非拍卖，卖家有权接受或拒绝任何报价" : "Online negotiation is not an auction — sellers may accept or reject any offer",
     isZh ? "交易为线下交付，请实地验机后再确认成交" : "Delivery is offline — inspect equipment in person before confirming",
@@ -65,8 +65,8 @@ export default function RulesClient() {
     {
       q: isZh ? "设备无法过户怎么办？" : "What if the equipment can't be transferred?",
       a: isZh
-        ? "部分设备通过司法处置渠道获得，所有权已合法转移但无法办理过户。我们提供全套法律文件（司法拍卖成交确认书、评估报告等）证明合法所有权。"
-        : "Some equipment was acquired via judicial auction. Ownership is legally transferred but registration transfer may not be possible. Full legal documents are provided.",
+        ? "部分设备通过司法处置渠道获得，所有权已合法转移但无法办理过户。我们提供全套法律文件（法院处置成交确认书、评估报告等）证明合法所有权。"
+        : "Some equipment was acquired via judicial disposal. Ownership is legally transferred but registration transfer may not be possible. Full legal documents are provided.",
     },
     {
       q: isZh ? "如何确保设备质量？" : "How is equipment quality ensured?",
@@ -77,7 +77,7 @@ export default function RulesClient() {
     {
       q: isZh ? "成交后如何交付？" : "How does delivery work after a deal?",
       a: isZh
-        ? "成交后买卖双方线下交接。交付时附带司法拍卖成交确认书、设备评估报告、交接清单等全套法律文件。"
+        ? "成交后买卖双方线下交接。交付时附带法院处置成交确认书、设备评估报告、交接清单等全套法律文件。"
         : "Delivery is arranged offline between buyer and seller. Full legal documents are provided at handover.",
     },
     {
@@ -120,7 +120,7 @@ export default function RulesClient() {
             <p>
               {isZh
                 ? "所有设备信息均真实披露，包括已知瑕疵、司法处置渠道、无法过户等风险。买家在出价前应仔细阅读设备详情和风险告知。"
-                : "All equipment information is truthfully disclosed, including known defects, judicial auction sources, and transfer risks. Buyers should review details carefully before making an offer."}
+                : "All equipment information is truthfully disclosed, including known defects, judicial disposal sources, and transfer risks. Buyers should review details carefully before making an offer."}
             </p>
           </div>
         </div>
