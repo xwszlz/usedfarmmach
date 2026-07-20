@@ -142,11 +142,11 @@ const FAQ_KNOWLEDGE: FAQEntry[] = [
     questionEn: "What payment methods do you accept?",
     questionRu: "Какие способы оплаты вы принимаете?",
     answerZh:
-      "支持人民币（支付宝/微信/银行转账）、美元（T/T电汇）、欧元（SEPA/SWIFT）。大额订单可协商信用证。",
+      "买卖双方自行协商付款方式。常见方式包括人民币银行转账、美元T/T电汇、欧元SEPA/SWIFT。大额订单可协商信用证。平台不代收交易款项。",
     answerEn:
-      "We accept CNY (Alipay/WeChat/bank transfer), USD (T/T wire), and EUR (SEPA/SWIFT). Large orders can use L/C upon negotiation.",
+      "Buyers and sellers arrange payment directly. Common methods: CNY bank transfer, USD T/T wire, EUR SEPA/SWIFT. Large orders can use L/C. The platform does not handle transaction funds.",
     answerRu:
-      "Принимаем CNY (Alipay/WeChat/банковский перевод), USD (T/T), EUR (SEPA/SWIFT). Для крупных заказов возможен аккредитив.",
+      "Покупатели и продавцы договариваются об оплате напрямую. Обычно: CNY банковский перевод, USD T/T, EUR SEPA/SWIFT. Для крупных заказов возможен аккредитив. Платформа не обрабатывает платежи.",
     tags: ["payment"],
   },
   {

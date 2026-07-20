@@ -170,8 +170,8 @@ function PrivacyContentZh() {
               <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">注册验证邮件、密码重置邮件</td>
             </tr>
             <tr>
-              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">微信/支付宝（支付服务）</td>
-              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">支付必要信息（由支付机构直接处理）</td>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">银行对公转账</td>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">汇款备注信息（由银行直接处理）</td>
               <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">会员费收取</td>
             </tr>
           </tbody>
@@ -311,7 +311,7 @@ function PrivacyContentZh() {
             用于产品产地展示和筛选。该信息基于用户自愿提供，不会用于其他目的。
           </li>
           <li>
-            <strong>支付信息：</strong>会员费支付由微信支付/支付宝等持牌支付机构直接处理，
+            <strong>支付信息：</strong>会员费通过对公转账方式收取，
             我们不接触、不存储您的完整支付凭证（银行卡号、支付密码等）。
           </li>
         </ul>
