@@ -73,7 +73,7 @@ export function QuickContact({ locale }: QuickContactProps) {
             </div>
             <div className="mx-auto h-24 w-24 overflow-hidden rounded-lg border border-green-200">
               <img
-                src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/images/wechat-qr.png"
+                src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/images/wechat-qr-v2.png"
                 alt="WeChat QR Code"
                 className="h-full w-full object-cover"
               />
@@ -88,7 +88,7 @@ export function QuickContact({ locale }: QuickContactProps) {
             </div>
             <div className="mx-auto h-24 w-24 overflow-hidden rounded-lg border border-blue-200">
               <img
-                src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/images/alipay-qr.jpg"
+                src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/images/alipay-qr-v2.jpg"
                 alt="Alipay QR Code"
                 className="h-full w-full object-cover"
               />
