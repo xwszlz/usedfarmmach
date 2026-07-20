@@ -101,8 +101,8 @@ export function DailyReportSection({ locale, initialArticles = [] }: DailyReport
           const mapped = d.data.products.map((item: any) => ({
             product: `${item.brandName} ${item.productName}（${item.year}款）`,
             price: item.domesticPrice,
-            profit: `${Math.round(item.estimatedProfit / 10000)}万`,
-            margin: `${Number(item.priceDiffPercent).toFixed(1)}%`,
+            profit: `${(item.estimatedProfit / 10000).toFixed(1)}万`,
+            margin: `${((item.estimatedProfit / item.domesticPrice) * 100).toFixed(1)}%`,
             productId: item.productId,
           }));
           setLiveTop3(mapped);
