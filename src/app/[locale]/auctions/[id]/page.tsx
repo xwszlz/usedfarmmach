@@ -9,7 +9,7 @@ export default async function BargainRedirect({
 }) {
   const { locale, id } = await params;
 
-  // 尝试查找关联产品，成功则重定向到产品页#bargain，失败则回退到议价列表
+  // 尝试查找关联产品，成功则重定向到产品页#bargain，失败则回退到询价列表
   try {
     const { prisma } = await import("@/lib/db");
     const auction = await prisma.auction.findUnique({

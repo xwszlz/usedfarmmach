@@ -1,9 +1,9 @@
 /**
- * 议价 API（原拍卖改造）
+ * 询价 API（原拍卖改造）
  *
- * GET  /api/auctions              — 获取议价列表
- * POST /api/auctions              — 创建议价（仅seller/admin）
- * GET  /api/auctions/[id]         — 获取议价详情
+ * GET  /api/auctions              — 获取询价列表
+ * POST /api/auctions              — 创建询价（仅seller/admin）
+ * GET  /api/auctions/[id]         — 获取询价详情
  * POST /api/auctions/[id]/bid     — 报价
  * POST /api/auctions/[id]/accept  — 卖家接受报价
  * POST /api/auctions/[id]/reject  — 卖家拒绝报价

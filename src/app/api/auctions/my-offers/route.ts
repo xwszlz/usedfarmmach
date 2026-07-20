@@ -1,6 +1,6 @@
 /**
- * 我的议价 API
- * GET /api/auctions/my-offers — 获取当前用户参与的议价（买家出价 + 卖家发布 + 报名预约）
+ * 我的询价 API
+ * GET /api/auctions/my-offers — 获取当前用户参与的询价（买家出价 + 卖家发布 + 报名预约）
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
-    // 作为买家的议价（出价过的）
+    // 作为买家的询价（出价过的）
     const buyerBids = await prisma.bid.findMany({
       where: { bidderId: user.id },
       include: {
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: "desc" },
     });
 
-    // 作为报名者的议价（预约看车/缴纳保证金）
+    // 作为报名者的询价（预约看车/缴纳保证金）
     const inspectionBookings = await prisma.inspectionBooking.findMany({
       where: { userId: user.id },
       include: {
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: "desc" },
     });
 
-    // 作为卖家的议价
+    // 作为卖家的询价
     const sellerAuctions = await prisma.auction.findMany({
       where: { sellerId: user.id },
       include: {

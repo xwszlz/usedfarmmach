@@ -932,34 +932,34 @@ model ElectronicContract {
 }
 
 // ═══════════════════════════════════════════════════════
-// 在线议价系统（原拍卖系统改造，去掉时间限制和自动成交）
+// 在线询价系统（原拍卖系统改造，去掉时间限制和自动成交）
 // ═══════════════════════════════════════════════════════
 
 model Auction {
   id             String    @id @default(cuid())
-  bargainNo      String    @unique // 议价编号：SD-YJ-YYYYMMDD-XXXX
-  productId      String // 议价设备
+  bargainNo      String    @unique // 询价编号：SD-YJ-YYYYMMDD-XXXX
+  productId      String // 询价设备
   sellerId       String // 卖方
-  title          String // 议价标题
-  description    String?   @db.Text // 议价描述
-  // 议价参数
+  title          String // 询价标题
+  description    String?   @db.Text // 询价描述
+  // 询价参数
   askingPrice    Float // 卖家要价（CNY）
-  // — 议价公告参数（复用原拍卖字段，不再deprecated）—
-  startPrice       Float     @default(0) // 起始议价价
+  // — 询价公告参数（复用原拍卖字段，不再deprecated）—
+  startPrice       Float     @default(0) // 起始价
   reservePrice     Float? // 保留价（可选，低于此价不成交）
-  priceIncrement   Float     @default(5000) // 加价幅度
-  deposit          Float     @default(0) // 保证金金额
-  startTime        DateTime? // 议价开始时间
-  endTime          DateTime? // 议价结束时间（null=无限制）
+  priceIncrement   Float     @default(5000) // 加价幅度（已弃用，保留字段）
+  deposit          Float     @default(0) // 保证金金额（已弃用，保留字段）
+  startTime        DateTime? // 询价开始时间
+  endTime          DateTime? // 询价结束时间（null=无限制）
   // 新增：公告信息
   announcementNo   String?   // 公告编号 SJZSN-2026-0720
-  minParticipants   Int       @default(3) // 最低启动人数
+  minParticipants   Int       @default(3) // 最低启动人数（已弃用，保留字段）
   paymentDeadline   DateTime? // 付款截止时间
   evaluationPrice   Float?    // 参考评估价
   knownFlaws        String?   @db.Text // 已知瑕疵
   contractTemplateNo String?  // 合同模板编号
   // 状态
-  status         String    @default("active") // active(议价中), accepted(已成交), cancelled(已取消)
+  status         String    @default("active") // active(询价中), accepted(已成交), cancelled(已取消)
   acceptedBidId  String?   @unique // 接受的报价ID
   acceptedPrice  Float? // 成交价
   winnerId       String? // deprecated（由acceptedBidId反查）
@@ -1003,7 +1003,7 @@ model Bid {
 }
 
 // ═══════════════════════════════════════════════════════
-// 议价报名 + 验车预约
+// 询价报名 + 验车预约
 // ═══════════════════════════════════════════════════════
 
 model InspectionBooking {

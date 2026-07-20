@@ -1,5 +1,5 @@
 /**
- * 议价报名 + 验车预约 API
+ * 询价报名 + 验车预约 API
  * POST /api/auctions/[id]/inspection-booking
  * GET  /api/auctions/[id]/inspection-booking  — 获取报名列表（卖家）
  */
@@ -11,7 +11,7 @@ import { sendEmail } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
 
-// 创建议价报名
+// 创建询价报名
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -105,9 +105,9 @@ export async function POST(
 
       await sendEmail({
         to: sellerEmail,
-        subject: `[议价报名] ${name} - ${productName}`,
+        subject: `[询价报名] ${name} - ${productName}`,
         html: `
-          <h2>新的议价报名</h2>
+          <h2>新的询价报名</h2>
           <p><strong>公告编号：</strong>${auction.announcementNo || auction.bargainNo}</p>
           <p><strong>标的物：</strong>${productName}</p>
           <p><strong>报名人：</strong>${name}</p>
@@ -116,9 +116,9 @@ export async function POST(
           <p><strong>已知瑕疵确认：</strong>已确认</p>
           <p><strong>风险自担确认：</strong>已确认</p>
           <hr>
-          <p>请登录管理后台查看详情并确认保证金缴纳。</p>
+          <p>请登录管理后台查看详情并确认诚意金收付。</p>
         `,
-        text: `议价报名：${name} ${phone} - ${productName}`,
+        text: `询价报名：${name} ${phone} - ${productName}`,
       });
     } catch (emailErr) {
       console.error("Email notification failed:", emailErr);

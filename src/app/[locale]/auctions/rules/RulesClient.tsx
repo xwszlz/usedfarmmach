@@ -96,14 +96,14 @@ export default function RulesClient() {
     {
       q: isZh ? "成交后违约责任如何？" : "What about liability for breach?",
       a: isZh
-        ? "买卖双方违约责任对等。买方逾期付款：保证金（如有）不予退还 + 合同解除 + 六个月内不得参与同类议价。卖方无法交付：退还已付款项 + 支付合同总价5%-10%违约金 + 赔偿实际损失。卖方权属虚假或隐瞒重大瑕疵：买方有权解除合同并要求赔偿。"
+        ? "买卖双方违约责任对等。买方逾期付款：保证金（如有）不予退还 + 合同解除 + 六个月内不得参与同类询价。卖方无法交付：退还已付款项 + 支付合同总价5%-10%违约金 + 赔偿实际损失。卖方权属虚假或隐瞒重大瑕疵：买方有权解除合同并要求赔偿。"
         : "Liability is mutual. Buyer late payment: deposit (if any) forfeited + contract cancelled + 6-month restriction. Seller non-delivery: full refund + 5-10% penalty + actual losses. Title fraud or concealed defects: buyer may cancel and claim damages.",
     },
     {
-      q: isZh ? "服务费怎么收？" : "How are service fees charged?",
+      q: isZh ? "成交后服务费怎么收？" : "Are there service fees after closing?",
       a: isZh
-        ? "成交后收取综合服务费5%（买方2%+卖方3%）。现阶段平台不代收交易款项，买卖双方按成交价各自向平台支付服务费。未来接入第三方支付分账后，将自动从成交款中扣除。"
-        : "5% total service fee after closing (buyer 2% + seller 3%). Currently the platform does not handle funds; both parties pay fees separately. Auto-deduction will be available once payment split is integrated.",
+        ? "本功能为信息发布与价格协商撮合服务，平台不收取任何交易服务费、佣金或成交手续费。会员费、AI估值费等属于增值信息服务费，与设备交易无关。买卖双方按合同约定自行完成交易及资金收付。"
+        : "This feature is an information and price-inquiry matching service. The platform charges no transaction service fees, commissions, or closing fees. Membership and AI valuation fees are value-added information service fees, unrelated to equipment transactions. Buyers and sellers complete transactions and payments per their contract.",
     },
   ];
 

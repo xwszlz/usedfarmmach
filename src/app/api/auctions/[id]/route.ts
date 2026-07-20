@@ -1,5 +1,5 @@
 /**
- * 议价详情 API
+ * 询价详情 API
  * GET /api/auctions/[id]
  */
 

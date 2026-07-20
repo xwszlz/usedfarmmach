@@ -40,7 +40,7 @@ const BID_STATUS_MAP: Record<string, { zh: string; en: string; color: string }> 
 };
 
 const BARGAIN_STATUS_MAP: Record<string, { zh: string; en: string; color: string }> = {
-  active: { zh: "议价中", en: "Active", color: "bg-blue-100 text-blue-700" },
+  active: { zh: "询价中", en: "Active", color: "bg-blue-100 text-blue-700" },
   accepted: { zh: "已成交", en: "Sold", color: "bg-green-100 text-green-700" },
   cancelled: { zh: "已取消", en: "Cancelled", color: "bg-gray-100 text-gray-500" },
 };
@@ -103,7 +103,7 @@ export default function MyOffersClient() {
   const filtered = tab === "all" ? items : items.filter((i) => i.role === tab);
 
   const statCards = [
-    { label: isZh ? "总议价" : "Total", value: stats.total, color: "text-gray-900" },
+    { label: isZh ? "总询价" : "Total", value: stats.total, color: "text-gray-900" },
     { label: isZh ? "进行中" : "Active", value: stats.active, color: "text-blue-600" },
     { label: isZh ? "待回复" : "Pending", value: stats.pending, color: "text-amber-600" },
     { label: isZh ? "已成交" : "Deals", value: stats.accepted, color: "text-green-600" },
@@ -115,9 +115,9 @@ export default function MyOffersClient() {
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold text-gray-900">{isZh ? "我的议价" : "My Offers"}</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{isZh ? "我的询价" : "My Offers"}</h1>
             <Link href={`/${locale}/auctions`} className="text-sm text-[#1E40AF] hover:underline">
-              {isZh ? "浏览议价" : "Browse All"}
+              {isZh ? "浏览询价" : "Browse All"}
             </Link>
           </div>
           {/* Stats */}
@@ -161,10 +161,10 @@ export default function MyOffersClient() {
         {filtered.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-2xl border border-gray-200">
             <p className="text-gray-400 text-lg">
-              {isZh ? "暂无议价记录" : "No offers yet"}
+              {isZh ? "暂无询价记录" : "No offers yet"}
             </p>
             <Link href={`/${locale}/auctions`} className="text-[#1E40AF] text-sm hover:underline mt-2 inline-block">
-              {isZh ? "去议价" : "Start negotiating"}
+              {isZh ? "去询价" : "Start negotiating"}
             </Link>
           </div>
         ) : (
@@ -210,8 +210,8 @@ export default function MyOffersClient() {
                         item.depositPaid ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
                       }`}>
                         {item.depositPaid
-                          ? (isZh ? "保证金已确认" : "Deposit confirmed")
-                          : (isZh ? "待上传保证金" : "Deposit pending")}
+                          ? (isZh ? "诚意金已确认" : "Earnest confirmed")
+                          : (isZh ? "待上传诚意金" : "Earnest pending")}
                       </span>
                     )}
                     {!bidStatus && item.role !== "bidder" && (

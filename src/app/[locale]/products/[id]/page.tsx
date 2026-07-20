@@ -149,7 +149,7 @@ export default async function ProductDetailPage({
       videos: { orderBy: { sortOrder: "asc" } },
       internationalPrices: { orderBy: { sourceDate: "desc" } },
       seller: { select: { id: true, companyName: true, country: true } },
-      // 查询是否有关联的活跃议价
+      // 查询是否有关联的活跃询价
       auctions: {
         where: { status: "active" },
         select: { id: true, bargainNo: true, askingPrice: true, totalBids: true },
@@ -449,7 +449,7 @@ export default async function ProductDetailPage({
       </div>
 
       {/* ================================================================ */}
-      {/*  在线议价栏目 — 直接嵌入产品详情页（不再跳转到独立页面）        */}
+      {/*  在线询价栏目 — 直接嵌入产品详情页（不再跳转到独立页面）        */}
       {/* ================================================================ */}
       {product.auctions?.[0] && (
         <div className="mt-6">

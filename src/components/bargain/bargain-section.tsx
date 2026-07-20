@@ -655,7 +655,7 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
         </div>
       )}
 
-      {/* 链接到议价规则页 */}
+      {/* 链接到询价规则页 */}
       <div className="text-center">
         <a
           href={`/${locale}/auctions/rules`}

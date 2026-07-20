@@ -37,7 +37,7 @@ interface Bargain {
 }
 
 const STATUS_MAP: Record<string, { zh: string; en: string; bg: string; text: string }> = {
-  active: { zh: "议价中", en: "Open", bg: "bg-emerald-500", text: "text-white" },
+  active: { zh: "询价中", en: "Open", bg: "bg-emerald-500", text: "text-white" },
   accepted: { zh: "已成交", en: "Sold", bg: "bg-blue-500", text: "text-white" },
   cancelled: { zh: "已取消", en: "Cancelled", bg: "bg-gray-400", text: "text-white" },
 };
@@ -75,7 +75,7 @@ export default function BargainsClient() {
     }
   };
 
-  // 获取所有议价（含已成交）用于统计
+  // 获取所有询价（含已成交）用于统计
   const [allBargains, setAllBargains] = useState<Bargain[]>([]);
   useEffect(() => {
     fetch("/api/auctions?limit=100&status=all")
@@ -119,7 +119,7 @@ export default function BargainsClient() {
           <div className="flex gap-8 md:gap-12">
             <div className="text-center">
               <p className="text-2xl md:text-3xl font-bold text-white font-mono">{activeCount}</p>
-              <p className="text-xs text-blue-200 mt-1">{isZh ? "正在议价" : "Active"}</p>
+              <p className="text-xs text-blue-200 mt-1">{isZh ? "正在询价" : "Active"}</p>
             </div>
             <div className="text-center">
               <p className="text-2xl md:text-3xl font-bold text-white font-mono">{totalDeals}</p>
@@ -130,7 +130,7 @@ export default function BargainsClient() {
                 ¥{minPrice > 0 ? (minPrice / 10000).toFixed(0) : "0"}
                 <span className="text-base">{isZh ? "万" : "w"}</span>
               </p>
-              <p className="text-xs text-blue-200 mt-1">{isZh ? "起议价" : "Min Price"}</p>
+              <p className="text-xs text-blue-200 mt-1">{isZh ? "起询价" : "Min Price"}</p>
             </div>
           </div>
         </div>
@@ -142,7 +142,7 @@ export default function BargainsClient() {
           <div className="flex gap-2">
             {[
               { value: "all", label: isZh ? "全部" : "All" },
-              { value: "active", label: isZh ? "议价中" : "Open" },
+              { value: "active", label: isZh ? "询价中" : "Open" },
               { value: "accepted", label: isZh ? "已成交" : "Sold" },
             ].map((tab) => (
               <button
@@ -165,7 +165,7 @@ export default function BargainsClient() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            {isZh ? "议价规则" : "Rules"}
+            {isZh ? "询价规则" : "Rules"}
           </Link>
         </div>
       </div>
@@ -175,7 +175,7 @@ export default function BargainsClient() {
         {filtered.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-2xl border border-gray-200">
             <p className="text-gray-400 text-lg">
-              {isZh ? "暂无议价商品" : "No bargains available"}
+              {isZh ? "暂无询价商品" : "No bargains available"}
             </p>
           </div>
         ) : (

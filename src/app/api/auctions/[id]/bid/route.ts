@@ -7,7 +7,7 @@
  * 1. 移除最低启动人数检查 — 不再有"满N人启动"
  * 2. 移除必须确认报名+保证金才能报价的限制 — 平台不设保证金
  * 3. 报价金额只校验 > 0，不校验是否高于当前最高价 — 非竞价模式
- * 4. 保留基础校验：登录、不能给自己报价、议价状态active
+ * 4. 保留基础校验：登录、不能给自己报价、询价状态active
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -45,7 +45,7 @@ export async function POST(
       return NextResponse.json({ error: "Bargain not found" }, { status: 404 });
     }
 
-    // 检查议价状态
+    // 检查询价状态
     if (bargain.status !== "active") {
       return NextResponse.json(
         { error: "This inquiry is no longer active" },
@@ -73,7 +73,7 @@ export async function POST(
       },
     });
 
-    // 更新议价统计
+    // 更新询价统计
     const bidCount = await prisma.bid.count({
       where: { auctionId: params.id },
     });

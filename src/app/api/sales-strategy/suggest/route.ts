@@ -385,7 +385,7 @@ export async function POST(request: NextRequest) {
 
     // 7. 定价建议
     let pricingAdvice = {
-      suggestion: "建议参考同品类均价定价，留出5-10%议价空间",
+      suggestion: "建议参考同品类均价定价，留出5-10%询价空间",
       confidence: 0.7,
     };
 
@@ -643,7 +643,7 @@ export async function GET(request: NextRequest) {
 
     // 7. 定价建议
     let pricingAdvice = {
-      suggestion: "建议参考同品类均价定价，留出5-10%议价空间",
+      suggestion: "建议参考同品类均价定价，留出5-10%询价空间",
       confidence: 0.7,
     };
 

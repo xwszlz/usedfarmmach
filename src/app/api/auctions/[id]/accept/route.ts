@@ -49,7 +49,7 @@ export async function POST(
       return NextResponse.json({ error: "bidId is required" }, { status: 400 });
     }
 
-    // 验证报价属于此议价
+    // 验证报价属于此询价
     const bid = await prisma.bid.findFirst({
       where: { id: bidId, auctionId: params.id },
     });
@@ -58,7 +58,7 @@ export async function POST(
       return NextResponse.json({ error: "Offer not found" }, { status: 404 });
     }
 
-    // 使用事务：更新议价状态 + 标记报价为已接受
+    // 使用事务：更新询价状态 + 标记报价为已接受
     const [updatedAuction] = await prisma.$transaction([
       prisma.auction.update({
         where: { id: params.id },

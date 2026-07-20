@@ -57,7 +57,7 @@ export default function AuctionBookingsPage() {
     return headers;
   };
 
-  // 获取所有议价（不限状态）
+  // 获取所有询价（不限状态）
   useEffect(() => {
     (async () => {
       try {
@@ -139,10 +139,10 @@ export default function AuctionBookingsPage() {
         {isZh ? "询价报名管理" : "Inquiry Bookings"}
       </h1>
 
-      {/* 议价列表 - 卡片式展示 */}
+      {/* 询价列表 - 卡片式展示 */}
       {auctions.length > 0 ? (
         <div className="mb-6 space-y-2">
-          <p className="text-sm font-medium text-gray-500 mb-2">{isZh ? "点击选择议价项目" : "Click to select"}</p>
+          <p className="text-sm font-medium text-gray-500 mb-2">{isZh ? "点击选择询价项目" : "Click to select"}</p>
           {auctions.map((a) => {
             const selected = a.id === selectedAuction;
             const isCancelled = a.status === "cancelled";
@@ -189,7 +189,7 @@ export default function AuctionBookingsPage() {
         </div>
       ) : (
         <div className="text-center py-12 text-gray-400">
-          {isZh ? "暂无议价记录" : "No bargains available"}
+          {isZh ? "暂无询价记录" : "No bargains available"}
         </div>
       )}
 

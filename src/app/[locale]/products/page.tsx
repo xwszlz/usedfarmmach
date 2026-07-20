@@ -39,7 +39,7 @@ export default async function ProductsPage({
         images: { orderBy: { sortOrder: "asc" }, take: 1 },
         internationalPrices: { orderBy: { sourceDate: "desc" }, take: 1 },
         seller: { select: { id: true, companyName: true, country: true } },
-        // 关联活跃议价
+        // 关联活跃询价
         auctions: {
           where: { status: "active" },
           select: { id: true, totalBids: true },
