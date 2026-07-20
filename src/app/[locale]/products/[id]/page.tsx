@@ -10,7 +10,7 @@ import { StandardDescription } from "@/components/product/standard-description";
 import { InquiryForm } from "@/components/product/inquiry-form";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin, ArrowLeftRight, Info, Mail, ExternalLink, MessageCircle, Phone } from "lucide-react";
+import { MapPin, ArrowLeftRight, Info, Mail, MessageCircle, Phone } from "lucide-react";
 import { getImageUrl, getVideoUrl, generateImageAlt } from "@/lib/image-url";
 import { formatPrice } from "@/lib/utils";
 import ArbitrageCalculatorSection from "@/components/product/arbitrage-calculator-section";
@@ -26,6 +26,7 @@ import { InspectionReportCard } from "@/components/inspection/inspection-report-
 import { FavoriteButton } from "@/components/favorite/favorite-button";
 import { SellerTrustCard } from "@/components/seller/seller-trust-card";
 import BlockchainTrace from "@/components/blockchain/blockchain-trace";
+import BargainSection from "@/components/bargain/bargain-section";
 import Link from "next/link";
 import { Wrench } from "lucide-react";
 
@@ -448,35 +449,23 @@ export default async function ProductDetailPage({
       </div>
 
       {/* ================================================================ */}
-      {/*  议价入口 — 如果该产品正在议价中                                */}
+      {/*  在线议价栏目 — 直接嵌入产品详情页（不再跳转到独立页面）        */}
       {/* ================================================================ */}
       {product.auctions?.[0] && (
         <div className="mt-6">
-          <Card className="border-2 border-amber-200 bg-amber-50/50">
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between gap-4 flex-wrap">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Badge className="bg-amber-500 text-white">议价中</Badge>
-                    <span className="text-sm text-gray-500">{product.auctions[0].bargainNo}</span>
-                  </div>
-                  <p className="text-lg font-bold text-gray-900">
-                    卖家要价 ¥{product.auctions[0].askingPrice.toLocaleString()}
-                  </p>
-                  <p className="text-sm text-gray-500 mt-0.5">
-                    已有 {product.auctions[0].totalBids} 人报价
-                  </p>
-                </div>
-                <Link
-                  href={`/${locale}/auctions/${product.auctions[0].id}`}
-                  className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-6 py-3 text-sm font-bold text-white shadow-lg transition-all hover:bg-amber-600 hover:shadow-xl active:scale-[0.98]"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  前往议价
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="mb-3 flex items-center gap-2">
+            <span className="text-lg font-bold text-gray-900">
+              {locale === "zh" ? "在线议价" : "Price Negotiation"}
+            </span>
+            <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-xs font-medium">
+              {locale === "zh" ? "实时议价" : "Live"}
+            </span>
+          </div>
+          <BargainSection
+            auctionId={product.auctions[0].id}
+            locale={locale}
+            sellerId={product.seller.id}
+          />
         </div>
       )}
 

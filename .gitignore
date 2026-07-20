@@ -61,6 +61,10 @@ replacements.txt
 .tmp-*
 temp-*
 
+# build/deploy logs and next cache backups
+*.log
+.next-old*/
+
 # scripts that should not be in repo (temporary utilities + secrets)
 scripts/
 /test-*.js

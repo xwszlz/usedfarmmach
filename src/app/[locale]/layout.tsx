@@ -10,6 +10,7 @@ import { Footer } from "@/components/layout/footer";
 import { OrganizationStructuredData } from "@/components/seo/structured-data";
 import { ThemeProvider } from "@/lib/theme/theme-provider";
 import { SmoothScrollProvider } from "@/lib/lenis/smooth-scroll-provider";
+import { FloatingBargainAd } from "@/components/bargain/floating-bargain-ad";
 
 const locales = ["zh", "en", "ru", "es", "pt", "ar", "fr", "hi"] as const;
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
@@ -60,6 +61,7 @@ export default async function LocaleLayout({
               <Navbar locale={locale} />
               <main className="min-h-[calc(100vh-4rem)]">{children}</main>
               <Footer locale={locale} />
+              <FloatingBargainAd locale={locale} />
             </SmoothScrollProvider>
           </NextIntlClientProvider>
         </ThemeProvider>

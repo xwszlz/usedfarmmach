@@ -23,12 +23,35 @@ const NOTIFY_URL = process.env.WECHAT_NOTIFY_URL || "";
 const BASE_URL = "https://api.mch.weixin.qq.com";
 
 /**
+ * 规范化私钥：环境变量里的 PEM 可能把换行存成字面量 \n，需要还原。
+ * 同时兼容 PKCS#1 与 PKCS#8 格式，以及缺失/多余头尾的粘贴。
+ */
+function normalizePrivateKey(raw: string): string {
+  let key = raw.trim();
+  // 将粘贴时被转义的 \n 还原为真实换行
+  key = key.replace(/\\n/g, "\n");
+  // 移除首尾空格与多余空行
+  key = key.replace(/\r\n/g, "\n").trim();
+
+  // 如果用户把 "BEGIN PRIVATE KEY" / "END PRIVATE KEY" 头尾也复制丢了，按常见 PKCS#8 补回
+  const hasBegin = key.includes("-----BEGIN");
+  const hasEnd = key.includes("-----END");
+  if (hasBegin && hasEnd) return key;
+
+  // 纯 base64 内容：补回 PKCS#8 头尾（微信支付 APIv3 默认下发 PKCS#8）
+  const base64Body = key.replace(/\s+/g, "");
+  return `-----BEGIN PRIVATE KEY-----\n${base64Body}\n-----END PRIVATE KEY-----`;
+}
+
+const NORMALIZED_PRIVATE_KEY = normalizePrivateKey(PRIVATE_KEY);
+
+/**
  * 用商户私钥对消息做 SHA256withRSA 签名
  */
 function signWithPrivateKey(message: string): string {
   const sign = crypto.createSign("RSA-SHA256");
   sign.update(message, "utf8");
-  return sign.sign(PRIVATE_KEY, "base64");
+  return sign.sign(NORMALIZED_PRIVATE_KEY, "base64");
 }
 
 /**

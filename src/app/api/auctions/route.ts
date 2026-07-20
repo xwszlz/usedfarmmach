@@ -29,9 +29,9 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "20", 10);
 
     const whereClause: Record<string, unknown> = {};
-    if (status) {
+    if (status && status !== "all") {
       whereClause.status = status;
-    } else {
+    } else if (!status) {
       whereClause.status = { in: ["active"] };
     }
 
@@ -43,6 +43,11 @@ export async function GET(request: NextRequest) {
             id: true,
             modelName: true,
             year: true,
+            workingHours: true,
+            condition: true,
+            location: true,
+            enginePower: true,
+            driveSystem: true,
             brand: { select: { nameZh: true, nameEn: true } },
             images: { orderBy: { sortOrder: "asc" as const }, take: 1 },
           },
