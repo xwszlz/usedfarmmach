@@ -48,6 +48,7 @@ model User {
   auctionsAsSeller      Auction[]            @relation("AuctionSeller")
   auctionsAsWinner      Auction[]            @relation("AuctionWinner")
   auctionBids           Bid[]                @relation("AuctionBidder")
+  inspectionBookings    InspectionBooking[]
   loanApplications      LoanApplication[]
   apiKeys               ApiKey[]
   rentalListings        RentalListing[]
@@ -943,13 +944,20 @@ model Auction {
   description    String?   @db.Text // 议价描述
   // 议价参数
   askingPrice    Float // 卖家要价（CNY）
-  // — 以下字段保留兼容但不再使用 —
-  startPrice     Float     @default(0) // deprecated
-  reservePrice   Float? // deprecated
-  priceIncrement Float     @default(1000) // deprecated
-  deposit        Float     @default(0) // deprecated
-  startTime      DateTime? // deprecated
-  endTime        DateTime? // deprecated
+  // — 议价公告参数（复用原拍卖字段，不再deprecated）—
+  startPrice       Float     @default(0) // 起始议价价
+  reservePrice     Float? // 保留价（可选，低于此价不成交）
+  priceIncrement   Float     @default(5000) // 加价幅度
+  deposit          Float     @default(0) // 保证金金额
+  startTime        DateTime? // 议价开始时间
+  endTime          DateTime? // 议价结束时间（null=无限制）
+  // 新增：公告信息
+  announcementNo   String?   // 公告编号 SJZSN-2026-0720
+  minParticipants   Int       @default(3) // 最低启动人数
+  paymentDeadline   DateTime? // 付款截止时间
+  evaluationPrice   Float?    // 参考评估价
+  knownFlaws        String?   @db.Text // 已知瑕疵
+  contractTemplateNo String?  // 合同模板编号
   // 状态
   status         String    @default("active") // active(议价中), accepted(已成交), cancelled(已取消)
   acceptedBidId  String?   @unique // 接受的报价ID
@@ -967,10 +975,11 @@ model Auction {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
-  product Product @relation(fields: [productId], references: [id])
-  seller  User    @relation("AuctionSeller", fields: [sellerId], references: [id])
-  bids    Bid[]
-  winner  User?   @relation("AuctionWinner", fields: [winnerId], references: [id])
+  product           Product             @relation(fields: [productId], references: [id])
+  seller            User                @relation("AuctionSeller", fields: [sellerId], references: [id])
+  bids              Bid[]
+  winner            User?               @relation("AuctionWinner", fields: [winnerId], references: [id])
+  inspectionBookings InspectionBooking[]
 
   @@index([status, createdAt])
   @@index([sellerId])
@@ -991,6 +1000,78 @@ model Bid {
 
   @@index([auctionId, amount])
   @@index([bidderId])
+}
+
+// ═══════════════════════════════════════════════════════
+// 议价报名 + 验车预约
+// ═══════════════════════════════════════════════════════
+
+model InspectionBooking {
+  id              String    @id @default(cuid())
+  auctionId       String
+  userId          String?   // 登录用户ID（匿名用户为null）
+  // 预约人信息
+  name            String    // 姓名
+  phone           String    // 手机号
+  preferredDate   DateTime? // 期望验车日期
+  // 确认
+  flawConfirmed   Boolean   @default(false) // 已知瑕疵确认
+  riskConfirmed   Boolean   @default(false) // 风险自担确认
+  // 保证金
+  depositAmount   Float?    // 保证金金额
+  depositPaid     Boolean   @default(false) // 是否已缴保证金
+  depositProofUrl String?   // 转账凭证URL
+  depositConfirmedAt DateTime? // 卖家确认收款时间
+  // 状态
+  status          String    @default("pending") // pending(待处理) / deposit_paid(已缴保证金) / confirmed(已确认) / cancelled(已取消)
+  // 预留：拍卖模式扩展
+  type            String    @default("bargain") // bargain / auction
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  auction  Auction @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+  user     User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([auctionId, status])
+  @@index([userId])
+  @@index([status, createdAt])
+}
+
+// ═══════════════════════════════════════════════════════
+// 合同模板管理
+// ═══════════════════════════════════════════════════════
+
+model ContractTemplate {
+  id              String    @id @default(cuid())
+  templateNo      String    @unique // 模板编号：SJZSN-2026-0725
+  title           String    // 合同标题
+  contractType    String    @default("sale") // sale(买卖) / auction(拍卖) / lease(租赁)
+  // 卖方信息
+  sellerName      String    // 卖方名称
+  sellerCreditCode String?  // 统一社会信用代码
+  sellerAddress   String?   // 卖方地址
+  sellerPhone     String?   // 卖方联系电话
+  sellerLegalPerson String? // 法定代表人
+  // 收款账户
+  bankName        String?   // 开户银行
+  bankAccountName String?   // 户名
+  bankAccountNo   String?   // 账号
+  // 合同条款
+  content         String    @db.Text // 合同条款（Markdown模板，支持变量替换）
+  // 变量说明：{{buyerName}} {{buyerIdCard}} {{buyerPhone}} {{productInfo}} {{price}} {{paymentDeadline}} {{deliveryAddress}}
+  // 交易参数
+  paymentDays     Int       @default(2) // 付款期限（天）
+  deliveryDays    Int       @default(3) // 提货期限（工作日）
+  transferResponsibility String @default("buyer") // 过户责任：buyer(买方自行) / seller(卖方协助)
+  // 争议解决
+  courtJurisdiction String? // 管辖法院
+  // 状态
+  status          String    @default("active") // active / archived
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([status])
+  @@index([contractType])
 }
 
 // ═══════════════════════════════════════════════════════
