@@ -1,7 +1,9 @@
 /**
- * 卖家确认保证金收款 API
+ * 卖家确认诚意金收款 API
  * POST /api/auctions/[id]/deposit/confirm
  * { bookingId }
+ *
+ * 合规改造：诚意金由买卖双方自行约定，平台仅提供通知工具
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -71,7 +73,7 @@ export async function POST(
       },
     });
 
-    // 通知报名人保证金已确认
+    // 通知报名人诚意金已确认
     try {
       if (booking.userId) {
         const bidder = await prisma.user.findUnique({
@@ -80,16 +82,15 @@ export async function POST(
         if (bidder?.email) {
           await sendEmail({
             to: bidder.email,
-            subject: `[保证金确认] 议价资格已开通 - ${booking.auction.title}`,
+            subject: `[诚意金确认] 询价资格已开通 - ${booking.auction.title}`,
             html: `
-              <h2>保证金已确认</h2>
-              <p>您的保证金已由卖家确认，议价资格已开通。</p>
-              <p><strong>议价编号：</strong>${booking.auction.bargainNo}</p>
+              <h2>诚意金已确认</h2>
+              <p>您的诚意金已由卖家确认，您现在可以提交报价了。</p>
+              <p><strong>询价编号：</strong>${booking.auction.bargainNo}</p>
               <p><strong>标的物：</strong>${booking.auction.title}</p>
-              ${booking.auction.startTime ? `<p><strong>议价开始时间：</strong>${new Date(booking.auction.startTime).toLocaleString("zh-CN")}</p>` : `<p><strong>启动条件：</strong>确认报名满${booking.auction.minParticipants || 3}人即启动</p>`}
-              <p>请在议价启动后准时参与。</p>
+              <p>请在询价页面提交您的报价。卖家将审阅后决定是否接受。</p>
             `,
-            text: `保证金已确认，议价资格已开通。议价编号：${booking.auction.bargainNo}`,
+            text: `诚意金已确认，询价资格已开通。询价编号：${booking.auction.bargainNo}`,
           });
         }
       }
@@ -97,58 +98,12 @@ export async function POST(
       console.error("Email notification failed:", emailErr);
     }
 
-    // 检查是否达到最低启动人数
-    const confirmedCount = await prisma.inspectionBooking.count({
-      where: {
-        auctionId: params.id,
-        depositPaid: true,
-        status: "confirmed",
-      },
-    });
-
-    const auction = booking.auction;
-    const minParticipants = auction.minParticipants || 3;
-
-    if (confirmedCount >= minParticipants) {
-      // 达到最低人数，通知所有已确认的报名者
-      const confirmedBookings = await prisma.inspectionBooking.findMany({
-        where: {
-          auctionId: params.id,
-          depositPaid: true,
-          status: "confirmed",
-        },
-        include: { user: true },
-      });
-
-      for (const cb of confirmedBookings) {
-        if (cb.user?.email) {
-          try {
-            await sendEmail({
-              to: cb.user.email,
-              subject: `[议价启动] 满${minParticipants}人，议价即将开始 - ${auction.title}`,
-              html: `
-                <h2>议价已启动</h2>
-                <p>报名人数已达${confirmedCount}人（最低${minParticipants}人），议价已正式启动，您可以立即出价。</p>
-                <p><strong>议价编号：</strong>${auction.bargainNo}</p>
-                <p><strong>标的物：</strong>${auction.title}</p>
-                ${auction.startTime ? `<p><strong>议价开始时间：</strong>${new Date(auction.startTime).toLocaleString("zh-CN")}</p>` : ""}
-                <p>请立即登录议价大厅出价。</p>
-              `,
-              text: `议价启动通知：满${minParticipants}人，议价即将开始。`,
-            });
-          } catch (e) {
-            console.error("Notify bidder failed:", e);
-          }
-        }
-      }
-    }
-
     return NextResponse.json({
       success: true,
       data: updated,
-      confirmedCount,
-      minReached: confirmedCount >= minParticipants,
-      minParticipants,
+      confirmedCount: 0,
+      minReached: false,
+      minParticipants: 0,
     });
   } catch (error) {
     console.error("Deposit confirm error:", error);

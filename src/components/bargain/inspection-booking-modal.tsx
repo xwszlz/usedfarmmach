@@ -167,8 +167,8 @@ export default function InspectionBookingModal({
         {/* 头部 */}
         <div className="flex items-center justify-between p-5 border-b border-gray-100 sticky top-0 bg-white z-10">
           <h3 className="text-lg font-bold text-gray-900">
-            {step === "form" && (isZh ? "议价报名 · 验车预约" : "Bargain Registration")}
-            {step === "deposit" && (isZh ? "保证金缴纳" : "Deposit Payment")}
+            {step === "form" && (isZh ? "询价报名 · 验车预约" : "Inquiry Registration")}
+            {step === "deposit" && (isZh ? "诚意金（如需）" : "Earnest Money (if applicable)")}
             {step === "done" && (isZh ? "报名完成" : "Registration Complete")}
           </h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
@@ -210,24 +210,14 @@ export default function InspectionBookingModal({
                   )}
                   {bargain.priceIncrement != null && bargain.priceIncrement > 0 && (
                     <div>
-                      <span className="text-gray-500">{isZh ? "加价幅度" : "Increment"}：</span>
-                      <span className="font-semibold text-gray-900">¥{bargain.priceIncrement.toLocaleString()}/次</span>
+                      <span className="text-gray-500">{isZh ? "参考加价" : "Reference Increment"}：</span>
+                      <span className="font-semibold text-gray-900">¥{bargain.priceIncrement.toLocaleString()}{isZh ? "（仅参考）" : " (ref only)"}</span>
                     </div>
                   )}
                   {bargain.deposit != null && bargain.deposit > 0 && (
                     <div>
-                      <span className="text-gray-500">{isZh ? "保证金" : "Deposit"}：</span>
+                      <span className="text-gray-500">{isZh ? "建议诚意金" : "Suggested Earnest"}：</span>
                       <span className="font-semibold text-red-600">¥{bargain.deposit.toLocaleString()}</span>
-                    </div>
-                  )}
-                  {bargain.minParticipants != null && bargain.minParticipants > 0 && (
-                    <div>
-                      <span className="text-gray-500">{isZh ? "启动条件" : "Start Condition"}：</span>
-                      <span className="font-semibold text-gray-900">
-                        {isZh
-                          ? `满 ${bargain.minParticipants} 人确认报名即启动`
-                          : `Starts when ${bargain.minParticipants} bidders confirmed`}
-                      </span>
                     </div>
                   )}
                   {bargain.startTime && (
@@ -356,24 +346,25 @@ export default function InspectionBookingModal({
               {/* 保证金缴纳指引 */}
               <div className="bg-blue-50 rounded-lg p-4 space-y-3">
                 <h4 className="text-sm font-bold text-blue-900">
-                  {isZh ? "保证金缴纳指引" : "Deposit Payment Guide"}
+                  {isZh ? "诚意金说明（双方自行约定）" : "Earnest Money (Optional, by Agreement)"}
                 </h4>
                 {bargain.deposit != null && bargain.deposit > 0 && (
                   <p className="text-sm text-blue-700">
-                    {isZh ? "保证金金额" : "Deposit Amount"}：
+                    {isZh ? "建议金额" : "Suggested Amount"}：
                     <span className="font-bold text-lg">¥{bargain.deposit.toLocaleString()}</span>
+                    <span className="text-xs ml-1">{isZh ? "（可协商）" : "(negotiable)"}</span>
                   </p>
                 )}
                 <div className="text-sm text-blue-700 space-y-1">
-                  <p>1. {isZh ? "线下银行转账至卖方指定账户" : "Bank transfer to seller's account"}</p>
-                  <p>2. {isZh ? "转账完成后截图保存" : "Take screenshot after transfer"}</p>
-                  <p>3. {isZh ? "点击下方按钮上传转账凭证" : "Click button below to upload proof"}</p>
-                  <p>4. {isZh ? "等待卖家确认收款" : "Wait for seller confirmation"}</p>
+                  <p>1. {isZh ? "诚意金由买卖双方自行约定，平台不代收、不验证、不托管" : "Earnest money agreed between buyer and seller; platform does not handle funds"}</p>
+                  <p>2. {isZh ? "如约定诚意金，请线下银行转账至卖方指定账户" : "If agreed, bank transfer to seller's account"}</p>
+                  <p>3. {isZh ? "转账完成后截图保存" : "Take screenshot after transfer"}</p>
+                  <p>4. {isZh ? "点击下方按钮上传转账凭证（仅通知卖家）" : "Click button below to upload proof (notifies seller)"}</p>
                 </div>
                 <div className="text-xs text-blue-500 bg-blue-100 rounded p-2">
                   {isZh
-                    ? "提示：保证金将在议价成功后转为您购机款的一部分。未成交者保证金全额退还。"
-                    : "Note: Deposit will be applied to purchase if you win. Full refund if not."}
+                    ? "重要提示：诚意金非保证金。是否需要诚意金由买卖双方自行约定。平台不介入资金往来。"
+                    : "Important: This is not a mandatory deposit. Platform does not handle funds."}
                 </div>
               </div>
 
@@ -392,9 +383,9 @@ export default function InspectionBookingModal({
                       ) : (
                         <>
                           <Upload className="h-8 w-8 text-gray-400" />
-                          <span className="text-sm text-gray-500 mt-2">
-                            {isZh ? "点击上传转账截图" : "Click to upload transfer screenshot"}
-                          </span>
+                      <span className="text-sm text-gray-500 mt-2">
+                        {isZh ? "点击上传诚意金转账截图（如适用）" : "Click to upload transfer screenshot (if applicable)"}
+                      </span>
                         </>
                       )}
                       <input
@@ -412,8 +403,8 @@ export default function InspectionBookingModal({
               ) : (
                 <div className="bg-amber-50 rounded-lg p-3 text-sm text-amber-700">
                   {isZh
-                    ? "请先登录后再上传保证金凭证。您也可以联系卖家线下确认。"
-                    : "Please login first to upload deposit proof."}
+                    ? "请先登录后再上传诚意金凭证。您也可以联系卖家线下确认。"
+                    : "Please login first to upload earnest money proof."}
                 </div>
               )}
 
@@ -445,29 +436,10 @@ export default function InspectionBookingModal({
                 <p className="text-sm text-gray-500 mt-2">
                   {isZh
                     ? proofUrl
-                      ? "保证金凭证已上传，等待卖家确认。确认后您将获得议价资格。"
-                      : "报名信息已提交。请尽快缴纳保证金并上传凭证。"
-                    : "Registration submitted. Please pay deposit and upload proof as soon as possible."}
+                      ? "诚意金凭证已上传，卖家将查看。您现在可以提交报价了。"
+                      : "报名信息已提交。您现在可以提交报价了。"
+                    : "Registration submitted. You can now submit your offer."}
                 </p>
-                {bargain.minParticipants ? (
-                  <p className="text-sm text-blue-600 mt-3">
-                    {isZh ? "议价启动条件：" : "Bargain starts when："}
-                    <br />
-                    <span className="font-bold">
-                      {isZh
-                        ? `确认报名满 ${bargain.minParticipants} 人即启动议价`
-                        : `${bargain.minParticipants} confirmed bidders will start the bargain`}
-                    </span>
-                  </p>
-                ) : bargain.startTime ? (
-                  <p className="text-sm text-blue-600 mt-3">
-                    {isZh ? "议价开始时间：" : "Bargain starts at："}
-                    <br />
-                    <span className="font-bold">
-                      {new Date(bargain.startTime).toLocaleString(isZh ? "zh-CN" : "en-US")}
-                    </span>
-                  </p>
-                ) : null}
               </div>
               <button
                 onClick={onClose}

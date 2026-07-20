@@ -9,7 +9,7 @@ const AD_LABELS: Record<string, { title: string; subtitle: string; cta: string; 
   zh: { title: "在线议价", subtitle: "精选好机 · 欢迎参与", cta: "立即参与", live: "正在进行" },
   en: { title: "Online Bargaining", subtitle: "Quality machines · Join now", cta: "Participate", live: "Live now" },
   ru: { title: "Онлайн-торг", subtitle: "Отборная техника · Присоединяйтесь", cta: "Участвовать", live: "Идёт сейчас" },
-  es: { title: "Subasta en línea", subtitle: "Maquinaria selecta · Únase ahora", cta: "Participar", live: "En vivo" },
+  es: { title: "Negociación en línea", subtitle: "Maquinaria selecta · Únase ahora", cta: "Participar", live: "En vivo" },
   pt: { title: "Barganha online", subtitle: "Máquinas selecionadas · Participe", cta: "Participar", live: "Agora" },
   ar: { title: "مساومة عبر الإنترنت", subtitle: "آلات مختارة · انضم الآن", cta: "شارك", live: "مباشر" },
   fr: { title: "Négociation en ligne", subtitle: "Machines sélectionnées · Rejoignez", cta: "Participer", live: "En direct" },

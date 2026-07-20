@@ -1,7 +1,13 @@
 /**
- * 议价报价 API（原出价改造）
+ * 询价/报价 API（合规改造版）
  * POST /api/auctions/[id]/bid
  * { amount: number }
+ *
+ * 改造要点（根据法务审查报告）：
+ * 1. 移除最低启动人数检查 — 不再有"满N人启动"
+ * 2. 移除必须确认报名+保证金才能报价的限制 — 平台不设保证金
+ * 3. 报价金额只校验 > 0，不校验是否高于当前最高价 — 非竞价模式
+ * 4. 保留基础校验：登录、不能给自己报价、议价状态active
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -42,7 +48,7 @@ export async function POST(
     // 检查议价状态
     if (bargain.status !== "active") {
       return NextResponse.json(
-        { error: "This bargain is no longer active" },
+        { error: "This inquiry is no longer active" },
         { status: 400 }
       );
     }
@@ -55,41 +61,10 @@ export async function POST(
       );
     }
 
-    // 检查是否已报名并确认保证金
-    const booking = await prisma.inspectionBooking.findFirst({
-      where: {
-        auctionId: params.id,
-        userId: user.id,
-        depositPaid: true,
-        status: "confirmed",
-      },
-    });
+    // 合规改造：不再检查报名状态和保证金
+    // 买家可自由报价，保证金由买卖双方自行约定（平台不介入）
 
-    if (!booking) {
-      return NextResponse.json(
-        { error: "请先报名并缴纳保证金，等待卖家确认后再出价" },
-        { status: 403 }
-      );
-    }
-
-    // 检查是否达到最低启动人数
-    const confirmedCount = await prisma.inspectionBooking.count({
-      where: {
-        auctionId: params.id,
-        depositPaid: true,
-        status: "confirmed",
-      },
-    });
-
-    const minParticipants = bargain.minParticipants || 3;
-    if (confirmedCount < minParticipants) {
-      return NextResponse.json(
-        { error: `议价尚未启动，当前确认报名人数 ${confirmedCount}/${minParticipants}` },
-        { status: 403 }
-      );
-    }
-
-    // 创建报价
+    // 创建报价（询价模式：不要求高于当前最高价）
     const bid = await prisma.bid.create({
       data: {
         auctionId: params.id,
@@ -118,7 +93,7 @@ export async function POST(
     return NextResponse.json({
       success: true,
       data: bid,
-      message: "Offer submitted successfully",
+      message: "Offer submitted successfully. Seller will review and respond.",
     });
   } catch (error) {
     console.error("Offer error:", error);

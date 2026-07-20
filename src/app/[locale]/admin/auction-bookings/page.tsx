@@ -96,7 +96,7 @@ export default function AuctionBookingsPage() {
   }, [selectedAuction, fetchBookings]);
 
   const handleConfirm = async (bookingId: string) => {
-    if (!confirm(isZh ? "确认已收到保证金？" : "Confirm deposit received?")) return;
+    if (!confirm(isZh ? "确认已收到诚意金？" : "Confirm earnest money received?")) return;
     setConfirming(bookingId);
     setError("");
     try {
@@ -136,7 +136,7 @@ export default function AuctionBookingsPage() {
     <div className="max-w-5xl mx-auto p-6">
       <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2 mb-6">
         <Gavel className="h-7 w-7 text-blue-600" />
-        {isZh ? "议价报名管理" : "Bargain Bookings"}
+        {isZh ? "询价报名管理" : "Inquiry Bookings"}
       </h1>
 
       {/* 议价列表 - 卡片式展示 */}
@@ -172,7 +172,7 @@ export default function AuctionBookingsPage() {
                       )}
                     </div>
                     <div className="text-sm text-gray-500">
-                      {a.bargainNo} · {isZh ? "保证金" : "Deposit"} ¥{(a.deposit || 0).toLocaleString()}
+                      {a.bargainNo} · {isZh ? "建议诚意金" : "Earnest"} ¥{(a.deposit || 0).toLocaleString()}
                       {a.startPrice && ` · ${isZh ? "起始价" : "Start"} ¥${a.startPrice.toLocaleString()}`}
                     </div>
                   </div>
@@ -208,13 +208,13 @@ export default function AuctionBookingsPage() {
               <div>
                 <div className={`text-2xl font-bold ${isStarted ? "text-green-700" : "text-amber-700"}`}>
                   {isStarted
-                    ? (isZh ? "✓ 议价已启动" : "Bargain Started")
-                    : (isZh ? "⏳ 未启动" : "Not Started")}
+                    ? (isZh ? "✓ 询价进行中" : "Inquiry Active")
+                    : (isZh ? "⏳ 等待询价" : "Waiting")}
                 </div>
                 <div className={`text-sm ${isStarted ? "text-green-600" : "text-amber-600"}`}>
                   {isStarted
-                    ? (isZh ? `已确认 ${confirmedCount} 人，满足最低 ${minParticipants} 人要求，议价已启动` : `${confirmedCount} confirmed, minimum ${minParticipants} reached`)
-                    : (isZh ? `已确认 ${confirmedCount} / ${minParticipants} 人，满 ${minParticipants} 人即自动启动` : `${confirmedCount} / ${minParticipants} confirmed, starts when minimum reached`)}
+                    ? (isZh ? `已确认 ${confirmedCount} 人收到诚意金，询价进行中` : `${confirmedCount} confirmed, inquiry active`)
+                    : (isZh ? `已确认 ${confirmedCount} 人收到诚意金` : `${confirmedCount} confirmed`)}
                 </div>
               </div>
             </div>
@@ -290,7 +290,7 @@ export default function AuctionBookingsPage() {
                       </span>
                     ) : (
                       <span className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-xs">
-                        {isZh ? "待缴保证金" : "No Deposit"}
+                        {isZh ? "待缴诚意金" : "No Earnest"}
                       </span>
                     )}
                   </div>
@@ -300,7 +300,7 @@ export default function AuctionBookingsPage() {
                   </div>
                   {b.depositAmount != null && (
                     <div className="text-sm">
-                      <span className="text-gray-500">{isZh ? "保证金" : "Deposit"}: </span>
+                      <span className="text-gray-500">{isZh ? "诚意金" : "Earnest"}: </span>
                       <span className="font-semibold text-red-600">¥{b.depositAmount.toLocaleString()}</span>
                     </div>
                   )}
