@@ -1,40 +1,40 @@
 {
-  "date": "2026-07-15",
-  "eurCny": 7.91,
+  "date": "2026-07-22",
+  "eurCny": 7.93,
   "eurRub": 87.4,
-  "usdCny": 6.82,
+  "usdCny": 7.25,
   "productCount": 18,
-  "totalCount": 95,
+  "totalCount": 93,
   "topArbitrage": [
     {
-      "model": "Krone 1290XC(2014)",
-      "rate": "878.6%",
-      "intlPrice": "135.1万",
-      "domPrice": "13.8万"
+      "model": "CLAAS 850青储机(2018)",
+      "rate": "7275%",
+      "intlPrice": "147.5万",
+      "domPrice": "2万"
     },
     {
-      "model": "CLAAS 850(2018)",
-      "rate": "635.5%",
-      "intlPrice": "147.1万",
-      "domPrice": "20.0万"
+      "model": "Krone 1290XC(2014)",
+      "rate": "877%",
+      "intlPrice": "135.0万",
+      "domPrice": "13万"
     },
     {
       "model": "Kuhn 890大方捆(2014)",
       "rate": "345.0%",
       "intlPrice": "35.6万",
-      "domPrice": "8.0万"
+      "domPrice": "8万"
     },
     {
       "model": "CLAAS 5300RC(2020)",
-      "rate": "339.0%",
-      "intlPrice": "79.0万",
-      "domPrice": "18.0万"
+      "rate": "337.8%",
+      "intlPrice": "78.8万",
+      "domPrice": "18万"
     },
     {
       "model": "NH FR450(2013)",
       "rate": "300.0%",
       "intlPrice": "44.0万",
-      "domPrice": "11.0万"
+      "domPrice": "11万"
     }
   ],
   "markets": [
@@ -46,8 +46,8 @@
     "非洲"
   ],
   "keyEvents": [
-    "河北农机地头展7/23-24倒计时8天",
-    "EUR/CNY 7.91维持7月高位",
-    "EUR/RUB 87.40高位维持"
+    "河北农机地头展7/23-24明天报到!",
+    "EUR/CNY 7.93创7月新高(+0.6%)",
+    "ECB议息会议7/22-23进行中"
   ]
 }
