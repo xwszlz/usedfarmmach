@@ -159,16 +159,27 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // === 先上传图片到 OSS 临时目录，用于内容审核 ===
-    const imageFiles = formData.getAll("images") as File[];
-    const validImages = imageFiles.filter((f) => f.size > 0);
+    // === 图片上传（兼容前端直传 OSS 和旧版 FormData 两种模式）===
+    const directImageUrls = formData.get("imageUrls")?.toString();
+    let uploadedImageUrls: string[];
 
-    const tempFolder = `uploads/tmp/${Date.now()}_${seller.userId}`;
-    const uploadedImageUrls: string[] = [];
-
-    for (let i = 0; i < validImages.length; i++) {
-      const { url } = await uploadFileToOSS(validImages[i], tempFolder);
-      uploadedImageUrls.push(url);
+    if (directImageUrls) {
+      // 新方案：前端已直传 OSS，只传 URL
+      try {
+        uploadedImageUrls = JSON.parse(directImageUrls);
+      } catch {
+        return NextResponse.json({ success: false, error: "imageUrls 格式错误" }, { status: 400 });
+      }
+    } else {
+      // 旧方案：从 FormData 获取文件并上传到 OSS
+      const imageFiles = formData.getAll("images") as File[];
+      const validImages = imageFiles.filter((f) => f.size > 0);
+      const tempFolder = `uploads/tmp/${Date.now()}_${seller.userId}`;
+      uploadedImageUrls = [];
+      for (let i = 0; i < validImages.length; i++) {
+        const { url } = await uploadFileToOSS(validImages[i], tempFolder);
+        uploadedImageUrls.push(url);
+      }
     }
 
     // === 内容安全检测（微信 sec-check）===
@@ -236,66 +247,114 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // === 上传视频（支持多个，最多3个）===
-    const videoFiles = formData.getAll("videos") as File[];
-    // 兼容旧版单视频字段
-    const oldVideoFile = formData.get("video") as File | null;
-    const allVideoFiles = [
-      ...videoFiles.filter((f) => f.size > 0),
-      ...(oldVideoFile && oldVideoFile.size > 0 && videoFiles.length === 0 ? [oldVideoFile] : []),
-    ];
+    // === 上传视频（兼容前端直传 OSS 和旧版 FormData 两种模式）===
+    const directVideoUrls = formData.get("videoUrls")?.toString();
+    let savedVideoRecords: { id: string; url: string }[] = [];
 
-    if (allVideoFiles.length > MAX_VIDEOS_PER_PRODUCT) {
-      return NextResponse.json(
-        { success: false, error: `最多上传 ${MAX_VIDEOS_PER_PRODUCT} 个视频`, code: "TOO_MANY_VIDEOS" },
-        { status: 400 }
-      );
-    }
+    if (directVideoUrls) {
+      // 新方案：前端已直传 OSS，只传 URL
+      let videoUrls: string[];
+      try {
+        videoUrls = JSON.parse(directVideoUrls);
+      } catch {
+        return NextResponse.json({ success: false, error: "videoUrls 格式错误" }, { status: 400 });
+      }
 
-    const savedVideoRecords: { id: string; url: string }[] = [];
-    for (let vi = 0; vi < allVideoFiles.length; vi++) {
-      const vf = allVideoFiles[vi];
-      // 校验文件大小
-      if (vf.size > MAX_VIDEO_FILE_SIZE_BYTES) {
+      if (videoUrls.length > MAX_VIDEOS_PER_PRODUCT) {
         return NextResponse.json(
-          { success: false, error: `视频文件不能超过 ${Math.round(MAX_VIDEO_FILE_SIZE_BYTES / 1024 / 1024)}MB（${vf.name}）`, code: "VIDEO_TOO_LARGE" },
+          { success: false, error: `最多上传 ${MAX_VIDEOS_PER_PRODUCT} 个视频`, code: "TOO_MANY_VIDEOS" },
           { status: 400 }
         );
       }
 
-      const videoFolder = `uploads/products/${product.id}`;
-      const { url: videoUrl } = await uploadFileToOSS(vf, videoFolder);
-
-      // 读取前端传来的视频时长（秒）
+      // 读取前端传来的视频时长
       const videoDurationsStr = formData.get("videoDurations")?.toString();
-      let videoDuration: number | null = null;
+      let durations: number[] = [];
       if (videoDurationsStr) {
-        try {
-          const durations = JSON.parse(videoDurationsStr) as number[];
-          if (durations[vi] != null) {
-            videoDuration = Number(durations[vi]);
-            if (videoDuration > MAX_VIDEO_DURATION_SECONDS) {
-              return NextResponse.json(
-                { success: false, error: `视频时长不能超过 ${MAX_VIDEO_DURATION_SECONDS} 秒（${vf.name}）`, code: "VIDEO_TOO_LONG" },
-                { status: 400 }
-              );
-            }
-          }
-        } catch { /* ignore parse error */ }
+        try { durations = JSON.parse(videoDurationsStr); } catch { /* ignore */ }
       }
 
-      const videoRecord = await prisma.productVideo.create({
-        data: {
-          productId: product.id,
-          url: videoUrl,
-          sortOrder: vi,
-          title: `${modelName} 视频${allVideoFiles.length > 1 ? vi + 1 : ""}`,
-          duration: videoDuration,
-          fileSize: vf.size,
-          moderationStatus: "pending",
-        },
-      });
-      savedVideoRecords.push({ id: videoRecord.id, url: videoUrl });
+      for (let vi = 0; vi < videoUrls.length; vi++) {
+        const videoUrl = videoUrls[vi];
+        const videoDuration = durations[vi] ?? null;
+        if (videoDuration != null && videoDuration > MAX_VIDEO_DURATION_SECONDS) {
+          return NextResponse.json(
+            { success: false, error: `视频时长不能超过 ${MAX_VIDEO_DURATION_SECONDS} 秒`, code: "VIDEO_TOO_LONG" },
+            { status: 400 }
+          );
+        }
+
+        const videoRecord = await prisma.productVideo.create({
+          data: {
+            productId: product.id,
+            url: videoUrl,
+            sortOrder: vi,
+            title: `${modelName} 视频${videoUrls.length > 1 ? vi + 1 : ""}`,
+            duration: videoDuration,
+            fileSize: 0,
+            moderationStatus: "pending",
+          },
+        });
+        savedVideoRecords.push({ id: videoRecord.id, url: videoUrl });
+      }
+    } else {
+      // 旧方案：从 FormData 获取文件并上传到 OSS
+      const videoFiles = formData.getAll("videos") as File[];
+      const oldVideoFile = formData.get("video") as File | null;
+      const allVideoFiles = [
+        ...videoFiles.filter((f) => f.size > 0),
+        ...(oldVideoFile && oldVideoFile.size > 0 && videoFiles.length === 0 ? [oldVideoFile] : []),
+      ];
+
+      if (allVideoFiles.length > MAX_VIDEOS_PER_PRODUCT) {
+        return NextResponse.json(
+          { success: false, error: `最多上传 ${MAX_VIDEOS_PER_PRODUCT} 个视频`, code: "TOO_MANY_VIDEOS" },
+          { status: 400 }
+        );
+      }
+
+      for (let vi = 0; vi < allVideoFiles.length; vi++) {
+        const vf = allVideoFiles[vi];
+        if (vf.size > MAX_VIDEO_FILE_SIZE_BYTES) {
+          return NextResponse.json(
+            { success: false, error: `视频文件不能超过 ${Math.round(MAX_VIDEO_FILE_SIZE_BYTES / 1024 / 1024)}MB（${vf.name}）`, code: "VIDEO_TOO_LARGE" },
+            { status: 400 }
+          );
+        }
+
+        const videoFolder = `uploads/products/${product.id}`;
+        const { url: videoUrl } = await uploadFileToOSS(vf, videoFolder);
+
+        const videoDurationsStr = formData.get("videoDurations")?.toString();
+        let videoDuration: number | null = null;
+        if (videoDurationsStr) {
+          try {
+            const durations = JSON.parse(videoDurationsStr) as number[];
+            if (durations[vi] != null) {
+              videoDuration = Number(durations[vi]);
+              if (videoDuration > MAX_VIDEO_DURATION_SECONDS) {
+                return NextResponse.json(
+                  { success: false, error: `视频时长不能超过 ${MAX_VIDEO_DURATION_SECONDS} 秒（${vf.name}）`, code: "VIDEO_TOO_LONG" },
+                  { status: 400 }
+                );
+              }
+            }
+          } catch { /* ignore */ }
+        }
+
+        const videoRecord = await prisma.productVideo.create({
+          data: {
+            productId: product.id,
+            url: videoUrl,
+            sortOrder: vi,
+            title: `${modelName} 视频${allVideoFiles.length > 1 ? vi + 1 : ""}`,
+            duration: videoDuration,
+            fileSize: vf.size,
+            moderationStatus: "pending",
+          },
+        });
+        savedVideoRecords.push({ id: videoRecord.id, url: videoUrl });
+      }
     }
 
     // 异步触发视频内容审核（fire-and-forget）

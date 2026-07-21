@@ -18,8 +18,7 @@ const CONDITIONS = [
 
 const DRIVE_SYSTEMS = ["二驱", "四驱", "全液压驱动"];
 const TRADE_TERMS = ["FOB", "CIF", "CFR", "EXW", "其他"];
-const MAX_IMAGES_NO_VIDEO = 12;
-const MAX_IMAGES_WITH_VIDEO = 5; // 有视频时图片限制，防止总大小超 4.5MB
+const MAX_IMAGES = 12;
 
 // 拍摄建议标签（不强制对应位置）
 const PHOTO_SUGGESTIONS = [
@@ -53,8 +52,6 @@ export default function NewProductPage() {
   const [imagePreviews, setImagePreviews] = useState<{ url: string; name: string }[]>([]);
   const [videoFiles, setVideoFiles] = useState<File[]>([]);
 
-  // 动态图片上限：有视频时限制 5 张，防止总大小超 4.5MB
-  const maxImages = videoFiles.length > 0 ? MAX_IMAGES_WITH_VIDEO : MAX_IMAGES_NO_VIDEO;
   const [videoPreviews, setVideoPreviews] = useState<{ url: string; name: string; duration: number }[]>([]);
   const [aiTriggerVideo, setAiTriggerVideo] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -160,8 +157,8 @@ export default function NewProductPage() {
     if (files.length === 0) return;
 
     const total = imageFiles.length + files.length;
-    if (total > maxImages) {
-      setResult({ success: false, message: `最多上传 ${maxImages} 张图片（${videoFiles.length > 0 ? "已上传视频，图片限制减少" : "当前已有 " + imageFiles.length + " 张"}）` });
+    if (total > MAX_IMAGES) {
+      setResult({ success: false, message: `最多上传 ${MAX_IMAGES} 张图片，当前已有 ${imageFiles.length} 张` });
       return;
     }
 
@@ -409,14 +406,11 @@ export default function NewProductPage() {
     });
   };
 
-  const compressImage = async (file: File, hasVideo: boolean): Promise<File> => {
-    if (file.size < 200 * 1024) return file; // <200KB 不压
-    // 有视频时压更狠：视频占 3-4MB，5张图必须 < 0.5MB 总量
-    const maxDim = hasVideo ? 600 : 1024;
-    const quality = hasVideo ? 0.45 : 0.6;
-    let compressed = await compressImageOnce(file, maxDim, quality);
-    if (compressed.size > 500 * 1024) {
-      compressed = await compressImageOnce(compressed, hasVideo ? 480 : 800, hasVideo ? 0.4 : 0.5);
+  const compressImage = async (file: File): Promise<File> => {
+    if (file.size < 300 * 1024) return file; // <300KB 不压
+    let compressed = await compressImageOnce(file, 1024, 0.6);
+    if (compressed.size > 1024 * 1024) {
+      compressed = await compressImageOnce(compressed, 800, 0.5);
     }
     return compressed;
   };
@@ -484,43 +478,84 @@ export default function NewProductPage() {
       fd.append("tradePort", form.tradePort);
       fd.append("isChineseBrand", String(form.isChineseBrand));
 
-      // 压缩图片后再上传（避免超过 Vercel 4.5MB 请求体限制）
-      const hasVideo = videoFiles.length > 0;
-      setResult({ success: false, message: "正在压缩图片..." });
+      // 压缩图片（仅为减小体积）
       const compressedImages: File[] = [];
       for (const f of imageFiles) {
-        const compressed = await compressImage(f, hasVideo);
+        const compressed = await compressImage(f);
         compressedImages.push(compressed);
       }
-      const totalImageSize = compressedImages.reduce((sum, f) => sum + f.size, 0);
 
-      // 校验视频文件大小和时长
+      // 校验视频时长
       const videoDurations: number[] = [];
       for (let i = 0; i < videoPreviews.length; i++) {
         const dur = await getVideoDuration(videoPreviews[i].url);
         videoDurations.push(dur);
         if (dur > MAX_VIDEO_DURATION) {
           setResult({ success: false, message: `视频时长不能超过 ${MAX_VIDEO_DURATION} 秒（${videoPreviews[i].name}）` });
+          setSubmitting(false);
           return;
         }
       }
 
-      const totalVideoSize = videoFiles.reduce((sum, f) => sum + f.size, 0);
-      // 单视频不能超过 3.5MB（否则5张图没空间了）
-      if (hasVideo && videoFiles.some(f => f.size > 3.5 * 1024 * 1024)) {
-        setResult({ success: false, message: "已上传视频，单个视频不能超过 3.5MB，请先压缩视频（建议用微信转发给自己再保存，可大幅压缩）" });
-        return;
-      }
-      const totalSize = totalImageSize + totalVideoSize;
-      // Vercel serverless body 限制约 4.5MB，提到硬顶，靠图片压缩保证不超
-      if (totalSize > 4.5 * 1024 * 1024) {
-        setResult({ success: false, message: `上传数据过大（${(totalSize / 1024 / 1024).toFixed(1)}MB），请减少图片数量或先压缩视频后再重试` });
-        return;
+      // ===== 直传 OSS（绕过 Vercel 4.5MB 限制）=====
+      const allFiles: { kind: "image" | "video"; file: File }[] = [
+        ...compressedImages.map(f => ({ kind: "image" as const, file: f })),
+        ...videoFiles.map(f => ({ kind: "video" as const, file: f })),
+      ];
+      const uploadedUrls: string[] = [];
+      const imagePublicUrls: string[] = [];
+      const videoPublicUrls: string[] = [];
+
+      for (let i = 0; i < allFiles.length; i++) {
+        const { kind, file } = allFiles[i];
+        const imageIdx = kind === "image" ? imagePublicUrls.length : videoPublicUrls.length;
+        setResult({
+          success: false,
+          message: `正在上传${kind === "image" ? "图片" : "视频"} ${imageIdx + 1}/${kind === "image" ? compressedImages.length : videoFiles.length}...`,
+        });
+
+        // 1. 获取签名 URL
+        const signRes = await fetch("/api/oss/sign", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            folder: kind === "image" ? "uploads/products" : `uploads/videos`,
+            filename: file.name,
+            contentType: file.type || (kind === "image" ? "image/jpeg" : "video/mp4"),
+          }),
+        });
+        const signData = await signRes.json();
+        if (!signData.success) {
+          setResult({ success: false, message: `获取上传签名失败：${signData.error}` });
+          setSubmitting(false);
+          return;
+        }
+
+        // 2. 直传 OSS
+        const putRes = await fetch(signData.uploadUrl, {
+          method: "PUT",
+          body: file,
+          headers: { "Content-Type": file.type || (kind === "image" ? "image/jpeg" : "video/mp4") },
+        });
+        if (!putRes.ok) {
+          setResult({ success: false, message: `${kind === "image" ? "图片" : "视频"}上传失败（HTTP ${putRes.status}），请重试` });
+          setSubmitting(false);
+          return;
+        }
+
+        // 3. 收集 URL
+        uploadedUrls.push(signData.publicUrl);
+        if (kind === "image") imagePublicUrls.push(signData.publicUrl);
+        else videoPublicUrls.push(signData.publicUrl);
       }
 
-      compressedImages.forEach((f) => fd.append("images", f));
-      videoFiles.forEach((f) => fd.append("videos", f));
-      if (videoDurations.length > 0) {
+      // 把 URL 传给 API
+      fd.append("imageUrls", JSON.stringify(imagePublicUrls));
+      if (videoPublicUrls.length > 0) {
+        fd.append("videoUrls", JSON.stringify(videoPublicUrls));
         fd.append("videoDurations", JSON.stringify(videoDurations));
       }
 
@@ -584,7 +619,7 @@ export default function NewProductPage() {
         <div className="mb-4 flex items-center gap-2">
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-600 text-sm font-bold text-white">1</span>
           <h2 className="text-base font-bold text-gray-800">上传农机图片</h2>
-          <span className="text-xs text-gray-400">{imageFiles.length}/{maxImages} 张{videoFiles.length > 0 && "（已上传视频，限5张）"}</span>
+          <span className="text-xs text-gray-400">{imageFiles.length}/{MAX_IMAGES} 张</span>
         </div>
 
         {/* 拍摄建议 */}
@@ -621,7 +656,7 @@ export default function NewProductPage() {
         )}
 
         {/* 上传按钮 */}
-        {imagePreviews.length < maxImages && (
+        {imagePreviews.length < MAX_IMAGES && (
           <div
             onClick={() => imageInputRef.current?.click()}
             className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-6 transition-colors hover:border-primary-400 hover:bg-primary-50"
@@ -631,7 +666,7 @@ export default function NewProductPage() {
               {imagePreviews.length === 0 ? "点击上传农机图片" : "继续添加图片"}
             </p>
             <p className="mt-1 text-xs text-gray-400">
-              最多 {maxImages} 张{videoFiles.length > 0 ? "（已上传视频，图片压缩更狠）" : "，单张不超过 10MB。图片越多识别越准确"}
+              最多 {MAX_IMAGES} 张，单张不超过 10MB。图片越多识别越准确
             </p>
           </div>
         )}
