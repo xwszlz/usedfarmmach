@@ -18,7 +18,8 @@ const CONDITIONS = [
 
 const DRIVE_SYSTEMS = ["二驱", "四驱", "全液压驱动"];
 const TRADE_TERMS = ["FOB", "CIF", "CFR", "EXW", "其他"];
-const MAX_IMAGES = 12;
+const MAX_IMAGES_NO_VIDEO = 12;
+const MAX_IMAGES_WITH_VIDEO = 5; // 有视频时图片限制，防止总大小超 4.5MB
 
 // 拍摄建议标签（不强制对应位置）
 const PHOTO_SUGGESTIONS = [
@@ -51,6 +52,9 @@ export default function NewProductPage() {
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<{ url: string; name: string }[]>([]);
   const [videoFiles, setVideoFiles] = useState<File[]>([]);
+
+  // 动态图片上限：有视频时限制 5 张，防止总大小超 4.5MB
+  const maxImages = videoFiles.length > 0 ? MAX_IMAGES_WITH_VIDEO : MAX_IMAGES_NO_VIDEO;
   const [videoPreviews, setVideoPreviews] = useState<{ url: string; name: string; duration: number }[]>([]);
   const [aiTriggerVideo, setAiTriggerVideo] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -156,8 +160,8 @@ export default function NewProductPage() {
     if (files.length === 0) return;
 
     const total = imageFiles.length + files.length;
-    if (total > MAX_IMAGES) {
-      setResult({ success: false, message: `最多上传 ${MAX_IMAGES} 张图片，当前已有 ${imageFiles.length} 张` });
+    if (total > maxImages) {
+      setResult({ success: false, message: `最多上传 ${maxImages} 张图片（${videoFiles.length > 0 ? "已上传视频，图片限制减少" : "当前已有 " + imageFiles.length + " 张"}）` });
       return;
     }
 
@@ -406,13 +410,13 @@ export default function NewProductPage() {
   };
 
   const compressImage = async (file: File, hasVideo: boolean): Promise<File> => {
-    if (file.size < 300 * 1024) return file; // <300KB 不压
-    // 有视频时压更狠：视频占 3-4MB，留给图片只剩 0.5-1MB
-    const maxDim = hasVideo ? 800 : 1024;
-    const quality = hasVideo ? 0.5 : 0.6;
+    if (file.size < 200 * 1024) return file; // <200KB 不压
+    // 有视频时压更狠：视频占 3-4MB，5张图必须 < 0.5MB 总量
+    const maxDim = hasVideo ? 600 : 1024;
+    const quality = hasVideo ? 0.45 : 0.6;
     let compressed = await compressImageOnce(file, maxDim, quality);
-    if (compressed.size > 1024 * 1024) {
-      compressed = await compressImageOnce(compressed, hasVideo ? 600 : 800, hasVideo ? 0.45 : 0.5);
+    if (compressed.size > 500 * 1024) {
+      compressed = await compressImageOnce(compressed, hasVideo ? 480 : 800, hasVideo ? 0.4 : 0.5);
     }
     return compressed;
   };
@@ -502,9 +506,9 @@ export default function NewProductPage() {
       }
 
       const totalVideoSize = videoFiles.reduce((sum, f) => sum + f.size, 0);
-      // 单视频不能超过 4MB（否则图片没空间了）
-      if (hasVideo && videoFiles.some(f => f.size > 4 * 1024 * 1024)) {
-        setResult({ success: false, message: "单个视频不能超过 4MB，请先压缩视频后再上传" });
+      // 单视频不能超过 3.5MB（否则5张图没空间了）
+      if (hasVideo && videoFiles.some(f => f.size > 3.5 * 1024 * 1024)) {
+        setResult({ success: false, message: "已上传视频，单个视频不能超过 3.5MB，请先压缩视频（建议用微信转发给自己再保存，可大幅压缩）" });
         return;
       }
       const totalSize = totalImageSize + totalVideoSize;
@@ -572,7 +576,7 @@ export default function NewProductPage() {
 
       <h1 className="mb-2 text-2xl font-bold text-gray-900">发布新产品</h1>
       <p className="mb-8 text-sm text-gray-500">
-        先传图片 → 传视频 → 智能识别 → 确认参数 → 发布（消耗 1 积分）
+        先传图片 → 传视频 → 智能识别 → 确认参数 → 发布（消耗 1 积分） v0722
       </p>
 
       {/* ===== Step 1: 上传图片 ===== */}
@@ -580,7 +584,7 @@ export default function NewProductPage() {
         <div className="mb-4 flex items-center gap-2">
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-600 text-sm font-bold text-white">1</span>
           <h2 className="text-base font-bold text-gray-800">上传农机图片</h2>
-          <span className="text-xs text-gray-400">{imageFiles.length}/{MAX_IMAGES} 张</span>
+          <span className="text-xs text-gray-400">{imageFiles.length}/{maxImages} 张{videoFiles.length > 0 && "（已上传视频，限5张）"}</span>
         </div>
 
         {/* 拍摄建议 */}
@@ -617,7 +621,7 @@ export default function NewProductPage() {
         )}
 
         {/* 上传按钮 */}
-        {imagePreviews.length < MAX_IMAGES && (
+        {imagePreviews.length < maxImages && (
           <div
             onClick={() => imageInputRef.current?.click()}
             className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-6 transition-colors hover:border-primary-400 hover:bg-primary-50"
@@ -627,7 +631,7 @@ export default function NewProductPage() {
               {imagePreviews.length === 0 ? "点击上传农机图片" : "继续添加图片"}
             </p>
             <p className="mt-1 text-xs text-gray-400">
-              最多 {MAX_IMAGES} 张，单张不超过 10MB。图片越多识别越准确
+              最多 {maxImages} 张{videoFiles.length > 0 ? "（已上传视频，图片压缩更狠）" : "，单张不超过 10MB。图片越多识别越准确"}
             </p>
           </div>
         )}
@@ -647,7 +651,7 @@ export default function NewProductPage() {
         <div className="mb-4 flex items-center gap-2">
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-600 text-sm font-bold text-white">2</span>
           <h2 className="text-base font-bold text-gray-800">上传运转视频</h2>
-          <span className="text-xs text-gray-400">可选，最多3个，60秒/20MB内</span>
+          <span className="text-xs text-gray-400">可选，最多3个，60秒/20MB内{videoFiles.length > 0 && " ⚠️ 有视频时图片限5张"}</span>
         </div>
 
         {/* 已选视频列表 */}
