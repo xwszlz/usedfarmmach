@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { QrCode, ShieldCheck, History, MapPin, Calendar, Factory, ScanLine, CheckCircle2, Clock } from "lucide-react";
+import { QrCode, ShieldCheck, History, MapPin, Calendar, Factory, ScanLine, CheckCircle2, Clock, Copy, ExternalLink, Image as ImageIcon, Video } from "lucide-react";
+import QRCodeLib from "qrcode";
 
 interface MachineryEvent {
   id: string;
@@ -43,8 +44,30 @@ export function MachineryIdentityCard({ productId, locale }: { productId: string
   const [identity, setIdentity] = useState<MachineryIdentity | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [qrImage, setQrImage] = useState<string>("");
 
   const isZh = locale === "zh";
+  const qrScanUrl = identity
+    ? `${typeof window !== "undefined" ? window.location.origin : ""}/${locale}/m/qr/${identity.qrCode}`
+    : "";
+
+  function copyScanUrl() {
+    navigator.clipboard.writeText(qrScanUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  // 生成二维码图片
+  useEffect(() => {
+    if (identity && typeof window !== "undefined") {
+      const url = `${window.location.origin}/${locale}/m/qr/${identity.qrCode}`;
+      QRCodeLib.toDataURL(url, { width: 224, margin: 1, errorCorrectionLevel: "M" })
+        .then((dataUrl: string) => setQrImage(dataUrl))
+        .catch((err: any) => console.error("[QR] 生成失败:", err));
+    }
+  }, [identity, locale]);
 
   useEffect(() => {
     fetchIdentity();
@@ -142,13 +165,18 @@ export function MachineryIdentityCard({ productId, locale }: { productId: string
         {/* QR码与验证状态 */}
         <div className="flex items-start gap-4">
           <div className="flex flex-col items-center gap-2">
-            <div className="flex h-28 w-28 items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50">
-              <div className="text-center">
-                <ScanLine className="mx-auto h-8 w-8 text-gray-400" />
-                <p className="mt-1 text-xs font-mono font-bold text-gray-600">{identity.qrCode}</p>
-              </div>
+            <div className="flex h-28 w-28 items-center justify-center rounded-lg border border-gray-200 bg-white p-1 shadow-sm">
+              {qrImage ? (
+                <img src={qrImage} alt="QR Code" className="h-full w-full object-contain" />
+              ) : (
+                <div className="text-center">
+                  <ScanLine className="mx-auto h-8 w-8 text-gray-400" />
+                  <p className="mt-1 text-[10px] font-mono text-gray-500">{identity.qrCode}</p>
+                </div>
+              )}
             </div>
-            <p className="text-xs text-gray-400">{isZh ? "扫码验真" : "Scan to verify"}</p>
+            <p className="text-xs text-gray-400">{isZh ? "微信扫码验机" : "Scan to verify"}</p>
+            <p className="text-[10px] font-mono text-gray-300">{identity.qrCode}</p>
           </div>
           <div className="flex-1 space-y-2">
             <div className="flex items-center gap-2">
@@ -196,6 +224,23 @@ export function MachineryIdentityCard({ productId, locale }: { productId: string
           </div>
         </div>
 
+        {/* 扫码链接 */}
+        <div className="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2">
+          <span className="flex-1 truncate text-xs font-mono text-gray-500">{qrScanUrl}</span>
+          <Button variant="ghost" size="sm" onClick={copyScanUrl} className="h-7 shrink-0 px-2 text-xs">
+            {copied ? (
+              <><CheckCircle2 className="mr-1 h-3 w-3 text-green-500" />{isZh ? "已复制" : "Copied"}</>
+            ) : (
+              <><Copy className="mr-1 h-3 w-3" />{isZh ? "复制链接" : "Copy"}</>
+            )}
+          </Button>
+          <a href={qrScanUrl} target="_blank" rel="noopener noreferrer">
+            <Button variant="ghost" size="sm" className="h-7 shrink-0 px-2 text-xs">
+              <ExternalLink className="h-3 w-3" />
+            </Button>
+          </a>
+        </div>
+
         {/* 生命周期时间线 */}
         {identity.events.length > 0 && (
           <div>
@@ -207,6 +252,11 @@ export function MachineryIdentityCard({ productId, locale }: { productId: string
             <div className="space-y-3">
               {identity.events.map((event, idx) => {
                 const typeInfo = EVENT_TYPE_LABELS[event.eventType] || { label: event.eventType, color: "bg-gray-100 text-gray-700" };
+                // Parse evidence JSON for inspected events
+                let evidence: { photos?: string[]; videos?: string[] } | null = null;
+                if (event.eventType === "inspected" && (event as any).evidence) {
+                  try { evidence = JSON.parse((event as any).evidence); } catch {}
+                }
                 return (
                   <div key={event.id} className="flex gap-3">
                     {/* 时间线轴 */}
@@ -237,6 +287,27 @@ export function MachineryIdentityCard({ productId, locale }: { productId: string
                           </span>
                         )}
                       </div>
+                      {/* Evidence photos/videos for inspection events */}
+                      {evidence && (evidence.photos || evidence.videos) && (
+                        <div className="mt-2 space-y-2">
+                          {evidence.photos && evidence.photos.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5">
+                              {evidence.photos.map((url, pi) => (
+                                <a key={pi} href={url} target="_blank" rel="noopener noreferrer"
+                                  className="flex h-14 w-14 items-center justify-center overflow-hidden rounded border border-gray-200 bg-gray-100 hover:border-blue-400">
+                                  <img src={url} alt="" className="h-full w-full object-cover" loading="lazy" />
+                                </a>
+                              ))}
+                            </div>
+                          )}
+                          {evidence.videos && evidence.videos.length > 0 && (
+                            <div className="flex items-center gap-2 text-xs text-blue-600">
+                              <Video className="h-3 w-3" />
+                              <span>{evidence.videos.length} {isZh ? "个视频" : "videos"}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
