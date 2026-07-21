@@ -364,7 +364,7 @@ export default function NewProductPage() {
     setResult({ success: true, message: `AI 识别结果已填充到表单${data.isChineseBrand ? "（国内农机）" : "（国际农机）"}，请核对绿色标记的字段` });
   };
 
-  // ===== Canvas 图片压缩（避免超过 Vercel 4.5MB 请求体限制）=====
+  // ===== Canvas 图片压缩（优化上传速度）=====
   // 策略：先按 1024px/quality0.6 压；如果仍 >1MB，二次压到 800px/quality0.5
   const compressImageOnce = (file: File, maxDim: number, quality: number): Promise<File> => {
     return new Promise((resolve) => {
@@ -415,6 +415,49 @@ export default function NewProductPage() {
     return compressed;
   };
 
+  // ===== 直传 OSS 辅助函数 =====
+  const uploadToOss = async (
+    file: File,
+    folder: string,
+    token: string
+  ): Promise<string> => {
+    // 1. 获取预签名 URL
+    const signRes = await fetch("/api/oss/sign", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        folder,
+        filename: file.name,
+        contentType: file.type || "application/octet-stream",
+      }),
+    });
+
+    if (!signRes.ok) {
+      const errData = await signRes.json().catch(() => ({}));
+      throw new Error(errData.error || `签名请求失败（HTTP ${signRes.status}）`);
+    }
+
+    const { uploadUrl, publicUrl } = await signRes.json();
+
+    // 2. 直传 OSS
+    const putRes = await fetch(uploadUrl, {
+      method: "PUT",
+      body: file,
+      headers: {
+        "Content-Type": file.type || "application/octet-stream",
+      },
+    });
+
+    if (!putRes.ok) {
+      throw new Error(`OSS 上传失败（HTTP ${putRes.status}）`);
+    }
+
+    return publicUrl as string;
+  };
+
   // ===== 提交 =====
   const handleSubmit = async () => {
     if (!form.modelName || !form.priceCny) {
@@ -450,6 +493,81 @@ export default function NewProductPage() {
 
     try {
       const token = localStorage.getItem("token");
+      if (!token) {
+        setResult({ success: false, message: "请先登录后再发布" });
+        setSubmitting(false);
+        return;
+      }
+
+      // ── 压缩图片 ──
+      setResult({ success: false, message: "正在压缩图片..." });
+      const compressedImages: File[] = [];
+      for (const f of imageFiles) {
+        const compressed = await compressImage(f);
+        compressedImages.push(compressed);
+      }
+
+      // ── 校验视频时长 ──
+      const videoDurations: number[] = [];
+      for (let i = 0; i < videoPreviews.length; i++) {
+        const dur = await getVideoDuration(videoPreviews[i].url);
+        videoDurations.push(dur);
+        if (dur > MAX_VIDEO_DURATION) {
+          setResult({ success: false, message: `视频时长不能超过 ${MAX_VIDEO_DURATION} 秒（${videoPreviews[i].name}）` });
+          setSubmitting(false);
+          return;
+        }
+      }
+
+      const totalFiles = compressedImages.length + videoFiles.length;
+      let uploadedCount = 0;
+      const folder = `uploads/tmp/${Date.now()}`;
+
+      // ── 直传图片到 OSS ──
+      const imageUrls: string[] = [];
+      for (let i = 0; i < compressedImages.length; i++) {
+        setResult({
+          success: false,
+          message: `正在上传图片 ${i + 1}/${compressedImages.length}...`,
+        });
+        try {
+          const url = await uploadToOss(compressedImages[i], folder, token);
+          imageUrls.push(url);
+          uploadedCount++;
+        } catch (err: any) {
+          setResult({
+            success: false,
+            message: `图片上传失败（${compressedImages[i].name}）：${err.message || "未知错误"}`,
+          });
+          setSubmitting(false);
+          return;
+        }
+      }
+
+      // ── 直传视频到 OSS ──
+      const videoUrls: string[] = [];
+      for (let i = 0; i < videoFiles.length; i++) {
+        setResult({
+          success: false,
+          message: `正在上传视频 ${i + 1}/${videoFiles.length}...`,
+        });
+        try {
+          const url = await uploadToOss(videoFiles[i], folder, token);
+          videoUrls.push(url);
+          uploadedCount++;
+        } catch (err: any) {
+          setResult({
+            success: false,
+            message: `视频上传失败（${videoFiles[i].name}）：${err.message || "未知错误"}`,
+          });
+          setSubmitting(false);
+          return;
+        }
+      }
+
+      // ── 提交产品信息（只传 OSS URL，不传文件）──
+      setResult({ success: false, message: "正在提交产品信息..." });
+
       const fd = new FormData();
       fd.append("brandId", form.brandId);
       fd.append("brandName", form.brandName);
@@ -477,85 +595,12 @@ export default function NewProductPage() {
       fd.append("tradeTerm", form.tradeTerm);
       fd.append("tradePort", form.tradePort);
       fd.append("isChineseBrand", String(form.isChineseBrand));
-
-      // 压缩图片（仅为减小体积）
-      const compressedImages: File[] = [];
-      for (const f of imageFiles) {
-        const compressed = await compressImage(f);
-        compressedImages.push(compressed);
+      // 传递 OSS URL 数组（JSON 字符串），不再是文件
+      fd.append("imageUrls", JSON.stringify(imageUrls));
+      if (videoUrls.length > 0) {
+        fd.append("videoUrls", JSON.stringify(videoUrls));
       }
-
-      // 校验视频时长
-      const videoDurations: number[] = [];
-      for (let i = 0; i < videoPreviews.length; i++) {
-        const dur = await getVideoDuration(videoPreviews[i].url);
-        videoDurations.push(dur);
-        if (dur > MAX_VIDEO_DURATION) {
-          setResult({ success: false, message: `视频时长不能超过 ${MAX_VIDEO_DURATION} 秒（${videoPreviews[i].name}）` });
-          setSubmitting(false);
-          return;
-        }
-      }
-
-      // ===== 直传 OSS（绕过 Vercel 4.5MB 限制）=====
-      const allFiles: { kind: "image" | "video"; file: File }[] = [
-        ...compressedImages.map(f => ({ kind: "image" as const, file: f })),
-        ...videoFiles.map(f => ({ kind: "video" as const, file: f })),
-      ];
-      const uploadedUrls: string[] = [];
-      const imagePublicUrls: string[] = [];
-      const videoPublicUrls: string[] = [];
-
-      for (let i = 0; i < allFiles.length; i++) {
-        const { kind, file } = allFiles[i];
-        const imageIdx = kind === "image" ? imagePublicUrls.length : videoPublicUrls.length;
-        setResult({
-          success: false,
-          message: `正在上传${kind === "image" ? "图片" : "视频"} ${imageIdx + 1}/${kind === "image" ? compressedImages.length : videoFiles.length}...`,
-        });
-
-        // 1. 获取签名 URL
-        const signRes = await fetch("/api/oss/sign", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            folder: kind === "image" ? "uploads/products" : `uploads/videos`,
-            filename: file.name,
-            contentType: file.type || (kind === "image" ? "image/jpeg" : "video/mp4"),
-          }),
-        });
-        const signData = await signRes.json();
-        if (!signData.success) {
-          setResult({ success: false, message: `获取上传签名失败：${signData.error}` });
-          setSubmitting(false);
-          return;
-        }
-
-        // 2. 直传 OSS
-        const putRes = await fetch(signData.uploadUrl, {
-          method: "PUT",
-          body: file,
-          headers: { "Content-Type": file.type || (kind === "image" ? "image/jpeg" : "video/mp4") },
-        });
-        if (!putRes.ok) {
-          setResult({ success: false, message: `${kind === "image" ? "图片" : "视频"}上传失败（HTTP ${putRes.status}），请重试` });
-          setSubmitting(false);
-          return;
-        }
-
-        // 3. 收集 URL
-        uploadedUrls.push(signData.publicUrl);
-        if (kind === "image") imagePublicUrls.push(signData.publicUrl);
-        else videoPublicUrls.push(signData.publicUrl);
-      }
-
-      // 把 URL 传给 API
-      fd.append("imageUrls", JSON.stringify(imagePublicUrls));
-      if (videoPublicUrls.length > 0) {
-        fd.append("videoUrls", JSON.stringify(videoPublicUrls));
+      if (videoDurations.length > 0) {
         fd.append("videoDurations", JSON.stringify(videoDurations));
       }
 
@@ -578,8 +623,6 @@ export default function NewProductPage() {
         setResult({ success: false, message: "请先登录后再发布" });
       } else if (res.status === 403) {
         setResult({ success: false, message: `积分不足！当前 ${data.credits} 积分` });
-      } else if (res.status === 413) {
-        setResult({ success: false, message: "上传数据过大，请减少图片数量或压缩后重试" });
       } else {
         setResult({ success: false, message: data.error || `发布失败（HTTP ${res.status}）` });
       }
@@ -589,7 +632,7 @@ export default function NewProductPage() {
       setResult({
         success: false,
         message: errMsg.includes("fetch") || errMsg.includes("Failed to fetch")
-          ? "网络连接失败，请检查网络后重试（若反复出现，可能是上传文件过大）"
+          ? "网络连接失败，请检查网络后重试"
           : `发布异常：${errMsg.substring(0, 100)}`,
       });
     } finally {
@@ -611,7 +654,7 @@ export default function NewProductPage() {
 
       <h1 className="mb-2 text-2xl font-bold text-gray-900">发布新产品</h1>
       <p className="mb-8 text-sm text-gray-500">
-        先传图片 → 传视频 → 智能识别 → 确认参数 → 发布（消耗 1 积分） v0722
+        先传图片 → 传视频 → 智能识别 → 确认参数 → 发布（消耗 1 积分） v0723
       </p>
 
       {/* ===== Step 1: 上传图片 ===== */}
@@ -686,7 +729,7 @@ export default function NewProductPage() {
         <div className="mb-4 flex items-center gap-2">
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-600 text-sm font-bold text-white">2</span>
           <h2 className="text-base font-bold text-gray-800">上传运转视频</h2>
-          <span className="text-xs text-gray-400">可选，最多3个，60秒/20MB内{videoFiles.length > 0 && " ⚠️ 有视频时图片限5张"}</span>
+          <span className="text-xs text-gray-400">可选，最多3个，60秒/20MB内</span>
         </div>
 
         {/* 已选视频列表 */}
@@ -1015,7 +1058,7 @@ export default function NewProductPage() {
         </div>
       )}
 
-      {/* ===== Step 6: 提交 ===== */}
+      {/* ===== Step 5: 提交 ===== */}
       <button onClick={handleSubmit} disabled={submitting}
         className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-600 px-4 py-3.5 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50">
         {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
