@@ -53,6 +53,7 @@ function createOssClient(): {
     bucket: "usedfarmmach-oss",
     accessKeyId,
     accessKeySecret,
+    secure: true, // 强制 HTTPS，防止 Mixed Content 错误
     timeout: 120000,
   });
 }
@@ -115,7 +116,7 @@ export async function POST(request: NextRequest) {
       signOptions["Content-Type"] = contentType;
     }
 
-    const uploadUrl = client.signatureUrl(ossKey, signOptions);
+    const uploadUrl = client.signatureUrl(ossKey, signOptions).replace(/^http:\/\//, "https://");
     const publicUrl = `${OSS_BASE_URL}/${ossKey}`;
 
     console.log(

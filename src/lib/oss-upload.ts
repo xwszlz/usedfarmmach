@@ -42,6 +42,7 @@ function createClient() {
     bucket: "usedfarmmach-oss",
     accessKeyId,
     accessKeySecret,
+    secure: true, // 强制 HTTPS，防止 Mixed Content
     timeout: 120000,
   }) as {
     put(name: string, file: Buffer | string | ReadableStream, options?: Record<string, unknown>): Promise<PutObjectResult & { url?: string; name: string; res: { status: number } }>;
@@ -64,8 +65,9 @@ export async function uploadBufferToOSS(
     headers: contentType ? { "Content-Type": contentType } : undefined,
   });
 
-  // 返回完整 URL
-  return (result.url as string) || `https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/${ossKey}`;
+  // 返回完整 URL（强制 HTTPS，阿里云 SDK 默认可能返回 http）
+  const rawUrl = (result.url as string) || `https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/${ossKey}`;
+  return rawUrl.replace(/^http:\/\//, "https://");
 }
 
 /**
