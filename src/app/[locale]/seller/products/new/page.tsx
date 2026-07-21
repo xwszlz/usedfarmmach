@@ -405,11 +405,14 @@ export default function NewProductPage() {
     });
   };
 
-  const compressImage = async (file: File): Promise<File> => {
+  const compressImage = async (file: File, hasVideo: boolean): Promise<File> => {
     if (file.size < 300 * 1024) return file; // <300KB 不压
-    let compressed = await compressImageOnce(file, 1024, 0.6);
+    // 有视频时压更狠：视频占 3-4MB，留给图片只剩 0.5-1MB
+    const maxDim = hasVideo ? 800 : 1024;
+    const quality = hasVideo ? 0.5 : 0.6;
+    let compressed = await compressImageOnce(file, maxDim, quality);
     if (compressed.size > 1024 * 1024) {
-      compressed = await compressImageOnce(compressed, 800, 0.5);
+      compressed = await compressImageOnce(compressed, hasVideo ? 600 : 800, hasVideo ? 0.45 : 0.5);
     }
     return compressed;
   };
@@ -478,10 +481,11 @@ export default function NewProductPage() {
       fd.append("isChineseBrand", String(form.isChineseBrand));
 
       // 压缩图片后再上传（避免超过 Vercel 4.5MB 请求体限制）
+      const hasVideo = videoFiles.length > 0;
       setResult({ success: false, message: "正在压缩图片..." });
       const compressedImages: File[] = [];
       for (const f of imageFiles) {
-        const compressed = await compressImage(f);
+        const compressed = await compressImage(f, hasVideo);
         compressedImages.push(compressed);
       }
       const totalImageSize = compressedImages.reduce((sum, f) => sum + f.size, 0);
@@ -498,10 +502,15 @@ export default function NewProductPage() {
       }
 
       const totalVideoSize = videoFiles.reduce((sum, f) => sum + f.size, 0);
+      // 单视频不能超过 4MB（否则图片没空间了）
+      if (hasVideo && videoFiles.some(f => f.size > 4 * 1024 * 1024)) {
+        setResult({ success: false, message: "单个视频不能超过 4MB，请先压缩视频后再上传" });
+        return;
+      }
       const totalSize = totalImageSize + totalVideoSize;
-      // Vercel serverless body 限制约 4.5MB，已做图片压缩，再留 0.3MB 余量
-      if (totalSize > 4.2 * 1024 * 1024) {
-        setResult({ success: false, message: `上传数据过大（${(totalSize / 1024 / 1024).toFixed(1)}MB），请减少图片数量或压缩后重试` });
+      // Vercel serverless body 限制约 4.5MB，提到硬顶，靠图片压缩保证不超
+      if (totalSize > 4.5 * 1024 * 1024) {
+        setResult({ success: false, message: `上传数据过大（${(totalSize / 1024 / 1024).toFixed(1)}MB），请减少图片数量或先压缩视频后再重试` });
         return;
       }
 
@@ -941,12 +950,12 @@ export default function NewProductPage() {
             <label className="mb-1 block text-sm font-medium text-gray-700">发货港口</label>
             <select value={form.tradePort} onChange={e => update("tradePort", e.target.value)}
               className={fieldClass("tradePort")}>
-              <option value="青岛">青岛</option>
-              <option value="上海">上海</option>
-              <option value="天津">天津</option>
-              <option value="广州">广州</option>
+              <option value="青岛港">青岛港</option>
+              <option value="上海港">上海港</option>
+              <option value="天津港">天津港</option>
+              <option value="广州港">广州港</option>
               <option value="连云港">连云港</option>
-              <option value="宁波">宁波</option>
+              <option value="宁波港">宁波港</option>
               <option value="其他">其他</option>
             </select>
           </div>
