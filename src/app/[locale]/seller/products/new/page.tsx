@@ -44,7 +44,7 @@ export default function NewProductPage() {
     enginePower: "", engineType: "柴油发动机", driveSystem: "二驱",
     overallLength: "", overallWidth: "", overallHeight: "", netWeight: "",
     mainConfig: "", descOther: "",
-    priceMode: "por", tradeTerm: "FOB", tradePort: "天津",
+    priceMode: "por", tradeTerm: "FOB", tradePort: "天津港",
     isChineseBrand: false as boolean,
   });
 
