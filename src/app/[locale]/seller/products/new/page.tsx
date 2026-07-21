@@ -364,13 +364,9 @@ export default function NewProductPage() {
   };
 
   // ===== Canvas 图片压缩（避免超过 Vercel 4.5MB 请求体限制）=====
-  const compressImage = (file: File, maxDim = 1280, quality = 0.7): Promise<File> => {
-    return new Promise((resolve, reject) => {
-      if (file.size < 500 * 1024) {
-        // 小于 500KB 不压缩
-        resolve(file);
-        return;
-      }
+  // 策略：先按 1024px/quality0.6 压；如果仍 >1MB，二次压到 800px/quality0.5
+  const compressImageOnce = (file: File, maxDim: number, quality: number): Promise<File> => {
+    return new Promise((resolve) => {
       const img = new Image();
       const url = URL.createObjectURL(file);
       img.onload = () => {
@@ -388,7 +384,7 @@ export default function NewProductPage() {
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext("2d");
-        if (!ctx) { resolve(file); return; }
+        if (!ctx) { URL.revokeObjectURL(url); resolve(file); return; }
         ctx.drawImage(img, 0, 0, width, height);
         canvas.toBlob(
           (blob) => {
@@ -407,6 +403,15 @@ export default function NewProductPage() {
       img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
       img.src = url;
     });
+  };
+
+  const compressImage = async (file: File): Promise<File> => {
+    if (file.size < 300 * 1024) return file; // <300KB 不压
+    let compressed = await compressImageOnce(file, 1024, 0.6);
+    if (compressed.size > 1024 * 1024) {
+      compressed = await compressImageOnce(compressed, 800, 0.5);
+    }
+    return compressed;
   };
 
   // ===== 提交 =====
@@ -494,9 +499,8 @@ export default function NewProductPage() {
 
       const totalVideoSize = videoFiles.reduce((sum, f) => sum + f.size, 0);
       const totalSize = totalImageSize + totalVideoSize;
-      // 网站端 Vercel serverless 有 4.5MB body 限制，但新方案改为直接上传到 OSS
-      // 这里暂时保留限制提示，实际由后端处理
-      if (totalSize > 4 * 1024 * 1024 && videoFiles.length === 0) {
+      // Vercel serverless body 限制约 4.5MB，已做图片压缩，再留 0.3MB 余量
+      if (totalSize > 4.2 * 1024 * 1024) {
         setResult({ success: false, message: `上传数据过大（${(totalSize / 1024 / 1024).toFixed(1)}MB），请减少图片数量或压缩后重试` });
         return;
       }
