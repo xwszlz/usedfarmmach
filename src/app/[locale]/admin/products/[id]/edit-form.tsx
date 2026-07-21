@@ -331,6 +331,114 @@ export function ProductEditForm({ product, brands, categories }: Props) {
         </div>
       )}
 
+      {/* Images + Upload */}
+      <div className="rounded-xl border bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b px-6 py-4">
+          <h2 className="font-semibold text-gray-900">产品图片 ({images.length})</h2>
+          <label
+            className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-medium transition-colors ${
+              uploading === "image"
+                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                : "bg-blue-50 text-blue-600 hover:bg-blue-100"
+            }`}
+          >
+            {uploading === "image" ? "⏳ 上传中..." : "📷 添加图片"}
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              disabled={uploading !== null}
+              onChange={(e) => handleMediaUpload("image", e)}
+              className="hidden"
+            />
+          </label>
+        </div>
+        <div className="flex flex-wrap gap-3 p-6">
+          {images.length > 0 ? (
+            images.map((img) => (
+              <div
+                key={img.id}
+                className="group relative h-24 w-32 overflow-hidden rounded-lg border bg-gray-50"
+              >
+                <img
+                  src={getDetailImageUrl(img.url)}
+                  alt=""
+                  className="h-full w-full object-cover"
+                  onError={(e) => { (e.target as HTMLImageElement).src = "/images/placeholders/tractor.svg"; }}
+                />
+                {img.isPrimary && (
+                  <span className="absolute bottom-1 left-1 rounded bg-primary-600 px-1.5 py-0.5 text-[10px] text-white">
+                    主图
+                  </span>
+                )}
+                {/* 删除按钮 */}
+                <button
+                  type="button"
+                  onClick={() => handleDeleteImage(img.id)}
+                  className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] text-white opacity-0 shadow transition-opacity hover:bg-red-600 group-hover:opacity-100"
+                  title="删除图片"
+                >
+                  ✕
+                </button>
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-gray-400">暂无图片，点击「添加图片」上传</p>
+          )}
+        </div>
+      </div>
+
+      {/* Video Upload */}
+      <div className="rounded-xl border bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b px-6 py-4">
+          <h2 className="font-semibold text-gray-900">产品视频</h2>
+          <label
+            className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-medium transition-colors ${
+              uploading === "video"
+                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                : "bg-orange-50 text-orange-600 hover:bg-orange-100"
+            }`}
+          >
+            {uploading === "video" ? "⏳ 上传中..." : "🎬 添加视频"}
+            <input
+              type="file"
+              accept="video/*"
+              multiple
+              disabled={uploading !== null}
+              onChange={(e) => handleMediaUpload("video", e)}
+              className="hidden"
+            />
+          </label>
+        </div>
+        <div className="p-6">
+          <p className="mb-3 text-xs text-gray-400">
+            支持 MP4、MOV、WebM 格式。视频将展示在产品详情页。
+          </p>
+          {videos.length > 0 ? (
+            <div className="space-y-2">
+              {videos.map((vid) => (
+                <div key={vid.id} className="group flex items-center gap-3 rounded-lg border bg-gray-50 p-3">
+                  <span className="text-xl">🎬</span>
+                  <video src={getVideoUrl(vid.url)} controls className="max-h-24 max-w-xs rounded" preload="metadata" />
+                  <span className="flex-1 truncate text-xs text-gray-500">{vid.url.split("/").pop()}</span>
+                  {/* 删除按钮 */}
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteVideo(vid.id)}
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-red-500 text-[11px] text-white opacity-0 shadow transition-opacity hover:bg-red-600 group-hover:opacity-100"
+                    title="删除视频"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-400">暂无视频，点击「添加视频」上传</p>
+          )}
+        </div>
+      </div>
+
       <div className="rounded-xl border bg-white shadow-sm">
         <div className="border-b px-6 py-4">
           <h2 className="font-semibold text-gray-900">基本信息</h2>
@@ -602,7 +710,7 @@ export function ProductEditForm({ product, brands, categories }: Props) {
               type="text"
               value={form.tradePort}
               onChange={(e) => handleChange("tradePort", e.target.value)}
-              placeholder="如: Qingdao"
+              placeholder="如: 天津港"
               className="rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </label>
@@ -622,114 +730,6 @@ export function ProductEditForm({ product, brands, categories }: Props) {
             placeholder="产品描述、配置详情、注意事项等..."
             className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
-        </div>
-      </div>
-
-      {/* Images + Upload */}
-      <div className="rounded-xl border bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b px-6 py-4">
-          <h2 className="font-semibold text-gray-900">产品图片 ({images.length})</h2>
-          <label
-            className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-medium transition-colors ${
-              uploading === "image"
-                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                : "bg-blue-50 text-blue-600 hover:bg-blue-100"
-            }`}
-          >
-            {uploading === "image" ? "⏳ 上传中..." : "📷 添加图片"}
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              disabled={uploading !== null}
-              onChange={(e) => handleMediaUpload("image", e)}
-              className="hidden"
-            />
-          </label>
-        </div>
-        <div className="flex flex-wrap gap-3 p-6">
-          {images.length > 0 ? (
-            images.map((img) => (
-              <div
-                key={img.id}
-                className="group relative h-24 w-32 overflow-hidden rounded-lg border bg-gray-50"
-              >
-                <img
-                  src={getDetailImageUrl(img.url)}
-                  alt=""
-                  className="h-full w-full object-cover"
-                  onError={(e) => { (e.target as HTMLImageElement).src = "/images/placeholders/tractor.svg"; }}
-                />
-                {img.isPrimary && (
-                  <span className="absolute bottom-1 left-1 rounded bg-primary-600 px-1.5 py-0.5 text-[10px] text-white">
-                    主图
-                  </span>
-                )}
-                {/* 删除按钮 */}
-                <button
-                  type="button"
-                  onClick={() => handleDeleteImage(img.id)}
-                  className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] text-white opacity-0 shadow transition-opacity hover:bg-red-600 group-hover:opacity-100"
-                  title="删除图片"
-                >
-                  ✕
-                </button>
-              </div>
-            ))
-          ) : (
-            <p className="text-sm text-gray-400">暂无图片，点击「添加图片」上传</p>
-          )}
-        </div>
-      </div>
-
-      {/* Video Upload */}
-      <div className="rounded-xl border bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b px-6 py-4">
-          <h2 className="font-semibold text-gray-900">产品视频</h2>
-          <label
-            className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-medium transition-colors ${
-              uploading === "video"
-                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                : "bg-orange-50 text-orange-600 hover:bg-orange-100"
-            }`}
-          >
-            {uploading === "video" ? "⏳ 上传中..." : "🎬 添加视频"}
-            <input
-              type="file"
-              accept="video/*"
-              multiple
-              disabled={uploading !== null}
-              onChange={(e) => handleMediaUpload("video", e)}
-              className="hidden"
-            />
-          </label>
-        </div>
-        <div className="p-6">
-          <p className="mb-3 text-xs text-gray-400">
-            支持 MP4、MOV、WebM 格式。视频将展示在产品详情页。
-          </p>
-          {videos.length > 0 ? (
-            <div className="space-y-2">
-              {videos.map((vid) => (
-                <div key={vid.id} className="group flex items-center gap-3 rounded-lg border bg-gray-50 p-3">
-                  <span className="text-xl">🎬</span>
-                  <video src={getVideoUrl(vid.url)} controls className="max-h-24 max-w-xs rounded" preload="metadata" />
-                  <span className="flex-1 truncate text-xs text-gray-500">{vid.url.split("/").pop()}</span>
-                  {/* 删除按钮 */}
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteVideo(vid.id)}
-                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-red-500 text-[11px] text-white opacity-0 shadow transition-opacity hover:bg-red-600 group-hover:opacity-100"
-                    title="删除视频"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-gray-400">暂无视频，点击「添加视频」上传</p>
-          )}
         </div>
       </div>
 
