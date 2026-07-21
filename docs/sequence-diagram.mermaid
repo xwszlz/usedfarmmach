@@ -1,87 +1,35 @@
 sequenceDiagram
-    participant User
-    participant PartsClient as PartsClient.tsx
-    participant CatalogAPI as /api/parts/catalog
-    participant PartsAPI as /api/parts
-    participant DetailAPI as /api/parts/[id]
-    participant CatalogSvc as parts-catalog.ts
-    participant DB as Prisma (PostgreSQL)
+    actor Seller as 卖家
+    participant EditPage as 编辑页<br/>edit/page.tsx
+    participant GETAPI as GET /api/seller/products/[id]
+    participant Prisma as Prisma DB
+    participant AIAsst as AI助手组件<br/>ai-assistant.tsx
+    participant Recognize as /api/agents/seller-helper/recognize
+    participant PUTAPI as PUT /api/seller/products/[id]
+    participant ListPage as 卖家产品列表
 
-    %% ═══ Flow 1: 页面初次加载 ═══
-    rect rgb(255, 245, 230)
-        Note over User, DB: Flow 1: 页面初次加载
-        User->>PartsClient: 访问 /parts
-        PartsClient->>CatalogAPI: GET /api/parts/catalog
-        CatalogAPI->>CatalogSvc: getCatalogTree()
-        CatalogSvc->>DB: findMany MachineType { include: SubSystem { include: ComponentGroup } }
-        DB-->>CatalogSvc: 14 MachineTypes (tractor有子节点)
-        CatalogSvc-->>CatalogAPI: CatalogTreeNode[]
-        CatalogAPI-->>PartsClient: { success, data: tree } (ISR cached 1h)
+    Seller->>EditPage: 从产品列表点击"编辑"
+    EditPage->>GETAPI: GET /api/seller/products/[id]
+    GETAPI->>Prisma: findUnique(include: brand, category, images)
+    Prisma-->>GETAPI: 产品完整数据
+    GETAPI-->>EditPage: JSON {product: {...}}
+    EditPage-->>Seller: 表单预填充显示
 
-        PartsClient->>PartsAPI: GET /api/parts?page=1&pageSize=24
-        PartsAPI->>CatalogSvc: getParts({ page: 1 })
-        CatalogSvc->>DB: findMany Part { where: { isActive: true } }
-        DB-->>CatalogSvc: Part[] (first 24)
-        CatalogSvc-->>PartsAPI: { parts, total, brands }
-        PartsAPI-->>PartsClient: { success, data, pagination, filters }
+    Seller->>EditPage: 点击"重新AI识别"
+    EditPage->>AIAsst: 传入 imageUrls (已有图片URL)
+    AIAsst->>Recognize: POST {imageUrls, isChineseBrand}
+    Recognize-->>AIAsst: 识别结果 AiRecognizedData
 
-        PartsClient-->>User: 渲染导航树 + 配件网格
-    end
+    AIAsst->>AIAsst: 比对 existingFormValues<br/>确定 checkedFields + conflictFields
+    AIAsst-->>EditPage: 渲染字段级checkbox列表<br/>冲突字段黄色警告
 
-    %% ═══ Flow 2: 四级导航选择 ═══
-    rect rgb(230, 245, 255)
-        Note over User, DB: Flow 2: 选择 拖拉机 → 液压系统 → 液压泵
-        User->>PartsClient: 点击"拖拉机"
-        PartsClient->>PartsAPI: GET /api/parts?machineType=tractor
-        PartsAPI->>CatalogSvc: getParts({ machineType: "tractor" })
-        CatalogSvc->>DB: findMany Part { where: { componentGroup: { subSystem: { machineType: { code: "tractor" } } } } }
-        DB-->>CatalogSvc: Part[] (tractor配件)
-        CatalogSvc-->>PartsAPI: { parts, total, brands }
-        PartsAPI-->>PartsClient: { success, data, pagination }
-        PartsClient-->>User: 展开子系统列表 + 更新网格
+    Seller->>AIAsst: 勾选/取消字段，点击"填充已选字段"
+    AIAsst->>EditPage: onFill(checkedData) + onValidationErrors([])
 
-        User->>PartsClient: 点击"液压系统"
-        PartsClient->>PartsAPI: GET /api/parts?machineType=tractor&subSystem=hydraulic_system
-        PartsAPI->>CatalogSvc: getParts({ machineType, subSystem })
-        CatalogSvc->>DB: findMany Part { where: { componentGroup: { subSystem: { code: "hydraulic_system", machineType: { code: "tractor" } } } } }
-        DB-->>CatalogSvc: Part[] (液压配件)
-        PartsAPI-->>PartsClient: { success, data, pagination }
-        PartsClient-->>User: 展开部件组列表 + 更新网格
-
-        User->>PartsClient: 点击"液压泵"
-        PartsClient->>PartsAPI: GET /api/parts?machineType=tractor&subSystem=hydraulic_system&componentGroup=hydraulic_pump
-        PartsAPI->>CatalogSvc: getParts({ machineType, subSystem, componentGroup })
-        CatalogSvc->>DB: findMany Part { where: { componentGroup: { code: "hydraulic_pump", subSystem: { code: "hydraulic_system" } } } }
-        DB-->>CatalogSvc: Part[] (液压泵配件)
-        PartsAPI-->>PartsClient: { success, data, pagination }
-        PartsClient-->>User: 面包屑更新 + 网格更新
-    end
-
-    %% ═══ Flow 3: 搜索 ═══
-    rect rgb(240, 255, 230)
-        Note over User, DB: Flow 3: 关键词搜索 (300ms防抖)
-        User->>PartsClient: 输入 "hydraulic pump"
-        PartsClient->>PartsClient: debounce 300ms
-        PartsClient->>PartsAPI: GET /api/parts?keyword=hydraulic+pump&page=1
-        PartsAPI->>CatalogSvc: getParts({ keyword: "hydraulic pump" })
-        CatalogSvc->>DB: findMany Part { where: { OR: [{ nameEn: { contains, insensitive } }, { brand: { contains } }, { oemNumber: { contains } }] } }
-        DB-->>CatalogSvc: Part[] (匹配配件)
-        PartsAPI-->>PartsClient: { success, data, pagination }
-        PartsClient-->>User: 网格更新为搜索结果
-    end
-
-    %% ═══ Flow 4: 查看配件详情 ═══
-    rect rgb(255, 230, 255)
-        Note over User, DB: Flow 4: 查看配件详情
-        User->>PartsClient: 点击配件卡片
-        PartsClient->>User: 跳转 /parts/[id]
-
-        User->>DetailAPI: GET /api/parts/[id]
-        DetailAPI->>CatalogSvc: getPartById(id)
-        CatalogSvc->>DB: findUnique Part { include: { componentGroup: { include: { subSystem: { include: { machineType: true } } } }, compatibleMachines: true } }
-        DB-->>CatalogSvc: PartDetail (含层级+兼容机型)
-        CatalogSvc-->>DetailAPI: PartDetail
-        DetailAPI-->>User: { success, data: partDetail } (ISR cached 1h)
-
-        User-->>User: 渲染详情页 (图片+参数表+兼容机型+询价)
-    end
+    Seller->>EditPage: 修改表单其他项，点击"保存"
+    EditPage->>PUTAPI: PUT /api/seller/products/[id]
+    PUTAPI->>PUTAPI: 校验 sellerId 权限
+    PUTAPI->>Prisma: product.update({data: {...}})
+    Prisma-->>PUTAPI: 更新成功
+    PUTAPI-->>EditPage: {success: true}
+    EditPage->>ListPage: 跳转到产品列表

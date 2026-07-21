@@ -44,7 +44,11 @@ export default function InspectionBookingModal({
   const [preferredDate, setPreferredDate] = useState("");
   const [flawConfirmed, setFlawConfirmed] = useState(false);
   const [riskConfirmed, setRiskConfirmed] = useState(false);
+  const [announcementConfirmed, setAnnouncementConfirmed] = useState(false);
   const [proofUrl, setProofUrl] = useState("");
+
+  // 公告全文展开
+  const [showFullAnnouncement, setShowFullAnnouncement] = useState(false);
 
   // 检查登录状态
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -72,6 +76,10 @@ export default function InspectionBookingModal({
     }
     if (!flawConfirmed || !riskConfirmed) {
       setError(isZh ? "请确认已知瑕疵和风险自担" : "Please confirm flaws and risks");
+      return;
+    }
+    if (!announcementConfirmed) {
+      setError(isZh ? "请先阅读并确认询价公告" : "Please read and confirm the announcement");
       return;
     }
 
@@ -289,6 +297,46 @@ export default function InspectionBookingModal({
                     className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
                   />
                 </div>
+              </div>
+
+              {/* 询价公告摘要 */}
+              <div className="bg-blue-50 rounded-lg p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-bold text-blue-900">
+                    📋 {isZh ? "询价公告摘要" : "Announcement Summary"}
+                  </h4>
+                  <button
+                    onClick={() => setShowFullAnnouncement(!showFullAnnouncement)}
+                    className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                  >
+                    {showFullAnnouncement ? (isZh ? "收起" : "Collapse") : (isZh ? "展开全文" : "Expand")}
+                  </button>
+                </div>
+                <div className="text-sm text-blue-700 space-y-1">
+                  <p>• {isZh ? "标的物：麦赛福格森MF3404农用拖拉机" : "Item: Massey Ferguson MF3404 Tractor"}</p>
+                  <p>• {isZh ? "参考评估价：¥850,000（评估基准日2025年8月，仅供参考）" : "Evaluation: ¥850,000 (Aug 2025, reference only)"}</p>
+                  <p>• {isZh ? "询价时间：2026年7月25日10:00" : "Inquiry Date: July 25, 2026 10:00"}</p>
+                  <p>• {isZh ? "付款截止：2026年7月27日23:59" : "Payment Deadline: July 27, 2026 23:59"}</p>
+                  <p>• {isZh ? "已知瑕疵：缺少前配重及后悬挂" : "Known Flaws: Missing front weight & rear hitch"}</p>
+                </div>
+                {showFullAnnouncement && (
+                  <div className="mt-3 p-3 bg-white rounded border border-blue-200 max-h-60 overflow-y-auto text-xs text-gray-700">
+                    <p className="font-bold mb-1">{isZh ? "公告编号" : "Notice No."}：{bargain.announcementNo || "SJZSN-2026-0720"}</p>
+                    <p className="mb-2">{isZh ? "出售方通过合法渠道取得标的物，确认为合法所有权人。标的按现状交付，建议实地查验后报价。" : "Seller acquired the item through legal channels and confirms legal title. Sold as-is; inspect before offering."}</p>
+                    <p className="text-blue-600 text-[10px]">{isZh ? "完整公告请在询价详情页查看" : "Full announcement available on the inquiry detail page"}</p>
+                  </div>
+                )}
+                <label className="flex items-start gap-2 cursor-pointer mt-2">
+                  <input
+                    type="checkbox"
+                    checked={announcementConfirmed}
+                    onChange={(e) => setAnnouncementConfirmed(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 rounded border-blue-300"
+                  />
+                  <span className="text-sm text-blue-900">
+                    {isZh ? "我已阅读询价公告，了解标的物状况和交易规则" : "I have read the announcement and understand the terms"}
+                  </span>
+                </label>
               </div>
 
               {/* 风险确认 */}

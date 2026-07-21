@@ -1,165 +1,125 @@
 classDiagram
-    class MachineType {
-        +String id
-        +String code
-        +String nameZh
-        +String nameEn
-        +String nameRu
-        +String nameEs
-        +String namePt
-        +String nameAr
-        +String nameFr
-        +String nameHi
-        +String imageUrl
-        +Int sortOrder
-        +Boolean isActive
-        +DateTime createdAt
-        +DateTime updatedAt
+    class SellerAiAssistantProps {
+        +File[] imageFiles
+        +File? videoFile
+        +boolean autoTrigger
+        +Record~string, any~? existingFormValues
+        +function onFill(data)
+        +function? onValidationErrors(missingFields)
+        +string[]? imageUrls
     }
 
-    class SubSystem {
-        +String id
-        +String code
-        +String nameZh
-        +String nameEn
-        +String nameRu
-        +String nameEs
-        +String namePt
-        +String nameAr
-        +String nameFr
-        +String nameHi
-        +String machineTypeId
-        +Int sortOrder
-        +Boolean isActive
-        +DateTime createdAt
-        +DateTime updatedAt
+    class AiRecognizedData {
+        +string? brand
+        +string? modelName
+        +number? year
+        +string? enginePower
+        +string? engineType
+        +string? driveSystem
+        +string? overallLength
+        +string? overallWidth
+        +string? overallHeight
+        +string? netWeight
+        +string? mainConfig
+        +number? workingHours
+        +string? condition
+        +string? priceMode
+        +string? tradeTerm
+        +string? tradePort
+        +boolean isChineseBrand
+        +number confidence
+        +string? category
+        +string? location
+        +string? country
+        +string? province
+        +string? city
+        +number? referencePrice
     }
 
-    class ComponentGroup {
-        +String id
-        +String code
-        +String nameZh
-        +String nameEn
-        +String nameRu
-        +String nameEs
-        +String namePt
-        +String nameAr
-        +String nameFr
-        +String nameHi
-        +String subSystemId
-        +Int sortOrder
-        +Boolean isActive
-        +DateTime createdAt
-        +DateTime updatedAt
+    class SellerAiAssistant_State {
+        -boolean recognizing
+        -AiRecognizedData? recognized
+        -string? error
+        -string phase
+        -string engineMode
+        -Set~string~ checkedFields
+        -Set~string~ conflictFields
     }
 
-    class Part {
-        +String id
-        +String sku
-        +String nameZh
-        +String nameEn
-        +String nameRu
-        +String nameEs
-        +String brand
-        +String oemNumber
-        +String componentGroupId
-        +Float price
-        +String currency
-        +String stockStatus
-        +String[] images
-        +String descriptionZh
-        +String descriptionEn
-        +String descriptionRu
-        +Json specs
-        +Boolean isActive
-        +Boolean isOEM
-        +Boolean isAftermarket
-        +String dataSource
-        +String dataQuality
-        +DateTime createdAt
-        +DateTime updatedAt
+    class SpecificationTableProps {
+        +string brandName
+        +string modelName
+        +number year
+        +number? workingHours
+        +string? engineType
+        +number? enginePower
+        +string? driveSystem
+        +string? mainConfig
+        +number? overallLength
+        +number? overallWidth
+        +number? overallHeight
+        +number? netWeight
+        +string conditionLabel
+        +string locale
+        +string categoryName
+        +string? location
     }
 
-    class CompatibleMachine {
-        +String id
-        +String partId
-        +String brand
-        +String model
-        +String yearRange
-        +String notes
+    class ProductUpdateBody {
+        +string? brandName
+        +string? categoryName
+        +string? modelName
+        +number? year
+        +string? condition
+        +number? enginePower
+        +string? engineType
+        +string? driveSystem
+        +number? overallLength
+        +number? overallWidth
+        +number? overallHeight
+        +number? netWeight
+        +string? mainConfig
+        +string? location
+        +string? country
+        +string? province
+        +string? city
+        +string? priceMode
+        +string? tradeTerm
+        +string? tradePort
+        +boolean? isChineseBrand
     }
 
-    class PartLegacy {
-        +String id
-        +String nameZh
-        +String nameEn
-        +String nameRu
-        +String brand
-        +String category
-        +Float price
-        +String currency
-        +String stockStatus
-        +String[] compatibleModels
-        +String[] images
-        +String descriptionZh
-        +String descriptionEn
-        +String descriptionRu
-        +Boolean isActive
-        +DateTime createdAt
-        +DateTime updatedAt
+    class ProductEditData {
+        +string id
+        +string brandId
+        +string brandName
+        +string categoryId
+        +string categoryName
+        +string modelName
+        +number year
+        +number? workingHours
+        +string condition
+        +number priceCny
+        +string location
+        +string? country
+        +string? province
+        +string? city
+        +number? enginePower
+        +string? engineType
+        +string? driveSystem
+        +number? overallLength
+        +number? overallWidth
+        +number? overallHeight
+        +number? netWeight
+        +string? mainConfig
+        +string priceMode
+        +string tradeTerm
+        +string? tradePort
+        +boolean isChineseBrand
+        +object[] images
     }
 
-    class PartsCatalogService {
-        <<service>>
-        +getCatalogTree() CatalogTreeNode[]
-        +getParts(filters) PartListResult
-        +getPartById(id) PartDetail
-        +getBrandsByComponentGroup(componentGroupId) String[]
-    }
-
-    class PartsCatalogNav {
-        <<component>>
-        +catalogTree: CatalogTreeNode[]
-        +selectedMachineType: string
-        +selectedSubSystem: string
-        +selectedComponentGroup: string
-        +onSelect(callback): void
-    }
-
-    class PartsGrid {
-        <<component>>
-        +parts: Part[]
-        +loading: boolean
-        +pagination: Pagination
-        +onPageChange(page): void
-    }
-
-    class PartCard {
-        <<component>>
-        +part: Part
-        +locale: string
-    }
-
-    class PartsBreadcrumb {
-        <<component>>
-        +machineTypeName: string
-        +subSystemName: string
-        +componentGroupName: string
-        +locale: string
-    }
-
-    MachineType "1" --> "*" SubSystem : subSystems
-    SubSystem "1" --> "*" ComponentGroup : componentGroups
-    ComponentGroup "1" --> "*" Part : parts
-    Part "1" --> "*" CompatibleMachine : compatibleMachines
-
-    PartsCatalogService ..> MachineType : queries
-    PartsCatalogService ..> SubSystem : queries
-    PartsCatalogService ..> ComponentGroup : queries
-    PartsCatalogService ..> Part : queries
-    PartsCatalogService ..> CompatibleMachine : queries
-
-    PartsCatalogNav ..> PartsCatalogService : uses tree
-    PartsGrid ..> PartsCatalogService : uses parts
-    PartsGrid --> "*" PartCard : renders
-    PartCard ..> Part : displays
+    SpecificationTableProps --> SpecificationTable : 渲染规格表
+    SellerAiAssistantProps --> SellerAiAssistant : 渲染AI助手
+    ProductUpdateBody --> "PUT /api/seller/products/[id]" : 请求体
+    ProductEditData --> "edit/page.tsx" : 页面初始化

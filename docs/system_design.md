@@ -1,9 +1,9 @@
-# 农机配件专区V2 — 系统设计与任务分解
+# AI识别字段补全 — 系统架构设计 + 任务分解
 
-> 项目：神雕农机 usedfarmmach
-> 技术栈：Next.js 14 App Router + Prisma + Neon PostgreSQL + Tailwind CSS
-> 日期：2026-07-08
-> 架构师：Bob (software-architect)
+> **作者**: Bob (Architect)  
+> **日期**: 2026-07-15  
+> **项目**: 神雕农机 (usedfarmmach.com)  
+> **版本**: v1.0
 
 ---
 
@@ -11,839 +11,565 @@
 
 ### 1. 实现方案
 
-#### 1.1 核心技术挑战
+#### 方案A — MF3404重新识别并补齐数据库（P0-1, P0-2）
 
-| 挑战 | 分析 | 方案 |
-|------|------|------|
-| 四级分类体系 | 14整机品类 × 9子系统 × N部件组 × M配件，层级深、数据量大 | 三张分类表 + 一张配件表，通过外键关联，导航树API预加载缓存 |
-| 旧数据兼容 | 现有Part表有25条测试数据，字段结构与新模型不兼容 | 旧Part模型重命名为PartLegacy（`@@map("part_legacy")`），新Part模型重建，旧数据保留备份 |
-| 前端导航复杂度 | 从扁平8分类升级为4级级联导航，需要流畅的交互体验 | 三级级联选择器（整机品类→子系统→部件组）+ 面包屑 + 配件网格，客户端状态管理 |
-| 配件数据量增长 | 首批50-100条，最终目标3-5万条，需要分页和缓存 | API层分页（默认24条/页）+ 导航树ISR缓存（1小时）+ 配件列表force-dynamic |
-| AI图片生成 | 每个拖拉机配件需要白底工业摄影风格产品图 | 独立脚本批量调用ImageGen，图片上传至OSS，URL写入Part.images字段 |
-| 可扩展性 | 拖拉机跑通后，其余13品类需快速复制 | 种子数据结构化设计，分类数据与配件数据分离，新增品类只需追加种子数据 |
+**核心策略**: 新建产品编辑页 + 新建产品更新API
 
-#### 1.2 框架与库选型
+- **新建编辑页**: `src/app/[locale]/seller/products/[id]/edit/page.tsx`
+  - 复用发布页的表单结构（品牌/品类/型号/年份/规格等字段），从数据库预填充
+  - 展示已有产品图片（OSS URL），新增"重新AI识别"按钮
+  - 调用 `/api/agents/seller-helper/recognize` 时传入 `imageUrls`（已有图片HTTP URL）
+  - 识别完成后复用方案B的字段级确认机制
 
-| 组件 | 选型 | 理由 |
-|------|------|------|
-| ORM | Prisma (已用) | 项目已深度集成，支持PostgreSQL全部特性 |
-| 数据库 | Neon PostgreSQL (已用) | 支持数组字段(String[])、JSON字段、全文索引 |
-| 前端框架 | Next.js 14 App Router (已用) | ISR缓存、Server Components、API Routes一体化 |
-| UI组件库 | shadcn/ui + Tailwind (已用) | 项目已有Card/Badge/Input/Pagination等组件 |
-| 图标 | lucide-react (已用) | 项目已集成 |
-| 图片存储 | 阿里云OSS (已用) | 已有getImageUrl工具函数处理OSS路径 |
-| AI图片生成 | ImageGen (通过ToolSearch调用) | 方案指定，白底工业摄影风格 |
+- **新建更新API**: `src/app/api/seller/products/[id]/route.ts`
+  - `GET`：根据产品ID返回产品完整数据（含品牌/品类/图片），用于编辑页初始化
+  - `PUT`：接收更新后的表单数据，写入 `mainConfig`, `overallLength/Width/Height`, `netWeight` 等字段
+  - 权限校验：仅该产品的卖家（`sellerId`）可编辑
 
-#### 1.3 架构模式
+- **卖家产品列表增加编辑入口**: 在 `seller/products/page.tsx` 每个产品卡片右侧增加"编辑"按钮
 
-采用 **分层架构**：
-- **数据层**：Prisma schema + 种子数据脚本
-- **数据访问层**：`src/lib/parts-catalog.ts` 封装分类树查询、配件查询逻辑
-- **API层**：Next.js Route Handlers（REST风格）
-- **前端层**：React Client Components + 级联导航 + 响应式网格
+#### 方案B — AI回填增强：字段级确认+必填校验（P0-3, P0-4, P0-5）
+
+**核心策略**: 改造 `ai-assistant.tsx` 组件
+
+- **字段级确认（P0-3）**:
+  - 识别结果区域从"绿框文字列表"改为"字段级 checkbox 列表"
+  - 每个字段左侧加 `<input type="checkbox">`，右侧显示 AI 识别值
+  - "一键填充到表单"改为"填充已选字段"，仅填充勾选的字段
+  - 新增状态: `checkedFields: Set<string>` 管理选中/取消
+
+- **已填字段保护（P0-4）**:
+  - 新增 Props: `existingFormValues?: Record<string, any>` — 父页面传入已填表单值
+  - 比较逻辑: AI值非空 且 existingFormValues[field] 非空 → 默认不勾选 + 黄色警告标签 `⚠️ 表单已填写，AI值不同`
+  - 比较逻辑: AI值非空 且 existingFormValues[field] 为空 → 默认勾选（新数据的自然行为）
+  - 新增状态: `conflictFields: Set<string>` 记录冲突字段
+
+- **必填字段校验（P0-5）**:
+  - 必填项列表: `brandName`, `modelName`, `year`, `categoryId`/`categoryName`, `priceCny`
+  - 填充后检查：若上述字段在表单中仍为空，触发警告提示
+  - 新增 Props: `onValidationErrors?: (missingFields: string[]) => void` — 通知父页面
+  - 在"填充已选字段"按钮点击后弹出校验摘要
+
+#### 方案C — 规格表展示补全（P0-6, P0-7）
+
+**核心策略**: 改造 `specification-table.tsx` + 产品详情页传参
+
+- **新增"品类"行（P0-6）**:
+  - 在"品牌→型号→年份"之后插入"品类"行，数据源: `category.nameZh` / `category.nameEn` / `category.nameRu`
+  - Props 新增: `categoryName: string`
+  - LABELS 补充三语: `category: "品类" / "Category" / "Категория"`
+
+- **新增"产地"行（P0-7）**:
+  - 在"整机重量"之后插入"产地"行
+  - 数据源优先级: `product.location` → `province+city`拼接 → "暂无"
+  - Props 新增: `location?: string | null`
+  - LABELS 补充三语: `location: "产地" / "Origin" / "Происхождение"`
+
+#### P1备注 — 外形尺寸部分展示
+
+（本次不实现，仅在设计文档中标注）规格表 `formatDimension()` 改为支持部分值展示：
+```
+// 现状：三个值都有才显示 "8900×2990×3490"，否则"暂无"
+// 改进：有部分值显示 "8900×-×3490" 或 "8900×2990×暂无"
+```
 
 ---
 
 ### 2. 文件列表
 
-#### 新建文件
-
-| 文件路径 | 说明 |
-|----------|------|
-| `src/types/parts-v2.ts` | 新配件系统TypeScript类型定义 |
-| `src/lib/parts-catalog.ts` | 配件分类数据访问层（查询封装、缓存逻辑） |
-| `src/app/api/parts/catalog/route.ts` | 导航树API（四级分类结构，ISR缓存） |
-| `src/app/api/parts/[id]/route.ts` | 配件详情API |
-| `src/components/parts/PartsCatalogNav.tsx` | 四级级联导航组件 |
-| `src/components/parts/PartsGrid.tsx` | 配件网格组件（含分页） |
-| `src/components/parts/PartCard.tsx` | 配件卡片组件 |
-| `src/components/parts/PartsBreadcrumb.tsx` | 面包屑导航组件 |
-| `src/components/parts/PartDetailClient.tsx` | 配件详情页客户端组件 |
-| `src/components/parts/PartSpecsTable.tsx` | 技术参数表格组件 |
-| `src/app/[locale]/parts/[id]/page.tsx` | 配件详情页（Server Component） |
-| `prisma/seed-parts-v2.ts` | V2种子数据：14品类+9子系统+拖拉机部件组+50-100条配件 |
-| `scripts/migrate-old-parts.ts` | 旧Part数据迁移到PartLegacy的脚本 |
-| `scripts/generate-part-images.ts` | AI图片批量生成脚本（ImageGen调用） |
-
-#### 修改文件
-
-| 文件路径 | 修改内容 |
-|----------|----------|
-| `prisma/schema.prisma` | 旧Part重命名为PartLegacy；新增MachineType/SubSystem/ComponentGroup/Part/CompatibleMachine |
-| `src/app/api/parts/route.ts` | 重写为多级筛选API（machineType/subSystem/componentGroup/brand/keyword/page） |
-| `src/app/[locale]/parts/PartsClient.tsx` | 从扁平8分类重构为四级级联导航 |
-| `src/app/[locale]/parts/page.tsx` | 更新SEO元数据，适配新结构 |
+| 操作 | 相对路径 | 说明 |
+|------|----------|------|
+| ✅ 修改 | `src/components/product/specification-table.tsx` | 新增品类/产地行 + 三语标签 |
+| ✅ 修改 | `src/components/seller/ai-assistant.tsx` | 字段级checkbox + 字段保护 + 必填校验 |
+| ✅ 修改 | `src/app/[locale]/seller/products/new/page.tsx` | 适配新`onFill`签名、传入`existingFormValues` |
+| ✅ 修改 | `src/app/[locale]/seller/products/page.tsx` | 产品卡片增加"编辑"按钮 |
+| ✅ 修改 | `src/app/[locale]/products/[id]/page.tsx` | 给规格表传入`categoryName`和`location` |
+| 🆕 新建 | `src/app/[locale]/seller/products/[id]/edit/page.tsx` | 产品编辑页（全新） |
+| 🆕 新建 | `src/app/api/seller/products/[id]/route.ts` | 产品 CRUD API（GET + PUT） |
 
 ---
 
-### 3. 数据结构与接口
+### 3. 数据结构和接口
 
-#### 3.1 Prisma模型最终版
-
-```prisma
-// ═══════════════════════════════════════════════════════
-// 配件专区V2 — 四级分类体系
-// ═══════════════════════════════════════════════════════
-
-/// Level 1: 整机品类（拖拉机、收割机等14大类）
-model MachineType {
-  id          String      @id @default(cuid())
-  code        String      @unique // "tractor", "combine_harvester"
-  nameZh      String
-  nameEn      String
-  nameRu      String      @default("")
-  nameEs      String      @default("")
-  namePt      String      @default("")
-  nameAr      String      @default("")
-  nameFr      String      @default("")
-  nameHi      String      @default("")
-  imageUrl    String?
-  sortOrder   Int         @default(0)
-  isActive    Boolean     @default(true)
-  subSystems  SubSystem[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-
-  @@index([isActive, sortOrder])
-}
-
-/// Level 2: 子系统（动力、液压、传动等9大系统，按整机品类分组）
-model SubSystem {
-  id              String          @id @default(cuid())
-  code            String          // "powertrain", "hydraulic"
-  nameZh          String
-  nameEn          String
-  nameRu          String          @default("")
-  nameEs          String          @default("")
-  namePt          String          @default("")
-  nameAr          String          @default("")
-  nameFr          String          @default("")
-  nameHi          String          @default("")
-  machineType     MachineType     @relation(fields: [machineTypeId], references: [id])
-  machineTypeId   String
-  componentGroups ComponentGroup[]
-  sortOrder       Int             @default(0)
-  isActive        Boolean         @default(true)
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-
-  @@unique([machineTypeId, code])
-  @@index([machineTypeId, isActive])
-}
-
-/// Level 3: 部件组（液压泵、滤芯等，按子系统分组）
-model ComponentGroup {
-  id          String   @id @default(cuid())
-  code        String   // "hydraulic_pump", "air_filter"
-  nameZh      String
-  nameEn      String
-  nameRu      String   @default("")
-  nameEs      String   @default("")
-  namePt      String   @default("")
-  nameAr      String   @default("")
-  nameFr      String   @default("")
-  nameHi      String   @default("")
-  subSystem   SubSystem @relation(fields: [subSystemId], references: [id])
-  subSystemId String
-  parts       Part[]
-  sortOrder   Int      @default(0)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@unique([subSystemId, code])
-  @@index([subSystemId, isActive])
-}
-
-/// Level 4: 配件（具体SKU，关联到部件组）
-model Part {
-  id                String              @id @default(cuid())
-  sku               String              @unique // SD-TRACTOR-HYD-001
-  nameZh            String
-  nameEn            String
-  nameRu            String              @default("")
-  nameEs            String              @default("")
-  brand             String              // 配件品牌（Bosch Rexroth, SKF等）
-  oemNumber         String?             // 原厂编号
-  componentGroup    ComponentGroup      @relation(fields: [componentGroupId], references: [id])
-  componentGroupId  String
-  compatibleMachines CompatibleMachine[]
-  price             Float
-  currency          String              @default("CNY")
-  stockStatus       String              @default("in_stock") // in_stock, low_stock, out_of_stock, preorder
-  images            String[]
-  descriptionZh     String?             @db.Text
-  descriptionEn     String?             @db.Text
-  descriptionRu     String?             @db.Text
-  specs             Json?               // {material, weight, dimensions, warranty, ...}
-  isActive          Boolean             @default(true)
-  isOEM             Boolean             @default(false)
-  isAftermarket     Boolean             @default(false)
-  dataSource        String              @default("manual") // manual, scraped, ai_generated
-  dataQuality       String              @default("verified") // verified, unverified, draft
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-
-  @@index([componentGroupId, isActive])
-  @@index([brand, isActive])
-  @@index([sku])
-  @@index([oemNumber])
-  @@index([stockStatus, isActive])
-}
-
-/// 配件兼容机型（多对多，一个配件可兼容多个整机型号）
-model CompatibleMachine {
-  id        String   @id @default(cuid())
-  part      Part     @relation(fields: [partId], references: [id], onDelete: Cascade)
-  partId    String
-  brand     String   // 整机品牌（John Deere, CLAAS等）
-  model     String   // 整机型号（6155R, LEXION 770等）
-  yearRange String?  // "2015-2020"
-  notes     String?
-
-  @@index([partId])
-  @@index([brand, model])
-}
-
-/// 旧配件数据备份（原Part模型，不再使用，仅保留数据）
-model PartLegacy {
-  id               String   @id @default(cuid())
-  nameZh           String
-  nameEn           String   @default("")
-  nameRu           String   @default("")
-  brand            String
-  category         String
-  price            Float
-  currency         String   @default("CNY")
-  stockStatus      String   @default("in_stock")
-  compatibleModels String[]
-  images           String[]
-  descriptionZh    String?  @db.Text
-  descriptionEn    String?  @db.Text
-  descriptionRu    String?  @db.Text
-  isActive         Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  @@index([category, isActive])
-  @@index([brand, isActive])
-
-  @@map("part_legacy")
-}
-```
-
-#### 3.2 旧数据处理策略
-
-| 步骤 | 操作 | 说明 |
-|------|------|------|
-| 1 | schema.prisma中旧Part重命名为PartLegacy，加`@@map("part_legacy")` | Prisma生成迁移时将旧Part表重命名为part_legacy |
-| 2 | 新建MachineType/SubSystem/ComponentGroup/Part/CompatibleMachine模型 | 新Part表与旧表完全独立 |
-| 3 | `prisma migrate dev --name parts_v2` 生成迁移 | 工程师需检查迁移SQL，确保是ALTER TABLE RENAME而非DROP+CREATE |
-| 4 | 运行`scripts/migrate-old-parts.ts`（可选） | 将旧25条数据映射到新模型（category→componentGroup的映射规则） |
-| 5 | 运行`prisma/seed-parts-v2.ts` | 播种14品类+9子系统+拖拉机部件组+50-100条配件 |
-
-**旧→新分类映射规则**（用于迁移脚本）：
-
-| 旧category | → 新MachineType | → 新SubSystem | → 新ComponentGroup |
-|------------|----------------|---------------|-------------------|
-| engine | tractor | powertrain | engine_assembly |
-| hydraulic | tractor | hydraulic_system | hydraulic_pump |
-| transmission | tractor | transmission_system | clutch |
-| electrical | tractor | electrical_system | alternator |
-| filters | tractor | filter_system | oil_filter |
-| tires | tractor | chassis_system | tire |
-| bearings | tractor | bearing_seal_system | ball_bearing |
-| body | tractor | body_cab | cab |
-
-#### 3.3 与现有Product/Brand表的关联决策
-
-| 问题 | 决策 | 理由 |
-|------|------|------|
-| MachineType是否关联Brand表？ | **不关联** | MachineType是品类（拖拉机/收割机），Brand是品牌（约翰迪尔/克拉斯）。一个品类有多个品牌，属于多对多关系，无需在MachineType上建FK |
-| CompatibleMachine.brand是否关联Brand表？ | **暂不关联，保留为String** | CompatibleMachine.brand记录的是整机品牌名（如"John Deere"），与Brand表可能不完全匹配（Brand表可能没有所有农机品牌）。保持String灵活性，后续可增加brandId可选FK |
-| Part.brand是否关联Brand表？ | **暂不关联，保留为String** | 同上。配件品牌（如Bosch Rexroth、SKF、Parker）不一定在Brand表中（Brand表主要存农机整机品牌） |
-
-#### 3.4 种子数据结构说明
-
-**种子文件**：`prisma/seed-parts-v2.ts`
-
-数据分三层写入：
-
-```
-Layer 1: 14个MachineType（全量，但只有tractor有子节点）
-  ├─ tractor (code: "tractor", sortOrder: 1)
-  ├─ combine_harvester (code: "combine_harvester", sortOrder: 2)
-  ├─ forage_harvester (sortOrder: 3)
-  ├─ ... 其余11个品类（只有名称，无子系统）
-
-Layer 2: 拖拉机下的9个SubSystem
-  ├─ powertrain (动力系统)
-  ├─ hydraulic_system (液压系统)
-  ├─ electrical_system (电气系统)
-  ├─ transmission_system (传动系统)
-  ├─ chassis_system (行走系统)
-  ├─ working_implement (工作装置)
-  ├─ body_cab (车身/驾驶室)
-  ├─ filter_system (过滤系统)
-  └─ bearing_seal_system (轴承密封系统)
-
-Layer 3: 拖拉机9子系统下的部件组（约60-70个）
-  每个子系统下6-10个部件组，参考方案3.3节拖拉机拆解表
-
-Layer 4: 50-100条拖拉机配件数据
-  覆盖9大子系统的核心部件组，每条包含：
-  - SKU (SD-TRACTOR-{SUB}-{SEQ})
-  - 中英俄西四语名称
-  - 品牌 + OEM编号
-  - 价格 + 库存状态
-  - 技术参数 (specs JSON)
-  - 兼容机型 (CompatibleMachine数组)
-  - 描述（中英俄三语）
-```
-
-**SKU编码规则**：`SD-{MACHINE_CODE}-{SUB_CODE_PREFIX}-{SEQ3}`
-
-| 示例 | 含义 |
-|------|------|
-| SD-TRACTOR-PWR-001 | 拖拉机-动力系统-第001号 |
-| SD-TRACTOR-HYD-001 | 拖拉机-液压系统-第001号 |
-| SD-TRACTOR-ELE-001 | 拖拉机-电气系统-第001号 |
-
-子系统编码前缀映射：
-
-| SubSystem code | SKU前缀 |
-|----------------|---------|
-| powertrain | PWR |
-| hydraulic_system | HYD |
-| electrical_system | ELE |
-| transmission_system | TRN |
-| chassis_system | CHS |
-| working_implement | WIM |
-| body_cab | BCB |
-| filter_system | FLT |
-| bearing_seal_system | BRS |
-
----
-
-### 4. API设计方案
-
-#### 4.1 接口总览
-
-| 接口 | 方法 | 缓存策略 | 说明 |
-|------|------|---------|------|
-| `/api/parts/catalog` | GET | ISR 3600s | 导航树（14品类→子系统→部件组，含配件计数） |
-| `/api/parts` | GET | force-dynamic | 配件列表（多级筛选+分页+搜索） |
-| `/api/parts/[id]` | GET | ISR 3600s | 配件详情（含兼容机型、技术参数） |
-
-#### 4.2 导航树API
-
-```
-GET /api/parts/catalog
-```
-
-**响应结构**：
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": "cuid",
-      "code": "tractor",
-      "nameZh": "拖拉机",
-      "nameEn": "Tractor",
-      "sortOrder": 1,
-      "subSystems": [
-        {
-          "id": "cuid",
-          "code": "hydraulic_system",
-          "nameZh": "液压系统",
-          "nameEn": "Hydraulic System",
-          "sortOrder": 2,
-          "componentGroups": [
-            {
-              "id": "cuid",
-              "code": "hydraulic_pump",
-              "nameZh": "液压泵",
-              "nameEn": "Hydraulic Pump",
-              "sortOrder": 1,
-              "partCount": 5
-            }
-          ]
-        }
-      ]
+```mermaid
+classDiagram
+    class SellerAiAssistantProps {
+        +File[] imageFiles
+        +File? videoFile
+        +boolean autoTrigger
+        +Record~string, any~? existingFormValues
+        +function onFill(data)
+        +function? onValidationErrors(missingFields)
     }
-  ]
-}
-```
 
-**设计要点**：
-- 使用 `export const revalidate = 3600` 实现ISR缓存
-- 只返回 `isActive: true` 的节点
-- 每个ComponentGroup附带 `partCount`（该部件组下活跃配件数）
-- 只有拖拉机返回完整子树，其余13品类 `subSystems` 为空数组
-
-#### 4.3 配件列表API
-
-```
-GET /api/parts?machineType=tractor&subSystem=hydraulic_system&componentGroup=hydraulic_pump&brand=Bosch&keyword=pump&page=1&pageSize=24
-```
-
-**查询参数**：
-
-| 参数 | 类型 | 默认 | 说明 |
-|------|------|------|------|
-| machineType | string | - | 整机品类code（如 "tractor"） |
-| subSystem | string | - | 子系统code（如 "hydraulic_system"） |
-| componentGroup | string | - | 部件组code（如 "hydraulic_pump"） |
-| brand | string | - | 配件品牌（精确匹配） |
-| keyword | string | - | 搜索词（匹配nameZh/nameEn/nameRu/oemNumber/brand） |
-| page | int | 1 | 页码 |
-| pageSize | int | 24 | 每页条数（最大100） |
-
-**响应结构**：
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": "cuid",
-      "sku": "SD-TRACTOR-HYD-001",
-      "nameZh": "博世力士乐液压齿轮泵",
-      "nameEn": "Bosch Rexroth Hydraulic Gear Pump",
-      "brand": "Bosch Rexroth",
-      "oemNumber": "A10VSO45DFR/31R",
-      "price": 8500,
-      "currency": "CNY",
-      "stockStatus": "in_stock",
-      "images": ["https://oss.../parts/tractor/hydraulic/SD-TRACTOR-HYD-001.jpg"],
-      "isOEM": true,
-      "componentGroup": { "code": "hydraulic_pump", "nameZh": "液压泵" },
-      "subSystem": { "code": "hydraulic_system", "nameZh": "液压系统" },
-      "machineType": { "code": "tractor", "nameZh": "拖拉机" }
+    class AiRecognizedData {
+        +string? brand
+        +string? modelName
+        +number? year
+        +string? enginePower
+        +string? engineType
+        +string? driveSystem
+        +string? overallLength
+        +string? overallWidth
+        +string? overallHeight
+        +string? netWeight
+        +string? mainConfig
+        +number? workingHours
+        +string? condition
+        +string? priceMode
+        +string? tradeTerm
+        +string? tradePort
+        +boolean isChineseBrand
+        +number confidence
+        +string? category
+        +string? location
+        +string? country
+        +string? province
+        +string? city
+        +number? referencePrice
     }
-  ],
-  "pagination": {
-    "page": 1,
-    "pageSize": 24,
-    "total": 87,
-    "totalPages": 4
-  },
-  "filters": {
-    "brands": ["Bosch Rexroth", "Parker", "SKF"],
-    "stockStatuses": ["in_stock", "low_stock"]
-  }
-}
+
+    class SellerAiAssistant_State {
+        -boolean recognizing
+        -AiRecognizedData? recognized
+        -string? error
+        -string phase
+        -string engineMode
+        -Set~string~ checkedFields
+        -Set~string~ conflictFields
+    }
+
+    class SpecificationTableProps {
+        +string brandName
+        +string modelName
+        +number year
+        +number? workingHours
+        +string? engineType
+        +number? enginePower
+        +string? driveSystem
+        +string? mainConfig
+        +number? overallLength
+        +number? overallWidth
+        +number? overallHeight
+        +number? netWeight
+        +string conditionLabel
+        +string locale
+        +string categoryName
+        +string? location
+    }
+
+    class ProductUpdateBody {
+        +string? brandName
+        +string? categoryName
+        +string? modelName
+        +number? year
+        +string? condition
+        +number? enginePower
+        +string? engineType
+        +string? driveSystem
+        +number? overallLength
+        +number? overallWidth
+        +number? overallHeight
+        +number? netWeight
+        +string? mainConfig
+        +string? location
+        +string? country
+        +string? province
+        +string? city
+        +string? priceMode
+        +string? tradeTerm
+        +string? tradePort
+        +boolean? isChineseBrand
+    }
+
+    class ProductEditData {
+        +string id
+        +string brandId
+        +string brandName
+        +string categoryId
+        +string categoryName
+        +string modelName
+        +number year
+        +number? workingHours
+        +string condition
+        +number priceCny
+        +string location
+        +string? country
+        +string? province
+        +string? city
+        +number? enginePower
+        +string? engineType
+        +string? driveSystem
+        +number? overallLength
+        +number? overallWidth
+        +number? overallHeight
+        +number? netWeight
+        +string? mainConfig
+        +string priceMode
+        +string tradeTerm
+        +string? tradePort
+        +boolean isChineseBrand
+        +object[] images
+    }
+
+    SpecificationTableProps --> SpecificationTable : 渲染规格表
+    SellerAiAssistantProps --> SellerAiAssistant : 渲染AI助手
+    ProductUpdateBody --> "PUT /api/seller/products/[id]" : 请求体
+    ProductEditData --> "edit/page.tsx" : 页面初始化
 ```
-
-**设计要点**：
-- `force-dynamic` 确保库存状态实时性
-- 多级筛选通过 Prisma relation查询：`where: { componentGroup: { subSystem: { machineType: { code: "tractor" } } } }`
-- keyword搜索使用 `OR` + `contains` + `mode: "insensitive"`
-- 响应附带 `filters` 聚合数据（当前筛选条件下的可用品牌列表），供前端渲染筛选面板
-- 列表只返回摘要字段（不含specs/description），减少传输量
-
-#### 4.4 配件详情API
-
-```
-GET /api/parts/[id]
-```
-
-**响应结构**：
-```json
-{
-  "success": true,
-  "data": {
-    "id": "cuid",
-    "sku": "SD-TRACTOR-HYD-001",
-    "nameZh": "...",
-    "nameEn": "...",
-    "nameRu": "...",
-    "brand": "Bosch Rexroth",
-    "oemNumber": "A10VSO45DFR/31R",
-    "price": 8500,
-    "currency": "CNY",
-    "stockStatus": "in_stock",
-    "images": ["url1", "url2"],
-    "descriptionZh": "...",
-    "descriptionEn": "...",
-    "descriptionRu": "...",
-    "specs": {
-      "material": "Cast Iron",
-      "weight": "12kg",
-      "dimensions": "200×150×180mm",
-      "warranty": "12 months",
-      "pressure": "250 bar",
-      "flowRate": "45 L/min"
-    },
-    "isOEM": true,
-    "isAftermarket": false,
-    "dataQuality": "verified",
-    "componentGroup": { "code": "hydraulic_pump", "nameZh": "液压泵", "nameEn": "Hydraulic Pump" },
-    "subSystem": { "code": "hydraulic_system", "nameZh": "液压系统", "nameEn": "Hydraulic System" },
-    "machineType": { "code": "tractor", "nameZh": "拖拉机", "nameEn": "Tractor" },
-    "compatibleMachines": [
-      { "brand": "John Deere", "model": "6155R", "yearRange": "2014-2020" },
-      { "brand": "John Deere", "model": "6175R", "yearRange": "2014-2020" }
-    ]
-  }
-}
-```
-
-**设计要点**：
-- 使用 `export const revalidate = 3600` ISR缓存
-- 包含完整层级关系（componentGroup → subSystem → machineType），用于面包屑
-- 包含compatibleMachines数组，用于兼容机型展示
 
 ---
 
-### 5. 前端导航设计
+### 4. 程序调用流程
 
-#### 5.1 页面布局
+#### 4.1 完整链路：产品编辑页 → AI重新识别 → 字段确认 → 更新保存
 
+```mermaid
+sequenceDiagram
+    actor Seller as 卖家
+    participant EditPage as 编辑页<br/>edit/page.tsx
+    participant GETAPI as GET /api/seller/products/[id]
+    participant Prisma as Prisma DB
+    participant AIAsst as AI助手组件<br/>ai-assistant.tsx
+    participant Recognize as /api/agents/seller-helper/recognize
+    participant PUTAPI as PUT /api/seller/products/[id]
+    participant ListPage as 卖家产品列表
+
+    Seller->>EditPage: 从产品列表点击"编辑"
+    EditPage->>GETAPI: GET /api/seller/products/[id]
+    GETAPI->>Prisma: findUnique(include: brand, category, images)
+    Prisma-->>GETAPI: 产品完整数据
+    GETAPI-->>EditPage: JSON {product: {...}}
+    EditPage-->>Seller: 表单预填充显示
+
+    Seller->>EditPage: 点击"重新AI识别"
+    EditPage->>AIAsst: 传入 imageUrls (已有图片URL)
+    AIAsst->>Recognize: POST {imageUrls, isChineseBrand}
+    Recognize-->>AIAsst: 识别结果 AiRecognizedData
+
+    AIAsst->>AIAsst: 比对 existingFormValues<br/>确定 checkedFields + conflictFields
+    AIAsst-->>EditPage: 渲染字段级checkbox列表<br/>冲突字段黄色警告
+
+    Seller->>AIAsst: 勾选/取消字段，点击"填充已选字段"
+    AIAsst->>EditPage: onFill(checkedData) + onValidationErrors([])
+
+    Seller->>EditPage: 修改表单其他项，点击"保存"
+    EditPage->>PUTAPI: PUT /api/seller/products/[id]
+    PUTAPI->>PUTAPI: 校验 sellerId 权限
+    PUTAPI->>Prisma: product.update({data: {...}})
+    Prisma-->>PUTAPI: 更新成功
+    PUTAPI-->>EditPage: {success: true}
+    EditPage->>ListPage: 跳转到产品列表
 ```
-┌─────────────────────────────────────────────────┐
-│  Hero区域（保留现有橙色渐变 + 搜索框）              │
-├─────────────────────────────────────────────────┤
-│  面包屑：首页 > 配件专区 > 拖拉机 > 液压系统 > 液压泵  │
-├──────────┬──────────────────────────────────────┤
-│          │  筛选栏：品牌下拉 | 库存状态 | 排序     │
-│  左侧    ├──────────────────────────────────────┤
-│  导航树  │                                      │
-│          │  配件网格（4列响应式）                  │
-│  拖拉机 ► │  ┌────┐ ┌────┐ ┌────┐ ┌────┐       │
-│   ├动力  │  │卡片│ │卡片│ │卡片│ │卡片│       │
-│   ├液压 ►│  └────┘ └────┘ └────┘ └────┘       │
-│   │├液压泵│  ┌────┐ ┌────┐ ┌────┐ ┌────┐       │
-│   │├油缸  │  │卡片│ │卡片│ │卡片│ │卡片│       │
-│   │└阀门  │  └────┘ └────┘ └────┘ └────┘       │
-│   ├传动  │                                      │
-│   └...   │  分页：< 1 2 3 4 >                   │
-│  收割机  │                                      │
-│  青储机  │                                      │
-│  ...     │                                      │
-└──────────┴──────────────────────────────────────┘
+
+#### 4.2 发布页：AI识别 → 字段确认 → 必填校验
+
+```mermaid
+sequenceDiagram
+    actor Seller as 卖家
+    participant NewPage as 发布页<br/>new/page.tsx
+    participant AIAsst as AI助手<br/>ai-assistant.tsx
+    participant Recognize as /api/agents/seller-helper/recognize
+    participant NewPage2 as 发布页表单
+
+    Seller->>NewPage: 上传图片
+    NewPage->>AIAsst: autoTrigger 自动识别
+    AIAsst->>Recognize: POST {imageUrls (base64处理后)}
+    Recognize-->>AIAsst: 识别结果
+
+    AIAsst->>AIAsst: 初始化 checkedFields<br/>(全部有值的字段默认勾选)
+    AIAsst-->>Seller: 字段级checkbox列表
+
+    Seller->>AIAsst: 勾选感兴趣字段，点击"填充已选字段"
+    AIAsst->>AIAsst: 必填校验检查
+    alt 必填项缺失
+        AIAsst-->>Seller: ⚠️ 警告弹窗："brandName/modelName/year/categoryId/priceCny 为空，请手动填写"
+    else 校验通过
+        AIAsst->>NewPage2: onFill(checkedData)
+        NewPage2-->>Seller: 表单字段高亮（绿色边框）
+    end
 ```
 
-#### 5.2 交互流程
+#### 4.3 产品详情页：规格表渲染（新增品类+产地行）
 
-1. **页面初次加载**：
-   - 调用 `/api/parts/catalog` 获取完整导航树
-   - 调用 `/api/parts`（无筛选）获取第一页配件
-   - 左侧导航树渲染14个整机品类，拖拉机展开显示9个子系统
-   - 默认显示全部配件（或拖拉机配件）
+```mermaid
+sequenceDiagram
+    actor Buyer as 买家
+    participant DetailPage as 产品详情页<br/>products/[id]/page.tsx
+    participant Prisma as Prisma DB
+    participant SpecTable as 规格表组件<br/>specification-table.tsx
 
-2. **选择整机品类**（如点击"拖拉机"）：
-   - 展开子系统列表
-   - 调用 `/api/parts?machineType=tractor` 获取拖拉机配件
-   - 面包屑更新：配件专区 > 拖拉机
-
-3. **选择子系统**（如点击"液压系统"）：
-   - 展开部件组列表
-   - 调用 `/api/parts?machineType=tractor&subSystem=hydraulic_system`
-   - 面包屑更新：配件专区 > 拖拉机 > 液压系统
-
-4. **选择部件组**（如点击"液压泵"）：
-   - 调用 `/api/parts?machineType=tractor&subSystem=hydraulic_system&componentGroup=hydraulic_pump`
-   - 面包屑更新：配件专区 > 拖拉机 > 液压系统 > 液压泵
-
-5. **搜索**：
-   - 输入关键词，300ms防抖
-   - 调用 `/api/parts?keyword=xxx`（保留当前层级筛选）
-   - 网格更新
-
-6. **点击配件卡片**：
-   - 跳转到 `/[locale]/parts/[id]`
-   - 展示配件详情（图片轮播、技术参数表、兼容机型列表、询价按钮）
-
-#### 5.3 响应式设计
-
-| 断点 | 布局 |
-|------|------|
-| < 768px (mobile) | 导航树收起为顶部下拉选择器，网格1-2列 |
-| 768px-1024px (tablet) | 导航树收起为顶部级联选择器，网格2-3列 |
-| > 1024px (desktop) | 左侧导航树常驻，网格3-4列 |
+    Buyer->>DetailPage: 访问产品详情
+    DetailPage->>Prisma: findUnique(include: brand, category)
+    Prisma-->>DetailPage: product + category + brand
+    DetailPage->>SpecTable: 传入 categoryName, location 等props
+    SpecTable->>SpecTable: 渲染13行规格<br/>(原11行 + 品类 + 产地)
+    SpecTable-->>DetailPage: 完整规格表HTML
+    DetailPage-->>Buyer: 产品详情页完整展示
+```
 
 ---
 
-### 6. 待明确事项
+### 5. Anything UNCLEAR（已决策 + 待确认）
 
-| # | 问题 | 当前假设 | 需确认方 |
-|---|------|---------|---------|
-| 1 | 旧Part表25条数据是否需要迁移到新模型？ | 假设：不迁移，旧数据仅保留备份（PartLegacy表），新数据全部重新录入 | 产品/用户 |
-| 2 | CompatibleMachine.brand是否需要关联Brand表？ | 假设：暂不关联，保留为String，后续可扩展 | 架构 |
-| 3 | AI图片生成用ImageGen还是其他工具？ | 假设：使用ImageGen（通过ToolSearch调用），图片上传至OSS | 产品 |
-| 4 | 首批50-100条拖拉机配件数据来源？ | 假设：手动整理真实OEM数据（品牌官网+配件平台），非爬虫自动采集 | 产品/数据 |
-| 5 | 其余13品类是否需要预填9个子系统名称？ | 假设：否，只填整机品类名称（14个MachineType记录），子系统等后续扩展时再填 | 产品 |
-| 6 | 配件详情页是否需要询价表单？ | 假设：是，复用现有Inquiry机制或简单mailto链接 | 产品 |
-| 7 | 配件图片是否需要多角度？ | 假设：首批每配件1张（正视图），后续可扩展到2-3张 | 产品 |
+| # | 问题 | 架构师决策 |
+|---|------|-----------|
+| 1 | 编辑页是否存在？ | 不存在，需**新建** `seller/products/[id]/edit/page.tsx` |
+| 2 | 产品更新API是否存在？ | 不存在，需**新建** `api/seller/products/[id]/route.ts` |
+| 3 | 重新识别图片来源 | 使用产品已有图片的 OSS URL（recognize 接口支持 `imageUrls`） |
+| 4 | 数据覆盖策略 | 复用方案B的字段级确认——所有字段默认不覆盖，用户手动勾选 |
+| 5 | 规格表产地数据源 | 优先 `product.location`，为空则 `province+city` 拼接 |
+| 6 | 品类多语言 | 从 `product.category.nameZh/nameEn/nameRu` 取，规格表接收 `categoryName` prop |
+| 7 | 外形尺寸部分展示 | 本次**不实现**（P1），保持现有"全有或暂无"逻辑 |
+| 8 | 编辑页是否复用发布页表单 | **不复用**组件提取，独立实现编辑页表单（避免影响现有发布流程） |
+| 9 | AI助手URL模式 | 新增 `imageUrls?: string[]` prop，跳过压缩/上传步骤，直接调用 recognize API |
 
 ---
 
 ## Part B: 任务分解
 
-### 7. 依赖包列表
+### 6. Required Packages
 
-本项目无需新增第三方依赖包，所有功能基于现有技术栈实现：
-
-```
-# 已有依赖（无需新增）
-- next@^14.2.0: App Router + API Routes + ISR缓存
-- @prisma/client@^5.14.0: ORM
-- prisma@^5.14.0: Schema管理 + 迁移
-- react@^18.3.0: UI框架
-- tailwindcss@^3.4.0: 样式
-- lucide-react@^0.378.0: 图标
-- tsx@^4.10.0: 种子脚本执行
-- ali-oss@^6.23.0: OSS图片上传（devDependency，脚本用）
-
-# AI图片生成
-- ImageGen: 通过ToolSearch/DeferExecuteTool调用，无需npm安装
-```
+**无需新增 npm 包。** 所有功能基于现有技术栈实现：
+- React 18 + Next.js 14 (App Router)
+- TypeScript
+- Tailwind CSS
+- Prisma ORM
+- Lucide React (图标，已安装)
 
 ---
 
-### 8. 任务列表
+### 7. Task List（按依赖关系排序）
 
-#### T01: 项目基础设施（Schema + 类型 + 数据访问层）
+#### T01: 项目基础设施 — 规格表增强 + 卖家列表编辑入口 + 产品详情页传参
 
-| 项 | 内容 |
-|----|------|
-| **任务ID** | T01 |
-| **任务名** | 项目基础设施：Prisma Schema更新 + TypeScript类型 + 数据访问层 |
-| **源文件** | `prisma/schema.prisma`（修改）, `src/types/parts-v2.ts`（新建）, `src/lib/parts-catalog.ts`（新建） |
-| **依赖** | 无 |
-| **优先级** | P0 |
+| 字段 | 内容 |
+|------|------|
+| **Task ID** | T01 |
+| **Task Name** | 基础设施：规格表补全 + 编辑导航 + 详情页集成 |
+| **Source Files** | `src/components/product/specification-table.tsx`（改）, `src/app/[locale]/seller/products/page.tsx`（改）, `src/app/[locale]/products/[id]/page.tsx`（改） |
+| **Dependencies** | 无 |
+| **Priority** | P0 |
 
-**工作内容**：
-1. 在 `prisma/schema.prisma` 中：
-   - 将旧 `Part` 模型重命名为 `PartLegacy`，添加 `@@map("part_legacy")`
-   - 新增 `MachineType`、`SubSystem`、`ComponentGroup`、`Part`（新）、`CompatibleMachine` 模型
-   - 确保8语言字段、复合唯一约束、索引完整
-2. 创建 `src/types/parts-v2.ts`：
-   - 定义 `MachineType`、`SubSystem`、`ComponentGroup`、`Part`、`CompatibleMachine` 的 TypeScript 接口
-   - 定义 `CatalogTree`、`PartListResponse`、`PartDetailResponse` 等 API 响应类型
-   - 定义 `PartSpecs` 接口（material, weight, dimensions, warranty 等可选字段）
-3. 创建 `src/lib/parts-catalog.ts`：
-   - `getCatalogTree()`: 查询完整导航树（MachineType → SubSystem → ComponentGroup + partCount），使用 Prisma include 嵌套查询
-   - `getParts(filters)`: 多级筛选查询，返回配件列表 + 分页 + 品牌聚合
-   - `getPartById(id)`: 查询配件详情，include componentGroup → subSystem → machineType + compatibleMachines
-   - `getBrandsByComponentGroup(componentGroupId)`: 获取某部件组下的品牌列表（用于筛选面板）
-4. 运行 `npx prisma migrate dev --name parts_v2` 生成迁移
-5. 运行 `npx prisma generate` 更新 Prisma Client
+**涉及修改**:
 
----
+1. **`specification-table.tsx`** — 规格表增强
+   - `SpecificationTableProps` 新增 `categoryName: string` 和 `location?: string | null`
+   - `LABELS` 三语新增: `category` / `location`
+   - rows 数组在"年份"后插入"品类"行（图标用 `Tag`），在"整机重量"后插入"产地"行（图标用 `MapPin`）
+   - 产地值: `location || "暂无"` / `location || l.notAvailable`
 
-#### T02: 种子数据 + 迁移脚本
+2. **`seller/products/page.tsx`** — 卖家产品列表
+   - 在每个产品卡片右侧（"在售"标签旁）增加"编辑"按钮
+   - 链接到 `/zh/seller/products/${p.id}/edit`
+   - 按钮样式：`rounded-lg border border-gray-300 px-3 py-1 text-xs text-gray-600 hover:bg-gray-100`
+   - 导入 `Edit3` 图标（来自 lucide-react）
 
-| 项 | 内容 |
-|----|------|
-| **任务ID** | T02 |
-| **任务名** | 种子数据：14品类架构 + 拖拉机深度填充 + 旧数据迁移脚本 |
-| **源文件** | `prisma/seed-parts-v2.ts`（新建）, `scripts/migrate-old-parts.ts`（新建）, `scripts/generate-part-images.ts`（新建） |
-| **依赖** | T01 |
-| **优先级** | P0 |
-
-**工作内容**：
-1. 创建 `prisma/seed-parts-v2.ts`：
-   - **Layer 1**: 14个MachineType（全量，参考方案3.1节，含8语名称 + sortOrder）
-   - **Layer 2**: 拖拉机下9个SubSystem（powertrain/hydraulic_system/electrical_system/transmission_system/chassis_system/working_implement/body_cab/filter_system/bearing_seal_system）
-   - **Layer 3**: 拖拉机9子系统下的部件组（参考方案3.3节，约60-70个ComponentGroup）
-   - **Layer 4**: 50-100条拖拉机真实OEM配件数据（覆盖9大子系统核心部件组，每条含SKU/四语名称/品牌/OEM编号/价格/库存/specs/兼容机型/描述）
-   - 脚本支持幂等执行（先deleteMany再创建）
-   - 运行命令：`npx tsx prisma/seed-parts-v2.ts`
-2. 创建 `scripts/migrate-old-parts.ts`：
-   - 读取PartLegacy表全部数据
-   - 按3.2节映射规则，将旧category映射到新ComponentGroup
-   - 写入新Part表（补充SKU、componentGroupId等字段）
-   - 运行命令：`npx tsx scripts/migrate-old-parts.ts`（可选执行）
-3. 创建 `scripts/generate-part-images.ts`：
-   - 读取新Part表中images为空的拖拉机配件
-   - 对每个配件，根据nameEn + brand + componentGroup生成ImageGen prompt
-   - 调用ImageGen生成白底工业摄影风格图片
-   - 上传至OSS（路径：`/parts/{machineType}/{componentGroup}/{sku}.jpg`）
-   - 更新Part.images字段
-   - 支持批量处理 + 失败重试
-   - Prompt模板：`"Professional product photography of {nameEn}, {brand} agricultural machinery part, clean white background, studio lighting, 8k resolution, sharp focus, industrial catalog style, metallic texture, precise engineering details"`
+3. **`products/[id]/page.tsx`** — 产品详情页
+   - 在 `SpecificationTable` 调用处新增两个 prop:
+     ```tsx
+     categoryName={categoryName}
+     location={product.location ?? null}
+     ```
 
 ---
 
-#### T03: API层（多级筛选 + 导航树 + 详情接口）
+#### T02: 产品编辑页 + 更新API
 
-| 项 | 内容 |
-|----|------|
-| **任务ID** | T03 |
-| **任务名** | API层：导航树接口 + 配件列表多级筛选接口 + 配件详情接口 |
-| **源文件** | `src/app/api/parts/catalog/route.ts`（新建）, `src/app/api/parts/route.ts`（修改）, `src/app/api/parts/[id]/route.ts`（新建） |
-| **依赖** | T01 |
-| **优先级** | P0 |
+| 字段 | 内容 |
+|------|------|
+| **Task ID** | T02 |
+| **Task Name** | 新建产品编辑页 + 产品 CRUD API |
+| **Source Files** | `src/app/[locale]/seller/products/[id]/edit/page.tsx`（新）, `src/app/api/seller/products/[id]/route.ts`（新） |
+| **Dependencies** | T01（编辑入口已就绪） |
+| **Priority** | P0 |
 
-**工作内容**：
-1. 创建 `src/app/api/parts/catalog/route.ts`：
-   - `export const revalidate = 3600`（ISR缓存1小时）
-   - 调用 `getCatalogTree()` 返回完整导航树
-   - 响应格式：`{ success: true, data: CatalogTreeNode[] }`
-2. 修改 `src/app/api/parts/route.ts`：
-   - `export const dynamic = "force-dynamic"`
-   - 解析查询参数：machineType, subSystem, componentGroup, brand, keyword, page, pageSize
-   - 调用 `getParts(filters)` 返回配件列表 + 分页 + 品牌聚合
-   - 响应格式：`{ success: true, data: Part[], pagination: {...}, filters: { brands: [...] } }`
-   - 保留现有错误处理模式（try-catch + 500响应）
-3. 创建 `src/app/api/parts/[id]/route.ts`：
-   - `export const revalidate = 3600`（ISR缓存1小时）
-   - 调用 `getPartById(id)` 返回配件详情
-   - 包含完整层级关系 + 兼容机型
-   - 404处理：配件不存在时返回 `{ success: false, error: "Part not found" }`
+**涉及修改**:
 
----
+1. **`api/seller/products/[id]/route.ts`**（新建）— 产品 CRUD API
+   - `GET`: 根据 `params.id` 查询产品（含 brand, category, images），校验 sellerId 权限
+   - `PUT`: 接收 JSON body (`ProductUpdateBody`)，校验 sellerId，prisma.product.update
+   - 权限：从 JWT token 提取 userId，对比 product.sellerId，不匹配返回 403
+   - 响应格式: `{ success: true, data: product }` / `{ success: false, error: "..." }`
 
-#### T04: 前端列表页（四级导航 + 配件网格 + 面包屑）
-
-| 项 | 内容 |
-|----|------|
-| **任务ID** | T04 |
-| **任务名** | 前端列表页：四级级联导航 + 配件网格 + 卡片 + 面包屑 + 页面集成 |
-| **源文件** | `src/app/[locale]/parts/PartsClient.tsx`（修改）, `src/app/[locale]/parts/page.tsx`（修改）, `src/components/parts/PartsCatalogNav.tsx`（新建）, `src/components/parts/PartsGrid.tsx`（新建）, `src/components/parts/PartCard.tsx`（新建）, `src/components/parts/PartsBreadcrumb.tsx`（新建） |
-| **依赖** | T01, T03 |
-| **优先级** | P0 |
-
-**工作内容**：
-1. 创建 `src/components/parts/PartsCatalogNav.tsx`：
-   - Props: `catalogTree`, `selectedMachineType`, `selectedSubSystem`, `selectedComponentGroup`, `onSelect` 回调
-   - 渲染左侧导航树：14个整机品类（拖拉机展开）
-   - 三级级联：MachineType → SubSystem → ComponentGroup
-   - 每个节点显示配件计数（partCount）
-   - 选中状态高亮
-   - 响应式：移动端收起为级联选择器
-2. 创建 `src/components/parts/PartCard.tsx`：
-   - Props: `part`, `locale`
-   - 渲染：图片 + 品牌Badge + 名称 + 库存状态 + 价格 + 询价按钮
-   - 复用现有 `getImageUrl()` 处理OSS图片
-   - 复用现有 `Card`/`Badge` UI组件
-   - 链接到 `/[locale]/parts/[id]`
-3. 创建 `src/components/parts/PartsGrid.tsx`：
-   - Props: `parts`, `loading`, `error`, `locale`, `pagination`, `onPageChange`
-   - 渲染响应式网格（1/2/3/4列）
-   - 包含分页控件（复用现有Pagination组件）
-   - 加载/错误/空状态处理
-4. 创建 `src/components/parts/PartsBreadcrumb.tsx`：
-   - Props: `machineTypeName`, `subSystemName`, `componentGroupName`, `locale`
-   - 渲染面包屑：首页 > 配件专区 > [整机品类] > [子系统] > [部件组]
-   - 每级可点击返回
-5. 修改 `src/app/[locale]/parts/PartsClient.tsx`：
-   - 移除旧的8分类硬编码（PART_CATEGORIES）
-   - 新增状态：catalogTree, selectedMachineType, selectedSubSystem, selectedComponentGroup
-   - 页面加载时fetch `/api/parts/catalog` 获取导航树
-   - 层级选择时fetch `/api/parts?...` 获取配件列表
-   - 布局：左侧导航树 + 右侧（面包屑 + 筛选栏 + 配件网格）
-   - 保留现有Hero区域和搜索框
-   - 保留现有服务保障区块和CTA区块
-6. 修改 `src/app/[locale]/parts/page.tsx`：
-   - 更新 `generatePageMetadata` 中的关键词（从8分类改为四级分类体系）
-   - 更新面包屑结构化数据
+2. **`seller/products/[id]/edit/page.tsx`**（新建）— 产品编辑页
+   - **顶部**: 面包屑 "返回产品列表" → 链接到 `/zh/seller/products`
+   - **Step 1**: 展示已有图片（从 `product.images` 取 OSS URL），不可删除/新增（编辑页仅改参数）
+   - **Step 2**: "重新AI识别"按钮（先留占位，T05 对接AI组件）
+   - **Step 3**: 表单 — 与发布页相同的字段布局（品牌/品类/型号/年份/成色/价格/产地/规格/贸易信息）
+   - 表单初始值从 `GET /api/seller/products/[id]` 获取并预填充
+   - **Step 4**: "保存修改"按钮 → 调用 `PUT /api/seller/products/[id]`
+   - 必填校验: `modelName`, `priceCny`, `location` 不能为空
+   - 提交成功后跳转到 `/zh/seller/products`
+   - **参考发布页表单字段**（80%相同）: 品牌、品类、型号、年份、成色、价格Cny、产地、引擎功率/类型、驱动方式、外形尺寸、整机重量、主要配置、价格模式、贸易条款、贸易港口
 
 ---
 
-#### T05: 前端详情页（配件详情 + 技术参数 + 兼容机型）
+#### T03: AI助手字段级增强
 
-| 项 | 内容 |
-|----|------|
-| **任务ID** | T05 |
-| **任务名** | 前端详情页：配件详情展示 + 技术参数表 + 兼容机型列表 + 询价入口 |
-| **源文件** | `src/app/[locale]/parts/[id]/page.tsx`（新建）, `src/components/parts/PartDetailClient.tsx`（新建）, `src/components/parts/PartSpecsTable.tsx`（新建） |
-| **依赖** | T01, T03, T04 |
-| **优先级** | P1 |
+| 字段 | 内容 |
+|------|------|
+| **Task ID** | T03 |
+| **Task Name** | AI助手字段级确认 + 已填字段保护 + 必填校验 |
+| **Source Files** | `src/components/seller/ai-assistant.tsx`（改）, `src/app/[locale]/seller/products/new/page.tsx`（改） |
+| **Dependencies** | 无（可独立开发并测试） |
+| **Priority** | P0 |
 
-**工作内容**：
-1. 创建 `src/app/[locale]/parts/[id]/page.tsx`（Server Component）：
-   - `generateMetadata`: 根据配件名称生成SEO元数据
-   - `generateStaticParams` 预生成首批配件的静态路径
-   - `BreadcrumbStructuredData` 面包屑结构化数据
-   - 渲染 `PartDetailClient`
-2. 创建 `src/components/parts/PartDetailClient.tsx`：
-   - Props: `part`, `locale`
-   - 布局：左侧图片轮播 + 右侧信息区
-   - 信息区：SKU + 品牌 + OEM编号 + 名称 + 价格 + 库存 + 询价按钮
-   - 下方：技术参数表 + 兼容机型列表 + 描述
-   - 面包屑：首页 > 配件专区 > 拖拉机 > 液压系统 > 液压泵 > [配件名]
-   - 询价按钮：跳转到 `/about#contact` 或弹出简单表单
-3. 创建 `src/components/parts/PartSpecsTable.tsx`：
-   - Props: `specs` (JSON对象)
-   - 将specs JSON渲染为键值对表格
-   - 常见字段：材质/重量/尺寸/保修期/压力/流量等
-   - 支持中英文标签映射
+**涉及修改**:
+
+1. **`ai-assistant.tsx`** — 核心改造
+   - **新增 Props**:
+     - `existingFormValues?: Partial<Record<string, any>>` — 已填表单值
+     - `onValidationErrors?: (missingFields: string[]) => void` — 必填项缺失回调
+     - `imageUrls?: string[]` — 外部图片URL（跳过压缩/上传，直接识别）
+   - **新增 State**:
+     - `checkedFields: Set<string>` — 已勾选字段集合
+     - `conflictFields: Set<string>` — 冲突字段（AI值≠已有值）
+   - **识别完成后逻辑**:
+     - 遍历 `AiRecognizedData` 所有有值字段
+     - 对于每个字段：若 `existingFormValues[field]` 有值且 ≠ AI值 → 加入 `conflictFields`，默认不勾选
+     - 若 `existingFormValues[field]` 无值或为空 → 默认勾选
+   - **渲染改造**: `renderField()` 改为 `renderFieldWithCheckbox()`
+     - 左侧: `<input type="checkbox" checked={checkedFields.has(key)} onChange={toggleField}>`
+     - 中间: 字段标签
+     - 右侧: AI识别值
+     - 冲突字段附加: `<span class="text-amber-600 text-[10px]">⚠️ 表单已有值</span>`
+   - **必填校验**（`handleFill`中）:
+     - 勾选回填后，检查 `brandName/modelName/year/categoryId/categoryName/priceCny` 是否为空
+     - 若有关键字段缺失，调用 `onValidationErrors` 通知父页面
+   - **"一键填充"按钮** → 改为 "填充已选字段（{checkedFields.size}项）"
+
+2. **`new/page.tsx`** — 发布页适配
+   - `handleAiFill` 函数中，`onFill` 回调现在只传勾选字段的数据（但 `ai-assistant` 内部已做过滤）
+   - 添加 `onValidationErrors` 回调: 弹出红色警告提示缺失字段
+   - 为 `SellerAiAssistant` 传入 `existingFormValues={{...form}}`
+   - `aiFilledFields` Set 标记逻辑保持不变（用于绿色高亮样式）
 
 ---
 
-### 9. 共享知识（跨文件约定）
+#### T04: 编辑页AI识别对接 + 端到端集成
 
-```
-# 数据库
-- Prisma client导入：import { prisma } from "@/lib/db"
-- 旧Part模型已重命名为PartLegacy（prisma.partLegacy），不再使用
-- 新Part模型通过prisma.part访问
-- 所有分类表使用8语言字段：nameZh/nameEn/nameRu/nameEs/namePt/nameAr/nameFr/nameHi
-- Part表使用4语名称（zh/en/ru/es）+ 3语描述（zh/en/ru），后续可扩展
+| 字段 | 内容 |
+|------|------|
+| **Task ID** | T04 |
+| **Task Name** | 编辑页AI识别集成 + 完整链路联调 |
+| **Source Files** | `src/app/[locale]/seller/products/[id]/edit/page.tsx`（改）, `src/components/seller/ai-assistant.tsx`（改-URL模式）, `src/app/api/seller/products/[id]/route.ts`（改-完善） |
+| **Dependencies** | T02（编辑页存在）, T03（AI组件增强完成） |
+| **Priority** | P0 |
 
-# SKU编码
-- 格式：SD-{MACHINE_CODE}-{SUB_CODE_PREFIX}-{SEQ3}
-- 示例：SD-TRACTOR-HYD-001
-- 子系统前缀：PWR/HYD/ELE/TRN/CHS/WIM/BCB/FLT/BRS
-- SKU全局唯一（@unique约束）
+**涉及修改**:
 
-# API
-- 所有API响应格式：{ success: boolean, data: T, pagination?: {...}, error?: string, filters?: {...} }
-- 导航树API和详情API使用ISR缓存（revalidate = 3600）
-- 列表API使用force-dynamic（库存状态实时性）
-- 分页：默认pageSize=24，最大100，响应包含pagination对象
-- 多级筛选参数：machineType, subSystem, componentGroup（均为code，非id）
+1. **`edit/page.tsx`** — AI识别集成
+   - 引入 `SellerAiAssistant` 组件
+   - 从 `GET` 响应中提取 `product.images` URL 数组
+   - 传入 `imageUrls={product.images.map(img => img.url)}`
+   - 传入 `existingFormValues={{...form}}` (已填表单值，即数据库现有值)
+   - 实现 `onFill` 回调: 将AI识别的勾选字段更新到表单 state
+   - 实现 `onValidationErrors` 回调: 弹出警告提示
+   - 提交逻辑: `PUT` API + 跳转到产品列表
 
-# 前端
-- 图片URL处理：使用 getImageUrl() from "@/lib/image-url"（OSS缩略图）
-- 详情大图：使用 getDetailImageUrl() from "@/lib/image-url"
-- UI组件：复用 src/components/ui/ 下的 Card/Badge/Input/Pagination/Skeleton
-- 图标：使用 lucide-react
-- 多语言：通过 locale prop 传递（"zh"/"en"/"ru"等），前端用 isZh = locale === "zh" 判断
-- 导航树状态管理：useState管理选中的 machineType/subSystem/componentGroup
-- 搜索防抖：300ms
+2. **`ai-assistant.tsx`** — URL模式完善
+   - 当 `imageUrls` prop 有值时，跳过图片压缩和上传步骤
+   - 直接调用 `/api/agents/seller-helper/recognize` 传入 `imageUrls`
+   - "重新识别"按钮文案根据模式调整: "重新AI识别（{imageUrls.length}张已有图片）"
 
-# 图片
-- OSS路径规则：/parts/{machineType}/{componentGroup}/{sku}.jpg
-- AI图片风格：白底工业摄影（clean white background, studio lighting, 8k, sharp focus）
-- 图片尺寸：1024×1024，< 200KB，JPG格式
-- 占位图：/images/placeholders/tractor.svg（现有）
+3. **`api/seller/products/[id]/route.ts`** — 完善PUT
+   - 完善字段白名单（只允许更新非关键字段：规格字段、贸易字段）
+   - 不允许修改 `sellerId`, `brandId`, `categoryId` 以防篡改
 
-# 种子数据
-- 种子文件幂等：先deleteMany再创建
-- 运行命令：npx tsx prisma/seed-parts-v2.ts
-- 14品类中只有tractor有完整子系统+部件组+配件数据
-- 其余13品类只有MachineType记录（名称+code+sortOrder）
+---
+
+#### T05: 集成测试 + 收尾
+
+| 字段 | 内容 |
+|------|------|
+| **Task ID** | T05 |
+| **Task Name** | 集成测试 + 边界情况处理 + 代码收尾 |
+| **Source Files** | `src/app/[locale]/seller/products/[id]/edit/page.tsx`（验证）, `src/components/seller/ai-assistant.tsx`（边界处理）, `src/components/product/specification-table.tsx`（边界处理） |
+| **Dependencies** | T01, T02, T03, T04（全部完成） |
+| **Priority** | P0 |
+
+**涉及内容**:
+
+1. 边界情况验证清单:
+   - 编辑页：产品不存在时的 404 处理
+   - 编辑页：非产品所有者访问时的 403 处理
+   - AI组件：所有字段为空时 `checkedFields` 为空，"填充已选字段"按钮禁用
+   - AI组件：`existingFormValues` 为空对象时的默认行为（全勾选）
+   - 规格表：`categoryName` / `location` 为 null 时显示 "暂无"
+   - 规格表：多语言切换（zh/en/ru）新行标签正确
+
+2. 端到端测试场景:
+   - 新发布 → 上传图片 → AI识别 → 字段级勾选 → 填充 → 提交
+   - 编辑页 → 加载已有数据 → 重新AI识别 → 冲突字段警告 → 选择性覆盖 → 保存
+   - 产品详情页 → 规格表加载 → 品类行 + 产地行显示
+
+3. 代码清理: 移除 console.log 调试代码，确保 TypeScript 无 any 类型警告
+
+---
+
+### 8. Shared Knowledge（跨文件约定）
+
+```yaml
+# ── Props 命名规范 ──
+# • 中文字段保持中文名（如 brandName, categoryName, modelName）
+# • 新增 Props 使用 camelCase
+# • optional props 统一加 ? 后缀
+
+# ── API 响应格式 ──
+# 所有 API 使用统一格式: { success: boolean, data?: any, error?: string, code?: string }
+# HTTP 状态码: 200=成功, 400=参数错误, 401=未登录, 403=无权限, 404=不存在, 500=服务器错误
+
+# ── Tailwind 颜色约定 ──
+# • AI识别成功: bg-green-50 border-green-200 text-green-700
+# • AI字段冲突警告: bg-amber-50 border-amber-200 text-amber-600
+# • 表单已填高亮: border-green-400 bg-green-50 （保持现有 fieldClass()）
+# • 错误提示: bg-red-50 text-red-600
+# • 编辑按钮: text-gray-600 hover:bg-gray-100 border-gray-300
+
+# ── Lucide 图标 ──
+# • 品类行: Tag (lucide-react)
+# • 产地行: MapPin (lucide-react)
+# • 编辑按钮: Edit3 (lucide-react) — 或 Pencil
+
+# ── 字段映射（AI识别字段名 → 表单字段名）──
+# brand → brandName
+# modelName → modelName (一致)
+# enginePower → enginePower (一致)
+# overallLength/Width/Height → overallLength/Width/Height (一致)
+# 品类: category → categoryName (编辑页/发布页中 categoryId 需额外匹配)
+
+# ── 必填字段列表 ──
+REQUIRED_FIELDS = ["brandName", "modelName", "year", "categoryId", "priceCny"]
+
+# ── 编辑页不开放修改的字段 ──
+READONLY_FIELDS = ["sellerId", "brandId", "categoryId"]
+# (品牌和品类在编辑页可以修改，但需要同步更新 brandId/categoryId)
 ```
 
 ---
 
-### 10. 任务依赖图
+### 9. Task Dependency Graph
 
 ```mermaid
 graph TD
-    T01[T01: 项目基础设施<br/>Schema + 类型 + 数据访问层]
-    T02[T02: 种子数据 + 迁移脚本<br/>14品类 + 拖拉机数据 + AI图片]
-    T03[T03: API层<br/>导航树 + 列表筛选 + 详情]
-    T04[T04: 前端列表页<br/>四级导航 + 网格 + 面包屑]
-    T05[T05: 前端详情页<br/>详情 + 参数表 + 兼容机型]
+    T01["T01: 基础设施<br/>规格表+导航+详情页"]
+    T02["T02: 编辑页+API<br/>新建page+route"]
+    T03["T03: AI字段增强<br/>checkbox+保护+校验"]
+    T04["T04: 编辑页AI集成<br/>URL识别+表单对接"]
+    T05["T05: 集成测试<br/>边界+端到端+代码清理"]
 
     T01 --> T02
-    T01 --> T03
-    T03 --> T04
     T01 --> T04
+    T03 --> T04
+    T02 --> T04
+    T02 --> T05
     T03 --> T05
     T04 --> T05
-
-    style T01 fill:#ff6b6b,color:#fff
-    style T02 fill:#4ecdc4,color:#fff
-    style T03 fill:#45b7d1,color:#fff
-    style T04 fill:#f9ca24,color:#333
-    style T05 fill:#a55eea,color:#fff
 ```
 
-**关键路径**：T01 → T03 → T04 → T05（主线）
-**可并行**：T02 与 T03 可并行（都只依赖 T01）
+**并行能力**: T02 和 T03 可同时开发（互不依赖）；T01 先行；T04 需等待 T01+T02+T03；T05 收尾。
+
+---
+
+*End of System Design Document*

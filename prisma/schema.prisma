@@ -8,176 +8,167 @@ datasource db {
 }
 
 model User {
-  id                    String    @id @default(cuid())
-  email                 String?   @unique
-  username              String?   @unique
+  id                    String               @id @default(cuid())
+  email                 String?              @unique
   phone                 String?
-  wxOpenid              String?
-  miniOpenid            String?   @unique // 微信小程序 openid（登录态 + JSAPI 支付 payer.openid）
   passwordHash          String
-  role                  String    @default("buyer") // buyer, seller, admin, super_admin
+  role                  String               @default("buyer")
   companyName           String?
   country               String?
-  preferredLanguage     String    @default("zh")
-  credits               Int       @default(0)
-  membershipTier        String    @default("free") // free, basic, premium, enterprise
-  membershipExpiresAt   DateTime?
-  freeValuationsUsed    Int       @default(0)
-  freeValuationsResetAt DateTime  @default(now())
-  isActive              Boolean   @default(true)
+  preferredLanguage     String               @default("zh")
+  credits               Int                  @default(0)
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  freeValuationsResetAt DateTime             @default(now())
+  freeValuationsUsed    Int                  @default(0)
+  isActive              Boolean              @default(true)
   lastLoginAt           DateTime?
-  resetToken            String? // 密码重置令牌
-  resetTokenExpires     DateTime? // 重置令牌过期时间
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-
-  products              Product[]
-  demands               Demand[]
-  inquiries             Inquiry[]
-  creditTransactions    CreditTransaction[]
-  certifications        Certification[]
-  favorites             Favorite[]
-  savedSearches         SavedSearch[]
-  sellerRatingsReceived SellerRating[]       @relation("SellerRatingsReceived")
-  sellerRatingsGiven    SellerRating[]       @relation("SellerRatingsGiven")
-  inspectionReports     InspectionReport[]
-  following             Follow[]             @relation("FollowFollower")
-  followers             Follow[]             @relation("FollowSeller")
-  contractsAsSeller     ElectronicContract[] @relation("ContractSeller")
-  contractsAsBuyer      ElectronicContract[] @relation("ContractBuyer")
+  membershipExpiresAt   DateTime?
+  membershipTier        String               @default("free")
+  username              String?              @unique
+  resetToken            String?
+  resetTokenExpires     DateTime?
+  wxOpenid              String?
+  miniOpenid            String?              @unique
+  apiKeys               ApiKey[]
   auctionsAsSeller      Auction[]            @relation("AuctionSeller")
   auctionsAsWinner      Auction[]            @relation("AuctionWinner")
   auctionBids           Bid[]                @relation("AuctionBidder")
-  inspectionBookings    InspectionBooking[]
-  loanApplications      LoanApplication[]
-  apiKeys               ApiKey[]
-  rentalListings        RentalListing[]
+  expoBooths            Booth[]
+  certifications        Certification[]
+  creditTransactions    CreditTransaction[]
+  demands               Demand[]
+  contractsAsBuyer      ElectronicContract[] @relation("ContractBuyer")
+  contractsAsSeller     ElectronicContract[] @relation("ContractSeller")
   escrowAsBuyer         EscrowOrder[]        @relation("EscrowBuyer")
   escrowAsSeller        EscrowOrder[]        @relation("EscrowSeller")
-
-  // Expo 模块关系
-  expoBooths          Booth[]
-  expoInquiries       ExpoInquiry[]
-  expoQuotesAsBuyer   Quote[]       @relation("QuoteBuyer")
-  expoQuotesAsSeller  Quote[]       @relation("QuoteSeller")
-  expoOrdersAsBuyer   Order[]       @relation("OrderBuyer")
-  expoOrdersAsSeller  Order[]       @relation("OrderSeller")
-  expoReviewsGiven    Review[]      @relation("ReviewReviewer")
-  expoReviewsReceived Review[]      @relation("ReviewReviewee")
+  expoInquiries         ExpoInquiry[]
+  favorites             Favorite[]
+  followers             Follow[]             @relation("FollowSeller")
+  following             Follow[]             @relation("FollowFollower")
+  inquiries             Inquiry[]
+  inspectionBookings    InspectionBooking[]
+  inspectionReports     InspectionReport[]
+  loanApplications      LoanApplication[]
+  expoOrdersAsBuyer     Order[]              @relation("OrderBuyer")
+  expoOrdersAsSeller    Order[]              @relation("OrderSeller")
+  products              Product[]
+  expoQuotesAsBuyer     Quote[]              @relation("QuoteBuyer")
+  expoQuotesAsSeller    Quote[]              @relation("QuoteSeller")
+  rentalListings        RentalListing[]
+  expoReviewsReceived   Review[]             @relation("ReviewReviewee")
+  expoReviewsGiven      Review[]             @relation("ReviewReviewer")
+  savedSearches         SavedSearch[]
+  sellerRatingsGiven    SellerRating[]       @relation("SellerRatingsGiven")
+  sellerRatingsReceived SellerRating[]       @relation("SellerRatingsReceived")
 }
 
 model Brand {
-  id            String  @id @default(cuid())
-  nameZh        String
-  nameEn        String
-  nameRu        String  @default("")
-  nameEs        String  @default("")
-  namePt        String  @default("")
-  nameAr        String  @default("")
-  nameFr        String  @default("")
-  nameHi        String  @default("")
-  originCountry String
-  isImported    Boolean @default(false)
-
-  // Expo 展厅字段
-  isChineseBrand  Boolean @default(false)
-  brandTier       String? // flagship | premium | standard | showcase
-  expoSlug        String? @unique
-  expoLogoUrl     String?
-  expoCoverUrl    String?
-  expoStory       String? @db.Text
-  officialWebsite String?
+  id              String         @id @default(cuid())
+  nameZh          String
+  nameEn          String
+  originCountry   String
+  isImported      Boolean        @default(false)
+  nameRu          String         @default("")
+  nameEs          String         @default("")
+  namePt          String         @default("")
+  nameAr          String         @default("")
+  nameFr          String         @default("")
+  nameHi          String         @default("")
+  brandTier       String?
   establishedYear Int?
+  expoCoverUrl    String?
+  expoLogoUrl     String?
+  expoSlug        String?        @unique
+  expoStory       String?
   exportVolume    String?
-
-  products      Product[]
-  valuations    Valuation[]
-  demands       Demand[]
-  showcaseItems ShowcaseItem[]
-  Booth         Booth[]
+  isChineseBrand  Boolean        @default(false)
+  officialWebsite String?
+  Booth           Booth[]
+  demands         Demand[]
+  products        Product[]
+  showcaseItems   ShowcaseItem[]
+  valuations      Valuation[]
 }
 
 model Category {
-  id       String  @id @default(cuid())
+  id       String     @id @default(cuid())
   nameZh   String
   nameEn   String
-  nameRu   String  @default("")
-  nameEs   String  @default("")
-  namePt   String  @default("")
-  nameAr   String  @default("")
-  nameFr   String  @default("")
-  nameHi   String  @default("")
   parentId String?
-
+  nameRu   String     @default("")
+  nameEs   String     @default("")
+  namePt   String     @default("")
+  nameAr   String     @default("")
+  nameFr   String     @default("")
+  nameHi   String     @default("")
   parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children Category[] @relation("CategoryHierarchy")
-
-  products Product[]
   demands  Demand[]
+  products Product[]
 }
 
 model Product {
-  id                    String   @id @default(cuid())
+  id                    String               @id @default(cuid())
   sellerId              String
   brandId               String
   categoryId            String
   modelName             String
   year                  Int
   workingHours          Int?
-  condition             String // excellent, good, fair, poor
+  condition             String
   priceCny              Float
   priceUsd              Float?
   location              String
-  country               String? // 国家代码，如 "CN" / "DE" / "US"
-  province              String? // 省/州，如 "河北" / "Bavaria"
-  city                  String? // 城市，如 "石家庄" / "Munich"
   descriptionZh         String?
   descriptionEn         String?
+  aiGenerated           Boolean              @default(false)
+  status                String               @default("active")
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
   descriptionRu         String?
   descriptionEs         String?
   descriptionPt         String?
   descriptionAr         String?
   descriptionFr         String?
   descriptionHi         String?
-  aiGenerated           Boolean  @default(false)
-  status                String   @default("active") // active, sold, draft, archived
-  enginePower           Int? // 额定马力 HP
-  engineType            String? // 发动机类型，默认 "Diesel Engine"
-  driveSystem           String? // 传动方式：2WD / 4WD / Full Hydraulic
-  overallLength         Float? // 长 mm
-  overallWidth          Float? // 宽 mm
-  overallHeight         Float? // 高 mm
-  netWeight             Float? // 整机重量 KG
-  mainConfig            String? // 主要配置描述
-  priceMode             String   @default("por") // "fixed" | "por"
-  tradeTerm             String   @default("FOB") // FOB / CIF / EXW
-  tradePort             String? // 发货港口
-  latitude              Float? // 农机所在地纬度（wx.chooseLocation 选点，用于物流与地图展示）
-  longitude             Float? // 农机所在地经度（wx.chooseLocation 选点，用于物流与地图展示）
-  standardDescriptionEn String? // 英文标准描述
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-
-  seller              User                 @relation(fields: [sellerId], references: [id])
-  brand               Brand                @relation(fields: [brandId], references: [id])
-  category            Category             @relation(fields: [categoryId], references: [id])
-  images              ProductImage[]
-  videos              ProductVideo[]
-  internationalPrices InternationalPrice[]
-  inquiries           Inquiry[]
-  arbitrageTopCaches  ArbitrageTopCache[]
-  machineryIdentity   MachineryIdentity?
-  inspectionReports   InspectionReport[]
-  favorites           Favorite[]
-  contracts           ElectronicContract[]
-  auctions            Auction[]
-  loanApplications    LoanApplication[]
-  warranties          Warranty[]
-  maintenanceRecords  MaintenanceRecord[]
-  govMachineryData    GovMachineryData?
-  blockchainRecords   BlockchainRecord[]
-  rentalListing       RentalListing?
-  escrowOrders        EscrowOrder[]
+  driveSystem           String?
+  enginePower           Int?
+  engineType            String?
+  mainConfig            String?
+  netWeight             Float?
+  overallHeight         Float?
+  overallLength         Float?
+  overallWidth          Float?
+  priceMode             String               @default("por")
+  standardDescriptionEn String?
+  tradePort             String?
+  tradeTerm             String               @default("FOB")
+  latitude              Float?
+  longitude             Float?
+  city                  String?
+  country               String?
+  province              String?
+  arbitrageTopCaches    ArbitrageTopCache[]
+  auctions              Auction[]
+  blockchainRecords     BlockchainRecord[]
+  contracts             ElectronicContract[]
+  escrowOrders          EscrowOrder[]
+  favorites             Favorite[]
+  govMachineryData      GovMachineryData?
+  inquiries             Inquiry[]
+  inspectionReports     InspectionReport[]
+  internationalPrices   InternationalPrice[]
+  loanApplications      LoanApplication[]
+  machineryIdentity     MachineryIdentity?
+  maintenanceRecords    MaintenanceRecord[]
+  brand                 Brand                @relation(fields: [brandId], references: [id])
+  category              Category             @relation(fields: [categoryId], references: [id])
+  seller                User                 @relation(fields: [sellerId], references: [id])
+  images                ProductImage[]
+  videos                ProductVideo[]
+  rentalListing         RentalListing?
+  warranties            Warranty[]
 }
 
 model ProductImage {
@@ -186,34 +177,31 @@ model ProductImage {
   url        String
   sortOrder  Int     @default(0)
   isPrimary  Boolean @default(false)
-  angleLabel String? // 拍摄角度标签
-
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  angleLabel String?
+  product    Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId])
 }
 
 model ProductVideo {
-  id               String   @id @default(cuid())
+  id               String    @id @default(cuid())
   productId        String
   url              String
-  sortOrder        Int      @default(0)
-  title            String?  // optional video title/caption
-  duration         Int?     // 视频时长（秒）
-  fileSize         Int?     // 文件大小（字节）
-  moderationStatus String?  @default("pending") // pending / passed / rejected
-  moderatedAt      DateTime? // 审核时间
-
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sortOrder        Int       @default(0)
+  title            String?
+  duration         Int?
+  fileSize         Int?
+  moderatedAt      DateTime?
+  moderationStatus String?   @default("pending")
+  product          Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId])
 }
 
-// 小程序邮箱订阅（资讯推送）：用于向订阅用户推送农机行业资讯与交易动态
 model Subscriber {
   id           String   @id @default(cuid())
   email        String   @unique
-  source       String   @default("miniprogram") // miniprogram / web / admin
+  source       String   @default("miniprogram")
   isActive     Boolean  @default(true)
   subscribedAt DateTime @default(now())
   createdAt    DateTime @default(now())
@@ -224,23 +212,22 @@ model Subscriber {
 }
 
 model Demand {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   buyerId        String
   targetCountry  String
   categoryId     String?
   brandId        String?
   budgetMinUsd   Float?
   budgetMaxUsd   Float?
-  quantity       Int      @default(1)
+  quantity       Int       @default(1)
   deadlineMonths Int?
   description    String?
-  status         String   @default("active") // active, fulfilled, closed
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  buyer    User      @relation(fields: [buyerId], references: [id])
-  brand    Brand?    @relation(fields: [brandId], references: [id])
-  category Category? @relation(fields: [categoryId], references: [id])
+  status         String    @default("active")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  brand          Brand?    @relation(fields: [brandId], references: [id])
+  buyer          User      @relation(fields: [buyerId], references: [id])
+  category       Category? @relation(fields: [categoryId], references: [id])
 }
 
 model Inquiry {
@@ -248,37 +235,35 @@ model Inquiry {
   productId String
   buyerId   String?
   name      String
-  email     String?  // 邮箱（选填，兼容匿名用户）
+  email     String?
   phone     String?
   company   String?
   message   String?
-  status    String   @default("pending") // pending, replied, closed
+  status    String   @default("pending")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  product Product @relation(fields: [productId], references: [id])
-  buyer   User?   @relation(fields: [buyerId], references: [id])
+  buyer     User?    @relation(fields: [buyerId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
 }
 
 model InternationalPrice {
   id              String    @id @default(cuid())
   productId       String
-  priceForeignCny Float // 国外市场价（人民币换算，万元）
-  priceForeignRaw Float? // 国外市场价（原始货币金额）
-  currency        String    @default("EUR") // 原始货币：EUR, USD, etc.
-  exchangeRate    Float? // 当时汇率
-  source          String // 数据来源：e-farm, TractorHouse, Agroline, etc.
-  sourceUrl       String? // 来源链接
-  sourceDate      String? // 数据抓取日期
-  country         String? // 国外市场国家
-  notes           String? // 备注
+  priceForeignCny Float
+  priceForeignRaw Float?
+  currency        String    @default("EUR")
+  exchangeRate    Float?
+  source          String
+  sourceUrl       String?
+  sourceDate      String?
+  country         String?
+  notes           String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
-  isActive        Boolean   @default(true)
   confidenceScore Float     @default(0.5)
+  isActive        Boolean   @default(true)
   lastVerified    DateTime?
-
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product         Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId])
 }
@@ -293,219 +278,198 @@ model Valuation {
   estimatedPriceCny Float
   estimatedPriceUsd Float
   confidenceScore   Float   @default(0.5)
-  factors           String? // JSON string (SQLite compat)
-
-  brand Brand @relation(fields: [brandId], references: [id])
+  factors           String?
+  brand             Brand   @relation(fields: [brandId], references: [id])
 }
 
 model CreditTransaction {
   id        String   @id @default(cuid())
   userId    String
-  type      String // consume, recharge, reward, expire
-  amount    Int // 正=入账，负=扣款
-  balance   Int // 操作后余额
-  reason    String? // 消费原因：valuation, publish_product, etc.
-  relatedId String? // 关联对象ID
+  type      String
+  amount    Int
+  balance   Int
+  reason    String?
+  relatedId String?
   createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
 }
 
-// 汇率表 - 存储最新和历史汇率
 model ExchangeRate {
   id             String   @id @default(cuid())
-  baseCurrency   String   @default("CNY") // 基础货币
-  targetCurrency String // 目标货币: USD, EUR, GBP等
-  rate           Float // 汇率值 (1 CNY = X USD)
-  source         String   @default("exchangerate-api") // 数据来源
-  lastUpdated    DateTime @default(now()) // 最后更新时间
-  effectiveDate  DateTime // 汇率生效日期
+  baseCurrency   String   @default("CNY")
+  targetCurrency String
+  rate           Float
+  source         String   @default("exchangerate-api")
+  lastUpdated    DateTime @default(now())
+  effectiveDate  DateTime
 
   @@unique([baseCurrency, targetCurrency, effectiveDate])
   @@index([baseCurrency, targetCurrency])
 }
 
-// 套利计算结果缓存表 - 预计算Top N设备
 model ArbitrageTopCache {
   id               String   @id @default(cuid())
-  productId        String // 产品ID
-  rank             Int // 排名 (1-10)
-  domesticPrice    Float // 国内价格(CNY)
-  foreignPrice     Float // 国外价格(CNY)
-  priceDiff        Float // 价差(CNY)
-  priceDiffPercent Float // 价差百分比(%)
-  profitMargin     Float? // 利润率(%)
-  lastCalculated   DateTime @default(now()) // 最后计算时间
-  validUntil       DateTime // 有效期至
-
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId        String
+  rank             Int
+  domesticPrice    Float
+  foreignPrice     Float
+  priceDiff        Float
+  priceDiffPercent Float
+  profitMargin     Float?
+  lastCalculated   DateTime @default(now())
+  validUntil       DateTime
+  product          Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([productId, rank])
   @@index([rank])
   @@index([validUntil])
 }
 
-// 文章/博客 - SEO驱动的国际农机市场内容
 model Article {
   id             String    @id @default(cuid())
   slug           String    @unique
   titleZh        String
   titleEn        String?
   titleRu        String?
-  titleEs        String?
-  titlePt        String?
-  titleAr        String?
-  titleFr        String?
-  titleHi        String?
-  contentZh      String    @db.Text
-  contentEn      String?   @db.Text
-  contentRu      String?   @db.Text
-  contentEs      String?   @db.Text
-  contentPt      String?   @db.Text
-  contentAr      String?   @db.Text
-  contentFr      String?   @db.Text
-  contentHi      String?   @db.Text
-  excerptZh      String?   @db.Text // 摘要/简介
-  excerptEn      String?   @db.Text
-  excerptRu      String?   @db.Text
-  excerptEs      String?   @db.Text
-  excerptPt      String?   @db.Text
-  excerptAr      String?   @db.Text
-  excerptFr      String?   @db.Text
-  excerptHi      String?   @db.Text
-  coverImage     String? // 封面图URL
-  status         String    @default("draft") // draft, published, archived
-  category       String? // market-analysis, price-guide, brand-review, industry-news, buying-guide
-  tags           String?   @db.Text // JSON数组字符串 (中文) ["CLAAS","青储机","套利"]
-  tagsEn         String?   @db.Text // 英文标签: ["CLAAS","Forage Harvester","Arbitrage"]
-  tagsRu         String?   @db.Text // 俄文标签: ["CLAAS","Кормоуборочный","Арбитраж"]
-  tagsEs         String?   @db.Text
-  tagsPt         String?   @db.Text
-  tagsAr         String?   @db.Text
-  tagsFr         String?   @db.Text
-  tagsHi         String?   @db.Text
-  sourcePlatform String? // 数据来源平台: agroline, machinerypete, tractorhouse, mascus, e-farm, internal
-  sourceUrl      String? // 原始数据来源URL
-  metaTitle      String? // SEO标题
-  isPinned       Boolean   @default(false) // 置顶标记
-  metaDesc       String? // SEO描述
-  keywords       String? // SEO关键词
+  contentZh      String
+  contentEn      String?
+  contentRu      String?
+  excerptZh      String?
+  excerptEn      String?
+  excerptRu      String?
+  coverImage     String?
+  status         String    @default("draft")
+  category       String?
+  tags           String?
+  sourcePlatform String?
+  sourceUrl      String?
+  metaTitle      String?
+  metaDesc       String?
+  keywords       String?
   publishedAt    DateTime?
   viewCount      Int       @default(0)
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+  tagsEn         String?
+  tagsRu         String?
+  contentEs      String?
+  contentPt      String?
+  excerptEs      String?
+  excerptPt      String?
+  tagsEs         String?
+  tagsPt         String?
+  titleEs        String?
+  titlePt        String?
+  contentAr      String?
+  contentFr      String?
+  contentHi      String?
+  excerptAr      String?
+  excerptFr      String?
+  excerptHi      String?
+  tagsAr         String?
+  tagsFr         String?
+  tagsHi         String?
+  titleAr        String?
+  titleFr        String?
+  titleHi        String?
+  isPinned       Boolean   @default(false)
 
   @@index([status, publishedAt])
   @@index([category])
   @@index([sourcePlatform])
 }
 
-// 市场情报速递 - 每日更新
 model MarketIntel {
   id                String   @id @default(cuid())
-  date              DateTime // 数据日期（每日一条）
-  icon              String // emoji图标
-  region            String // 地区（中文）
-  regionEn          String? // 地区（英文）
-  regionRu          String? // 地区（俄文）
-  regionEs          String? // 地区（西班牙语）
-  regionPt          String? // 地区（葡萄牙语）
-  regionAr          String? // 地区（阿拉伯语）
-  regionFr          String? // 地区（法语）
-  regionHi          String? // 地区（印地语）
-  tags              String // JSON数组: ["tag1","tag2"] (中文)
-  tagsEn            String?  @db.Text // 英文标签JSON
-  tagsRu            String?  @db.Text // 俄文标签JSON
-  tagsEs            String?  @db.Text // 西班牙语标签JSON
-  tagsPt            String?  @db.Text // 葡萄牙语标签JSON
-  tagsAr            String?  @db.Text // 阿拉伯语标签JSON
-  tagsFr            String?  @db.Text // 法语标签JSON
-  tagsHi            String?  @db.Text // 印地语标签JSON
-  text              String // 摘要文本（中文）
-  textEn            String? // 摘要文本（英文）
-  textRu            String? // 摘要文本（俄文）
-  textEs            String? // 摘要文本（西班牙语）
-  textPt            String? // 摘要文本（葡萄牙语）
-  textAr            String? // 摘要文本（阿拉伯语）
-  textFr            String? // 摘要文本（法语）
-  textHi            String? // 摘要文本（印地语）
-  url               String? // 链接
-  detailedContent   String? // 展开后的Markdown内容（中文）
-  detailedContentEn String?  @db.Text // 展开后的Markdown内容（英文）
-  detailedContentRu String?  @db.Text // 展开后的Markdown内容（俄文）
-  detailedContentEs String?  @db.Text // 展开后的Markdown内容（西班牙语）
-  detailedContentPt String?  @db.Text // 展开后的Markdown内容（葡萄牙语）
-  detailedContentAr String?  @db.Text // 展开后的Markdown内容（阿拉伯语）
-  detailedContentFr String?  @db.Text // 展开后的Markdown内容（法语）
-  detailedContentHi String?  @db.Text // 展开后的Markdown内容（印地语）
-  dataSummary       String? // JSON: [{"label":"...","value":"..."}]
-  actionTips        String? // JSON数组: ["tip1","tip2"]
+  date              DateTime
+  icon              String
+  region            String
+  tags              String
+  text              String
+  url               String?
+  detailedContent   String?
+  dataSummary       String?
+  actionTips        String?
   sortOrder         Int      @default(0)
   isActive          Boolean  @default(true)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+  detailedContentEn String?
+  detailedContentRu String?
+  regionEn          String?
+  regionRu          String?
+  tagsEn            String?
+  tagsRu            String?
+  textEn            String?
+  textRu            String?
+  detailedContentEs String?
+  detailedContentPt String?
+  regionEs          String?
+  regionPt          String?
+  tagsEs            String?
+  tagsPt            String?
+  textEs            String?
+  textPt            String?
+  detailedContentAr String?
+  detailedContentFr String?
+  detailedContentHi String?
+  regionAr          String?
+  regionFr          String?
+  regionHi          String?
+  tagsAr            String?
+  tagsFr            String?
+  tagsHi            String?
+  textAr            String?
+  textFr            String?
+  textHi            String?
 
   @@index([date])
   @@index([isActive, date])
 }
 
-// ── 多语客服 Agent 对话表 ──
 model ChatSession {
-  id        String   @id @default(cuid())
-  visitorId String // 匿名访客指纹或登录用户ID
-  productId String? // 关联产品（如果从产品页发起）
-  locale    String   @default("en") // zh, en, ru, es, pt, ar, fr, hi
-  status    String   @default("active") // active, closed, handed_over
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  messages ChatMessage[]
+  id        String        @id @default(cuid())
+  visitorId String
+  productId String?
+  locale    String        @default("en")
+  status    String        @default("active")
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  messages  ChatMessage[]
 
   @@index([visitorId, status])
   @@index([productId])
   @@index([updatedAt])
 }
 
-// ── 卖方采集原始数据表 ──
 model RawListing {
-  id        String @id @default(cuid())
-  source    String // 来源：agriaffaires, tractorhouse, nongjitong, etc.
-  sourceUrl String // 原始链接
-  status    String @default("pending") // pending, reviewed, approved, rejected
-
-  // 产品信息（采集原始数据）
-  brandName    String // 品牌名（原始文本，未映射到 Brand 表）
-  modelName    String // 型号
-  year         Int? // 年份
-  workingHours Int? // 工作小时
-  condition    String? // 状况描述
-  priceRaw     Float? // 原始价格
-  currency     String? // 原始货币
-  priceCny     Float? // 换算人民币
-  location     String // 地区
-
-  // 卖家信息
-  sellerName     String? // 卖家名
-  sellerPhone    String? // 电话
-  sellerWechat   String? // 微信
-  sellerWhatsapp String? // WhatsApp
-
-  // 图片
-  images String? // JSON 数组：["url1", "url2"]
-
-  // 去重
-  contentHash String @unique // MD5(brand+model+year+location+price)
-
-  // 元数据
-  scrapedAt  DateTime  @default(now())
-  reviewedAt DateTime?
-  reviewedBy String? // 审核人ID
-  notes      String? // 审核备注
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String    @id @default(cuid())
+  source         String
+  sourceUrl      String
+  status         String    @default("pending")
+  brandName      String
+  modelName      String
+  year           Int?
+  workingHours   Int?
+  condition      String?
+  priceRaw       Float?
+  currency       String?
+  priceCny       Float?
+  location       String
+  sellerName     String?
+  sellerPhone    String?
+  sellerWechat   String?
+  sellerWhatsapp String?
+  images         String?
+  contentHash    String    @unique
+  scrapedAt      DateTime  @default(now())
+  reviewedAt     DateTime?
+  reviewedBy     String?
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   @@index([status, scrapedAt])
   @@index([source, scrapedAt])
@@ -513,201 +477,150 @@ model RawListing {
 }
 
 model ChatMessage {
-  id        String   @id @default(cuid())
+  id        String      @id @default(cuid())
   sessionId String
-  role      String // user, assistant, system, human
-  content   String   @db.Text
-  intent    String? // 意图分类：price_inquiry, product_compare, shipping, payment, warranty, general, hand_over
-  metadata  String? // JSON: { productIds: [...], confidence: 0.92, model: "openrouter/..." }
-  createdAt DateTime @default(now())
-
-  session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role      String
+  content   String
+  intent    String?
+  metadata  String?
+  createdAt DateTime    @default(now())
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId, createdAt])
 }
 
-// ═══════════════════════════════════════════════════════
-// #0 调度者 Agent — 数据模型
-// ═══════════════════════════════════════════════════════
-
 model AgentDefinition {
-  id          String  @id @default(cuid())
-  agentId     String  @unique // 唯一标识：price-intel, buyer-chat, seller-scout, seller-helper
-  name        String // 显示名称
-  description String? // 描述
-  version     String  @default("0.1.0")
-
-  // 触发方式
-  triggerType String  @default("manual") // manual, cron, webhook, dependency
-  schedule    String? // cron 表达式（如 "0 6 * * *"）
-  endpoint    String? // API 端点（如 "/api/agents/price-intel"）
-
-  // 依赖：此 Agent 执行前需要先执行哪些 Agent
-  dependencies String? // JSON 数组：["seller-scout", ...]
-
-  // 状态
-  status    String    @default("active") // active, paused, disabled, error
-  lastRunAt DateTime?
-  nextRunAt DateTime?
-
-  // 配置
-  config String? // JSON：各 Agent 自定义配置
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  runs AgentRunLog[]
+  id           String        @id @default(cuid())
+  agentId      String        @unique
+  name         String
+  description  String?
+  version      String        @default("0.1.0")
+  triggerType  String        @default("manual")
+  schedule     String?
+  endpoint     String?
+  dependencies String?
+  status       String        @default("active")
+  lastRunAt    DateTime?
+  nextRunAt    DateTime?
+  config       String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  runs         AgentRunLog[]
 
   @@index([status, agentId])
 }
 
 model AgentRunLog {
-  id      String @id @default(cuid())
-  agentId String
-
-  // 执行信息
-  triggeredBy String @default("manual") // manual, cron, dependency, webhook, system
-  status      String // running, success, failed, cancelled, timeout
-
-  // 时间
-  startedAt   DateTime  @default(now())
-  completedAt DateTime?
-  durationMs  Int? // 执行耗时（毫秒）
-
-  // 结果
-  result       String? // JSON：成功时的返回数据摘要
-  errorMessage String? // 失败时的错误信息
-
-  // 元数据
-  metadata String? // JSON：额外信息（如触发参数、输入摘要）
-
-  createdAt DateTime @default(now())
-
-  agent AgentDefinition @relation(fields: [agentId], references: [agentId], onDelete: Cascade)
+  id           String          @id @default(cuid())
+  agentId      String
+  triggeredBy  String          @default("manual")
+  status       String
+  startedAt    DateTime        @default(now())
+  completedAt  DateTime?
+  durationMs   Int?
+  result       String?
+  errorMessage String?
+  metadata     String?
+  createdAt    DateTime        @default(now())
+  agent        AgentDefinition @relation(fields: [agentId], references: [agentId], onDelete: Cascade)
 
   @@index([agentId, startedAt])
   @@index([status, startedAt])
 }
 
-// ═══════════════════════════════════════════════════════
-// 一机一码身份溯源系统
-// ═══════════════════════════════════════════════════════
-
 model MachineryIdentity {
-  id              String    @id @default(cuid())
-  productId       String    @unique
-  qrCode          String    @unique // 唯一QR码标识：SD-YYYY-XXXXXXX
-  serialNo        String? // 出厂编号/铭牌编号
-  manufactureDate String? // 出厂日期
-  factoryName     String? // 制造商
-  factoryLocation String? // 产地
-  verifyHash      String? // 防伪校验哈希
-  isVerified      Boolean   @default(false) // 是否已验证
+  id              String           @id @default(cuid())
+  productId       String           @unique
+  qrCode          String           @unique
+  serialNo        String?
+  manufactureDate String?
+  factoryName     String?
+  factoryLocation String?
+  verifyHash      String?
+  isVerified      Boolean          @default(false)
   verifiedAt      DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  product Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
-  events  MachineryEvent[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  events          MachineryEvent[]
+  product         Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([qrCode])
 }
 
 model MachineryEvent {
-  id          String   @id @default(cuid())
+  id          String            @id @default(cuid())
   identityId  String
-  eventType   String // manufactured, listed, inspected, traded, exported, maintained, transferred
+  eventType   String
   title       String
   description String?
-  operator    String? // 操作人/机构
-  location    String? // 事件发生地
-  evidence    String? // JSON: 证据文件URL数组
-  metadata    String? // JSON: 额外元数据
-  eventDate   DateTime @default(now()) // 事件发生时间
-  createdAt   DateTime @default(now())
-
-  identity MachineryIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  operator    String?
+  location    String?
+  evidence    String?
+  metadata    String?
+  eventDate   DateTime          @default(now())
+  createdAt   DateTime          @default(now())
+  identity    MachineryIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
 
   @@index([identityId, eventDate])
   @@index([eventType])
 }
 
-// ═══════════════════════════════════════════════════════
-// 三重认证体系
-// ═══════════════════════════════════════════════════════
-
 model Certification {
-  id            String  @id @default(cuid())
-  userId        String // 申请用户ID
-  certType      String // institution(机构认证), personnel(人员认证), vehicle(车辆认证)
-  status        String  @default("pending") // pending, approved, rejected, expired
-  // 通用字段
-  applicantName String // 申请人/机构名称
-  contactPhone  String
-  contactEmail  String?
-
-  // 机构认证字段
-  businessLicenseNo  String? // 营业执照号
-  businessLicenseImg String? // 营业执照图片URL
-  legalPerson        String? // 法人代表
-  registeredCapital  String? // 注册资本
-  businessScope      String? // 经营范围
-
-  // 人员认证字段
-  personnelName    String? // 评估师姓名
-  personnelCertNo  String? // 证书编号
-  personnelCertImg String? // 证书图片URL
-  personnelLevel   String? // 评估师等级：初级/中级/高级
-
-  // 车辆认证字段
-  productId           String? // 关联产品ID
-  inspectionReportNo  String? // 检测报告编号
-  inspectionReportImg String? // 检测报告图片URL
-  inspectionGrade     String? // 检测等级：A/B/C/D
-  inspectionDate      DateTime? // 检测日期
-  inspectionOrg       String? // 检测机构
-
-  // 审核信息
-  reviewedBy String? // 审核人ID
-  reviewedAt DateTime?
-  reviewNote String? // 审核备注
-  validUntil DateTime? // 认证有效期
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                  String    @id @default(cuid())
+  userId              String
+  certType            String
+  status              String    @default("pending")
+  applicantName       String
+  contactPhone        String
+  contactEmail        String?
+  businessLicenseNo   String?
+  businessLicenseImg  String?
+  legalPerson         String?
+  registeredCapital   String?
+  businessScope       String?
+  personnelName       String?
+  personnelCertNo     String?
+  personnelCertImg    String?
+  personnelLevel      String?
+  productId           String?
+  inspectionReportNo  String?
+  inspectionReportImg String?
+  inspectionGrade     String?
+  inspectionDate      DateTime?
+  inspectionOrg       String?
+  reviewedBy          String?
+  reviewedAt          DateTime?
+  reviewNote          String?
+  validUntil          DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, certType])
   @@index([status])
   @@index([certType, status])
 }
 
-// ═══════════════════════════════════════════════════════
-// 线下服务网络
-// ═══════════════════════════════════════════════════════
-
 model ServiceCenter {
-  id            String   @id @default(cuid())
-  name          String // 网点名称
-  level         String   @default("county") // province(省级中心), city(市级), county(县域网点)
-  province      String // 省份
-  city          String? // 城市
-  district      String? // 区县
-  address       String // 详细地址
-  longitude     Float? // 经度
-  latitude      Float? // 纬度
-  contactPerson String? // 联系人
-  contactPhone  String? // 联系电话
-  services      String? // JSON: 服务项目数组 ["检测","维修","评估","交易"]
-  businessHours String? // 营业时间
-  images        String? // JSON: 网点图片URL数组
-  description   String? // 网点描述
-  isActive      Boolean  @default(true)
-  sortOrder     Int      @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
+  id                 String              @id @default(cuid())
+  name               String
+  level              String              @default("county")
+  province           String
+  city               String?
+  district           String?
+  address            String
+  longitude          Float?
+  latitude           Float?
+  contactPerson      String?
+  contactPhone       String?
+  services           String?
+  businessHours      String?
+  images             String?
+  description        String?
+  isActive           Boolean             @default(true)
+  sortOrder          Int                 @default(0)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
   maintenanceRecords MaintenanceRecord[]
 
   @@index([province, level])
@@ -715,57 +628,39 @@ model ServiceCenter {
   @@index([level, isActive])
 }
 
-// ═══════════════════════════════════════════════════════
-// 设备检验报告
-// ═══════════════════════════════════════════════════════
-
 model InspectionReport {
   id              String    @id @default(cuid())
   productId       String
-  inspectorId     String? // 检验员ID（平台人员）
-  inspectorName   String // 检验员姓名
-  inspectionOrg   String? // 检验机构
+  inspectorId     String?
+  inspectorName   String
+  inspectionOrg   String?
   inspectionDate  DateTime  @default(now())
-  overallGrade    String // A(优秀) / B(良好) / C(一般) / D(需维修)
-  overallScore    Int // 0-100 综合评分
-  // 5大类检测项（JSON数组）
-  // [
-  //   { category: "engine", items: [{ name, result, score, note }] },
-  //   { category: "transmission", items: [...] },
-  //   { category: "hydraulics", items: [...] },
-  //   { category: "electrical", items: [...] },
-  //   { category: "exterior", items: [...] }
-  // ]
-  inspectionItems String // JSON: 5大类20项检测结果
-  summary         String? // 检验总结
-  recommendations String? // 维修建议
-  photos          String? // JSON: 检验照片URL数组
-  reportPdfUrl    String? // PDF报告URL
-  status          String    @default("published") // draft, published, archived
-  validUntil      DateTime? // 报告有效期
+  overallGrade    String
+  overallScore    Int
+  inspectionItems String
+  summary         String?
+  recommendations String?
+  photos          String?
+  reportPdfUrl    String?
+  status          String    @default("published")
+  validUntil      DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
-
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  inspector User?   @relation(fields: [inspectorId], references: [id])
+  inspector       User?     @relation(fields: [inspectorId], references: [id])
+  product         Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId])
   @@index([overallGrade])
   @@index([status, inspectionDate])
 }
 
-// ═══════════════════════════════════════════════════════
-// 收藏 / 关注 / 保存搜索
-// ═══════════════════════════════════════════════════════
-
 model Favorite {
   id        String   @id @default(cuid())
   userId    String
   productId String
   createdAt DateTime @default(now())
-
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId])
   @@index([userId, createdAt])
@@ -773,13 +668,12 @@ model Favorite {
 
 model Follow {
   id                  String   @id @default(cuid())
-  userId              String // 关注者
-  sellerId            String // 被关注的卖家
-  notificationEnabled Boolean  @default(true)
+  userId              String
+  sellerId            String
   createdAt           DateTime @default(now())
-
-  user   User @relation("FollowFollower", fields: [userId], references: [id], onDelete: Cascade)
-  seller User @relation("FollowSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+  notificationEnabled Boolean  @default(true)
+  seller              User     @relation("FollowSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+  user                User     @relation("FollowFollower", fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, sellerId])
   @@index([userId, createdAt])
@@ -790,58 +684,47 @@ model Follow {
 model SavedSearch {
   id             String    @id @default(cuid())
   userId         String
-  name           String // 搜索名称
-  filters        String // JSON: 筛选条件
-  notifyOnNew    Boolean   @default(false) // 新品上架通知
+  name           String
+  filters        String
+  notifyOnNew    Boolean   @default(false)
   lastNotifiedAt DateTime?
   createdAt      DateTime  @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
 }
 
-// ═══════════════════════════════════════════════════════
-// 卖家信任体系 — 评分
-// ═══════════════════════════════════════════════════════
-
 model SellerRating {
   id             String   @id @default(cuid())
-  sellerId       String // 被评价的卖家
-  raterId        String // 评价人
-  productId      String? // 关联产品（交易后评价）
-  score          Int // 1-5 星
+  sellerId       String
+  raterId        String
+  productId      String?
+  score          Int
   comment        String?
-  // 评价维度
-  itemMatchScore Int? // 物品相符度 1-5
-  serviceScore   Int? // 服务态度 1-5
-  logisticsScore Int? // 物流速度 1-5
+  itemMatchScore Int?
+  serviceScore   Int?
+  logisticsScore Int?
   createdAt      DateTime @default(now())
-
-  seller User @relation("SellerRatingsReceived", fields: [sellerId], references: [id], onDelete: Cascade)
-  rater  User @relation("SellerRatingsGiven", fields: [raterId], references: [id], onDelete: Cascade)
+  rater          User     @relation("SellerRatingsGiven", fields: [raterId], references: [id], onDelete: Cascade)
+  seller         User     @relation("SellerRatingsReceived", fields: [sellerId], references: [id], onDelete: Cascade)
 
   @@unique([sellerId, raterId, productId])
   @@index([sellerId, createdAt])
   @@index([raterId])
 }
 
-// ═══════════════════════════════════════════════════════
-// 价格指数引擎
-// ═══════════════════════════════════════════════════════
-
 model PriceIndex {
   id             String   @id @default(cuid())
-  date           DateTime // 数据日期
-  category       String? // 品类ID（null=综合指数）
-  brand          String? // 品牌ID（null=品类或综合）
-  region         String? // 区域（null=全国）
-  indexValue     Float // 指数值（基准日=100）
-  avgPriceCny    Float // 平均价格（万元）
-  sampleCount    Int // 样本数量
-  monthOverMonth Float? // 环比变化(%)
-  yearOverYear   Float? // 同比变化(%)
-  metadata       String? // JSON: 额外元数据
+  date           DateTime
+  category       String?
+  brand          String?
+  region         String?
+  indexValue     Float
+  avgPriceCny    Float
+  sampleCount    Int
+  monthOverMonth Float?
+  yearOverYear   Float?
+  metadata       String?
   createdAt      DateTime @default(now())
 
   @@unique([date, category, brand, region])
@@ -850,29 +733,22 @@ model PriceIndex {
   @@index([brand, date])
 }
 
-// ═══════════════════════════════════════════════════════
-// 行业报告
-// ═══════════════════════════════════════════════════════
-
 model IndustryReport {
   id            String    @id @default(cuid())
-  title         String // 报告标题
-  reportType    String // monthly, quarterly, yearly, special
-  period        String // 报告期：2026-07, 2026-Q3, 2026
-  summary       String    @db.Text // 报告摘要
-  content       String    @db.Text // Markdown内容
-  coverImage    String? // 封面图URL
-  // 关键数据摘要
-  keyMetrics    String? // JSON: [{label, value, change}]
-  topBrands     String? // JSON: [{brand, share, avgPrice}]
-  topCategories String? // JSON: [{category, count, avgPrice}]
-  priceTrends   String? // JSON: [{date, index}]
-  // 状态
-  status        String    @default("draft") // draft, published, archived
+  title         String
+  reportType    String
+  period        String
+  summary       String
+  content       String
+  coverImage    String?
+  keyMetrics    String?
+  topBrands     String?
+  topCategories String?
+  priceTrends   String?
+  status        String    @default("draft")
   publishedAt   DateTime?
   viewCount     Int       @default(0)
   downloadCount Int       @default(0)
-  // 作者
   authorId      String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -881,49 +757,38 @@ model IndustryReport {
   @@index([reportType, period])
 }
 
-// ═══════════════════════════════════════════════════════
-// 电子合同
-// ═══════════════════════════════════════════════════════
-
 model ElectronicContract {
-  id              String    @id @default(cuid())
-  contractNo      String    @unique // 合同编号：SD-HT-YYYYMMDD-XXXX
-  productId       String // 关联产品
-  sellerId        String // 卖方ID
-  buyerId         String // 买方ID
-  // 合同信息
-  title           String // 合同标题
-  contractType    String    @default("sale") // sale(买卖), auction(拍卖), lease(租赁)
-  tradeTerm       String    @default("FOB") // 贸易条款
-  // 交易信息
-  productInfo     String // JSON: 产品摘要信息
-  priceCny        Float // 成交价（人民币）
-  priceUsd        Float? // 成交价（美元）
-  currency        String    @default("CNY")
-  paymentMethod   String? // 付款方式
-  deliveryDate    DateTime? // 交货日期
-  deliveryAddress String? // 交货地址
-  // 合同条款
-  terms           String    @db.Text // 合同条款（Markdown）
-  attachments     String? // JSON: 附件URL数组
-  // 签署状态
-  status          String    @default("draft") // draft, pending_seller, pending_buyer, signed, executed, cancelled, disputed
+  id              String     @id @default(cuid())
+  contractNo      String     @unique
+  productId       String
+  sellerId        String
+  buyerId         String
+  title           String
+  contractType    String     @default("sale")
+  tradeTerm       String     @default("FOB")
+  productInfo     String
+  priceCny        Float
+  priceUsd        Float?
+  currency        String     @default("CNY")
+  paymentMethod   String?
+  deliveryDate    DateTime?
+  deliveryAddress String?
+  terms           String
+  attachments     String?
+  status          String     @default("draft")
   sellerSignedAt  DateTime?
   buyerSignedAt   DateTime?
-  sellerSignature String? // 签名图片URL或哈希
-  buyerSignature  String? // 签名图片URL或哈希
-  // PDF
-  pdfUrl          String? // 生成的PDF URL
-  // 时间
+  sellerSignature String?
+  buyerSignature  String?
+  pdfUrl          String?
   validFrom       DateTime?
   validUntil      DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  product    Product    @relation(fields: [productId], references: [id])
-  seller     User       @relation("ContractSeller", fields: [sellerId], references: [id])
-  buyer      User       @relation("ContractBuyer", fields: [buyerId], references: [id])
-  warranties Warranty[]
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  buyer           User       @relation("ContractBuyer", fields: [buyerId], references: [id])
+  product         Product    @relation(fields: [productId], references: [id])
+  seller          User       @relation("ContractSeller", fields: [sellerId], references: [id])
+  warranties      Warranty[]
 
   @@index([sellerId, status])
   @@index([buyerId, status])
@@ -931,54 +796,43 @@ model ElectronicContract {
   @@index([status, createdAt])
 }
 
-// ═══════════════════════════════════════════════════════
-// 在线询价系统（原拍卖系统改造，去掉时间限制和自动成交）
-// ═══════════════════════════════════════════════════════
-
 model Auction {
-  id             String    @id @default(cuid())
-  bargainNo      String    @unique // 询价编号：SD-YJ-YYYYMMDD-XXXX
-  productId      String // 询价设备
-  sellerId       String // 卖方
-  title          String // 询价标题
-  description    String?   @db.Text // 询价描述
-  // 询价参数
-  askingPrice    Float // 卖家要价（CNY）
-  // — 询价公告参数（复用原拍卖字段，不再deprecated）—
-  startPrice       Float     @default(0) // 起始价
-  reservePrice     Float? // 保留价（可选，低于此价不成交）
-  priceIncrement   Float     @default(5000) // 加价幅度（已弃用，保留字段）
-  deposit          Float     @default(0) // 保证金金额（已弃用，保留字段）
-  startTime        DateTime? // 询价开始时间
-  endTime          DateTime? // 询价结束时间（null=无限制）
-  // 新增：公告信息
-  announcementNo   String?   // 公告编号 SJZSN-2026-0720
-  minParticipants   Int       @default(3) // 最低启动人数（已弃用，保留字段）
-  paymentDeadline   DateTime? // 付款截止时间
-  evaluationPrice   Float?    // 参考评估价
-  knownFlaws        String?   @db.Text // 已知瑕疵
-  contractTemplateNo String?  // 合同模板编号
-  // 状态
-  status         String    @default("active") // active(询价中), accepted(已成交), cancelled(已取消)
-  acceptedBidId  String?   @unique // 接受的报价ID
-  acceptedPrice  Float? // 成交价
-  winnerId       String? // deprecated（由acceptedBidId反查）
-  winningBid     Float? // deprecated
-  totalBids      Int       @default(0) // 总出价次数
-  totalBidders   Int       @default(0) // 出价人数
-  // 结算
-  settledAt      DateTime?
-  contractId     String? // 关联合同ID
-  // 元数据
-  coverImage     String? // 封面图
-  viewCount      Int       @default(0)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-
-  product           Product             @relation(fields: [productId], references: [id])
-  seller            User                @relation("AuctionSeller", fields: [sellerId], references: [id])
-  bids              Bid[]
-  winner            User?               @relation("AuctionWinner", fields: [winnerId], references: [id])
+  id                 String              @id @default(cuid())
+  productId          String
+  sellerId           String
+  title              String
+  description        String?
+  startPrice         Float               @default(0)
+  reservePrice       Float?
+  priceIncrement     Float               @default(5000)
+  deposit            Float               @default(0)
+  startTime          DateTime?
+  endTime            DateTime?
+  status             String              @default("active")
+  winnerId           String?
+  winningBid         Float?
+  totalBids          Int                 @default(0)
+  totalBidders       Int                 @default(0)
+  settledAt          DateTime?
+  contractId         String?
+  coverImage         String?
+  viewCount          Int                 @default(0)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  acceptedBidId      String?             @unique
+  acceptedPrice      Float?
+  askingPrice        Float
+  bargainNo          String              @unique
+  announcementNo     String?
+  contractTemplateNo String?
+  evaluationPrice    Float?
+  knownFlaws         String?
+  minParticipants    Int                 @default(3)
+  paymentDeadline    DateTime?
+  product            Product             @relation(fields: [productId], references: [id])
+  seller             User                @relation("AuctionSeller", fields: [sellerId], references: [id])
+  winner             User?               @relation("AuctionWinner", fields: [winnerId], references: [id])
+  bids               Bid[]
   inspectionBookings InspectionBooking[]
 
   @@index([status, createdAt])
@@ -990,268 +844,208 @@ model Bid {
   id        String   @id @default(cuid())
   auctionId String
   bidderId  String
-  amount    Float // 报价金额
-  status    String   @default("pending") // pending(待处理), accepted(已接受), rejected(已拒绝)
-  isWinning Boolean  @default(false) // deprecated
+  amount    Float
+  isWinning Boolean  @default(false)
   createdAt DateTime @default(now())
-
-  auction Auction @relation(fields: [auctionId], references: [id], onDelete: Cascade)
-  bidder  User    @relation("AuctionBidder", fields: [bidderId], references: [id], onDelete: Cascade)
+  status    String   @default("pending")
+  auction   Auction  @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+  bidder    User     @relation("AuctionBidder", fields: [bidderId], references: [id], onDelete: Cascade)
 
   @@index([auctionId, amount])
   @@index([bidderId])
 }
 
-// ═══════════════════════════════════════════════════════
-// 询价报名 + 验车预约
-// ═══════════════════════════════════════════════════════
-
 model InspectionBooking {
-  id              String    @id @default(cuid())
-  auctionId       String
-  userId          String?   // 登录用户ID（匿名用户为null）
-  // 预约人信息
-  name            String    // 姓名
-  phone           String    // 手机号
-  preferredDate   DateTime? // 期望验车日期
-  // 确认
-  flawConfirmed   Boolean   @default(false) // 已知瑕疵确认
-  riskConfirmed   Boolean   @default(false) // 风险自担确认
-  // 保证金
-  depositAmount   Float?    // 保证金金额
-  depositPaid     Boolean   @default(false) // 是否已缴保证金
-  depositProofUrl String?   // 转账凭证URL
-  depositConfirmedAt DateTime? // 卖家确认收款时间
-  // 状态
-  status          String    @default("pending") // pending(待处理) / deposit_paid(已缴保证金) / confirmed(已确认) / cancelled(已取消)
-  // 预留：拍卖模式扩展
-  type            String    @default("bargain") // bargain / auction
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  auction  Auction @relation(fields: [auctionId], references: [id], onDelete: Cascade)
-  user     User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id                 String    @id @default(cuid())
+  auctionId          String
+  userId             String?
+  name               String
+  phone              String
+  preferredDate      DateTime?
+  flawConfirmed      Boolean   @default(false)
+  riskConfirmed      Boolean   @default(false)
+  depositAmount      Float?
+  depositPaid        Boolean   @default(false)
+  depositProofUrl    String?
+  depositConfirmedAt DateTime?
+  status             String    @default("pending")
+  type               String    @default("bargain")
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  auction            Auction   @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+  user               User?     @relation(fields: [userId], references: [id])
 
   @@index([auctionId, status])
   @@index([userId])
   @@index([status, createdAt])
 }
 
-// ═══════════════════════════════════════════════════════
-// 合同模板管理
-// ═══════════════════════════════════════════════════════
-
 model ContractTemplate {
-  id              String    @id @default(cuid())
-  templateNo      String    @unique // 模板编号：SJZSN-2026-0725
-  title           String    // 合同标题
-  contractType    String    @default("sale") // sale(买卖) / auction(拍卖) / lease(租赁)
-  // 卖方信息
-  sellerName      String    // 卖方名称
-  sellerCreditCode String?  // 统一社会信用代码
-  sellerAddress   String?   // 卖方地址
-  sellerPhone     String?   // 卖方联系电话
-  sellerLegalPerson String? // 法定代表人
-  // 收款账户
-  bankName        String?   // 开户银行
-  bankAccountName String?   // 户名
-  bankAccountNo   String?   // 账号
-  // 合同条款
-  content         String    @db.Text // 合同条款（Markdown模板，支持变量替换）
-  // 变量说明：{{buyerName}} {{buyerIdCard}} {{buyerPhone}} {{productInfo}} {{price}} {{paymentDeadline}} {{deliveryAddress}}
-  // 交易参数
-  paymentDays     Int       @default(2) // 付款期限（天）
-  deliveryDays    Int       @default(3) // 提货期限（工作日）
-  transferResponsibility String @default("buyer") // 过户责任：buyer(买方自行) / seller(卖方协助)
-  // 争议解决
-  courtJurisdiction String? // 管辖法院
-  // 状态
-  status          String    @default("active") // active / archived
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id                     String   @id @default(cuid())
+  templateNo             String   @unique
+  title                  String
+  contractType           String   @default("sale")
+  sellerName             String
+  sellerCreditCode       String?
+  sellerAddress          String?
+  sellerPhone            String?
+  sellerLegalPerson      String?
+  bankName               String?
+  bankAccountName        String?
+  bankAccountNo          String?
+  content                String
+  paymentDays            Int      @default(2)
+  deliveryDays           Int      @default(3)
+  transferResponsibility String   @default("buyer")
+  courtJurisdiction      String?
+  status                 String   @default("active")
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 
   @@index([status])
   @@index([contractType])
 }
 
-// ═══════════════════════════════════════════════════════
-// 金融保险服务
-// ═══════════════════════════════════════════════════════
-
 model FinancialService {
-  id           String   @id @default(cuid())
-  serviceName  String // 产品名称
-  serviceType  String // loan(贷款), insurance(保险), lease(租赁)
-  provider     String // 机构名称：银行/保险公司
-  providerLogo String? // 机构Logo URL
-  // 产品参数
-  interestRate Float? // 利率(%)
-  maxAmount    Float? // 最高额度（CNY）
-  maxTerm      Int? // 最长期限（月）
-  downPayment  Float? // 首付比例(%)
-  coverage     String?  @db.Text // 保险保障范围
-  premium      Float? // 保费率(%)
-  // 描述
-  description  String?  @db.Text
-  requirements String?  @db.Text // 申请条件
-  // 状态
-  isActive     Boolean  @default(true)
-  sortOrder    Int      @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
+  id           String            @id @default(cuid())
+  serviceName  String
+  serviceType  String
+  provider     String
+  providerLogo String?
+  interestRate Float?
+  maxAmount    Float?
+  maxTerm      Int?
+  downPayment  Float?
+  coverage     String?
+  premium      Float?
+  description  String?
+  requirements String?
+  isActive     Boolean           @default(true)
+  sortOrder    Int               @default(0)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
   applications LoanApplication[]
 
   @@index([serviceType, isActive])
 }
 
 model LoanApplication {
-  id             String    @id @default(cuid())
-  userId         String // 申请人
-  serviceId      String // 关联金融产品
-  productId      String? // 关联设备（如购买设备贷款）
-  // 申请信息
+  id             String           @id @default(cuid())
+  userId         String
+  serviceId      String
+  productId      String?
   applicantName  String
   contactPhone   String
   contactEmail   String?
   companyName    String?
-  // 贷款/保险信息
-  appliedAmount  Float // 申请金额
-  appliedTerm    Int? // 申请期限（月）
-  purpose        String?   @db.Text // 贷款用途/保险需求
-  // 资料
-  idCardUrl      String? // 身份证/营业执照URL
-  assetProofUrl  String? // 资产证明URL
-  // 状态
-  status         String    @default("pending") // pending, reviewing, approved, rejected, disbursed
+  appliedAmount  Float
+  appliedTerm    Int?
+  purpose        String?
+  idCardUrl      String?
+  assetProofUrl  String?
+  status         String           @default("pending")
   reviewedBy     String?
   reviewedAt     DateTime?
   reviewNote     String?
-  approvedAmount Float? // 实批金额
-  // 元数据
-  metadata       String? // JSON
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-
-  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  service FinancialService @relation(fields: [serviceId], references: [id])
-  product Product?         @relation(fields: [productId], references: [id])
+  approvedAmount Float?
+  metadata       String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  product        Product?         @relation(fields: [productId], references: [id])
+  service        FinancialService @relation(fields: [serviceId], references: [id])
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, status])
   @@index([status, createdAt])
 }
 
-// ═══════════════════════════════════════════════════════
-// 售后维保平台
-// ═══════════════════════════════════════════════════════
-
 model Warranty {
-  id           String   @id @default(cuid())
-  productId    String // 关联设备
-  contractId   String? // 关联合同
-  warrantyType String // standard(标准质保), extended(延保), parts(配件质保)
-  coverage     String   @db.Text // 保障范围
+  id           String              @id @default(cuid())
+  productId    String
+  contractId   String?
+  warrantyType String
+  coverage     String
   startDate    DateTime
   endDate      DateTime
-  status       String   @default("active") // active, expired, claimed
-  provider     String? // 质保方
-  terms        String?  @db.Text // 质保条款
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  product  Product             @relation(fields: [productId], references: [id])
-  contract ElectronicContract? @relation(fields: [contractId], references: [id])
-  records  MaintenanceRecord[]
+  status       String              @default("active")
+  provider     String?
+  terms        String?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  records      MaintenanceRecord[]
+  contract     ElectronicContract? @relation(fields: [contractId], references: [id])
+  product      Product             @relation(fields: [productId], references: [id])
 
   @@index([productId, status])
   @@index([endDate])
 }
 
 model MaintenanceRecord {
-  id              String    @id @default(cuid())
-  productId       String // 关联设备
-  warrantyId      String? // 关联质保
-  serviceCenterId String? // 服务网点
-  // 维保信息
-  maintenanceType String // routine(日常保养), repair(维修), inspection(检测), emergency(紧急维修)
-  title           String // 维保标题
-  description     String?   @db.Text
-  cost            Float? // 费用（CNY）
-  // 状态
-  status          String    @default("scheduled") // scheduled, in_progress, completed, cancelled
+  id              String         @id @default(cuid())
+  productId       String
+  warrantyId      String?
+  serviceCenterId String?
+  maintenanceType String
+  title           String
+  description     String?
+  cost            Float?
+  status          String         @default("scheduled")
   scheduledDate   DateTime?
   completedDate   DateTime?
-  // 维修人员
-  technician      String? // 维修技师
-  // 记录
-  partsReplaced   String?   @db.Text // 更换配件（JSON数组）
-  photos          String? // JSON: 维修照片URL数组
-  notes           String?   @db.Text // 维修备注
-  // 评价
-  rating          Int? // 1-5 评分
-  ratingComment   String? // 评价内容
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  product       Product        @relation(fields: [productId], references: [id])
-  warranty      Warranty?      @relation(fields: [warrantyId], references: [id])
-  serviceCenter ServiceCenter? @relation(fields: [serviceCenterId], references: [id])
+  technician      String?
+  partsReplaced   String?
+  photos          String?
+  notes           String?
+  rating          Int?
+  ratingComment   String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  product         Product        @relation(fields: [productId], references: [id])
+  serviceCenter   ServiceCenter? @relation(fields: [serviceCenterId], references: [id])
+  warranty        Warranty?      @relation(fields: [warrantyId], references: [id])
 
   @@index([productId, status])
   @@index([status, scheduledDate])
 }
 
-// ═══════════════════════════════════════════════════════
-// 第四阶段：开放API + 政府数据 + 海外仓 + 区块链 + 租赁
-// ═══════════════════════════════════════════════════════
-
-// 开放API Key管理
 model ApiKey {
   id               String    @id @default(cuid())
-  key              String    @unique // 实际API Key
-  userId           String // 所属用户
-  name             String // Key名称（如"农业部数据接口"）
-  organization     String? // 机构名称
-  scope            String    @default("read") // read, read_write, admin
-  // 速率限制
+  key              String    @unique
+  userId           String
+  name             String
+  organization     String?
+  scope            String    @default("read")
   rateLimitPerHour Int       @default(100)
   rateLimitPerDay  Int       @default(1000)
-  // 使用统计
   totalRequests    Int       @default(0)
   lastUsedAt       DateTime?
-  // 状态
-  status           String    @default("active") // active, suspended, revoked
+  status           String    @default("active")
   expiresAt        DateTime?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, status])
   @@index([status])
 }
 
-// 政府农机补贴政策
 model GovSubsidyPolicy {
   id             String    @id @default(cuid())
-  title          String // 政策标题
-  policyNumber   String? // 政策文号
-  region         String // 适用地区（省份/全国）
-  // 补贴详情
-  category       String // 补贴类别: purchase(购机), scrap(报废), operation(作业), loan(贷款贴息)
-  machineryTypes String? // 适用机型（JSON数组）
-  subsidyAmount  Float? // 补贴金额（元）
-  subsidyRatio   Float? // 补贴比例（如0.3 = 30%）
-  maxSubsidy     Float? // 最高补贴额
-  // 时间
+  title          String
+  policyNumber   String?
+  region         String
+  category       String
+  machineryTypes String?
+  subsidyAmount  Float?
+  subsidyRatio   Float?
+  maxSubsidy     Float?
   effectiveDate  DateTime
   expiryDate     DateTime?
-  // 内容
-  description    String    @db.Text
-  requirements   String?   @db.Text // 申请条件
-  applicationUrl String? // 官方申请链接
-  source         String? // 数据来源
-  status         String    @default("active") // active, expired, repealed
+  description    String
+  requirements   String?
+  applicationUrl String?
+  source         String?
+  status         String    @default("active")
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
@@ -1260,60 +1054,47 @@ model GovSubsidyPolicy {
   @@index([effectiveDate])
 }
 
-// 政府农机登记数据
 model GovMachineryData {
   id                 String    @id @default(cuid())
-  productId          String?   @unique // 关联平台产品（可选）
-  // 登记信息
-  registrationNo     String? // 登记编号
-  plateNumber        String? // 牌照号
-  ownerName          String? // 登记所有人
-  // 设备信息
+  productId          String?   @unique
+  registrationNo     String?
+  plateNumber        String?
+  ownerName          String?
   brandName          String
   modelName          String
-  category           String // 设备类别
-  enginePower        Float? // 发动机功率
-  // 合规信息
-  emissionStandard   String? // 排放标准
-  inspectionDate     DateTime? // 年检日期
-  inspectionResult   String? // 检验结果
-  // 状态
-  registrationStatus String?   @default("active") // active, transferred, scrapped
-  // 元数据
+  category           String
+  enginePower        Float?
+  emissionStandard   String?
+  inspectionDate     DateTime?
+  inspectionResult   String?
+  registrationStatus String?   @default("active")
   dataSource         String    @default("gov_registry")
   verifiedAt         DateTime?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
-
-  product Product? @relation(fields: [productId], references: [id])
+  product            Product?  @relation(fields: [productId], references: [id])
 
   @@index([brandName, category])
   @@index([registrationNo])
 }
 
-// 海外仓信息
 model OverseasWarehouse {
   id            String   @id @default(cuid())
-  name          String // 仓库名称
+  name          String
   nameEn        String   @default("")
-  country       String // 所在国家
-  city          String // 所在城市
-  address       String // 详细地址
-  // 仓库属性
-  warehouseType String // bonded(保税仓), standard(普通仓), cold(冷链仓)
-  capacity      Float? // 容量（立方米）
-  area          Float? // 面积（平方米）
-  // 服务
-  services      String?  @db.Text // 服务内容（JSON数组）
-  // 联系
+  country       String
+  city          String
+  address       String
+  warehouseType String
+  capacity      Float?
+  area          Float?
+  services      String?
   contactName   String?
   contactPhone  String?
   contactEmail  String?
-  // 位置
   latitude      Float?
   longitude     Float?
-  // 状态
-  status        String   @default("active") // active, inactive, full
+  status        String   @default("active")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -1321,114 +1102,89 @@ model OverseasWarehouse {
   @@index([warehouseType, status])
 }
 
-// 区块链溯源记录
 model BlockchainRecord {
   id           String    @id @default(cuid())
-  productId    String // 关联产品
-  // 区块信息
-  blockIndex   Int // 区块序号
-  previousHash String // 前一区块哈希
-  currentHash  String // 当前区块哈希
-  // 事件数据
-  eventType    String // created, inspected, transferred, maintained, sold, exported
-  eventData    String    @db.Text // JSON: 事件详细数据
+  productId    String
+  blockIndex   Int
+  previousHash String
+  currentHash  String
+  eventType    String
+  eventData    String
   timestamp    DateTime  @default(now())
-  // 签名
-  operatorId   String? // 操作人ID
-  operatorName String? // 操作人名称
-  // 验证
+  operatorId   String?
+  operatorName String?
   isVerified   Boolean   @default(false)
   verifiedAt   DateTime?
   createdAt    DateTime  @default(now())
-
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product      Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId, blockIndex])
   @@index([currentHash])
 }
 
-// 租赁信息
 model RentalListing {
   id                String   @id @default(cuid())
-  productId         String   @unique // 关联产品
-  ownerId           String // 出租方（卖家）
-  // 租赁模式
-  rentalType        String // daily(日租), monthly(月租), yearly(年租)
-  pricePerDay       Float? // 日租金（CNY）
-  pricePerMonth     Float? // 月租金（CNY）
-  pricePerYear      Float? // 年租金（CNY）
-  deposit           Float? // 押金（CNY）
-  // 租赁条件
-  minRentalPeriod   Int? // 最短租赁周期
-  maxRentalPeriod   Int? // 最长租赁周期
-  // 配送
+  productId         String   @unique
+  ownerId           String
+  rentalType        String
+  pricePerDay       Float?
+  pricePerMonth     Float?
+  pricePerYear      Float?
+  deposit           Float?
+  minRentalPeriod   Int?
+  maxRentalPeriod   Int?
   deliveryAvailable Boolean  @default(false)
-  deliveryFee       Float? // 配送费
-  // 状态
-  status            String   @default("available") // available, rented, unavailable
+  deliveryFee       Float?
+  status            String   @default("available")
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
-
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  owner   User    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner             User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([status, rentalType])
   @@index([ownerId, status])
 }
 
-// ═══════════════════════════════════════════════════════
-// 担保交易系统（Escrow）
-// ═══════════════════════════════════════════════════════
-
 model EscrowOrder {
-  id               String    @id @default(cuid())
-  orderNo          String    @unique // 订单号：SD-ESC-YYYYMMDD-XXXXXX
-  productId        String // 关联产品
-  buyerId          String // 买方
-  sellerId         String // 卖方
-  // 金额信息
-  amount           Float // 交易总额（CNY）
-  depositAmount    Float     @default(0) // 定金金额（线上微信支付）
-  balanceAmount    Float     @default(0) // 尾款金额（线下对公转账）
-  platformFee      Float     @default(0) // 平台手续费
-  sellerAmount     Float     @default(0) // 卖家实际到账
-  // 支付信息
-  paymentMethod    String // wechat, alipay
-  paymentStatus    String    @default("pending_deposit") // pending_deposit, deposit_paid, paid, escrow, released, refunded, cancelled
-  balanceMethod    String? // 尾款支付方式：offline_bank_transfer（线下对公转账）
-  // 时间线
-  depositPaidAt    DateTime? // 定金支付时间
-  balancePaidAt    DateTime? // 尾款到账确认时间
-  depositExpiredAt DateTime? // 定金支付截止（创建后7天）
-  balanceExpiredAt DateTime? // 尾款支付截止（定金后30天）
-  paidAt           DateTime? // 全款付清时间（尾款确认后）
+  id               String          @id @default(cuid())
+  orderNo          String          @unique
+  productId        String
+  buyerId          String
+  sellerId         String
+  amount           Float
+  platformFee      Float           @default(0)
+  sellerAmount     Float           @default(0)
+  paymentMethod    String
+  paymentStatus    String          @default("pending_deposit")
+  paidAt           DateTime?
   escrowStartedAt  DateTime?
   releasedAt       DateTime?
   refundedAt       DateTime?
   cancelledAt      DateTime?
-  // 确认收货
-  buyerConfirmed   Boolean   @default(false)
+  buyerConfirmed   Boolean         @default(false)
   buyerConfirmedAt DateTime?
-  // 自动放款倒计时（确认收货后X天自动放款）
   autoReleaseAt    DateTime?
-  // 物流
-  deliveryAddress  String?   @db.Text
+  deliveryAddress  String?
   deliveryCompany  String?
   trackingNo       String?
   shippedAt        DateTime?
-  // 争议
-  disputeStatus    String? // null, opened, resolved_buyer, resolved_seller
-  disputeReason    String?   @db.Text
+  disputeStatus    String?
+  disputeReason    String?
   disputeOpenedAt  DateTime?
-  // 元数据
-  metadata         String?   @db.Text // JSON
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-
-  product  Product         @relation(fields: [productId], references: [id])
-  buyer    User            @relation("EscrowBuyer", fields: [buyerId], references: [id])
-  seller   User            @relation("EscrowSeller", fields: [sellerId], references: [id])
-  payments PaymentRecord[]
+  metadata         String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  balanceAmount    Float           @default(0)
+  balanceExpiredAt DateTime?
+  balanceMethod    String?
+  balancePaidAt    DateTime?
+  depositAmount    Float           @default(0)
+  depositExpiredAt DateTime?
+  depositPaidAt    DateTime?
+  buyer            User            @relation("EscrowBuyer", fields: [buyerId], references: [id])
+  product          Product         @relation(fields: [productId], references: [id])
+  seller           User            @relation("EscrowSeller", fields: [sellerId], references: [id])
+  payments         PaymentRecord[]
 
   @@index([buyerId, paymentStatus])
   @@index([sellerId, paymentStatus])
@@ -1438,61 +1194,45 @@ model EscrowOrder {
 }
 
 model PaymentRecord {
-  id            String    @id @default(cuid())
-  orderId       String // 关联担保订单
-  paymentMethod String // wechat, alipay
-  // 第三方流水
-  transactionId String? // 微信/支付宝流水号
-  prepayId      String? // 微信预支付ID
-  tradeNo       String? // 支付宝交易号
-  // 金额
-  amount        Float // 支付金额（CNY）
-  // 状态
-  status        String    @default("pending") // pending, success, failed, refunded
-  // 原始数据
-  rawRequest    String?   @db.Text // JSON: 请求参数
-  rawResponse   String?   @db.Text // JSON: 响应数据
-  rawCallback   String?   @db.Text // JSON: 回调数据
-  // 时间
+  id            String      @id @default(cuid())
+  orderId       String
+  paymentMethod String
+  transactionId String?
+  prepayId      String?
+  tradeNo       String?
+  amount        Float
+  status        String      @default("pending")
+  rawRequest    String?
+  rawResponse   String?
+  rawCallback   String?
   paidAt        DateTime?
   callbackAt    DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  order EscrowOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  order         EscrowOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId])
   @@index([transactionId])
   @@index([status])
 }
 
-// ═══════════════════════════════════════════════════════
-// 永不落幕的农机世界展会 — Expo 模块
-// Phase 0~5 新增模型（8个）
-// ═══════════════════════════════════════════════════════
-
-// Phase 0: 展会报名/招商意向登记
 model ExpoRegistration {
   id           String   @id @default(cuid())
-  // 报名人信息
-  name         String // 联系人姓名
-  phone        String // 手机号
-  wechat       String? // 微信号
-  email        String? // 邮箱
-  company      String? // 公司名
-  country      String? // 国家/地区
-  category     String? // 主营品类
-  boothType    String? // 意向展位类型：standard | premium | flagship
-  intentDevice String? // 意向设备
-  visitDate    String? // 参观日期
-  message      String?  @db.Text // 留言
-  // 来源
-  source       String   @default("website") // website | miniprogram | wechat
-  expoType     String   @default("virtual") // field | virtual
-  locale       String? // 提交语言 zh/en/ru
-  // 状态
-  status       String   @default("pending") // pending | confirmed | attended | rejected
-  // 时间
+  name         String
+  phone        String
+  wechat       String?
+  email        String?
+  company      String?
+  country      String?
+  category     String?
+  boothType    String?
+  intentDevice String?
+  visitDate    String?
+  message      String?
+  source       String   @default("website")
+  expoType     String   @default("virtual")
+  locale       String?
+  status       String   @default("pending")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -1501,52 +1241,47 @@ model ExpoRegistration {
   @@index([source])
 }
 
-// Phase 1: 展会信息
 model Expo {
   id          String    @id @default(cuid())
-  name        String // 展会名称
-  slug        String    @unique // URL标识
-  type        String // virtual | field
-  status      String    @default("active") // active | ended | upcoming
+  name        String
+  slug        String    @unique
+  type        String
+  status      String    @default("active")
   startDate   DateTime
   endDate     DateTime?
-  location    String? // 线下展会地点
-  description String?   @db.Text
-  bannerUrl   String? // 展会横幅图
+  location    String?
+  description String?
+  bannerUrl   String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-
-  booths Booth[]
+  booths      Booth[]
 
   @@index([status, startDate])
   @@index([type, status])
 }
 
-// Phase 1: 展位
 model Booth {
-  id         String   @id @default(cuid())
-  expoId     String
-  merchantId String? // 关联展商(User)，null=未分配
-  name       String // 展位名称
-  hall       String // 品类厅：tractor | harvester | forage | planting | material | comprehensive
-  template   String   @default("standard") // standard | premium | flagship
-  pavilion   String   @default("china") // china | global
-  tier       String   @default("standard") // flagship | premium | standard | showcase
-  brandId    String? // 关联品牌（品牌馆模式）
-  status     String   @default("empty") // empty | configured | published | offline
-  sortIndex  Int      @default(0)
-  // 展位装修信息
-  coverImage String? // 展位封面图
-  intro      String?  @db.Text // 展商简介
-  logoUrl    String? // 展商Logo
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
+  id            String         @id @default(cuid())
+  expoId        String
+  merchantId    String?
+  name          String
+  hall          String
+  template      String         @default("standard")
+  status        String         @default("empty")
+  sortIndex     Int            @default(0)
+  coverImage    String?
+  intro         String?
+  logoUrl       String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  brandId       String?
+  pavilion      String         @default("china")
+  tier          String         @default("standard")
+  brand         Brand?         @relation(fields: [brandId], references: [id])
   expo          Expo           @relation(fields: [expoId], references: [id], onDelete: Cascade)
   merchant      User?          @relation(fields: [merchantId], references: [id])
-  brand         Brand?         @relation(fields: [brandId], references: [id])
-  showcaseItems ShowcaseItem[]
   expoInquiries ExpoInquiry[]
+  showcaseItems ShowcaseItem[]
 
   @@index([expoId, status])
   @@index([hall, status])
@@ -1556,67 +1291,55 @@ model Booth {
   @@index([brandId])
 }
 
-// Phase 1: 展品（展厅展示的设备）
 model ShowcaseItem {
-  id            String   @id @default(cuid())
+  id            String        @id @default(cuid())
   boothId       String
-  // 展品类型
-  itemType      String   @default("used") // used=二手农机 | new=新机展厅
-  // 设备信息
-  deviceType    String // 设备类型/品类
-  brand         String? // 品牌名（文本）
-  brandId       String? // 关联Brand表
-  model         String? // 型号
-  year          Int? // 年份
-  workingHours  Int? // 工作小时（二手专用）
-  condition     String? // 状况（二手专用，新机固定"new"）
-  // 新机专属字段
-  launchYear    Int? // 上市年份
-  series        String? // 产品系列
-  machineTier   String? // 技术等级：entry | mid | high | flagship
-  msrpUsd       Float? // 厂商建议零售价（USD）
-  msrpCny       Float? // 厂商建议零售价（CNY）
-  priceRange    String? // 价格区间：economy | mid | high | flagship | ultra | inquire
-  country       String? // 产地国代码：CN | US | DE | JP | KR | ...
-  origin        String? // domestic | imported
-  isChineseMade Boolean? @default(false)
-  // 价格
-  price         Float? // 价格
-  currency      String   @default("CNY")
-  // 媒体
-  images        String[] // OSS图片URL数组
-  videos        String[] // OSS视频URL数组
-  brochureUrl   String? // 产品手册PDF
-  arModelUrl    String? // 3D/AR模型URL
-  // 规格
-  specs         String?  @db.Text // 设备参数JSON字符串
-  description   String?  @db.Text
-  // 多语言描述
-  descriptionZh String?
-  descriptionEn String?
-  descriptionRu String?
-  descriptionEs String?
-  descriptionPt String?
+  deviceType    String
+  brand         String?
+  model         String?
+  year          Int?
+  workingHours  Int?
+  condition     String?
+  price         Float?
+  currency      String        @default("CNY")
+  images        String[]
+  videos        String[]
+  specs         String?
+  description   String?
+  productId     String?
+  status        String        @default("draft")
+  sortIndex     Int           @default(0)
+  viewCount     Int           @default(0)
+  inquiryCount  Int           @default(0)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  arModelUrl    String?
+  brandId       String?
+  brochureUrl   String?
+  country       String?
   descriptionAr String?
+  descriptionEn String?
+  descriptionEs String?
   descriptionFr String?
   descriptionHi String?
-  // 关联平台产品（可选，新机留null）
-  productId     String? // 关联Product表的产品
-  // 排序与热度
-  hotScore      Float    @default(0) // 预计算热度分
-  isFeatured    Boolean  @default(false)
-  isNewLaunch   Boolean  @default(false)
-  // 状态
-  status        String   @default("draft") // draft | published | archived
-  sortIndex     Int      @default(0)
-  viewCount     Int      @default(0)
-  inquiryCount  Int      @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  booth     Booth         @relation(fields: [boothId], references: [id], onDelete: Cascade)
-  brandRel  Brand?        @relation(fields: [brandId], references: [id])
-  inquiries ExpoInquiry[]
+  descriptionPt String?
+  descriptionRu String?
+  descriptionZh String?
+  hotScore      Float         @default(0)
+  isChineseMade Boolean?      @default(false)
+  isFeatured    Boolean       @default(false)
+  isNewLaunch   Boolean       @default(false)
+  itemType      String        @default("used")
+  launchYear    Int?
+  machineTier   String?
+  msrpCny       Float?
+  msrpUsd       Float?
+  origin        String?
+  priceRange    String?
+  series        String?
+  inquiries     ExpoInquiry[]
+  booth         Booth         @relation(fields: [boothId], references: [id], onDelete: Cascade)
+  brandRel      Brand?        @relation(fields: [brandId], references: [id])
 
   @@index([boothId, status])
   @@index([deviceType, status])
@@ -1628,31 +1351,25 @@ model ShowcaseItem {
   @@index([isNewLaunch, status])
 }
 
-// Phase 1: 展会询盘（区别于现有Inquiry模型）
 model ExpoInquiry {
-  id             String   @id @default(cuid())
-  showcaseItemId String? // 关联展品
-  boothId        String? // 关联展位
-  merchantId     String? // 关联展商(User)
-  buyerId        String? // 关联买家(User)，匿名则null
-  // 买家信息
+  id             String        @id @default(cuid())
+  showcaseItemId String?
+  boothId        String?
+  merchantId     String?
+  buyerId        String?
   buyerName      String
   buyerPhone     String
   buyerEmail     String?
   buyerWechat    String?
-  buyerCountry   String? // 买家国家
-  // 询盘内容
-  message        String   @db.Text
-  intent         String? // 意向类型：purchase | inquiry |代理合作
-  // 状态
-  status         String   @default("new") // new | contacted | closed | converted
-  // 时间
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  showcaseItem ShowcaseItem? @relation(fields: [showcaseItemId], references: [id], onDelete: SetNull)
-  booth        Booth?        @relation(fields: [boothId], references: [id], onDelete: SetNull)
-  buyer        User?         @relation(fields: [buyerId], references: [id], onDelete: SetNull)
+  buyerCountry   String?
+  message        String
+  intent         String?
+  status         String        @default("new")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  booth          Booth?        @relation(fields: [boothId], references: [id])
+  buyer          User?         @relation(fields: [buyerId], references: [id])
+  showcaseItem   ShowcaseItem? @relation(fields: [showcaseItemId], references: [id])
 
   @@index([status, createdAt])
   @@index([boothId, status])
@@ -1660,64 +1377,50 @@ model ExpoInquiry {
   @@index([buyerId])
 }
 
-// Phase 5: 报价单
 model Quote {
   id             String   @id @default(cuid())
-  inquiryId      String? // 关联ExpoInquiry
-  showcaseItemId String? // 关联展品
-  buyerId        String // 买方(User)
-  sellerId       String // 卖方(User)
-  // 报价信息
-  price          Float // 报价金额
+  inquiryId      String?
+  showcaseItemId String?
+  buyerId        String
+  sellerId       String
+  price          Float
   currency       String   @default("CNY")
   quantity       Int      @default(1)
-  deliveryTime   String? // 交货周期
-  paymentTerms   String? // 付款方式
-  validUntil     DateTime // 报价有效期
-  // 还价
-  counterPrice   Float? // 买方还价
-  // 状态
-  status         String   @default("pending") // pending | accepted | rejected | expired | counterOffered
-  // 时间
+  deliveryTime   String?
+  paymentTerms   String?
+  validUntil     DateTime
+  counterPrice   Float?
+  status         String   @default("pending")
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-
-  buyer  User @relation("QuoteBuyer", fields: [buyerId], references: [id])
-  seller User @relation("QuoteSeller", fields: [sellerId], references: [id])
+  buyer          User     @relation("QuoteBuyer", fields: [buyerId], references: [id])
+  seller         User     @relation("QuoteSeller", fields: [sellerId], references: [id])
 
   @@index([buyerId, status])
   @@index([sellerId, status])
   @@index([status, validUntil])
 }
 
-// Phase 5: 订单
 model Order {
   id              String   @id @default(cuid())
-  orderNo         String   @unique // 订单号：SD-EXPO-YYYYMMDD-XXXXXX
-  quoteId         String? // 关联报价单
-  buyerId         String // 买方(User)
-  sellerId        String // 卖方(User)
-  // 订单内容
-  items           String   @db.Text // JSON: [{showcaseItemId, name, price, quantity}]
-  totalAmount     Float // 总金额
+  orderNo         String   @unique
+  quoteId         String?
+  buyerId         String
+  sellerId        String
+  items           String
+  totalAmount     Float
   currency        String   @default("CNY")
-  // 状态
-  status          String   @default("pending_payment") // pending_payment | paid | shipped | delivered | completed | cancelled | disputed
-  // 支付
-  paymentMethod   String? // wechat | alipay | paypal | bank_transfer
-  paymentId       String? // 第三方支付流水号
-  escrowStatus    String? // holding | released | refunded
-  // 物流
+  status          String   @default("pending_payment")
+  paymentMethod   String?
+  paymentId       String?
+  escrowStatus    String?
   trackingNumber  String?
   shippingCompany String?
-  // 合同
-  contractUrl     String? // 电子合同PDF URL
-  // 时间
+  contractUrl     String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-
-  buyer  User @relation("OrderBuyer", fields: [buyerId], references: [id])
-  seller User @relation("OrderSeller", fields: [sellerId], references: [id])
+  buyer           User     @relation("OrderBuyer", fields: [buyerId], references: [id])
+  seller          User     @relation("OrderSeller", fields: [sellerId], references: [id])
 
   @@index([buyerId, status])
   @@index([sellerId, status])
@@ -1725,80 +1428,70 @@ model Order {
   @@index([orderNo])
 }
 
-// Phase 5: 评价
 model Review {
   id             String    @id @default(cuid())
-  orderId        String // 关联订单（用orderNo关联）
-  reviewerId     String // 评价人(User)
-  revieweeId     String // 被评价人(User)
-  // 评价内容
-  rating         Int // 1-5星
-  content        String?   @db.Text
-  images         String[] // 评价图片URL数组
-  // 维度评分
-  itemMatchScore Int? // 物品相符 1-5
-  serviceScore   Int? // 服务态度 1-5
-  logisticsScore Int? // 物流速度 1-5
-  // 商家回复
-  reply          String?   @db.Text
+  orderId        String
+  reviewerId     String
+  revieweeId     String
+  rating         Int
+  content        String?
+  images         String[]
+  itemMatchScore Int?
+  serviceScore   Int?
+  logisticsScore Int?
+  reply          String?
   repliedAt      DateTime?
-  // 状态
-  status         String    @default("published") // published | hidden | reported
+  status         String    @default("published")
   createdAt      DateTime  @default(now())
-
-  reviewer User @relation("ReviewReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
-  reviewee User @relation("ReviewReviewee", fields: [revieweeId], references: [id], onDelete: Cascade)
+  reviewee       User      @relation("ReviewReviewee", fields: [revieweeId], references: [id], onDelete: Cascade)
+  reviewer       User      @relation("ReviewReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
 
   @@index([revieweeId, status])
   @@index([reviewerId])
   @@index([orderId])
 }
 
-// ═══════════════════════════════════════════════════════
-// 配件专区V2 — 四级分类体系
-// ═══════════════════════════════════════════════════════
-
 /// Level 1: 整机品类（拖拉机、收割机等14大类）
 model MachineType {
-  id          String      @id @default(cuid())
-  code        String      @unique // "tractor", "combine_harvester"
-  nameZh      String
-  nameEn      String
-  nameRu      String      @default("")
-  nameEs      String      @default("")
-  namePt      String      @default("")
-  nameAr      String      @default("")
-  nameFr      String      @default("")
-  nameHi      String      @default("")
-  imageUrl    String?
-  sortOrder   Int         @default(0)
-  isActive    Boolean     @default(true)
-  subSystems  SubSystem[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id         String      @id @default(cuid())
+  code       String      @unique
+  nameZh     String
+  nameEn     String
+  nameRu     String      @default("")
+  nameEs     String      @default("")
+  namePt     String      @default("")
+  nameAr     String      @default("")
+  nameFr     String      @default("")
+  nameHi     String      @default("")
+  imageUrl   String?
+  sortOrder  Int         @default(0)
+  isActive   Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  subSystems SubSystem[]
 
   @@index([isActive, sortOrder])
 }
 
 /// Level 2: 子系统（动力、液压、传动等9大系统，按整机品类分组）
 model SubSystem {
-  id              String          @id @default(cuid())
-  code            String // "powertrain", "hydraulic"
+  id              String           @id @default(cuid())
+  code            String
   nameZh          String
   nameEn          String
-  nameRu          String          @default("")
-  nameEs          String          @default("")
-  namePt          String          @default("")
-  nameAr          String          @default("")
-  nameFr          String          @default("")
-  nameHi          String          @default("")
-  machineType     MachineType     @relation(fields: [machineTypeId], references: [id])
+  nameRu          String           @default("")
+  nameEs          String           @default("")
+  namePt          String           @default("")
+  nameAr          String           @default("")
+  nameFr          String           @default("")
+  nameHi          String           @default("")
   machineTypeId   String
+  sortOrder       Int              @default(0)
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
   componentGroups ComponentGroup[]
-  sortOrder       Int             @default(0)
-  isActive        Boolean         @default(true)
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  machineType     MachineType      @relation(fields: [machineTypeId], references: [id])
 
   @@unique([machineTypeId, code])
   @@index([machineTypeId, isActive])
@@ -1806,23 +1499,23 @@ model SubSystem {
 
 /// Level 3: 部件组（液压泵、滤芯等，按子系统分组）
 model ComponentGroup {
-  id          String   @id @default(cuid())
-  code        String   // "hydraulic_pump", "air_filter"
+  id          String    @id @default(cuid())
+  code        String
   nameZh      String
   nameEn      String
-  nameRu      String   @default("")
-  nameEs      String   @default("")
-  namePt      String   @default("")
-  nameAr      String   @default("")
-  nameFr      String   @default("")
-  nameHi      String   @default("")
-  subSystem   SubSystem @relation(fields: [subSystemId], references: [id])
+  nameRu      String    @default("")
+  nameEs      String    @default("")
+  namePt      String    @default("")
+  nameAr      String    @default("")
+  nameFr      String    @default("")
+  nameHi      String    @default("")
   subSystemId String
+  sortOrder   Int       @default(0)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  subSystem   SubSystem @relation(fields: [subSystemId], references: [id])
   parts       Part[]
-  sortOrder   Int      @default(0)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 
   @@unique([subSystemId, code])
   @@index([subSystemId, isActive])
@@ -1831,31 +1524,31 @@ model ComponentGroup {
 /// Level 4: 配件（具体SKU，关联到部件组）
 model Part {
   id                 String              @id @default(cuid())
-  sku                String              @unique // SD-TRACTOR-HYD-001
+  sku                String              @unique
   nameZh             String
   nameEn             String
   nameRu             String              @default("")
   nameEs             String              @default("")
-  brand              String              // 配件品牌（Bosch Rexroth, SKF等）
-  oemNumber          String?             // 原厂编号
-  componentGroup     ComponentGroup      @relation(fields: [componentGroupId], references: [id])
+  brand              String
+  oemNumber          String?
   componentGroupId   String
-  compatibleMachines CompatibleMachine[]
   price              Float
   currency           String              @default("CNY")
-  stockStatus        String              @default("in_stock") // in_stock, low_stock, out_of_stock, preorder
+  stockStatus        String              @default("in_stock")
   images             String[]
-  descriptionZh      String?             @db.Text
-  descriptionEn      String?             @db.Text
-  descriptionRu      String?             @db.Text
-  specs              Json?               // {material, weight, dimensions, warranty, ...}
+  descriptionZh      String?
+  descriptionEn      String?
+  descriptionRu      String?
+  specs              Json?
   isActive           Boolean             @default(true)
   isOEM              Boolean             @default(false)
   isAftermarket      Boolean             @default(false)
-  dataSource         String              @default("manual") // manual, scraped, ai_generated
-  dataQuality        String              @default("verified") // verified, unverified, draft
+  dataSource         String              @default("manual")
+  dataQuality        String              @default("verified")
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
+  compatibleMachines CompatibleMachine[]
+  componentGroup     ComponentGroup      @relation(fields: [componentGroupId], references: [id])
 
   @@index([componentGroupId, isActive])
   @@index([brand, isActive])
@@ -1866,13 +1559,13 @@ model Part {
 
 /// 配件兼容机型（多对多，一个配件可兼容多个整机型号）
 model CompatibleMachine {
-  id        String   @id @default(cuid())
-  part      Part     @relation(fields: [partId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
   partId    String
-  brand     String   // 整机品牌（John Deere, CLAAS等）
-  model     String   // 整机型号（6155R, LEXION 770等）
-  yearRange String?  // "2015-2020"
+  brand     String
+  model     String
+  yearRange String?
   notes     String?
+  part      Part    @relation(fields: [partId], references: [id], onDelete: Cascade)
 
   @@index([partId])
   @@index([brand, model])
@@ -1891,15 +1584,14 @@ model PartLegacy {
   stockStatus      String   @default("in_stock")
   compatibleModels String[]
   images           String[]
-  descriptionZh    String?  @db.Text
-  descriptionEn    String?  @db.Text
-  descriptionRu    String?  @db.Text
+  descriptionZh    String?
+  descriptionEn    String?
+  descriptionRu    String?
   isActive         Boolean  @default(true)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
   @@index([category, isActive])
   @@index([brand, isActive])
-
   @@map("part_legacy")
 }

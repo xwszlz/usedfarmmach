@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useLocale } from "next-intl";
-import { Clock, Check, FileText, MapPin, TrendingUp, AlertCircle, MessageSquare, ShieldCheck } from "lucide-react";
+import { Clock, Check, FileText, MapPin, TrendingUp, AlertCircle, MessageSquare, ShieldCheck, ChevronDown, ChevronUp, Truck, Wrench, Eye, Lock, X } from "lucide-react";
 import InspectionBookingModal from "./inspection-booking-modal";
 
 interface BargainData {
@@ -77,6 +77,10 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [paymentCountdown, setPaymentCountdown] = useState("");
+  const [showAnnouncement, setShowAnnouncement] = useState(false);
+  const [showContract, setShowContract] = useState(false);
+  const [announcementHtml, setAnnouncementHtml] = useState("");
+  const [contractHtml, setContractHtml] = useState("");
 
   useEffect(() => {
     const userStr = typeof window !== "undefined" ? localStorage.getItem("user") : null;
@@ -128,6 +132,33 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
     }, 1000);
     return () => clearInterval(timer);
   }, [bargain]);
+
+  // 懒加载公告/合同HTML
+  const loadAnnouncementHtml = useCallback(async () => {
+    if (announcementHtml) return;
+    try {
+      const res = await fetch("/documents/mf3404_announcement.html");
+      if (res.ok) setAnnouncementHtml(await res.text());
+    } catch { /* noop */ }
+  }, [announcementHtml]);
+
+  const loadContractHtml = useCallback(async () => {
+    if (contractHtml) return;
+    try {
+      const res = await fetch("/documents/mf3404_contract_template.html");
+      if (res.ok) setContractHtml(await res.text());
+    } catch { /* noop */ }
+  }, [contractHtml]);
+
+  const toggleAnnouncement = () => {
+    if (!showAnnouncement) loadAnnouncementHtml();
+    setShowAnnouncement(!showAnnouncement);
+  };
+
+  const toggleContract = () => {
+    if (!showContract) loadContractHtml();
+    setShowContract(!showContract);
+  };
 
   const handleOffer = async () => {
     if (!bargain) return;
@@ -275,37 +306,143 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
       </div>
 
       {/* ============================================================ */}
-      {/*  2. 评估报告摘要                                              */}
+      {/*  2. 车况信息卡 + 权属徽章 + 评估报告摘要                      */}
       {/* ============================================================ */}
-      {(bargain.evaluationPrice || bargain.knownFlaws) && (
-        <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
+      <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+        {/* 车况信息卡 */}
+        <div className="space-y-3">
           <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-            <FileText className="h-5 w-5 text-blue-600" />
-            {isZh ? "评估报告与设备信息" : "Evaluation & Equipment Info"}
+            <Truck className="h-5 w-5 text-[#1E40AF]" />
+            {isZh ? "车辆信息" : "Vehicle Info"}
           </h3>
-          {bargain.evaluationPrice != null && (
-            <div className="flex items-center justify-between bg-blue-50 rounded-lg p-3">
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="bg-gray-50 rounded-lg p-3">
+              <span className="text-gray-500 text-xs">{isZh ? "品牌型号" : "Model"}</span>
+              <p className="font-semibold text-gray-900 mt-0.5">{isZh ? "常州爱科 MF3404" : "Changzhou AGCO MF3404"}</p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-3">
+              <span className="text-gray-500 text-xs">VIN码</span>
+              <p className="font-mono font-semibold text-gray-900 mt-0.5">AKCMY48GHNB091020</p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-3">
+              <span className="text-gray-500 text-xs">{isZh ? "车牌号" : "Plate"}</span>
+              <p className="font-semibold text-gray-900 mt-0.5">苏09Y8888</p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-3">
+              <span className="text-gray-500 text-xs">{isZh ? "最大马力" : "Max Power"}</span>
+              <p className="font-semibold text-gray-900 mt-0.5">340 {isZh ? "匹" : "HP"}</p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-3">
+              <span className="text-gray-500 text-xs">{isZh ? "出厂日期" : "Mfg Date"}</span>
+              <p className="font-semibold text-gray-900 mt-0.5">2022-08-11</p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-3">
+              <span className="text-gray-500 text-xs">{isZh ? "驱动形式" : "Drive"}</span>
+              <p className="font-semibold text-gray-900 mt-0.5">4×4</p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-3">
+              <span className="text-gray-500 text-xs">{isZh ? "排放标准" : "Emission"}</span>
+              <p className="font-semibold text-gray-900 mt-0.5">{isZh ? "国三" : "China III"}</p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-3">
+              <span className="text-gray-500 text-xs">{isZh ? "发动机品牌" : "Engine"}</span>
+              <p className="font-semibold text-gray-900 mt-0.5">{isZh ? "爱科动力" : "AGCO Power"}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* 评估价 */}
+        {bargain.evaluationPrice != null && (
+          <div className="flex items-center justify-between bg-blue-50 rounded-lg p-3">
+            <div>
               <span className="text-sm text-blue-700">{isZh ? "参考评估价" : "Evaluation Price"}</span>
-              <span className="text-lg font-bold text-blue-700 font-mono">
-                ¥{Number(bargain.evaluationPrice).toLocaleString()}
-                <span className="text-xs font-normal ml-1">{isZh ? "(仅供参考)" : "(reference only)"}</span>
-              </span>
+              <p className="text-xs text-blue-500 mt-0.5">
+                {isZh ? "评估基准日：2025年8月 · 仅供参考" : "Evaluation date: Aug 2025 · reference only"}
+              </p>
             </div>
-          )}
-          {bargain.knownFlaws && (
-            <div className="bg-amber-50 rounded-lg p-3">
-              <p className="text-sm font-bold text-amber-800 mb-1">⚠ {isZh ? "已知瑕疵" : "Known Flaws"}</p>
-              <p className="text-sm text-amber-700">{bargain.knownFlaws}</p>
-            </div>
-          )}
-          {bargain.product.workingHours != null && (
-            <div className="bg-gray-50 rounded-lg p-3 flex items-center justify-between">
-              <span className="text-sm text-gray-600">{isZh ? "发动机工作时长" : "Engine Hours"}</span>
-              <span className="text-sm font-bold text-gray-900 font-mono">{bargain.product.workingHours} {isZh ? "小时" : "hrs"}</span>
+            <span className="text-lg font-bold text-blue-700 font-mono">
+              ¥{Number(bargain.evaluationPrice).toLocaleString()}
+            </span>
+          </div>
+        )}
+
+        {/* 权属徽章 */}
+        <div className="flex items-center gap-3 bg-green-50 rounded-lg p-3">
+          <Lock className="h-5 w-5 text-green-600 flex-shrink-0" />
+          <div>
+            <p className="text-sm font-bold text-green-800">{isZh ? "权属文件已上传" : "Title Documents Uploaded"}</p>
+            <p className="text-xs text-green-600 mt-0.5">
+              {isZh ? "来源合同等权属证明可预约现场查验" : "Source contract & title docs available for on-site inspection"}
+            </p>
+          </div>
+        </div>
+
+        {/* 已知瑕疵 */}
+        {bargain.knownFlaws && (
+          <div className="bg-amber-50 rounded-lg p-3">
+            <p className="text-sm font-bold text-amber-800 mb-1">⚠ {isZh ? "已知瑕疵" : "Known Flaws"}</p>
+            <p className="text-sm text-amber-700">{bargain.knownFlaws}</p>
+          </div>
+        )}
+
+        {/* 工作时长 */}
+        {bargain.product.workingHours != null && (
+          <div className="bg-gray-50 rounded-lg p-3 flex items-center justify-between">
+            <span className="text-sm text-gray-600">{isZh ? "发动机工作时长" : "Engine Hours"}</span>
+            <span className="text-sm font-bold text-gray-900 font-mono">{bargain.product.workingHours} {isZh ? "小时" : "hrs"}</span>
+          </div>
+        )}
+
+        {/* 询价公告折叠面板 */}
+        <div className="border border-gray-200 rounded-lg overflow-hidden">
+          <button
+            onClick={toggleAnnouncement}
+            className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 transition-colors"
+          >
+            <span className="text-sm font-bold text-gray-900 flex items-center gap-2">
+              <FileText className="h-4 w-4 text-[#1E40AF]" />
+              {isZh ? "询价公告全文" : "Full Inquiry Announcement"}
+            </span>
+            {showAnnouncement ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+          </button>
+          {showAnnouncement && (
+            <div className="p-4 max-h-[500px] overflow-y-auto text-sm border-t border-gray-100">
+              {announcementHtml ? (
+                <div dangerouslySetInnerHTML={{ __html: announcementHtml }} />
+              ) : (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#1E40AF]"></div>
+                </div>
+              )}
             </div>
           )}
         </div>
-      )}
+
+        {/* 合同模板预览 */}
+        <div className="border border-gray-200 rounded-lg overflow-hidden">
+          <button
+            onClick={toggleContract}
+            className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 transition-colors"
+          >
+            <span className="text-sm font-bold text-gray-900 flex items-center gap-2">
+              <FileText className="h-4 w-4 text-emerald-600" />
+              {isZh ? "买卖合同模板预览" : "Sales Contract Preview"}
+            </span>
+            {showContract ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+          </button>
+          {showContract && (
+            <div className="p-4 max-h-[500px] overflow-y-auto text-sm border-t border-gray-100">
+              {contractHtml ? (
+                <div dangerouslySetInnerHTML={{ __html: contractHtml }} />
+              ) : (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-600"></div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* ============================================================ */}
       {/*  3. 询价/报价区（核心改造：一对一询价）                        */}
@@ -427,12 +564,33 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
           )}
 
           {bargain.contractTemplateNo && (
-            <div className="bg-white/60 rounded-lg p-3 flex items-center gap-3">
-              <FileText className="h-5 w-5 text-gray-600 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-bold text-gray-900">{isZh ? "买卖合同" : "Sales Contract"}</p>
-                <p className="text-sm text-gray-500 font-mono">{isZh ? "合同编号" : "Contract No."}：{bargain.contractTemplateNo}</p>
+            <div className="bg-white/60 rounded-lg p-3 space-y-2">
+              <div className="flex items-center gap-3">
+                <FileText className="h-5 w-5 text-gray-600 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-bold text-gray-900">{isZh ? "买卖合同" : "Sales Contract"}</p>
+                  <p className="text-sm text-gray-500 font-mono">{isZh ? "合同编号" : "Contract No."}：{bargain.contractTemplateNo}</p>
+                </div>
               </div>
+              <button
+                onClick={toggleContract}
+                className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 ml-8"
+              >
+                <Eye className="h-3 w-3" />
+                {isZh ? "查看完整合同条款" : "View full contract terms"}
+                {showContract ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+              </button>
+              {showContract && (
+                <div className="mt-2 p-3 bg-gray-50 rounded-lg max-h-[400px] overflow-y-auto text-xs border border-gray-200">
+                  {contractHtml ? (
+                    <div dangerouslySetInnerHTML={{ __html: contractHtml }} />
+                  ) : (
+                    <div className="flex items-center justify-center py-4">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
