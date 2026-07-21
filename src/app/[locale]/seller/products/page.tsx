@@ -91,6 +91,12 @@ export default function SellerProductsPage() {
               }`}>
                 {p.status === "active" ? "在售" : p.status}
               </span>
+              <Link
+                href={`/zh/seller/products/${p.id}/edit`}
+                className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-600 hover:bg-blue-100"
+              >
+                编辑
+              </Link>
             </div>
           ))}
         </div>

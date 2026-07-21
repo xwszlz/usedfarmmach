@@ -266,6 +266,8 @@ export default async function ProductDetailPage({
             overallHeight={product.overallHeight ?? null}
             netWeight={product.netWeight ?? null}
             conditionLabel={conditionLabel}
+            categoryName={categoryName}
+            location={product.location || ""}
             locale={locale}
           />
 

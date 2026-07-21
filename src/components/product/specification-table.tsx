@@ -1,4 +1,4 @@
-import { Wrench, Calendar, Clock, Cpu, Gauge, Cog, Settings, Ruler, Weight, CheckCircle2 } from "lucide-react";
+import { Wrench, Calendar, Clock, Cpu, Gauge, Cog, Settings, Ruler, Weight, CheckCircle2, MapPin, Tag } from "lucide-react";
 
 interface SpecRow {
   label: string;
@@ -20,6 +20,8 @@ interface SpecificationTableProps {
   overallHeight: number | null;
   netWeight: number | null;
   conditionLabel: string;
+  categoryName: string;
+  location: string;
   locale: string;
 }
 
@@ -35,6 +37,8 @@ const LABELS: Record<string, Record<string, string>> = {
     mainConfig: "主要配置",
     overallDimension: "外形尺寸(长×宽×高 mm)",
     netWeight: "整机重量(KG)",
+    category: "品类",
+    location: "产地",
     condition: "设备状况",
     hoursUnit: "小时",
     notAvailable: "暂无",
@@ -50,6 +54,8 @@ const LABELS: Record<string, Record<string, string>> = {
     mainConfig: "Main Configuration",
     overallDimension: "Overall Dimension(L×W×H mm)",
     netWeight: "Net Weight(KG)",
+    category: "Category",
+    location: "Location",
     condition: "Condition",
     hoursUnit: "hrs",
     notAvailable: "N/A",
@@ -65,6 +71,8 @@ const LABELS: Record<string, Record<string, string>> = {
     mainConfig: "Конфигурация",
     overallDimension: "Габариты(Д×Ш×В мм)",
     netWeight: "Вес(КГ)",
+    category: "Категория",
+    location: "Местоположение",
     condition: "Состояние",
     hoursUnit: "моточасов",
     notAvailable: "Н/Д",
@@ -85,21 +93,23 @@ export function SpecificationTable({
   overallHeight,
   netWeight,
   conditionLabel,
+  categoryName,
+  location,
   locale,
 }: SpecificationTableProps) {
   const l = LABELS[locale] || LABELS.en;
 
   const formatDimension = (): string => {
     const parts = [overallLength, overallWidth, overallHeight];
-    if (parts.every((p) => p != null)) {
-      return `${overallLength}×${overallWidth}×${overallHeight}`;
-    }
-    return l.notAvailable;
+    if (parts.every((p) => p == null)) return l.notAvailable;
+    const formatted = parts.map((p) => (p != null ? String(p) : "—"));
+    return `${formatted[0]}×${formatted[1]}×${formatted[2]}`;
   };
 
   const rows: { icon: React.ReactNode; label: string; value: string }[] = [
     { icon: <Wrench className="h-4 w-4 text-gray-400" />, label: l.brand, value: brandName },
     { icon: <Settings className="h-4 w-4 text-gray-400" />, label: l.model, value: modelName },
+    { icon: <Tag className="h-4 w-4 text-gray-400" />, label: l.category, value: categoryName },
     { icon: <Calendar className="h-4 w-4 text-gray-400" />, label: l.year, value: String(year) },
     {
       icon: <Clock className="h-4 w-4 text-gray-400" />,
@@ -135,6 +145,11 @@ export function SpecificationTable({
       icon: <Weight className="h-4 w-4 text-gray-400" />,
       label: l.netWeight,
       value: netWeight != null ? netWeight.toLocaleString() : l.notAvailable,
+    },
+    {
+      icon: <MapPin className="h-4 w-4 text-gray-400" />,
+      label: l.location,
+      value: location || l.notAvailable,
     },
     {
       icon: <CheckCircle2 className="h-4 w-4 text-gray-400" />,
