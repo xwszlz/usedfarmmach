@@ -527,7 +527,7 @@ export function DeepReportSection({
                 </p>
                 <button
                   onClick={() => {
-                    window.location.href = `/${locale}/products/new?prefill=true&brand=${encodeURIComponent(brand || "")}&model=${encodeURIComponent(model || "")}&year=${year || ""}&hp=${horsepower || ""}`;
+                    window.location.href = `/${locale}/seller/products/new?prefill=true&brand=${encodeURIComponent(brand || "")}&model=${encodeURIComponent(model || "")}&category=${encodeURIComponent(category || "")}&year=${year || ""}&hp=${horsepower || ""}`;
                   }}
                   className="w-full rounded-lg bg-green-600 py-2 text-xs font-medium text-white hover:bg-green-700"
                 >

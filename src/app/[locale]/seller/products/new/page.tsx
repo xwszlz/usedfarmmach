@@ -60,12 +60,99 @@ export default function NewProductPage() {
   const [aiReferencePrice, setAiReferencePrice] = useState<number | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+  const prefillAppliedRef = useRef(false);
 
   useEffect(() => {
     fetch("/api/brands-categories").then(r => r.json()).then(d => {
       if (d.success) { setBrands(d.brands); setCategories(d.categories); }
     });
   }, []);
+
+  // 一键发布 prefill: 从URL参数 ?prefill=true&brand=...&model=...&category=...&year=...&hp=...
+  // 读出后填入表单对应字段，按名称匹配 brand/category id，绿色高亮提示用户
+  useEffect(() => {
+    // 等品牌/品类列表加载完
+    if (brands.length === 0 || categories.length === 0) return;
+    if (prefillAppliedRef.current) return; // 防重复
+    if (typeof window === "undefined") return;
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("prefill") !== "true") return;
+
+    prefillAppliedRef.current = true;
+
+    const brand = params.get("brand") || "";
+    const model = params.get("model") || "";
+    const category = params.get("category") || "";
+    const year = params.get("year") || "";
+    const hp = params.get("hp") || "";
+
+    if (!brand && !model && !category && !year && !hp) return;
+
+    const filled = new Set<string>();
+
+    // 匹配 brand
+    let matchedBrand: { id: string; nameZh: string } | undefined;
+    if (brand) {
+      matchedBrand = brands.find((b) => b.nameZh === brand)
+        || brands.find((b) => b.nameZh.includes(brand) || brand.includes(b.nameZh));
+    }
+
+    // 匹配 category
+    let matchedCategory: { id: string; nameZh: string } | undefined;
+    let finalCategoryName = "";
+    let nextCatMode: "select" | "custom" = "custom";
+    if (category) {
+      matchedCategory = categories.find((c) => c.nameZh === category)
+        || categories.find((c) => c.nameZh.includes(category) || category.includes(c.nameZh));
+      if (matchedCategory) {
+        finalCategoryName = matchedCategory.nameZh;
+        nextCatMode = "select";
+      } else {
+        finalCategoryName = category;
+        nextCatMode = "custom";
+      }
+    }
+
+    setForm((f) => ({
+      ...f,
+      brandId: matchedBrand?.id || f.brandId,
+      brandName: matchedBrand?.nameZh || brand || f.brandName,
+      categoryId: matchedCategory?.id || f.categoryId,
+      categoryName: finalCategoryName || f.categoryName,
+      modelName: model || f.modelName,
+      year: year ? Number(year) : f.year,
+      enginePower: hp || f.enginePower,
+    }));
+
+    if (matchedBrand) {
+      setBrandMode("select");
+      filled.add("brandId");
+      filled.add("brandName");
+    } else if (brand) {
+      setBrandMode("custom");
+      filled.add("brandName");
+    }
+    if (category) {
+      setCatMode(nextCatMode);
+      filled.add("categoryName");
+      if (nextCatMode === "select") filled.add("categoryId");
+    }
+    if (model) filled.add("modelName");
+    if (year) filled.add("year");
+    if (hp) filled.add("enginePower");
+
+    setAiFilledFields(filled);
+
+    // 滚动到顶部 + 显示提示
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      setResult({
+        success: true,
+        message: `已从估值结果预填 ${filled.size} 个字段（${Array.from(filled).slice(0, 3).join("、")}${filled.size > 3 ? "..." : ""}）`,
+      });
+    }, 100);
+  }, [brands, categories]);
 
   const update = (key: string, value: any) => {
     setForm(f => {
