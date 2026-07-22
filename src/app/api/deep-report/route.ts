@@ -8,13 +8,11 @@ import { NextRequest, NextResponse } from "next/server";
 // ============================================================
 
 // In-memory order store (replace with Prisma/database in production)
-// This is a simple Map for demo. In production, use the database.
 const orderStore = new Map<string, {
   orderId: string;
   tier: string;
   price: number;
   paymentMethod: string;
-  email: string;
   paid: boolean;
   status: "created" | "paid" | "generating" | "completed" | "failed";
   reportHtml?: string;
@@ -26,82 +24,6 @@ const orderStore = new Map<string, {
   paidAt?: number;
   completedAt?: number;
 }>();
-
-// ============================================================
-// Email sending via Resend (https://resend.com)
-// Free tier: 100 emails/day, 3000/month
-// Set RESEND_API_KEY env var to enable. Without it, emails are
-// logged to console only (dev mode).
-// ============================================================
-
-async function sendReportEmail(
-  to: string,
-  orderId: string,
-  tier: string,
-  productName: string,
-  reportHtml: string
-): Promise<{ success: boolean; error?: string }> {
-  const apiKey = process.env.RESEND_API_KEY;
-  const fromAddress = process.env.REPORT_FROM_EMAIL || "report@usedfarmmach.com";
-
-  const subject = `【深度估值报告】${productName || "您的农机设备"} - ${tier === "basic" ? "基础版" : tier === "standard" ? "标准版" : "旗舰版"}`;
-
-  // Plain text fallback
-  const text = `
-您的深度估值报告已生成完毕！
-
-订单号: ${orderId}
-设备: ${productName || "未指定"}
-报告类型: ${tier === "basic" ? "基础版" : tier === "standard" ? "标准版" : "旗舰版"}
-生成时间: ${new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" })}
-
-请查看邮件正文的 HTML 报告内容。
-
-如有问题请联系：
-WhatsApp: +86 15511395016
-Email: 9321332555@qq.com
-
-神雕农机 AI 估值系统
-https://usedfarmmach.com
-  `.trim();
-
-  if (!apiKey) {
-    // Dev mode: log to console
-    console.log("📧 [DEV] Would send email:", { to, subject, orderId, tier });
-    console.log("📧 [DEV] Set RESEND_API_KEY env var to enable real email sending");
-    return { success: true };
-  }
-
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        from: fromAddress,
-        to: [to],
-        subject,
-        html: reportHtml,
-        text,
-      }),
-    });
-
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error("❌ Resend API error:", errText);
-      return { success: false, error: errText };
-    }
-
-    const result = await res.json();
-    console.log("✅ Email sent:", result);
-    return { success: true };
-  } catch (err) {
-    console.error("❌ Email send failed:", err);
-    return { success: false, error: String(err) };
-  }
-}
 
 const TIER_PRICES: Record<string, number> = {
   basic: 9,
@@ -235,7 +157,7 @@ function generateReportHTML(
   html += `
     <div style="border-top: 1px solid #E5E7EB; margin-top: 20px; padding-top: 12px;">
       <p style="margin: 0; color: #999; font-size: 11px;">
-        免责声明：本报告由AI估值引擎基于520万条补贴数据和市场模型自动生成，仅供决策参考，不构成投资或交易建议。
+        免责声明：本报告由AI估值引擎基于市场模型自动生成，仅供决策参考，不构成投资或交易建议。
         实际成交价格受车况、市场供需、谈判等多重因素影响。报告编号: ${orderId} | ${tierNames[tier] || tier}
       </p>
     </div>
@@ -254,18 +176,11 @@ export async function POST(req: NextRequest) {
     const { action } = body;
 
     if (action === "create_order") {
-      const { tier, paymentMethod, email, productId, productName, productInfo, valuationResult } = body;
+      const { tier, paymentMethod, productId, productName, productInfo, valuationResult } = body;
 
       if (!TIER_PRICES[tier]) {
         return NextResponse.json(
           { success: false, error: "Invalid tier" },
-          { status: 400 }
-        );
-      }
-
-      if (!email) {
-        return NextResponse.json(
-          { success: false, error: "Email is required" },
           { status: 400 }
         );
       }
@@ -276,7 +191,6 @@ export async function POST(req: NextRequest) {
         tier,
         price: TIER_PRICES[tier],
         paymentMethod: paymentMethod || "wechat",
-        email,
         paid: false,
         status: "created" as const,
         productInfo,
@@ -322,7 +236,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "generate") {
-      const { orderId, tier, email, productInfo, valuationResult, productName } = body;
+      const { orderId, tier, productInfo, valuationResult, productName } = body;
 
       const order = orderStore.get(orderId);
       if (!order) {
@@ -343,28 +257,11 @@ export async function POST(req: NextRequest) {
       order.status = "completed";
       order.completedAt = Date.now();
 
-      // Send report to user's email
-      const sendTo = email || order.email;
-      const finalProductName = productName || order.productName;
-      let emailResult: { success: boolean; error?: string } = { success: false };
-
-      if (sendTo) {
-        emailResult = await sendReportEmail(
-          sendTo,
-          orderId,
-          tier,
-          finalProductName || "农机设备",
-          reportHtml
-        );
-      }
-
       return NextResponse.json({
         success: true,
         data: {
           reportHtml,
           orderId,
-          emailSent: emailResult.success,
-          emailError: emailResult.error,
         },
       });
     }

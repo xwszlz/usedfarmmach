@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import {
-  Shield, Check, Mail, FileDown,
+  Shield, Check, FileDown,
   Printer, TrendingUp, AlertCircle,
   ArrowLeft, Sparkles,
 } from "lucide-react";
@@ -108,7 +108,6 @@ export function DeepReportSection({
   const [orderId, setOrderId] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(10);
   const [reportHtml, setReportHtml] = useState<string | null>(null);
-  const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [showPublishForm, setShowPublishForm] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -122,16 +121,9 @@ export function DeepReportSection({
     };
   }, []);
 
-  // Start payment: create order, send email, show QR
+  // Start payment: create order, show QR
   const handleStartPayment = async () => {
     setError(null);
-
-    // Validate email
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError(isZh ? "请填写正确的邮箱地址（用于接收报告）" : "Please enter a valid email address");
-      return;
-    }
-
     setStep("paying");
     try {
       const res = await fetch("/api/deep-report", {
@@ -141,7 +133,6 @@ export function DeepReportSection({
           action: "create_order",
           tier: selectedTier,
           paymentMethod,
-          email,
           productId,
           productName,
           productInfo: { brand, model, year, horsepower, category },
@@ -176,7 +167,7 @@ export function DeepReportSection({
     setTimeout(() => handleGenerate(), 300);
   };
 
-  // Generate report and email to user
+  // Generate report
   const handleGenerate = async () => {
     setStep("generating");
     setCountdown(10);
@@ -201,7 +192,6 @@ export function DeepReportSection({
           action: "generate",
           orderId,
           tier: selectedTier,
-          email,
           productInfo: { brand, model, year, horsepower, category },
           valuationResult,
         }),
@@ -357,26 +347,6 @@ export function DeepReportSection({
               </div>
             </div>
 
-            {/* Email for report delivery */}
-            <div className="mt-3">
-              <div className="mb-1 flex items-center gap-1.5 text-xs font-medium text-gray-700">
-                <Mail className="h-3.5 w-3.5" />
-                {isZh ? "邮箱（用于接收报告）" : "Email (for report delivery)"}
-              </div>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="your@email.com"
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none"
-              />
-              <div className="mt-1 text-[10px] text-gray-400">
-                {isZh
-                  ? "报告将同时在此页面显示，并发送到您填写的邮箱"
-                  : "Report will be shown here and emailed to you"}
-              </div>
-            </div>
-
             {/* Pay button */}
             <button
               onClick={handleStartPayment}
@@ -386,6 +356,11 @@ export function DeepReportSection({
                 ? `确认下单 · 扫码支付 ¥${TIERS[selectedTier].price}`
                 : `Confirm · Pay ¥${TIERS[selectedTier].price} via QR`}
             </button>
+            <div className="mt-2 text-center text-[10px] text-gray-400">
+              {isZh
+                ? "付款后在页面查看报告，支持在线查看 / 下载 / 打印"
+                : "View report on page after payment. Supports online view / download / print"}
+            </div>
           </>
         )}
 
@@ -396,7 +371,7 @@ export function DeepReportSection({
               {isZh ? `${TIERS[selectedTier].name} · ¥${TIERS[selectedTier].price}` : `${TIERS[selectedTier].nameEn} · ¥${TIERS[selectedTier].price}`}
             </div>
             <div className="mb-3 text-xs text-gray-500">
-              {isZh ? `订单号: ${orderId} · 发送到: ${email}` : `Order: ${orderId} · To: ${email}`}
+              {isZh ? `订单号: ${orderId}` : `Order: ${orderId}`}
             </div>
             <div className="rounded-xl border-2 border-gray-100 bg-white p-3 shadow-sm">
               <img
@@ -456,8 +431,8 @@ export function DeepReportSection({
             </div>
             <div className="mt-2 text-xs text-gray-400">
               {isZh
-                ? `AI正在分析市场数据，报告将同时发送到 ${email}`
-                : `AI is analyzing market data. Report will also be sent to ${email}`}
+                ? "AI正在分析市场数据，请稍候..."
+                : "AI is analyzing market data, please wait..."}
             </div>
           </div>
         )}
@@ -468,7 +443,7 @@ export function DeepReportSection({
             <div className="mb-3 flex items-center justify-between">
               <div className="flex items-center gap-1.5 text-sm font-medium text-gray-800">
                 <Check className="h-4 w-4 text-green-600" />
-                {isZh ? "报告已生成 · 已发送到您的邮箱" : "Report ready · Emailed to you"}
+                {isZh ? "报告已生成" : "Report ready"}
               </div>
               <div className="flex gap-2">
                 <button
@@ -659,7 +634,7 @@ function generateMockReport(tier: Tier): string {
   sections += `
     <div style="border-top: 1px solid #E5E7EB; margin-top: 20px; padding-top: 12px;">
       <p style="margin: 0; color: #999; font-size: 11px;">
-        免责声明：本报告由AI估值引擎基于520万条补贴数据和市场模型自动生成，仅供决策参考，不构成投资或交易建议。
+        免责声明：本报告由AI估值引擎基于市场模型自动生成，仅供决策参考，不构成投资或交易建议。
         实际成交价格受车况、市场供需、谈判等多重因素影响。报告编号: DR${Date.now()} | ${tierName}
       </p>
     </div>
