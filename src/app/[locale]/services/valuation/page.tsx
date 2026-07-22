@@ -413,12 +413,16 @@ function DeepAnalysisSection({
   const [report, setReport] = useState<string | null>(null);
   const [structured, setStructured] = useState<Record<string, any> | null>(null);
   const [error, setError] = useState("");
+  const [locked, setLocked] = useState(false);
+  const [valuationPrice, setValuationPrice] = useState<number | null>(null);
 
   const runDeepAnalysis = async () => {
     setLoading(true);
     setError("");
     setReport(null);
     setStructured(null);
+    setLocked(false);
+    setValuationPrice(null);
     try {
       const res = await fetch("/api/agents/seller-helper/deep-analysis", {
         method: "POST",
@@ -435,6 +439,8 @@ function DeepAnalysisSection({
       if (data.success) {
         setReport(data.data?.analysis || "");
         setStructured(data.data?.structured || null);
+        setValuationPrice(data.data?.valuationPrice ?? null);
+        setLocked(true);
       } else {
         setError(data.error || "深度分析失败");
       }
@@ -452,10 +458,10 @@ function DeepAnalysisSection({
           <FileText className="h-5 w-5 text-purple-600" />
           <h3 className="text-sm font-semibold text-gray-800">深度估值报告</h3>
         </div>
-        <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-medium text-purple-700">¥9-29</span>
+        <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-medium text-purple-700">¥9</span>
       </div>
       <p className="mb-3 text-xs text-gray-500">
-        包含：技术参数评估 · 操作维修建议 · 市场参考价 · FOB出口价 · 购买建议
+        包含：六维度现状评估 · 技术参数 · 操作维修 · 估值引擎参考价 · 购买建议 · 资源文档
       </p>
 
       {!report && !loading && (
@@ -488,6 +494,9 @@ function DeepAnalysisSection({
             brandName={prefillData.brand}
             categoryName={prefillData.category}
             locale="zh"
+            locked={locked}
+            onUnlock={() => setLocked(false)}
+            valuationPrice={valuationPrice}
           />
           <button
             onClick={runDeepAnalysis}

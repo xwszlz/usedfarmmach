@@ -32,6 +32,8 @@ export default function DeepAnalysisCard({
   const [structured, setStructured] = useState<Record<string, any> | null>(null);
   const [modelUsed, setModelUsed] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const [locked, setLocked] = useState(false);
+  const [valuationPrice, setValuationPrice] = useState<number | null>(null);
 
   // 只取前3张图片（豆包处理够用，避免超时）
   const selectedImages = imageUrls.slice(0, 3);
@@ -47,6 +49,8 @@ export default function DeepAnalysisCard({
     setReport(null);
     setStructured(null);
     setModelUsed("");
+    setLocked(false);
+    setValuationPrice(null);
 
     try {
       const res = await fetch("/api/agents/seller-helper/deep-analysis", {
@@ -84,6 +88,8 @@ export default function DeepAnalysisCard({
       setReport(data.data.analysis || "");
       setStructured(data.data.structured || null);
       setModelUsed(data.data.model || "");
+      setValuationPrice(data.data.valuationPrice ?? null);
+      setLocked(true);
     } catch (err: any) {
       setError(err.message || (locale === "zh" ? "深度分析失败，请稍后重试" : "Analysis failed, please try again"));
     } finally {
@@ -181,6 +187,9 @@ export default function DeepAnalysisCard({
             brandName={brandName}
             categoryName={productName}
             locale={locale}
+            locked={locked}
+            onUnlock={() => setLocked(false)}
+            valuationPrice={valuationPrice}
           />
           <button
             onClick={handleAnalyze}

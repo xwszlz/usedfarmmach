@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
-import { Printer, Download, Copy, Check, BarChart3, FileText } from "lucide-react";
+import { useState, useMemo, useRef, useEffect } from "react";
+import { Printer, Download, Copy, Check, BarChart3, FileText, Lock, Loader2 } from "lucide-react";
 import { getSubsidyPriceHistory, type SubsidyYearDatum } from "@/lib/valuation/brand-data";
 
 interface AnalysisReportViewProps {
@@ -11,6 +11,9 @@ interface AnalysisReportViewProps {
   brandName?: string;
   categoryName?: string;
   locale?: string;
+  locked?: boolean;
+  onUnlock?: () => void;
+  valuationPrice?: number | null;
 }
 
 interface ReportSection {
@@ -67,11 +70,32 @@ export default function AnalysisReportView({
   brandName,
   categoryName,
   locale = "zh",
+  locked = false,
+  onUnlock,
+  valuationPrice,
 }: AnalysisReportViewProps) {
   const [copied, setCopied] = useState(false);
+  const [paying, setPaying] = useState(false);
+  const [countdown, setCountdown] = useState(10);
   const reportRef = useRef<HTMLDivElement>(null);
   const reportId = useMemo(() => genReportId(), []);
   const reportTime = useMemo(() => new Date().toLocaleString("zh-CN"), []);
+
+  // Payment countdown
+  const handlePayment = () => {
+    setPaying(true);
+    setCountdown(10);
+  };
+  useEffect(() => {
+    if (!paying) return;
+    if (countdown <= 0) {
+      setPaying(false);
+      onUnlock?.();
+      return;
+    }
+    const timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [paying, countdown, onUnlock]);
 
   const sections = useMemo(() => parseMarkdownSections(report), [report]);
 
@@ -142,6 +166,13 @@ export default function AnalysisReportView({
       label: locale === "zh" ? "马力" : "Power",
       value: `${structured.enginePower} HP`,
       color: "text-red-700 bg-red-50",
+    });
+  }
+  if (valuationPrice) {
+    metrics.push({
+      label: locale === "zh" ? "AI估值引擎" : "AI Valuation",
+      value: `¥${formatMoney(valuationPrice)}`,
+      color: "text-purple-700 bg-purple-50",
     });
   }
 
@@ -326,23 +357,150 @@ ${reportRef.current?.innerHTML || ""}
           </div>
         )}
 
+        {/* Technical Parameters Table */}
+        {structured && (structured.engineType || structured.driveSystem || structured.netWeight || structured.mainConfig || structured.overallLength) && (
+          <div className="border-b border-gray-100 bg-white p-4">
+            <div className="mb-2 flex items-center gap-2">
+              <FileText className="h-4 w-4 text-blue-600" />
+              <h4 className="text-sm font-semibold text-gray-800">{zh ? "技术参数" : "Technical Specs"}</h4>
+            </div>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+              {structured.engineType && (
+                <div className="flex justify-between border-b border-gray-50 pb-1">
+                  <span className="text-gray-500">{zh ? "发动机型号" : "Engine"}</span>
+                  <span className="font-medium text-gray-800">{structured.engineType}</span>
+                </div>
+              )}
+              {structured.driveSystem && (
+                <div className="flex justify-between border-b border-gray-50 pb-1">
+                  <span className="text-gray-500">{zh ? "驱动方式" : "Drive"}</span>
+                  <span className="font-medium text-gray-800">{structured.driveSystem}</span>
+                </div>
+              )}
+              {structured.netWeight && (
+                <div className="flex justify-between border-b border-gray-50 pb-1">
+                  <span className="text-gray-500">{zh ? "整机重量" : "Weight"}</span>
+                  <span className="font-medium text-gray-800">{structured.netWeight} kg</span>
+                </div>
+              )}
+              {structured.mainConfig && (
+                <div className="flex justify-between border-b border-gray-50 pb-1">
+                  <span className="text-gray-500">{zh ? "主要配置" : "Config"}</span>
+                  <span className="font-medium text-gray-800">{structured.mainConfig}</span>
+                </div>
+              )}
+              {structured.overallLength && structured.overallWidth && (
+                <div className="flex justify-between border-b border-gray-50 pb-1">
+                  <span className="text-gray-500">{zh ? "外形尺寸" : "Dimensions"}</span>
+                  <span className="font-medium text-gray-800">{structured.overallLength}x{structured.overallWidth}{structured.overallHeight ? `x${structured.overallHeight}` : ""} mm</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 6-Dimension Condition Scores */}
+        {structured?.conditionScores && (
+          <div className="border-b border-gray-100 bg-white p-4">
+            <div className="mb-3 flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-purple-600" />
+              <h4 className="text-sm font-semibold text-gray-800">{zh ? "设备现状评估（六维度）" : "Condition Assessment"}</h4>
+            </div>
+            <div className="space-y-2">
+              {[
+                { key: "exterior", label: zh ? "外观漆面" : "Exterior" },
+                { key: "rust", label: zh ? "锈蚀程度" : "Rust" },
+                { key: "tires", label: zh ? "轮胎/履带" : "Tires" },
+                { key: "cabin", label: zh ? "驾驶室/操作台" : "Cabin" },
+                { key: "hydraulic", label: zh ? "液压渗漏" : "Hydraulic" },
+                { key: "overall", label: zh ? "整体印象" : "Overall" },
+              ].map(({ key, label }) => {
+                const score = structured.conditionScores[key];
+                if (score === undefined || score === null) return null;
+                const pct = (Number(score) / 10) * 100;
+                const color = Number(score) >= 8 ? "#10b981" : Number(score) >= 6 ? "#f59e0b" : "#ef4444";
+                return (
+                  <div key={key} className="flex items-center gap-3">
+                    <span className="w-24 text-xs text-gray-600">{label}</span>
+                    <div className="h-2 flex-1 rounded-full bg-gray-100">
+                      <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
+                    </div>
+                    <span className="w-10 text-right text-xs font-bold" style={{ color }}>{score}/10</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Report Sections */}
         <div className="divide-y divide-gray-100 bg-white">
-          {sections.map((section, i) => (
-            <div key={i} className="px-5 py-4">
-              <h3 className="mb-2 text-sm font-bold text-gray-900">
-                <span className="mr-2 text-purple-500">§{i + 1}</span>
-                {section.title}
-              </h3>
-              <div
-                className="prose prose-sm max-w-none"
-                dangerouslySetInnerHTML={{
-                  __html: `<p class="text-gray-600">${mdToHtml(section.content)}</p>`,
-                }}
-              />
-            </div>
-          ))}
+          {sections.map((section, i) => {
+            const isLockedSection = locked && i >= 2;
+            return (
+              <div key={i} className="px-5 py-4">
+                <h3 className="mb-2 text-sm font-bold text-gray-900">
+                  <span className="mr-2 text-purple-500">{"\u00a7"}{i + 1}</span>
+                  {section.title}
+                </h3>
+                <div
+                  className={`prose prose-sm max-w-none ${isLockedSection ? "filter blur-sm pointer-events-none select-none" : ""}`}
+                  dangerouslySetInnerHTML={{
+                    __html: `<p class="text-gray-600">${mdToHtml(section.content)}</p>`,
+                  }}
+                />
+              </div>
+            );
+          })}
         </div>
+
+        {/* Payment Gate */}
+        {locked && sections.length > 2 && (
+          <div className="border-t-2 border-purple-200 bg-gradient-to-b from-purple-50 to-white p-6">
+            <div className="flex flex-col items-center">
+              <Lock className="mb-2 h-8 w-8 text-purple-500" />
+              <p className="text-sm font-bold text-gray-800">{zh ? "解锁完整深度分析报告" : "Unlock Full Report"}</p>
+              <p className="mb-3 text-xs text-gray-500">
+                {zh ? `剩余 ${sections.length - 2} 个章节待解锁` : `${sections.length - 2} more sections locked`}
+              </p>
+
+              {paying ? (
+                <div className="flex flex-col items-center py-4">
+                  <Loader2 className="mb-2 h-8 w-8 animate-spin text-purple-600" />
+                  <p className="text-sm font-medium text-purple-600">
+                    {zh ? `正在解锁... ${countdown}s` : `Unlocking... ${countdown}s`}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="mb-3 flex items-baseline gap-1">
+                    <span className="text-3xl font-bold text-purple-600">{"\u00a5"}9</span>
+                    <span className="text-xs text-gray-400">{zh ? "一键解锁全部" : "one-time"}</span>
+                  </div>
+                  <div className="mb-4 flex gap-4">
+                    <div className="flex flex-col items-center">
+                      <img src="/qrcode/wechat-pay.png" alt="WeChat Pay" className="h-28 w-28 rounded-lg border border-gray-200 object-cover" />
+                      <span className="mt-1 text-xs text-gray-500">{zh ? "微信支付" : "WeChat"}</span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <img src="/qrcode/alipay.jpg" alt="Alipay" className="h-28 w-28 rounded-lg border border-gray-200 object-cover" />
+                      <span className="mt-1 text-xs text-gray-500">{zh ? "支付宝" : "Alipay"}</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handlePayment}
+                    className="rounded-lg bg-purple-600 px-8 py-2.5 text-sm font-medium text-white transition-colors hover:bg-purple-700"
+                  >
+                    {zh ? "已付款，解锁全部" : "I've Paid, Unlock All"}
+                  </button>
+                  <p className="mt-2 text-[10px] text-gray-400">
+                    {zh ? "扫码付款后点击按钮即可解锁全部内容" : "Scan to pay, then click the button"}
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Footer */}
         <div className="border-t border-gray-100 bg-gray-50 px-5 py-3 text-center text-[10px] text-gray-400">
