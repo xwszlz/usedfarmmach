@@ -7,10 +7,9 @@ import { ImageGallery } from "@/components/product/image-gallery";
 import { SpecificationTable } from "@/components/product/specification-table";
 import { PriceTradeSection } from "@/components/product/price-trade-section";
 import { StandardDescription } from "@/components/product/standard-description";
-import { InquiryForm } from "@/components/product/inquiry-form";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin, ArrowLeftRight, Info, Mail, MessageCircle, Phone } from "lucide-react";
+import { ArrowLeftRight, Info, Mail, MessageCircle, Phone } from "lucide-react";
 import { getImageUrl, getVideoUrl, generateImageAlt } from "@/lib/image-url";
 import { formatPrice } from "@/lib/utils";
 import ArbitrageCalculatorSection from "@/components/product/arbitrage-calculator-section";
@@ -247,7 +246,7 @@ export default async function ProductDetailPage({
       </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        {/* Left Column: Specs + Price */}
+        {/* Left Column: Specs + Description */}
         <div className="space-y-6">
           {/* ================================================================ */}
           {/*  SECTION 3 — Specification Table (11 rows)                      */}
@@ -272,14 +271,12 @@ export default async function ProductDetailPage({
           />
 
           {/* ================================================================ */}
-          {/*  SECTION 5 — Price & Trade Terms                                 */}
+          {/*  SECTION 5 — Product Description (moved up below specs)           */}
           {/* ================================================================ */}
-          <PriceTradeSection
-            priceCny={product.priceCny}
-            priceUsd={product.priceUsd ?? null}
-            priceMode={product.priceMode || "por"}
-            tradeTerm={product.tradeTerm || "FOB"}
-            tradePort={product.tradePort ?? null}
+          <StandardDescription
+            standardDescriptionEn={product.standardDescriptionEn ?? null}
+            descriptionZh={product.descriptionZh ?? null}
+            descriptionEn={product.descriptionEn ?? null}
             locale={locale}
           />
 
@@ -345,16 +342,6 @@ export default async function ProductDetailPage({
               </CardContent>
             </Card>
           )}
-
-          {/* 立即询价 Button + Favorite */}
-          <div className="flex items-center gap-3">
-            <BuyIntentButton
-              productId={product.id}
-              productName={`${brandName} ${product.modelName}`}
-              locale={locale}
-            />
-            <FavoriteButton productId={product.id} locale={locale} />
-          </div>
         </div>
 
         {/* Right Column: Video + AI Deep Analysis */}
@@ -406,19 +393,85 @@ export default async function ProductDetailPage({
       </div>
 
       {/* ================================================================ */}
-      {/*  SECTION 6 — Standard Product Description                        */}
+      {/*  SECTION 6 — Price & Unified Inquiry Entry (moved down)          */}
       {/* ================================================================ */}
+
+      {/* Price & Trade Terms */}
       <div className="mt-8">
-        <StandardDescription
-          standardDescriptionEn={product.standardDescriptionEn ?? null}
-          descriptionZh={product.descriptionZh ?? null}
-          descriptionEn={product.descriptionEn ?? null}
+        <PriceTradeSection
+          priceCny={product.priceCny}
+          priceUsd={product.priceUsd ?? null}
+          priceMode={product.priceMode || "por"}
+          tradeTerm={product.tradeTerm || "FOB"}
+          tradePort={product.tradePort ?? null}
           locale={locale}
         />
       </div>
 
+      {/* Unified Contact & Inquiry Entry */}
+      <div className="mt-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageCircle className="h-5 w-5 text-primary-600" />
+              {t("contactSeller")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            {/* Main CTA: 立即询价 */}
+            <div className="flex items-center gap-3">
+              <BuyIntentButton
+                productId={product.id}
+                productName={`${brandName} ${product.modelName}`}
+                locale={locale}
+              />
+              <FavoriteButton productId={product.id} locale={locale} />
+            </div>
+
+            {/* Contact Methods — WhatsApp / Phone / Email in one row */}
+            <div className="flex flex-wrap gap-6 text-sm text-gray-600">
+              <div className="flex items-center gap-2">
+                <MessageCircle className="h-4 w-4 text-gray-400" />
+                <span>WhatsApp: </span>
+                <a
+                  href="https://wa.me/8615511395016"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary-600 hover:text-primary-700 font-medium"
+                >
+                  +86 15511395016
+                </a>
+              </div>
+              <div className="flex items-center gap-2">
+                <Phone className="h-4 w-4 text-gray-400" />
+                <span>{locale === "zh" ? "电话" : "Phone"}: </span>
+                <a
+                  href="tel:+8618633878701"
+                  className="text-primary-600 hover:text-primary-700 font-medium"
+                >
+                  +86 18633878701
+                </a>
+              </div>
+              <div className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-gray-400" />
+                <span>Email: </span>
+                <a
+                  href="mailto:932133255@qq.com"
+                  className="text-primary-600 hover:text-primary-700 font-medium"
+                >
+                  932133255@qq.com
+                </a>
+              </div>
+            </div>
+
+            {/* Quick Contact: QR Codes */}
+            <QuickContact locale={locale} />
+          </CardContent>
+        </Card>
+      </div>
+
       {/* ================================================================ */}
-      {/*  Differentiated Features (below standard blocks)                 */}
+      {/*  Differentiated Features (below inquiry entry)                   */}
       {/* ================================================================ */}
 
       {/* Arbitrage Calculator */}
@@ -470,60 +523,6 @@ export default async function ProductDetailPage({
           />
         </div>
       )}
-
-      {/* ================================================================ */}
-      {/*  联系卖家 & 询价（原在右侧栏，与AI深度分析对调后移到这里）          */}
-      {/* ================================================================ */}
-      <div className="mt-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("contactSeller")}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Contact Methods — WhatsApp / Phone / Email in one row */}
-            <div className="flex flex-wrap gap-6 text-sm text-gray-600">
-              <div className="flex items-center gap-2">
-                <MessageCircle className="h-4 w-4 text-gray-400" />
-                <span>WhatsApp: </span>
-                <a
-                  href="https://wa.me/8615511395016"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary-600 hover:text-primary-700 font-medium"
-                >
-                  +86 15511395016
-                </a>
-              </div>
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-gray-400" />
-                <span>{locale === "zh" ? "电话" : "Phone"}: </span>
-                <a
-                  href="tel:+8618633878701"
-                  className="text-primary-600 hover:text-primary-700 font-medium"
-                >
-                  +86 18633878701
-                </a>
-              </div>
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-gray-400" />
-                <span>Email: </span>
-                <a
-                  href="mailto:932133255@qq.com"
-                  className="text-primary-600 hover:text-primary-700 font-medium"
-                >
-                  932133255@qq.com
-                </a>
-              </div>
-            </div>
-
-            {/* Inquiry Form */}
-            <InquiryForm productId={product.id} />
-
-            {/* Quick Contact: QR Codes */}
-            <QuickContact locale={locale} />
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Machinery Identity & Traceability (一机一码) */}
       <div className="mt-6">
