@@ -8,6 +8,7 @@ import {
   Zap, Globe, Ship, CheckCircle2, XCircle,
 } from "lucide-react";
 import Link from "next/link";
+import { DeepReportSection } from "@/components/valuation/deep-report-section";
 import {
   DOMESTIC_HP_REGRESSION,
   DOMESTIC_BRAND_PREMIUM,
@@ -1137,20 +1138,20 @@ export default function ValuationPage() {
                 </div>
               )}
 
-              {/* Upgrade to Deep Report */}
-              <div className="flex items-center justify-between rounded-xl border border-purple-200 bg-purple-50/50 p-4">
-                <div>
-                  <div className="text-sm font-medium text-purple-700">需要更详细的分析？</div>
-                  <div className="text-xs text-gray-500">2000字专业报告 · 技术参数/市场参考/FOB出口价/购买建议</div>
-                </div>
-                <button
-                  onClick={() => setMode("deep")}
-                  className="flex items-center gap-1 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700"
-                >
-                  升级报告
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
+              {/* Deep Report Section (paid, three tiers) */}
+              <DeepReportSection
+                brand={channel === "domestic" ? dBrand : iBrand}
+                model={channel === "domestic" ? `${dBrand} ${dCategory}` : iBrand}
+                year={channel === "domestic" ? dYear - dYears : iYear}
+                horsepower={channel === "domestic" ? dHP : iHP}
+                category={dCategory}
+                valuationResult={result ? {
+                  estimatedValue: result.value,
+                  confidenceScore: result.confidence / 100,
+                } : null}
+                locale={locale}
+                showPublishButton={true}
+              />
             </div>
           )}
         </>

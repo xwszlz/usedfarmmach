@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { TrendingUp, ChevronDown, ChevronUp, Sparkles, ThumbsUp, AlertTriangle, HelpCircle, Shield } from "lucide-react";
+import { ChevronDown, ChevronUp, Sparkles, ThumbsUp, AlertTriangle, Shield } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatValuationMoney } from "@/lib/valuation/formulas";
 import type { ValuationResult } from "@/lib/valuation/formulas";
+import { DeepReportSection } from "./deep-report-section";
 
 const LABELS: Record<string, {
   title: string;
@@ -214,20 +215,13 @@ export function ValuationCard({ productId, productName, locale, autoLoad = true 
           </div>
         )}
 
-        {/* 深度报告入口 */}
-        <div className="mt-3 flex items-center justify-between rounded-lg border border-purple-200 bg-purple-50 px-3 py-2">
-          <div className="flex items-center gap-1.5 text-xs text-purple-700">
-            <Shield className="h-3.5 w-3.5" />
-            <span>{l.reportHint}</span>
-          </div>
-          <button
-            onClick={() => alert(locale === "zh" ? "深度报告功能即将上线" : "Deep report coming soon")}
-            className="flex items-center gap-1 rounded bg-purple-600 px-3 py-1 text-xs font-medium text-white hover:bg-purple-700"
-          >
-            {l.viewReport}
-            <TrendingUp className="h-3 w-3" />
-          </button>
-        </div>
+        {/* 深度报告入口 — 内嵌展开三档选择+支付+生成 */}
+        <DeepReportSection
+          productId={productId}
+          productName={productName}
+          valuationResult={result}
+          locale={locale}
+        />
       </CardContent>
     </Card>
   );
