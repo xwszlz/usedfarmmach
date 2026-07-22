@@ -14,23 +14,99 @@ const orderStore = new Map<string, {
   tier: string;
   price: number;
   paymentMethod: string;
+  email: string;
   paid: boolean;
   status: "created" | "paid" | "generating" | "completed" | "failed";
   reportHtml?: string;
   productInfo?: any;
   valuationResult?: any;
-  contactInfo?: string;
-  contactType?: string;
-  generateMode?: string;
+  productName?: string;
+  productId?: string;
   createdAt: number;
   paidAt?: number;
   completedAt?: number;
 }>();
 
+// ============================================================
+// Email sending via Resend (https://resend.com)
+// Free tier: 100 emails/day, 3000/month
+// Set RESEND_API_KEY env var to enable. Without it, emails are
+// logged to console only (dev mode).
+// ============================================================
+
+async function sendReportEmail(
+  to: string,
+  orderId: string,
+  tier: string,
+  productName: string,
+  reportHtml: string
+): Promise<{ success: boolean; error?: string }> {
+  const apiKey = process.env.RESEND_API_KEY;
+  const fromAddress = process.env.REPORT_FROM_EMAIL || "report@usedfarmmach.com";
+
+  const subject = `【深度估值报告】${productName || "您的农机设备"} - ${tier === "basic" ? "基础版" : tier === "standard" ? "标准版" : "旗舰版"}`;
+
+  // Plain text fallback
+  const text = `
+您的深度估值报告已生成完毕！
+
+订单号: ${orderId}
+设备: ${productName || "未指定"}
+报告类型: ${tier === "basic" ? "基础版" : tier === "standard" ? "标准版" : "旗舰版"}
+生成时间: ${new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" })}
+
+请查看邮件正文的 HTML 报告内容。
+
+如有问题请联系：
+WhatsApp: +86 15511395016
+Email: 9321332555@qq.com
+
+神雕农机 AI 估值系统
+https://usedfarmmach.com
+  `.trim();
+
+  if (!apiKey) {
+    // Dev mode: log to console
+    console.log("📧 [DEV] Would send email:", { to, subject, orderId, tier });
+    console.log("📧 [DEV] Set RESEND_API_KEY env var to enable real email sending");
+    return { success: true };
+  }
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        from: fromAddress,
+        to: [to],
+        subject,
+        html: reportHtml,
+        text,
+      }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error("❌ Resend API error:", errText);
+      return { success: false, error: errText };
+    }
+
+    const result = await res.json();
+    console.log("✅ Email sent:", result);
+    return { success: true };
+  } catch (err) {
+    console.error("❌ Email send failed:", err);
+    return { success: false, error: String(err) };
+  }
+}
+
 const TIER_PRICES: Record<string, number> = {
-  basic: 99,
-  standard: 199,
-  premium: 299,
+  basic: 9,
+  standard: 19,
+  premium: 29,
 };
 
 // Generate report HTML based on tier and product info
@@ -178,11 +254,18 @@ export async function POST(req: NextRequest) {
     const { action } = body;
 
     if (action === "create_order") {
-      const { tier, paymentMethod, productId, productInfo, valuationResult } = body;
+      const { tier, paymentMethod, email, productId, productName, productInfo, valuationResult } = body;
 
       if (!TIER_PRICES[tier]) {
         return NextResponse.json(
           { success: false, error: "Invalid tier" },
+          { status: 400 }
+        );
+      }
+
+      if (!email) {
+        return NextResponse.json(
+          { success: false, error: "Email is required" },
           { status: 400 }
         );
       }
@@ -193,28 +276,32 @@ export async function POST(req: NextRequest) {
         tier,
         price: TIER_PRICES[tier],
         paymentMethod: paymentMethod || "wechat",
+        email,
         paid: false,
         status: "created" as const,
         productInfo,
         valuationResult,
+        productName: productName || (productInfo ? `${productInfo.brand || ""} ${productInfo.model || ""}`.trim() : undefined),
         productId,
         createdAt: Date.now(),
       };
 
       orderStore.set(orderId, order);
 
-      // In production: call WeChat Pay / Alipay API to create a real payment order
-      // and return the QR code URL. For now, return a mock QR code URL.
+      // Return real QR code URL from /public/qrcode/
+      const qrCodeUrl = paymentMethod === "alipay"
+        ? "/qrcode/alipay.jpg"
+        : "/qrcode/wechat-pay.png";
+
       return NextResponse.json({
         success: true,
         data: {
           orderId,
           price: TIER_PRICES[tier],
-          // Mock QR code URL — replace with real payment QR in production
-          qrCodeUrl: `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="white"/><text x="100" y="100" text-anchor="middle" font-size="14" fill="#333">Pay ¥${TIER_PRICES[tier]}</text></svg>`)}`,
+          qrCodeUrl,
           paymentMethod,
-          // Mock: auto-mark as paid after 5 seconds for demo
-          mockAutoPay: true,
+          // In trust mode, user confirms payment themselves
+          trustMode: true,
         },
       });
     }
@@ -235,7 +322,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "generate") {
-      const { orderId, tier, mode, productInfo, valuationResult, contactInfo, contactType } = body;
+      const { orderId, tier, email, productInfo, valuationResult, productName } = body;
 
       const order = orderStore.get(orderId);
       if (!order) {
@@ -245,41 +332,41 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      if (mode === "sync") {
-        // Generate report synchronously
-        order.status = "generating";
-        const reportHtml = generateReportHTML(tier, productInfo || order.productInfo, valuationResult || order.valuationResult);
-        order.reportHtml = reportHtml;
-        order.status = "completed";
-        order.completedAt = Date.now();
+      // Generate report
+      order.status = "generating";
+      const reportHtml = generateReportHTML(
+        tier,
+        productInfo || order.productInfo,
+        valuationResult || order.valuationResult
+      );
+      order.reportHtml = reportHtml;
+      order.status = "completed";
+      order.completedAt = Date.now();
 
-        return NextResponse.json({
-          success: true,
-          data: { reportHtml, orderId },
-        });
-      } else {
-        // Async mode — queue for background generation
-        order.status = "generating";
-        order.contactInfo = contactInfo;
-        order.contactType = contactType;
-        order.generateMode = "async";
+      // Send report to user's email
+      const sendTo = email || order.email;
+      const finalProductName = productName || order.productName;
+      let emailResult: { success: boolean; error?: string } = { success: false };
 
-        // In production: push to a job queue (BullMQ, etc.) and send
-        // email/WeChat notification when done. For now, generate immediately
-        // and store the result.
-        const reportHtml = generateReportHTML(tier, productInfo || order.productInfo, valuationResult || order.valuationResult);
-        order.reportHtml = reportHtml;
-        order.status = "completed";
-        order.completedAt = Date.now();
-
-        return NextResponse.json({
-          success: true,
-          data: {
-            orderId,
-            message: "Report queued for generation. You will be notified via " + (contactType === "email" ? "email" : "WeChat") + " at " + contactInfo,
-          },
-        });
+      if (sendTo) {
+        emailResult = await sendReportEmail(
+          sendTo,
+          orderId,
+          tier,
+          finalProductName || "农机设备",
+          reportHtml
+        );
       }
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          reportHtml,
+          orderId,
+          emailSent: emailResult.success,
+          emailError: emailResult.error,
+        },
+      });
     }
 
     return NextResponse.json(

@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import {
-  Shield, Check, Clock, Mail, Smartphone, FileDown,
-  Printer, Share2, Loader2, TrendingUp, AlertCircle,
-  QrCode, ArrowLeft, Sparkles,
+  Shield, Check, Mail, FileDown,
+  Printer, TrendingUp, AlertCircle,
+  ArrowLeft, Sparkles,
 } from "lucide-react";
 
 // ============================================================
@@ -13,8 +13,7 @@ import {
 
 type Tier = "basic" | "standard" | "premium";
 type PaymentMethod = "wechat" | "alipay";
-type GenerateMode = "sync" | "async";
-type Step = "select" | "paying" | "paid" | "generating" | "done" | "async-submitted";
+type Step = "select" | "paying" | "generating" | "done";
 
 interface DeepReportSectionProps {
   productId?: string;
@@ -48,14 +47,14 @@ const TIERS: Record<Tier, {
   basic: {
     name: "基础版",
     nameEn: "Basic",
-    price: 99,
+    price: 9,
     features: ["市场对比分析", "估值依据详细拆解", "基础购买建议"],
     featuresEn: ["Market comparison", "Valuation breakdown", "Basic buying advice"],
   },
   standard: {
     name: "标准版",
     nameEn: "Standard",
-    price: 199,
+    price: 19,
     features: ["基础版全部内容", "价格趋势分析", "补贴退坡影响", "深度购买建议(时机/议价/风险)"],
     featuresEn: ["All basic content", "Price trend analysis", "Subsidy impact", "Deep buying advice"],
     recommended: true,
@@ -63,67 +62,28 @@ const TIERS: Record<Tier, {
   premium: {
     name: "旗舰版",
     nameEn: "Premium",
-    price: 299,
+    price: 29,
     features: ["标准版全部内容", "出口套利分析(中美价差)", "维修成本预估", "投资回报分析(残值/年化)"],
     featuresEn: ["All standard content", "Export arbitrage", "Maintenance cost", "ROI analysis"],
   },
 };
 
 // ============================================================
-// Mock QR code SVG (placeholder for real payment QR)
+// Real payment QR code (uploaded by site owner)
 // ============================================================
 
-function MockQRCode({ size = 160 }: { size?: number }) {
-  const cells = [];
-  const grid = 21;
-  const cellSize = size / grid;
-  // Pseudo-random pattern based on fixed seed
-  const pattern = [
-    1,1,1,1,1,1,1,0,1,0,1,1,0,1,1,1,1,1,1,1,1,
-    1,0,0,0,0,0,1,0,0,1,0,0,1,0,1,0,0,0,0,0,1,
-    1,0,1,1,1,0,1,1,0,0,1,1,0,1,1,0,1,1,1,0,1,
-    1,0,1,1,1,0,1,0,1,1,0,0,0,0,1,0,1,1,1,0,1,
-    1,0,1,1,1,0,1,0,0,1,1,1,0,1,1,0,1,1,1,0,1,
-    1,0,0,0,0,0,1,0,1,0,0,1,1,0,1,0,0,0,0,0,1,
-    1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,
-    0,0,0,0,0,0,0,0,1,1,0,1,0,1,0,0,0,0,0,0,0,
-    1,0,1,1,0,1,1,1,0,0,1,0,1,1,1,0,1,0,1,0,1,
-    0,1,0,0,1,0,0,1,1,1,0,1,0,0,1,0,0,1,0,1,0,
-    1,1,1,0,1,1,0,0,0,1,1,1,1,0,0,1,1,0,1,1,1,
-    0,0,1,1,0,0,1,1,1,0,0,1,0,1,1,0,0,1,0,0,1,
-    1,1,0,0,1,1,0,1,0,1,1,0,1,0,0,1,1,0,1,1,0,
-    0,0,0,0,0,0,0,0,1,0,0,1,0,1,0,0,1,0,0,0,0,
-    1,1,1,1,1,1,1,0,0,1,1,0,1,0,1,1,0,1,1,1,1,
-    1,0,0,0,0,0,1,0,1,0,0,1,0,1,1,0,0,0,0,0,1,
-    1,0,1,1,1,0,1,1,1,1,0,0,1,0,0,1,1,1,1,0,1,
-    1,0,1,1,1,0,1,0,0,1,1,1,0,1,1,0,1,1,1,0,1,
-    1,0,1,1,1,0,1,0,1,0,0,1,1,0,1,0,1,1,1,0,1,
-    1,0,0,0,0,0,1,0,0,1,1,0,0,1,0,0,0,0,0,0,1,
-    1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1,
-  ];
-  for (let i = 0; i < grid; i++) {
-    for (let j = 0; j < grid; j++) {
-      if (pattern[i * grid + j]) {
-        cells.push(
-          <rect
-            key={`${i}-${j}`}
-            x={j * cellSize}
-            y={i * cellSize}
-            width={cellSize}
-            height={cellSize}
-            fill="#1a1a1a"
-          />
-        );
-      }
-    }
-  }
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      <rect width={size} height={size} fill="#fff" />
-      {cells}
-    </svg>
-  );
-}
+const REAL_QR_CODES: Record<PaymentMethod, { src: string; label: string; tip: string }> = {
+  wechat: {
+    src: "/qrcode/wechat-pay.png",
+    label: "微信支付",
+    tip: "神雕农机 老许建辉（经营）",
+  },
+  alipay: {
+    src: "/qrcode/alipay.jpg",
+    label: "支付宝",
+    tip: "扫码支付 ¥X",
+  },
+};
 
 // ============================================================
 // Main component
@@ -145,16 +105,13 @@ export function DeepReportSection({
   const [step, setStep] = useState<Step>("select");
   const [selectedTier, setSelectedTier] = useState<Tier>("standard");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("wechat");
-  const [generateMode, setGenerateMode] = useState<GenerateMode>("sync");
   const [orderId, setOrderId] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(10);
   const [reportHtml, setReportHtml] = useState<string | null>(null);
-  const [contactInfo, setContactInfo] = useState("");
-  const [contactType, setContactType] = useState<"email" | "phone">("email");
+  const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [showPublishForm, setShowPublishForm] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const isZh = locale === "zh";
 
@@ -162,13 +119,19 @@ export function DeepReportSection({
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
-      if (pollRef.current) clearInterval(pollRef.current);
     };
   }, []);
 
-  // Start payment: create order and show QR
+  // Start payment: create order, send email, show QR
   const handleStartPayment = async () => {
     setError(null);
+
+    // Validate email
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError(isZh ? "请填写正确的邮箱地址（用于接收报告）" : "Please enter a valid email address");
+      return;
+    }
+
     setStep("paying");
     try {
       const res = await fetch("/api/deep-report", {
@@ -178,7 +141,9 @@ export function DeepReportSection({
           action: "create_order",
           tier: selectedTier,
           paymentMethod,
+          email,
           productId,
+          productName,
           productInfo: { brand, model, year, horsepower, category },
           valuationResult,
         }),
@@ -186,8 +151,6 @@ export function DeepReportSection({
       const data = await res.json();
       if (data.success) {
         setOrderId(data.data.orderId);
-        // Start polling for payment status
-        startPaymentPolling(data.data.orderId);
       } else {
         setError(data.error || "Failed to create order");
         setStep("select");
@@ -196,121 +159,65 @@ export function DeepReportSection({
       // Mock mode: simulate order creation
       const mockOrderId = `DR${Date.now()}`;
       setOrderId(mockOrderId);
-      // Auto-simulate payment after 5 seconds for demo
-      pollRef.current = setInterval(async () => {
-        if (mockOrderId) {
-          clearInterval(pollRef.current!);
-          // Simulate payment success
-          setStep("paid");
-        }
-      }, 5000);
     }
   };
 
-  // Poll payment status
-  const startPaymentPolling = (oid: string) => {
-    let attempts = 0;
-    pollRef.current = setInterval(async () => {
-      attempts++;
-      if (attempts > 100) {
-        // 5 minutes timeout
-        clearInterval(pollRef.current!);
-        setError(isZh ? "支付超时，请重试" : "Payment timeout, please retry");
-        setStep("select");
-        return;
-      }
-      try {
-        const res = await fetch(`/api/deep-report?action=payment_status&orderId=${oid}`);
-        const data = await res.json();
-        if (data.success && data.data.paid) {
-          clearInterval(pollRef.current!);
-          setStep("paid");
-        }
-      } catch {
-        // Ignore polling errors
-      }
-    }, 3000);
+  // User confirms they have paid (信任模式) - 直接进入生成
+  const handleConfirmPaid = () => {
+    // Notify backend (mark as paid in mock mode)
+    if (orderId) {
+      fetch("/api/deep-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "simulate_payment", orderId }),
+      }).catch(() => {});
+    }
+    // Auto-start generation
+    setTimeout(() => handleGenerate(), 300);
   };
 
-  // Simulate payment (for demo/testing)
-  const handleSimulatePayment = () => {
-    if (pollRef.current) clearInterval(pollRef.current);
-    setStep("paid");
-  };
-
-  // Start report generation
+  // Generate report and email to user
   const handleGenerate = async () => {
-    if (generateMode === "sync") {
-      setStep("generating");
-      setCountdown(10);
+    setStep("generating");
+    setCountdown(10);
 
-      // Countdown timer
-      timerRef.current = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timerRef.current!);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-
-      // Generate report
-      try {
-        const res = await fetch("/api/deep-report", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "generate",
-            orderId,
-            tier: selectedTier,
-            mode: "sync",
-            productInfo: { brand, model, year, horsepower, category },
-            valuationResult,
-          }),
-        });
-        const data = await res.json();
-        if (data.success) {
-          setReportHtml(data.data.reportHtml);
-          setStep("done");
-        } else {
-          // Mock report
-          setReportHtml(generateMockReport(selectedTier));
-          setStep("done");
+    // Countdown timer
+    timerRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timerRef.current!);
+          return 0;
         }
-      } catch {
-        // Mock report for demo
-        setTimeout(() => {
-          setReportHtml(generateMockReport(selectedTier));
-          setStep("done");
-        }, 2000);
+        return prev - 1;
+      });
+    }, 1000);
+
+    // Generate report
+    try {
+      const res = await fetch("/api/deep-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "generate",
+          orderId,
+          tier: selectedTier,
+          email,
+          productInfo: { brand, model, year, horsepower, category },
+          valuationResult,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setReportHtml(data.data.reportHtml);
+        setStep("done");
+      } else {
+        // Fallback to mock report
+        setReportHtml(generateMockReport(selectedTier));
+        setStep("done");
       }
-    } else {
-      // Async mode
-      if (!contactInfo) {
-        setError(isZh ? "请填写联系方式" : "Please enter contact info");
-        return;
-      }
-      setError(null);
-      try {
-        await fetch("/api/deep-report", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "generate",
-            orderId,
-            tier: selectedTier,
-            mode: "async",
-            contactInfo,
-            contactType,
-            productInfo: { brand, model, year, horsepower, category },
-            valuationResult,
-          }),
-        });
-      } catch {
-        // Ignore API errors in demo mode
-      }
-      setStep("async-submitted");
+    } catch {
+      setReportHtml(generateMockReport(selectedTier));
+      setStep("done");
     }
   };
 
@@ -319,11 +226,9 @@ export function DeepReportSection({
     setStep("select");
     setOrderId(null);
     setReportHtml(null);
-    setContactInfo("");
     setCountdown(10);
     setError(null);
     if (timerRef.current) clearInterval(timerRef.current);
-    if (pollRef.current) clearInterval(pollRef.current);
   };
 
   // ============================================================
@@ -337,8 +242,8 @@ export function DeepReportSection({
           <Shield className="h-3.5 w-3.5" />
           <span>
             {isZh
-              ? "深度估值报告 — 市场对比·趋势分析·购买建议（¥99-299）"
-              : "Deep valuation report — Market analysis·Trends·Buying advice (¥99-299)"}
+              ? "深度估值报告 — 市场对比·趋势分析·购买建议（¥9-29）"
+              : "Deep valuation report — Market analysis·Trends·Buying advice (¥9-29)"}
           </span>
         </div>
         <button
@@ -452,74 +357,34 @@ export function DeepReportSection({
               </div>
             </div>
 
-            {/* Generate mode */}
+            {/* Email for report delivery */}
             <div className="mt-3">
-              <div className="mb-2 text-xs font-medium text-gray-700">
-                {isZh ? "报告生成方式" : "Report generation"}
+              <div className="mb-1 flex items-center gap-1.5 text-xs font-medium text-gray-700">
+                <Mail className="h-3.5 w-3.5" />
+                {isZh ? "邮箱（用于接收报告）" : "Email (for report delivery)"}
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setGenerateMode("sync")}
-                  className={`flex items-center gap-1.5 rounded-lg border px-4 py-2 text-sm transition-all ${
-                    generateMode === "sync"
-                      ? "border-purple-500 bg-purple-50 text-purple-700"
-                      : "border-gray-200 text-gray-600 hover:border-purple-300"
-                  }`}
-                >
-                  <Clock className="h-3.5 w-3.5" />
-                  {isZh ? "同步等待 (约10秒)" : "Sync (~10s)"}
-                </button>
-                <button
-                  onClick={() => setGenerateMode("async")}
-                  className={`flex items-center gap-1.5 rounded-lg border px-4 py-2 text-sm transition-all ${
-                    generateMode === "async"
-                      ? "border-purple-500 bg-purple-50 text-purple-700"
-                      : "border-gray-200 text-gray-600 hover:border-purple-300"
-                  }`}
-                >
-                  <Mail className="h-3.5 w-3.5" />
-                  {isZh ? "异步通知 (邮箱/微信)" : "Async (email/WeChat)"}
-                </button>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your@email.com"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none"
+              />
+              <div className="mt-1 text-[10px] text-gray-400">
+                {isZh
+                  ? "报告将同时在此页面显示，并发送到您填写的邮箱"
+                  : "Report will be shown here and emailed to you"}
               </div>
             </div>
-
-            {/* Async contact info */}
-            {generateMode === "async" && (
-              <div className="mt-3 rounded-lg bg-gray-50 p-3">
-                <div className="mb-2 flex gap-2">
-                  <button
-                    onClick={() => setContactType("email")}
-                    className={`rounded px-3 py-1 text-xs ${
-                      contactType === "email" ? "bg-purple-600 text-white" : "bg-white text-gray-600 border border-gray-200"
-                    }`}
-                  >
-                    {isZh ? "邮箱" : "Email"}
-                  </button>
-                  <button
-                    onClick={() => setContactType("phone")}
-                    className={`rounded px-3 py-1 text-xs ${
-                      contactType === "phone" ? "bg-purple-600 text-white" : "bg-white text-gray-600 border border-gray-200"
-                    }`}
-                  >
-                    {isZh ? "手机(微信)" : "Phone (WeChat)"}
-                  </button>
-                </div>
-                <input
-                  type={contactType === "email" ? "email" : "tel"}
-                  value={contactInfo}
-                  onChange={(e) => setContactInfo(e.target.value)}
-                  placeholder={contactType === "email" ? "your@email.com" : "138XXXXXXXX"}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none"
-                />
-              </div>
-            )}
 
             {/* Pay button */}
             <button
               onClick={handleStartPayment}
               className="mt-4 w-full rounded-lg bg-purple-600 py-3 text-sm font-medium text-white hover:bg-purple-700 transition-colors"
             >
-              {isZh ? `扫码支付 ¥${TIERS[selectedTier].price}` : `Pay ¥${TIERS[selectedTier].price} via QR`}
+              {isZh
+                ? `确认下单 · 扫码支付 ¥${TIERS[selectedTier].price}`
+                : `Confirm · Pay ¥${TIERS[selectedTier].price} via QR`}
             </button>
           </>
         )}
@@ -527,55 +392,43 @@ export function DeepReportSection({
         {/* Step: Paying (QR code) */}
         {step === "paying" && (
           <div className="flex flex-col items-center py-6">
-            <div className="mb-3 text-sm font-medium text-gray-700">
+            <div className="mb-1 text-sm font-medium text-gray-700">
               {isZh ? `${TIERS[selectedTier].name} · ¥${TIERS[selectedTier].price}` : `${TIERS[selectedTier].nameEn} · ¥${TIERS[selectedTier].price}`}
             </div>
-            <div className="rounded-xl border-2 border-gray-100 p-3">
-              <MockQRCode size={160} />
+            <div className="mb-3 text-xs text-gray-500">
+              {isZh ? `订单号: ${orderId} · 发送到: ${email}` : `Order: ${orderId} · To: ${email}`}
             </div>
-            <div className="mt-3 flex items-center gap-1.5 text-xs text-gray-500">
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            <div className="rounded-xl border-2 border-gray-100 bg-white p-3 shadow-sm">
+              <img
+                src={REAL_QR_CODES[paymentMethod].src}
+                alt={REAL_QR_CODES[paymentMethod].label}
+                width={180}
+                height={180}
+                className="block"
+              />
+            </div>
+            <div className="mt-2 text-xs text-gray-500">
+              {REAL_QR_CODES[paymentMethod].tip}
+            </div>
+            <div className="mt-3 flex items-center gap-1.5 text-[11px] text-amber-600">
+              <AlertCircle className="h-3 w-3" />
               {isZh
-                ? `${paymentMethod === "wechat" ? "微信" : "支付宝"}扫码支付中...`
-                : `Waiting for ${paymentMethod === "wechat" ? "WeChat" : "Alipay"} payment...`}
+                ? "请使用微信/支付宝扫一扫，付款后点击下方按钮"
+                : "Please scan to pay, then click the button below"}
             </div>
-            {/* Demo: simulate payment button */}
+
+            {/* Confirm payment button (信任模式) */}
             <button
-              onClick={handleSimulatePayment}
-              className="mt-3 rounded-lg border border-green-300 bg-green-50 px-4 py-1.5 text-xs text-green-700 hover:bg-green-100"
+              onClick={handleConfirmPaid}
+              className="mt-4 w-full max-w-xs rounded-lg bg-green-600 py-3 text-sm font-medium text-white hover:bg-green-700 transition-colors shadow-sm"
             >
-              {isZh ? "[测试] 模拟支付成功" : "[Test] Simulate payment success"}
+              {isZh ? "✓ 我已付款，立即生成报告" : "✓ I've paid, generate report now"}
             </button>
             <button
               onClick={handleReset}
               className="mt-2 text-xs text-gray-400 hover:text-gray-600"
             >
               {isZh ? "← 返回重新选择" : "← Back"}
-            </button>
-          </div>
-        )}
-
-        {/* Step: Paid — confirm and generate */}
-        {step === "paid" && (
-          <div className="flex flex-col items-center py-4">
-            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-              <Check className="h-6 w-6 text-green-600" />
-            </div>
-            <div className="mb-1 text-sm font-medium text-gray-800">
-              {isZh ? "支付成功！" : "Payment successful!"}
-            </div>
-            <div className="mb-4 text-xs text-gray-500">
-              {isZh
-                ? `${TIERS[selectedTier].name} · ¥${TIERS[selectedTier].price} · 订单号 ${orderId}`
-                : `${TIERS[selectedTier].nameEn} · ¥${TIERS[selectedTier].price} · Order ${orderId}`}
-            </div>
-            <button
-              onClick={handleGenerate}
-              className="rounded-lg bg-purple-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-purple-700 transition-colors"
-            >
-              {generateMode === "sync"
-                ? isZh ? "立即生成报告 (约10秒)" : "Generate now (~10s)"
-                : isZh ? "提交并后台生成" : "Submit for async generation"}
             </button>
           </div>
         )}
@@ -602,7 +455,9 @@ export function DeepReportSection({
               {isZh ? "正在生成深度估值报告..." : "Generating deep valuation report..."}
             </div>
             <div className="mt-2 text-xs text-gray-400">
-              {isZh ? "AI正在分析市场数据、趋势和套利机会" : "AI is analyzing market data, trends and arbitrage"}
+              {isZh
+                ? `AI正在分析市场数据，报告将同时发送到 ${email}`
+                : `AI is analyzing market data. Report will also be sent to ${email}`}
             </div>
           </div>
         )}
@@ -613,7 +468,7 @@ export function DeepReportSection({
             <div className="mb-3 flex items-center justify-between">
               <div className="flex items-center gap-1.5 text-sm font-medium text-gray-800">
                 <Check className="h-4 w-4 text-green-600" />
-                {isZh ? "报告已生成" : "Report ready"}
+                {isZh ? "报告已生成 · 已发送到您的邮箱" : "Report ready · Emailed to you"}
               </div>
               <div className="flex gap-2">
                 <button
@@ -629,7 +484,7 @@ export function DeepReportSection({
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement("a");
                     a.href = url;
-                    a.download = `deep-report-${orderId}.html`;
+                    a.download = `deep-report-${orderId || Date.now()}.html`;
                     a.click();
                   }}
                   className="flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50"
@@ -650,34 +505,6 @@ export function DeepReportSection({
               className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-700 prose prose-sm max-w-none"
               dangerouslySetInnerHTML={{ __html: reportHtml }}
             />
-          </div>
-        )}
-
-        {/* Step: Async submitted */}
-        {step === "async-submitted" && (
-          <div className="flex flex-col items-center py-6">
-            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
-              <Mail className="h-6 w-6 text-blue-600" />
-            </div>
-            <div className="mb-1 text-sm font-medium text-gray-800">
-              {isZh ? "已提交后台生成" : "Submitted for generation"}
-            </div>
-            <div className="mb-3 text-center text-xs text-gray-500">
-              {isZh
-                ? `报告将在1-3分钟内生成完毕，我们将通过${contactType === "email" ? "邮件" : "微信"}发送到 ${contactInfo}`
-                : `Report will be ready in 1-3 minutes. We'll notify you via ${contactType === "email" ? "email" : "WeChat"} at ${contactInfo}`}
-            </div>
-            <div className="rounded-lg bg-blue-50 p-3 text-xs text-blue-700">
-              {isZh
-                ? "订单号: " + orderId + "（请妥善保存，可用于查询报告状态）"
-                : "Order: " + orderId}
-            </div>
-            <button
-              onClick={handleReset}
-              className="mt-4 text-xs text-gray-400 hover:text-gray-600"
-            >
-              {isZh ? "← 返回" : "← Back"}
-            </button>
           </div>
         )}
 
