@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, Loader2, AlertCircle, ChevronDown, ChevronUp, Bot } from "lucide-react";
+import { Sparkles, Loader2, AlertCircle, Bot } from "lucide-react";
+import AnalysisReportView from "@/components/valuation/analysis-report-view";
 
 interface DeepAnalysisCardProps {
   productId: string;
@@ -31,7 +32,6 @@ export default function DeepAnalysisCard({
   const [structured, setStructured] = useState<Record<string, any> | null>(null);
   const [modelUsed, setModelUsed] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState(false);
 
   // 只取前3张图片（豆包处理够用，避免超时）
   const selectedImages = imageUrls.slice(0, 3);
@@ -47,7 +47,6 @@ export default function DeepAnalysisCard({
     setReport(null);
     setStructured(null);
     setModelUsed("");
-    setExpanded(true);
 
     try {
       const res = await fetch("/api/agents/seller-helper/deep-analysis", {
@@ -107,6 +106,7 @@ export default function DeepAnalysisCard({
     ? (locale === "zh" ? "分析中（约15-30秒）..." : "Analyzing...")
     : (locale === "zh" ? "开始深度分析" : "Start Deep Analysis");
   const reportTitle = locale === "zh" ? "深度分析报告" : "Deep Analysis Report";
+  const zh = locale === "zh";
   const noImageText = locale === "zh"
     ? "当前产品无图片，无法进行AI深度分析"
     : "No product images available for AI analysis";
@@ -173,106 +173,22 @@ export default function DeepAnalysisCard({
 
       {/* Report */}
       {report && (
-        <div className="mt-4 overflow-hidden rounded-lg border border-purple-200 bg-white">
-          {/* Report Header - Collapsible */}
+        <div className="mt-4">
+          <AnalysisReportView
+            report={report}
+            structured={structured}
+            isChineseBrand={isChineseBrand}
+            brandName={brandName}
+            categoryName={productName}
+            locale={locale}
+          />
           <button
-            onClick={() => setExpanded(!expanded)}
-            className="flex w-full items-center justify-between bg-purple-50 px-4 py-3 text-left transition-colors hover:bg-purple-100"
+            onClick={handleAnalyze}
+            disabled={analyzing}
+            className="mt-3 w-full rounded-lg border border-purple-300 py-2 text-xs text-purple-600 hover:bg-purple-50 disabled:opacity-50"
           >
-            <span className="flex items-center gap-2 text-sm font-medium text-purple-800">
-              <Sparkles className="h-4 w-4" />
-              {reportTitle}
-            </span>
-            {expanded ? (
-              <ChevronUp className="h-4 w-4 text-purple-500" />
-            ) : (
-              <ChevronDown className="h-4 w-4 text-purple-500" />
-            )}
+            {zh ? "重新分析" : "Re-analyze"}
           </button>
-
-          {/* Report Body */}
-          {expanded && (
-            <div className="border-t border-purple-100 p-4">
-              {/* Markdown Report */}
-              <div
-                className="prose prose-sm max-w-none text-gray-700"
-                dangerouslySetInnerHTML={{
-                  __html: report
-                    .replace(/## /g, '<h2 class="text-base font-bold text-gray-900 mt-4 mb-2">')
-                    .replace(/### /g, '<h3 class="text-sm font-bold text-gray-800 mt-3 mb-1">')
-                    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-                    .replace(/^- (.*)/gm, '<li class="ml-4 list-disc">$1</li>')
-                    .replace(/\n/g, "<br />"),
-                }}
-              />
-
-              {/* Structured Data Summary */}
-              {structured && structured.brand && (
-                <div className="mt-4 rounded-lg bg-green-50 p-3 text-sm">
-                  <p className="font-medium text-green-800">
-                    {locale === "zh" ? "识别设备" : "Identified Equipment"}：{structured.brand}{" "}
-                    {structured.modelName || ""}
-                    {structured.year && ` (${structured.year})`}
-                  </p>
-                  {structured.enginePower && (
-                    <p className="mt-1 text-green-700">
-                      {locale === "zh" ? "马力" : "Engine Power"}：{structured.enginePower} HP
-                    </p>
-                  )}
-                  {/* 国内品牌：补贴参考价区块 */}
-                  {isChineseBrand && (
-                    <>
-                      {structured.subsidyAmount && (
-                        <p className="mt-1 text-green-700">
-                          {locale === "zh" ? "购置补贴" : "Subsidy"}：¥{structured.subsidyAmount}
-                        </p>
-                      )}
-                      {structured.newMachinePrice && (
-                        <p className="mt-1 text-green-700">
-                          {locale === "zh" ? "新机参考价" : "New Machine Price"}：¥{structured.newMachinePrice}
-                        </p>
-                      )}
-                      {structured.estimatedPriceCny && (
-                        <p className="mt-1 font-medium text-green-800">
-                          {locale === "zh" ? "二手参考价" : "Used Market Price"}：¥{structured.estimatedPriceCny}
-                        </p>
-                      )}
-                      {structured.fobPriceUsd && (
-                        <p className="mt-1 text-green-600">
-                          {locale === "zh" ? "出口FOB参考价" : "FOB Export Price"}：${structured.fobPriceUsd}
-                        </p>
-                      )}
-                    </>
-                  )}
-                  {/* 国际品牌：出口参考价区块 */}
-                  {!isChineseBrand && (
-                    <>
-                      {structured.estimatedPriceCny && (
-                        <p className="mt-1 text-green-700">
-                          {locale === "zh" ? "国内参考价" : "China Market Price"}：¥{structured.estimatedPriceCny}
-                        </p>
-                      )}
-                      {structured.estimatedPriceUsd && (
-                        <p className="mt-1 text-green-700">
-                          {locale === "zh" ? "国际参考价" : "Intl Market Price"}：${structured.estimatedPriceUsd}
-                        </p>
-                      )}
-                      {structured.fobPriceUsd && (
-                        <p className="mt-1 font-medium text-green-800">
-                          {locale === "zh" ? "FOB青岛港参考价" : "FOB Qingdao Price"}：${structured.fobPriceUsd}
-                        </p>
-                      )}
-                    </>
-                  )}
-                  {structured.confidence && (
-                    <p className="mt-2 text-xs text-green-500">
-                      {locale === "zh" ? "置信度" : "Confidence"}：{Math.round(structured.confidence * 100)}%
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
         </div>
       )}
     </div>

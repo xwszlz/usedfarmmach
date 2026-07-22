@@ -436,3 +436,145 @@ export function getSubsidyTrendFactor(year: number): number {
   }
   return 1.00;
 }
+
+/**
+ * 补贴数据库年度价格走势（真实历史数据）
+ * 数据来源：520万条补贴数据库（2022-2025年，21省128文件）
+ * 用于：深度分析报告中的国产农机价格走势柱状图
+ */
+export interface SubsidyYearDatum {
+  year: number;
+  avgPrice: number;     // 平均售价（元）
+  avgSubsidy: number;   // 平均补贴（元）
+  count: number;        // 样本量
+}
+
+export const SUBSIDY_PRICE_HISTORY_BY_CATEGORY: Record<string, SubsidyYearDatum[]> = {
+  "轮式拖拉机": [
+    { year: 2022, avgPrice: 89744, avgSubsidy: 20535, count: 4660 },
+    { year: 2023, avgPrice: 102368, avgSubsidy: 19286, count: 2480 },
+    { year: 2024, avgPrice: 93576, avgSubsidy: 14746, count: 4151 },
+    { year: 2025, avgPrice: 109505, avgSubsidy: 16284, count: 3442 },
+  ],
+  "收割机": [
+    { year: 2022, avgPrice: 130420, avgSubsidy: 28605, count: 1635 },
+    { year: 2023, avgPrice: 198249, avgSubsidy: 37382, count: 851 },
+    { year: 2024, avgPrice: 130269, avgSubsidy: 24576, count: 1557 },
+    { year: 2025, avgPrice: 145013, avgSubsidy: 28225, count: 1595 },
+  ],
+  "玉米收割机": [
+    { year: 2022, avgPrice: 207913, avgSubsidy: 50435, count: 921 },
+    { year: 2023, avgPrice: 230983, avgSubsidy: 50593, count: 456 },
+    { year: 2024, avgPrice: 230212, avgSubsidy: 51540, count: 748 },
+    { year: 2025, avgPrice: 244972, avgSubsidy: 50150, count: 571 },
+  ],
+  "旋耕机": [
+    { year: 2022, avgPrice: 10529, avgSubsidy: 2339, count: 2954 },
+    { year: 2023, avgPrice: 9701, avgSubsidy: 2046, count: 1700 },
+    { year: 2024, avgPrice: 10066, avgSubsidy: 2021, count: 3614 },
+    { year: 2025, avgPrice: 9346, avgSubsidy: 1799, count: 2515 },
+  ],
+  "播种机": [
+    { year: 2022, avgPrice: 10819, avgSubsidy: 2472, count: 1547 },
+    { year: 2023, avgPrice: 13361, avgSubsidy: 3163, count: 1566 },
+    { year: 2024, avgPrice: 9673, avgSubsidy: 2159, count: 2589 },
+    { year: 2025, avgPrice: 13842, avgSubsidy: 3209, count: 2213 },
+  ],
+  "插秧机": [
+    { year: 2022, avgPrice: 43069, avgSubsidy: 14146, count: 665 },
+    { year: 2023, avgPrice: 44702, avgSubsidy: 15283, count: 419 },
+    { year: 2024, avgPrice: 52185, avgSubsidy: 17429, count: 621 },
+    { year: 2025, avgPrice: 40813, avgSubsidy: 11581, count: 633 },
+  ],
+  "植保机": [
+    { year: 2022, avgPrice: 44037, avgSubsidy: 10855, count: 311 },
+    { year: 2023, avgPrice: 43606, avgSubsidy: 9734, count: 288 },
+    { year: 2024, avgPrice: 41400, avgSubsidy: 10596, count: 428 },
+    { year: 2025, avgPrice: 43332, avgSubsidy: 12900, count: 1197 },
+  ],
+  "微耕机": [
+    { year: 2022, avgPrice: 2600, avgSubsidy: 670, count: 3989 },
+    { year: 2023, avgPrice: 2454, avgSubsidy: 656, count: 3055 },
+    { year: 2024, avgPrice: 2469, avgSubsidy: 674, count: 4634 },
+    { year: 2025, avgPrice: 2696, avgSubsidy: 745, count: 7521 },
+  ],
+};
+
+export const SUBSIDY_PRICE_HISTORY_BY_BRAND: Record<string, SubsidyYearDatum[]> = {
+  "东方红": [
+    { year: 2022, avgPrice: 102621, avgSubsidy: 20927, count: 1001 },
+    { year: 2023, avgPrice: 119423, avgSubsidy: 19585, count: 469 },
+    { year: 2024, avgPrice: 114983, avgSubsidy: 16065, count: 999 },
+    { year: 2025, avgPrice: 136005, avgSubsidy: 21089, count: 661 },
+  ],
+  "潍柴雷沃": [
+    { year: 2023, avgPrice: 149199, avgSubsidy: 26134, count: 317 },
+    { year: 2024, avgPrice: 161493, avgSubsidy: 27222, count: 1296 },
+    { year: 2025, avgPrice: 173419, avgSubsidy: 31717, count: 964 },
+  ],
+  "雷沃": [
+    { year: 2022, avgPrice: 137630, avgSubsidy: 30336, count: 1302 },
+    { year: 2023, avgPrice: 145553, avgSubsidy: 30154, count: 454 },
+    { year: 2024, avgPrice: 149215, avgSubsidy: 26378, count: 162 },
+    { year: 2025, avgPrice: 174874, avgSubsidy: 31465, count: 275 },
+  ],
+  "东风": [
+    { year: 2022, avgPrice: 95050, avgSubsidy: 22109, count: 299 },
+    { year: 2023, avgPrice: 101443, avgSubsidy: 21085, count: 154 },
+    { year: 2024, avgPrice: 93831, avgSubsidy: 15854, count: 248 },
+    { year: 2025, avgPrice: 98405, avgSubsidy: 13747, count: 211 },
+  ],
+  "沃得": [
+    { year: 2022, avgPrice: 114865, avgSubsidy: 26626, count: 939 },
+    { year: 2023, avgPrice: 188771, avgSubsidy: 36317, count: 498 },
+    { year: 2024, avgPrice: 111908, avgSubsidy: 25077, count: 633 },
+    { year: 2025, avgPrice: 136281, avgSubsidy: 29716, count: 678 },
+  ],
+  "常发": [
+    { year: 2022, avgPrice: 97333, avgSubsidy: 24033, count: 201 },
+    { year: 2023, avgPrice: 121887, avgSubsidy: 25888, count: 89 },
+    { year: 2024, avgPrice: 105375, avgSubsidy: 17403, count: 199 },
+    { year: 2025, avgPrice: 123881, avgSubsidy: 16066, count: 210 },
+  ],
+  "华夏": [
+    { year: 2022, avgPrice: 67823, avgSubsidy: 18446, count: 156 },
+    { year: 2023, avgPrice: 76129, avgSubsidy: 19623, count: 86 },
+    { year: 2024, avgPrice: 58920, avgSubsidy: 11317, count: 186 },
+    { year: 2025, avgPrice: 56898, avgSubsidy: 10008, count: 95 },
+  ],
+  "久保田": [
+    { year: 2022, avgPrice: 102511, avgSubsidy: 18817, count: 197 },
+    { year: 2023, avgPrice: 130270, avgSubsidy: 21405, count: 140 },
+    { year: 2024, avgPrice: 132488, avgSubsidy: 22520, count: 171 },
+    { year: 2025, avgPrice: 98560, avgSubsidy: 16951, count: 265 },
+  ],
+};
+
+/**
+ * 获取品牌或品类的补贴价格走势
+ * 优先按品牌匹配，其次按品类映射
+ */
+export function getSubsidyPriceHistory(brand: string, category: string): SubsidyYearDatum[] {
+  // 先尝试品牌精确匹配
+  if (brand && SUBSIDY_PRICE_HISTORY_BY_BRAND[brand]) {
+    return SUBSIDY_PRICE_HISTORY_BY_BRAND[brand];
+  }
+  // 模糊匹配品牌
+  if (brand) {
+    for (const [key, data] of Object.entries(SUBSIDY_PRICE_HISTORY_BY_BRAND)) {
+      if (brand.includes(key) || key.includes(brand)) return data;
+    }
+  }
+  // 品类映射
+  const mappedCat = CATEGORY_MAPPING[category] || category;
+  if (mappedCat && SUBSIDY_PRICE_HISTORY_BY_CATEGORY[mappedCat]) {
+    return SUBSIDY_PRICE_HISTORY_BY_CATEGORY[mappedCat];
+  }
+  // 模糊匹配品类
+  if (category) {
+    for (const [key, data] of Object.entries(SUBSIDY_PRICE_HISTORY_BY_CATEGORY)) {
+      if (category.includes(key) || key.includes(category)) return data;
+    }
+  }
+  return [];
+}

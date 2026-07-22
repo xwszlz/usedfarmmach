@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { DeepReportSection } from "@/components/valuation/deep-report-section";
+import AnalysisReportView from "@/components/valuation/analysis-report-view";
 import {
   DOMESTIC_HP_REGRESSION,
   DOMESTIC_BRAND_PREMIUM,
@@ -410,12 +411,14 @@ function DeepAnalysisSection({
 }) {
   const [loading, setLoading] = useState(false);
   const [report, setReport] = useState<string | null>(null);
+  const [structured, setStructured] = useState<Record<string, any> | null>(null);
   const [error, setError] = useState("");
 
   const runDeepAnalysis = async () => {
     setLoading(true);
     setError("");
     setReport(null);
+    setStructured(null);
     try {
       const res = await fetch("/api/agents/seller-helper/deep-analysis", {
         method: "POST",
@@ -430,7 +433,8 @@ function DeepAnalysisSection({
       });
       const data = await res.json();
       if (data.success) {
-        setReport(data.data?.report || data.report || JSON.stringify(data.data, null, 2));
+        setReport(data.data?.analysis || "");
+        setStructured(data.data?.structured || null);
       } else {
         setError(data.error || "深度分析失败");
       }
@@ -477,9 +481,14 @@ function DeepAnalysisSection({
 
       {report && (
         <div className="animate-in space-y-3">
-          <div className="rounded-lg bg-white p-4">
-            <pre className="whitespace-pre-wrap text-sm text-gray-700">{report}</pre>
-          </div>
+          <AnalysisReportView
+            report={report}
+            structured={structured}
+            isChineseBrand={true}
+            brandName={prefillData.brand}
+            categoryName={prefillData.category}
+            locale="zh"
+          />
           <button
             onClick={runDeepAnalysis}
             className="w-full rounded-lg border border-purple-300 py-2 text-xs text-purple-600 hover:bg-purple-50"
