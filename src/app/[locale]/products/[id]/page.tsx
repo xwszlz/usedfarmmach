@@ -5,7 +5,6 @@ import { getTranslations } from "next-intl/server";
 import { setRequestLocale } from "next-intl/server";
 import { ImageGallery } from "@/components/product/image-gallery";
 import { SpecificationTable } from "@/components/product/specification-table";
-import { PriceTradeSection } from "@/components/product/price-trade-section";
 import { StandardDescription } from "@/components/product/standard-description";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -393,22 +392,50 @@ export default async function ProductDetailPage({
       </div>
 
       {/* ================================================================ */}
-      {/*  SECTION 6 — Price & Unified Inquiry Entry (moved down)          */}
+      {/*  Machinery Identity & Traceability (一机一码) — 紧贴产品描述       */}
       {/* ================================================================ */}
-
-      {/* Price & Trade Terms */}
       <div className="mt-8">
-        <PriceTradeSection
-          priceCny={product.priceCny}
-          priceUsd={product.priceUsd ?? null}
-          priceMode={product.priceMode || "por"}
-          tradeTerm={product.tradeTerm || "FOB"}
-          tradePort={product.tradePort ?? null}
+        <MachineryIdentityCard productId={product.id} locale={locale} />
+      </div>
+
+      {/* ================================================================ */}
+      {/*  AI 智能估值                                                      */}
+      {/* ================================================================ */}
+      <div className="mt-6">
+        <ValuationCard
+          productId={product.id}
+          productName={`${brandName} ${product.modelName}`}
           locale={locale}
         />
       </div>
 
-      {/* Unified Contact & Inquiry Entry */}
+      {/* ================================================================ */}
+      {/*  Differentiated Features — 跨境套利计算器                         */}
+      {/* ================================================================ */}
+
+      {/* Arbitrage Calculator */}
+      {arbitragePercent !== null && latestIntlPrice && (
+        <div className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>跨境套利计算器</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ArbitrageCalculatorSection
+                productId={product.id}
+                domesticPrice={product.priceCny}
+                foreignPrice={latestIntlPrice.priceForeignRaw || undefined}
+                foreignCurrency={latestIntlPrice.currency as any}
+                showForeignPrice={true}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* ================================================================ */}
+      {/*  联系卖家 / 快速联系卖家 — 统一询价入口                           */}
+      {/* ================================================================ */}
       <div className="mt-6">
         <Card>
           <CardHeader>
@@ -471,39 +498,6 @@ export default async function ProductDetailPage({
       </div>
 
       {/* ================================================================ */}
-      {/*  Differentiated Features (below inquiry entry)                   */}
-      {/* ================================================================ */}
-
-      {/* Arbitrage Calculator */}
-      {arbitragePercent !== null && latestIntlPrice && (
-        <div className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>跨境套利计算器</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ArbitrageCalculatorSection
-                productId={product.id}
-                domesticPrice={product.priceCny}
-                foreignPrice={latestIntlPrice.priceForeignRaw || undefined}
-                foreignCurrency={latestIntlPrice.currency as any}
-                showForeignPrice={true}
-              />
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* AI Valuation */}
-      <div className="mt-6">
-        <ValuationCard
-          productId={product.id}
-          productName={`${brandName} ${product.modelName}`}
-          locale={locale}
-        />
-      </div>
-
-      {/* ================================================================ */}
       {/*  在线询价栏目 — 直接嵌入产品详情页（不再跳转到独立页面）        */}
       {/* ================================================================ */}
       {product.auctions?.[0] && (
@@ -523,11 +517,6 @@ export default async function ProductDetailPage({
           />
         </div>
       )}
-
-      {/* Machinery Identity & Traceability (一机一码) */}
-      <div className="mt-6">
-        <MachineryIdentityCard productId={product.id} locale={locale} />
-      </div>
 
       {/* Inspection Report (设备检验报告) */}
       <div className="mt-6">
