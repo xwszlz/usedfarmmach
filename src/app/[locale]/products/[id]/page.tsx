@@ -346,7 +346,7 @@ export default async function ProductDetailPage({
             </Card>
           )}
 
-          {/* Buy Intent Button + Favorite */}
+          {/* 立即询价 Button + Favorite */}
           <div className="flex items-center gap-3">
             <BuyIntentButton
               productId={product.id}

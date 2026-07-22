@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import { Send, CheckCircle } from "lucide-react";
+import { CheckCircle, MessageSquare } from "lucide-react";
 
 interface InquiryFormProps {
   productId: string;
@@ -55,14 +55,13 @@ export function InquiryForm({ productId }: InquiryFormProps) {
 
   return (
     <>
-      <Button
+      <button
         onClick={() => setOpen(true)}
-        className="w-full"
-        size="lg"
+        className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-600 transition-colors hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
       >
-        <Send className="mr-2 h-4 w-4" />
+        <MessageSquare className="h-4 w-4" />
         {t("submit")}
-      </Button>
+      </button>
 
       <Dialog open={open} onClose={() => { setOpen(false); setSuccess(false); setError(""); }} title={t("title")}>
         {success ? (
