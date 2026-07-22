@@ -448,7 +448,7 @@ function DeepAnalysisSection({
           <FileText className="h-5 w-5 text-purple-600" />
           <h3 className="text-sm font-semibold text-gray-800">深度估值报告</h3>
         </div>
-        <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-medium text-purple-700">¥99-299</span>
+        <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-medium text-purple-700">¥9-29</span>
       </div>
       <p className="mb-3 text-xs text-gray-500">
         包含：技术参数评估 · 操作维修建议 · 市场参考价 · FOB出口价 · 购买建议
@@ -710,7 +710,7 @@ export default function ValuationPage() {
         </div>
         <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">AI智能估价</h1>
         <p className="mt-2 text-gray-500">
-          基于520万条补贴数据 + AI多模态识别，覆盖国产/国际/出口三大通道
+          AI多模态识别，覆盖国产/国际/出口三大通道
         </p>
       </div>
 
@@ -734,7 +734,7 @@ export default function ValuationPage() {
         >
           <FileText className="mr-1 inline h-4 w-4" />
           深度报告
-          <span className="ml-1 text-xs opacity-70">¥99-299 · 30秒</span>
+          <span className="ml-1 text-xs opacity-70">¥9-29 · 30秒</span>
         </button>
       </div>
 
@@ -1168,29 +1168,10 @@ export default function ValuationPage() {
         />
       )}
 
-      {/* Formula Reference */}
-      <div className="mt-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h4 className="mb-3 text-sm font-semibold text-gray-700">估值公式参考</h4>
-        <div className="rounded-lg bg-gray-50 p-4 text-xs text-gray-600">
-          <div className="mb-2"><strong>国产估值：</strong></div>
-          <div className="mb-3 font-mono">
-            新机基准价(马力回归) × 年限折旧(7-8%/年) × 地区修正 × 补贴趋势 × 品牌溢价
-          </div>
-          <div className="mb-2"><strong>国际估值：</strong></div>
-          <div className="mb-3 font-mono">
-            (新机价 × 小时折旧 × 状况系数 × 排放系数 + 配置增值) × 区域系数 × 品牌保值率
-          </div>
-          <div className="mb-2"><strong>出口估值：</strong></div>
-          <div className="font-mono">
-            国际估值 → 目标国收购价(×buy系数) + 运费 + 关税 = 到岸成本 → 售价(×sell系数) - 成本 = 套利利润
-          </div>
-        </div>
-      </div>
-
       {/* Disclaimer */}
-      <div className="mt-6 text-center text-xs leading-relaxed text-gray-400">
+      <div className="mt-8 text-center text-xs leading-relaxed text-gray-400">
         <strong className="text-gray-500">免责声明：</strong>
-        本估值引擎基于520万条补贴数据回归分析和市场模型估算，仅供决策参考，不构成投资或交易建议。
+        本估值引擎基于AI多模态识别与市场模型估算，仅供决策参考，不构成投资或交易建议。
         实际成交价格受车况、市场供需、谈判等多重因素影响，可能存在偏差。
       </div>
     </div>
