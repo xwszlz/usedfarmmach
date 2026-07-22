@@ -241,12 +241,12 @@ export const CONDITION_FACTORS: Record<string, number> = {
   "poor": 0.75,
 };
 
-// 折旧率（分年段）— 农机价值保持优于汽车
+// 折旧率（分年段）— 基于520万条补贴数据按年份分组校准
 export const DEPRECIATION_TABLE = [
-  { maxYear: 3, rate: 0.05 },   // 0-3年: 每年折4%
-  { maxYear: 7, rate: 0.06 },   // 4-7年: 每年折6%
-  { maxYear: 12, rate: 0.05 },  // 8-12年: 每年折5%
-  { maxYear: 999, rate: 0.04 }, // 13年+: 每年折4%
+  { maxYear: 3, rate: 0.07 },   // 0-3年: 每年折7%（原5%，补贴数据校准）
+  { maxYear: 7, rate: 0.08 },   // 4-7年: 每年折8%（原6%，补贴数据校准）
+  { maxYear: 12, rate: 0.07 },  // 8-12年: 每年折7%（原5%，补贴数据校准）
+  { maxYear: 999, rate: 0.05 }, // 13年+: 每年折5%（原4%，补贴数据校准）
 ];
 
 // 工时参数
@@ -264,3 +264,175 @@ export const MARKET_FACTOR_RANGE = {
 
 // 残值底线
 export const MIN_RESIDUAL_RATIO = 0.10; // 不低于新机价格10%
+
+// ========================================
+// 数据驱动参数（基于520万条补贴数据库回归分析）
+// 更新日期：2026-07-22
+// 数据源：21省128文件，2022-2025年，去重后520万条
+// ========================================
+
+/**
+ * 国产农机马力-价格回归模型
+ * 数据来源：520万条农机补贴数据库（2022-2025年）
+ * 用于：当品牌为国产且有马力数据时，通过回归公式计算新机基准价
+ * 公式：新机价格 = pricePerHP × 马力 + intercept
+ */
+export const DOMESTIC_HP_REGRESSION: Record<string, {
+  pricePerHP: number;   // 每马力单价（元/HP）
+  intercept: number;    // 回归截距（元）
+  r2: number;           // 拟合优度
+  avgHP: number;        // 平均马力
+  avgPrice: number;     // 平均价格（元）
+  sampleSize: number;   // 样本量
+}> = {
+  "东方红":    { pricePerHP: 1240, intercept: -12840, r2: 0.6453, avgHP: 104.0, avgPrice: 116120, sampleSize: 3128 },
+  "潍柴雷沃":  { pricePerHP: 1449, intercept: -30047, r2: 0.8044, avgHP: 107.6, avgPrice: 125865, sampleSize: 1386 },
+  "雷沃":      { pricePerHP: 1303, intercept: -21045, r2: 0.8567, avgHP: 106.1, avgPrice: 117205, sampleSize: 1242 },
+  "东风":      { pricePerHP: 1139, intercept: -9979,  r2: 0.9299, avgHP: 94.6,  avgPrice: 97780,  sampleSize: 865 },
+  "沃得":      { pricePerHP: 1050, intercept: -13286, r2: 0.9176, avgHP: 87.3,  avgPrice: 78379,  sampleSize: 858 },
+  "常发":      { pricePerHP: 1245, intercept: -20442, r2: 0.9064, avgHP: 115.7, avgPrice: 123605, sampleSize: 613 },
+  "华夏":      { pricePerHP: 927,  intercept: -12718, r2: 0.8659, avgHP: 82.8,  avgPrice: 64038,  sampleSize: 523 },
+  "泰山":      { pricePerHP: 903,  intercept: -8748,  r2: 0.9032, avgHP: 61.7,  avgPrice: 46927,  sampleSize: 493 },
+  "中联":      { pricePerHP: 1247, intercept: -21624, r2: 0.9267, avgHP: 113.3, avgPrice: 119661, sampleSize: 169 },
+  // 通用回归（全品牌汇总，R2=0.5147）
+  "_default":  { pricePerHP: 1414, intercept: -33848, r2: 0.5147, avgHP: 100,   avgPrice: 100000, sampleSize: 14733 },
+};
+
+/**
+ * 补贴数据品类中位价（元）
+ * 当无马力数据时，用品类中位价作为新机基准价
+ */
+export const SUBSIDY_CATEGORY_PRICES: Record<string, { median: number; avg: number; count: number }> = {
+  "轮式拖拉机":   { median: 63000,  avg: 97070,  count: 770121 },
+  "收割机":       { median: 145000, avg: 144918, count: 295126 },
+  "玉米收割机":   { median: 216000, avg: 226392, count: 138230 },
+  "微耕机":       { median: 2500,   avg: 2579,   count: 1007612 },
+  "旋耕机":       { median: 7000,   avg: 9774,   count: 564803 },
+  "播种机":       { median: 6500,   avg: 11773,  count: 410381 },
+  "插秧机":       { median: 20500,  avg: 45585,  count: 120078 },
+  "耕作机具":     { median: 9800,   avg: 16292,  count: 113179 },
+  "植保机":       { median: 44000,  avg: 43299,  count: 110678 },
+  "烘干机":       { median: 3400,   avg: 32045,  count: 68553 },
+  "秸秆处理机":   { median: 6600,   avg: 6650,   count: 266996 },
+  "饲料加工机":   { median: 4300,   avg: 15783,  count: 64282 },
+  "灌溉设备":     { median: 28000,  avg: 29014,  count: 28890 },
+  "水稻收割机":   { median: 118000, avg: 116396, count: 5221 },
+  "移栽机":       { median: 17600,  avg: 29610,  count: 3047 },
+  "其他拖拉机":   { median: 116000, avg: 116517, count: 4060 },
+  "手扶拖拉机":   { median: 12500,  avg: 12839,  count: 253 },
+};
+
+/**
+ * 网站品类名 → 补贴数据品类名 映射
+ */
+export const CATEGORY_MAPPING: Record<string, string> = {
+  "拖拉机": "轮式拖拉机",
+  "收获机": "收割机",
+  "收割机": "收割机",
+  "青储机": "收割机",
+  "打捆机": "秸秆处理机",
+  "播种机": "播种机",
+  "旋耕机": "旋耕机",
+  "植保机": "植保机",
+  "插秧机": "插秧机",
+  "烘干机": "烘干机",
+};
+
+/**
+ * 国产品牌溢价系数（基于补贴数据回归）
+ * 相对市场中位价的溢价/折价比率
+ * 用于：无马力数据时的品牌修正
+ */
+export const DOMESTIC_BRAND_PREMIUM: Record<string, number> = {
+  "东方红":    1.50,   // +50.1%
+  "潍柴雷沃":  1.50,   // +50.8%
+  "雷沃":      1.49,   // +48.9%
+  "道依茨法尔": 1.50,   // +50.8%
+  "中联":      1.44,   // +43.8%
+  "中联重科":  1.44,
+  "英轩":      1.32,   // +31.7%
+  "常发":      1.27,   // +27.0%
+  "东风":      1.19,   // +19.0%
+  "沃得":      1.03,   // +2.5%
+  "五征":      0.86,   // -14.4%
+  "悍沃":      0.85,   // -15.4%
+  "华夏":      0.68,   // -31.7%
+  "泰山":      0.65,   // -34.9%
+  "萨丁":      0.65,
+  "潍坊鲁中":  0.65,
+  "双力现代":  0.65,
+  "万年红拖":  0.54,   // -46.0%
+  "瑞得拖拉":  0.52,   // -47.6%
+  "常力工贸":  0.56,   // -44.4%
+  "力王农业":  0.58,   // -42.2%
+};
+
+/**
+ * 地区价格修正系数
+ * 数据来源：补贴数据21省份均价分析
+ * 已收缩范围避免产品结构差异导致的扭曲
+ */
+export const REGIONAL_FACTORS: Record<string, number> = {
+  "黑龙江":    1.08,
+  "新疆":      1.12,
+  "辽宁":      1.04,
+  "北大荒":    1.06,
+  "河北":      1.04,
+  "河南":      1.00,
+  "山东":      0.97,
+  "江西":      0.97,
+  "山西":      0.94,
+  "甘肃":      0.92,
+  "湖北":      0.90,
+  "广西":      0.88,
+  "广东":      0.86,
+  "贵州":      0.80,
+  "_default":  1.00,
+};
+
+/**
+ * 补贴退坡趋势因子
+ * 补贴减少 → 新机实际成本上升 → 二手机相对更有价值
+ * 2022年基准1.0，之后逐年小幅上升
+ */
+export const SUBSIDY_TREND_FACTOR: Record<number, number> = {
+  2022: 1.00,
+  2023: 1.02,
+  2024: 1.04,
+  2025: 1.05,
+};
+
+/**
+ * 判断品牌是否为有补贴数据支持的国产品牌
+ */
+export function isDomesticBrandSupported(brand: string): boolean {
+  const supportedBrands = Object.keys(DOMESTIC_HP_REGRESSION).filter(k => k !== "_default");
+  return supportedBrands.some(b => brand.includes(b) || b.includes(brand));
+}
+
+/**
+ * 获取地区修正系数
+ */
+export function getRegionalFactor(location?: string): number {
+  if (!location) return REGIONAL_FACTORS._default;
+  for (const [region, factor] of Object.entries(REGIONAL_FACTORS)) {
+    if (region === "_default") continue;
+    if (location.includes(region) || region.includes(location)) return factor;
+  }
+  return REGIONAL_FACTORS._default;
+}
+
+/**
+ * 获取补贴趋势因子
+ */
+export function getSubsidyTrendFactor(year: number): number {
+  if (SUBSIDY_TREND_FACTOR[year]) return SUBSIDY_TREND_FACTOR[year];
+  if (year <= 2022) return 1.00;
+  // 2025年以后继续递减但放缓
+  const lastYear = Math.max(...Object.keys(SUBSIDY_TREND_FACTOR).map(Number));
+  if (year > lastYear) {
+    const decline = Math.min((year - lastYear) * 0.01, 0.05);
+    return SUBSIDY_TREND_FACTOR[lastYear] * (1 + decline);
+  }
+  return 1.00;
+}

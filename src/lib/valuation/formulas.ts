@@ -22,6 +22,14 @@ import {
   HOURS_PARAMS,
   MARKET_FACTOR_RANGE,
   MIN_RESIDUAL_RATIO,
+  // 数据驱动参数（520万条补贴数据库）
+  DOMESTIC_HP_REGRESSION,
+  SUBSIDY_CATEGORY_PRICES,
+  CATEGORY_MAPPING,
+  DOMESTIC_BRAND_PREMIUM,
+  isDomesticBrandSupported,
+  getRegionalFactor,
+  getSubsidyTrendFactor,
 } from "./brand-data";
 
 // V4: 导入图片分析模块
@@ -185,6 +193,95 @@ function getCategoryBasePrice(category: string, modelName?: string): number {
   }
 
   return 800000; // 默认80万
+}
+
+/**
+ * 数据驱动基准价计算（双轨制）
+ * 
+ * 轨道A（进口/无补贴数据品牌）：现有逻辑 — 品类基准价 × 品牌系数
+ * 轨道B1（国产 + 有马力）：马力-价格回归模型
+ * 轨道B2（国产 + 无马力）：品类中位价 × 品牌溢价系数
+ * 
+ * @returns { basePrice, brandFactor, dataSource } 基准价、品牌系数、数据来源
+ */
+function getDataDrivenBasePrice(
+  brand: string,
+  category: string,
+  modelName?: string,
+  enginePower?: number
+): { basePrice: number; brandFactor: number; dataSource: string } {
+  // 检查是否为有补贴数据支持的国产品牌
+  const isDomestic = isDomesticBrandSupported(brand);
+
+  if (isDomestic) {
+    // 查找品牌级回归参数
+    let regression = DOMESTIC_HP_REGRESSION[brand];
+    if (!regression) {
+      // 模糊匹配
+      for (const [key, val] of Object.entries(DOMESTIC_HP_REGRESSION)) {
+        if (key === "_default") continue;
+        if (brand.includes(key) || key.includes(brand)) {
+          regression = val;
+          break;
+        }
+      }
+    }
+
+    // 轨道B1：国产 + 有马力数据 → 回归模型
+    if (enginePower && enginePower > 0 && regression) {
+      const regPrice = regression.pricePerHP * enginePower + regression.intercept;
+      const basePrice = Math.max(regPrice, 5000); // 最低5000元
+      return {
+        basePrice,
+        brandFactor: 1.0, // 回归已内含品牌差异
+        dataSource: `回归模型(${regression.pricePerHP}元/HP × ${enginePower}HP)`,
+      };
+    }
+
+    // 轨道B2：国产 + 无马力数据 → 品类中位价 × 品牌溢价
+    const subsidyCategory = CATEGORY_MAPPING[category] || category;
+    const categoryData = SUBSIDY_CATEGORY_PRICES[subsidyCategory];
+
+    // 查找品牌溢价系数
+    let premium = DOMESTIC_BRAND_PREMIUM[brand];
+    if (!premium) {
+      for (const [key, val] of Object.entries(DOMESTIC_BRAND_PREMIUM)) {
+        if (brand.includes(key) || key.includes(brand)) {
+          premium = val;
+          break;
+        }
+      }
+    }
+    premium = premium || 1.0;
+
+    if (categoryData) {
+      return {
+        basePrice: categoryData.median,
+        brandFactor: premium,
+        dataSource: `补贴中位价(${subsidyCategory} ¥${categoryData.median.toLocaleString()}) × 品牌溢价(${premium})`,
+      };
+    }
+
+    // 补贴数据无此品类，回退到通用回归
+    if (enginePower && enginePower > 0) {
+      const defaultReg = DOMESTIC_HP_REGRESSION._default;
+      const regPrice = defaultReg.pricePerHP * enginePower + defaultReg.intercept;
+      return {
+        basePrice: Math.max(regPrice, 5000),
+        brandFactor: premium,
+        dataSource: `通用回归(${defaultReg.pricePerHP}元/HP × ${enginePower}HP) × 品牌溢价(${premium})`,
+      };
+    }
+  }
+
+  // 轨道A：进口品牌或无补贴数据 → 现有逻辑
+  const categoryBasePrice = getCategoryBasePrice(category, modelName);
+  const brandFactor = getBrandFactor(brand);
+  return {
+    basePrice: categoryBasePrice * brandFactor,
+    brandFactor,
+    dataSource: `品类基准价(¥${(categoryBasePrice / 10000).toFixed(1)}万) × 品牌系数(${brandFactor})`,
+  };
 }
 
 /**
@@ -579,10 +676,10 @@ export async function calculateValuationV4(
 
   // === V2 基础计算 ===
   
-  // 1. 基准价
-  const categoryBasePrice = getCategoryBasePrice(input.category, input.modelName);
-  const brandFactor = getBrandFactor(input.brand);
-  const basePrice = categoryBasePrice * brandFactor;
+  // 1. 基准价（双轨制：国产数据驱动 vs 进口传统）
+  const { basePrice, brandFactor, dataSource } = getDataDrivenBasePrice(
+    input.brand, input.category, input.modelName, input.enginePower
+  );
 
   // 2. 年份因子
   const yearFactor = calcYearFactor(input.year, currentYear);
@@ -621,6 +718,11 @@ export async function calculateValuationV4(
   const videoAnalysisResult = input.videoAnalysisResult;
   const videoFactor = videoAnalysisResult ? calculateVideoFactor(videoAnalysisResult) : 1.0;
   estimatedValue = Math.round(estimatedValue * videoFactor);
+
+  // === 数据驱动：地区修正 + 补贴趋势 ===
+  const regionalFactor = getRegionalFactor(input.location);
+  const subsidyFactor = getSubsidyTrendFactor(input.year);
+  estimatedValue = Math.round(estimatedValue * regionalFactor * subsidyFactor);
 
   // 7. 折旧率
   const depreciationPercent = Math.round((1 - estimatedValue / basePrice) * 100);
@@ -710,6 +812,36 @@ export async function calculateValuationV4(
     });
   }
 
+  // 添加地区修正详情
+  if (regionalFactor !== 1.0) {
+    details.push({
+      label: "地区修正",
+      value: `${Math.round(regionalFactor * 100)}%`,
+      impact: regionalFactor > 1.0 ? "positive" : "negative",
+      description: input.location
+        ? `${input.location}地区价格水平${regionalFactor > 1.0 ? "偏高" : "偏低"}`
+        : "基于地区均价修正",
+    });
+  }
+
+  // 添加补贴趋势详情
+  if (subsidyFactor !== 1.0) {
+    details.push({
+      label: "补贴趋势",
+      value: `${Math.round(subsidyFactor * 100)}%`,
+      impact: subsidyFactor > 1.0 ? "positive" : "neutral",
+      description: `补贴退坡使二手机相对增值（${input.year}年趋势因子${subsidyFactor.toFixed(2)}）`,
+    });
+  }
+
+  // 添加数据来源详情
+  details.push({
+    label: "基准价来源",
+    value: isDomesticBrandSupported(input.brand) ? "数据驱动" : "传统查表",
+    impact: "neutral",
+    description: dataSource,
+  });
+
   // 12. 一句话分析
   let analysis = "";
   const v4Tag = conditionInfo.usedV4 ? "🎯 V4多模态" : "📊 V2传统";
@@ -777,10 +909,10 @@ export async function calculateValuationV4(
 export function calculateValuation(input: ValuationInput): ValuationResult {
   const currentYear = new Date().getFullYear();
 
-  // 1. 基准价
-  const categoryBasePrice = getCategoryBasePrice(input.category, input.modelName);
-  const brandFactor = getBrandFactor(input.brand);
-  const basePrice = categoryBasePrice * brandFactor;
+  // 1. 基准价（双轨制：国产数据驱动 vs 进口传统）
+  const { basePrice, brandFactor, dataSource } = getDataDrivenBasePrice(
+    input.brand, input.category, input.modelName, input.enginePower
+  );
 
   // 2. 年份因子
   const yearFactor = calcYearFactor(input.year, currentYear);
@@ -802,6 +934,11 @@ export function calculateValuation(input: ValuationInput): ValuationResult {
   if (input.priceCny && input.priceCny > 0 && estimatedValue > input.priceCny * 2) {
     estimatedValue = Math.round(input.priceCny * 2);
   }
+
+  // 6b. 数据驱动：地区修正 + 补贴趋势
+  const regionalFactor = getRegionalFactor(input.location);
+  const subsidyFactor = getSubsidyTrendFactor(input.year);
+  estimatedValue = Math.round(estimatedValue * regionalFactor * subsidyFactor);
 
   // 7. 折旧率
   const depreciationPercent = Math.round((1 - estimatedValue / basePrice) * 100);
@@ -870,6 +1007,26 @@ export function calculateValuation(input: ValuationInput): ValuationResult {
       description: input.foreignPriceCny
         ? `基于国际市场价¥${Math.round(input.foreignPriceCny / 10000)}万修正`
         : "暂无国际市场价格参考",
+    },
+    {
+      label: "地区修正",
+      value: `${Math.round(regionalFactor * 100)}%`,
+      impact: regionalFactor > 1.0 ? "positive" : "negative",
+      description: input.location
+        ? `${input.location}地区价格水平${regionalFactor > 1.0 ? "偏高" : "偏低"}`
+        : "基于地区均价修正",
+    },
+    {
+      label: "补贴趋势",
+      value: `${Math.round(subsidyFactor * 100)}%`,
+      impact: subsidyFactor > 1.0 ? "positive" : "neutral",
+      description: `补贴退坡使二手机相对增值（${input.year}年趋势因子${subsidyFactor.toFixed(2)}）`,
+    },
+    {
+      label: "基准价来源",
+      value: isDomesticBrandSupported(input.brand) ? "数据驱动" : "传统查表",
+      impact: "neutral",
+      description: dataSource,
     },
   ];
 
