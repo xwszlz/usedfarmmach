@@ -71,10 +71,11 @@ export async function POST(request: NextRequest) {
     }
 
     // "改密即失效"：比对 passwordHash 摘要（用户已改密则旧链接作废）
+    // 设计 §3.8：令牌内嵌的 passwordHash 摘要与当前用户不符，返回 401（拒绝，文案保留）。
     if (result.pwdHash && sha256(user.passwordHash) !== result.pwdHash) {
       return NextResponse.json(
         { success: false, error: "密码已变更，请重新申请重置" },
-        { status: 400 }
+        { status: 401 }
       );
     }
 

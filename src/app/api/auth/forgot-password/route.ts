@@ -8,7 +8,7 @@
  *   3) 统一口径：无论账号是否存在 / 是否验证，均返回"若该账号存在，已发送指引"，
  *      绝不泄露邮箱 / 用户名是否注册（防枚举攻击）；
  *   4) 仅对"已验证邮箱"的用户真正发信（未验证 / 无邮箱静默返回同口径）；
- *   5) 限流：按 IP（60s≤10）+ 按邮箱（1h≤3），复用 cache.ts。
+ *   5) 限流：按 IP（1h≤5）+ 按邮箱（1h≤3），复用 cache.ts。
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
@@ -42,8 +42,8 @@ export async function POST(request: NextRequest) {
     const ip = getClientIp(request) ?? "unknown";
     const ipRl = await rateLimit({
       key: rateLimitKeys.forgotPasswordIp(ip),
-      windowSec: 60,
-      max: 10,
+      windowSec: 3600,
+      max: 5,
     });
     if (!ipRl.allowed) {
       return NextResponse.json(
