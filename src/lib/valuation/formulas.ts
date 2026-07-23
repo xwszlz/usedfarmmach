@@ -31,6 +31,8 @@ import {
   getRegionalFactor,
   getSubsidyTrendFactor,
 } from "./brand-data";
+// Phase C: 国产未配置品牌 — 品类内相对溢价兜底表（337品牌，替代常数兜底）
+import { BRAND_RELATIVE_PREMIUM } from "./brand-relative-premium";
 
 // V4: 导入图片分析模块
 import { type VisualValuationResult, visualScoreToConditionFactor } from "./image-analyzer";
@@ -250,6 +252,13 @@ function getDataDrivenBasePrice(
           premium = val;
           break;
         }
+      }
+    }
+    // [Phase C T3] 品类内相对溢价兜底：替代常数 1.0，缓解长尾品牌被拍平
+    if (!premium) {
+      const rel = BRAND_RELATIVE_PREMIUM[brand];
+      if (rel && (rel.category === subsidyCategory || rel.category === category || rel.category === "其他")) {
+        premium = rel.factor;
       }
     }
     premium = premium || 1.0;
