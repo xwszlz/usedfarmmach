@@ -42,6 +42,18 @@ export const BRAND_COEFFICIENTS: Record<string, number> = {
   "arcusln": 0.75,                        // Arcusin变体
   "IDASS": 0.70,      // 未知品牌
   "马赛": 0.70,       // 未知品牌
+  // === 进口 P0/P1 补齐（Phase B）===
+  "Amazone": 1.15, "阿玛松": 1.15,        // 德系播种+自走植保双龙头
+  "Horsch": 1.15, "霍尔希": 1.15, "豪斯": 1.15,  // 免耕播种全球标杆
+  "Väderstad": 1.15, "维德斯塔": 1.15, "Vaderstad": 1.15, // 瑞典精量/免耕标杆
+  "McHale": 1.15, "麦克海尔": 1.15,        // 圆捆机全球龙头
+  "Lamborghini": 1.10, "兰博基尼": 1.10,   // SDF高端子品牌
+  "Pöttinger": 1.10, "波廷格": 1.10, "Pottinger": 1.10, // 奥系青贮/打捆全能
+  "Deutz-Fahr": 1.05, "道依茨法尔": 1.05,  // SDF旗舰
+  "Yanmar": 0.95, "洋马": 0.95,            // 日系紧凑型
+  "SAME": 1.00, "萨美": 1.00,              // SDF走量子品牌
+  "Hardi": 1.00, "哈迪": 1.00,             // 丹麦植保中坚
+  "Mahindra": 0.88, "马恒达": 0.88,        // 印度经济型出口霸主
   // === 国产品牌 ===
   "东方红": 0.65,
   "Dongfanghong": 0.65,
@@ -124,6 +136,9 @@ export const CATEGORY_BASE_PRICES: Record<string, number> = {
   "装载机": 30,
   "配件": 3,                     // 降低：零配件
   "跑车": 20,
+  // === Phase B 新增品类 ===
+  "免耕播种机": 70,     // Horsch/Väderstad/Amazone 新机60-120万
+  "自走式植保机": 60,   // Amazone Pantera/Hardi 新机40-80万
 };
 
 // 型号基准价格映射表（万元人民币）
