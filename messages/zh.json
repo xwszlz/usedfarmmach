@@ -492,6 +492,17 @@
       "noToken": "缺少重置令牌，请通过邮件中的链接访问此页面",
       "requestNew": "重新申请重置链接",
       "error": "重置失败，请稍后重试"
+    },
+    "verifyEmail": {
+      "successTitle": "邮箱验证成功",
+      "successMessage": "您的邮箱已成功验证，现在可以使用找回密码等功能。",
+      "successMessageWithGift": "您的邮箱已验证，并领取了 {amount} 积分奖励！",
+      "expiredTitle": "链接已过期",
+      "expiredMessage": "该验证链接已过期或无效，请重新发送验证邮件。",
+      "invalidTitle": "链接无效",
+      "invalidMessage": "验证链接无效或已被使用，请重新发送验证邮件。",
+      "gotoAccount": "前往个人中心",
+      "backHome": "返回首页"
     }
   },
   "account": {

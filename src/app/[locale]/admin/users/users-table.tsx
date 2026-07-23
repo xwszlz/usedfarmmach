@@ -29,6 +29,7 @@ export interface AdminUserRow {
 interface Props {
   users: AdminUserRow[];
   canReveal: boolean;
+  canRemind?: boolean;
 }
 
 /** 是否待补全：emailPending 或任一关键资料缺失 */
@@ -37,11 +38,12 @@ function isIncomplete(u: AdminUserRow): boolean {
   return c.pending || !c.hasEmail || !c.hasCompany || !c.hasCountry || !c.hasPhone;
 }
 
-export function UsersTable({ users, canReveal }: Props) {
+export function UsersTable({ users, canReveal, canRemind }: Props) {
   const [onlyPending, setOnlyPending] = useState(false);
   const [revealed, setRevealed] = useState<Record<string, string>>({});
   const [revealError, setRevealError] = useState<string | null>(null);
   const [resetMsg, setResetMsg] = useState<string | null>(null);
+  const [remindMsg, setRemindMsg] = useState<string | null>(null);
 
   const visible = onlyPending ? users.filter(isIncomplete) : users;
 
@@ -88,6 +90,27 @@ export function UsersTable({ users, canReveal }: Props) {
     setTimeout(() => setResetMsg(null), 3000);
   };
 
+  const sendRemind = async (id: string) => {
+    setRemindMsg(null);
+    const token = localStorage.getItem("token");
+    try {
+      const res = await fetch("/api/admin/send-complete-reminder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ userId: id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setRemindMsg("已发送补全提醒（站内信 + 邮件）");
+      } else {
+        setRemindMsg(data.error || "发送失败");
+      }
+    } catch {
+      setRemindMsg("请求失败");
+    }
+    setTimeout(() => setRemindMsg(null), 3000);
+  };
+
   return (
     <div>
       <div className="mb-4 flex items-center gap-3">
@@ -105,6 +128,7 @@ export function UsersTable({ users, canReveal }: Props) {
 
       {revealError && <div className="mb-2 text-xs text-red-600">{revealError}</div>}
       {resetMsg && <div className="mb-2 text-xs text-green-600">{resetMsg}</div>}
+      {remindMsg && <div className="mb-2 text-xs text-green-600">{remindMsg}</div>}
 
       <div className="rounded-xl border bg-white shadow-sm">
         <div className="overflow-x-auto">
@@ -193,6 +217,14 @@ export function UsersTable({ users, canReveal }: Props) {
                         >
                           重置密码
                         </button>
+                        {canRemind && (
+                          <button
+                            onClick={() => sendRemind(u.id)}
+                            className="rounded bg-teal-50 px-2 py-0.5 text-xs text-teal-700 hover:bg-teal-100"
+                          >
+                            发送补全提醒
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

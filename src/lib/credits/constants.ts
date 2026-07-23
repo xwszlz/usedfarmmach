@@ -38,6 +38,7 @@ export const MILESTONE_EVENTS = [
   "first_publish",
   "first_inquiry",
   "first_deal",
+  "email_verified_gift",
 ] as const;
 export type MilestoneEvent = (typeof MILESTONE_EVENTS)[number];
 
@@ -59,6 +60,7 @@ export const DEFAULT_REWARD_VALUES = {
   firstPublish: 2, // 首次发布
   firstInquiry: 5, // 首次收到询价（卖家）
   firstDeal: 20, // 首次标记成交
+  emailVerifiedGift: 5, // 邮箱验证成功（与注册礼包一致）
 } as const;
 export type RewardValues = {
   [K in keyof typeof DEFAULT_REWARD_VALUES]: number;

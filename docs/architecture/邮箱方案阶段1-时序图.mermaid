@@ -1,0 +1,115 @@
+%% 4.1 注册后 / 补全后发送验证邮件
+sequenceDiagram
+    participant U as 用户
+    participant R as /api/auth/register 或 /api/user/profile
+    participant T as signEmailToken
+    participant E as sendEmail (email.ts)
+    participant P as ResendProvider
+    participant DB as Prisma/Neon (EmailSendLog)
+    participant L as rateLimit (cache)
+
+    R->>R: 注册/补全成功，取得本人 email + consentCrossBorderAt
+    R->>L: rateLimit(sendVerifyEmail(email))
+    L-->>R: allowed
+    R->>T: signEmailToken({userId,email,purpose:'verify_email'})
+    T-->>R: token
+    R->>E: sendEmail({to:email,template:'verifyEmail',vars:{link}})
+    E->>P: provider.send({to,subject,html})
+    P-->>E: {id}
+    E->>DB: 写 EmailSendLog(recipientHash=sha256(email), type:'verify_email', provider:'resend')
+    E-->>R: {ok:true}
+    R-->>U: 200 {sent:true}（补全场景同时返回资料已保存）
+
+%% 4.2 邮箱验证回调（magic link 点击）
+sequenceDiagram
+    participant U as 用户(浏览器)
+    participant PG as /[locale]/auth/verify-email (Server)
+    participant T as verifyEmailToken
+    participant DB as Prisma/Neon (User)
+    participant G as grantEmailVerifiedGiftIfNeeded
+
+    U->>PG: 访问 /auth/verify-email?token=xxx
+    PG->>T: verifyEmailToken(token,'verify_email')
+    alt token 无效/过期/email 不匹配
+        T-->>PG: null
+        PG-->>U: 渲染"链接无效或已过期"
+    else 有效
+        T-->>PG: {userId,email}
+        PG->>DB: findUnique(userId) → 比对 email 一致
+        PG->>DB: update(emailVerified:true, emailPending:false)
+        PG->>G: grantEmailVerifiedGiftIfNeeded(userId)
+        G-->>PG: {granted, amount:5}
+        PG-->>U: 渲染"邮箱已验证，积分 +5（如有）"
+    end
+
+%% 4.3 忘记密码 — 发信（统一口径、不泄露）
+sequenceDiagram
+    participant U as 用户
+    participant F as forgot-password-form.tsx
+    participant API as /api/auth/forgot-password
+    participant DB as Prisma/Neon (User)
+    participant L as rateLimit (cache)
+    participant T as signEmailToken
+    participant E as sendEmail (email.ts)
+
+    U->>F: 输入 identifier（用户名/邮箱）
+    F->>API: POST {identifier}
+    API->>DB: findUnique(where:{username} 或 {email})
+    API->>L: rateLimit(forgotPasswordEmail/forgotPasswordIp)
+    L-->>API: allowed / 429
+    alt 用户存在 且 email 非空 且 emailVerified=true
+        API->>T: signEmailToken({userId,email,purpose:'reset_password',pwdHash})
+        T-->>API: token
+        API->>E: sendEmail({to:email,template:'resetPassword',vars:{link}})
+        E-->>API: {ok:true}
+    else 用户不存在 / 未验证
+        Note over API: 不发信（但不在响应中区分）
+    end
+    API-->>F: 200 {sent:true}（无论是否存在/验证，口径一致）
+    F->>U: 提示"若账号存在且已验证，重置邮件已发送"
+
+%% 4.4 重置密码（消费 reset 令牌）
+sequenceDiagram
+    participant U as 用户(浏览器)
+    participant PG as /auth/reset-password?token=xxx
+    participant F as reset-password-form.tsx
+    participant API as /api/auth/reset-password
+    participant T as verifyEmailToken
+    participant DB as Prisma/Neon (User)
+
+    U->>PG: 点邮件链接进入
+    PG->>F: 传 token
+    U->>F: 输入新密码
+    F->>API: POST {token,newPassword}
+    API->>T: verifyEmailToken(token,'reset_password')
+    T-->>API: {userId,email} 或 null
+    API->>DB: findUnique(userId)
+    API->>API: 比对 token.pwdHash 与当前 passwordHash（不一致→401 已失效）
+    API->>DB: update(passwordHash: bcrypt(newPassword))
+    API-->>F: 200 {reset:true}
+    F->>U: 提示"密码已重置，请登录"
+
+%% 4.5 管理员发补全提醒（站内信 + 邮件，绝不群发明文）
+sequenceDiagram
+    participant A as 管理员
+    participant UT as users-table.tsx (按钮)
+    participant API as /api/admin/send-complete-reminder
+    participant DB as Prisma/Neon (User)
+    participant L as rateLimit (cache)
+    participant N as createInAppNotification
+    participant E as sendEmail (email.ts)
+
+    A->>UT: 点击某行"发送补全提醒"
+    UT->>API: POST {userId}（Bearer admin）
+    API->>API: checkAdmin(role)
+    API->>DB: findUnique(userId)
+    API->>L: rateLimit(adminReminder(userId), 24h, 1)
+    L-->>API: allowed / 429
+    API->>N: createInAppNotification({type:'complete_profile_reminder', link:'/account/complete-profile'})
+    alt user.email 非空
+        API->>E: sendEmail({to:email,template:'completeProfileReminder'})
+        E-->>API: {ok:true}
+    end
+    API-->>UT: 200 {notified:true, emailed:boolean}
+    UT->>A: 提示"已发送站内信（及邮件）"
+    Note over API,E: 逐用户触发；绝不明文导出清单、绝不群发

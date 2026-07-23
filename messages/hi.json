@@ -325,6 +325,17 @@
       "noToken": "रीसेट टोकन गायब है। कृपया अपने ईमेल में लिंक के माध्यम से इस पेज तक पहुंचें।",
       "requestNew": "नया रीसेट लिंक अनुरोध करें",
       "error": "रीसेट विफल, कृपया बाद में पुनः प्रयास करें"
+    },
+    "verifyEmail": {
+      "successTitle": "Email Verified",
+      "successMessage": "Your email has been verified. You can now use features like password recovery.",
+      "successMessageWithGift": "Your email is verified and you earned {amount} credit reward!",
+      "expiredTitle": "Link Expired",
+      "expiredMessage": "This verification link has expired or is invalid. Please request a new verification email.",
+      "invalidTitle": "Invalid Link",
+      "invalidMessage": "The verification link is invalid or already used. Please request a new verification email.",
+      "gotoAccount": "Go to Account",
+      "backHome": "Back to Home"
     }
   },
   "logistics": {

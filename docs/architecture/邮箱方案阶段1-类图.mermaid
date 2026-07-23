@@ -1,0 +1,113 @@
+classDiagram
+    class User {
+      +String id
+      +String? email
+      +String? phone
+      +String role
+      +String? companyName
+      +String? country
+      +Boolean emailPending
+      +Boolean emailVerified
+      +DateTime? consentCrossBorderAt
+      +String? resetToken
+      +DateTime? resetTokenExpires
+      +String passwordHash
+      +notifications Notification[]
+    }
+    class PiiAuditLog {
+      +String id
+      +String actorId
+      +String targetUserId
+      +String field
+      +String action
+      +DateTime createdAt
+    }
+    class EmailSendLog {
+      <<新增 additive>>
+      +String id
+      +String? userId
+      +String type
+      +String provider
+      +String recipientHash
+      +String status
+      +String? ip
+      +DateTime createdAt
+    }
+    class Notification {
+      +String id
+      +String userId
+      +String type
+      +String title
+      +String? body
+      +String? link
+      +Boolean read
+    }
+    class EmailProvider {
+      <<interface>>
+      +name: string
+      +send(input: EmailInput): Promise~EmailSendResult~
+    }
+    class ResendProvider {
+      <<lib/email/provider.ts>>
+      +send(input): Promise~EmailSendResult~
+    }
+    class AliyunDirectMailProvider {
+      <<stub 阶段2>>
+      +send(input): Promise~EmailSendResult~
+    }
+    class TencentSesProvider {
+      <<stub 阶段2>>
+      +send(input): Promise~EmailSendResult~
+    }
+    class EmailService {
+      <<lib/email.ts>>
+      +sendEmail(opts): Promise~{ok}~
+    }
+    class EmailTemplates {
+      <<lib/email/templates.ts>>
+      +renderVerifyEmail(vars): EmailTemplate
+      +renderResetPassword(vars): EmailTemplate
+      +renderCompleteProfileReminder(vars): EmailTemplate
+    }
+    class EmailTokenService {
+      <<lib/email-token.ts>>
+      +signEmailToken(input): string
+      +verifyEmailToken(token, purpose): object|null
+    }
+    class RateLimitService {
+      <<lib/rate-limit.ts>>
+      +rateLimit(opts): Promise~RateLimitResult~
+    }
+    class Cache {
+      <<lib/cache.ts 复用>>
+      +get/set/del
+    }
+    class CreditGrantService {
+      <<lib/credits/grant.ts>>
+      +grantRegisterGiftIfNeeded(userId): GrantResult
+      +grantEmailVerifiedGiftIfNeeded(userId): GrantResult
+    }
+    class PiiService {
+      <<lib/pii.ts>>
+      +maskEmail(raw): string
+      +canViewFullPii(role): boolean
+      +profileCompleteness(user): Completeness
+    }
+    class NotifyService {
+      <<lib/notify.ts>>
+      +createInAppNotification(input): Promise~void~
+    }
+
+    EmailSendLog ..> User : userId
+    PiiAuditLog ..> User : actorId / targetUserId
+    EmailProvider <|.. ResendProvider
+    EmailProvider <|.. AliyunDirectMailProvider
+    EmailProvider <|.. TencentSesProvider
+    EmailService ..> EmailProvider : 选 provider
+    EmailService ..> EmailTemplates : 渲染
+    EmailService ..> EmailSendLog : 写 recipientHash
+    RateLimitService ..> Cache : 计数/窗口
+    CreditGrantService ..> User : 幂等发分(经 UserMilestone)
+    NotifyService ..> Notification : 写入
+    PiiService ..> User : 序列化/脱敏
+    User "1" --> "0..*" Notification : 站内信

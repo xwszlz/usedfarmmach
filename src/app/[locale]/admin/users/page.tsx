@@ -80,7 +80,7 @@ export default async function AdminUsersPage() {
   return (
     <div>
       <h1 className="mb-6 text-2xl font-bold text-gray-900">用户管理</h1>
-      <UsersTable users={rows} canReveal={true} />
+      <UsersTable users={rows} canReveal={true} canRemind={true} />
     </div>
   );
 }

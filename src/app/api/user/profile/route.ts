@@ -24,6 +24,7 @@ import { prisma } from "@/lib/db";
 import { getTokenFromHeaders, verifyToken, hashPassword } from "@/lib/auth";
 import { completeProfileSchema } from "@/lib/validators";
 import { grantRegisterGiftIfNeeded } from "@/lib/credits/grant";
+import { sendVerificationEmail } from "@/lib/email-actions";
 
 export async function POST(request: NextRequest) {
   try {
@@ -78,11 +79,29 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 4.5) 取当前用户状态，判断是否需要"重新验证邮箱"
+    const current = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: {
+        email: true,
+        emailVerified: true,
+        emailPending: true,
+        preferredLanguage: true,
+      },
+    });
+    const currentEmail = current?.email ?? null;
+    const emailChanged =
+      !!normalizedEmail &&
+      normalizedEmail.toLowerCase() !== (currentEmail ?? "").toLowerCase();
+    // 仅当"提交了邮箱"且"（邮箱变更 或 原未验证）"才降级为未验证并重新发验证邮件。
+    // 已验证且未变更邮箱的用户保持 verified，不回退。
+    const shouldVerify = !!normalizedEmail && (emailChanged || !current?.emailVerified);
+
     // 5) 组装更新数据（仅写入提交且非空的字段）
     const updateData: Record<string, unknown> = {
-      // 阶段 0 自证：补全即视为已验证，并解除待补全标记
-      emailVerified: true,
-      emailPending: false,
+      // 阶段 1：补全提交邮箱不再"自证为已验证"（撤回阶段 0 行为）；
+      // 改为发验证邮件，点击 magic-link 后才置 true（见 verify-email 回调）。
+      ...(shouldVerify ? { emailVerified: false, emailPending: true } : {}),
       // 数据出境单独同意留痕
       consentCrossBorderAt: new Date(),
     };
@@ -103,16 +122,32 @@ export async function POST(request: NextRequest) {
       select: { id: true, credits: true },
     });
 
-    // 6) 幂等发放注册礼包（重复提交不重复发分）
+    // 6) 若需重新验证邮箱 → 发验证邮件（限流兜底，重复点击不影响）
+    if (shouldVerify && normalizedEmail) {
+      try {
+        await sendVerificationEmail({
+          userId: payload.userId,
+          email: normalizedEmail,
+          locale: current?.preferredLanguage || "zh",
+          origin: request.nextUrl.origin,
+        });
+      } catch (emailErr: unknown) {
+        console.error("send verify email (profile) failed:", emailErr);
+      }
+    }
+
+    // 7) 幂等发放注册礼包（重复提交不重复发分）
     const gift = await grantRegisterGiftIfNeeded(payload.userId);
     const finalCredits = (updated.credits ?? 0) + (gift.granted ? gift.amount : 0);
 
-    // 7) 返回最新状态
+    // 8) 返回最新状态（emailVerified 以实际结果为准，已验证用户不回退）
+    const resultEmailVerified = shouldVerify ? false : (current?.emailVerified ?? false);
+    const resultEmailPending = shouldVerify ? true : (current?.emailPending ?? false);
     return NextResponse.json({
       success: true,
       data: {
-        emailVerified: true,
-        emailPending: false,
+        emailVerified: resultEmailVerified,
+        emailPending: resultEmailPending,
         credits: finalCredits,
         giftGranted: gift.granted,
         giftAmount: gift.amount,

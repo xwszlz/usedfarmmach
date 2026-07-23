@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { hashPassword, signToken, ensureJwtSecret, setTokenCookie } from "@/lib/auth";
 import { registerSchema } from "@/lib/validators";
 import { grantRegisterGiftIfNeeded } from "@/lib/credits/grant";
+import { sendVerificationEmail } from "@/lib/email-actions";
 
 export async function POST(request: NextRequest) {
   ensureJwtSecret();
@@ -78,6 +79,21 @@ export async function POST(request: NextRequest) {
     // 统一幂等发放注册礼包（替代旧 credits:10 直写，口径统一为 registerGift=5）
     const gift = await grantRegisterGiftIfNeeded(user.id);
     const finalCredits = (user.credits ?? 0) + (gift.granted ? gift.amount : 0);
+
+    // 阶段 1（T05）：注册成功且提供了邮箱并已勾选数据出境同意 → 自动发验证邮件
+    // 邮件发送失败不影响注册成功（catch 兜底）。
+    if (user.email && dataCrossBorderConsent) {
+      try {
+        await sendVerificationEmail({
+          userId: user.id,
+          email: user.email,
+          locale: user.preferredLanguage || "zh",
+          origin: request.nextUrl.origin,
+        });
+      } catch (emailErr: unknown) {
+        console.error("Auto send verify email failed:", emailErr);
+      }
+    }
 
     const token = signToken({
       userId: user.id,
