@@ -1,0 +1,71 @@
+sequenceDiagram
+    autonumber
+    participant U as 卖家浏览器
+    participant API as /api/seller/products
+    participant MS as MembershipService
+    participant CS as CreditService
+    participant ML as MilestoneService
+    participant IV as InviteService
+    participant DB as PostgreSQL
+
+    Note over U,DB: ① 发布产品（E1：产品创建与扣分同事务）
+    U->>API: POST 发布产品(表单+图片URL)
+    API->>API: 鉴权/校验/内容安全检测(事务外)
+    API->>MS: isUnlimitedPublisher(user)
+    alt 高级版/企业版有效期内
+        API->>DB: product.create（不扣分）
+    else 普通用户
+        API->>DB: $transaction
+        DB->>DB: product.create
+        DB->>CS: deductCredits(tx, uid, 1, publish_cost)
+        CS->>DB: UPDATE User SET credits=credits-1 WHERE id AND credits>=1
+        alt 条件更新 count=0
+            CS-->>API: throw InsufficientCreditsError → 整体回滚
+            API-->>U: 403 { code: INSUFFICIENT_CREDITS }
+            U->>U: 弹出额度耗尽弹窗 QuotaModal
+        else 扣减成功
+            CS->>DB: 按 account ASC,expiresAt ASC 扣批次 + 写流水(breakdown)
+        end
+    end
+    API-->>U: 200 发布成功
+    API->>ML: grantOnce(uid, first_publish, +2) [best-effort]
+    ML->>DB: milestone 唯一约束 → 首次才发分
+    API->>IV: rewardOnFirstPublish(uid) [best-effort]
+
+    Note over U,DB: ② 注册送分 + 邀请绑定（Q1 注册即送 5 分）
+    U->>API: POST /api/auth/register {..., ref?}
+    API->>DB: user.create(credits=0, inviteCode=生成)
+    API->>ML: grantOnce(uid, register_gift, +5, gift/90d)
+    ML->>DB: $tx: milestone → lot → credits+5 → 流水 register_gift
+    opt 带 ref 邀请码
+        API->>IV: bind(uid, ref, {deviceFp, ip})
+        IV->>DB: invitation.create(inviteeId 唯一)
+        alt 命中风控规则
+            IV->>DB: status=risk_hold + RiskReview 入队
+        end
+    end
+
+    Note over U,DB: ③ 每日签到（E2 唯一约束 + 月上限 10 含连击）
+    U->>API: POST /api/credits/checkin
+    API->>DB: $tx: checkIn.create(userId+day 唯一)
+    alt P2002 重复签到
+        DB-->>U: 200 { duplicate: true, 今日已签到 }
+    else 首次签到
+        DB->>DB: 算连击/月已发 → credits(上限截断)
+        DB->>CS: credits>0 时 grantCredits(checkin, gift/90d)
+        DB-->>U: { credits, streak, monthGranted }
+    end
+
+    Note over U,DB: ④ 后台确认订单（人工确认到账，SLA 工作日 2 小时）
+    participant AD as 管理员
+    participant AO as /api/admin/orders/[id]/confirm
+    AD->>AO: POST confirm(orderId)
+    AO->>DB: $transaction
+    DB->>DB: UPDATE ServiceOrder SET paid WHERE id AND status='pending'（防重复确认）
+    alt 积分包/基础版套餐
+        DB->>CS: grantCredits(recharge, +N, 1年, relatedId=orderId)
+    else 高级版/企业版套餐
+        DB->>MS: activateFromOrder(tier, annual_billing_enabled → +1年)
+    end
+    DB->>IV: rewardOnFirstPay(uid, amountCny) → min(50,floor(×10%)) 月上限截断
+    AO-->>AD: 200 完成（订单/积分/会员/流水一致）
