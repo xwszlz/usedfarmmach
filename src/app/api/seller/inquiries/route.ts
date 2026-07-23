@@ -22,13 +22,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get inquiries for products owned by this seller
+    // 管理员可看全量询价；普通 seller 只看自己产品的询价
+    const isAdmin = user.role === "admin";
+    const where = isAdmin ? {} : { product: { sellerId: user.id } };
+
     const inquiries = await prisma.inquiry.findMany({
-      where: {
-        product: {
-          sellerId: user.id,
-        },
-      },
+      where,
       orderBy: { createdAt: "desc" },
       take: 50,
       include: {
