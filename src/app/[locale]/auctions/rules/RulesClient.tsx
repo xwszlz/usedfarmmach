@@ -50,7 +50,7 @@ export default function RulesClient() {
     {
       icon: "⚖️",
       title: isZh ? "法律保障" : "Legal Protection",
-      desc: isZh ? "附法院处置成交确认书等全套法律文件。卖方配合过户，因权属瑕疵导致无法过户可解除合同" : "Complete legal documents included. Seller assists with transfer; buyer may cancel for title defects",
+      desc: isZh ? "附江苏金融租赁购买合同等现有权属文件。因标的物暂无农机登记证书，过户存在障碍，卖方不协助办理过户手续。买方应在交易前自行了解过户可行性并自担风险。" : "Jiangsu Financial Leasing purchase contract and available title documents provided. Transfer assistance not available due to missing registration certificate. Buyer assumes transfer risks.",
     },
     {
       icon: "🤝",
@@ -62,7 +62,7 @@ export default function RulesClient() {
   const risks = [
     isZh ? "本平台提供的是在线询价/报价服务，不是拍卖。卖家有权接受或拒绝任何报价，无需说明理由" : "This is an online inquiry/quote service, not an auction. Seller may accept or reject any offer without explanation",
     isZh ? "报价相互不可见，不存在公开竞价。买家之间无法看到彼此的报价" : "Offers are private — buyers cannot see each other's offers. No public bidding",
-    isZh ? "部分设备通过司法处置渠道获得，卖方应配合过户但具体程序需咨询当地农机监理机构" : "Some equipment acquired via judicial disposal. Seller assists with transfer but local agricultural machinery procedures vary",
+    isZh ? "部分设备通过租赁渠道取得，权属文件可能存在不完整的情形。卖方如实披露权属状况，不协助办理过户手续，买方应自行了解过户可行性并自担风险。" : "Some equipment acquired via leasing. Title documents may be incomplete. Seller discloses title status truthfully and does not assist with transfer. Buyer assumes transfer risks.",
     isZh ? "设备可能存在零部件缺失（如前配重、后悬挂等），详情页已公示。建议实地验机后再报价" : "Equipment may have missing parts (disclosed on listing). In-person inspection recommended",
     isZh ? "平台不设定保证金、不设定加价幅度、不设定最低启动人数。交易条款由买卖双方在合同中约定" : "Platform sets no deposit, no increment, no minimum participants. Terms agreed in the contract",
     isZh ? "交易为线下交付。请在签署合同前仔细阅读格式条款（特别是瑕疵告知、过户事宜、违约责任）" : "Delivery is offline. Review standard terms carefully (defects, transfer, liability) before signing",
@@ -78,8 +78,8 @@ export default function RulesClient() {
     {
       q: isZh ? "设备无法过户怎么办？" : "What if the equipment can't be transferred?",
       a: isZh
-        ? "卖方确认其为合法所有权人或经授权的处置权人，并应配合买方办理过户手续。因卖方权属瑕疵（如非合法所有权人、存在抵押/查封等）导致无法过户的，买方有权解除合同，卖方应退还已付全部款项并赔偿直接损失。买方应自行了解当地农机上牌政策。"
-        : "Seller confirms legal title and shall assist with transfer. If title defects prevent transfer, buyer may cancel and recover full payment plus direct losses. Buyers should check local agricultural machinery registration policies.",
+        ? "卖方如实披露标的物权属状况。本标的暂无农机登记证书，仅有江苏金融租赁购买合同，权属文件不完整。卖方不协助办理过户手续。买方应在报价前自行了解标的物能否在所在地办理过户登记及上牌使用，因无法过户或上牌导致的全部风险由买方自行承担。卖方不存在隐瞒或虚假陈述的，买方不得以权属文件不全为由要求解除合同或索赔。"
+        : "Seller truthfully discloses title status. This unit has no agricultural machinery registration certificate; only a Jiangsu Financial Leasing purchase contract is available. Seller does not assist with transfer. Buyer assumes all transfer/registration risks. Buyer may not cancel or claim for incomplete title documents if seller has not concealed or misrepresented.",
     },
     {
       q: isZh ? "如何确保设备质量？" : "How is equipment quality ensured?",
@@ -144,14 +144,14 @@ export default function RulesClient() {
             <p>
               <strong>{isZh ? "三、信息披露：": "3. Information Disclosure: "}</strong>
               {isZh
-                ? "所有设备信息均真实披露，包括已知瑕疵、司法处置渠道、无法过户风险等。卖方对明知或应知而未披露的重大瑕疵，以及因故意隐瞒或虚假陈述导致的损失，依法承担责任。"
-                : "All equipment information is truthfully disclosed, including known defects, judicial disposal sources, and transfer risks. Seller remains liable for known but undisclosed defects."}
+                ? "所有设备信息均真实披露，包括已知瑕疵、租赁取得渠道、无法过户风险等。卖方对明知或应知而未披露的重大瑕疵，以及因故意隐瞒或虚假陈述导致的损失，依法承担责任。"
+                : "All equipment information is truthfully disclosed, including known defects, leasing acquisition sources, and transfer risks. Seller remains liable for known but undisclosed defects."}
             </p>
             <p>
               <strong>{isZh ? "四、权属保证：": "4. Title Guarantee: "}</strong>
               {isZh
-                ? "卖方确认其为标的物的合法所有权人或经合法授权的处置权人。卖方应配合买方办理过户手续。因卖方权属瑕疵导致无法过户的，买方有权解除合同并要求赔偿。"
-                : "Seller confirms legal title or authorized disposal rights. Seller shall assist with transfer. Buyer may cancel for title defects."}
+                ? "卖方如实披露标的物权属状况。因部分标的暂无农机登记证书等权属文件，过户存在障碍，卖方不协助办理过户手续。买方应在交易前自行了解过户可行性并自担风险。卖方已如实披露不存在隐瞒或虚假陈述的，买方不得以此为由要求解除合同或索赔。"
+                : "Seller truthfully discloses title status. Some units lack registration certificates; transfer is obstructed. Seller does not assist with transfer. Buyer assumes transfer risks. Buyer may not cancel or claim if seller has not concealed or misrepresented."}
             </p>
           </div>
         </div>
@@ -322,8 +322,8 @@ export default function RulesClient() {
                 <span>
                   <strong>{isZh ? "过户事宜：": "Transfer: "}</strong>
                   {isZh
-                    ? "卖方应配合买方办理过户手续。因卖方权属瑕疵导致无法过户的，买方有权解除合同，卖方应退还已付全部款项并赔偿直接损失。"
-                    : "Seller shall assist with transfer. Buyer may cancel for title defects and recover full payment plus losses."}
+                    ? "因部分标的物暂无农机登记证书，过户存在障碍，卖方不协助办理过户手续。买方应在交易前自行了解过户可行性并自担风险。"
+                    : "Some units lack registration certificates; transfer is obstructed. Seller does not assist with transfer. Buyer assumes transfer risks."}
                 </span>
               </div>
               <div className="flex items-start gap-2">

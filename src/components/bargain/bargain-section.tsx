@@ -602,8 +602,8 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
                 <p className="text-sm font-bold text-gray-900">{isZh ? "交付与过户" : "Delivery & Transfer"}</p>
                 <p className="text-sm text-gray-500">
                   {isZh
-                    ? "卖方应配合买方办理过户手续，包括签署文件、提供农机登记证书等。具体交付安排由双方协商。"
-                    : "Seller shall assist with transfer procedures. Delivery arrangements to be agreed."}
+                    ? "因标的物暂无农机登记证书，过户存在障碍，卖方不协助办理过户手续。标的物过户（变更登记）事宜由买方自行办理。具体交付安排由双方协商。"
+                    : "This unit lacks a registration certificate; transfer is obstructed. Seller does not assist with transfer. Buyer handles transfer registration independently. Delivery arrangements to be agreed."}
                 </p>
               </div>
             </div>
@@ -613,8 +613,8 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
                 <p className="text-sm font-bold text-gray-900">{isZh ? "权属保证" : "Title Guarantee"}</p>
                 <p className="text-sm text-gray-500">
                   {isZh
-                    ? "卖方确认其为合法所有权人或经授权的处置权人。因权属瑕疵导致无法过户的，买方有权解除合同。"
-                    : "Seller confirms legal title. Buyer may cancel if title defects prevent transfer."}
+                    ? "卖方如实披露标的物权属状况。本标的暂无农机登记证书，仅有江苏金融租赁购买合同。买方已充分知悉权属文件不全，自愿承担过户风险。"
+                    : "Seller truthfully discloses title status. This unit has no registration certificate; only a Jiangsu Financial Leasing purchase contract is available. Buyer acknowledges incomplete title documents and assumes transfer risks."}
                 </p>
               </div>
             </div>
@@ -642,17 +642,17 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
           <h4 className="text-sm font-bold text-amber-800">⚠ {isZh ? "权属与过户告知" : "Title & Transfer"}</h4>
           <p className="text-sm text-amber-700">
             {isZh
-              ? "卖方确认其为标的物的合法所有权人或经合法授权的处置权人，持有相关权属证明文件。卖方应配合买方办理过户手续。"
-              : "Seller confirms legal title or authorized disposal rights. Seller shall assist with transfer procedures."}
+              ? "卖方如实披露标的物权属状况：本标的暂无农机登记证书，仅有江苏金融租赁购买合同，权属文件不完整。卖方不协助办理过户手续。"
+              : "Seller truthfully discloses title status: this unit has no registration certificate; only a Jiangsu Financial Leasing purchase contract is available. Seller does not assist with transfer."}
           </p>
           <p className="text-sm text-amber-700">
             {isZh
-              ? "因卖方权属瑕疵导致无法过户的，买方有权解除合同，卖方应退还已付全部款项并赔偿直接损失。"
-              : "If title defects prevent transfer, buyer may cancel and recover full payment plus direct losses."}
+              ? "买方已充分知悉标的物权属文件不全的现状，自愿承担因此可能导致的过户风险。卖方已如实披露权属状况，不存在隐瞒或虚假陈述。买方不得以权属文件不全为由要求解除合同或要求卖方赔偿。"
+              : "Buyer acknowledges incomplete title documents and voluntarily assumes transfer risks. Seller has truthfully disclosed title status without concealment or misrepresentation. Buyer may not cancel or claim for incomplete title documents."}
           </p>
           {bargain.knownFlaws && (
             <p className="text-sm text-amber-700">
-              {isZh ? "购入渠道：江苏金融淘宝司法处置平台（合法合规）" : "Source: Jiangsu Judicial Disposal Platform (legal & compliant)"}
+              {isZh ? "购入渠道：江苏金融租赁股份有限公司（租赁取得）" : "Source: Jiangsu Financial Leasing Co., Ltd. (leased acquisition)"}
             </p>
           )}
         </div>
@@ -676,7 +676,7 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
         <div className="bg-green-50 rounded-lg p-4 space-y-2">
           <h4 className="text-sm font-bold text-gray-900">{isZh ? "交付资料清单" : "Delivery Documents"}</h4>
           <ul className="space-y-1 text-sm text-green-700">
-            <li>✓ {isZh ? "法院处置成交确认书" : "Court disposal confirmation"}</li>
+            <li>✓ {isZh ? "江苏金融租赁购买合同" : "Jiangsu Financial Leasing purchase contract"}</li>
             <li>✓ {isZh ? "设备评估报告" : "Equipment appraisal report"}</li>
             <li>✓ {isZh ? "设备交接清单" : "Equipment handover list"}</li>
             <li>✓ {isZh ? "标的物交付验收确认书" : "Delivery acceptance form"}</li>
@@ -689,8 +689,8 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
           <h4 className="text-sm font-bold text-blue-900">📋 {isZh ? "格式条款特别提示" : "Standard Terms Notice"}</h4>
           <p className="text-xs text-blue-700 leading-relaxed">
             {isZh
-              ? "根据《民法典》第496条，请特别注意以下条款：①设备按现状交付，卖方对经合理查验可发现的瑕疵不承担担保责任，但对故意隐瞒或虚假陈述导致的损失仍依法承担责任；②卖方应配合过户，因权属瑕疵导致无法过户的买方有权解除合同；③违约责任对等适用。完整条款详见买卖合同。"
-              : "Per PRC Civil Code Art. 496, please note: (1) Equipment sold as-is; seller not liable for discoverable defects but remains liable for concealed defects or misrepresentation; (2) Seller shall assist with transfer; buyer may cancel for title defects; (3) Liability is mutual. Full terms in the sales contract."}
+              ? "根据《民法典》第496条，请特别注意以下条款：①设备按现状交付，卖方对经合理查验可发现的瑕疵不承担担保责任，但对故意隐瞒或虚假陈述导致的损失仍依法承担责任；②因标的物暂无农机登记证书，过户存在障碍，卖方不协助办理过户，买方应自行了解过户可行性并自担风险；③违约责任对等适用。完整条款详见买卖合同。"
+              : "Per PRC Civil Code Art. 496, please note: (1) Equipment sold as-is; seller not liable for discoverable defects but remains liable for concealed defects or misrepresentation; (2) This unit lacks a registration certificate; transfer is obstructed. Seller does not assist with transfer. Buyer assumes transfer risks; (3) Liability is mutual. Full terms in the sales contract."}
           </p>
         </div>
       </div>
