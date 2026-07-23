@@ -461,7 +461,9 @@
       "loginLink": "立即登录",
       "error": "注册失败，请稍后重试",
       "success": "注册成功",
-      "passwordMismatch": "两次密码不一致"
+      "passwordMismatch": "两次密码不一致",
+      "crossBorderConsent": "我已阅读并同意《数据出境》单独同意条款",
+      "crossBorderConsentRequired": "请勾选并同意《数据出境》单独同意条款"
     },
     "forgotPassword": {
       "title": "忘记密码",
@@ -473,7 +475,8 @@
       "errorEmpty": "请输入用户名或邮箱",
       "sentMessage": "如果该账号存在且绑定了邮箱，重置链接已发送到您的邮箱。请查收邮件（注意检查垃圾邮件文件夹）。",
       "backToLogin": "返回登录",
-      "error": "操作失败，请稍后重试"
+      "error": "操作失败，请稍后重试",
+      "contactAdmin": "如您注册时未绑定邮箱，将无法收到重置邮件，请联系客服或管理员重置密码。"
     },
     "resetPassword": {
       "title": "重置密码",
@@ -489,6 +492,31 @@
       "noToken": "缺少重置令牌，请通过邮件中的链接访问此页面",
       "requestNew": "重新申请重置链接",
       "error": "重置失败，请稍后重试"
+    }
+  },
+  "account": {
+    "completeProfile": {
+      "title": "补全资料",
+      "subtitle": "完善您的资料，享受更完整的服务（选填，不强制）",
+      "email": "邮箱（选填）",
+      "emailPlaceholder": "用于找回密码",
+      "emailInvalid": "邮箱格式不正确",
+      "companyName": "公司名称（选填）",
+      "companyNamePlaceholder": "选填",
+      "country": "国家/地区（选填）",
+      "countryPlaceholder": "请选择国家/地区",
+      "password": "设置密码（选填）",
+      "passwordPlaceholder": "至少6位，不填则不修改",
+      "passwordTooShort": "密码至少6位",
+      "crossBorderConsent": "我已阅读并同意《数据出境》单独同意条款",
+      "consentRequired": "请勾选并同意《数据出境》单独同意条款",
+      "submit": "提交补全",
+      "successMessage": "资料已补全，积分已发放(如有)",
+      "successMessageWithGift": "资料已补全，积分已发放",
+      "currentCredits": "当前积分：{credits}",
+      "notLoggedIn": "请先登录后再补全资料",
+      "backToAccount": "返回个人中心",
+      "error": "补全失败，请稍后重试"
     }
   },
   "logistics": {

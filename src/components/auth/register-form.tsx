@@ -18,6 +18,8 @@ export function RegisterForm({ locale }: RegisterFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  // 数据出境单独同意（后端 register 已强制校验 dataCrossBorderConsent）
+  const [consent, setConsent] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -49,6 +51,13 @@ export function RegisterForm({ locale }: RegisterFormProps) {
       return;
     }
 
+    // 数据出境单独同意：未勾选则拦截（后端亦强制校验）
+    if (!consent) {
+      setError(t("crossBorderConsentRequired") || "请勾选并同意《数据出境》单独同意条款");
+      setLoading(false);
+      return;
+    }
+
     const data = {
       username,
       email: (form.elements.namedItem("email") as HTMLInputElement).value || undefined,
@@ -58,6 +67,8 @@ export function RegisterForm({ locale }: RegisterFormProps) {
       companyName: (form.elements.namedItem("companyName") as HTMLInputElement).value || undefined,
       country: (form.elements.namedItem("country") as HTMLSelectElement).value || undefined,
       role: (form.elements.namedItem("role") as HTMLSelectElement).value || "buyer",
+      // 必须携带，否则后端返回 400（方案 3.5 / 共享知识 §8）
+      dataCrossBorderConsent: true,
     };
 
     try {
@@ -168,6 +179,18 @@ export function RegisterForm({ locale }: RegisterFormProps) {
         options={roleOptions}
         defaultValue="buyer"
       />
+
+      {/* 数据出境单独同意（合规红线，必勾选） */}
+      <label className="flex items-start gap-2 text-sm text-gray-600">
+        <input
+          type="checkbox"
+          checked={consent}
+          onChange={(e) => setConsent(e.target.checked)}
+          className="mt-1"
+        />
+        <span>{t("crossBorderConsent") || "我已阅读并同意《数据出境》单独同意条款"}</span>
+      </label>
+
       {error && <p className="text-sm text-red-500">{error}</p>}
       <Button type="submit" className="w-full" disabled={loading}>
         <UserPlus className="mr-2 h-4 w-4" />

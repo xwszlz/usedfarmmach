@@ -85,6 +85,9 @@ export function ForgotPasswordForm({ locale }: ForgotPasswordFormProps) {
       <p className="text-sm text-gray-500">
         {t("hint") || "我们将向您的注册邮箱发送密码重置链接"}
       </p>
+      <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-700">
+        {t("contactAdmin") || "如您注册时未绑定邮箱，将无法收到重置邮件，请联系客服或管理员重置密码。"}
+      </p>
       {error && <p className="text-sm text-red-500">{error}</p>}
       <Button type="submit" className="w-full" disabled={loading}>
         {loading ? "..." : (t("submit") || "发送重置链接")}

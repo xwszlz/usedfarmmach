@@ -460,6 +460,8 @@
       "error": "Registration failed. Please try again.",
       "success": "Registration successful",
       "passwordMismatch": "Passwords do not match",
+      "crossBorderConsent": "I have read and agree to the separate consent for cross-border data transfer",
+      "crossBorderConsentRequired": "Please check and agree to the separate consent for cross-border data transfer",
       "username": "Username",
       "usernamePlaceholder": "At least 3 characters",
       "usernameTooShort": "Username must be at least 3 characters",
@@ -475,7 +477,8 @@
       "errorEmpty": "Please enter username or email",
       "sentMessage": "If the account exists with an email, a reset link has been sent. Please check your inbox (and spam folder).",
       "backToLogin": "Back to Login",
-      "error": "Operation failed, please try again later"
+      "error": "Operation failed, please try again later",
+      "contactAdmin": "If you did not bind an email at registration, you will not receive a reset email. Please contact customer service or an administrator to reset your password."
     },
     "resetPassword": {
       "title": "Reset Password",
@@ -491,6 +494,31 @@
       "noToken": "Missing reset token. Please access this page via the link in your email.",
       "requestNew": "Request a new reset link",
       "error": "Reset failed, please try again later"
+    }
+  },
+  "account": {
+    "completeProfile": {
+      "title": "Complete Profile",
+      "subtitle": "Complete your profile to enjoy full services (optional, not required)",
+      "email": "Email (optional)",
+      "emailPlaceholder": "For password recovery",
+      "emailInvalid": "Invalid email format",
+      "companyName": "Company Name (optional)",
+      "companyNamePlaceholder": "Optional",
+      "country": "Country/Region (optional)",
+      "countryPlaceholder": "Select country/region",
+      "password": "Set Password (optional)",
+      "passwordPlaceholder": "At least 6 characters; leave blank to keep unchanged",
+      "passwordTooShort": "Password must be at least 6 characters",
+      "crossBorderConsent": "I have read and agree to the separate consent for cross-border data transfer",
+      "consentRequired": "Please check and agree to the separate consent for cross-border data transfer",
+      "submit": "Submit",
+      "successMessage": "Profile completed. Credits granted if applicable.",
+      "successMessageWithGift": "Profile completed. Credits have been granted.",
+      "currentCredits": "Current credits: {credits}",
+      "notLoggedIn": "Please sign in before completing your profile",
+      "backToAccount": "Back to Account",
+      "error": "Failed to complete profile. Please try again."
     }
   },
   "logistics": {

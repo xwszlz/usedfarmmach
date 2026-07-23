@@ -182,17 +182,19 @@ function PrivacyContentZh() {
       </section>
 
       <section>
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">五、个人信息跨境传输声明</h2>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">五、数据出境（跨境传输）专章</h2>
         <p>
           由于本平台使用海外云服务提供商，您的部分个人信息可能被传输至中华人民共和国境外进行处理。
-          具体跨境传输情况如下：
+          我们依据《中华人民共和国个人信息保护法》（以下简称&ldquo;个保法&rdquo;）第三十八条至第四十条、
+          以及《促进和规范数据跨境流动规定》的要求履行告知与单独同意义务。具体跨境传输情况如下：
         </p>
         <table className="w-full text-sm border border-gray-200 dark:border-gray-700 mt-3">
           <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>
               <th className="border border-gray-200 dark:border-gray-700 px-3 py-2 text-left">境外接收方</th>
               <th className="border border-gray-200 dark:border-gray-700 px-3 py-2 text-left">所在国家/地区</th>
-              <th className="border border-gray-200 dark:border-gray-700 px-3 py-2 text-left">传输数据</th>
+              <th className="border border-gray-200 dark:border-gray-700 px-3 py-2 text-left">传输的个人信息</th>
+              <th className="border border-gray-200 dark:border-gray-700 px-3 py-2 text-left">处理目的</th>
               <th className="border border-gray-200 dark:border-gray-700 px-3 py-2 text-left">合规路径</th>
             </tr>
           </thead>
@@ -201,24 +203,46 @@ function PrivacyContentZh() {
               <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">Neon PostgreSQL</td>
               <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">新加坡</td>
               <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">用户注册信息、产品数据</td>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">用户注册信息与产品数据的存储及管理</td>
               <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">标准合同（备案中）</td>
             </tr>
             <tr>
               <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">Vercel Inc.</td>
               <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">美国（全球CDN节点）</td>
               <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">网页缓存数据（可能含IP地址等）</td>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">网站部署与全球访问加速</td>
               <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">标准合同（备案中）</td>
             </tr>
             <tr>
               <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">Resend Inc.</td>
               <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">美国</td>
               <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">用户邮箱地址（邮件发送）</td>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">注册验证邮件、密码重置邮件发送</td>
               <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">标准合同（备案中）/ 计划替换为国内服务</td>
+            </tr>
+            <tr>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">阿里云OSS（图片存储）</td>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">中国（北京）</td>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">用户上传的农机图片</td>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">图片存储与CDN加速</td>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">境内存储，不涉及出境</td>
             </tr>
           </tbody>
         </table>
+
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mt-5 mb-2">单独同意说明（依据个保法第三十九条）</h3>
+        <p>
+          根据《中华人民共和国个人信息保护法》第三十九条规定，向中华人民共和国境外提供个人信息的，
+          应当向个人告知境外接收方的名称或者姓名、联系方式、处理目的、处理方式、个人信息的种类，
+          以及个人向境外接收方行使个人信息保护权利的方式和程序等事项，并取得个人的<strong>单独同意</strong>。
+        </p>
         <p className="mt-2">
-          我们正在依据PIPL第三十八条至第四十条的规定，通过签订网信办标准合同并向省级网信部门备案的方式
+          为此，您在注册账号或补全资料（邮箱、公司、国家等）时，本平台会通过<strong>独立的勾选项</strong>，
+          就&ldquo;个人信息出境&rdquo;这一事项单独取得您的同意。未经您的单独同意，我们不会将您的个人信息传输至上述境外接收方。
+          您有权随时撤回该单独同意；撤回后我们将停止相关跨境传输（法律法规另有规定，或为履行您所要求的合同所必需的情形除外）。
+        </p>
+        <p className="mt-2">
+          我们正在依据个保法第三十八条至第四十条的规定，通过签订网信办标准合同并向省级网信部门备案的方式
           完成跨境传输合规程序。在标准合同备案完成前，我们已要求各境外接收方采取必要的安全措施保护您的个人信息。
         </p>
       </section>
@@ -403,11 +427,76 @@ function PrivacyContentEn() {
         and the &ldquo;AgriTrade&rdquo; WeChat Mini Program (collectively, the &ldquo;Platform&rdquo;).
         We are committed to protecting your personal information in accordance with applicable laws and regulations.
       </p>
-      <p className="mt-4 text-sm text-gray-500">
-        The English version is a translation of the Chinese Privacy Policy for reference only.
-        In case of any discrepancy, the Chinese version shall prevail.
-        The full English version will be available soon. For now, please refer to the Chinese version.
-      </p>
+
+      <section>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Data Cross-Border Transfer</h2>
+        <p>
+          Because the Platform uses overseas cloud service providers, some of your personal information
+          may be transferred outside the territory of the People&rsquo;s Republic of China for processing.
+          In accordance with the Personal Information Protection Law (PIPL) of the PRC (Articles 38&ndash;40)
+          and the Provisions on Promoting and Regulating the Cross-Border Data Flows, we fulfill our
+          notification and separate-consent obligations. The cross-border transfers are as follows:
+        </p>
+        <table className="w-full text-sm border border-gray-200 dark:border-gray-700 mt-3">
+          <thead className="bg-gray-50 dark:bg-gray-800">
+            <tr>
+              <th className="border border-gray-200 dark:border-gray-700 px-3 py-2 text-left">Overseas Recipient</th>
+              <th className="border border-gray-200 dark:border-gray-700 px-3 py-2 text-left">Country/Region</th>
+              <th className="border border-gray-200 dark:border-gray-700 px-3 py-2 text-left">Personal Information Transferred</th>
+              <th className="border border-gray-200 dark:border-gray-700 px-3 py-2 text-left">Purpose of Processing</th>
+              <th className="border border-gray-200 dark:border-gray-700 px-3 py-2 text-left">Compliance Path</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">Neon PostgreSQL</td>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">Singapore</td>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">User registration and product data</td>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">Storage and management of user and product data</td>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">Standard Contract (filing in progress)</td>
+            </tr>
+            <tr>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">Vercel Inc.</td>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">United States (global CDN)</td>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">Web cache data (may include IP addresses)</td>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">Website deployment and global access acceleration</td>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">Standard Contract (filing in progress)</td>
+            </tr>
+            <tr>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">Resend Inc.</td>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">United States</td>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">User email addresses (email sending)</td>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">Registration verification and password reset emails</td>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">Standard Contract (filing in progress) / planned migration to domestic service</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mt-5 mb-2">
+          Separate Consent (pursuant to Article 39 of PIPL)
+        </h3>
+        <p>
+          Under Article 39 of the Personal Information Protection Law, where personal information is
+          provided to a recipient outside the PRC, the individual must be informed of the name/identity
+          and contact details of the overseas recipient, the purpose and means of processing, the types
+          of personal information, and the methods and procedures by which the individual may exercise
+          their personal-information rights against the overseas recipient, and the individual&rsquo;s
+          <strong>separate consent</strong> must be obtained.
+        </p>
+        <p className="mt-2">
+          Accordingly, when you register or complete your profile (email, company, country, etc.),
+          the Platform obtains your <strong>separate consent</strong> for the cross-border transfer of
+          personal information through an <strong>independent checkbox</strong>. Without your separate
+          consent, we will not transfer your personal information to the overseas recipients listed above.
+          You may withdraw this separate consent at any time; upon withdrawal we will cease the relevant
+          cross-border transfer (except where otherwise required by law or necessary to perform a contract
+          you have requested).
+        </p>
+        <p className="mt-4 text-sm text-gray-500">
+          This English text is a translation of the Chinese Privacy Policy for reference only.
+          In case of any discrepancy, the Chinese version shall prevail.
+        </p>
+      </section>
     </>
   );
 }
