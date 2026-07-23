@@ -212,10 +212,12 @@ function DesktopNavItem({ item, locale, t }: DesktopNavItemProps) {
     <Link
       href={`/${locale}${item.href}`}
         className={cn(
-          "rounded-lg px-2 py-1.5 text-sm font-medium transition-colors text-center leading-tight min-w-[3.5rem]",
-          item.highlight
-          ? "bg-brand-accent-light text-brand-accent dark:text-brand-accent"
-          : "text-gray-600 hover:bg-gray-100 hover:text-primary-600 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-primary-400"
+          "rounded-lg px-2 py-1.5 text-sm font-medium text-center leading-tight min-w-[3.5rem]",
+          item.spotlight
+          ? "rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 px-3 font-bold text-white shadow-md shadow-orange-500/30 transition-all duration-300 animate-[pulse_2s_ease-in-out_infinite] hover:scale-105 hover:brightness-110 hover:shadow-lg hover:shadow-orange-500/50 dark:shadow-orange-400/30 dark:hover:shadow-orange-400/50"
+          : item.highlight
+          ? "bg-brand-accent-light text-brand-accent transition-colors dark:text-brand-accent"
+          : "text-gray-600 transition-colors hover:bg-gray-100 hover:text-primary-600 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-primary-400"
       )}
     >
       <span className="whitespace-pre-line block">{splitNavLabel(label)}</span>
@@ -238,8 +240,10 @@ function MobileNavItem({ item, locale, t, setMobileOpen }: MobileNavItemProps) {
       href={`/${locale}${item.href}`}
       onClick={() => setMobileOpen(false)}
       className={cn(
-        "block rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-        item.highlight
+        "block rounded-lg px-3 py-2 text-sm font-medium transition-all",
+        item.spotlight
+          ? "rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 font-bold text-white shadow-md shadow-orange-500/30 animate-[pulse_2s_ease-in-out_infinite] hover:scale-[1.02] hover:brightness-110 dark:shadow-orange-400/30"
+          : item.highlight
           ? "bg-brand-accent-light text-brand-accent dark:text-brand-accent"
           : "text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
       )}

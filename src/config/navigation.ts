@@ -2,6 +2,8 @@ export interface NavItem {
   href: string;
   labelKey: string;
   highlight?: boolean;
+  /** Spotlight: the brightest nav item site-wide (gradient capsule + pulse). Takes precedence over highlight. */
+  spotlight?: boolean;
 }
 
 /**
@@ -13,7 +15,7 @@ export interface NavItem {
 export const mainNav: NavItem[] = [
   { href: "/", labelKey: "nav.home" },
   { href: "/products", labelKey: "nav.machinery" },
-  { href: "/auctions", labelKey: "nav.bargain" },
+  { href: "/auctions", labelKey: "nav.bargain", spotlight: true },
   { href: "/parts", labelKey: "nav.parts" },
   { href: "/services", labelKey: "nav.services" },
   { href: "/expo", labelKey: "nav.expo" },
