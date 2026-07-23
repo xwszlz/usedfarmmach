@@ -11,6 +11,12 @@ model User {
   id                    String               @id @default(cuid())
   email                 String?              @unique
   phone                 String?
+  /// 邮箱待补全标记：小程序无邮箱注册自动置 true；web 注册有邮箱则 false
+  emailPending          Boolean              @default(false)
+  /// 邮箱是否已验证：阶段0补全即视为已验证（自证）；阶段1改为令牌验证后置 true
+  emailVerified         Boolean              @default(false)
+  /// 数据出境单独同意时间（留痕合规证据，比仅校验更强）
+  consentCrossBorderAt  DateTime?
   passwordHash          String
   role                  String               @default("buyer")
   companyName           String?
@@ -60,6 +66,7 @@ model User {
   followers             Follow[]             @relation("FollowSeller")
   following             Follow[]             @relation("FollowFollower")
   inquiries             Inquiry[]
+  notifications         Notification[]
   inspectionBookings    InspectionBooking[]
   inspectionReports     InspectionReport[]
   loanApplications      LoanApplication[]
@@ -74,6 +81,20 @@ model User {
   savedSearches         SavedSearch[]
   sellerRatingsGiven    SellerRating[]       @relation("SellerRatingsGiven")
   sellerRatingsReceived SellerRating[]       @relation("SellerRatingsReceived")
+}
+
+/// PII 访问审计：记录谁、何时、读了哪个用户的哪个 PII 字段、用途（保留 ≥6 个月）
+model PiiAuditLog {
+  id           String   @id @default(cuid())
+  actorId      String   // 操作人（admin/super_admin）userId
+  targetUserId String   // 被查看的用户
+  field        String   // 如 "email" | "phone"
+  action       String   @default("view_full") // view_full | export
+  purpose      String?  // 用途备注（可选）
+  createdAt    DateTime @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([targetUserId, createdAt])
 }
 
 model Brand {
@@ -261,6 +282,22 @@ model Inquiry {
   updatedAt DateTime @updatedAt
   buyer     User?    @relation(fields: [buyerId], references: [id])
   product   Product  @relation(fields: [productId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  body      String?
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([userId, createdAt])
 }
 
 model InternationalPrice {
@@ -844,6 +881,9 @@ model Auction {
   updatedAt          DateTime            @updatedAt
   acceptedBidId      String?             @unique
   acceptedPrice      Float?
+  sellerQuoteAmount  Float?
+  sellerQuoteMsg     String?
+  sellerQuoteAt      DateTime?
   askingPrice        Float
   bargainNo          String              @unique
   announcementNo     String?

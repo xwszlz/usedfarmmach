@@ -16,6 +16,12 @@ export const registerSchema = z
     companyName: z.string().optional(),
     country: z.string().optional(),
     role: z.enum(["buyer", "seller"]).default("buyer"),
+    // 数据出境单独同意：必须勾选（true），否则拦截（方案 3.5 / 共享知识 §8）
+    dataCrossBorderConsent: z
+      .boolean({ required_error: "请勾选数据出境单独同意" })
+      .refine((v) => v === true, {
+        message: "请勾选并同意《数据出境》单独同意条款",
+      }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -60,3 +66,35 @@ export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type InquiryInput = z.infer<typeof inquirySchema>;
 export type ProductQueryInput = z.infer<typeof productQuerySchema>;
+
+/**
+ * 补全资料（本人，POST /api/user/profile）
+ * email/companyName/country 可选；password 可选（≥6 位）；
+ * dataCrossBorderConsent 必须 true。
+ */
+export const completeProfileSchema = z.object({
+  email: z.string().email("Invalid email address").optional().or(z.literal("")),
+  companyName: z.string().optional(),
+  country: z.string().optional(),
+  password: z.string().min(6, "Password must be at least 6 characters").optional(),
+  dataCrossBorderConsent: z
+    .boolean({ required_error: "请勾选数据出境单独同意" })
+    .refine((v) => v === true, {
+      message: "请勾选并同意《数据出境》单独同意条款",
+    }),
+});
+
+/**
+ * 管理员重置密码（POST /api/admin/reset-user-password）
+ * userId 必填；newPassword 可选（不传则服务端生成随机密码）。
+ */
+export const adminResetPasswordSchema = z.object({
+  userId: z.string().min(1, "userId is required"),
+  newPassword: z
+    .string()
+    .min(6, "Password must be at least 6 characters")
+    .optional(),
+});
+
+export type CompleteProfileInput = z.infer<typeof completeProfileSchema>;
+export type AdminResetPasswordInput = z.infer<typeof adminResetPasswordSchema>;
