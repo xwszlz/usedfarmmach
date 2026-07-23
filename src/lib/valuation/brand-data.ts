@@ -72,6 +72,16 @@ export const BRAND_COEFFICIENTS: Record<string, number> = {
   "沃得": 0.50,       // 国产 (World)
   "谷王": 0.50,       // 国产
   "凯 斯": 1.10,      // DB中"凯斯"有空格的变体
+  // === 国产小农机头部品牌（Phase A P0 补齐）===
+  "农哈哈机": 0.80,
+  "巨隆科技": 0.80,
+  "双天机械": 1.02,
+  "日照市立": 0.81,
+  "圣和农业": 0.84,
+  "鑫源农机": 1.02,
+  "深圳市大": 1.02,
+  "沃富机械": 0.90,
+  "宗申通用": 1.02,
   "废铁": 0.30,       // 最低
 };
 
@@ -365,6 +375,16 @@ export const DOMESTIC_BRAND_PREMIUM: Record<string, number> = {
   "瑞得拖拉":  0.52,   // -47.6%
   "常力工贸":  0.56,   // -44.4%
   "力王农业":  0.58,   // -42.2%
+  // === 国产小农机头部品牌（Phase A P0 补齐）===
+  "农哈哈机":  0.80,   // 播种机头部，主销低价机型，溢价比0.664裁剪至下限
+  "巨隆科技":  0.80,   // 旋耕机头部，溢价比0.699裁剪至下限
+  "双天机械":  1.02,   // 旋耕机头部，溢价比1.174封顶
+  "日照市立":  0.81,   // 微耕机头部，溢价比0.809
+  "圣和农业":  0.84,   // 旋耕机头部，溢价比0.844
+  "鑫源农机":  1.02,   // 微耕机头部，溢价比1.046封顶
+  "深圳市大":  1.02,   // 植保机头部，溢价比1.124封顶
+  "沃富机械":  0.90,   // 微耕机头部，溢价比0.897
+  "宗申通用":  1.02,   // 微耕机头部，溢价比1.050封顶
 };
 
 /**
@@ -387,6 +407,12 @@ export const REGIONAL_FACTORS: Record<string, number> = {
   "广西":      0.88,
   "广东":      0.86,
   "贵州":      0.80,
+  // === Phase A 补齐 5 省 ===
+  "上海":      1.15,   // 样本少(112)，高价设备拉高，封顶
+  "北京":      0.80,   // 样本少(268)，封底
+  "天津":      1.15,   // 样本少(543)，封顶
+  "海南":      1.15,   // 样本少(239)，封顶
+  "青海":      0.91,   // 样本605，比值0.907
   "_default":  1.00,
 };
 
@@ -406,8 +432,12 @@ export const SUBSIDY_TREND_FACTOR: Record<number, number> = {
  * 判断品牌是否为有补贴数据支持的国产品牌
  */
 export function isDomesticBrandSupported(brand: string): boolean {
-  const supportedBrands = Object.keys(DOMESTIC_HP_REGRESSION).filter(k => k !== "_default");
-  return supportedBrands.some(b => brand.includes(b) || b.includes(brand));
+  // Phase A：将"有补贴数据支持"的认定范围从仅马力回归品牌，扩展到含品牌溢价表的国产品牌
+  // （DOMESTIC_BRAND_PREMIUM 仅含国产品牌，不会误伤进口品牌）
+  const hpBrands = Object.keys(DOMESTIC_HP_REGRESSION).filter(k => k !== "_default");
+  const premiumBrands = Object.keys(DOMESTIC_BRAND_PREMIUM);
+  const domesticBrands = [...hpBrands, ...premiumBrands];
+  return domesticBrands.some(b => brand.includes(b) || b.includes(brand));
 }
 
 /**
