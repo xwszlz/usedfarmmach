@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { hashPassword, signToken, ensureJwtSecret, setTokenCookie } from "@/lib/auth";
 import { registerSchema } from "@/lib/validators";
-import { membershipConfig } from "@/lib/permissions";
+import { grantRegisterGiftIfNeeded } from "@/lib/credits/grant";
 
 export async function POST(request: NextRequest) {
   ensureJwtSecret();
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { username, email, password, confirmPassword, phone, companyName, country, role } = parsed.data;
+    const { username, email, password, confirmPassword, phone, companyName, country, role, dataCrossBorderConsent } = parsed.data;
 
     // 检查用户名是否已存在
     const existingUsername = await prisma.user.findUnique({ where: { username } });
@@ -40,8 +40,6 @@ export async function POST(request: NextRequest) {
     }
 
     const passwordHash = await hashPassword(password);
-    const freeCredits = membershipConfig.free.credits;
-    const freeValuations = membershipConfig.free.freeValuationsPerMonth;
 
     const user = await prisma.user.create({
       data: {
@@ -53,7 +51,13 @@ export async function POST(request: NextRequest) {
         country,
         role: role || "buyer",
         membershipTier: "free",
-        credits: freeCredits,
+        // 邮箱待补全标记：有邮箱则 false，无邮箱（小程序等）则 true
+        emailPending: email ? false : true,
+        // 阶段0：注册即视为未验证，补全资料后置 true（自证）
+        emailVerified: false,
+        // 数据出境单独同意留痕（注册已强制勾选）
+        consentCrossBorderAt: dataCrossBorderConsent ? new Date() : null,
+        credits: 0,
         freeValuationsUsed: 0,
       },
       select: {
@@ -71,6 +75,10 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // 统一幂等发放注册礼包（替代旧 credits:10 直写，口径统一为 registerGift=5）
+    const gift = await grantRegisterGiftIfNeeded(user.id);
+    const finalCredits = (user.credits ?? 0) + (gift.granted ? gift.amount : 0);
+
     const token = signToken({
       userId: user.id,
       role: user.role,
@@ -83,6 +91,7 @@ export async function POST(request: NextRequest) {
         token,
         user: {
           ...user,
+          credits: finalCredits,
           membershipTier: user.membershipTier,
           freeValuationsUsed: user.freeValuationsUsed,
         },

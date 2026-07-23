@@ -46,6 +46,8 @@ export async function POST(request: NextRequest) {
           passwordHash: await bcrypt.hash(Math.random().toString(36), 10),
           role: "buyer",
           preferredLanguage: "zh",
+          // 小程序无邮箱注册：置待补全标记，不因缺邮箱阻塞注册
+          emailPending: true,
         },
       });
       console.log(`[miniprogram/login] 新建小程序用户 ${user.id} (openid=${openid.slice(0, 6)}...)`);
