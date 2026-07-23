@@ -1,20 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { PrismaClient } from "@prisma/client";
 
 // ============================================================
 // Deep Report API Route
 // Handles: create_order, payment_status, generate, result
 // Payment is currently in mock mode — structure is ready for
 // real WeChat Pay / Alipay integration.
+//
+// Persistence (Phase C-2): orders are stored in PostgreSQL via
+// Prisma when DATABASE_URL is configured, so they survive a server
+// restart. When the database is unavailable, an in-memory Map is
+// used as a graceful fallback so the flow still works in dev /
+// preview environments. Every read/write goes through
+// loadOrder / saveOrder / patchOrder.
 // ============================================================
 
-// In-memory order store (replace with Prisma/database in production)
-const orderStore = new Map<string, {
+// In-memory fallback store (used only when DB is unavailable)
+const orderStore = new Map<string, OrderRecord>();
+
+type OrderStatus = "created" | "paid" | "generating" | "completed" | "failed";
+
+interface OrderRecord {
   orderId: string;
   tier: string;
   price: number;
   paymentMethod: string;
   paid: boolean;
-  status: "created" | "paid" | "generating" | "completed" | "failed";
+  status: OrderStatus;
   reportHtml?: string;
   productInfo?: any;
   valuationResult?: any;
@@ -23,7 +35,108 @@ const orderStore = new Map<string, {
   createdAt: number;
   paidAt?: number;
   completedAt?: number;
-}>();
+}
+
+// ---- Prisma access (lazy + safe) ----
+// Loaded lazily so that environments without DATABASE_URL never crash
+// at module load (PrismaClient throws if the env var is missing).
+let _prisma: PrismaClient | null = null;
+let _prismaInit: Promise<PrismaClient | null> | null = null;
+
+async function getPrisma(): Promise<PrismaClient | null> {
+  if (!process.env.DATABASE_URL) return null;
+  if (_prisma) return _prisma;
+  if (!_prismaInit) {
+    _prismaInit = import("@/lib/db")
+      .then((m) => m.prisma)
+      .catch((e) => {
+        console.error("[deep-report] Failed to load Prisma client:", e);
+        return null;
+      });
+  }
+  return _prismaInit;
+}
+
+function dbToOrder(rec: any): OrderRecord {
+  return {
+    orderId: rec.orderNo,
+    tier: rec.tier,
+    price: rec.price,
+    paymentMethod: rec.paymentMethod ?? "wechat",
+    paid: rec.paid,
+    status: rec.status,
+    reportHtml: rec.reportHtml ?? undefined,
+    productInfo: rec.productInfo ?? undefined,
+    valuationResult: rec.valuationResult ?? undefined,
+    productName: rec.productName ?? undefined,
+    productId: rec.productId ?? undefined,
+    createdAt: rec.createdAt ? new Date(rec.createdAt).getTime() : Date.now(),
+    paidAt: rec.paidAt ? new Date(rec.paidAt).getTime() : undefined,
+    completedAt: rec.completedAt ? new Date(rec.completedAt).getTime() : undefined,
+  };
+}
+
+async function saveOrder(order: OrderRecord): Promise<void> {
+  const p = await getPrisma();
+  if (p) {
+    try {
+      await p.valuationReportOrder.upsert({
+        where: { orderNo: order.orderId },
+        create: {
+          orderNo: order.orderId,
+          tier: order.tier,
+          price: order.price,
+          paymentMethod: order.paymentMethod,
+          paid: order.paid,
+          status: order.status,
+          reportHtml: order.reportHtml,
+          productInfo: order.productInfo,
+          valuationResult: order.valuationResult,
+          productName: order.productName,
+          productId: order.productId,
+          createdAt: new Date(order.createdAt),
+          paidAt: order.paidAt ? new Date(order.paidAt) : null,
+          completedAt: order.completedAt ? new Date(order.completedAt) : null,
+        },
+        update: {
+          paid: order.paid,
+          status: order.status,
+          reportHtml: order.reportHtml,
+          paidAt: order.paidAt ? new Date(order.paidAt) : null,
+          completedAt: order.completedAt ? new Date(order.completedAt) : null,
+        },
+      });
+      return;
+    } catch (e) {
+      console.error("[deep-report] Prisma save failed, falling back to memory:", e);
+    }
+  }
+  orderStore.set(order.orderId, order);
+}
+
+async function loadOrder(orderId: string): Promise<OrderRecord | undefined> {
+  const p = await getPrisma();
+  if (p) {
+    try {
+      const rec = await p.valuationReportOrder.findUnique({ where: { orderNo: orderId } });
+      if (rec) return dbToOrder(rec);
+    } catch (e) {
+      console.error("[deep-report] Prisma load failed, falling back to memory:", e);
+    }
+  }
+  return orderStore.get(orderId);
+}
+
+async function patchOrder(
+  orderId: string,
+  patch: Partial<OrderRecord>
+): Promise<OrderRecord | undefined> {
+  const order = await loadOrder(orderId);
+  if (!order) return undefined;
+  const updated: OrderRecord = { ...order, ...patch };
+  await saveOrder(updated);
+  return updated;
+}
 
 const TIER_PRICES: Record<string, number> = {
   basic: 9,
@@ -167,7 +280,7 @@ function generateReportHTML(
 }
 
 // ============================================================
-// POST handler — create_order / generate
+// POST handler — create_order / simulate_payment / generate
 // ============================================================
 
 export async function POST(req: NextRequest) {
@@ -186,13 +299,13 @@ export async function POST(req: NextRequest) {
       }
 
       const orderId = `DR${Date.now()}`;
-      const order = {
+      const order: OrderRecord = {
         orderId,
         tier,
         price: TIER_PRICES[tier],
         paymentMethod: paymentMethod || "wechat",
         paid: false,
-        status: "created" as const,
+        status: "created",
         productInfo,
         valuationResult,
         productName: productName || (productInfo ? `${productInfo.brand || ""} ${productInfo.model || ""}`.trim() : undefined),
@@ -200,7 +313,7 @@ export async function POST(req: NextRequest) {
         createdAt: Date.now(),
       };
 
-      orderStore.set(orderId, order);
+      await saveOrder(order);
 
       // Return real QR code URL from /public/qrcode/
       const qrCodeUrl = paymentMethod === "alipay"
@@ -222,23 +335,24 @@ export async function POST(req: NextRequest) {
 
     if (action === "simulate_payment") {
       const { orderId } = body;
-      const order = orderStore.get(orderId);
+      const order = await patchOrder(orderId, {
+        paid: true,
+        status: "paid",
+        paidAt: Date.now(),
+      });
       if (!order) {
         return NextResponse.json(
           { success: false, error: "Order not found" },
           { status: 404 }
         );
       }
-      order.paid = true;
-      order.status = "paid";
-      order.paidAt = Date.now();
       return NextResponse.json({ success: true, data: { paid: true } });
     }
 
     if (action === "generate") {
       const { orderId, tier, productInfo, valuationResult, productName } = body;
 
-      const order = orderStore.get(orderId);
+      const order = await loadOrder(orderId);
       if (!order) {
         return NextResponse.json(
           { success: false, error: "Order not found" },
@@ -246,16 +360,20 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // Generate report
-      order.status = "generating";
+      const finalTier = tier || order.tier;
+      await patchOrder(orderId, { status: "generating" });
+
       const reportHtml = generateReportHTML(
-        tier,
+        finalTier,
         productInfo || order.productInfo,
         valuationResult || order.valuationResult
       );
-      order.reportHtml = reportHtml;
-      order.status = "completed";
-      order.completedAt = Date.now();
+
+      await patchOrder(orderId, {
+        status: "completed",
+        completedAt: Date.now(),
+        reportHtml,
+      });
 
       return NextResponse.json({
         success: true,
@@ -295,7 +413,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const order = orderStore.get(orderId);
+    const order = await loadOrder(orderId);
     if (!order) {
       return NextResponse.json(
         { success: false, error: "Order not found" },

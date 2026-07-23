@@ -97,6 +97,25 @@ model PiiAuditLog {
   @@index([targetUserId, createdAt])
 }
 
+/// 邮件发送日志（阶段 1 新增，additive 不影响任何现有表）
+/// 记录"向用户发过哪类邮件、经哪个服务商、收件人是谁（仅 hash）"，
+/// 用于跨境传输追溯、限流排查、PIPIA 与 10 万人阈值监控。
+/// 注意：recipientHash = SHA-256(email)，【不存明文邮箱】，避免二次扩散 PII。
+model EmailSendLog {
+  id            String    @id @default(cuid())
+  userId        String?  // 目标用户（站内/本人场景有值；匿名找回场景可空）
+  type          String    // verify_email | reset_password | complete_profile_reminder
+  provider      String    // resend | aliyun_directmail | tencent_ses | console
+  recipientHash String    // 收件邮箱 SHA-256 摘要（不存明文）
+  status        String    @default("sent") // sent | failed
+  ip            String?   // 触发来源 IP（风控/追溯）
+  createdAt     DateTime  @default(now())
+
+  @@index([userId, createdAt])
+  @@index([type, createdAt])
+  @@index([recipientHash, createdAt])
+}
+
 model Brand {
   id              String         @id @default(cuid())
   nameZh          String
@@ -1795,5 +1814,30 @@ model RiskReview {
   note         String?
   createdAt    DateTime  @default(now())
 
+  @@index([status, createdAt])
+}
+
+/// 深度估值报告订单（付费报告，信任模式人工确认收款）
+/// 替代原 deep-report/route.ts 的纯内存 Map，重启不丢；无 DATABASE_URL 时路由自动降级回内存。
+model ValuationReportOrder {
+  id              String   @id @default(cuid())
+  orderNo         String   @unique
+  tier            String   // basic | standard | premium
+  price           Float
+  paymentMethod   String?  // wechat | alipay
+  paid            Boolean  @default(false)
+  status          String   @default("created") // created|paid|generating|completed|failed
+  reportHtml      String?
+  productInfo     Json?
+  valuationResult Json?
+  productName     String?
+  productId       String?
+  userId          String?  // 关联下单用户（可选，未登录为空）
+  createdAt       DateTime @default(now())
+  paidAt          DateTime?
+  completedAt     DateTime?
+  updatedAt       DateTime @updatedAt
+
+  @@index([orderNo])
   @@index([status, createdAt])
 }
