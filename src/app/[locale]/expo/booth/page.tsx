@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { SelfBoothLanding } from "./SelfBoothLanding";
+import SelfBoothLanding from "./SelfBoothLanding";
 import { generatePageMetadata } from "@/lib/seo-metadata";
 
 export async function generateMetadata({

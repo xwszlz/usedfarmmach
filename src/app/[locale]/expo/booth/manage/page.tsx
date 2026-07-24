@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { BoothManageClient } from "./BoothManageClient";
+import BoothManageClient from "./BoothManageClient";
 import { generatePageMetadata } from "@/lib/seo-metadata";
 
 export async function generateMetadata({

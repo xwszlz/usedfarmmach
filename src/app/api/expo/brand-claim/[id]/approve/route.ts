@@ -59,15 +59,15 @@ export async function POST(
     }
 
     // 4. 创建 User（merchant 角色）
-    const username = `booth_${claim.company || brandName}_${nanoid(6)}`;
+    const username = `booth_${(claim.company || brandName).replace(/[^a-zA-Z0-9]/g, '_')}_${nanoid(6)}`;
     const rawPassword = nanoid(10); // 自动生成密码
     const hashedPwd = await hashPassword(rawPassword);
 
     const user = await prisma.user.create({
       data: {
         username,
-        password: hashedPwd,
-        email: claim.email || "",
+        passwordHash: hashedPwd,
+        email: claim.email || `${nanoid(8)}@booth-temp.shendiao.com`,
         phone: claim.phone,
         companyName: claim.company || brandName,
         country: claim.country || "中国",
