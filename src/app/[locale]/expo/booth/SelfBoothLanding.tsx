@@ -32,8 +32,8 @@ export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
     },
     {
       name: isZh ? "Pro" : "Pro",
-      price: isZh ? "¥3,800/年" : "¥3,800/yr",
-      period: isZh ? "日均¥10.4" : "¥10.4/day",
+      price: isZh ? "¥380/年" : "¥380/yr",
+      period: isZh ? "日均¥1.04" : "¥1.04/day",
       features: [
         isZh ? "品牌库优先收录" : "Priority brand listing",
         isZh ? "20台展品" : "20 exhibits",
@@ -50,8 +50,8 @@ export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
     },
     {
       name: isZh ? "旗舰版" : "Flagship",
-      price: isZh ? "¥9,800/年" : "¥9,800/yr",
-      period: isZh ? "日均¥26.8" : "¥26.8/day",
+      price: isZh ? "¥980/年" : "¥980/yr",
+      period: isZh ? "日均¥2.68" : "¥2.68/day",
       features: [
         isZh ? "品牌库置顶展示" : "Top brand placement",
         isZh ? "50台展品" : "50 exhibits",
@@ -69,8 +69,8 @@ export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
     },
     {
       name: isZh ? "战略版" : "Strategic",
-      price: isZh ? "¥28,800/年" : "¥28,800/yr",
-      period: isZh ? "日均¥78.9" : "¥78.9/day",
+      price: isZh ? "¥2,880/年" : "¥2,880/yr",
+      period: isZh ? "日均¥7.89" : "¥7.89/day",
       features: [
         isZh ? "品牌库首页推荐" : "Homepage featured",
         isZh ? "无限展品" : "Unlimited exhibits",
@@ -215,6 +215,52 @@ export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Payment */}
+      <section id="payment" className="py-12">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+          <h2 className="mb-3 text-center text-2xl font-bold text-gray-900 dark:text-white">
+            {isZh ? "扫码付款" : "Scan to Pay"}
+          </h2>
+          <p className="mb-8 text-center text-sm text-gray-500">
+            {isZh ? "选择版本后，使用微信或支付宝扫码付款，付款确认后24小时内开通" : "Scan to pay after tier selection. Activated within 24 hours after payment confirmed."}
+          </p>
+          <div className="grid gap-6 sm:grid-cols-2">
+            {/* WeChat */}
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 text-center shadow-sm dark:border-gray-800 dark:bg-gray-900">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800 dark:bg-green-900 dark:text-green-200">
+                💚 微信支付
+              </div>
+              <div className="flex justify-center">
+                <img
+                  src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/payment/wechat-qr.png"
+                  alt="微信支付二维码"
+                  className="h-56 w-56 rounded-lg border border-gray-200 object-contain p-2 dark:border-gray-700"
+                />
+              </div>
+              <p className="mt-3 text-xs text-gray-500">扫一扫即可付款</p>
+            </div>
+
+            {/* Alipay */}
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 text-center shadow-sm dark:border-gray-800 dark:bg-gray-900">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                💙 支付宝支付
+              </div>
+              <div className="flex justify-center">
+                <img
+                  src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/payment/alipay-qr.jpg"
+                  alt="支付宝支付二维码"
+                  className="h-56 w-56 rounded-lg border border-gray-200 object-contain p-2 dark:border-gray-700"
+                />
+              </div>
+              <p className="mt-3 text-xs text-gray-500">扫一扫即可付款</p>
+            </div>
+          </div>
+          <p className="mt-6 text-center text-xs text-gray-400">
+            {isZh ? "付款后请将截图发送至 jiusei0319@gmail.com 或致电 18932905854 确认" : "After payment, send screenshot to jiusei0319@gmail.com to confirm."}
+          </p>
         </div>
       </section>
 
