@@ -137,11 +137,11 @@ export const BUILT_IN_AGENTS: Array<{
   {
     agentId: "seller-scout",
     name: "#1 卖方采集",
-    description: "从国内外二手农机网站采集产品列表数据",
-    version: "0.1.0",
+    description: "从国内外二手农机网站采集产品列表数据（Agriaffaires + 国内全平台）",
+    version: "1.0.0",
     triggerType: "cron",
     schedule: "0 6 * * *", // 每天 06:00 UTC+8
-    endpoint: "https://api.github.com/repos/xwszlz/usedfarmmach/actions/workflows/seller-scout.yml/dispatches",
+    endpoint: "/api/agents/seller-scout",
   },
   {
     agentId: "price-intel",

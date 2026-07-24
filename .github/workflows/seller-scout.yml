@@ -44,24 +44,50 @@ jobs:
         env:
           PYTHONIOENCODING: utf-8
 
+      - name: Run domestic seller scraper
+        id: scrape_domestic
+        continue-on-error: true
+        run: python ../scripts/seller_scout_domestic_scraper.py
+        working-directory: ./scripts
+        env:
+          PYTHONIOENCODING: utf-8
+          HTTPS_PROXY: ""
+
       - name: Check scrape results
         id: check
         run: |
+          TOTAL=0
           if [ -f scripts/agriaffaires_data.json ]; then
             COUNT=$(python3 -c "import json; d=json.load(open('scripts/agriaffaires_data.json')); print(d.get('totalListings', 0))")
-            echo "listing_count=$COUNT" >> $GITHUB_OUTPUT
-            echo "✅ 采集到 $COUNT 条数据"
+            TOTAL=$((TOTAL + COUNT))
+            echo "✅ 国际采集: $COUNT 条"
           else
-            echo "listing_count=0" >> $GITHUB_OUTPUT
-            echo "⚠️ 采集数据文件不存在，写入空 fallback"
+            echo "⚠️ 国际采集文件不存在"
             echo '{"scrapedAt":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","source":"agriaffaires","totalListings":0,"withPrice":0,"priceOnRequest":0,"listings":[]}' > scripts/agriaffaires_data.json
           fi
+          if [ -f scripts/domestic_sellers_data_v2.json ]; then
+            DCOUNT=$(python3 -c "import json; d=json.load(open('scripts/domestic_sellers_data_v2.json')); print(d.get('totalListings', 0))")
+            TOTAL=$((TOTAL + DCOUNT))
+            echo "✅ 国内采集: $DCOUNT 条"
+          else
+            echo "⚠️ 国内采集文件不存在"
+          fi
+          echo "listing_count=$TOTAL" >> $GITHUB_OUTPUT
+          echo "📊 总计: $TOTAL 条"
 
-      - name: Import to database
+      - name: Import international data to database
         id: import
         if: env.DATABASE_URL != ''
         continue-on-error: true
         run: npx tsx scripts/import-seller-scout.ts
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Import domestic data to database
+        id: import_domestic
+        if: env.DATABASE_URL != '' && hashFiles('scripts/domestic_sellers_data_v2.json') != ''
+        continue-on-error: true
+        run: npx tsx scripts/import-seller-scout-domestic.ts
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
