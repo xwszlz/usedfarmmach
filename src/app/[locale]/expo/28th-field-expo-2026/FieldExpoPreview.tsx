@@ -11,14 +11,18 @@ interface FieldExpoPreviewProps {
 const EXHIBITORS = [
   { name: "唐山鑫万达实业", product: "青贮饲料收获割台·智能压捆机", category: "青储机", inLib: false },
   { name: "郑州龙丰农业机械", product: "1LFT-455液压自动调幅犁·驱播机", category: "耕地机", inLib: true, brandSlug: "BR-郑州龙丰" },
+const EXHIBITORS = [
+  { name: "唐山鑫万达实业", product: "青贮饲料收获割台·智能压捆机", category: "青储机", inLib: true, brandSlug: "BR-唐山鑫万达" },
+  { name: "郑州龙丰农业机械", product: "1LFT-455液压自动调幅犁·驱播机", category: "耕地机", inLib: true, brandSlug: "BR-郑州龙丰" },
   { name: "中机美诺科技", product: "9360C自走式饲料收获机", category: "青储机", inLib: true, brandSlug: "BR-中机美诺" },
-  { name: "西安亚澳农机", product: "旋播施肥一体机", category: "播种机", inLib: false },
-  { name: "河北利裕丰机械", product: "9QZ-2600B青饲料收获机", category: "青储机", inLib: false },
-  { name: "宁晋县陆风制动", product: "深松联合整地机", category: "整地机械", inLib: false },
-  { name: "石家庄美迪机械", product: "9QS-6000S青饲料收获机", category: "青储机", inLib: false },
-  { name: "山东当康农业装备", product: "驱动耙播种机", category: "播种机", inLib: false },
-  { name: "晋州市冀丰农机", product: "雷沃4QZ-3QA2青饲料收获机", category: "青储机", inLib: false },
+  { name: "西安亚澳农机", product: "旋播施肥一体机", category: "播种机", inLib: true, brandSlug: "BR-西安亚澳" },
+  { name: "河北利裕丰机械", product: "9QZ-2600B青饲料收获机", category: "青储机", inLib: true, brandSlug: "BR-河北利裕丰" },
+  { name: "宁晋县陆风制动", product: "深松联合整地机", category: "整地机械", inLib: true, brandSlug: "BR-宁晋陆风" },
+  { name: "石家庄美迪机械", product: "9QS-6000S青饲料收获机", category: "青储机", inLib: true, brandSlug: "BR-石家庄美迪" },
+  { name: "山东当康农业装备", product: "驱动耙播种机", category: "播种机", inLib: true, brandSlug: "BR-山东当康" },
+  { name: "晋州市冀丰农机", product: "雷沃4QZ-3QA2青饲料收获机", category: "青储机", inLib: true, brandSlug: "BR-晋州冀丰" },
   { name: "河北农哈哈机械", product: "播种机·智能耕整设备", category: "播种机", inLib: true, brandSlug: "BR-河北农哈哈" },
+];
 ];
 
 const DEMO_SCHEDULE = [
@@ -169,14 +173,8 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
                       )}
                       {e.inLib && (
                         <span className="ml-2 inline-block rounded bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900 dark:text-blue-200">
-                          {isZh ? "品牌库收录" : "In Brand Lib"}
+                          {isZh ? "品牌库已收录" : "In Brand Lib"}
                         </span>
-                      )}
-                      {!e.inLib && (
-                        <span className="ml-2 inline-block rounded bg-yellow-100 px-1.5 py-0.5 text-xs font-medium text-yellow-700 dark:bg-yellow-900 dark:text-yellow-200">
-                          {isZh ? "新发现" : "New"}
-                        </span>
-                      )}
                     </td>
                     <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{e.product}</td>
                     <td className="px-4 py-3">
