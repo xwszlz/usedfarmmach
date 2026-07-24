@@ -1,0 +1,84 @@
+
+=== 1. 邮箱令牌：签名/校验往返 + purpose 强绑定（三向） ===
+  ✓ verify_email 令牌往返（userId/email 正确）
+  ✓ verify_email 令牌被 reset_password 校验器拒绝
+  ✓ verify_email 令牌被 complete_profile_reminder 校验器拒绝
+  ✓ reset_password 令牌被 verify_email / complete_profile_reminder 拒绝
+  ✓ complete_profile_reminder 令牌被 verify_email / reset_password 拒绝
+
+=== 2. 令牌篡改 / 伪造 / 过期 被拒 ===
+  ✓ 篡改签名段（追加字符）被拒
+  ✓ 篡改 payload(email) 但不重签 → 被拒
+  ✓ 过期令牌（exp 已过去）被拒
+
+=== 3. reset 令牌内嵌 pwdHash 摘要 + 改密即失效（构建块验证） ===
+  ✓ reset 令牌内嵌 pwdHash 并可正确回读
+  ✓ 改密后：当前 pwdHash 摘要 ≠ 令牌摘要 → 旧链接应失效
+  ✓ 未改密：当前 pwdHash 摘要 = 令牌摘要 → 链接仍有效
+
+=== 4. 邮件模板渲染（magic link + 多语言 + 纯文本降级） ===
+  ✓ verify 模板（zh）含链接与中文文案
+  ✓ verify 模板渲染出 magic link 按钮（href 含 token）
+  ✓ reset 模板（en）含链接与英文文案
+  ✓ reminder 模板（zh）含链接与中文文案
+  ✓ 三套模板均包含纯文本 text 降级
+
+=== 5. 限流（复用 cache.ts）：滑动窗口 + 邮箱归一化 + 维度隔离 ===
+  ✓ 每邮箱每小时 ≤3：前 3 次放行，第 4/5 次被限流(429)
+  ✓ 不同邮箱限流计数相互独立
+  ✓ 限流 key 对邮箱大小写归一化（防大小写绕过）
+  ✓ 限流 key 包含邮箱 SHA-256 摘要（不存明文）
+  ✓ adminReminder 维度可用
+
+=== 6. EmailSendLog：仅存收件邮箱 SHA-256 摘要，不写明文 / 不写 PiiAuditLog ===
+[Email:Console] from=no-reply@usedfarmmach.com to=QA_Test_User@Example.com subject=请验证您的神雕农机邮箱
+[Email:Console] text:
+验证您的邮箱
+感谢您使用神雕农机。请点击下方按钮验证您的邮箱地址，验证后即可使用找回密码等功能。
+本链接有效期为 30 分钟。
+https://usedfarmmach.com/zh/auth/verify-email?token=T
+  ✓ sendEmail(verifyEmail) 经 provider 成功
+  ✓ sendEmail(verifyEmail) 写入 EmailSendLog
+  ✓ EmailSendLog.type 映射正确：verifyEmail → verify_email
+  ✓ recipientHash 为 64 位 sha256（verifyEmail）
+  ✓ recipientHash == sha256(邮箱小写)（verifyEmail）
+  ✓ EmailSendLog 不含明文邮箱（verifyEmail）
+[Email:Console] from=no-reply@usedfarmmach.com to=QA_Test_User@Example.com subject=神雕农机 · 密码重置链接
+[Email:Console] text:
+重置您的密码
+我们收到了您的密码重置请求。请点击下方按钮设置新密码。如果您没有请求重置密码，请忽略本邮件。
+本链接有效期为 30 分钟，且仅可使用一次。
+https://usedfarmmach.com/zh/auth/verify-email?token=T
+  ✓ sendEmail(resetPassword) 经 provider 成功
+  ✓ sendEmail(resetPassword) 写入 EmailSendLog
+  ✓ EmailSendLog.type 映射正确：resetPassword → reset_password
+  ✓ recipientHash 为 64 位 sha256（resetPassword）
+  ✓ recipientHash == sha256(邮箱小写)（resetPassword）
+  ✓ EmailSendLog 不含明文邮箱（resetPassword）
+[Email:Console] from=no-reply@usedfarmmach.com to=QA_Test_User@Example.com subject=请补全您的神雕农机资料
+[Email:Console] text:
+补全您的资料
+为了给您提供更好的服务（如找回密码、接收重要通知），建议您补全以下资料：公司名称、国家/地区等。补全并验证邮箱，还可领取积分奖励。
+https://usedfarmmach.com/zh/auth/verify-email?token=T
+  ✓ sendEmail(completeProfileReminder) 经 provider 成功
+  ✓ sendEmail(completeProfileReminder) 写入 EmailSendLog
+  ✓ EmailSendLog.type 映射正确：completeProfileReminder → complete_profile_reminder
+  ✓ recipientHash 为 64 位 sha256（completeProfileReminder）
+  ✓ recipientHash == sha256(邮箱小写)（completeProfileReminder）
+  ✓ EmailSendLog 不含明文邮箱（completeProfileReminder）
+  ✓ 发信路径未写 PiiAuditLog（仅跨境 EmailSendLog）
+
+=== 7. 验证送分幂等：grantEmailVerifiedGiftIfNeeded（mock prisma） ===
+  ✓ 首次验证送分 granted=true, amount=5
+  ✓ 第二次调用幂等：granted=false, amount=0
+  ✓ UserMilestone 仅创建一次（幂等，唯一约束去重）
+  ✓ event key 精确为 email_verified_gift
+  ✓ 不与注册礼包 event(register_gift) 串号
+
+=== 8. i18n：8 语言 auth.verifyEmail 命名空间 key 齐备 ===
+  ✓ 8 语言 auth.verifyEmail 全部 key 齐备（检查 8 个文件）
+
+────────────────────────────────────────
+QA Phase1 结果：PASS=46  FAIL=0
+────────────────────────────────────────
+QA_EXIT=0

@@ -47,7 +47,7 @@ export default function BoothManageClient({ locale }: BoothManageClientProps) {
   const [user, setUser] = useState<any>(null);
   const [booth, setBooth] = useState<BoothData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [loginForm, setLoginForm] = useState({ username: "", password: "" });
+  const [loginForm, setLoginForm] = useState({ identifier: "", password: "" });
   const [loginError, setLoginError] = useState("");
   const [saving, setSaving] = useState(false);
   const [editForm, setEditForm] = useState<Partial<ShowcaseItem> & { isNew?: boolean }>({});
@@ -162,8 +162,8 @@ export default function BoothManageClient({ locale }: BoothManageClientProps) {
               </label>
               <input
                 type="text"
-                value={loginForm.username}
-                onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
+                value={loginForm.identifier}
+                onChange={(e) => setLoginForm({ ...loginForm, identifier: e.target.value })}
                 className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-green-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800"
                 required
               />

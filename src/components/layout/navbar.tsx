@@ -8,6 +8,7 @@ import { mainNav, type NavItem } from "@/config/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/lib/theme/theme-toggle";
+import { NotificationBell } from "@/components/notification-bell";
 
 interface NavbarProps {
   locale: string;
@@ -83,6 +84,7 @@ export function Navbar({ locale }: NavbarProps) {
         {/* Right side */}
         <div className="flex items-center gap-2">
           <ThemeToggle />
+          {user && <NotificationBell locale={locale} />}
           <LanguageSwitcher locale={locale} />
           <div className="hidden items-center gap-2 md:flex">
             {user ? (

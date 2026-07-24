@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getTokenFromHeaders, getUserFromToken } from "@/lib/auth";
+import { createNotification } from "@/lib/notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +53,7 @@ export async function POST(
     // 验证报价属于此询价
     const bid = await prisma.bid.findFirst({
       where: { id: bidId, auctionId: params.id },
+      include: { bidder: { select: { id: true, email: true } } },
     });
 
     if (!bid) {
@@ -75,6 +77,16 @@ export async function POST(
         data: { status: "accepted", isWinning: true },
       }),
     ]);
+
+    // 通知买家报价被接受
+    await createNotification({
+      userId: bid.bidderId,
+      type: "inquiry_accepted",
+      title: "您的报价已被接受",
+      body: `成交价 ¥${bid.amount.toLocaleString()}。请与卖家联系看货与交付事宜。`,
+      link: "/auctions/my-offers",
+      email: bid.bidder.email,
+    });
 
     return NextResponse.json({
       success: true,

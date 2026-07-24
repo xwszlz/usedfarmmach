@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useLocale } from "next-intl";
-import { Clock, Check, FileText, MapPin, TrendingUp, AlertCircle, MessageSquare, ShieldCheck, ChevronDown, ChevronUp, Truck, Wrench, Eye, Lock, X } from "lucide-react";
+import { Clock, Check, FileText, MapPin, TrendingUp, AlertCircle, MessageSquare, ShieldCheck, ChevronDown, ChevronUp, Truck, Wrench, Eye, Lock, X, Tag } from "lucide-react";
 import InspectionBookingModal from "./inspection-booking-modal";
 
 interface BargainData {
@@ -14,6 +14,10 @@ interface BargainData {
   acceptedPrice: number | null;
   totalBids: number;
   totalBidders: number;
+  sellerQuoteAmount: number | null;
+  sellerQuoteMsg: string | null;
+  sellerQuoteAt: string | null;
+  reservePrice: number | null;
   bids: {
     id: string;
     amount: number;
@@ -73,6 +77,11 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
   const [offering, setOffering] = useState(false);
   const [message, setMessage] = useState("");
   const [sellerActionLoading, setSellerActionLoading] = useState(false);
+
+  // 卖家工具状态
+  const [quoteAmount, setQuoteAmount] = useState("");
+  const [quoteMsg, setQuoteMsg] = useState("");
+  const [reserveInput, setReserveInput] = useState("");
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [showBookingModal, setShowBookingModal] = useState(false);
@@ -234,6 +243,79 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
     }
   };
 
+  const handleAcceptSellerQuote = async () => {
+    if (!bargain || bargain.sellerQuoteAmount == null) return;
+    setOffering(true);
+    try {
+      const res = await fetch(`/api/auctions/${bargain.id}/accept-seller-quote`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+      const json = await res.json();
+      if (json.success) {
+        setMessage(isZh ? "已接受卖家还价，交易达成！" : "Accepted seller's quote! Deal made!");
+        fetchBargain();
+      } else {
+        setMessage(json.error || (isZh ? "操作失败" : "Action failed"));
+      }
+    } catch {
+      setMessage(isZh ? "操作失败" : "Action failed");
+    } finally {
+      setOffering(false);
+    }
+  };
+
+  const handleSellerQuote = async () => {
+    if (!bargain || !quoteAmount) return;
+    setSellerActionLoading(true);
+    try {
+      const res = await fetch(`/api/auctions/${bargain.id}/seller-quote`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ amount: parseFloat(quoteAmount), message: quoteMsg }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setMessage(isZh ? "还价已发送给买家" : "Quote sent to buyers");
+        setQuoteAmount("");
+        setQuoteMsg("");
+        fetchBargain();
+      } else {
+        setMessage(json.error || (isZh ? "操作失败" : "Action failed"));
+      }
+    } catch {
+      setMessage(isZh ? "操作失败" : "Action failed");
+    } finally {
+      setSellerActionLoading(false);
+    }
+  };
+
+  const handleSetReserve = async () => {
+    if (!bargain || !reserveInput) return;
+    setSellerActionLoading(true);
+    try {
+      const res = await fetch(`/api/auctions/${bargain.id}/settings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ reservePrice: parseFloat(reserveInput) }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setMessage(isZh ? "已保存最低接受价（仅您可见）" : "Floor price saved (private)");
+        fetchBargain();
+      } else {
+        setMessage(json.error || (isZh ? "操作失败" : "Action failed"));
+      }
+    } catch {
+      setMessage(isZh ? "操作失败" : "Action failed");
+    } finally {
+      setSellerActionLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -252,6 +334,13 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
   // 询价/报价模式：报价列表仅卖家可见，买家看不到他人报价
   const sellerBids = [...bargain.bids].sort((a, b) => b.amount - a.amount);
   const acceptedBid = bargain.bids.find((b) => b.status === "accepted" || b.isWinning);
+
+  // MF3404 类重点标的：存在公告/合同/瑕疵/评估价任一，则展示专属丰富块
+  const hasRich =
+    !!bargain.announcementNo ||
+    !!bargain.contractTemplateNo ||
+    !!bargain.knownFlaws ||
+    bargain.evaluationPrice != null;
 
   const statusBadge = (status: string) => {
     const map: Record<string, { zh: string; en: string; bg: string }> = {
@@ -306,146 +395,163 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
       </div>
 
       {/* ============================================================ */}
-      {/*  2. 车况信息卡 + 权属徽章 + 评估报告摘要                      */}
+      {/*  2. 重点标的专属块（仅 MF3404 类：公告/合同/瑕疵/评估价存在）  */}
       {/* ============================================================ */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
-        {/* 车况信息卡 */}
-        <div className="space-y-3">
-          <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-            <Truck className="h-5 w-5 text-[#1E40AF]" />
-            {isZh ? "车辆信息" : "Vehicle Info"}
-          </h3>
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="bg-gray-50 rounded-lg p-3">
-              <span className="text-gray-500 text-xs">{isZh ? "品牌型号" : "Model"}</span>
-              <p className="font-semibold text-gray-900 mt-0.5">{isZh ? "常州爱科 MF3404" : "Changzhou AGCO MF3404"}</p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <span className="text-gray-500 text-xs">VIN码</span>
-              <p className="font-mono font-semibold text-gray-900 mt-0.5">AKCMY48GHNB091020</p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <span className="text-gray-500 text-xs">{isZh ? "车牌号" : "Plate"}</span>
-              <p className="font-semibold text-gray-900 mt-0.5">苏09Y8888</p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <span className="text-gray-500 text-xs">{isZh ? "最大马力" : "Max Power"}</span>
-              <p className="font-semibold text-gray-900 mt-0.5">340 {isZh ? "匹" : "HP"}</p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <span className="text-gray-500 text-xs">{isZh ? "出厂日期" : "Mfg Date"}</span>
-              <p className="font-semibold text-gray-900 mt-0.5">2022-08-11</p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <span className="text-gray-500 text-xs">{isZh ? "驱动形式" : "Drive"}</span>
-              <p className="font-semibold text-gray-900 mt-0.5">4×4</p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <span className="text-gray-500 text-xs">{isZh ? "排放标准" : "Emission"}</span>
-              <p className="font-semibold text-gray-900 mt-0.5">{isZh ? "国三" : "China III"}</p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <span className="text-gray-500 text-xs">{isZh ? "发动机品牌" : "Engine"}</span>
-              <p className="font-semibold text-gray-900 mt-0.5">{isZh ? "爱科动力" : "AGCO Power"}</p>
+      {hasRich && (
+        <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+          {/* 车况信息卡 */}
+          <div className="space-y-3">
+            <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+              <Truck className="h-5 w-5 text-[#1E40AF]" />
+              {isZh ? "车辆信息" : "Vehicle Info"}
+            </h3>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="bg-gray-50 rounded-lg p-3">
+                <span className="text-gray-500 text-xs">{isZh ? "品牌型号" : "Model"}</span>
+                <p className="font-semibold text-gray-900 mt-0.5">{isZh ? "常州爱科 MF3404" : "Changzhou AGCO MF3404"}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <span className="text-gray-500 text-xs">VIN码</span>
+                <p className="font-mono font-semibold text-gray-900 mt-0.5">AKCMY48GHNB091020</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <span className="text-gray-500 text-xs">{isZh ? "车牌号" : "Plate"}</span>
+                <p className="font-semibold text-gray-900 mt-0.5">苏09Y8888</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <span className="text-gray-500 text-xs">{isZh ? "最大马力" : "Max Power"}</span>
+                <p className="font-semibold text-gray-900 mt-0.5">340 {isZh ? "匹" : "HP"}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <span className="text-gray-500 text-xs">{isZh ? "出厂日期" : "Mfg Date"}</span>
+                <p className="font-semibold text-gray-900 mt-0.5">2022-08-11</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <span className="text-gray-500 text-xs">{isZh ? "驱动形式" : "Drive"}</span>
+                <p className="font-semibold text-gray-900 mt-0.5">4×4</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <span className="text-gray-500 text-xs">{isZh ? "排放标准" : "Emission"}</span>
+                <p className="font-semibold text-gray-900 mt-0.5">{isZh ? "国三" : "China III"}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <span className="text-gray-500 text-xs">{isZh ? "发动机品牌" : "Engine"}</span>
+                <p className="font-semibold text-gray-900 mt-0.5">{isZh ? "爱科动力" : "AGCO Power"}</p>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* 评估价 */}
-        {bargain.evaluationPrice != null && (
-          <div className="flex items-center justify-between bg-blue-50 rounded-lg p-3">
+          {/* 评估价 */}
+          {bargain.evaluationPrice != null && (
+            <div className="flex items-center justify-between bg-blue-50 rounded-lg p-3">
+              <div>
+                <span className="text-sm text-blue-700">{isZh ? "参考评估价" : "Evaluation Price"}</span>
+                <p className="text-xs text-blue-500 mt-0.5">
+                  {isZh ? "评估基准日：2025年8月 · 仅供参考" : "Evaluation date: Aug 2025 · reference only"}
+                </p>
+              </div>
+              <span className="text-lg font-bold text-blue-700 font-mono">
+                ¥{Number(bargain.evaluationPrice).toLocaleString()}
+              </span>
+            </div>
+          )}
+
+          {/* 权属徽章 */}
+          <div className="flex items-center gap-3 bg-green-50 rounded-lg p-3">
+            <Lock className="h-5 w-5 text-green-600 flex-shrink-0" />
             <div>
-              <span className="text-sm text-blue-700">{isZh ? "参考评估价" : "Evaluation Price"}</span>
-              <p className="text-xs text-blue-500 mt-0.5">
-                {isZh ? "评估基准日：2025年8月 · 仅供参考" : "Evaluation date: Aug 2025 · reference only"}
+              <p className="text-sm font-bold text-green-800">{isZh ? "权属文件已上传" : "Title Documents Uploaded"}</p>
+              <p className="text-xs text-green-600 mt-0.5">
+                {isZh ? "来源合同等权属证明可预约现场查验" : "Source contract & title docs available for on-site inspection"}
               </p>
             </div>
-            <span className="text-lg font-bold text-blue-700 font-mono">
-              ¥{Number(bargain.evaluationPrice).toLocaleString()}
-            </span>
           </div>
-        )}
 
-        {/* 权属徽章 */}
-        <div className="flex items-center gap-3 bg-green-50 rounded-lg p-3">
-          <Lock className="h-5 w-5 text-green-600 flex-shrink-0" />
-          <div>
-            <p className="text-sm font-bold text-green-800">{isZh ? "权属文件已上传" : "Title Documents Uploaded"}</p>
-            <p className="text-xs text-green-600 mt-0.5">
-              {isZh ? "来源合同等权属证明可预约现场查验" : "Source contract & title docs available for on-site inspection"}
+          {/* 已知瑕疵 */}
+          {bargain.knownFlaws && (
+            <div className="bg-amber-50 rounded-lg p-3">
+              <p className="text-sm font-bold text-amber-800 mb-1">⚠ {isZh ? "已知瑕疵" : "Known Flaws"}</p>
+              <p className="text-sm text-amber-700">{bargain.knownFlaws}</p>
+            </div>
+          )}
+
+          {/* 工作时长 */}
+          {bargain.product.workingHours != null && (
+            <div className="bg-gray-50 rounded-lg p-3 flex items-center justify-between">
+              <span className="text-sm text-gray-600">{isZh ? "发动机工作时长" : "Engine Hours"}</span>
+              <span className="text-sm font-bold text-gray-900 font-mono">{bargain.product.workingHours} {isZh ? "小时" : "hrs"}</span>
+            </div>
+          )}
+
+          {/* 询价公告折叠面板 */}
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <button
+              onClick={toggleAnnouncement}
+              className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 transition-colors"
+            >
+              <span className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                <FileText className="h-4 w-4 text-[#1E40AF]" />
+                {isZh ? "询价公告全文" : "Full Inquiry Announcement"}
+              </span>
+              {showAnnouncement ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+            </button>
+            {showAnnouncement && (
+              <div className="p-4 max-h-[500px] overflow-y-auto text-sm border-t border-gray-100">
+                {announcementHtml ? (
+                  <div dangerouslySetInnerHTML={{ __html: announcementHtml }} />
+                ) : (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#1E40AF]"></div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* 合同模板预览 */}
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <button
+              onClick={toggleContract}
+              className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 transition-colors"
+            >
+              <span className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                <FileText className="h-4 w-4 text-emerald-600" />
+                {isZh ? "买卖合同模板预览" : "Sales Contract Preview"}
+              </span>
+              {showContract ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+            </button>
+            {showContract && (
+              <div className="p-4 max-h-[500px] overflow-y-auto text-sm border-t border-gray-100">
+                {contractHtml ? (
+                  <div dangerouslySetInnerHTML={{ __html: contractHtml }} />
+                ) : (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-600"></div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* MF3404 专属：交付与过户（无登记证书，卖方不协助过户） */}
+          <div className="bg-amber-50 rounded-lg p-4 space-y-2">
+            <h4 className="text-sm font-bold text-amber-800">⚠ {isZh ? "权属与过户告知" : "Title & Transfer"}</h4>
+            <p className="text-sm text-amber-700">
+              {isZh
+                ? "卖方如实披露标的物权属状况：本标的暂无农机登记证书，仅有江苏金融租赁购买合同，权属文件不完整。卖方不协助办理过户手续。"
+                : "Seller truthfully discloses title status: this unit has no registration certificate; only a Jiangsu Financial Leasing purchase contract is available. Seller does not assist with transfer."}
+            </p>
+            <p className="text-sm text-amber-700">
+              {isZh
+                ? "买方已充分知悉标的物权属文件不全的现状，自愿承担因此可能导致的过户风险。卖方已如实披露权属状况，不存在隐瞒或虚假陈述。买方不得以权属文件不全为由要求解除合同或要求卖方赔偿。"
+                : "Buyer acknowledges incomplete title documents and voluntarily assumes transfer risks. Seller has truthfully disclosed title status without concealment or misrepresentation. Buyer may not cancel or claim for incomplete title documents."}
             </p>
           </div>
         </div>
-
-        {/* 已知瑕疵 */}
-        {bargain.knownFlaws && (
-          <div className="bg-amber-50 rounded-lg p-3">
-            <p className="text-sm font-bold text-amber-800 mb-1">⚠ {isZh ? "已知瑕疵" : "Known Flaws"}</p>
-            <p className="text-sm text-amber-700">{bargain.knownFlaws}</p>
-          </div>
-        )}
-
-        {/* 工作时长 */}
-        {bargain.product.workingHours != null && (
-          <div className="bg-gray-50 rounded-lg p-3 flex items-center justify-between">
-            <span className="text-sm text-gray-600">{isZh ? "发动机工作时长" : "Engine Hours"}</span>
-            <span className="text-sm font-bold text-gray-900 font-mono">{bargain.product.workingHours} {isZh ? "小时" : "hrs"}</span>
-          </div>
-        )}
-
-        {/* 询价公告折叠面板 */}
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
-          <button
-            onClick={toggleAnnouncement}
-            className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 transition-colors"
-          >
-            <span className="text-sm font-bold text-gray-900 flex items-center gap-2">
-              <FileText className="h-4 w-4 text-[#1E40AF]" />
-              {isZh ? "询价公告全文" : "Full Inquiry Announcement"}
-            </span>
-            {showAnnouncement ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
-          </button>
-          {showAnnouncement && (
-            <div className="p-4 max-h-[500px] overflow-y-auto text-sm border-t border-gray-100">
-              {announcementHtml ? (
-                <div dangerouslySetInnerHTML={{ __html: announcementHtml }} />
-              ) : (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#1E40AF]"></div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* 合同模板预览 */}
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
-          <button
-            onClick={toggleContract}
-            className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 transition-colors"
-          >
-            <span className="text-sm font-bold text-gray-900 flex items-center gap-2">
-              <FileText className="h-4 w-4 text-emerald-600" />
-              {isZh ? "买卖合同模板预览" : "Sales Contract Preview"}
-            </span>
-            {showContract ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
-          </button>
-          {showContract && (
-            <div className="p-4 max-h-[500px] overflow-y-auto text-sm border-t border-gray-100">
-              {contractHtml ? (
-                <div dangerouslySetInnerHTML={{ __html: contractHtml }} />
-              ) : (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-600"></div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+      )}
 
       {/* ============================================================ */}
-      {/*  3. 询价/报价区（核心改造：一对一询价）                        */}
+      {/*  3. 询价/报价区（核心：一对一询价，盲报）                      */}
       {/* ============================================================ */}
       {isActive && !isSeller && (
         <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
@@ -472,6 +578,31 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
             </ul>
           </div>
 
+          {/* 卖家还价展示 + 接受 */}
+          {bargain.sellerQuoteAmount != null && (
+            <div className="bg-emerald-50 rounded-lg p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-bold text-emerald-800">{isZh ? "卖家还价" : "Seller's Counter-Offer"}</p>
+                  {bargain.sellerQuoteAt && (
+                    <p className="text-xs text-emerald-500 mt-0.5">
+                      {new Date(bargain.sellerQuoteAt).toLocaleString(isZh ? "zh-CN" : "en-US")}
+                    </p>
+                  )}
+                </div>
+                <p className="text-2xl font-bold font-mono text-emerald-700">¥{bargain.sellerQuoteAmount.toLocaleString()}</p>
+              </div>
+              {bargain.sellerQuoteMsg && <p className="text-sm text-emerald-700">{bargain.sellerQuoteMsg}</p>}
+              <button
+                onClick={handleAcceptSellerQuote}
+                disabled={offering}
+                className="w-full rounded-lg bg-emerald-600 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+              >
+                {offering ? "..." : (isZh ? "接受此还价" : "Accept this quote")}
+              </button>
+            </div>
+          )}
+
           {/* 报价输入 */}
           <div className="flex gap-2">
             <div className="flex-1 relative">
@@ -494,7 +625,7 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
           </div>
 
           {message && (
-            <p className={`text-sm ${message.includes("成功") || message.includes("success") || message.includes("已接受") || message.includes("提交") ? "text-green-600" : "text-red-600"}`}>
+            <p className={`text-sm ${message.includes("成功") || message.includes("success") || message.includes("已接受") || message.includes("提交") || message.includes("已保存") || message.includes("已发送") ? "text-green-600" : "text-red-600"}`}>
               {message}
             </p>
           )}
@@ -522,12 +653,76 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
         </div>
       )}
 
-      {/* 卖家管理区 */}
+      {/* 卖家工作台：还价 + 设置最低接受价（仅卖家可见） */}
       {isSeller && isActive && (
-        <div className="bg-amber-50 rounded-xl border border-amber-200 p-4 text-sm text-amber-700">
-          {isZh
-            ? "这是您的询价商品。下方为收到的报价列表，您可以选择接受或拒绝。报价仅您可见，买家之间无法看到彼此的报价。"
-            : "This is your listing. Review offers below — accept or reject. Offers are visible only to you."}
+        <div className="bg-amber-50 rounded-xl border border-amber-200 p-4 space-y-3">
+          <p className="text-sm font-bold text-amber-800">
+            {isZh ? "卖家工作台：给出还价，或设置内部最低接受价" : "Seller tools: send a counter-offer or set your private floor price"}
+          </p>
+
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-amber-700">{isZh ? "向买家还价" : "Counter-offer to buyers"}</p>
+            <div className="flex gap-2">
+              <div className="flex-1 relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">¥</span>
+                <input
+                  type="number"
+                  value={quoteAmount}
+                  onChange={(e) => setQuoteAmount(e.target.value)}
+                  placeholder={isZh ? "还价金额" : "Counter price"}
+                  className="w-full pl-7 pr-3 py-2 border border-amber-300 rounded-lg text-sm focus:outline-none focus:border-amber-500"
+                />
+              </div>
+              <button
+                onClick={handleSellerQuote}
+                disabled={sellerActionLoading || !quoteAmount}
+                className="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-bold hover:bg-amber-700 disabled:opacity-50"
+              >
+                {isZh ? "发送还价" : "Send"}
+              </button>
+            </div>
+            <input
+              type="text"
+              value={quoteMsg}
+              onChange={(e) => setQuoteMsg(e.target.value)}
+              placeholder={isZh ? "还价留言（选填）" : "Message (optional)"}
+              className="w-full px-3 py-2 border border-amber-300 rounded-lg text-sm focus:outline-none focus:border-amber-500"
+            />
+          </div>
+
+          <div className="space-y-2 border-t border-amber-200 pt-3">
+            <div className="flex items-center gap-1.5 text-xs font-medium text-amber-700">
+              <Tag className="h-3.5 w-3.5" />
+              {isZh ? "内部最低接受价（仅您可见，不向买家展示）" : "Internal floor price (private)"}
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                value={reserveInput}
+                onChange={(e) => setReserveInput(e.target.value)}
+                placeholder={isZh ? "最低接受价" : "Min accept price"}
+                className="flex-1 px-3 py-2 border border-amber-300 rounded-lg text-sm focus:outline-none focus:border-amber-500"
+              />
+              <button
+                onClick={handleSetReserve}
+                disabled={sellerActionLoading || !reserveInput}
+                className="px-4 py-2 bg-gray-700 text-white rounded-lg text-sm font-bold hover:bg-gray-800 disabled:opacity-50"
+              >
+                {isZh ? "保存" : "Save"}
+              </button>
+            </div>
+            {bargain.reservePrice != null && (
+              <p className="text-xs text-amber-600">
+                {isZh ? "当前最低接受价" : "Current floor"}: ¥{bargain.reservePrice.toLocaleString()}
+              </p>
+            )}
+          </div>
+
+          {message && (
+            <p className={`text-sm ${message.includes("成功") || message.includes("已保存") || message.includes("已发送") ? "text-green-700" : "text-red-600"}`}>
+              {message}
+            </p>
+          )}
         </div>
       )}
 
@@ -594,7 +789,7 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
             </div>
           )}
 
-          {/* 交付提醒（合规改造：补充过户配合义务） */}
+          {/* 交付与过户（通用说明） */}
           <div className="bg-white/60 rounded-lg p-3 space-y-2">
             <div className="flex items-center gap-3">
               <MapPin className="h-5 w-5 text-gray-600 flex-shrink-0" />
@@ -602,8 +797,8 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
                 <p className="text-sm font-bold text-gray-900">{isZh ? "交付与过户" : "Delivery & Transfer"}</p>
                 <p className="text-sm text-gray-500">
                   {isZh
-                    ? "因标的物暂无农机登记证书，过户存在障碍，卖方不协助办理过户手续。标的物过户（变更登记）事宜由买方自行办理。具体交付安排由双方协商。"
-                    : "This unit lacks a registration certificate; transfer is obstructed. Seller does not assist with transfer. Buyer handles transfer registration independently. Delivery arrangements to be agreed."}
+                    ? "看货满意后，双方协商交付安排。大额交易建议通过担保支付保障资金安全。"
+                    : "After inspection, both parties agree on delivery. For large deals, use escrow payment for fund safety."}
                 </p>
               </div>
             </div>
@@ -613,8 +808,8 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
                 <p className="text-sm font-bold text-gray-900">{isZh ? "权属保证" : "Title Guarantee"}</p>
                 <p className="text-sm text-gray-500">
                   {isZh
-                    ? "卖方如实披露标的物权属状况。本标的暂无农机登记证书，仅有江苏金融租赁购买合同。买方已充分知悉权属文件不全，自愿承担过户风险。"
-                    : "Seller truthfully discloses title status. This unit has no registration certificate; only a Jiangsu Financial Leasing purchase contract is available. Buyer acknowledges incomplete title documents and assumes transfer risks."}
+                    ? "卖方应如实披露标的物权属状况。对明知或应知而未披露的重大瑕疵，卖方依法承担责任。"
+                    : "Seller must truthfully disclose title status. Seller remains liable for known but undisclosed defects."}
                 </p>
               </div>
             </div>
@@ -629,68 +824,24 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
       )}
 
       {/* ============================================================ */}
-      {/*  5. 风险告知                                                  */}
+      {/*  5. 风险告知（通用）                                          */}
       {/* ============================================================ */}
       <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
         <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
           <AlertCircle className="h-5 w-5 text-amber-500" />
-          {isZh ? "风险告知与设备说明" : "Risk Disclosure"}
+          {isZh ? "交易风险提示" : "Risk Disclosure"}
         </h3>
 
-        {/* 权属与过户告知 */}
-        <div className="bg-amber-50 rounded-lg p-4 space-y-2">
-          <h4 className="text-sm font-bold text-amber-800">⚠ {isZh ? "权属与过户告知" : "Title & Transfer"}</h4>
-          <p className="text-sm text-amber-700">
-            {isZh
-              ? "卖方如实披露标的物权属状况：本标的暂无农机登记证书，仅有江苏金融租赁购买合同，权属文件不完整。卖方不协助办理过户手续。"
-              : "Seller truthfully discloses title status: this unit has no registration certificate; only a Jiangsu Financial Leasing purchase contract is available. Seller does not assist with transfer."}
-          </p>
-          <p className="text-sm text-amber-700">
-            {isZh
-              ? "买方已充分知悉标的物权属文件不全的现状，自愿承担因此可能导致的过户风险。卖方已如实披露权属状况，不存在隐瞒或虚假陈述。买方不得以权属文件不全为由要求解除合同或要求卖方赔偿。"
-              : "Buyer acknowledges incomplete title documents and voluntarily assumes transfer risks. Seller has truthfully disclosed title status without concealment or misrepresentation. Buyer may not cancel or claim for incomplete title documents."}
-          </p>
-          {bargain.knownFlaws && (
-            <p className="text-sm text-amber-700">
-              {isZh ? "购入渠道：江苏金融租赁股份有限公司（租赁取得）" : "Source: Jiangsu Financial Leasing Co., Ltd. (leased acquisition)"}
-            </p>
-          )}
-        </div>
-
-        {/* 设备现状说明 */}
         <div className="bg-gray-50 rounded-lg p-4 space-y-2">
           <h4 className="text-sm font-bold text-gray-900">{isZh ? "设备现状说明" : "Equipment Condition"}</h4>
           <ul className="space-y-1 text-sm text-gray-700">
-            <li>• {isZh ? "前配重：缺失，需另行配置" : "Front weight: Missing, needs separate configuration"}</li>
-            <li>• {isZh ? "后悬挂：缺失，需另行配置" : "Rear hitch: Missing, needs separate configuration"}</li>
-            <li>• {isZh ? `发动机：运转正常，${bargain.product.workingHours || "—"}工时` : `Engine: Running normally, ${bargain.product.workingHours || "—"} hours`}</li>
+            <li>• {isZh ? "标的物按实物现状交付，建议报价前实地查验。" : "Sold as-is. Inspect before offering."}</li>
+            <li>• {isZh ? `发动机：${bargain.product.workingHours != null ? `${bargain.product.workingHours} 工时` : "运转状况以看货为准"}` : `Engine: ${bargain.product.workingHours != null ? `${bargain.product.workingHours} hours` : "condition per inspection"}`}</li>
           </ul>
           <p className="text-xs text-gray-500 mt-2">
             {isZh
-              ? "标的物按实物现状交付。建议买方在报价前实地查验。对明知或应知而未披露的重大瑕疵，卖方仍依法承担责任。"
-              : "Sold as-is. Buyers should inspect before offering. Seller remains liable for known but undisclosed defects."}
-          </p>
-        </div>
-
-        {/* 交付资料清单 */}
-        <div className="bg-green-50 rounded-lg p-4 space-y-2">
-          <h4 className="text-sm font-bold text-gray-900">{isZh ? "交付资料清单" : "Delivery Documents"}</h4>
-          <ul className="space-y-1 text-sm text-green-700">
-            <li>✓ {isZh ? "江苏金融租赁购买合同" : "Jiangsu Financial Leasing purchase contract"}</li>
-            <li>✓ {isZh ? "设备评估报告" : "Equipment appraisal report"}</li>
-            <li>✓ {isZh ? "设备交接清单" : "Equipment handover list"}</li>
-            <li>✓ {isZh ? "标的物交付验收确认书" : "Delivery acceptance form"}</li>
-            <li>✓ {isZh ? "其他法律文件" : "Other legal documents"}</li>
-          </ul>
-        </div>
-
-        {/* 格式条款特别提示 */}
-        <div className="bg-blue-50 rounded-lg p-4 space-y-2">
-          <h4 className="text-sm font-bold text-blue-900">📋 {isZh ? "格式条款特别提示" : "Standard Terms Notice"}</h4>
-          <p className="text-xs text-blue-700 leading-relaxed">
-            {isZh
-              ? "根据《民法典》第496条，请特别注意以下条款：①设备按现状交付，卖方对经合理查验可发现的瑕疵不承担担保责任，但对故意隐瞒或虚假陈述导致的损失仍依法承担责任；②因标的物暂无农机登记证书，过户存在障碍，卖方不协助办理过户，买方应自行了解过户可行性并自担风险；③违约责任对等适用。完整条款详见买卖合同。"
-              : "Per PRC Civil Code Art. 496, please note: (1) Equipment sold as-is; seller not liable for discoverable defects but remains liable for concealed defects or misrepresentation; (2) This unit lacks a registration certificate; transfer is obstructed. Seller does not assist with transfer. Buyer assumes transfer risks; (3) Liability is mutual. Full terms in the sales contract."}
+              ? "对明知或应知而未披露的重大瑕疵，卖方仍依法承担责任。平台仅提供信息展示与增值服务，不收取交易服务费、不碰支付。"
+              : "Seller remains liable for known but undisclosed defects. Platform provides information display and value-added services only — no transaction fees, no payment handling."}
           </p>
         </div>
       </div>

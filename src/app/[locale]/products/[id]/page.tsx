@@ -13,7 +13,8 @@ import { getImageUrl, getVideoUrl, generateImageAlt } from "@/lib/image-url";
 import { formatPrice } from "@/lib/utils";
 import ArbitrageCalculatorSection from "@/components/product/arbitrage-calculator-section";
 import { QuickContact } from "@/components/product/quick-contact";
-import { BuyIntentButton } from "@/components/product/buy-intent-button";
+import { InquiryActions } from "@/components/product/inquiry-actions";
+import InquirySection from "@/components/product/inquiry-section";
 import { ValuationCard } from "@/components/valuation/valuation-card";
 import DeepAnalysisCard from "@/components/product/deep-analysis-card";
 import { getHreflangLanguages } from "@/components/seo/hreflang-head";
@@ -24,7 +25,6 @@ import { InspectionReportCard } from "@/components/inspection/inspection-report-
 import { FavoriteButton } from "@/components/favorite/favorite-button";
 import { SellerTrustCard } from "@/components/seller/seller-trust-card";
 import BlockchainTrace from "@/components/blockchain/blockchain-trace";
-import BargainSection from "@/components/bargain/bargain-section";
 import Link from "next/link";
 import { Wrench } from "lucide-react";
 
@@ -445,9 +445,9 @@ export default async function ProductDetailPage({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
-            {/* Main CTA: 立即询价 */}
-            <div className="flex items-center gap-3">
-              <BuyIntentButton
+            {/* 单一询价入口（阶段0-A）：主按钮滚动到统一询价区；售前咨询为次要独立通道 */}
+            <div className="space-y-1">
+              <InquiryActions
                 productId={product.id}
                 productName={`${brandName} ${product.modelName}`}
                 locale={locale}
@@ -498,25 +498,15 @@ export default async function ProductDetailPage({
       </div>
 
       {/* ================================================================ */}
-      {/*  在线询价栏目 — 直接嵌入产品详情页（不再跳转到独立页面）        */}
+      {/*  统一在线询价栏目（阶段0-A：所有产品自动开通，单一入口）        */}
       {/* ================================================================ */}
-      {product.auctions?.[0] && (
-        <div className="mt-6">
-          <div className="mb-3 flex items-center gap-2">
-            <span className="text-lg font-bold text-gray-900">
-              {locale === "zh" ? "在线询价" : "Price Inquiry"}
-            </span>
-            <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-xs font-medium">
-              {locale === "zh" ? "询价中" : "Active"}
-            </span>
-          </div>
-          <BargainSection
-            auctionId={product.auctions[0].id}
-            locale={locale}
-            sellerId={product.seller.id}
-          />
-        </div>
-      )}
+      <InquirySection
+        productId={product.id}
+        sellerId={product.seller.id}
+        locale={locale}
+        productName={`${brandName} ${product.modelName}`}
+        askingPrice={product.priceCny}
+      />
 
       {/* Inspection Report (设备检验报告) */}
       <div className="mt-6">

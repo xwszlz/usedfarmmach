@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getTokenFromHeaders, getUserFromToken } from "@/lib/auth";
+import { createNotification } from "@/lib/notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +53,17 @@ export async function POST(
     const bid = await prisma.bid.update({
       where: { id: bidId },
       data: { status: "rejected" },
+      include: { bidder: { select: { id: true, email: true } } },
+    });
+
+    // 通知买家报价被拒绝
+    await createNotification({
+      userId: bid.bidderId,
+      type: "inquiry_rejected",
+      title: "您的报价未被接受",
+      body: "卖家暂未接受该报价，您可重新报价或与卖家沟通。",
+      link: "/auctions/my-offers",
+      email: bid.bidder.email,
     });
 
     return NextResponse.json({

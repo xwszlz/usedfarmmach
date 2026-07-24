@@ -1,0 +1,6 @@
+a4ecc255d70eadcc0749982a0c378e975df400f6
+a4ecc255d70eadcc0749982a0c378e975df400f6
+fix(email-phase1): 对齐 QA 标注的 2 处规格偏离
+ src/app/api/auth/forgot-password/route.ts | 6 +++---
+ src/app/api/auth/reset-password/route.ts  | 3 ++-
+ 2 files changed, 5 insertions(+), 4 deletions(-)

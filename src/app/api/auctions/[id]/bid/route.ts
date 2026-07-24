@@ -13,6 +13,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getTokenFromHeaders, getUserFromToken } from "@/lib/auth";
+import { createNotification } from "@/lib/notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +40,15 @@ export async function POST(
 
     const bargain = await prisma.auction.findUnique({
       where: { id: params.id },
+      include: {
+        seller: { select: { id: true, email: true } },
+        product: {
+          select: {
+            modelName: true,
+            brand: { select: { nameZh: true, nameEn: true } },
+          },
+        },
+      },
     });
 
     if (!bargain) {
@@ -88,6 +98,17 @@ export async function POST(
         totalBids: bidCount,
         totalBidders: bidderCount.length,
       },
+    });
+
+    // 通知卖家收到新报价（站内信 + 邮件）
+    const pName = `${bargain.product.brand?.nameZh || bargain.product.brand?.nameEn || ""} ${bargain.product.modelName}`.trim();
+    await createNotification({
+      userId: bargain.sellerId,
+      type: "inquiry_new_offer",
+      title: "收到新的询价报价",
+      body: `${pName}：买家报价 ¥${parseFloat(amount).toLocaleString()}`,
+      link: "/seller/inquiries",
+      email: bargain.seller.email,
     });
 
     return NextResponse.json({
