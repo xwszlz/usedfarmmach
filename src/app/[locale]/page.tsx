@@ -10,6 +10,7 @@ import { ResearchHubEntry } from "@/components/home/research-hub-entry";
 import { DailyReportSection } from "@/components/home/daily-report-section";
 import { TrustBadges } from "@/components/home/trust-badges";
 import { CTASection } from "@/components/home/cta-section";
+import { FieldExpoBanner } from "@/components/home/field-expo-banner";
 import { ArbitrageShowcase } from "@/components/home/arbitrage-showcase";
 import { DAILY_REPORT_RANKING } from "@/config/daily-report-ranking";
 import { generatePageMetadata } from "@/lib/seo-metadata";
@@ -147,6 +148,7 @@ export default async function HomePage({
       />
 
       {/* 10 屏组装 */}
+      <FieldExpoBanner locale={locale} />
       <RecruitmentBanner locale={locale} />
       <HotEquipment products={hotProducts} locale={locale} />
       <DailyReportSection locale={locale} initialArticles={initialArticles} />
