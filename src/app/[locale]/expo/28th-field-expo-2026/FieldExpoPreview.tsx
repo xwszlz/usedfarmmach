@@ -81,13 +81,13 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
 
               {/* CTA Buttons */}
               <div className="mt-6 flex flex-wrap gap-3">
-                <Link
-                  href={`/${locale}/expo/28th-field-expo-2026`}
+                <a
+                  href="#demo-schedule"
                   className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 font-semibold text-green-700 shadow-lg transition hover:bg-green-50"
                 >
                   <Play className="h-5 w-5" />
-                  {isZh ? "展会详情" : "Expo Details"}
-                </Link>
+                  {isZh ? "查看演示时间" : "Demo Schedule"}
+                </a>
                 <Link
                   href={`/${locale}/expo/china-brands`}
                   className="inline-flex items-center gap-2 rounded-lg border border-white/30 bg-white/10 px-6 py-3 font-semibold text-white backdrop-blur-sm transition hover:bg-white/20"
@@ -100,14 +100,14 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
 
             {/* Right: GIF */}
             <div className="flex items-center justify-center">
-              <div className="relative rounded-2xl bg-white/10 p-4 backdrop-blur-sm">
+              <div className="relative rounded-2xl bg-white/10 p-6 backdrop-blur-sm">
                 <img
                   src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/expo/28th-field-expo-2026/preview.gif"
-                  alt="展会标识"
-                  className="h-auto w-full max-w-sm rounded-lg"
+                  alt="第28届河北农机新机具新技术推广演示会"
+                  className="h-auto w-full max-w-md rounded-lg shadow-2xl"
                 />
-                <p className="mt-2 text-center text-sm text-green-200">
-                  {isZh ? "点击上方按钮进入直播间" : "Click above to enter live stream"}
+                <p className="mt-3 text-center text-base font-medium text-white">
+                  🔥 {isZh ? "线下实地演示 · 5场作业" : "5 Live Field Demos"}
                 </p>
               </div>
             </div>
@@ -189,7 +189,7 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
       </section>
 
       {/* Demo Schedule */}
-      <section className="bg-gray-50 py-12 dark:bg-gray-900">
+      <section id="demo-schedule" className="bg-gray-50 py-12 dark:bg-gray-900">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h2 className="mb-8 text-2xl font-bold text-gray-900 dark:text-white">
             {isZh ? "实地作业演示时间表" : "Live Demo Schedule"}
