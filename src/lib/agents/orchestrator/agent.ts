@@ -305,46 +305,24 @@ async function executeAgent(
     }
 
     case "seller-scout": {
-      // #1 本地直接执行采集 + 导入（不再走 GitHub Actions 中转）
-      const mode = (params.mode as string) || "all";
-      const dryRun = !!params.dryRun;
-
-      // 构建 baseUrl：NEXTAUTH_URL > VERCEL_URL > localhost
-      let baseUrl = process.env.NEXTAUTH_URL;
-      if (!baseUrl && process.env.VERCEL_URL) {
-        baseUrl = `https://${process.env.VERCEL_URL}`;
-      }
-      if (!baseUrl) baseUrl = "http://localhost:3000";
-
-      try {
-        const apiKey = process.env.CRON_API_KEY || "dev-secret-key";
-        const resp = await fetch(`${baseUrl}/api/agents/seller-scout`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
-          },
-          body: JSON.stringify({ mode, dryRun }),
-        });
-        const data = await resp.json();
-        return {
-          mode: "direct-execution",
-          ok: data.ok,
-          summary: data.summary,
-          log: data.log || [],
-          durationMs: data.durationMs,
-          message: dryRun
-            ? "DryRun 模式，仅采集不导入"
-            : `采集完成：国内 ${data.summary?.domesticCount || 0} 条 / 国际 ${data.summary?.intlCount || 0} 条，已导入数据库`,
-        };
-      } catch (err: any) {
-        return {
-          mode: "direct-execution",
-          ok: false,
-          error: `本地执行失败: ${err.message}`,
-          message: "请检查 /api/agents/seller-scout 路由是否正常，或 Python 脚本路径是否正确",
-        };
-      }
+      // #1 直接调用共享执行模块（不走 HTTP 内部 fetch，避免 Vercel 部署期页面响应问题）
+      const { executeSellerScout } = await import("@/lib/agents/seller-scout/execute");
+      const result = await executeSellerScout({
+        mode: (params.mode as "domestic" | "international" | "all") || "all",
+        dryRun: !!params.dryRun,
+        maxBrands: (params.maxBrands as number) || undefined,
+      });
+      return {
+        mode: "direct-execution",
+        ok: result.ok,
+        summary: result.summary,
+        log: result.log,
+        durationMs: result.durationMs,
+        message: result.ok
+          ? `采集完成：国内 ${result.summary.domesticCount} 条 / 国际 ${result.summary.intlCount} 条，已导入数据库`
+          : (result.error || "采集失败"),
+        error: result.error,
+      };
     }
 
     case "buyer-match": {
