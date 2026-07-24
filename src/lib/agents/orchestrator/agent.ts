@@ -305,42 +305,46 @@ async function executeAgent(
     }
 
     case "seller-scout": {
-      // #1 通过 GitHub Actions workflow_dispatch 触发（真采集）
-      const token = process.env.GITHUB_TOKEN;
-      const repo = process.env.GITHUB_REPO; // 形如 "xwszlz/usedfarmmach"
-      if (!token || !repo) {
+      // #1 本地直接执行采集 + 导入（不再走 GitHub Actions 中转）
+      const mode = (params.mode as string) || "all";
+      const dryRun = !!params.dryRun;
+
+      // 构建 baseUrl：NEXTAUTH_URL > VERCEL_URL > localhost
+      let baseUrl = process.env.NEXTAUTH_URL;
+      if (!baseUrl && process.env.VERCEL_URL) {
+        baseUrl = `https://${process.env.VERCEL_URL}`;
+      }
+      if (!baseUrl) baseUrl = "http://localhost:3000";
+
+      try {
+        const apiKey = process.env.CRON_API_KEY || "dev-secret-key";
+        const resp = await fetch(`${baseUrl}/api/agents/seller-scout`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({ mode, dryRun }),
+        });
+        const data = await resp.json();
         return {
-          mode: "external-cron",
+          mode: "direct-execution",
+          ok: data.ok,
+          summary: data.summary,
+          log: data.log || [],
+          durationMs: data.durationMs,
+          message: dryRun
+            ? "DryRun 模式，仅采集不导入"
+            : `采集完成：国内 ${data.summary?.domesticCount || 0} 条 / 国际 ${data.summary?.intlCount || 0} 条，已导入数据库`,
+        };
+      } catch (err: any) {
+        return {
+          mode: "direct-execution",
           ok: false,
-          message:
-            "缺少 GITHUB_TOKEN / GITHUB_REPO 环境变量。需要在 Vercel Dashboard 配置。",
-          guide:
-            "请到 Vercel 项目设置 → Environment Variables 添加 GITHUB_TOKEN（fine-grained, workflow 权限）和 GITHUB_REPO（xwszlz/usedfarmmach）",
+          error: `本地执行失败: ${err.message}`,
+          message: "请检查 /api/agents/seller-scout 路由是否正常，或 Python 脚本路径是否正确",
         };
       }
-      const url = `https://api.github.com/repos/${repo}/actions/workflows/seller-scout.yml/dispatches`;
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          Accept: "application/vnd.github+json",
-          Authorization: `Bearer ${token}`,
-          "X-GitHub-Api-Version": "2022-11-28",
-          "User-Agent": "usedfarmmach-orchestrator",
-        },
-        body: JSON.stringify({ ref: "main" }),
-      });
-      if (!res.ok) {
-        const txt = await res.text();
-        throw new Error(`GitHub dispatch ${res.status}: ${txt.slice(0, 300)}`);
-      }
-      return {
-        mode: "github-dispatch",
-        ok: true,
-        message:
-          "已触发 GitHub Actions seller-scout.yml，结果将写入 DB。可到 https://github.com/xwszlz/usedfarmmach/actions 查看运行进度。",
-        workflow: "seller-scout.yml",
-        workflowUrl: `https://github.com/${repo}/actions/workflows/seller-scout.yml`,
-      };
     }
 
     case "buyer-match": {

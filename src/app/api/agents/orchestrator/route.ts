@@ -17,6 +17,7 @@ import {
 } from "@/lib/agents/orchestrator/agent";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 120; // 卖方采集可能跑90秒+，给足时间
 
 const ADMIN_ROLES = ["admin", "super_admin"];
 
