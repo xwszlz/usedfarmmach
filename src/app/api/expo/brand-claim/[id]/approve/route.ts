@@ -58,16 +58,19 @@ export async function POST(
       });
     }
 
-    // 4. 创建 User（merchant 角色）
+    // 4. 创建 User（merchant 角色）—— 邮箱唯一，避免冲突
     const username = `booth_${(claim.company || brandName).replace(/[^a-zA-Z0-9]/g, '_')}_${nanoid(6)}`;
     const rawPassword = nanoid(10); // 自动生成密码
     const hashedPwd = await hashPassword(rawPassword);
+
+    // 邮箱策略：始终生成唯一占位邮箱，避免 brand_claim 中的邮箱与现有 User 冲突
+    const userEmail = `booth_${nanoid(8)}@booth.shendiao.com`;
 
     const user = await prisma.user.create({
       data: {
         username,
         passwordHash: hashedPwd,
-        email: claim.email || `${nanoid(8)}@booth-temp.shendiao.com`,
+        email: userEmail,
         phone: claim.phone,
         companyName: claim.company || brandName,
         country: claim.country || "中国",
