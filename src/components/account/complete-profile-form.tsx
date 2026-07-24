@@ -117,12 +117,24 @@ export function CompleteProfileForm({ locale }: CompleteProfileFormProps) {
           </p>
         </div>
         <p className="text-sm text-gray-600 dark:text-gray-300">
-          {locale === "zh" ? `当前积分：${result.credits}` : `Your current credits: ${result.credits}`}
+          {locale === "zh" ? "当前积分：" : "Your current credits: "}
+          <Link
+            href={`/${locale}/credits`}
+            className="font-semibold text-primary-600 hover:underline"
+          >
+            {result.credits}
+          </Link>
           {result.giftGranted
             ? locale === "zh"
               ? `（已发放注册礼包 ${result.giftAmount} 积分）`
               : ` (register gift ${result.giftAmount} credits granted)`
             : ""}
+          <Link
+            href={`/${locale}/credits`}
+            className="ml-2 font-medium text-primary-600 hover:underline"
+          >
+            {locale === "zh" ? "查看积分中心 →" : "Go to Credits Center →"}
+          </Link>
         </p>
         <div className="flex gap-3 pt-2">
           <Link

@@ -7,10 +7,10 @@ export interface NavItem {
 }
 
 /**
- * Unified 9-item flat navigation (no dropdowns).
+ * Unified flat navigation (no dropdowns).
  * Used for both zh and en — labels come from i18n translation keys.
  *
- * 首页 | 二手农机 | 零配件 | 增值服务 | 博览会 | AI竞技场 | AI认证 | 研究Hub | 关于我们
+ * 首页 | 二手农机 | 在线询价 | 零配件 | 增值服务 | 博览会 | AI竞技场 | AI认证 | 研究Hub | 关于我们 | 积分中心
  */
 export const mainNav: NavItem[] = [
   { href: "/", labelKey: "nav.home" },
@@ -23,6 +23,7 @@ export const mainNav: NavItem[] = [
   { href: "/engineer", labelKey: "nav.engineer" },
   { href: "/research", labelKey: "nav.research" },
   { href: "/about", labelKey: "nav.about" },
+  { href: "/credits", labelKey: "nav.credits", highlight: true },
 ];
 
 /** Resolve nav items for a given locale — now unified, same for all locales */
