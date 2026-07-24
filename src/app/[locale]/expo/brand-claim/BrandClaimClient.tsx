@@ -65,9 +65,13 @@ export default function BrandClaimClient({ locale }: { locale: string }) {
   const t = (zh: string, en: string) => (isZh ? zh : en);
 
   if (submitted) {
+    const selectedTier = (searchParams.get("tier") || "free").toLowerCase();
+    const isPaid = ["pro", "flagship", "strategic"].includes(selectedTier);
+    const tierPrice = selectedTier === "pro" ? "¥380/年" : selectedTier === "flagship" ? "¥980/年" : selectedTier === "strategic" ? "¥2,880/年" : "¥0/年";
+
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-blue-50 to-white px-4">
-        <div className="max-w-lg rounded-2xl bg-white p-8 text-center shadow-xl">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-blue-50 to-white px-4 py-12">
+        <div className="max-w-2xl rounded-2xl bg-white p-8 text-center shadow-xl">
           <CheckCircle2 className="mx-auto mb-4 h-20 w-20 text-green-500" />
           <h1 className="mb-2 text-2xl font-bold text-gray-900">
             {t("认领申请已提交！", "Claim Submitted!")}
@@ -78,12 +82,70 @@ export default function BrandClaimClient({ locale }: { locale: string }) {
               "We will review your application within 2 business days. Once approved, you will gain brand page management access to upload official materials and update product information."
             )}
           </p>
+
+          {/* Payment section for paid tiers */}
+          {isPaid && (
+            <div className="my-6 rounded-xl border-2 border-green-200 bg-green-50 p-6 text-left">
+              <h2 className="mb-2 text-center text-xl font-bold text-green-800">
+                {t("💚 请扫码完成付款", "💚 Please scan to pay")}
+              </h2>
+              <p className="mb-4 text-center text-sm text-gray-700">
+                {t(
+                  `您选择的版本：${tierPrice}（已打1折）。付款确认后24小时内开通自助展台。`,
+                  `Your tier: ${tierPrice}. Activated within 24 hours after payment confirmed.`
+                )}
+              </p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="rounded-lg border border-gray-200 bg-white p-3 text-center">
+                  <div className="mb-2 text-sm font-medium text-green-700">💚 微信支付</div>
+                  <img
+                    src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/payment/wechat-qr.png"
+                    alt="微信支付二维码"
+                    className="mx-auto h-40 w-40 rounded-lg border border-gray-200 object-contain p-1"
+                  />
+                  <p className="mt-2 text-xs text-gray-500">扫一扫即可付款</p>
+                </div>
+                <div className="rounded-lg border border-gray-200 bg-white p-3 text-center">
+                  <div className="mb-2 text-sm font-medium text-blue-700">💙 支付宝支付</div>
+                  <img
+                    src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/payment/alipay-qr.jpg"
+                    alt="支付宝支付二维码"
+                    className="mx-auto h-40 w-40 rounded-lg border border-gray-200 object-contain p-1"
+                  />
+                  <p className="mt-2 text-xs text-gray-500">扫一扫即可付款</p>
+                </div>
+              </div>
+              <div className="mt-4 rounded-lg bg-yellow-50 border border-yellow-200 p-3 text-xs text-gray-700">
+                {t(
+                  "📌 付款后请将截图发至 932133255@qq.com 或致电 +86 18633878701，24小时内开通自助展台。",
+                  "📌 After payment, send screenshot to 932133255@qq.com or call +86 18633878701. Activated within 24 hours."
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Free tier note */}
+          {!isPaid && (
+            <div className="my-6 rounded-lg bg-blue-50 border border-blue-200 p-4 text-sm text-blue-800">
+              {t(
+                "您选择的是免费版，审核通过后自动开通，无需付款。",
+                "You selected the Free tier. You'll be activated automatically after review—no payment needed."
+              )}
+            </div>
+          )}
+
           <div className="flex justify-center gap-3">
             <Link
               href={`/${locale}/expo`}
               className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700"
             >
               {t("返回展会", "Back to Expo")}
+            </Link>
+            <Link
+              href={`/${locale}/expo/booth`}
+              className="rounded-lg border border-gray-300 px-6 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+            >
+              {t("查看套餐", "View Plans")}
             </Link>
           </div>
         </div>
