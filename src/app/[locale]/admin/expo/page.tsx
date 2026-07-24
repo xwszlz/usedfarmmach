@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { AdminRegActions } from "./AdminRegActions";
 
 export const dynamic = "force-dynamic";
 
@@ -160,45 +161,26 @@ export default async function AdminExpoPage() {
           <h2 className="font-semibold text-gray-900">
             招商意向列表 <span className="text-sm font-normal text-gray-400">（{registrations.length} 条）</span>
           </h2>
+          <p className="mt-1 text-xs text-gray-500">点击「通过」自动创建品牌账号并发送登录凭证邮件</p>
         </div>
         <div className="overflow-x-auto">
           {registrations.length === 0 ? (
             <div className="px-4 py-12 text-center text-gray-400">暂无招商意向</div>
           ) : (
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">时间</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">联系人</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">公司</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">电话</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">国家</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">品类</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">展位</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">状态</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">留言</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {registrations.map((r) => (
-                  <tr key={r.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 text-xs text-gray-500">
-                      {new Date(r.createdAt).toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}
-                    </td>
-                    <td className="px-4 py-2 font-medium text-gray-900">{r.name}</td>
-                    <td className="px-4 py-2 text-gray-600">{r.company || "-"}</td>
-                    <td className="px-4 py-2 text-gray-600">{r.phone}</td>
-                    <td className="px-4 py-2 text-gray-600">{r.country || "-"}</td>
-                    <td className="px-4 py-2 text-gray-600">{r.category || "-"}</td>
-                    <td className="px-4 py-2 text-gray-600">{r.boothType || "-"}</td>
-                    <td className="px-4 py-2">{getStatusBadge(r.status)}</td>
-                    <td className="px-4 py-2 text-xs text-gray-500 max-w-[200px] truncate" title={r.message || ""}>
-                      {r.message || "-"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <AdminRegActions
+              registrations={registrations.map((r) => ({
+                id: r.id,
+                name: r.name,
+                company: r.company,
+                phone: r.phone,
+                email: r.email,
+                country: r.country,
+                category: r.category,
+                boothType: r.boothType,
+                status: r.status,
+                createdAt: r.createdAt,
+              }))}
+            />
           )}
         </div>
       </div>
