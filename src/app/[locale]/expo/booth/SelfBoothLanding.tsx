@@ -25,7 +25,7 @@ export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
         isZh ? "邮箱询盘通知" : "Email inquiry alerts",
       ],
       cta: isZh ? "免费开通" : "Start Free",
-      ctaHref: "/expo/booth/claim",
+      ctaHref: "/expo/brand-claim?tier=free",
       popular: false,
       gradient: "from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900",
       border: "border-gray-200 dark:border-gray-700",
@@ -43,7 +43,7 @@ export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
         isZh ? "邮件+短信询盘通知" : "Email + SMS alerts",
       ],
       cta: isZh ? "开通Pro" : "Get Pro",
-      ctaHref: "/expo/booth/claim?tier=pro",
+      ctaHref: "/expo/brand-claim?tier=pro",
       popular: true,
       gradient: "from-blue-500 to-cyan-500",
       border: "border-blue-500",
@@ -62,7 +62,7 @@ export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
         isZh ? "月轮播推荐位" : "Monthly featured slot",
       ],
       cta: isZh ? "开通旗舰" : "Get Flagship",
-      ctaHref: "/expo/booth/claim?tier=flagship",
+      ctaHref: "/expo/brand-claim?tier=flagship",
       popular: false,
       gradient: "from-purple-500 to-pink-500",
       border: "border-purple-500",
@@ -82,7 +82,7 @@ export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
         isZh ? "1对1客户经理" : "Dedicated account mgr",
       ],
       cta: isZh ? "联系开通" : "Contact Us",
-      ctaHref: "/expo/booth/claim?tier=strategic",
+      ctaHref: "/expo/brand-claim?tier=strategic",
       popular: false,
       gradient: "from-amber-500 to-orange-600",
       border: "border-amber-500",
@@ -258,7 +258,7 @@ export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
           </p>
           <div className="mt-6 flex justify-center gap-4">
             <Link
-              href={`/${locale}/expo/booth/claim`}
+              href={`/${locale}/expo/brand-claim`}
               className="rounded-lg bg-green-600 px-8 py-3 font-semibold text-white shadow-lg transition hover:bg-green-700"
             >
               {isZh ? "免费开通→" : "Start Free →"}
