@@ -343,6 +343,74 @@ async function executeAgent(
       };
     }
 
+    case "buyer-match": {
+      const { buyerMatchAgent } = await import("@/lib/agents/buyer-match/agent");
+      const result = await buyerMatchAgent.run({
+        brandId: (params.brandId as string) || undefined,
+        brandName: (params.brandName as string) || undefined,
+        modelName: (params.modelName as string) || undefined,
+        budgetMin: (params.budgetMin as number) || undefined,
+        budgetMax: (params.budgetMax as number) || undefined,
+        country: (params.country as string) || undefined,
+        province: (params.province as string) || undefined,
+        limit: (params.limit as number) || 10,
+      });
+      return { ok: result.ok, totalMatches: result.totalMatches, topMatch: result.matches[0] || null };
+    }
+
+    case "arbitrage-analyzer": {
+      const { arbitrageAnalyzerAgent } = await import("@/lib/agents/arbitrage-analyzer/agent");
+      const result = await arbitrageAnalyzerAgent.run({
+        productId: (params.productId as string) || undefined,
+        brandId: (params.brandId as string) || undefined,
+        targetCountries: (params.targetCountries as string[]) || undefined,
+        minMarginPct: (params.minMarginPct as number) || 10,
+        limit: (params.limit as number) || 20,
+      });
+      return { ok: result.ok, totalOpportunities: result.totalOpportunities, summary: result.summary, topOpportunity: result.opportunities[0] || null };
+    }
+
+    case "content-engine": {
+      const { contentEngineAgent } = await import("@/lib/agents/content-engine/agent");
+      const { ContentEngineInputSchema } = await import("@/lib/agents/content-engine/types");
+      const parsed = ContentEngineInputSchema.parse({
+        productId: (params.productId as string) || undefined,
+        brandName: (params.brandName as string) || undefined,
+        modelName: (params.modelName as string) || undefined,
+        year: (params.year as number) || undefined,
+        category: (params.category as string) || undefined,
+        languages: (params.languages as string[]) || ["zh", "en"],
+        contentType: (params.contentType as string) || "product_description",
+      });
+      const result = await contentEngineAgent.run(parsed);
+      return { ok: result.ok, contentType: result.contentType, generatedCount: result.contents.length, languages: result.contents.map((c) => c.lang) };
+    }
+
+    case "data-dashboard": {
+      const { dataDashboardAgent } = await import("@/lib/agents/data-dashboard/agent");
+      const result = await dataDashboardAgent.run({
+        days: (params.days as number) || 30,
+        includeRevenue: params.includeRevenue !== false,
+        includeUsers: params.includeUsers !== false,
+        includeProducts: params.includeProducts !== false,
+        includeInquiries: params.includeInquiries !== false,
+      });
+      return { ok: result.ok, period: result.period, metrics: result.metrics };
+    }
+
+    case "risk-control": {
+      const { riskControlAgent } = await import("@/lib/agents/risk-control/agent");
+      const { RiskControlInputSchema } = await import("@/lib/agents/risk-control/types");
+      const parsed = RiskControlInputSchema.parse({
+        checkType: (params.checkType as string) || "listing_scan",
+        targetProductId: (params.targetProductId as string) || undefined,
+        targetUserId: (params.targetUserId as string) || undefined,
+        limit: (params.limit as number) || 50,
+      });
+      const result = await riskControlAgent.run(parsed);
+      return { ok: result.ok, checkType: result.checkType, totalFindings: result.totalFindings, summary: result.summary, criticalFindings: result.findings.filter((f) => f.severity === "critical") };
+    }
+
     default:
       throw new Error(`Unknown agent: ${agentId}`);
   }
