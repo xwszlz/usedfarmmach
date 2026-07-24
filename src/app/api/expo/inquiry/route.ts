@@ -11,7 +11,7 @@ import { prisma } from "@/lib/db";
  * 2. 发送邮件通知管理员
  */
 
-const ADMIN_EMAIL = "jiusei0319@gmail.com";
+const ADMIN_EMAIL = "932133255@qq.com";
 
 export async function POST(request: NextRequest) {
   try {

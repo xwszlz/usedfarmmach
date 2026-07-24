@@ -43,7 +43,7 @@ export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
         isZh ? "邮件+短信询盘通知" : "Email + SMS alerts",
       ],
       cta: isZh ? "开通Pro" : "Get Pro",
-      ctaHref: "/expo/brand-claim?tier=pro",
+      ctaHref: "#payment",
       popular: true,
       gradient: "from-blue-500 to-cyan-500",
       border: "border-blue-500",
@@ -62,7 +62,7 @@ export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
         isZh ? "月轮播推荐位" : "Monthly featured slot",
       ],
       cta: isZh ? "开通旗舰" : "Get Flagship",
-      ctaHref: "/expo/brand-claim?tier=flagship",
+      ctaHref: "#payment",
       popular: false,
       gradient: "from-purple-500 to-pink-500",
       border: "border-purple-500",
@@ -82,7 +82,7 @@ export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
         isZh ? "1对1客户经理" : "Dedicated account mgr",
       ],
       cta: isZh ? "联系开通" : "Contact Us",
-      ctaHref: "/expo/brand-claim?tier=strategic",
+      ctaHref: "#payment",
       popular: false,
       gradient: "from-amber-500 to-orange-600",
       border: "border-amber-500",
@@ -259,7 +259,7 @@ export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
             </div>
           </div>
           <p className="mt-6 text-center text-xs text-gray-400">
-            {isZh ? "付款后请将截图发送至 jiusei0319@gmail.com 或致电 18932905854 确认" : "After payment, send screenshot to jiusei0319@gmail.com to confirm."}
+            {isZh ? "付款后请将截图发送至 932133255@qq.com 或致电 +86 18633878701 确认" : "After payment, send screenshot to 932133255@qq.com or call +86 18633878701."}
           </p>
         </div>
       </section>

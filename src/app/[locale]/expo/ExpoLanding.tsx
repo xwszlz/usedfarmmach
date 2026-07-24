@@ -118,9 +118,9 @@ const TEXTS: Record<string, {
       message: "留言（选填）",
     },
     boothOptions: [
-      "基础展位 ¥3,800/年（5款产品展示）",
-      "优选展位 ¥9,800/年（20款产品+视频展示）",
-      "旗舰展位 ¥28,800/年（不限量+VR展厅+优先推荐）",
+      "基础展位 ¥380/年（5款产品展示）",
+      "优选展位 ¥980/年（20款产品+视频展示）",
+      "旗舰展位 ¥2,880/年（不限量+VR展厅+优先推荐）",
       "暂不确定，请顾问联系我",
     ],
     categoryOptions: [
@@ -205,9 +205,9 @@ const TEXTS: Record<string, {
       message: "Message (Optional)",
     },
     boothOptions: [
-      "Basic ¥3,800/yr (5 products)",
-      "Premium ¥9,800/yr (20 products + video)",
-      "Flagship ¥28,800/yr (unlimited + VR + priority)",
+      "Basic ¥380/yr (5 products)",
+      "Premium ¥980/yr (20 products + video)",
+      "Flagship ¥2,880/yr (unlimited + VR + priority)",
       "Not sure, please contact me",
     ],
     categoryOptions: [
@@ -223,7 +223,7 @@ const TEXTS: Record<string, {
     submit: "Submit Application",
     submitting: "Submitting...",
     success: "Submitted successfully! We'll contact you within 24 hours.",
-    error: "Submission failed. Please try again or contact Email: jiusei0319@gmail.com",
+    error: "Submission failed. Please try again or contact Email: 932133255@qq.com",
     selectPlaceholder: "Please select",
   },
   ru: {
@@ -292,9 +292,9 @@ const TEXTS: Record<string, {
       message: "Сообщение (необязательно)",
     },
     boothOptions: [
-      "Базовый ¥3,800/год (5 товаров)",
-      "Премиум ¥9,800/год (20 товаров + видео)",
-      "Флагман ¥28,800/год (без лимита + VR + приоритет)",
+      "Базовый ¥380/год (5 товаров)",
+      "Премиум ¥980/год (20 товаров + видео)",
+      "Флагман ¥2,880/год (без лимита + VR + приоритет)",
       "Не уверен, свяжитесь со мной",
     ],
     categoryOptions: [
@@ -355,9 +355,9 @@ const TEXTS: Record<string, {
       message: "Mensaje (Opcional)",
     },
     boothOptions: [
-      "Básico ¥3,800/año (5 productos)",
-      "Premium ¥9,800/año (20 productos + video)",
-      "Insignia ¥28,800/año (ilimitado + VR + prioridad)",
+      "Básico ¥380/año (5 productos)",
+      "Premium ¥980/año (20 productos + video)",
+      "Insignia ¥2,880/año (ilimitado + VR + prioridad)",
       "No estoy seguro, contáctenme",
     ],
     categoryOptions: [
@@ -373,7 +373,7 @@ const TEXTS: Record<string, {
     submit: "Enviar Solicitud",
     submitting: "Enviando...",
     success: "¡Enviado con éxito! Le contactaremos en 24 horas.",
-    error: "Error. Intente de nuevo o contacte Email: jiusei0319@gmail.com",
+    error: "Error. Intente de nuevo o contacte Email: 932133255@qq.com",
     selectPlaceholder: "Seleccione",
   },
   pt: {
@@ -418,9 +418,9 @@ const TEXTS: Record<string, {
       message: "Mensagem (Opcional)",
     },
     boothOptions: [
-      "Básico ¥3,800/ano (5 produtos)",
-      "Premium ¥9,800/ano (20 produtos + vídeo)",
-      "Flagship ¥28,800/ano (ilimitado + VR + prioridade)",
+      "Básico ¥380/ano (5 produtos)",
+      "Premium ¥980/ano (20 produtos + vídeo)",
+      "Flagship ¥2,880/ano (ilimitado + VR + prioridade)",
       "Não tenho certeza, entre em contato",
     ],
     categoryOptions: [
@@ -481,9 +481,9 @@ const TEXTS: Record<string, {
       message: "رسالة (اختياري)",
     },
     boothOptions: [
-      "أساسي ¥3,800/سنة (5 منتجات)",
-      "مميز ¥9,800/سنة (20 منتج + فيديو)",
-      "رائد ¥28,800/سنة (غير محدود + VR + أولوية)",
+      "أساسي ¥380/سنة (5 منتجات)",
+      "مميز ¥980/سنة (20 منتج + فيديو)",
+      "رائد ¥2,880/سنة (غير محدود + VR + أولوية)",
       "غير متأكد، تواصل معي",
     ],
     categoryOptions: [
@@ -544,9 +544,9 @@ const TEXTS: Record<string, {
       message: "Message (Optionnel)",
     },
     boothOptions: [
-      "Basique ¥3,800/an (5 produits)",
-      "Premium ¥9,800/an (20 produits + vidéo)",
-      "Phare ¥28,800/an (illimité + VR + priorité)",
+      "Basique ¥380/an (5 produits)",
+      "Premium ¥980/an (20 produits + vidéo)",
+      "Phare ¥2,880/an (illimité + VR + priorité)",
       "Pas sûr, contactez-moi",
     ],
     categoryOptions: [
@@ -562,7 +562,7 @@ const TEXTS: Record<string, {
     submit: "Envoyer la Demande",
     submitting: "Envoi...",
     success: "Envoyé avec succès! Nous vous contacterons sous 24 heures.",
-    error: "Échec de l'envoi. Réessayez ou contactez Email: jiusei0319@gmail.com",
+    error: "Échec de l'envoi. Réessayez ou contactez Email: 932133255@qq.com",
     selectPlaceholder: "Sélectionner",
   },
   hi: {
@@ -607,9 +607,9 @@ const TEXTS: Record<string, {
       message: "संदेश (वैकल्पिक)",
     },
     boothOptions: [
-      "बेसिक ¥3,800/वर्ष (5 उत्पाद)",
-      "प्रीमियम ¥9,800/वर्ष (20 उत्पाद + वीडियो)",
-      "फ्लैगशिप ¥28,800/वर्ष (असीमित + VR + प्राथमिकता)",
+      "बेसिक ¥380/वर्ष (5 उत्पाद)",
+      "प्रीमियम ¥980/वर्ष (20 उत्पाद + वीडियो)",
+      "फ्लैगशिप ¥2,880/वर्ष (असीमित + VR + प्राथमिकता)",
       "निश्चित नहीं, मुझसे संपर्क करें",
     ],
     categoryOptions: [
@@ -839,9 +839,9 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {[
-              { name: locale === "zh" ? "基础展位" : "Basic", price: "¥3,800", period: locale === "zh" ? "/年" : "/yr", desc: locale === "zh" ? "5款产品展示" : "5 products" },
-              { name: locale === "zh" ? "优选展位" : "Premium", price: "¥9,800", period: locale === "zh" ? "/年" : "/yr", desc: locale === "zh" ? "20款产品+视频" : "20 products + video", highlight: true },
-              { name: locale === "zh" ? "旗舰展位" : "Flagship", price: "¥28,800", period: locale === "zh" ? "/年" : "/yr", desc: locale === "zh" ? "不限量+VR+优先推荐" : "Unlimited + VR + priority" },
+              { name: locale === "zh" ? "基础展位" : "Basic", price: "¥380", period: locale === "zh" ? "/年" : "/yr", desc: locale === "zh" ? "5款产品展示" : "5 products" },
+              { name: locale === "zh" ? "优选展位" : "Premium", price: "¥980", period: locale === "zh" ? "/年" : "/yr", desc: locale === "zh" ? "20款产品+视频" : "20 products + video", highlight: true },
+              { name: locale === "zh" ? "旗舰展位" : "Flagship", price: "¥2,880", period: locale === "zh" ? "/年" : "/yr", desc: locale === "zh" ? "不限量+VR+优先推荐" : "Unlimited + VR + priority" },
             ].map((tier) => (
               <div
                 key={tier.name}
@@ -1030,7 +1030,7 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
         {/* Contact info */}
         <div className="mt-8 text-center text-sm text-gray-500">
           <p>
-            Email: jiusei0319@gmail.com
+            Email: 932133255@qq.com
           </p>
         </div>
       </section>
