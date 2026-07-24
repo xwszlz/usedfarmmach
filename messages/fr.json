@@ -27,6 +27,34 @@
       "usd": "Dollar (USD)"
     }
   },
+  "credits": {
+    "title": "Espace adhérent",
+    "membershipStatus": "Statut d'adhésion",
+    "creditsBalance": "Solde de points",
+    "validUntil": "Valable jusqu'au",
+    "upgrade": "Améliorer l'adhésion",
+    "alreadyHighest": "Déjà au niveau maximum",
+    "upgradeComingSoon": "Amélioration de l'adhésion bientôt",
+    "recharge": "Acheter des points",
+    "rechargeComingSoon": "L'achat de points arrive bientôt.",
+    "transactions": "Historique des points",
+    "refresh": "Actualiser",
+    "noRecords": "Aucun enregistrement pour l'instant",
+    "pleaseLogin": "Veuillez vous connecter pour voir",
+    "transactionTypes": {
+      "recharge": "Recharge",
+      "consume": "Consommation",
+      "reward": "Récompense",
+      "expire": "Expiré",
+      "register_gift": "Cadeau d'inscription",
+      "email_verified_gift": "Cadeau de vérification e-mail",
+      "cert_gift": "Cadeau de certification",
+      "invite_reward": "Récompense parrainage",
+      "checkin": "Check-in",
+      "admin_adjust": "Ajustement admin",
+      "gift": "Cadeau"
+    }
+  },
   "nav": {
     "home": "Accueil",
     "products": "Équipements",

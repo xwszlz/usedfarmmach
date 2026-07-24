@@ -27,6 +27,34 @@
       "usd": "USD"
     }
   },
+  "credits": {
+    "title": "Центр участника",
+    "membershipStatus": "Статус участника",
+    "creditsBalance": "Баланс баллов",
+    "validUntil": "Действительно до",
+    "upgrade": "Повысить уровень",
+    "alreadyHighest": "Уже максимальный уровень",
+    "upgradeComingSoon": "Повышение уровня скоро",
+    "recharge": "Купить баллы",
+    "rechargeComingSoon": "Покупка баллов скоро появится.",
+    "transactions": "История баллов",
+    "refresh": "Обновить",
+    "noRecords": "Записей пока нет",
+    "pleaseLogin": "Войдите, чтобы просмотреть",
+    "transactionTypes": {
+      "recharge": "Пополнение",
+      "consume": "Списание",
+      "reward": "Награда",
+      "expire": "Истёк",
+      "register_gift": "Подарок за регистрацию",
+      "email_verified_gift": "Подарок за подтверждение почты",
+      "cert_gift": "Подарок за сертификат",
+      "invite_reward": "Награда за приглашение",
+      "checkin": "Отметка",
+      "admin_adjust": "Корректировка админа",
+      "gift": "Подарок"
+    }
+  },
   "nav": {
     "home": "Главная",
     "products": "Оборудование",

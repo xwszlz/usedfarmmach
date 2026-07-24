@@ -27,6 +27,34 @@
       "usd": "دولار أمريكي"
     }
   },
+  "credits": {
+    "title": "مركز العضوية",
+    "membershipStatus": "حالة العضوية",
+    "creditsBalance": "رصيد النقاط",
+    "validUntil": "صالح حتى",
+    "upgrade": "ترقية العضوية",
+    "alreadyHighest": "أنت بالفعل في أعلى مستوى",
+    "upgradeComingSoon": "ترقية العضوية قريبًا",
+    "recharge": "شراء النقاط",
+    "rechargeComingSoon": "شراء النقاط قريبًا. ترقبوا.",
+    "transactions": "سجل النقاط",
+    "refresh": "تحديث",
+    "noRecords": "لا توجد سجلات بعد",
+    "pleaseLogin": "يرجى تسجيل الدخول للعرض",
+    "transactionTypes": {
+      "recharge": "شحن",
+      "consume": "استهلاك",
+      "reward": "مكافأة",
+      "expire": "منتهي الصلاحية",
+      "register_gift": "هدية التسجيل",
+      "email_verified_gift": "هدية تأكيد البريد",
+      "cert_gift": "هدية الشهادة",
+      "invite_reward": "مكافأة الدعوة",
+      "checkin": "تسجيل الحضور",
+      "admin_adjust": "تعديل الإدارة",
+      "gift": "هدية"
+    }
+  },
   "nav": {
     "home": "الرئيسية",
     "products": "المعدات",

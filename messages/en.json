@@ -27,6 +27,34 @@
       "usd": "USD"
     }
   },
+  "credits": {
+    "title": "Membership Center",
+    "membershipStatus": "Membership Status",
+    "creditsBalance": "Credit Balance",
+    "validUntil": "Valid until",
+    "upgrade": "Upgrade Membership",
+    "alreadyHighest": "Already at highest tier",
+    "upgradeComingSoon": "Membership upgrade coming soon",
+    "recharge": "Buy Credits",
+    "rechargeComingSoon": "Credit purchase is coming soon. Stay tuned.",
+    "transactions": "Credit History",
+    "refresh": "Refresh",
+    "noRecords": "No records yet",
+    "pleaseLogin": "Please sign in to view",
+    "transactionTypes": {
+      "recharge": "Recharge",
+      "consume": "Consume",
+      "reward": "Reward",
+      "expire": "Expired",
+      "register_gift": "Registration gift",
+      "email_verified_gift": "Email verified gift",
+      "cert_gift": "Certification gift",
+      "invite_reward": "Invite reward",
+      "checkin": "Check-in",
+      "admin_adjust": "Admin adjustment",
+      "gift": "Gift"
+    }
+  },
   "nav": {
     "home": "Home",
     "products": "Equipment",

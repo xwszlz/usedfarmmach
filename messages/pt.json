@@ -27,6 +27,34 @@
       "usd": "Dólar (USD)"
     }
   },
+  "credits": {
+    "title": "Central de membros",
+    "membershipStatus": "Status de membresia",
+    "creditsBalance": "Saldo de pontos",
+    "validUntil": "Válido até",
+    "upgrade": "Melhorar membrosia",
+    "alreadyHighest": "Já é o nível máximo",
+    "upgradeComingSoon": "Melhoria de membrosia em breve",
+    "recharge": "Comprar pontos",
+    "rechargeComingSoon": "A compra de pontos estará disponível em breve.",
+    "transactions": "Histórico de pontos",
+    "refresh": "Atualizar",
+    "noRecords": "Nenhum registro ainda",
+    "pleaseLogin": "Faça login para visualizar",
+    "transactionTypes": {
+      "recharge": "Recarga",
+      "consume": "Consumo",
+      "reward": "Recompensa",
+      "expire": "Expirado",
+      "register_gift": "Presente de registro",
+      "email_verified_gift": "Presente por verificar e-mail",
+      "cert_gift": "Presente de certificação",
+      "invite_reward": "Recompensa por convite",
+      "checkin": "Check-in",
+      "admin_adjust": "Ajuste de administrador",
+      "gift": "Presente"
+    }
+  },
   "nav": {
     "home": "Início",
     "products": "Equipamentos",

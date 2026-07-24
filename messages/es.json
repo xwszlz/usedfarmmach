@@ -27,6 +27,34 @@
       "usd": "Dólar (USD)"
     }
   },
+  "credits": {
+    "title": "Centro de miembros",
+    "membershipStatus": "Estado de membresía",
+    "creditsBalance": "Saldo de puntos",
+    "validUntil": "Válido hasta",
+    "upgrade": "Mejorar membresía",
+    "alreadyHighest": "Ya es el nivel máximo",
+    "upgradeComingSoon": "Mejora de membresía próximamente",
+    "recharge": "Comprar puntos",
+    "rechargeComingSoon": "La compra de puntos estará disponible pronto.",
+    "transactions": "Historial de puntos",
+    "refresh": "Actualizar",
+    "noRecords": "Aún no hay registros",
+    "pleaseLogin": "Inicie sesión para ver",
+    "transactionTypes": {
+      "recharge": "Recarga",
+      "consume": "Consumo",
+      "reward": "Recompensa",
+      "expire": "Expirado",
+      "register_gift": "Regalo de registro",
+      "email_verified_gift": "Regalo por verificar correo",
+      "cert_gift": "Regalo de certificación",
+      "invite_reward": "Recompensa por invitar",
+      "checkin": "Check-in",
+      "admin_adjust": "Ajuste de administrador",
+      "gift": "Regalo"
+    }
+  },
   "nav": {
     "home": "Inicio",
     "products": "Maquinaria",

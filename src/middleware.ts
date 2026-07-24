@@ -25,6 +25,9 @@ const PROTECTED_PATHS = [
 const ADMIN_PATHS = ["/api/admin", "/admin"];
 const ADMIN_ROLES = ["admin", "super_admin"];
 
+// 仅超级管理员可访问（super_admin 专属路径，P0 收紧）
+const SUPER_ADMIN_PATHS = ["/admin/system", "/api/admin/system"];
+
 function getTokenFromRequest(request: NextRequest): string | null {
   const authHeader = request.headers.get("authorization");
   if (authHeader?.startsWith("Bearer ")) {
@@ -91,6 +94,15 @@ export async function middleware(request: NextRequest) {
       );
     }
 
+    // super_admin 专属路径收紧：仅 super_admin 可进入
+    const isSuperAdminPath = SUPER_ADMIN_PATHS.some((p) => pathname.startsWith(p));
+    if (isSuperAdminPath && payload.role !== "super_admin") {
+      return NextResponse.json(
+        { success: false, error: "Forbidden: super admin only" },
+        { status: 403 }
+      );
+    }
+
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set("x-user-id", payload.userId);
     requestHeaders.set("x-user-role", payload.role);
@@ -147,6 +159,15 @@ export async function middleware(request: NextRequest) {
   if (isAdminPath && !ADMIN_ROLES.includes(payload.role)) {
     return NextResponse.json(
       { success: false, error: "Forbidden: admin only" },
+      { status: 403 }
+    );
+  }
+
+  // super_admin 专属路径收紧：仅 super_admin 可进入
+  const isSuperAdminPath = SUPER_ADMIN_PATHS.some((p) => pathname.startsWith(p));
+  if (isSuperAdminPath && payload.role !== "super_admin") {
+    return NextResponse.json(
+      { success: false, error: "Forbidden: super admin only" },
       { status: 403 }
     );
   }

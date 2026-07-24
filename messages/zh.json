@@ -27,6 +27,34 @@
       "usd": "美元"
     }
   },
+  "credits": {
+    "title": "会员中心",
+    "membershipStatus": "会员状态",
+    "creditsBalance": "积分余额",
+    "validUntil": "有效期至",
+    "upgrade": "升级会员",
+    "alreadyHighest": "已是最高等级",
+    "upgradeComingSoon": "会员升级即将上线",
+    "recharge": "积分充值",
+    "rechargeComingSoon": "积分充值即将上线，敬请期待",
+    "transactions": "积分明细",
+    "refresh": "刷新",
+    "noRecords": "暂无记录",
+    "pleaseLogin": "请先登录后查看",
+    "transactionTypes": {
+      "recharge": "充值",
+      "consume": "消费",
+      "reward": "奖励",
+      "expire": "过期",
+      "register_gift": "注册礼包",
+      "email_verified_gift": "邮箱验证奖励",
+      "cert_gift": "认证奖励",
+      "invite_reward": "邀请奖励",
+      "checkin": "签到",
+      "admin_adjust": "后台调整",
+      "gift": "礼包"
+    }
+  },
   "nav": {
     "home": "首页",
     "products": "农机市场",

@@ -27,6 +27,34 @@
       "usd": "डॉलर (USD)"
     }
   },
+  "credits": {
+    "title": "सदस्य केंद्र",
+    "membershipStatus": "सदस्यता स्थिति",
+    "creditsBalance": "पॉइंट बैलेंस",
+    "validUntil": "तक वैध",
+    "upgrade": "सदस्यता अपग्रेड करें",
+    "alreadyHighest": "पहले से ही उच्चतम स्तर",
+    "upgradeComingSoon": "सदस्यता अपग्रेड जल्द आ रहा है",
+    "recharge": "पॉइंट खरीदें",
+    "rechargeComingSoon": "पॉइंट खरीदना जल्द उपलब्ध होगा।",
+    "transactions": "पॉइंट इतिहास",
+    "refresh": "रिफ्रेश",
+    "noRecords": "अभी कोई रिकॉर्ड नहीं",
+    "pleaseLogin": "देखने के लिए साइन इन करें",
+    "transactionTypes": {
+      "recharge": "रिचार्ज",
+      "consume": "उपभोग",
+      "reward": "इनाम",
+      "expire": "समाप्त",
+      "register_gift": "रजिस्ट्रेशन उपहार",
+      "email_verified_gift": "ईमेल सत्यापन उपहार",
+      "cert_gift": "प्रमाणन उपहार",
+      "invite_reward": "आमंत्रण इनाम",
+      "checkin": "चेक-इन",
+      "admin_adjust": "एडमिन समायोजन",
+      "gift": "उपहार"
+    }
+  },
   "nav": {
     "home": "होम",
     "products": "उपकरण",
