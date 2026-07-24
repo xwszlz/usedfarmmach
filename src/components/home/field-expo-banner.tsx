@@ -55,20 +55,12 @@ export function FieldExpoBanner({ locale }: FieldExpoBannerProps) {
 
           {/* Right: CTA */}
           <div className="flex items-center gap-2">
-            <a
-              href="https://mmbiz.qpic.cn/mmbiz_gif/wugrHFXr9o4M3eSDR4z8JACL15DvJriaM9wwiaFy4xHcXExmnApWSOznxVvVf2HFZVz4qLGBdJf2vtVWr5qU6KKw/640?wx_fmt=gif"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href={`/${locale}/expo/28th-field-expo-2026`}
               className="inline-flex items-center gap-1.5 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-green-700 shadow transition hover:bg-green-50"
             >
               <Play className="h-4 w-4" />
-              {isZh ? "直播间" : "Live"}
-            </a>
-            <Link
-              href={`/${locale}/expo/28th-field-expo-2026`}
-              className="inline-flex items-center gap-1 rounded-lg border border-white/30 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm transition hover:bg-white/20"
-            >
-              {isZh ? "查看详情 →" : "Details →"}
+              {isZh ? "展会详情" : "Expo Details"}
             </Link>
           </div>
         </div>
@@ -76,7 +68,7 @@ export function FieldExpoBanner({ locale }: FieldExpoBannerProps) {
         {/* Mobile: GIF image bar */}
         <div className="mt-2 flex justify-center sm:hidden">
           <img
-            src="https://mmbiz.qpic.cn/mmbiz_gif/wugrHFXr9o4M3eSDR4z8JACL15DvJriaM9wwiaFy4xHcXExmnApWSOznxVvVf2HFZVz4qLGBdJf2vtVWr5qU6KKw/640?wx_fmt=gif"
+            src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/expo/28th-field-expo-2026/preview.gif"
             alt="展会"
             className="h-6 w-auto opacity-80"
           />

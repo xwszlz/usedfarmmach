@@ -81,15 +81,13 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
 
               {/* CTA Buttons */}
               <div className="mt-6 flex flex-wrap gap-3">
-                <a
-                  href="https://mmbiz.qpic.cn/mmbiz_gif/wugrHFXr9o4M3eSDR4z8JACL15DvJriaM9wwiaFy4xHcXExmnApWSOznxVvVf2HFZVz4qLGBdJf2vtVWr5qU6KKw/640?wx_fmt=gif"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link
+                  href={`/${locale}/expo/28th-field-expo-2026`}
                   className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 font-semibold text-green-700 shadow-lg transition hover:bg-green-50"
                 >
                   <Play className="h-5 w-5" />
-                  {isZh ? "进入线上直播间" : "Live Stream"}
-                </a>
+                  {isZh ? "展会详情" : "Expo Details"}
+                </Link>
                 <Link
                   href={`/${locale}/expo/china-brands`}
                   className="inline-flex items-center gap-2 rounded-lg border border-white/30 bg-white/10 px-6 py-3 font-semibold text-white backdrop-blur-sm transition hover:bg-white/20"
@@ -104,7 +102,7 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
             <div className="flex items-center justify-center">
               <div className="relative rounded-2xl bg-white/10 p-4 backdrop-blur-sm">
                 <img
-                  src="https://mmbiz.qpic.cn/mmbiz_gif/wugrHFXr9o4M3eSDR4z8JACL15DvJriaM9wwiaFy4xHcXExmnApWSOznxVvVf2HFZVz4qLGBdJf2vtVWr5qU6KKw/640?wx_fmt=gif"
+                  src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/expo/28th-field-expo-2026/preview.gif"
                   alt="展会标识"
                   className="h-auto w-full max-w-sm rounded-lg"
                 />
