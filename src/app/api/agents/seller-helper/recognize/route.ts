@@ -18,6 +18,9 @@ import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
 import { parseLocationText, buildLocationText } from "@/lib/location-parser";
 import { findCountryInText } from "@/lib/location-data";
+import { resolveBrand } from "@/lib/agents/seller-helper/resolve-brand";
+import { resolveCategory, getCategorySynonymPrompt } from "@/lib/agents/seller-helper/resolve-category";
+import { prisma } from "@/lib/db";
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
 const OPENROUTER_BASE = "https://openrouter.ai/api/v1";
@@ -602,7 +605,7 @@ function buildBrandModelFallbackPrompt(isDomestic: boolean): string {
 }
 
 // ── 构建成功响应 ──
-function buildSuccessResponse(recognized: Record<string, any>) {
+async function buildSuccessResponse(recognized: Record<string, any>) {
   // 自动检测 isChineseBrand：优先用AI返回值，否则用关键词检测
   const detectedChinese = recognized.isChineseBrand !== undefined
     ? Boolean(recognized.isChineseBrand)
@@ -612,6 +615,31 @@ function buildSuccessResponse(recognized: Record<string, any>) {
   let brand = recognized.brand || null;
   if (brand && detectedChinese) {
     brand = mapEnBrandToCn(brand);
+  }
+
+  // ── 品牌智能匹配 ──
+  let brandId: string | null = null;
+  try {
+    const brandMatch = await resolveBrand(brand);
+    if (brandMatch.matched && brandMatch.brandId) {
+      brandId = brandMatch.brandId;
+      brand = brandMatch.displayName; // 使用 DB 标准名
+    }
+  } catch (e) {
+    console.warn("[SellerHelper] 品牌匹配失败:", e instanceof Error ? e.message : String(e));
+  }
+
+  // ── 品类智能匹配 ──
+  let categoryId: string | null = null;
+  let category = recognized.category || null;
+  try {
+    const catMatch = await resolveCategory(category);
+    if (catMatch.matched && catMatch.categoryId) {
+      categoryId = catMatch.categoryId;
+      category = catMatch.displayName; // 使用 DB 标准名
+    }
+  } catch (e) {
+    console.warn("[SellerHelper] 品类匹配失败:", e instanceof Error ? e.message : String(e));
   }
 
   // 港口归一化（英文 → 中文标准港口），识别不到默认"天津"
@@ -627,6 +655,7 @@ function buildSuccessResponse(recognized: Record<string, any>) {
     success: true,
     data: {
       brand,
+      brandId, // 品牌 DB ID（匹配成功 → 前端可直接 select）
       modelName: recognized.modelName || null,
       year: recognized.year || null,
       enginePower: recognized.enginePower || null,
@@ -643,7 +672,8 @@ function buildSuccessResponse(recognized: Record<string, any>) {
       tradeTerm: recognized.tradeTerm || null,
       tradePort: normalizedPort,
       // ── 新增字段 ──
-      category: recognized.category || null,
+      category: category, // 用品牌匹配后的标准名
+      categoryId, // 品类 DB ID（匹配成功 → 前端可直接 select）
       location: parsedLoc.text,
       country: parsedLoc.country,
       province: parsedLoc.province,
@@ -654,6 +684,40 @@ function buildSuccessResponse(recognized: Record<string, any>) {
       confidence: recognized.confidence || 0.5,
     },
   });
+}
+
+// ── 从DB加载品牌/品类引用列表，注入Prompt ──
+let cachedBrandPrompt: string | null = null;
+let cachedCategoryPrompt: string | null = null;
+let lastBrandRefresh = 0;
+
+async function getBrandPromptFragment(): Promise<string> {
+  if (cachedBrandPrompt && Date.now() - lastBrandRefresh < 300000) return cachedBrandPrompt;
+  try {
+    const brands = await prisma.brand.findMany({
+      select: { nameZh: true, nameEn: true },
+      take: 50,
+    });
+    cachedBrandPrompt = brands.map((b) => `"${b.nameZh}" / "${b.nameEn}"`).join("、");
+    lastBrandRefresh = Date.now();
+  } catch {
+    cachedBrandPrompt = cachedBrandPrompt || "";
+  }
+  return cachedBrandPrompt ? `\n\n📋 本站已知品牌列表（请优先输出以下标准品牌名）：\n${cachedBrandPrompt}\n` : "";
+}
+
+async function getCategoryPromptFragment(): Promise<string> {
+  if (cachedCategoryPrompt && Date.now() - lastBrandRefresh < 300000) return cachedCategoryPrompt;
+  try {
+    const cats = await prisma.category.findMany({
+      select: { nameZh: true },
+      take: 50,
+    });
+    cachedCategoryPrompt = cats.map((c) => `"${c.nameZh}"`).join("、");
+  } catch {
+    cachedCategoryPrompt = cachedCategoryPrompt || "";
+  }
+  return cachedCategoryPrompt ? `\n\n📋 本站已知品类列表（请优先输出以下标准品类名）：\n${cachedCategoryPrompt}\n` : "";
 }
 
 export async function POST(request: NextRequest) {
@@ -675,8 +739,13 @@ export async function POST(request: NextRequest) {
 
     // 双引擎Prompt选择：前端可强制指定，否则使用默认（先走国际，识别后自动检测）
     const useDomestic = forceChineseBrand === true;
-    const activePrompt = useDomestic ? DOMESTIC_PROMPT : INTERNATIONAL_PROMPT;
-    console.log(`[SellerHelper] 引擎模式: ${useDomestic ? "国内(DOMESTIC)" : "国际(INTERNATIONAL)"}, Prompt长度: ${activePrompt.length}`);
+    const basePrompt = useDomestic ? DOMESTIC_PROMPT : INTERNATIONAL_PROMPT;
+    const [brandRef, catRef] = await Promise.all([
+      getBrandPromptFragment(),
+      getCategoryPromptFragment(),
+    ]);
+    const activePrompt = basePrompt + brandRef + catRef;
+    console.log(`[SellerHelper] 引擎模式: ${useDomestic ? "国内(DOMESTIC)" : "国际(INTERNATIONAL)"}, Prompt长度(含参考): ${activePrompt.length}`);
 
     let lastError: Error | null = null;
     const errors: string[] = [];
@@ -793,7 +862,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return buildSuccessResponse(finalRecognized);
+    return await buildSuccessResponse(finalRecognized);
 
   } catch (error: any) {
     console.error("[SellerHelper] 未处理异常:", error?.message);

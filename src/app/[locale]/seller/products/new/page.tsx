@@ -434,6 +434,10 @@ export default function NewProductPage() {
 
     // 品类模式切换
     if (data.category) setCatMode(nextCatMode);
+    // AI 匹配到 categoryId → 直接选中
+    if (data.categoryId) {
+      setForm((f) => ({ ...f, categoryId: data.categoryId }));
+    }
 
     // 参考价格仅存储，不填入价格输入框
     if (data.referencePrice) {
@@ -447,7 +451,13 @@ export default function NewProductPage() {
       setLocationMode("domestic");
     }
 
-    if (data.brandName) setBrandMode("custom");
+    // 品牌模式切换：AI 匹配到 brandId → select 模式直接选中，否则 custom
+    if (data.brandId) {
+      setBrandMode("select");
+      setForm((f) => ({ ...f, brandId: data.brandId, brandName: "" }));
+    } else if (data.brandName) {
+      setBrandMode("custom");
+    }
     setResult({ success: true, message: `AI 识别结果已填充到表单${data.isChineseBrand ? "（国内农机）" : "（国际农机）"}，请核对绿色标记的字段` });
   };
 

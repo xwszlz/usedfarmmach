@@ -14,6 +14,7 @@ import { Sparkles, Wand2, CheckCircle, AlertCircle, Loader2, Upload, Globe, Flag
  */
 interface AiRecognizedData {
   brand: string | null;
+  brandId: string | null;   // 品牌 DB ID（匹配成功→前端可直接 select）
   modelName: string | null;
   year: number | null;
   enginePower: string | null;
@@ -33,6 +34,7 @@ interface AiRecognizedData {
   confidence: number;
   // ── 新增字段 ──
   category: string | null;
+  categoryId: string | null;  // 品类 DB ID（匹配成功→前端可直接 select）
   location: string | null;
   country: string | null;
   province: string | null;
@@ -45,6 +47,7 @@ interface AiRecognizedData {
  */
 type AiFillData = Partial<{
   brandName: string;
+  brandId: string;    // 品牌 DB ID
   modelName: string;
   year: number;
   enginePower: string;
@@ -62,6 +65,7 @@ type AiFillData = Partial<{
   tradePort: string;
   isChineseBrand: boolean;
   category: string;
+  categoryId: string;  // 品类 DB ID
   country: string;
   province: string;
   city: string;
@@ -435,6 +439,8 @@ export default function SellerAiAssistant({
       ...filled,
       isChineseBrand: recognized.isChineseBrand ?? false,
       referencePrice: recognized.referencePrice || 0,
+      brandId: recognized.brandId || undefined,
+      categoryId: recognized.categoryId || undefined,
     };
 
     onFill(result);
