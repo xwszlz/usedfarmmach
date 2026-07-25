@@ -11,6 +11,8 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { requireSuperAdmin, getComplianceMetrics } from "@/lib/admin/system";
+import { isComSite } from "@/config/site";
+import { crossBorderAssessment } from "@/lib/compliance/cross-border";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +23,12 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const data = await getComplianceMetrics();
+    const base = await getComplianceMetrics();
+    // .cn 站数据不出境，不调用跨境自评估；.com 站补充 crossBorder 指标
+    const data = isComSite()
+      ? { ...base, crossBorder: await crossBorderAssessment() }
+      : { ...base, crossBorder: null };
+
     return NextResponse.json({ success: true, data });
   } catch (err) {
     // eslint-disable-next-line no-console

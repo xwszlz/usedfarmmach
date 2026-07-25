@@ -88,6 +88,13 @@ model User {
   savedSearches         SavedSearch[]
   sellerRatingsGiven    SellerRating[]       @relation("SellerRatingsGiven")
   sellerRatingsReceived SellerRating[]       @relation("SellerRatingsReceived")
+  // 分站新增关联
+  stripeCustomer        StripeCustomer?
+  stripeSubscriptions   StripeSubscription[]
+  guaranteeIntentsAsBuyer  GuaranteeIntent[] @relation("GuaranteeBuyer")
+  guaranteeIntentsAsSeller GuaranteeIntent[] @relation("GuaranteeSeller")
+  accountLinksAsCom     AccountLink[]       @relation("AccountLinkCom")
+  accountLinksAsCn      AccountLink[]       @relation("AccountLinkCn")
 }
 
 /// PII 访问审计：记录谁、何时、读了哪个用户的哪个 PII 字段、用途（保留 ≥6 个月）
@@ -127,7 +134,7 @@ model EmailSendLog {
 model UsageLog {
   id          String   @id @default(cuid())
   userId      String // 消费动作所属用户
-  action      String // publish | inquiry | aiValuation | viewContact
+  action      String // publish | inquiry | aiValuation | viewContact | guarantee
   tier        String // 触发时的会员等级（快照）
   periodStart DateTime // 所属自然月起点
   createdAt   DateTime @default(now())
@@ -308,19 +315,22 @@ model Demand {
 }
 
 model Inquiry {
-  id        String   @id @default(cuid())
-  productId String
-  buyerId   String?
-  name      String
-  email     String?
-  phone     String?
-  company   String?
-  message   String?
-  status    String   @default("pending")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  buyer     User?    @relation(fields: [buyerId], references: [id])
-  product   Product  @relation(fields: [productId], references: [id])
+  id                 String           @id @default(cuid())
+  productId          String
+  buyerId            String?
+  source             String           @default("web") // "web" | "miniprogram"（Q8 打通）
+  guaranteeIntentId  String?          // 关联担保交易意向（可选）
+  name               String
+  email              String?
+  phone              String?
+  company            String?
+  message            String?
+  status             String           @default("pending")
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  buyer              User?            @relation(fields: [buyerId], references: [id])
+  product            Product          @relation(fields: [productId], references: [id])
+  guaranteeIntent    GuaranteeIntent? @relation(fields: [guaranteeIntentId], references: [id])
 }
 
 model Notification {
@@ -1633,6 +1643,10 @@ model Part {
   nameEn             String
   nameRu             String              @default("")
   nameEs             String              @default("")
+  namePt             String              @default("")
+  nameAr             String              @default("")
+  nameFr             String              @default("")
+  nameHi             String              @default("")
   brand              String
   oemNumber          String?
   componentGroupId   String
@@ -1840,7 +1854,6 @@ model RiskReview {
 }
 
 /// 深度估值报告订单（付费报告，信任模式人工确认收款）
-/// 替代原 deep-report/route.ts 的纯内存 Map，重启不丢；无 DATABASE_URL 时路由自动降级回内存。
 model ValuationReportOrder {
   id              String   @id @default(cuid())
   orderNo         String   @unique
@@ -1862,4 +1875,99 @@ model ValuationReportOrder {
 
   @@index([orderNo])
   @@index([status, createdAt])
+}
+
+// ============================================================
+// 分站新增模型（T02 — .com 专属 + .cn 专属 + 跨站关联）
+// 注意：两站同源 schema，各自 prisma migrate deploy 到自己的库
+// ============================================================
+
+/// .com 专属：Stripe 客户关联
+model StripeCustomer {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  stripeCustomerId String   @unique
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscriptions    StripeSubscription[]
+
+  @@index([stripeCustomerId])
+}
+
+/// .com 专属：Stripe 增值服务订阅（仅外币）
+model StripeSubscription {
+  id               String            @id @default(cuid())
+  userId           String
+  stripeCustomerId String
+  plan             String            // valuation_pack|intel_pack|premium|enterprise
+  currency         String            // USD|EUR|GBP
+  status           String            @default("active") // active|canceled|past_due
+  currentPeriodEnd DateTime
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  customer         StripeCustomer    @relation(fields: [stripeCustomerId], references: [id], onDelete: Cascade)
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoices         StripeInvoice[]
+
+  @@index([userId, status])
+  @@index([stripeCustomerId, status])
+}
+
+/// .com 专属：Stripe 账单/发票
+model StripeInvoice {
+  id               String              @id @default(cuid())
+  subscriptionId   String
+  stripeInvoiceId  String              @unique
+  amount           Float
+  currency         String              @default("USD")
+  status           String              @default("paid") // paid|open|uncollectible|void
+  paidAt           DateTime?
+  periodStart      DateTime?
+  periodEnd       DateTime?
+  createdAt        DateTime            @default(now())
+  subscription     StripeSubscription  @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([subscriptionId])
+  @@index([stripeInvoiceId])
+}
+
+/// .cn 专属：担保交易意向（资金在微信小程序收付通闭环）
+model GuaranteeIntent {
+  id                 String    @id @default(cuid())
+  inquiryId          String?   // 可选关联询价
+  productId          String
+  buyerUserId        String
+  sellerUserId       String
+  amountCny          Float
+  wechatSubMerchantId String   // 卖家子商户号
+  wechatOrderNo      String?   // 微信支付订单号（支付成功后回写）
+  status             String    @default("created") // created|paying|paid|delivered|completed|refunded|disputed
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  buyer              User      @relation("GuaranteeBuyer", fields: [buyerUserId], references: [id])
+  seller             User      @relation("GuaranteeSeller", fields: [sellerUserId], references: [id])
+  inquiries          Inquiry[]
+
+  @@index([buyerUserId, status])
+  @@index([sellerUserId, status])
+  @@index([wechatOrderNo])
+}
+
+/// 跨站账户关联（Q5 — 仅存 token，不复制 PII）
+model AccountLink {
+  id        String   @id @default(cuid())
+  comUserId String   // .com 站 userId
+  cnUserId  String   // .cn 站 userId
+  linkToken String   // 关联 token（sha256 hash）
+  method    String   // email|phone|manual
+  linkedAt  DateTime @default(now())
+  createdAt DateTime @default(now())
+  comUser   User     @relation("AccountLinkCom", fields: [comUserId], references: [id], onDelete: Cascade)
+  cnUser    User     @relation("AccountLinkCn", fields: [cnUserId], references: [id], onDelete: Cascade)
+
+  @@unique([comUserId, cnUserId])
+  @@index([comUserId])
+  @@index([cnUserId])
+  @@index([linkToken])
 }

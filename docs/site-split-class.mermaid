@@ -1,0 +1,138 @@
+classDiagram
+    class SiteConfig {
+        <<config>>
+        +SITE: "com"|"cn"
+        +locales: string[]
+        +defaultLocale: string
+        +payments: {stripe, wechatPay}
+        +features: {valuation, priceIndex, govDashboard, machineryIdentity, expo, stripeAddons}
+        +compliance: {icpNo, dataLocalized, serveDomesticUsers}
+    }
+    class GeoService {
+        +detectCountry(request): string
+        +isDomestic(ip): boolean
+    }
+    class DataResidencyGuard {
+        +assertDomesticWrite(user): void
+        +assertOverseasWrite(user): void
+    }
+    class StripeService {
+        +createCheckoutSession(sku, currency): url
+        +verifyWebhook(raw, sig): Event
+    }
+    class WechatPayService {
+        +createGuaranteeIntent(payload): params
+        +verifyCallback(raw, sig): Event
+    }
+    class User {
+        +id: string
+        +role: string
+        +country: string
+        +preferredLanguage: string
+        +membershipTier: string
+        +miniOpenid: string
+        +consentCrossBorderAt: DateTime?
+        +usagePeriodStart: DateTime?
+        +usagePublish / usageInquiry / usageAiValuation / usageViewContact: int
+    }
+    class Product {
+        +id: string
+        +sellerId: string
+        +priceCny: float
+        +country: string?
+    }
+    class Inquiry {
+        +id: string
+        +productId: string
+        +buyerId: string
+        +source: "web"|"miniprogram"
+        +guaranteeIntentId: string?
+        +status: string
+    }
+    class GuaranteeIntent {
+        +id: string
+        +inquiryId: string?
+        +productId: string
+        +buyerUserId: string
+        +sellerUserId: string
+        +amountCny: float
+        +wechatSubMerchantId: string
+        +wechatOrderNo: string?
+        +status: string
+    }
+    class StripeCustomer {
+        +id: string
+        +userId: string
+        +stripeCustomerId: string
+    }
+    class StripeSubscription {
+        +id: string
+        +userId: string
+        +plan: string
+        +currency: string
+        +status: string
+        +currentPeriodEnd: DateTime
+    }
+    class StripeInvoice {
+        +id: string
+        +subscriptionId: string
+        +amount: float
+        +currency: string
+        +status: string
+    }
+    class AccountLink {
+        +id: string
+        +comUserId: string
+        +cnUserId: string
+        +linkToken: string
+        +method: string
+    }
+    class UsageLog {
+        +id: string
+        +userId: string
+        +action: string
+        +tier: string
+        +periodStart: DateTime
+    }
+    class MachineryIdentity {
+        +id: string
+        +productId: string
+        +qrCode: string
+        +isVerified: boolean
+    }
+    class InspectionReport {
+        +id: string
+        +productId: string
+        +overallGrade: string
+    }
+    class PriceIndex {
+        +id: string
+        +date: DateTime
+        +indexValue: float
+        +avgPriceCny: float
+    }
+    class ElectronicContract {
+        +id: string
+        +productId: string
+        +sellerId: string
+        +buyerId: string
+        +status: string
+    }
+
+    SiteConfig ..> User : 决定 features/locales
+    GeoService ..> DataResidencyGuard : 提供 country
+    DataResidencyGuard ..> User : 写入前断言属地
+    StripeService ..> StripeCustomer
+    StripeService ..> StripeSubscription
+    StripeService ..> StripeInvoice
+    WechatPayService ..> GuaranteeIntent
+    User "1" --> "0..*" Inquiry
+    Product "1" --> "0..*" Inquiry
+    Inquiry "0..1" --> "1" GuaranteeIntent : guaranteeIntentId
+    User "1" --> "0..*" UsageLog
+    User "1" --> "1" AccountLink : comUserId
+    User "1" --> "1" AccountLink : cnUserId
+    Product "1" --> "1" MachineryIdentity
+    Product "1" --> "0..*" InspectionReport
+    Product "1" --> "0..*" PriceIndex
+    Product "1" --> "0..*" ElectronicContract

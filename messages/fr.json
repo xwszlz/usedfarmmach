@@ -821,5 +821,86 @@
     "sourceUsed": "Occasion",
     "sourceNew": "Neuf",
     "sourceShowcase": "Showcase"
+  },
+  "cn": {
+    "common": {
+      "serviceFee": "Frais de service d'information à valeur ajoutée",
+      "notTransactionFee": "Pas de commission de transaction",
+      "icpDisplay": "N° d'enregistrement ICP : {icp}",
+      "dataLocalized": "Données stockées localement",
+      "complianceNote": "Toutes les transactions garanties sont effectuées exclusivement via le Mini Programme WeChat.",
+      "trustSeller": "Vendeur de confiance",
+      "verified": "Vérifié"
+    },
+    "publish": {
+      "title": "Publier une annonce",
+      "subtitle": "Remplissez les informations de la machine pour atteindre les acheteurs nationaux",
+      "basicInfo": "Informations de base",
+      "brand": "Marque",
+      "selectBrand": "Sélectionner une marque",
+      "category": "Catégorie",
+      "selectCategory": "Sélectionner une catégorie",
+      "modelName": "Modèle",
+      "year": "Année",
+      "workingHours": "Heures de travail",
+      "priceCny": "Prix (CNY)",
+      "location": "Emplacement",
+      "description": "Description",
+      "conditionCard": "Fiche d'état du véhicule",
+      "required": "Requis",
+      "conditionCardDesc": "Fournir 8 données d'état",
+      "feeNote": "À propos des frais",
+      "feeDetail": "Frais de service d'information uniquement. Publication gratuite.",
+      "submit": "Publier",
+      "tips": "Conseils",
+      "tip1": "Assurez-vous que les informations d'état sont précises",
+      "complianceTitle": "Avis de conformité",
+      "complianceDesc": "Tous les fonds transitent uniquement par le Mini Programme WeChat."
+    },
+    "verify": {
+      "title": "Vérification de propriété",
+      "subtitle": "Téléchargez des documents pour examen",
+      "step1Title": "Télécharger des documents",
+      "step2Title": "Examen par la plateforme",
+      "step3Title": "Obtenir un badge",
+      "applyForm": "Soumettre une demande de vérification",
+      "certType": "Type de vérification",
+      "ownership": "Vérification de propriété",
+      "identity": "Vérification d'identité",
+      "full": "Vérification complète",
+      "submit": "Envoyer la demande"
+    },
+    "inquiry": {
+      "title": "Centre de demandes",
+      "subtitle": "Découvrez → Envoyez une demande",
+      "seller": "Vendeur",
+      "price": "Prix",
+      "location": "Emplacement",
+      "sendInquiry": "Envoyer une demande"
+    },
+    "intel": {
+      "title": "Indice des prix et intelligence marché",
+      "subtitle": "Analyse de marché",
+      "priceIndexTitle": "Indice des prix",
+      "marketAnalysis": "Analyse de marché",
+      "filter": "Filtres"
+    },
+    "expo": {
+      "title": "Salons et événements terrain",
+      "subtitle": "Événements nationaux",
+      "all": "Tous",
+      "viewDetails": "Détails",
+      "register": "S'inscrire"
+    },
+    "govDashboard": {
+      "title": "Tableau de bord gouvernemental",
+      "subtitle": "Aperçu des données de circulation",
+      "totalListings": "Total des annonces",
+      "verifiedCount": "Vérifiés",
+      "inquiryCount": "Demandes",
+      "status": "Statut",
+      "verified": "Vérifié",
+      "pending": "En attente"
+    }
   }
 }

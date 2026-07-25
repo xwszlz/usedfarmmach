@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Phone, Mail, MapPin, MessageSquare, Package, ChevronRight } from "lucide-react";
+import { AiBadge } from "@/components/ui/ai-badge";
 import type { BoothData } from "../types";
 
 export default function StandardBooth({ booth, locale, onInquiry }: {
@@ -41,7 +42,10 @@ export default function StandardBooth({ booth, locale, onInquiry }: {
       {/* Cover Image */}
       <div className="relative h-64 w-full overflow-hidden bg-gradient-to-br from-blue-600 to-blue-800 sm:h-80">
         {booth.coverImage ? (
-          <img src={booth.coverImage} alt={booth.name} className="h-full w-full object-cover" />
+          <>
+            <img src={booth.coverImage} alt={booth.name} className="h-full w-full object-cover" />
+            <AiBadge />
+          </>
         ) : (
           <div className="flex h-full items-center justify-center">
             <div className="text-center text-white">
@@ -93,7 +97,10 @@ export default function StandardBooth({ booth, locale, onInquiry }: {
                 >
                   <div className="relative aspect-square overflow-hidden bg-gray-100">
                     {item.images && item.images[0] ? (
-                      <img src={item.images[0]} alt={item.model || item.deviceType} className="h-full w-full object-cover transition group-hover:scale-105" />
+                      <>
+                        <img src={item.images[0]} alt={item.model || item.deviceType} className="h-full w-full object-cover transition group-hover:scale-105" />
+                        <AiBadge position="bottom-left" />
+                      </>
                     ) : (
                       <div className="flex h-full items-center justify-center text-gray-300">
                         <Package className="h-10 w-10" />

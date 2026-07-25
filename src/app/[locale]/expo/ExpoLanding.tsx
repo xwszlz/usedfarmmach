@@ -58,9 +58,9 @@ const TEXTS: Record<string, {
     subtitle:
       "125个品牌展位、187台中外精品农机365天在线展示，从东方红到大疆，从拖拉机到植保无人机，让中国制造走向全球田间。",
     cta: "立即申请参展",
-    introTitle: "中国农机的世界舞台",
+    introTitle: "世界农机的全球舞台",
     introBody:
-      "传统展会一年3天，错过等一年。我们将展会搬到线上，让中国农机品牌365天24小时向全球买家展示。中国品牌馆为主角，国际标杆馆为参照，品类对比厅为决策助手——三馆联动，从展示到成交的完整闭环。结合AI供需匹配、跨境交易担保和国际物流服务，让中国农机走向一带一路每一个田间。",
+      "传统展会一年3天，错过等一年。我们将展会搬到线上，让全球农机品牌365天24小时向全球买家展示。全球领袖馆为旗舰，行业中坚馆为核心，新锐专业馆为补充——三馆联动，按品牌全球影响力客观分级，从展示到成交的完整闭环。结合AI供需匹配、跨境交易担保和国际物流服务，让全球农机走向每一块农田。",
     featuresTitle: "核心亮点",
     features: [
       {
@@ -741,7 +741,7 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
             >
               <div className="absolute top-4 right-4 text-6xl opacity-20">🇨🇳</div>
               <h3 className="mb-2 text-2xl font-bold">
-                {locale === "zh" ? "中国品牌馆" : locale === "ru" ? "Китайский зал" : "China Pavilion"}
+                {locale === "zh" ? "全球领袖馆" : locale === "ru" ? "Зал мировых лидеров" : "Global Leaders Pavilion"}
               </h3>
               <p className="text-sm text-red-100">
                 {locale === "zh"
@@ -763,7 +763,7 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
             >
               <div className="absolute top-4 right-4 text-6xl opacity-20">🌍</div>
               <h3 className="mb-2 text-2xl font-bold">
-                {locale === "zh" ? "国际标杆馆" : locale === "ru" ? "Международный зал" : "Global Pavilion"}
+                {locale === "zh" ? "行业中坚馆" : locale === "ru" ? "Зал отраслевых лидеров" : "Industry Pillars Pavilion"}
               </h3>
               <p className="text-sm text-amber-100">
                 {locale === "zh"
@@ -785,7 +785,7 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
             >
               <div className="absolute top-4 right-4 text-6xl opacity-20">⚖️</div>
               <h3 className="mb-2 text-2xl font-bold">
-                {locale === "zh" ? "品类对比厅" : locale === "ru" ? "Зал сравнения" : "Comparison Hall"}
+                {locale === "zh" ? "新锐专业馆" : locale === "ru" ? "Зал новых брендов" : "Rising & Specialty Pavilion"}
               </h3>
               <p className="text-sm text-blue-100">
                 {locale === "zh"

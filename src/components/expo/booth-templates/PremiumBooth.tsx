@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Phone, Mail, MapPin, MessageSquare, Package, Play, Award, ChevronLeft, ChevronRight, X } from "lucide-react";
 import type { BoothData } from "../types";
+import { AiBadge } from "@/components/ui/ai-badge";
 
 export default function PremiumBooth({ booth, locale, onInquiry }: {
   booth: BoothData;
@@ -64,6 +65,7 @@ export default function PremiumBooth({ booth, locale, onInquiry }: {
         {carouselImages.length > 0 ? (
           <>
             <img src={carouselImages[carouselIdx]} alt={booth.name} className="h-full w-full object-cover" />
+            <AiBadge />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
             {carouselImages.length > 1 && (
               <>
@@ -138,7 +140,10 @@ export default function PremiumBooth({ booth, locale, onInquiry }: {
                     onClick={(e) => { e.stopPropagation(); if (item.images?.[0]) setLightbox(item.images[0]); }}
                   >
                     {item.images?.[0] ? (
-                      <img src={item.images[0]} alt={item.model || item.deviceType} className="h-full w-full object-cover transition group-hover:scale-110" />
+                      <>
+                        <img src={item.images[0]} alt={item.model || item.deviceType} className="h-full w-full object-cover transition group-hover:scale-110" />
+                        <AiBadge position="bottom-left" />
+                      </>
                     ) : (
                       <div className="flex h-full items-center justify-center text-gray-300"><Package className="h-10 w-10" /></div>
                     )}

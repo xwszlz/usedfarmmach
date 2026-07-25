@@ -2415,5 +2415,17 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "ar": "(أغسطس 2025، للمرجعية فقط)",
     "fr": "(août 2025, à titre indicatif)",
     "hi": "(अगस्त 2025, केवल संदर्भ)"
+  },
+  "交易受《中华人民共和国民法典》等法律法规保护。买卖双方在线达成的意向与线下签署的买卖合同具有法律效力。平台提供格式条款提示与合同模板参考，协助双方明确权责。": {
+    "en": "Transactions are protected by the Civil Code of the PRC and other applicable laws. The intent reached online and the offline sales contract are legally binding. The platform provides standard-term notices and contract templates to help both parties clarify rights and obligations."
+  },
+  "设备按现状交付，具体配置与零部件完整性以详情页公示与实地验机为准。建议报价前实地查验。": {
+    "en": "Equipment is sold as-is. Specific configuration and parts completeness are subject to the listing page and on-site inspection. We recommend an on-site inspection before placing an offer."
+  },
+  "不同设备权属来源不同，部分设备可能存在登记证书缺失、租赁取得或过户限制。卖方应在详情页如实披露权属来源与已知限制，买方应在报价前自行向当地农机管理部门了解过户、上牌可行性。因无法过户或上牌导致的全部风险由买方自行承担；卖方不存在隐瞒或虚假陈述的，买方不得以此为由要求解除合同或索赔。": {
+    "en": "Equipment ownership sources vary. Some equipment may lack registration certificates, be lease-acquired, or have transfer restrictions. Sellers must disclose ownership source and known restrictions on the listing page. Buyers should verify transfer and registration feasibility with local agricultural authorities before placing an offer. All risks arising from inability to transfer or register are borne by the buyer. Unless the seller has concealed or misrepresented facts, the buyer may not use incomplete title documents as grounds to rescind the contract or claim damages."
+  },
+  "卖方应在详情页如实告知已知瑕疵（如零部件缺失、外观损伤、功能异常等），标的物按现状交付。卖方对经合理查验可发现的瑕疵不承担担保责任，但对明知或应知而未披露的重大瑕疵，以及因故意隐瞒或虚假陈述导致的损失，仍依法承担责任。买方在交付后发现隐蔽瑕疵的，应在约定期限内书面通知卖方。": {
+    "en": "Sellers must disclose known flaws on the listing page (such as missing parts, cosmetic damage, functional defects, etc.). Equipment is sold as-is. The seller is not liable for defects discoverable by reasonable inspection, but remains liable for major defects known or should-have-been-known and not disclosed, as well as losses caused by intentional concealment or misrepresentation. If hidden defects are found after delivery, the buyer must notify the seller in writing within the agreed period."
   }
 };
