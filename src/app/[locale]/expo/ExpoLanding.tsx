@@ -736,7 +736,7 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {/* China Pavilion */}
             <Link
-              href={`/${locale}/expo/china-brands`}
+              href={`/${locale}/expo/global-brands`}
               className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-600 to-red-700 p-8 text-white shadow-lg transition-all hover:shadow-2xl hover:scale-[1.02]"
             >
               <div className="absolute top-4 right-4 text-6xl opacity-20">🇨🇳</div>
@@ -745,20 +745,20 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
               </h3>
               <p className="text-sm text-red-100">
                 {locale === "zh"
-                  ? "32+中国农机品牌旗舰机型，从东方红、雷沃到沃得、中联、大疆"
+                  ? "12+全球农机巨头：John Deere、CLAAS、Fendt、久保田、科罗尼——全球行业NO.1品牌标志机型"
                   : locale === "ru"
-                    ? "32+ китайских брендов: от Dongfanghong до DJI"
-                    : "32+ Chinese brands: Dongfanghong, Lovol, World, Zoomlion, DJI"}
+                    ? "12+ ведущих мировых брендов: John Deere, CLAAS, Fendt, Kubota, Krone"
+                    : "12+ global giants: John Deere, CLAAS, Fendt, Kubota, Krone"}
               </p>
               <div className="mt-4 flex items-center gap-2 text-sm font-medium">
-                {locale === "zh" ? "进入中国馆" : locale === "ru" ? "Войти" : "Enter"}
+                {locale === "zh" ? "进入领袖馆" : locale === "ru" ? "Войти" : "Enter"}
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </div>
             </Link>
 
             {/* Global Pavilion */}
             <Link
-              href={`/${locale}/expo/global-brands`}
+              href={`/${locale}/expo/china-brands`}
               className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-600 to-orange-700 p-8 text-white shadow-lg transition-all hover:shadow-2xl hover:scale-[1.02]"
             >
               <div className="absolute top-4 right-4 text-6xl opacity-20">🌍</div>
@@ -767,13 +767,13 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
               </h3>
               <p className="text-sm text-amber-100">
                 {locale === "zh"
-                  ? "John Deere、CLAAS、Fendt等全球知名品牌标杆机型参照对比"
+                  ? "东方红YTO、雷沃、沃得、中联、马恒达等行业腰部品牌，对标全球的强者"
                   : locale === "ru"
-                    ? "John Deere, CLAAS, Fendt — мировые эталоны"
-                    : "John Deere, CLAAS, Fendt — global benchmarks for comparison"}
+                    ? "YTO, Lovol, World, Zoomlion, Mahindra — крупные региональные игроки"
+                    : "YTO, Lovol, World, Zoomlion, Mahindra — regional powerhouses"}
               </p>
               <div className="mt-4 flex items-center gap-2 text-sm font-medium">
-                {locale === "zh" ? "进入国际馆" : locale === "ru" ? "Войти" : "Enter"}
+                {locale === "zh" ? "进入中坚馆" : locale === "ru" ? "Войти" : "Enter"}
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </div>
             </Link>
@@ -789,13 +789,13 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
               </h3>
               <p className="text-sm text-blue-100">
                 {locale === "zh"
-                  ? "同品类中外机型参数对比，价格性能一目了然"
+                  ? "大疆农业、极飞科技、专业细分品牌、新锐国货——按品类精挑细选"
                   : locale === "ru"
-                    ? "Сравнение параметров китайских и мировых моделей"
-                    : "Compare Chinese vs global models side by side"}
+                    ? "DJI, XAG, профильные бренды и нишевые игроки"
+                    : "DJI, XAG, specialty brands & niche players"}
               </p>
               <div className="mt-4 flex items-center gap-2 text-sm font-medium">
-                {locale === "zh" ? "进入对比厅" : locale === "ru" ? "Войти" : "Enter"}
+                {locale === "zh" ? "进入新锐馆" : locale === "ru" ? "Войти" : "Enter"}
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </div>
             </Link>
