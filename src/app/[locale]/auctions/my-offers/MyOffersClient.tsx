@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
+import { useTr } from "@/lib/i18n-tr";
 
 interface MyOfferItem {
   id: string;
@@ -48,6 +49,7 @@ const BARGAIN_STATUS_MAP: Record<string, { zh: string; en: string; color: string
 export default function MyOffersClient() {
   const locale = useLocale();
   const isZh = locale === "zh";
+  const tr = useTr();
   const [items, setItems] = useState<MyOfferItem[]>([]);
   const [stats, setStats] = useState({ total: 0, pending: 0, accepted: 0, active: 0 });
   const [loading, setLoading] = useState(true);
@@ -83,9 +85,9 @@ export default function MyOffersClient() {
     return (
       <div className="min-h-screen bg-[#F9FAFC] flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-500 mb-4">{isZh ? "请先登录" : "Please login first"}</p>
+          <p className="text-gray-500 mb-4">{tr("请先登录")}</p>
           <Link href={`/${locale}/auth/login`} className="px-6 py-2 bg-[#1E40AF] text-white rounded-lg font-medium">
-            {isZh ? "去登录" : "Login"}
+            {tr("去登录")}
           </Link>
         </div>
       </div>
@@ -103,10 +105,10 @@ export default function MyOffersClient() {
   const filtered = tab === "all" ? items : items.filter((i) => i.role === tab);
 
   const statCards = [
-    { label: isZh ? "总询价" : "Total", value: stats.total, color: "text-gray-900" },
-    { label: isZh ? "进行中" : "Active", value: stats.active, color: "text-blue-600" },
-    { label: isZh ? "待回复" : "Pending", value: stats.pending, color: "text-amber-600" },
-    { label: isZh ? "已成交" : "Deals", value: stats.accepted, color: "text-green-600" },
+    { label: tr("总询价"), value: stats.total, color: "text-gray-900" },
+    { label: tr("进行中"), value: stats.active, color: "text-blue-600" },
+    { label: tr("待回复"), value: stats.pending, color: "text-amber-600" },
+    { label: tr("已成交"), value: stats.accepted, color: "text-green-600" },
   ];
 
   return (
@@ -115,9 +117,9 @@ export default function MyOffersClient() {
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold text-gray-900">{isZh ? "我的询价" : "My Offers"}</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{tr("我的询价")}</h1>
             <Link href={`/${locale}/auctions`} className="text-sm text-[#1E40AF] hover:underline">
-              {isZh ? "浏览询价" : "Browse All"}
+              {tr("浏览询价")}
             </Link>
           </div>
           {/* Stats */}
@@ -136,10 +138,10 @@ export default function MyOffersClient() {
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 flex gap-6">
           {[
-            { value: "all", label: isZh ? "全部" : "All" },
-            { value: "buyer", label: isZh ? "我出价的" : "My Bids" },
-            { value: "bidder", label: isZh ? "我报名的" : "My Registrations" },
-            { value: "seller", label: isZh ? "我发布的" : "My Listings" },
+            { value: "all", label: tr("全部") },
+            { value: "buyer", label: tr("我出价的") },
+            { value: "bidder", label: tr("我报名的") },
+            { value: "seller", label: tr("我发布的") },
           ].map((t) => (
             <button
               key={t.value}
@@ -161,10 +163,10 @@ export default function MyOffersClient() {
         {filtered.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-2xl border border-gray-200">
             <p className="text-gray-400 text-lg">
-              {isZh ? "暂无询价记录" : "No offers yet"}
+              {tr("暂无询价记录")}
             </p>
             <Link href={`/${locale}/auctions`} className="text-[#1E40AF] text-sm hover:underline mt-2 inline-block">
-              {isZh ? "去询价" : "Start negotiating"}
+              {tr("去询价")}
             </Link>
           </div>
         ) : (
@@ -196,13 +198,13 @@ export default function MyOffersClient() {
                       <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                         item.role === "buyer" ? "bg-blue-50 text-blue-600" : "bg-purple-50 text-purple-600"
                       }`}>
-                      {item.role === "buyer" ? (isZh ? "买家" : "Buyer")
-                        : item.role === "seller" ? (isZh ? "卖家" : "Seller")
-                        : (isZh ? "已报名" : "Registered")}
+                      {item.role === "buyer" ? (tr("买家"))
+                        : item.role === "seller" ? (tr("卖家"))
+                        : (tr("已报名"))}
                     </span>
                     {bidStatus && (
                       <span className={`px-2 py-0.5 rounded text-xs font-medium ${bidStatus.color}`}>
-                        {isZh ? bidStatus.zh : bidStatus.en}
+                        {tr(bidStatus.zh)}
                       </span>
                     )}
                     {!bidStatus && item.role === "bidder" && (
@@ -210,13 +212,13 @@ export default function MyOffersClient() {
                         item.depositPaid ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
                       }`}>
                         {item.depositPaid
-                          ? (isZh ? "诚意金已确认" : "Earnest confirmed")
-                          : (isZh ? "待上传诚意金" : "Earnest pending")}
+                          ? (tr("诚意金已确认"))
+                          : (tr("待上传诚意金"))}
                       </span>
                     )}
                     {!bidStatus && item.role !== "bidder" && (
                       <span className={`px-2 py-0.5 rounded text-xs font-medium ${bargainStatus.color}`}>
-                        {isZh ? bargainStatus.zh : bargainStatus.en}
+                        {tr(bargainStatus.zh)}
                       </span>
                     )}
                     </div>
@@ -231,18 +233,18 @@ export default function MyOffersClient() {
                   <div className="text-right flex-shrink-0">
                     {item.role === "buyer" && item.myOffer ? (
                       <>
-                        <p className="text-xs text-gray-400">{isZh ? "我的报价" : "My Offer"}</p>
+                        <p className="text-xs text-gray-400">{tr("我的报价")}</p>
                         <p className="text-lg font-bold text-gray-900 font-mono">¥{item.myOffer.toLocaleString()}</p>
                         <p className="text-xs text-gray-400 mt-0.5">
-                          {isZh ? "要价" : "Ask"}: ¥{item.askingPrice.toLocaleString()}
+                          {tr("要价")}: ¥{item.askingPrice.toLocaleString()}
                         </p>
                       </>
                     ) : (
                       <>
-                        <p className="text-xs text-gray-400">{isZh ? "要价" : "Asking"}</p>
+                        <p className="text-xs text-gray-400">{tr("要价")}</p>
                         <p className="text-lg font-bold text-gray-900 font-mono">¥{displayPrice.toLocaleString()}</p>
                         <p className="text-xs text-gray-400 mt-0.5">
-                          {isZh ? `${item.totalBids} 人报价` : `${item.totalBids} offers`}
+                          {tr("{n} 人报价").replace("{n}", String(item.totalBids))}
                         </p>
                       </>
                     )}

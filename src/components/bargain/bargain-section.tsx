@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useLocale } from "next-intl";
-import { Clock, Check, FileText, MapPin, TrendingUp, AlertCircle, MessageSquare, ShieldCheck, ChevronDown, ChevronUp, Truck, Wrench, Eye, Lock, X, Tag } from "lucide-react";
+import { Clock, FileText, MapPin, AlertCircle, MessageSquare, ShieldCheck, ChevronDown, ChevronUp, Eye, Tag } from "lucide-react";
 import InspectionBookingModal from "./inspection-booking-modal";
+import { useTr } from "@/lib/i18n-tr";
 
 interface BargainData {
   id: string;
@@ -38,6 +39,7 @@ interface BargainData {
   };
   // 公告参数
   announcementNo?: string | null;
+  announcementHtml?: string | null;
   startPrice?: number | null;
   priceIncrement?: number | null;
   deposit?: number | null;
@@ -48,6 +50,7 @@ interface BargainData {
   evaluationPrice?: number | null;
   knownFlaws?: string | null;
   contractTemplateNo?: string | null;
+  contractHtml?: string | null;
   description?: string | null;
   // 报名统计
   totalBookingsCount?: number;
@@ -70,6 +73,7 @@ interface BargainSectionProps {
 export default function BargainSection({ auctionId, locale, sellerId }: BargainSectionProps) {
   const localeHook = useLocale();
   const isZh = (localeHook || locale) === "zh";
+  const tr = useTr();
 
   const [bargain, setBargain] = useState<BargainData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -88,8 +92,6 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
   const [paymentCountdown, setPaymentCountdown] = useState("");
   const [showAnnouncement, setShowAnnouncement] = useState(false);
   const [showContract, setShowContract] = useState(false);
-  const [announcementHtml, setAnnouncementHtml] = useState("");
-  const [contractHtml, setContractHtml] = useState("");
 
   useEffect(() => {
     const userStr = typeof window !== "undefined" ? localStorage.getItem("user") : null;
@@ -142,32 +144,8 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
     return () => clearInterval(timer);
   }, [bargain]);
 
-  // 懒加载公告/合同HTML
-  const loadAnnouncementHtml = useCallback(async () => {
-    if (announcementHtml) return;
-    try {
-      const res = await fetch("/documents/mf3404_announcement.html");
-      if (res.ok) setAnnouncementHtml(await res.text());
-    } catch { /* noop */ }
-  }, [announcementHtml]);
-
-  const loadContractHtml = useCallback(async () => {
-    if (contractHtml) return;
-    try {
-      const res = await fetch("/documents/mf3404_contract_template.html");
-      if (res.ok) setContractHtml(await res.text());
-    } catch { /* noop */ }
-  }, [contractHtml]);
-
-  const toggleAnnouncement = () => {
-    if (!showAnnouncement) loadAnnouncementHtml();
-    setShowAnnouncement(!showAnnouncement);
-  };
-
-  const toggleContract = () => {
-    if (!showContract) loadContractHtml();
-    setShowContract(!showContract);
-  };
+  const toggleAnnouncement = () => setShowAnnouncement((v) => !v);
+  const toggleContract = () => setShowContract((v) => !v);
 
   const handleOffer = async () => {
     if (!bargain) return;
@@ -182,14 +160,14 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
       });
       const json = await res.json();
       if (json.success) {
-        setMessage(isZh ? "报价已提交！卖家将审阅您的报价并通过平台回复。" : "Offer submitted! Seller will review and respond.");
+        setMessage(tr("报价已提交！卖家将审阅您的报价并通过平台回复。"));
         setOfferAmount("");
         fetchBargain();
       } else {
-        setMessage(json.error || (isZh ? "报价失败，请先登录" : "Offer failed, please login first"));
+        setMessage(json.error || (tr("报价失败，请先登录")));
       }
     } catch {
-      setMessage(isZh ? "提交失败，请先登录" : "Failed, please login first");
+      setMessage(tr("提交失败，请先登录"));
     } finally {
       setOffering(false);
     }
@@ -207,13 +185,13 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
       });
       const json = await res.json();
       if (json.success) {
-        setMessage(isZh ? "已接受报价，交易达成！" : "Offer accepted! Deal made!");
+        setMessage(tr("已接受报价，交易达成！"));
         fetchBargain();
       } else {
-        setMessage(json.error || (isZh ? "操作失败" : "Action failed"));
+        setMessage(json.error || (tr("操作失败")));
       }
     } catch {
-      setMessage(isZh ? "操作失败" : "Action failed");
+      setMessage(tr("操作失败"));
     } finally {
       setSellerActionLoading(false);
     }
@@ -231,13 +209,13 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
       });
       const json = await res.json();
       if (json.success) {
-        setMessage(isZh ? "已拒绝该报价" : "Offer rejected");
+        setMessage(tr("已拒绝该报价"));
         fetchBargain();
       } else {
-        setMessage(json.error || (isZh ? "操作失败" : "Action failed"));
+        setMessage(json.error || (tr("操作失败")));
       }
     } catch {
-      setMessage(isZh ? "操作失败" : "Action failed");
+      setMessage(tr("操作失败"));
     } finally {
       setSellerActionLoading(false);
     }
@@ -254,13 +232,13 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
       });
       const json = await res.json();
       if (json.success) {
-        setMessage(isZh ? "已接受卖家还价，交易达成！" : "Accepted seller's quote! Deal made!");
+        setMessage(tr("已接受卖家还价，交易达成！"));
         fetchBargain();
       } else {
-        setMessage(json.error || (isZh ? "操作失败" : "Action failed"));
+        setMessage(json.error || (tr("操作失败")));
       }
     } catch {
-      setMessage(isZh ? "操作失败" : "Action failed");
+      setMessage(tr("操作失败"));
     } finally {
       setOffering(false);
     }
@@ -278,15 +256,15 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
       });
       const json = await res.json();
       if (json.success) {
-        setMessage(isZh ? "还价已发送给买家" : "Quote sent to buyers");
+        setMessage(tr("还价已发送给买家"));
         setQuoteAmount("");
         setQuoteMsg("");
         fetchBargain();
       } else {
-        setMessage(json.error || (isZh ? "操作失败" : "Action failed"));
+        setMessage(json.error || (tr("操作失败")));
       }
     } catch {
-      setMessage(isZh ? "操作失败" : "Action failed");
+      setMessage(tr("操作失败"));
     } finally {
       setSellerActionLoading(false);
     }
@@ -304,13 +282,13 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
       });
       const json = await res.json();
       if (json.success) {
-        setMessage(isZh ? "已保存最低接受价（仅您可见）" : "Floor price saved (private)");
+        setMessage(tr("已保存最低接受价（仅您可见）"));
         fetchBargain();
       } else {
-        setMessage(json.error || (isZh ? "操作失败" : "Action failed"));
+        setMessage(json.error || (tr("操作失败")));
       }
     } catch {
-      setMessage(isZh ? "操作失败" : "Action failed");
+      setMessage(tr("操作失败"));
     } finally {
       setSellerActionLoading(false);
     }
@@ -335,10 +313,10 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
   const sellerBids = [...bargain.bids].sort((a, b) => b.amount - a.amount);
   const acceptedBid = bargain.bids.find((b) => b.status === "accepted" || b.isWinning);
 
-  // MF3404 类重点标的：存在公告/合同/瑕疵/评估价任一，则展示专属丰富块
+  // 重点标的专属块：存在公告/合同 HTML、瑕疵、评估价任一，则展示
   const hasRich =
-    !!bargain.announcementNo ||
-    !!bargain.contractTemplateNo ||
+    !!bargain.announcementHtml ||
+    !!bargain.contractHtml ||
     !!bargain.knownFlaws ||
     bargain.evaluationPrice != null;
 
@@ -351,7 +329,7 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
     const s = map[status] || map.cancelled;
     return (
       <span className={`px-3 py-1 rounded-lg text-xs font-semibold text-white ${s.bg}`}>
-        {isZh ? s.zh : s.en}
+        {tr(s.zh)}
       </span>
     );
   };
@@ -368,13 +346,13 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
             <span className="text-sm text-gray-400 font-mono">{bargain.bargainNo}</span>
             {bargain.announcementNo && (
               <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-xs font-medium">
-                {isZh ? "公告" : "Notice"}: {bargain.announcementNo}
+                {tr("公告")}: {bargain.announcementNo}
               </span>
             )}
           </div>
           <div className="text-right">
             <p className="text-xs text-gray-400">
-              {isAccepted ? (isZh ? "成交价" : "Deal Price") : (isZh ? "卖家要价" : "Asking Price")}
+              {isAccepted ? (tr("成交价")) : (tr("卖家要价"))}
             </p>
             <p className={`text-2xl font-bold font-mono ${isAccepted ? "text-green-600" : "text-gray-900"}`}>
               ¥{displayPrice.toLocaleString()}
@@ -385,69 +363,27 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
         <div className="flex items-center justify-between text-sm text-gray-500 border-t border-gray-100 pt-3">
           <span>
             {isAccepted
-              ? (isZh ? `已成交 · ${bargain.totalBidders} 人参与询价` : `${bargain.totalBidders} offerers · Deal closed`)
-              : (isZh ? `已有 ${bargain.totalBidders} 人询价` : `${bargain.totalBidders} offerers`)}
+              ? tr("已成交 · {n} 人参与询价").replace("{n}", String(bargain.totalBidders))
+              : tr("已有 {n} 人询价").replace("{n}", String(bargain.totalBidders))}
           </span>
           <span className="text-[#1E40AF] font-semibold">
-            {bargain.seller.companyName || bargain.seller.username || (isZh ? "平台自营" : "Platform")}
+            {bargain.seller.companyName || bargain.seller.username || (tr("平台自营"))}
           </span>
         </div>
       </div>
 
       {/* ============================================================ */}
-      {/*  2. 重点标的专属块（仅 MF3404 类：公告/合同/瑕疵/评估价存在）  */}
+      {/*  2. 重点标的专属块（公告/合同/瑕疵/评估价等动态内容）          */}
       {/* ============================================================ */}
       {hasRich && (
         <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
-          {/* 车况信息卡 */}
-          <div className="space-y-3">
-            <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-              <Truck className="h-5 w-5 text-[#1E40AF]" />
-              {isZh ? "车辆信息" : "Vehicle Info"}
-            </h3>
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div className="bg-gray-50 rounded-lg p-3">
-                <span className="text-gray-500 text-xs">{isZh ? "品牌型号" : "Model"}</span>
-                <p className="font-semibold text-gray-900 mt-0.5">{isZh ? "常州爱科 MF3404" : "Changzhou AGCO MF3404"}</p>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-3">
-                <span className="text-gray-500 text-xs">VIN码</span>
-                <p className="font-mono font-semibold text-gray-900 mt-0.5">AKCMY48GHNB091020</p>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-3">
-                <span className="text-gray-500 text-xs">{isZh ? "车牌号" : "Plate"}</span>
-                <p className="font-semibold text-gray-900 mt-0.5">苏09Y8888</p>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-3">
-                <span className="text-gray-500 text-xs">{isZh ? "最大马力" : "Max Power"}</span>
-                <p className="font-semibold text-gray-900 mt-0.5">340 {isZh ? "匹" : "HP"}</p>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-3">
-                <span className="text-gray-500 text-xs">{isZh ? "出厂日期" : "Mfg Date"}</span>
-                <p className="font-semibold text-gray-900 mt-0.5">2022-08-11</p>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-3">
-                <span className="text-gray-500 text-xs">{isZh ? "驱动形式" : "Drive"}</span>
-                <p className="font-semibold text-gray-900 mt-0.5">4×4</p>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-3">
-                <span className="text-gray-500 text-xs">{isZh ? "排放标准" : "Emission"}</span>
-                <p className="font-semibold text-gray-900 mt-0.5">{isZh ? "国三" : "China III"}</p>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-3">
-                <span className="text-gray-500 text-xs">{isZh ? "发动机品牌" : "Engine"}</span>
-                <p className="font-semibold text-gray-900 mt-0.5">{isZh ? "爱科动力" : "AGCO Power"}</p>
-              </div>
-            </div>
-          </div>
-
           {/* 评估价 */}
           {bargain.evaluationPrice != null && (
             <div className="flex items-center justify-between bg-blue-50 rounded-lg p-3">
               <div>
-                <span className="text-sm text-blue-700">{isZh ? "参考评估价" : "Evaluation Price"}</span>
+                <span className="text-sm text-blue-700">{tr("参考评估价")}</span>
                 <p className="text-xs text-blue-500 mt-0.5">
-                  {isZh ? "评估基准日：2025年8月 · 仅供参考" : "Evaluation date: Aug 2025 · reference only"}
+                  {tr("评估基准日：2025年8月 · 仅供参考")}
                 </p>
               </div>
               <span className="text-lg font-bold text-blue-700 font-mono">
@@ -456,21 +392,10 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
             </div>
           )}
 
-          {/* 权属徽章 */}
-          <div className="flex items-center gap-3 bg-green-50 rounded-lg p-3">
-            <Lock className="h-5 w-5 text-green-600 flex-shrink-0" />
-            <div>
-              <p className="text-sm font-bold text-green-800">{isZh ? "权属文件已上传" : "Title Documents Uploaded"}</p>
-              <p className="text-xs text-green-600 mt-0.5">
-                {isZh ? "来源合同等权属证明可预约现场查验" : "Source contract & title docs available for on-site inspection"}
-              </p>
-            </div>
-          </div>
-
           {/* 已知瑕疵 */}
           {bargain.knownFlaws && (
             <div className="bg-amber-50 rounded-lg p-3">
-              <p className="text-sm font-bold text-amber-800 mb-1">⚠ {isZh ? "已知瑕疵" : "Known Flaws"}</p>
+              <p className="text-sm font-bold text-amber-800 mb-1">⚠ {tr("已知瑕疵")}</p>
               <p className="text-sm text-amber-700">{bargain.knownFlaws}</p>
             </div>
           )}
@@ -478,75 +403,52 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
           {/* 工作时长 */}
           {bargain.product.workingHours != null && (
             <div className="bg-gray-50 rounded-lg p-3 flex items-center justify-between">
-              <span className="text-sm text-gray-600">{isZh ? "发动机工作时长" : "Engine Hours"}</span>
-              <span className="text-sm font-bold text-gray-900 font-mono">{bargain.product.workingHours} {isZh ? "小时" : "hrs"}</span>
+              <span className="text-sm text-gray-600">{tr("发动机工作时长")}</span>
+              <span className="text-sm font-bold text-gray-900 font-mono">{bargain.product.workingHours} {tr("小时")}</span>
             </div>
           )}
 
           {/* 询价公告折叠面板 */}
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
-            <button
-              onClick={toggleAnnouncement}
-              className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 transition-colors"
-            >
-              <span className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                <FileText className="h-4 w-4 text-[#1E40AF]" />
-                {isZh ? "询价公告全文" : "Full Inquiry Announcement"}
-              </span>
-              {showAnnouncement ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
-            </button>
-            {showAnnouncement && (
-              <div className="p-4 max-h-[500px] overflow-y-auto text-sm border-t border-gray-100">
-                {announcementHtml ? (
-                  <div dangerouslySetInnerHTML={{ __html: announcementHtml }} />
-                ) : (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#1E40AF]"></div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+          {bargain.announcementHtml && (
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <button
+                onClick={toggleAnnouncement}
+                className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 transition-colors"
+              >
+                <span className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-[#1E40AF]" />
+                  {tr("询价公告全文")}
+                </span>
+                {showAnnouncement ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+              </button>
+              {showAnnouncement && (
+                <div className="p-4 max-h-[500px] overflow-y-auto text-sm border-t border-gray-100">
+                  <div dangerouslySetInnerHTML={{ __html: bargain.announcementHtml }} />
+                </div>
+              )}
+            </div>
+          )}
 
           {/* 合同模板预览 */}
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
-            <button
-              onClick={toggleContract}
-              className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 transition-colors"
-            >
-              <span className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                <FileText className="h-4 w-4 text-emerald-600" />
-                {isZh ? "买卖合同模板预览" : "Sales Contract Preview"}
-              </span>
-              {showContract ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
-            </button>
-            {showContract && (
-              <div className="p-4 max-h-[500px] overflow-y-auto text-sm border-t border-gray-100">
-                {contractHtml ? (
-                  <div dangerouslySetInnerHTML={{ __html: contractHtml }} />
-                ) : (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-600"></div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* MF3404 专属：交付与过户（无登记证书，卖方不协助过户） */}
-          <div className="bg-amber-50 rounded-lg p-4 space-y-2">
-            <h4 className="text-sm font-bold text-amber-800">⚠ {isZh ? "权属与过户告知" : "Title & Transfer"}</h4>
-            <p className="text-sm text-amber-700">
-              {isZh
-                ? "卖方如实披露标的物权属状况：本标的暂无农机登记证书，仅有江苏金融租赁购买合同，权属文件不完整。卖方不协助办理过户手续。"
-                : "Seller truthfully discloses title status: this unit has no registration certificate; only a Jiangsu Financial Leasing purchase contract is available. Seller does not assist with transfer."}
-            </p>
-            <p className="text-sm text-amber-700">
-              {isZh
-                ? "买方已充分知悉标的物权属文件不全的现状，自愿承担因此可能导致的过户风险。卖方已如实披露权属状况，不存在隐瞒或虚假陈述。买方不得以权属文件不全为由要求解除合同或要求卖方赔偿。"
-                : "Buyer acknowledges incomplete title documents and voluntarily assumes transfer risks. Seller has truthfully disclosed title status without concealment or misrepresentation. Buyer may not cancel or claim for incomplete title documents."}
-            </p>
-          </div>
+          {bargain.contractHtml && (
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <button
+                onClick={toggleContract}
+                className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 transition-colors"
+              >
+                <span className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-emerald-600" />
+                  {tr("买卖合同模板预览")}
+                </span>
+                {showContract ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+              </button>
+              {showContract && (
+                <div className="p-4 max-h-[500px] overflow-y-auto text-sm border-t border-gray-100">
+                  <div dangerouslySetInnerHTML={{ __html: bargain.contractHtml }} />
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -558,23 +460,21 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
           <div>
             <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
               <MessageSquare className="h-5 w-5 text-[#1E40AF]" />
-              {isZh ? "提交您的报价" : "Submit Your Offer"}
+              {tr("提交您的报价")}
             </h3>
             <p className="text-xs text-gray-500 mt-1">
-              {isZh
-                ? "请输入您的心理价位，卖家将审阅后决定是否接受。您的报价对其他买家不可见。"
-                : "Enter your price. The seller will review and respond. Your offer is private."}
+              {tr("请输入您的心理价位，卖家将审阅后决定是否接受。您的报价对其他买家不可见。")}
             </p>
           </div>
 
           {/* 合规提示 */}
           <div className="bg-blue-50 rounded-lg p-3 text-xs text-blue-700 leading-relaxed">
-            <p className="font-bold mb-1">ℹ {isZh ? "询价须知" : "Inquiry Notice"}</p>
+            <p className="font-bold mb-1">ℹ {tr("询价须知")}</p>
             <ul className="space-y-1 ml-4 list-disc">
-              <li>{isZh ? "本功能为在线询价/报价，不是拍卖。" : "This is an online inquiry/quote, not an auction."}</li>
-              <li>{isZh ? "卖家可接受或拒绝任何报价，无需说明理由。" : "Seller may accept or reject any offer."}</li>
-              <li>{isZh ? "报价相互不可见，不存在竞价。" : "Offers are private — no bidding competition."}</li>
-              <li>{isZh ? "建议先预约看车，实地查验后再报价。" : "We recommend inspecting the equipment before offering."}</li>
+              <li>{tr("本功能为在线询价/报价，不是拍卖。")}</li>
+              <li>{tr("卖家可接受或拒绝任何报价，无需说明理由。")}</li>
+              <li>{tr("报价相互不可见，不存在竞价。")}</li>
+              <li>{tr("建议先预约看车，实地查验后再报价。")}</li>
             </ul>
           </div>
 
@@ -583,7 +483,7 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
             <div className="bg-emerald-50 rounded-lg p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-bold text-emerald-800">{isZh ? "卖家还价" : "Seller's Counter-Offer"}</p>
+                  <p className="text-sm font-bold text-emerald-800">{tr("卖家还价")}</p>
                   {bargain.sellerQuoteAt && (
                     <p className="text-xs text-emerald-500 mt-0.5">
                       {new Date(bargain.sellerQuoteAt).toLocaleString(isZh ? "zh-CN" : "en-US")}
@@ -598,7 +498,7 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
                 disabled={offering}
                 className="w-full rounded-lg bg-emerald-600 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors"
               >
-                {offering ? "..." : (isZh ? "接受此还价" : "Accept this quote")}
+                {offering ? "..." : (tr("接受此还价"))}
               </button>
             </div>
           )}
@@ -611,7 +511,7 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
                 type="number"
                 value={offerAmount}
                 onChange={(e) => setOfferAmount(e.target.value)}
-                placeholder={isZh ? "输入您的报价金额" : "Enter your offer amount"}
+                placeholder={tr("输入您的报价金额")}
                 className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:border-[#1E40AF]"
               />
             </div>
@@ -620,7 +520,7 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
               disabled={offering || !offerAmount}
               className="px-6 py-3 bg-[#1E40AF] text-white rounded-lg font-bold hover:bg-blue-800 disabled:bg-gray-300 transition-colors whitespace-nowrap"
             >
-              {offering ? "..." : (isZh ? "提交报价" : "Submit")}
+              {offering ? "..." : (tr("提交报价"))}
             </button>
           </div>
 
@@ -637,17 +537,15 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
               className="flex-1 py-2.5 bg-gray-100 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-200 text-center transition-colors inline-flex items-center justify-center gap-1.5"
             >
               <MapPin className="h-4 w-4" />
-              {isZh ? "预约看车" : "Book Inspection"}
+              {tr("预约看车")}
             </button>
           </div>
 
           {/* 保证金说明（合规改造：平台不设保证金） */}
           <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-600 leading-relaxed">
-            <p className="font-bold text-gray-700 mb-1">{isZh ? "关于保证金" : "About Deposit"}</p>
+            <p className="font-bold text-gray-700 mb-1">{tr("关于保证金")}</p>
             <p>
-              {isZh
-                ? "本平台不强制收取保证金。如卖家要求缴纳诚意金，由买卖双方自行约定金额和支付方式，平台不代收、不验证、不托管。"
-                : "The platform does not require deposits. Any earnest money is agreed between buyer and seller directly — the platform does not collect, verify, or hold funds."}
+              {tr("本平台不强制收取保证金。如卖家要求缴纳诚意金，由买卖双方自行约定金额和支付方式，平台不代收、不验证、不托管。")}
             </p>
           </div>
         </div>
@@ -657,11 +555,11 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
       {isSeller && isActive && (
         <div className="bg-amber-50 rounded-xl border border-amber-200 p-4 space-y-3">
           <p className="text-sm font-bold text-amber-800">
-            {isZh ? "卖家工作台：给出还价，或设置内部最低接受价" : "Seller tools: send a counter-offer or set your private floor price"}
+            {tr("卖家工作台：给出还价，或设置内部最低接受价")}
           </p>
 
           <div className="space-y-2">
-            <p className="text-xs font-medium text-amber-700">{isZh ? "向买家还价" : "Counter-offer to buyers"}</p>
+            <p className="text-xs font-medium text-amber-700">{tr("向买家还价")}</p>
             <div className="flex gap-2">
               <div className="flex-1 relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">¥</span>
@@ -669,7 +567,7 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
                   type="number"
                   value={quoteAmount}
                   onChange={(e) => setQuoteAmount(e.target.value)}
-                  placeholder={isZh ? "还价金额" : "Counter price"}
+                  placeholder={tr("还价金额")}
                   className="w-full pl-7 pr-3 py-2 border border-amber-300 rounded-lg text-sm focus:outline-none focus:border-amber-500"
                 />
               </div>
@@ -678,14 +576,14 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
                 disabled={sellerActionLoading || !quoteAmount}
                 className="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-bold hover:bg-amber-700 disabled:opacity-50"
               >
-                {isZh ? "发送还价" : "Send"}
+                {tr("发送还价")}
               </button>
             </div>
             <input
               type="text"
               value={quoteMsg}
               onChange={(e) => setQuoteMsg(e.target.value)}
-              placeholder={isZh ? "还价留言（选填）" : "Message (optional)"}
+              placeholder={tr("还价留言（选填）")}
               className="w-full px-3 py-2 border border-amber-300 rounded-lg text-sm focus:outline-none focus:border-amber-500"
             />
           </div>
@@ -693,14 +591,14 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
           <div className="space-y-2 border-t border-amber-200 pt-3">
             <div className="flex items-center gap-1.5 text-xs font-medium text-amber-700">
               <Tag className="h-3.5 w-3.5" />
-              {isZh ? "内部最低接受价（仅您可见，不向买家展示）" : "Internal floor price (private)"}
+              {tr("内部最低接受价（仅您可见，不向买家展示）")}
             </div>
             <div className="flex gap-2">
               <input
                 type="number"
                 value={reserveInput}
                 onChange={(e) => setReserveInput(e.target.value)}
-                placeholder={isZh ? "最低接受价" : "Min accept price"}
+                placeholder={tr("最低接受价")}
                 className="flex-1 px-3 py-2 border border-amber-300 rounded-lg text-sm focus:outline-none focus:border-amber-500"
               />
               <button
@@ -708,12 +606,12 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
                 disabled={sellerActionLoading || !reserveInput}
                 className="px-4 py-2 bg-gray-700 text-white rounded-lg text-sm font-bold hover:bg-gray-800 disabled:opacity-50"
               >
-                {isZh ? "保存" : "Save"}
+                {tr("保存")}
               </button>
             </div>
             {bargain.reservePrice != null && (
               <p className="text-xs text-amber-600">
-                {isZh ? "当前最低接受价" : "Current floor"}: ¥{bargain.reservePrice.toLocaleString()}
+                {tr("当前最低接受价")}: ¥{bargain.reservePrice.toLocaleString()}
               </p>
             )}
           </div>
@@ -733,11 +631,11 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
         <div className="bg-green-50 rounded-xl border border-green-200 p-5 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-green-700 font-bold text-lg">{isZh ? "交易已达成" : "Deal Made"}</p>
+              <p className="text-green-700 font-bold text-lg">{tr("交易已达成")}</p>
               <p className="text-sm text-green-600 mt-1">
-                {isZh
-                  ? `买家 ${acceptedBid.bidder.companyName || acceptedBid.bidder.username || "用户"} 以 ¥${acceptedBid.amount.toLocaleString()} 成交`
-                  : `Buyer ${acceptedBid.bidder.companyName || acceptedBid.bidder.username || "User"} dealt at ¥${acceptedBid.amount.toLocaleString()}`}
+                {tr("买家 {name} 以 ¥{amount} 成交")
+                  .replace("{name}", acceptedBid.bidder.companyName || acceptedBid.bidder.username || tr("用户"))
+                  .replace("{amount}", acceptedBid.amount.toLocaleString())}
               </p>
             </div>
             <p className="text-2xl font-bold text-green-700 font-mono">¥{acceptedBid.amount.toLocaleString()}</p>
@@ -747,11 +645,11 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
             <div className="bg-red-50 rounded-lg p-3 flex items-center gap-3">
               <Clock className="h-6 w-6 text-red-600 flex-shrink-0" />
               <div>
-                <p className="text-sm font-bold text-red-700">{isZh ? "付款截止倒计时" : "Payment Deadline"}</p>
+                <p className="text-sm font-bold text-red-700">{tr("付款截止倒计时")}</p>
                 <p className="text-xl font-bold text-red-600 font-mono">{paymentCountdown}</p>
                 {bargain.paymentDeadline && (
                   <p className="text-xs text-red-400 mt-1">
-                    {isZh ? "截止时间" : "Deadline"}: {new Date(bargain.paymentDeadline).toLocaleString(isZh ? "zh-CN" : "en-US")}
+                    {tr("截止时间")}: {new Date(bargain.paymentDeadline).toLocaleString(isZh ? "zh-CN" : "en-US")}
                   </p>
                 )}
               </div>
@@ -763,8 +661,8 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
               <div className="flex items-center gap-3">
                 <FileText className="h-5 w-5 text-gray-600 flex-shrink-0" />
                 <div>
-                  <p className="text-sm font-bold text-gray-900">{isZh ? "买卖合同" : "Sales Contract"}</p>
-                  <p className="text-sm text-gray-500 font-mono">{isZh ? "合同编号" : "Contract No."}：{bargain.contractTemplateNo}</p>
+                  <p className="text-sm font-bold text-gray-900">{tr("买卖合同")}</p>
+                  <p className="text-sm text-gray-500 font-mono">{tr("合同编号")}：{bargain.contractTemplateNo}</p>
                 </div>
               </div>
               <button
@@ -772,13 +670,13 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
                 className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 ml-8"
               >
                 <Eye className="h-3 w-3" />
-                {isZh ? "查看完整合同条款" : "View full contract terms"}
+                {tr("查看完整合同条款")}
                 {showContract ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
               </button>
               {showContract && (
                 <div className="mt-2 p-3 bg-gray-50 rounded-lg max-h-[400px] overflow-y-auto text-xs border border-gray-200">
-                  {contractHtml ? (
-                    <div dangerouslySetInnerHTML={{ __html: contractHtml }} />
+                  {bargain.contractHtml ? (
+                    <div dangerouslySetInnerHTML={{ __html: bargain.contractHtml }} />
                   ) : (
                     <div className="flex items-center justify-center py-4">
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
@@ -794,22 +692,18 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
             <div className="flex items-center gap-3">
               <MapPin className="h-5 w-5 text-gray-600 flex-shrink-0" />
               <div>
-                <p className="text-sm font-bold text-gray-900">{isZh ? "交付与过户" : "Delivery & Transfer"}</p>
+                <p className="text-sm font-bold text-gray-900">{tr("交付与过户")}</p>
                 <p className="text-sm text-gray-500">
-                  {isZh
-                    ? "看货满意后，双方协商交付安排。大额交易建议通过担保支付保障资金安全。"
-                    : "After inspection, both parties agree on delivery. For large deals, use escrow payment for fund safety."}
+                  {tr("看货满意后，双方协商交付安排。大额交易建议通过担保支付保障资金安全。")}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <ShieldCheck className="h-5 w-5 text-gray-600 flex-shrink-0" />
               <div>
-                <p className="text-sm font-bold text-gray-900">{isZh ? "权属保证" : "Title Guarantee"}</p>
+                <p className="text-sm font-bold text-gray-900">{tr("权属保证")}</p>
                 <p className="text-sm text-gray-500">
-                  {isZh
-                    ? "卖方应如实披露标的物权属状况。对明知或应知而未披露的重大瑕疵，卖方依法承担责任。"
-                    : "Seller must truthfully disclose title status. Seller remains liable for known but undisclosed defects."}
+                  {tr("卖方应如实披露标的物权属状况。对明知或应知而未披露的重大瑕疵，卖方依法承担责任。")}
                 </p>
               </div>
             </div>
@@ -819,7 +713,7 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
 
       {!isActive && !isAccepted && (
         <div className="bg-gray-100 rounded-xl p-4 text-sm text-gray-500 text-center">
-          {isZh ? "该询价已关闭" : "This inquiry is closed"}
+          {tr("该询价已关闭")}
         </div>
       )}
 
@@ -829,19 +723,21 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
       <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
         <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
           <AlertCircle className="h-5 w-5 text-amber-500" />
-          {isZh ? "交易风险提示" : "Risk Disclosure"}
+          {tr("交易风险提示")}
         </h3>
 
         <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-          <h4 className="text-sm font-bold text-gray-900">{isZh ? "设备现状说明" : "Equipment Condition"}</h4>
+          <h4 className="text-sm font-bold text-gray-900">{tr("设备现状说明")}</h4>
           <ul className="space-y-1 text-sm text-gray-700">
-            <li>• {isZh ? "标的物按实物现状交付，建议报价前实地查验。" : "Sold as-is. Inspect before offering."}</li>
-            <li>• {isZh ? `发动机：${bargain.product.workingHours != null ? `${bargain.product.workingHours} 工时` : "运转状况以看货为准"}` : `Engine: ${bargain.product.workingHours != null ? `${bargain.product.workingHours} hours` : "condition per inspection"}`}</li>
+            <li>• {tr("标的物按实物现状交付，建议报价前实地查验。")}</li>
+            <li>• {(() => {
+              const wh = bargain.product.workingHours;
+              const v = wh != null ? `${wh} ${tr("工时")}` : tr("运转状况以看货为准");
+              return tr("发动机：{v}").replace("{v}", v);
+            })()}</li>
           </ul>
           <p className="text-xs text-gray-500 mt-2">
-            {isZh
-              ? "对明知或应知而未披露的重大瑕疵，卖方仍依法承担责任。平台仅提供信息展示与增值服务，不收取交易服务费、不碰支付。"
-              : "Seller remains liable for known but undisclosed defects. Platform provides information display and value-added services only — no transaction fees, no payment handling."}
+            {tr("对明知或应知而未披露的重大瑕疵，卖方仍依法承担责任。平台仅提供信息展示与增值服务，不收取交易服务费、不碰支付。")}
           </p>
         </div>
       </div>
@@ -851,8 +747,8 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
       {/* ============================================================ */}
       {isActive && sellerBids.length > 0 && isSeller && (
         <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h3 className="text-base font-bold text-gray-900 mb-1">{isZh ? "收到的报价" : "Received Offers"}</h3>
-          <p className="text-xs text-gray-400 mb-4">{isZh ? "报价仅您可见，买家之间无法看到彼此报价" : "Offers visible only to you"}</p>
+          <h3 className="text-base font-bold text-gray-900 mb-1">{tr("收到的报价")}</h3>
+          <p className="text-xs text-gray-400 mb-4">{tr("报价仅您可见，买家之间无法看到彼此报价")}</p>
           <div className="space-y-2">
             {sellerBids.map((bid, idx) => (
               <div
@@ -868,19 +764,19 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
                 <div className="flex items-center gap-3">
                   <span className="text-sm text-gray-400 w-6">#{idx + 1}</span>
                   <span className="text-sm font-medium text-gray-700">
-                    {bid.bidder.companyName || bid.bidder.username || (isZh ? "匿名用户" : "Anonymous")}
+                    {bid.bidder.companyName || bid.bidder.username || (tr("匿名用户"))}
                   </span>
                   {bid.status === "accepted" || bid.isWinning ? (
                     <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium">
-                      {isZh ? "已成交" : "Accepted"}
+                      {tr("已成交")}
                     </span>
                   ) : bid.status === "rejected" ? (
                     <span className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-xs font-medium">
-                      {isZh ? "已拒绝" : "Rejected"}
+                      {tr("已拒绝")}
                     </span>
                   ) : (
                     <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium">
-                      {isZh ? "待处理" : "Pending"}
+                      {tr("待处理")}
                     </span>
                   )}
                 </div>
@@ -893,14 +789,14 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
                         disabled={sellerActionLoading}
                         className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 disabled:opacity-50 transition-colors"
                       >
-                        {isZh ? "接受" : "Accept"}
+                        {tr("接受")}
                       </button>
                       <button
                         onClick={() => handleReject(bid.id)}
                         disabled={sellerActionLoading}
                         className="px-3 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 disabled:opacity-50 transition-colors"
                       >
-                        {isZh ? "拒绝" : "Reject"}
+                        {tr("拒绝")}
                       </button>
                     </div>
                   )}
@@ -917,7 +813,7 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
       {/* 买家视角：仅显示自己的报价记录 */}
       {isActive && !isSeller && bargain.bids.filter((b) => b.bidder.id === currentUserId).length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h3 className="text-base font-bold text-gray-900 mb-4">{isZh ? "我的报价记录" : "My Offer History"}</h3>
+          <h3 className="text-base font-bold text-gray-900 mb-4">{tr("我的报价记录")}</h3>
           <div className="space-y-2">
             {bargain.bids
               .filter((b) => b.bidder.id === currentUserId)
@@ -937,15 +833,15 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
                     <span className="text-sm text-gray-400 w-6">#{idx + 1}</span>
                     {bid.status === "accepted" || bid.isWinning ? (
                       <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium">
-                        {isZh ? "已成交" : "Accepted"}
+                        {tr("已成交")}
                       </span>
                     ) : bid.status === "rejected" ? (
                       <span className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-xs font-medium">
-                        {isZh ? "已拒绝" : "Rejected"}
+                        {tr("已拒绝")}
                       </span>
                     ) : (
                       <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium">
-                        {isZh ? "待卖家回复" : "Pending"}
+                        {tr("待卖家回复")}
                       </span>
                     )}
                   </div>
@@ -959,7 +855,7 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
               ))}
           </div>
           <p className="text-xs text-gray-400 mt-3">
-            {isZh ? "您的报价仅卖家可见，其他买家无法查看。" : "Your offer is visible only to the seller."}
+            {tr("您的报价仅卖家可见，其他买家无法查看。")}
           </p>
         </div>
       )}
@@ -973,7 +869,7 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          {isZh ? "查看询价规则与交易保障" : "View inquiry rules & guarantees"}
+          {tr("查看询价规则与交易保障")}
         </a>
       </div>
 

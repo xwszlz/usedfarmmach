@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Phone, Clock, Wrench, Search, Building, Store } from "lucide-react";
+import { useTr } from "@/lib/i18n-tr";
 
 interface ServiceCenter {
   id: string;
@@ -48,7 +49,7 @@ export default function ServiceNetworkClient({
 }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
-  const isZh = locale === "zh";
+  const tr = useTr();
 
   const provinces = Object.keys(grouped).sort();
 
@@ -72,12 +73,10 @@ export default function ServiceNetworkClient({
       {/* 页面标题 */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
-          {isZh ? "线下服务网络" : "Service Network"}
+          {tr("线下服务网络")}
         </h1>
         <p className="mt-1 text-sm text-gray-500">
-          {isZh
-            ? "全国省级服务中心+县域服务网点，提供设备检测、维修、评估、交易等线下服务"
-            : "Provincial service centers and county-level service points across China"}
+          {tr("全国省级服务中心+县域服务网点，提供设备检测、维修、评估、交易等线下服务")}
         </p>
       </div>
 
@@ -86,25 +85,25 @@ export default function ServiceNetworkClient({
         <Card>
           <CardContent className="py-4 text-center">
             <p className="text-2xl font-bold text-primary-600">{summary.total}</p>
-            <p className="text-xs text-gray-500">{isZh ? "服务网点" : "Centers"}</p>
+            <p className="text-xs text-gray-500">{tr("服务网点")}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="py-4 text-center">
             <p className="text-2xl font-bold text-blue-600">{summary.provinceCount}</p>
-            <p className="text-xs text-gray-500">{isZh ? "覆盖省份" : "Provinces"}</p>
+            <p className="text-xs text-gray-500">{tr("覆盖省份")}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="py-4 text-center">
             <p className="text-2xl font-bold text-green-600">{summary.provinceLevel}</p>
-            <p className="text-xs text-gray-500">{isZh ? "省级中心" : "Provincial"}</p>
+            <p className="text-xs text-gray-500">{tr("省级中心")}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="py-4 text-center">
             <p className="text-2xl font-bold text-amber-600">{summary.countyLevel}</p>
-            <p className="text-xs text-gray-500">{isZh ? "县域网点" : "County"}</p>
+            <p className="text-xs text-gray-500">{tr("县域网点")}</p>
           </CardContent>
         </Card>
       </div>
@@ -115,7 +114,7 @@ export default function ServiceNetworkClient({
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder={isZh ? "搜索省份、城市、网点名称..." : "Search province, city, center..."}
+            placeholder={tr("搜索省份、城市、网点名称...")}
             className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 text-sm focus:border-primary-500 focus:outline-none"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -130,11 +129,11 @@ export default function ServiceNetworkClient({
             <Wrench className="h-12 w-12 text-gray-300" />
             <p className="mt-4 text-gray-500">
               {error
-                ? (isZh ? "服务网点数据暂时无法加载，请稍后重试" : "Service center data is temporarily unavailable. Please try again later.")
-                : (isZh ? "服务网点正在建设中，敬请期待" : "Service centers are being set up. Stay tuned.")}
+                ? (tr("服务网点数据暂时无法加载，请稍后重试"))
+                : (tr("服务网点正在建设中，敬请期待"))}
             </p>
             <p className="mt-2 text-sm text-gray-400">
-              {isZh ? "如需线下服务，请拨打客服热线：400-888-XXXX" : "For offline service, call: 400-888-XXXX"}
+              {tr("如需线下服务，请拨打客服热线：400-888-XXXX")}
             </p>
           </CardContent>
         </Card>

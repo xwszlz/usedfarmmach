@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { inquirySchema } from "@/lib/validators";
 import { getTokenFromHeaders, getUserFromToken } from "@/lib/auth";
 import { notifyInquiry } from "@/lib/email";
+import { getQuotaUser, consumeQuota, quotaExceededResponse } from "@/lib/quota";
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,6 +36,15 @@ export async function POST(request: NextRequest) {
     if (token) {
       const user = await getUserFromToken(token);
       if (user) buyerId = user.id;
+    }
+
+    // ── P1-a 额度闸门：仅登录用户计月度询盘额度 ──
+    if (buyerId) {
+      const qUser = await getQuotaUser(buyerId);
+      if (qUser) {
+        const q = await consumeQuota(qUser, "inquiry");
+        if (!q.ok) return quotaExceededResponse(q.resetAt);
+      }
     }
 
     const inquiry = await prisma.inquiry.create({

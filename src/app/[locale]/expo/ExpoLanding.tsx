@@ -56,7 +56,7 @@ const TEXTS: Record<string, {
     badge: "中国农机 · 走向世界",
     title: "永不落幕的农机世界展会",
     subtitle:
-      "42个中国农机品牌旗舰机型365天在线展示，从东方红到大疆，从拖拉机到植保无人机，让中国制造走向全球田间。",
+      "125个品牌展位、187台中外精品农机365天在线展示，从东方红到大疆，从拖拉机到植保无人机，让中国制造走向全球田间。",
     cta: "立即申请参展",
     introTitle: "中国农机的世界舞台",
     introBody:
@@ -143,7 +143,7 @@ const TEXTS: Record<string, {
     badge: "Chinese Machinery · Global Stage",
     title: "The Always-On Global Farm Machinery Expo",
     subtitle:
-      "42 Chinese farm machinery brands with flagship models on display 365 days a year. From Dongfanghong to DJI, from tractors to drones — bringing Chinese manufacturing to fields worldwide.",
+      "125 farm machinery brand booths on display 365 days a year. From Dongfanghong to DJI, from tractors to drones — bringing Chinese manufacturing to fields worldwide.",
     cta: "Apply to Exhibit",
     introTitle: "The World Stage for Chinese Farm Machinery",
     introBody:
@@ -230,7 +230,7 @@ const TEXTS: Record<string, {
     badge: "Китайская техника · Мировая сцена",
     title: "Всемирная выставка сельхозтехники без выходных",
     subtitle:
-      "42 китайских бренда сельхозтехники на витрине 365 дней в году. От Dongfanghong до DJI, от тракторов до дронов — китайское производство для полей всего мира.",
+      "125 китайских бренда сельхозтехники на витрине 365 дней в году. От Dongfanghong до DJI, от тракторов до дронов — китайское производство для полей всего мира.",
     cta: "Подать заявку",
     introTitle: "Мировая сцена для китайской сельхозтехники",
     introBody:
@@ -317,7 +317,7 @@ const TEXTS: Record<string, {
     badge: "Maquinaria China · Escenario Global",
     title: "Expo Mundial de Maquinaria Agrícola Siempre Activada",
     subtitle:
-      "42 marcas chinas de maquinaria agrícola con modelos insignia en exhibición 365 días al año. De Dongfanghong a DJI, de tractores a drones: la fabricación china llega a los campos del mundo.",
+      "125 marcas chinas de maquinaria agrícola con modelos insignia en exhibición 365 días al año. De Dongfanghong a DJI, de tractores a drones: la fabricación china llega a los campos del mundo.",
     cta: "Solicitar Participación",
     introTitle: "El Escenario Mundial para la Maquinaria Agrícola China",
     introBody:
@@ -380,7 +380,7 @@ const TEXTS: Record<string, {
     badge: "Máquinas Chinesas · Palco Global",
     title: "Expo Mundial de Maquinário Agrícola Sempre Ativa",
     subtitle:
-      "42 marcas chinesas de maquinário agrícola com modelos flagship em exibição 365 dias por ano. De Dongfanghong a DJI, de tratores a drones: a fabricação chinesa chega aos campos do mundo.",
+      "125 marcas chinesas de maquinário agrícola com modelos flagship em exibição 365 dias por ano. De Dongfanghong a DJI, de tratores a drones: a fabricação chinesa chega aos campos do mundo.",
     cta: "Solicitar Participação",
     introTitle: "O Palco Mundial para o Maquinário Agrícola Chinês",
     introBody:
@@ -443,7 +443,7 @@ const TEXTS: Record<string, {
     badge: "الآلات الصينية · منصة عالمية",
     title: "المعرض العالمي الدائم للآلات الزراعية",
     subtitle:
-      "42 علامة تجارية صينية للآلات الزراعية مع نماذج رئيسية معروضة 365 يوماً في السنة. من دونغفانغ هونغ إلى DJI، من الجرارات إلى الطائرات المسيرة: التصنيع الصيني يصل إلى حقول العالم.",
+      "125 علامة تجارية صينية للآلات الزراعية مع نماذج رئيسية معروضة 365 يوماً في السنة. من دونغفانغ هونغ إلى DJI، من الجرارات إلى الطائرات المسيرة: التصنيع الصيني يصل إلى حقول العالم.",
     cta: "تقديم طلب المشاركة",
     introTitle: "المنصة العالمية للآلات الزراعية الصينية",
     introBody:
@@ -506,7 +506,7 @@ const TEXTS: Record<string, {
     badge: "Machinerie Chinoise · Scène Mondiale",
     title: "Expo Mondiale de Machinerie Agricole Toujours Active",
     subtitle:
-      "42 marques chinoises de machinerie agricole avec modèles phares en exposition 365 jours par an. De Dongfanghong à DJI, des tracteurs aux drones: la fabrication chinoise atteint les champs du monde.",
+      "125 marques chinoises de machinerie agricole avec modèles phares en exposition 365 jours par an. De Dongfanghong à DJI, des tracteurs aux drones: la fabrication chinoise atteint les champs du monde.",
     cta: "Demander à Participer",
     introTitle: "La Scène Mondiale pour la Machinerie Agricole Chinoise",
     introBody:
@@ -569,7 +569,7 @@ const TEXTS: Record<string, {
     badge: "चीनी मशीनरी · वैश्विक मंच",
     title: "हमेशा चालू विश्व कृषि मशीनरी एक्सपो",
     subtitle:
-      "42 चीनी कृषि मशीनरी ब्रांड 365 दिनों तक फ्लैगशिप मॉडल प्रदर्शित। डोंगफांगहोंग से DJI तक, ट्रैक्टर से ड्रोन तक — चीनी निर्माण दुनिया के खेतों तक।",
+      "125 चीनी कृषि मशीनरी ब्रांड 365 दिनों तक फ्लैगशिप मॉडल प्रदर्शित। डोंगफांगहोंग से DJI तक, ट्रैक्टर से ड्रोन तक — चीनी निर्माण दुनिया के खेतों तक।",
     cta: "भाग लेने के लिए आवेदन करें",
     introTitle: "चीनी कृषि मशीनरी के लिए विश्व मंच",
     introBody:
@@ -718,7 +718,7 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
             </Link>
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <CheckCircle2 className="h-4 w-4 text-green-500" />
-              {locale === "zh" ? "98台中外精品农机在线展示" : locale === "ru" ? "98 китайских и мировых машин" : "98 Chinese & global machines on display"}
+              {locale === "zh" ? "187台中外精品农机在线展示" : locale === "ru" ? "187 китайских и мировых машин" : "187 Chinese & global machines on display"}
             </div>
           </div>
         </div>

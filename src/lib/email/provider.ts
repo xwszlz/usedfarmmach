@@ -114,3 +114,14 @@ export class TencentSesProvider implements EmailProvider {
     throw new Error("Tencent SES provider is not implemented yet");
   }
 }
+
+/**
+ * 国内 provider 工厂（P1-c C1 接线点；C2 真实实现）。
+ * 当前 C1 阶段 routing 对国内用户统一降级 ConsoleProvider（绝不出境），
+ * 此工厂预留给 C2 备案完成后按 EMAIL_PROVIDER_DOMESTIC 切换真实通道。
+ */
+export function createDomesticProvider(): EmailProvider {
+  const kind = (process.env.EMAIL_PROVIDER_DOMESTIC || "aliyun_directmail").toLowerCase();
+  if (kind === "tencent_ses") return new TencentSesProvider();
+  return new AliyunDirectMailProvider();
+}

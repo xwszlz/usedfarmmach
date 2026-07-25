@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import {
+import { useTr } from "@/lib/i18n-tr";
   Scale,
   Tractor,
   Wheat,
@@ -64,6 +65,7 @@ export default function CompareClient({
   locale: string;
 }) {
   const isZh = locale === "zh";
+  const tr = useTr();
   const [selectedCategory, setSelectedCategory] = useState<string>(
     categories[0]?.category || "拖拉机"
   );
@@ -88,15 +90,13 @@ export default function CompareClient({
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-blue-500/30 px-4 py-1.5 text-sm font-medium backdrop-blur-sm">
             <Scale className="h-4 w-4" />
-            {isZh ? "品类对比厅 · 功能厅" : "Comparison Hall · Function Hall"}
+            {tr("品类对比厅 · 功能厅")}
           </div>
           <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">
-            {isZh ? "中国制造 vs 国际标杆" : "Chinese vs Global Benchmark"}
+            {tr("中国制造 vs 国际标杆")}
           </h1>
           <p className="max-w-2xl text-lg text-blue-100">
-            {isZh
-              ? "同品类中外品牌横向参数对比——价格、马力、性能、技术差距一目了然。理性决策，选择最适合的农机。"
-              : "Side-by-side comparison of Chinese and international brands by category — price, power, performance, and technology gaps at a glance."}
+            {tr("同品类中外品牌横向参数对比——价格、马力、性能、技术差距一目了然。理性决策，选择最适合的农机。")}
           </p>
         </div>
       </section>
@@ -133,7 +133,7 @@ export default function CompareClient({
               <ArrowLeftRight className="h-6 w-6 text-blue-600" />
               <h2 className="text-2xl font-bold text-gray-900">
                 {currentCategory.category}
-                {isZh ? " 对比" : " Comparison"}
+                {tr(" 对比")}
               </h2>
             </div>
 
@@ -144,10 +144,10 @@ export default function CompareClient({
                 <div className="mb-4 flex items-center gap-2">
                   <span className="text-2xl">🇨🇳</span>
                   <h3 className="text-lg font-bold text-red-700">
-                    {isZh ? "中国品牌" : "Chinese Brands"}
+                    {tr("中国品牌")}
                   </h3>
                   <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
-                    {chineseItems.length} {isZh ? "款" : "models"}
+                    {chineseItems.length} {tr("款")}
                   </span>
                 </div>
                 <div className="space-y-3">
@@ -156,7 +156,7 @@ export default function CompareClient({
                   ))}
                   {chineseItems.length === 0 && (
                     <div className="rounded-lg border border-dashed border-gray-300 p-6 text-center text-sm text-gray-400">
-                      {isZh ? "暂无中国品牌展品" : "No Chinese models"}
+                      {tr("暂无中国品牌展品")}
                     </div>
                   )}
                 </div>
@@ -167,10 +167,10 @@ export default function CompareClient({
                 <div className="mb-4 flex items-center gap-2">
                   <span className="text-2xl">🌍</span>
                   <h3 className="text-lg font-bold text-amber-700">
-                    {isZh ? "国际标杆" : "International"}
+                    {tr("国际标杆")}
                   </h3>
                   <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
-                    {intlItems.length} {isZh ? "款" : "models"}
+                    {intlItems.length} {tr("款")}
                   </span>
                 </div>
                 <div className="space-y-3">
@@ -179,7 +179,7 @@ export default function CompareClient({
                   ))}
                   {intlItems.length === 0 && (
                     <div className="rounded-lg border border-dashed border-gray-300 p-6 text-center text-sm text-gray-400">
-                      {isZh ? "暂无国际品牌展品" : "No international models"}
+                      {tr("暂无国际品牌展品")}
                     </div>
                   )}
                 </div>
@@ -191,7 +191,7 @@ export default function CompareClient({
               <div className="mt-8 rounded-xl border bg-gradient-to-r from-blue-50 to-indigo-50 p-6">
                 <h4 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
                   <Scale className="h-5 w-5 text-blue-600" />
-                  {isZh ? "价格对比摘要" : "Price Comparison Summary"}
+                  {tr("价格对比摘要")}
                 </h4>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                   {(() => {
@@ -209,7 +209,7 @@ export default function CompareClient({
                       <>
                         <div className="rounded-lg bg-white p-4 shadow-sm">
                           <div className="text-xs text-gray-500">
-                            {isZh ? "中国品牌均价" : "Chinese Avg Price"}
+                            {tr("中国品牌均价")}
                           </div>
                           <div className="text-xl font-bold text-red-600">
                             ${cnAvg.toLocaleString(undefined, { maximumFractionDigits: 0 })}
@@ -217,7 +217,7 @@ export default function CompareClient({
                         </div>
                         <div className="rounded-lg bg-white p-4 shadow-sm">
                           <div className="text-xs text-gray-500">
-                            {isZh ? "国际品牌均价" : "International Avg Price"}
+                            {tr("国际品牌均价")}
                           </div>
                           <div className="text-xl font-bold text-amber-600">
                             ${intlAvg.toLocaleString(undefined, { maximumFractionDigits: 0 })}
@@ -225,7 +225,7 @@ export default function CompareClient({
                         </div>
                         <div className="rounded-lg bg-white p-4 shadow-sm">
                           <div className="text-xs text-gray-500">
-                            {isZh ? "价格比" : "Price Ratio"}
+                            {tr("价格比")}
                           </div>
                           <div className="text-xl font-bold text-blue-600">
                             {ratio > 0 ? `${ratio.toFixed(0)}%` : "—"}
@@ -252,25 +252,23 @@ export default function CompareClient({
       <section className="bg-gradient-to-r from-blue-600 to-indigo-700 py-12">
         <div className="mx-auto max-w-4xl px-4 text-center text-white sm:px-6 lg:px-8">
           <h2 className="mb-4 text-3xl font-bold">
-            {isZh ? "找到最适合的农机" : "Find the Right Machinery"}
+            {tr("找到最适合的农机")}
           </h2>
           <p className="mb-6 text-blue-100">
-            {isZh
-              ? "中国品牌解决'买得到、买得起、修得好'，国际品牌解决'极致性能、超大马力'——按需选择。"
-              : "Chinese brands solve affordability and availability; international brands deliver peak performance — choose what fits your needs."}
+            {tr("中国品牌解决'买得到、买得起、修得好'，国际品牌解决'极致性能、超大马力'——按需选择。")}
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link
               href={`/${locale}/expo/china-brands`}
               className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 font-semibold text-red-600 transition hover:bg-red-50"
             >
-              🇨🇳 {isZh ? "中国品牌馆" : "China Pavilion"}
+              🇨🇳 {tr("中国品牌馆")}
             </Link>
             <Link
               href={`/${locale}/expo/global-brands`}
               className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 font-semibold text-amber-600 transition hover:bg-amber-50"
             >
-              🌍 {isZh ? "国际标杆馆" : "Global Pavilion"}
+              🌍 {tr("国际标杆馆")}
             </Link>
           </div>
         </div>
@@ -281,6 +279,7 @@ export default function CompareClient({
 
 function CompareCard({ item, locale, side }: { item: CompareItem; locale: string; side: string }) {
   const isZh = locale === "zh";
+  const tr = useTr();
   const borderColor = side === "china" ? "border-red-200" : "border-amber-200";
   const bgColor = side === "china" ? "bg-red-50/50" : "bg-amber-50/50";
 
@@ -322,12 +321,12 @@ function CompareCard({ item, locale, side }: { item: CompareItem; locale: string
         {item.machineTier && (
           <span className="rounded bg-white px-2 py-0.5 text-gray-600">
             {item.machineTier === "flagship"
-              ? isZh ? "旗舰" : "Flagship"
+              ? tr("旗舰")
               : item.machineTier === "high"
-              ? isZh ? "高端" : "High"
+              ? tr("高端")
               : item.machineTier === "mid"
-              ? isZh ? "中端" : "Mid"
-              : isZh ? "标准" : "Standard"}
+              ? tr("中端")
+              : tr("标准")}
           </span>
         )}
         {item.isNewLaunch && (

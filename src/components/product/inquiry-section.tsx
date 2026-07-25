@@ -5,6 +5,7 @@ import { useLocale } from "next-intl";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import BargainSection from "@/components/bargain/bargain-section";
+import { useTr } from "@/lib/i18n-tr";
 
 interface InquirySectionProps {
   productId: string;
@@ -22,7 +23,7 @@ interface InquirySectionProps {
  */
 export default function InquirySection({ productId, sellerId, locale, productName }: InquirySectionProps) {
   const localeHook = useLocale();
-  const isZh = (localeHook || locale) === "zh";
+  const tr = useTr();
   const [auctionId, setAuctionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [needLogin, setNeedLogin] = useState(false);
@@ -67,13 +68,13 @@ export default function InquirySection({ productId, sellerId, locale, productNam
     return (
       <div className="mt-6 rounded-xl border border-dashed border-gray-300 p-6 text-center">
         <p className="text-sm text-gray-500">
-          {isZh ? "登录后即可发起在线询价与报价" : "Sign in to start an online inquiry"}
+          {tr("登录后即可发起在线询价与报价")}
         </p>
         <Link
           href={`/${locale}/auth/login`}
           className="mt-3 inline-block rounded-lg bg-emerald-600 px-5 py-2 text-sm font-medium text-white hover:bg-emerald-700"
         >
-          {isZh ? "登录" : "Sign in"}
+          {tr("登录")}
         </Link>
       </div>
     );
@@ -85,10 +86,10 @@ export default function InquirySection({ productId, sellerId, locale, productNam
     <div className="mt-6">
       <div className="mb-3 flex items-center gap-2">
         <span className="text-lg font-bold text-gray-900">
-          {isZh ? "在线询价" : "Price Inquiry"}
+          {tr("在线询价")}
         </span>
         <span className="rounded bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
-          {isZh ? "询价中" : "Active"}
+          {tr("询价中")}
         </span>
       </div>
       <BargainSection auctionId={auctionId} locale={locale} sellerId={sellerId} />

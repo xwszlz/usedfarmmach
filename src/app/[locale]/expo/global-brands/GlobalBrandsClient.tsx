@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import {
+import { useTr } from "@/lib/i18n-tr";
   Globe,
   Tractor,
   Wheat,
@@ -227,6 +228,7 @@ function BrandCard({ brand, locale }: { brand: Brand; locale: string }) {
   const Icon = config.icon;
   const flag = countryFlags[brand.originCountry] || "🌍";
   const isZh = locale === "zh";
+  const tr = useTr();
 
   return (
     <Link
@@ -281,7 +283,7 @@ function BrandCard({ brand, locale }: { brand: Brand; locale: string }) {
           {brand.establishedYear && (
             <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600">
               <Calendar className="h-3 w-3" />
-              {isZh ? "创立" : "Est."} {brand.establishedYear}
+              {tr("创立")} {brand.establishedYear}
             </span>
           )}
           {brand.exportVolume && (
@@ -300,7 +302,7 @@ function BrandCard({ brand, locale }: { brand: Brand; locale: string }) {
         {/* CTA */}
         <div className="flex items-center justify-between border-t border-gray-50 pt-3">
           <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-600 transition-colors group-hover:text-amber-700">
-            {isZh ? "进入展位" : "Enter Booth"}
+            {tr("进入展位")}
             <ArrowUpRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
           </span>
           {brand.officialWebsite && (
@@ -312,7 +314,7 @@ function BrandCard({ brand, locale }: { brand: Brand; locale: string }) {
               className="inline-flex items-center gap-1 text-xs text-gray-400 transition-colors hover:text-gray-600"
             >
               <ExternalLink className="h-3 w-3" />
-              {isZh ? "官网" : "Website"}
+              {tr("官网")}
             </a>
           )}
         </div>
@@ -330,6 +332,7 @@ function MachineCard({
 }) {
   const CatIcon = categoryIcons[item.deviceType] || Tractor;
   const isZh = locale === "zh";
+  const tr = useTr();
 
   return (
     <Link
@@ -357,7 +360,7 @@ function MachineCard({
         {item.isFeatured && (
           <span className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-amber-500 px-2.5 py-1 text-xs font-bold text-white shadow-md">
             <TrendingUp className="h-3 w-3" />
-            {isZh ? "热销" : "HOT"}
+            {tr("热销")}
           </span>
         )}
         {/* Bottom gradient overlay */}
@@ -422,6 +425,7 @@ export default function GlobalBrandsClient({
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
   const isZh = locale === "zh";
+  const tr = useTr();
 
   const filteredBrands = useMemo(() => {
     return brands.filter((b) => {
@@ -459,51 +463,49 @@ export default function GlobalBrandsClient({
           {/* Badge */}
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium backdrop-blur-md">
             <Globe className="h-4 w-4" />
-            <span>{isZh ? "全球标杆馆 · 主馆" : "Global Pavilion · Main Hall"}</span>
+            <span>{tr("全球标杆馆 · 主馆")}</span>
             <span className="ml-1 rounded-full bg-white/20 px-2 py-0.5 text-xs">
-              {brands.length} {isZh ? "品牌" : "Brands"}
+              {brands.length} {tr("品牌")}
             </span>
           </div>
 
           <h1 className="mb-4 text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
-            {isZh ? "全球标杆" : "Global Benchmark"}
+            {tr("全球标杆")}
             <span className="block bg-gradient-to-r from-yellow-300 to-amber-200 bg-clip-text text-transparent">
-              {isZh ? "农机品牌殿堂" : "Machinery Hall"}
+              {tr("农机品牌殿堂")}
             </span>
           </h1>
           <p className="max-w-2xl text-lg leading-relaxed text-amber-100">
-            {isZh
-              ? "约翰迪尔、克拉斯、凯斯、纽荷兰、芬特、麦赛弗格森——全球农机行业的技术标杆与品质参照。汇聚全球顶尖品牌，建立国际最高标准。"
-              : "John Deere, CLAAS, Case IH, New Holland, Fendt, Massey Ferguson — the world's leading agricultural machinery benchmarks. Discover international standards and cutting-edge technology."}
+            {tr("约翰迪尔、克拉斯、凯斯、纽荷兰、芬特、麦赛弗格森——全球农机行业的技术标杆与品质参照。汇聚全球顶尖品牌，建立国际最高标准。")}
           </p>
 
           {/* Stats Cards */}
           <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-4 lg:gap-6">
             <StatCard
               number={String(brands.length)}
-              label={isZh ? "国际品牌" : "Global Brands"}
-              sub={isZh ? "旗舰·核心·精选" : "Flagship · Premium · Selected"}
+              label={tr("国际品牌")}
+              sub={tr("旗舰·核心·精选")}
               icon={Globe}
               gradient="from-amber-500 to-orange-600"
             />
             <StatCard
               number={String(items.length)}
-              label={isZh ? "标杆机型" : "Benchmark Models"}
-              sub={isZh ? "最新技术前沿" : "Latest Technology"}
+              label={tr("标杆机型")}
+              sub={tr("最新技术前沿")}
               icon={Tractor}
               gradient="from-purple-500 to-indigo-600"
             />
             <StatCard
               number="10+"
-              label={isZh ? "覆盖国家" : "Countries"}
-              sub={isZh ? "欧美日主要产区" : "Major markets"}
+              label={tr("覆盖国家")}
+              sub={tr("欧美日主要产区")}
               icon={MapPin}
               gradient="from-blue-500 to-cyan-600"
             />
             <StatCard
               number="100+"
-              label={isZh ? "行业年限" : "Years of Legacy"}
-              sub={isZh ? "百年品牌传承" : "Heritage brands"}
+              label={tr("行业年限")}
+              sub={tr("百年品牌传承")}
               icon={Award}
               gradient="from-green-500 to-emerald-600"
             />
@@ -518,7 +520,7 @@ export default function GlobalBrandsClient({
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <span className="mr-2 flex items-center gap-1 text-sm font-medium text-gray-500">
               <Filter className="h-4 w-4" />
-              {isZh ? "品牌等级" : "Tier"}
+              {tr("品牌等级")}
             </span>
             <button
               onClick={() => setSelectedTier("all")}
@@ -528,7 +530,7 @@ export default function GlobalBrandsClient({
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
             >
-              {isZh ? "全部" : "All"} ({brands.length})
+              {tr("全部")} ({brands.length})
             </button>
             {(Object.keys(tierConfig) as string[]).map((tier) => {
               const config = tierConfig[tier];
@@ -554,7 +556,7 @@ export default function GlobalBrandsClient({
           <div className="flex flex-wrap items-center gap-2">
             <span className="mr-2 flex items-center gap-1 text-sm font-medium text-gray-500">
               <Tag className="h-4 w-4" />
-              {isZh ? "产品品类" : "Category"}
+              {tr("产品品类")}
             </span>
             <button
               onClick={() => setSelectedCategory("all")}
@@ -564,7 +566,7 @@ export default function GlobalBrandsClient({
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
             >
-              {isZh ? "全部" : "All"}
+              {tr("全部")}
             </button>
             {categoryCounts.map((c) => (
               <button
@@ -588,10 +590,10 @@ export default function GlobalBrandsClient({
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">
-              {isZh ? "品牌阵容" : "Brand Lineup"}
+              {tr("品牌阵容")}
             </h2>
             <p className="mt-1 text-sm text-gray-500">
-              {isZh ? "共" : ""} {filteredBrands.length} {isZh ? "个品牌" : "brands"}
+              {tr("共")} {filteredBrands.length} {tr("个品牌")}
               {selectedTier !== "all" && (
                 <span className="ml-1 text-amber-600">
                   · {isZh ? tierConfig[selectedTier].label : tierConfig[selectedTier].labelEn}
@@ -612,7 +614,7 @@ export default function GlobalBrandsClient({
               }}
               className="rounded-full bg-gray-100 px-3 py-1.5 text-sm text-gray-600 transition hover:bg-gray-200"
             >
-              {isZh ? "清除筛选" : "Clear"}
+              {tr("清除筛选")}
             </button>
           )}
         </div>
@@ -627,10 +629,10 @@ export default function GlobalBrandsClient({
           <div className="flex flex-col items-center justify-center py-20 text-gray-400">
             <Filter className="mb-3 h-12 w-12 opacity-30" />
             <p className="text-lg font-medium">
-              {isZh ? "暂无符合条件的品牌" : "No brands match your filters"}
+              {tr("暂无符合条件的品牌")}
             </p>
             <p className="text-sm">
-              {isZh ? "尝试调整筛选条件" : "Try adjusting your filters"}
+              {tr("尝试调整筛选条件")}
             </p>
           </div>
         )}
@@ -642,17 +644,17 @@ export default function GlobalBrandsClient({
           <div className="mb-8 flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">
-                {isZh ? "标杆机型展示" : "Benchmark Models"}
+                {tr("标杆机型展示")}
               </h2>
               <p className="mt-1 text-sm text-gray-500">
-                {isZh ? "精选" : "Showing"} {(selectedCategory === "all" ? items : filteredItems).length} {isZh ? "台热门机型" : "featured models"}
+                {tr("精选")} {(selectedCategory === "all" ? items : filteredItems).length} {tr("台热门机型")}
               </p>
             </div>
             <Link
               href={`/${locale}/expo/showroom`}
               className="inline-flex items-center gap-1 rounded-full bg-amber-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-700"
             >
-              {isZh ? "全部展厅" : "All Showroom"}
+              {tr("全部展厅")}
               <ChevronRight className="h-4 w-4" />
             </Link>
           </div>
@@ -674,26 +676,24 @@ export default function GlobalBrandsClient({
         </div>
         <div className="relative mx-auto max-w-4xl px-4 text-center text-white sm:px-6 lg:px-8">
           <h2 className="mb-4 text-3xl font-bold sm:text-4xl">
-            {isZh ? "中国制造 vs 国际标杆" : "Chinese vs Global Benchmark"}
+            {tr("中国制造 vs 国际标杆")}
           </h2>
           <p className="mx-auto mb-8 max-w-2xl text-lg text-amber-100">
-            {isZh
-              ? "想知道中国品牌与国际标杆的差距有多大？进入品类对比厅，横向参数对比，理性决策。"
-              : "Want to see how Chinese brands compare to global benchmarks? Visit the Comparison Hall for side-by-side specs."}
+            {tr("想知道中国品牌与国际标杆的差距有多大？进入品类对比厅，横向参数对比，理性决策。")}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Link
               href={`/${locale}/expo/compare`}
               className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3.5 font-semibold text-amber-600 shadow-lg transition hover:bg-amber-50 hover:shadow-xl"
             >
-              {isZh ? "进入品类对比厅" : "Comparison Hall"}
+              {tr("进入品类对比厅")}
               <ChevronRight className="h-4 w-4" />
             </Link>
             <Link
               href={`/${locale}/expo/china-brands`}
               className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-6 py-3.5 font-semibold text-white backdrop-blur-sm transition hover:bg-white/20"
             >
-              {isZh ? "查看中国品牌" : "Chinese Brands"}
+              {tr("查看中国品牌")}
               <Factory className="h-4 w-4" />
             </Link>
           </div>

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getTokenFromHeaders, verifyToken } from "@/lib/auth";
+import { getQuotaUser, consumeQuota, quotaExceededResponse } from "@/lib/quota";
 import { calculateValuation, calculateValuationV4, type ValuationInput, type ValuationResult } from "@/lib/valuation/formulas";
 import { analyzeProductImages } from "@/lib/valuation/image-analyzer";
 import { analyzeVideo } from "@/lib/valuation/video-analyzer";
@@ -43,6 +45,20 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { productId, brand, modelName, category, year, workingHours, condition, priceCny, useV4, skipImageAnalysis } = body;
+
+    // ── P1-a 额度闸门：仅登录用户计月度 AI 估值额度（先于昂贵计算，防绕过）──
+    const token = getTokenFromHeaders(request.headers);
+    if (token) {
+      const payload = verifyToken(token);
+      if (payload) {
+        const qUser = await getQuotaUser(payload.userId);
+        if (qUser) {
+          const q = await consumeQuota(qUser, "aiValuation");
+          if (!q.ok) return quotaExceededResponse(q.resetAt);
+        }
+      }
+    }
+
 
     // V4 新增字段
     const imageUrls: string[] = body.imageUrls || [];

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useLocale } from "next-intl";
+import { useTr } from "@/lib/i18n-tr";
 
 interface FinancialService {
   id: string;
@@ -28,6 +29,7 @@ const TYPE_MAP: Record<string, { zh: string; en: string; icon: string; color: st
 export default function FinanceClient() {
   const locale = useLocale();
   const isZh = locale === "zh";
+  const tr = useTr();
   const [services, setServices] = useState<FinancialService[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedService, setSelectedService] = useState<FinancialService | null>(null);
@@ -65,22 +67,20 @@ export default function FinanceClient() {
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">
-          {isZh ? "金融保险服务" : "Financial & Insurance Services"}
+          {tr("金融保险服务")}
         </h1>
         <p className="text-gray-500 mt-1">
-          {isZh
-            ? "农机贷款、交易保险、设备租赁 — 一站式金融服务助力交易"
-            : "Equipment loans, trade insurance, leasing — one-stop financial services"}
+          {tr("农机贷款、交易保险、设备租赁 — 一站式金融服务助力交易")}
         </p>
       </div>
 
       {/* Filter */}
       <div className="flex gap-2 mb-6">
         {[
-          { value: "all", label: isZh ? "全部" : "All" },
-          { value: "loan", label: isZh ? "贷款" : "Loans" },
-          { value: "insurance", label: isZh ? "保险" : "Insurance" },
-          { value: "lease", label: isZh ? "租赁" : "Leasing" },
+          { value: "all", label: tr("全部") },
+          { value: "loan", label: tr("贷款") },
+          { value: "insurance", label: tr("保险") },
+          { value: "lease", label: tr("租赁") },
         ].map((tab) => (
           <button
             key={tab.value}
@@ -100,7 +100,7 @@ export default function FinanceClient() {
       {filtered.length === 0 ? (
         <div className="text-center py-16 bg-gray-50 rounded-xl">
           <p className="text-gray-400 text-lg">
-            {isZh ? "暂无金融产品" : "No financial services available"}
+            {tr("暂无金融产品")}
           </p>
         </div>
       ) : (
@@ -121,7 +121,7 @@ export default function FinanceClient() {
                     </div>
                   </div>
                   <span className="px-2 py-1 bg-white/60 rounded text-xs font-medium text-gray-600">
-                    {isZh ? typeInfo.zh : typeInfo.en}
+                    {tr(typeInfo.zh)}
                   </span>
                 </div>
 
@@ -133,33 +133,33 @@ export default function FinanceClient() {
                 <div className="grid grid-cols-2 gap-3 mb-4">
                   {service.interestRate !== null && (
                     <div className="bg-white/50 rounded-lg p-3">
-                      <p className="text-xs text-gray-500">{isZh ? "年利率" : "Interest Rate"}</p>
+                      <p className="text-xs text-gray-500">{tr("年利率")}</p>
                       <p className="text-lg font-bold text-gray-900">{service.interestRate}%</p>
                     </div>
                   )}
                   {service.maxAmount !== null && (
                     <div className="bg-white/50 rounded-lg p-3">
-                      <p className="text-xs text-gray-500">{isZh ? "最高额度" : "Max Amount"}</p>
+                      <p className="text-xs text-gray-500">{tr("最高额度")}</p>
                       <p className="text-lg font-bold text-gray-900">
-                        ¥{(service.maxAmount / 10000).toFixed(0)}{isZh ? "万" : "k"}
+                        ¥{(service.maxAmount / 10000).toFixed(0)}{tr("万")}
                       </p>
                     </div>
                   )}
                   {service.maxTerm !== null && (
                     <div className="bg-white/50 rounded-lg p-3">
-                      <p className="text-xs text-gray-500">{isZh ? "最长期限" : "Max Term"}</p>
-                      <p className="text-lg font-bold text-gray-900">{service.maxTerm}{isZh ? "月" : "mo"}</p>
+                      <p className="text-xs text-gray-500">{tr("最长期限")}</p>
+                      <p className="text-lg font-bold text-gray-900">{service.maxTerm}{tr("月")}</p>
                     </div>
                   )}
                   {service.downPayment !== null && (
                     <div className="bg-white/50 rounded-lg p-3">
-                      <p className="text-xs text-gray-500">{isZh ? "首付比例" : "Down Payment"}</p>
+                      <p className="text-xs text-gray-500">{tr("首付比例")}</p>
                       <p className="text-lg font-bold text-gray-900">{service.downPayment}%</p>
                     </div>
                   )}
                   {service.premium !== null && (
                     <div className="bg-white/50 rounded-lg p-3">
-                      <p className="text-xs text-gray-500">{isZh ? "保费率" : "Premium Rate"}</p>
+                      <p className="text-xs text-gray-500">{tr("保费率")}</p>
                       <p className="text-lg font-bold text-gray-900">{service.premium}%</p>
                     </div>
                   )}
@@ -169,7 +169,7 @@ export default function FinanceClient() {
                   onClick={() => setSelectedService(service)}
                   className="w-full py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
                 >
-                  {isZh ? "立即申请" : "Apply Now"}
+                  {tr("立即申请")}
                 </button>
               </div>
             );
@@ -224,12 +224,12 @@ function ApplicationModal({
       });
       const json = await res.json();
       if (json.success) {
-        setResult(isZh ? "申请提交成功！我们会尽快联系您。" : "Application submitted! We'll contact you soon.");
+        setResult(tr("申请提交成功！我们会尽快联系您。"));
       } else {
-        setResult(json.error || (isZh ? "申请失败" : "Application failed"));
+        setResult(json.error || (tr("申请失败")));
       }
     } catch {
-      setResult(isZh ? "请先登录" : "Please login first");
+      setResult(tr("请先登录"));
     } finally {
       setSubmitting(false);
     }
@@ -243,7 +243,7 @@ function ApplicationModal({
       >
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-gray-900">
-            {isZh ? "申请" : "Apply"} — {service.serviceName}
+            {tr("申请")} — {service.serviceName}
           </h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
         </div>
@@ -254,59 +254,59 @@ function ApplicationModal({
               {result}
             </p>
             <button onClick={onClose} className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg">
-              {isZh ? "关闭" : "Close"}
+              {tr("关闭")}
             </button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {isZh ? "申请人姓名 *" : "Applicant Name *"}
+                {tr("申请人姓名 *")}
               </label>
               <input name="applicantName" required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {isZh ? "联系电话 *" : "Phone *"}
+                {tr("联系电话 *")}
               </label>
               <input name="contactPhone" required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {isZh ? "邮箱" : "Email"}
+                {tr("邮箱")}
               </label>
               <input name="contactEmail" type="email" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {isZh ? "公司名称" : "Company Name"}
+                {tr("公司名称")}
               </label>
               <input name="companyName" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {isZh ? "申请金额 (元) *" : "Amount (CNY) *"}
+                  {tr("申请金额 (元) *")}
                 </label>
                 <input name="appliedAmount" type="number" required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {isZh ? "期限 (月)" : "Term (months)"}
+                  {tr("期限 (月)")}
                 </label>
                 <input name="appliedTerm" type="number" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
               </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {isZh ? "用途说明" : "Purpose"}
+                {tr("用途说明")}
               </label>
               <textarea name="purpose" rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
             </div>
 
             {service.requirements && (
               <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-600">
-                <p className="font-medium mb-1">{isZh ? "申请条件" : "Requirements"}</p>
+                <p className="font-medium mb-1">{tr("申请条件")}</p>
                 <p className="whitespace-pre-wrap">{service.requirements}</p>
               </div>
             )}
@@ -316,7 +316,7 @@ function ApplicationModal({
               disabled={submitting}
               className="w-full py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-300 transition-colors"
             >
-              {submitting ? "..." : (isZh ? "提交申请" : "Submit Application")}
+              {submitting ? "..." : (tr("提交申请"))}
             </button>
           </form>
         )}

@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Package, Settings, FileText, Tent, Boxes, Shield, Bot, Gavel, FileSignature } from "lucide-react";
+import { LayoutDashboard, Users, Package, Settings, FileText, Tent, Boxes, Shield, Bot, Gavel, FileSignature, ShieldCheck, ScrollText, SlidersHorizontal, Activity } from "lucide-react";
 
 export function AdminSidebar({ role }: { role: string }) {
   const t = useTranslations("nav");
@@ -11,6 +11,15 @@ export function AdminSidebar({ role }: { role: string }) {
   const locale = pathname.split("/")[1] || "zh";
 
   const isEditor = role === "editor";
+  const isSuperAdmin = role === "super_admin";
+  const tg = useTranslations("adminSystem");
+
+  const governanceLinks = [
+    { href: `/${locale}/admin/system/roles`, label: tg("roles"), icon: ShieldCheck },
+    { href: `/${locale}/admin/system/audit`, label: tg("audit"), icon: ScrollText },
+    { href: `/${locale}/admin/system/config`, label: tg("config"), icon: SlidersHorizontal },
+    { href: `/${locale}/admin/system/compliance`, label: tg("compliance"), icon: Activity },
+  ];
 
   const links = [
     { href: `/${locale}/admin`, label: "控制台", icon: LayoutDashboard, hideForEditor: true },
@@ -50,6 +59,32 @@ export function AdminSidebar({ role }: { role: string }) {
           );
         })}
       </nav>
+
+      {isSuperAdmin && (
+        <div className="mt-6 border-t border-gray-200 pt-4">
+          <h3 className="mb-2 text-xs font-semibold text-gray-400 uppercase">
+            {tg("systemGovernance")}
+          </h3>
+          <nav className="space-y-1">
+            {governanceLinks.map((link) => {
+              const Icon = link.icon;
+              const active = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    active ? "bg-primary-100 text-primary-700" : "text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {link.label}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      )}
     </aside>
   );
 }

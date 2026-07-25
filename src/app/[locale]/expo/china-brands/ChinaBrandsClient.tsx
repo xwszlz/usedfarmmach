@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
+import { useTr } from "@/lib/i18n-tr";
   Factory,
   Tractor,
   Wheat,
@@ -359,7 +360,7 @@ export default function ChinaBrandsClient({
   const [selectedTier, setSelectedTier] = useState<string>("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
-  const isZh = locale === "zh";
+  const tr = useTr();
 
   const filteredBrands = useMemo(() => {
     return brands.filter((b) => {

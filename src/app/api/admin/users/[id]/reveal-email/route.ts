@@ -8,6 +8,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyToken, getTokenFromHeaders } from "@/lib/auth";
+import { getQuotaUser, consumeQuota, quotaExceededResponse } from "@/lib/quota";
+import { writePiiAuditLog } from "@/lib/audit";
 
 /** 角色门禁：仅 admin / super_admin */
 async function checkAdmin(req: NextRequest) {
@@ -32,6 +34,15 @@ export async function POST(
     return NextResponse.json({ success: false, error: "无权限" }, { status: 403 });
   }
 
+  // ── P1-a 额度闸门：查看联系方式计 actor 的 viewContact 额度 ──
+  const qUser = await getQuotaUser(admin.userId);
+  if (qUser) {
+    const q = await consumeQuota(qUser, "viewContact");
+    if (!q.ok) {
+      return quotaExceededResponse(q.resetAt);
+    }
+  }
+
   const { id } = params;
   const body = await request.json().catch(() => ({}));
   const purpose = typeof body?.purpose === "string" ? body.purpose : null;
@@ -45,14 +56,12 @@ export async function POST(
   }
 
   // 写审计：谁、何时、读了哪个用户的哪个字段、用途
-  await prisma.piiAuditLog.create({
-    data: {
-      actorId: admin.userId,
-      targetUserId: id,
-      field: "email",
-      action: "view_full",
-      purpose,
-    },
+  await writePiiAuditLog({
+    actorId: admin.userId,
+    targetUserId: id,
+    field: "email",
+    action: "view_full",
+    purpose,
   });
 
   return NextResponse.json({ success: true, data: { email: target.email } });

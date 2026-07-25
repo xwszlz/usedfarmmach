@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyToken, getTokenFromHeaders } from "@/lib/auth";
+import { getQuotaUser, consumeQuota, quotaExceededResponse } from "@/lib/quota";
 import { uploadFileToOSS } from "@/lib/oss-upload";
 import { buildLocationText } from "@/lib/location-parser";
 import { checkContent, isBlocked } from "@/lib/wechat-sec-check";
@@ -47,6 +48,15 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const seller = getSeller(request);
   if (!seller) return NextResponse.json({ success: false, error: "请先登录" }, { status: 401 });
+
+  // ── P1-a 额度闸门：发布前先校验月度发布额度（惰性重置 + 计数）──
+  const quotaUser = await getQuotaUser(seller.userId);
+  if (quotaUser) {
+    const q = await consumeQuota(quotaUser, "publish");
+    if (!q.ok) {
+      return quotaExceededResponse(q.resetAt);
+    }
+  }
 
   try {
     const formData = await request.formData();

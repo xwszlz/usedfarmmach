@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Mail, Phone, Building2, Clock, MessageSquare, Loader2, Handshake } from "lucide-react";
 
 import NegotiationCard, { NegotiationAuction } from "@/components/seller/negotiation-card";
+import { useTr } from "@/lib/i18n-tr";
 
 interface Inquiry {
   id: string;
@@ -35,6 +36,7 @@ export default function SellerInquiriesPage() {
   const t = useTranslations("common");
   const locale = useLocale();
   const isZh = locale === "zh";
+  const tr = useTr();
 
   const [tab, setTab] = useState<TabKey>("negotiation");
 
@@ -132,10 +134,10 @@ export default function SellerInquiriesPage() {
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">
-          {isZh ? "卖家工作台" : "Seller Workbench"}
+          {tr("卖家工作台")}
         </h1>
         <p className="mt-1 text-gray-500">
-          {isZh ? "管理买家对您设备的报价谈判与售前咨询" : "Manage buyer negotiations and pre-sales inquiries"}
+          {tr("管理买家对您设备的报价谈判与售前咨询")}
         </p>
       </div>
 
@@ -145,14 +147,14 @@ export default function SellerInquiriesPage() {
           active={tab === "negotiation"}
           onClick={() => setTab("negotiation")}
           icon={<Handshake className="h-4 w-4" />}
-          label={isZh ? "报价谈判" : "Negotiations"}
+          label={tr("报价谈判")}
           count={auctions.length}
         />
         <TabButton
           active={tab === "inquiry"}
           onClick={openInquiryTab}
           icon={<MessageSquare className="h-4 w-4" />}
-          label={isZh ? "售前咨询" : "Inquiries"}
+          label={tr("售前咨询")}
           count={statusCounts.all}
         />
       </div>
@@ -168,10 +170,10 @@ export default function SellerInquiriesPage() {
             <div className="rounded-xl border border-dashed border-gray-300 py-12 text-center">
               <Handshake className="h-12 w-12 text-gray-300 mx-auto mb-3" />
               <p className="text-gray-400">
-                {isZh ? "暂无进行中的询价谈判" : "No active negotiations yet"}
+                {tr("暂无进行中的询价谈判")}
               </p>
               <p className="text-xs text-gray-400 mt-1">
-                {isZh ? "买家在产品页点击「立即询价」后将自动生成谈判会话" : "Buyers start a negotiation from the product page"}
+                {tr("买家在产品页点击「立即询价」后将自动生成谈判会话")}
               </p>
             </div>
           ) : (
@@ -190,10 +192,10 @@ export default function SellerInquiriesPage() {
           {/* Filter sub-tabs */}
           <div className="mb-6 flex gap-2 flex-wrap">
             {[
-              { key: "all", label: isZh ? "全部" : "All", count: statusCounts.all },
-              { key: "pending", label: isZh ? "待回复" : "Pending", count: statusCounts.pending },
-              { key: "replied", label: isZh ? "已回复" : "Replied", count: statusCounts.replied },
-              { key: "closed", label: isZh ? "已关闭" : "Closed", count: statusCounts.closed },
+              { key: "all", label: tr("全部"), count: statusCounts.all },
+              { key: "pending", label: tr("待回复"), count: statusCounts.pending },
+              { key: "replied", label: tr("已回复"), count: statusCounts.replied },
+              { key: "closed", label: tr("已关闭"), count: statusCounts.closed },
             ].map((f) => (
               <button
                 key={f.key}
@@ -217,7 +219,7 @@ export default function SellerInquiriesPage() {
           ) : filtered.length === 0 ? (
             <div className="rounded-xl border border-dashed border-gray-300 py-12 text-center">
               <MessageSquare className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-400">{isZh ? "暂无咨询记录" : "No inquiries yet"}</p>
+              <p className="text-gray-400">{tr("暂无咨询记录")}</p>
             </div>
           ) : (
             <div className="space-y-4">

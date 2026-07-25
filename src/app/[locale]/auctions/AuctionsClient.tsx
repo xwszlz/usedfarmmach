@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
+import { useTr } from "@/lib/i18n-tr";
 
 interface Bargain {
   id: string;
@@ -52,6 +53,7 @@ const CONDITION_MAP: Record<string, { zh: string; en: string }> = {
 export default function BargainsClient() {
   const locale = useLocale();
   const isZh = locale === "zh";
+  const tr = useTr();
   const [bargains, setBargains] = useState<Bargain[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
@@ -108,29 +110,27 @@ export default function BargainsClient() {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">
-              {isZh ? "在线询价" : "Price Inquiry"}
+              {tr("在线询价")}
             </h1>
             <p className="text-sm md:text-base text-blue-200 mt-2">
-              {isZh
-                ? "一对一报价，透明询价，高效成交高价值农机设备"
-                : "Private offers, transparent inquiry, efficient deals"}
+              {tr("一对一报价，透明询价，高效成交高价值农机设备")}
             </p>
           </div>
           <div className="flex gap-8 md:gap-12">
             <div className="text-center">
               <p className="text-2xl md:text-3xl font-bold text-white font-mono">{activeCount}</p>
-              <p className="text-xs text-blue-200 mt-1">{isZh ? "正在询价" : "Active"}</p>
+              <p className="text-xs text-blue-200 mt-1">{tr("正在询价")}</p>
             </div>
             <div className="text-center">
               <p className="text-2xl md:text-3xl font-bold text-white font-mono">{totalDeals}</p>
-              <p className="text-xs text-blue-200 mt-1">{isZh ? "已成交" : "Deals"}</p>
+              <p className="text-xs text-blue-200 mt-1">{tr("已成交")}</p>
             </div>
             <div className="text-center">
               <p className="text-2xl md:text-3xl font-bold text-white font-mono">
                 ¥{minPrice > 0 ? (minPrice / 10000).toFixed(0) : "0"}
-                <span className="text-base">{isZh ? "万" : "w"}</span>
+                <span className="text-base">{tr("万")}</span>
               </p>
-              <p className="text-xs text-blue-200 mt-1">{isZh ? "起询价" : "Min Price"}</p>
+              <p className="text-xs text-blue-200 mt-1">{tr("起询价")}</p>
             </div>
           </div>
         </div>
@@ -141,9 +141,9 @@ export default function BargainsClient() {
         <div className="max-w-7xl mx-auto px-6 md:px-12 py-4 flex items-center justify-between">
           <div className="flex gap-2">
             {[
-              { value: "all", label: isZh ? "全部" : "All" },
-              { value: "active", label: isZh ? "询价中" : "Open" },
-              { value: "accepted", label: isZh ? "已成交" : "Sold" },
+              { value: "all", label: tr("全部") },
+              { value: "active", label: tr("询价中") },
+              { value: "accepted", label: tr("已成交") },
             ].map((tab) => (
               <button
                 key={tab.value}
@@ -165,7 +165,7 @@ export default function BargainsClient() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            {isZh ? "询价规则" : "Rules"}
+            {tr("询价规则")}
           </Link>
         </div>
       </div>
@@ -175,7 +175,7 @@ export default function BargainsClient() {
         {filtered.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-2xl border border-gray-200">
             <p className="text-gray-400 text-lg">
-              {isZh ? "暂无询价商品" : "No bargains available"}
+              {tr("暂无询价商品")}
             </p>
           </div>
         ) : (
@@ -185,9 +185,9 @@ export default function BargainsClient() {
               const displayPrice = bargain.acceptedPrice || bargain.askingPrice || bargain.product.priceCny || 0;
               const p = bargain.product;
               const subtitleParts = [
-                p.enginePower ? `${p.enginePower}${isZh ? "马力" : "HP"}` : null,
+                p.enginePower ? `${p.enginePower}${tr("马力")}` : null,
                 p.driveSystem || null,
-                p.workingHours ? `${p.workingHours}${isZh ? "小时" : "h"}` : null,
+                p.workingHours ? `${p.workingHours}${tr("小时")}` : null,
               ].filter(Boolean);
 
               return (
@@ -210,7 +210,7 @@ export default function BargainsClient() {
                       </div>
                     )}
                     <span className={`absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-medium ${status.bg} ${status.text}`}>
-                      {isZh ? status.zh : status.en}
+                      {tr(status.zh)}
                     </span>
                   </div>
 
@@ -247,8 +247,8 @@ export default function BargainsClient() {
                     <div className="flex items-center justify-between pt-1">
                       <span className="text-xs text-gray-400">
                         {bargain.status === "accepted"
-                          ? (isZh ? "成交价" : "Deal Price")
-                          : (isZh ? "卖家要价" : "Asking Price")}
+                          ? (tr("成交价"))
+                          : (tr("卖家要价"))}
                       </span>
                       <span className={`text-lg font-bold font-mono ${
                         bargain.status === "accepted" ? "text-green-600" : "text-gray-900"
@@ -259,9 +259,9 @@ export default function BargainsClient() {
 
                     {/* Offer Row */}
                     <div className="flex items-center justify-between text-xs text-gray-500 pt-1 border-t border-gray-50">
-                      <span>{isZh ? `报价 ${bargain._count.bids} 人` : `${bargain._count.bids} offers`}</span>
+                      <span>{tr("报价 {n} 人").replace("{n}", String(bargain._count.bids))}</span>
                       <span className="text-[#1E40AF] font-medium">
-                        {bargain.seller.companyName || bargain.seller.username || (isZh ? "平台自营" : "Platform")}
+                        {bargain.seller.companyName || bargain.seller.username || (tr("平台自营"))}
                       </span>
                     </div>
                   </div>

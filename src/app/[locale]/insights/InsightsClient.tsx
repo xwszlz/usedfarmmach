@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useTranslations, useLocale } from "next-intl";
+import { useTr } from "@/lib/i18n-tr";
 
 interface SummaryData {
   totalProducts: number;
@@ -129,6 +130,7 @@ export default function InsightsClient() {
   }, [fetchData]);
 
   const isZh = locale === "zh";
+  const tr = useTr();
 
   if (loading) {
     return (
@@ -141,7 +143,7 @@ export default function InsightsClient() {
   if (!data) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <p className="text-gray-500">{isZh ? "暂无数据" : "No data available"}</p>
+        <p className="text-gray-500">{tr("暂无数据")}</p>
       </div>
     );
   }
@@ -158,12 +160,10 @@ export default function InsightsClient() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
-            {isZh ? "数据洞察中心" : "Market Insights Center"}
+            {tr("数据洞察中心")}
           </h1>
           <p className="text-gray-500 mt-1">
-            {isZh
-              ? "实时掌握农机市场动态，数据驱动决策"
-              : "Real-time farm machinery market data for data-driven decisions"}
+            {tr("实时掌握农机市场动态，数据驱动决策")}
           </p>
         </div>
         <div className="flex gap-2">
@@ -186,27 +186,27 @@ export default function InsightsClient() {
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard
-          label={isZh ? "在售设备" : "Active Listings"}
+          label={tr("在售设备")}
           value={data.summary.totalProducts.toLocaleString()}
-          subValue={`+${data.summary.newProductsInPeriod} ${isZh ? "本期新增" : "new this period"}`}
+          subValue={`+${data.summary.newProductsInPeriod} ${tr("本期新增")}`}
           color="blue"
         />
         <StatCard
-          label={isZh ? "平均价格" : "Avg Price"}
-          value={`¥${(data.summary.avgPrice / 10000).toFixed(2)}${isZh ? "万" : "k"}`}
+          label={tr("平均价格")}
+          value={`¥${(data.summary.avgPrice / 10000).toFixed(2)}${tr("万")}`}
           subValue={isZh ? `¥${data.summary.minPrice / 10000}~${data.summary.maxPrice / 10000}万` : `Range: ¥${(data.summary.minPrice / 10000).toFixed(1)}k~${(data.summary.maxPrice / 10000).toFixed(1)}k`}
           color="green"
         />
         <StatCard
-          label={isZh ? "已售设备" : "Sold Equipment"}
+          label={tr("已售设备")}
           value={data.summary.soldProducts.toLocaleString()}
-          subValue={isZh ? "累计成交" : "Total sold"}
+          subValue={tr("累计成交")}
           color="purple"
         />
         <StatCard
-          label={isZh ? "询价总数" : "Total Inquiries"}
+          label={tr("询价总数")}
           value={data.summary.totalInquiries.toLocaleString()}
-          subValue={`${data.summary.pendingInquiries} ${isZh ? "待处理" : "pending"}`}
+          subValue={`${data.summary.pendingInquiries} ${tr("待处理")}`}
           color="orange"
         />
       </div>
@@ -215,9 +215,9 @@ export default function InsightsClient() {
       {priceIndex.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            {isZh ? "价格指数走势" : "Price Index Trend"}
+            {tr("价格指数走势")}
             <span className="ml-2 text-sm font-normal text-gray-500">
-              {isZh ? "（基准日 2026-01-01 = 100）" : "(Base: Jan 2026 = 100)"}
+              {tr("（基准日 2026-01-01 = 100）")}
             </span>
           </h2>
           <div className="flex items-end gap-2 h-48">
@@ -247,7 +247,7 @@ export default function InsightsClient() {
           {priceIndex.length > 0 && priceIndex[priceIndex.length - 1].monthOverMonth !== null && (
             <div className="mt-4 flex gap-6 text-sm">
               <span className="text-gray-500">
-                {isZh ? "环比" : "MoM"}:{" "}
+                {tr("环比")}:{" "}
                 <span className={priceIndex[priceIndex.length - 1].monthOverMonth! >= 0 ? "text-red-600 font-semibold" : "text-green-600 font-semibold"}>
                   {priceIndex[priceIndex.length - 1].monthOverMonth! >= 0 ? "+" : ""}
                   {priceIndex[priceIndex.length - 1].monthOverMonth}%
@@ -255,7 +255,7 @@ export default function InsightsClient() {
               </span>
               {priceIndex[priceIndex.length - 1].yearOverYear !== null && (
                 <span className="text-gray-500">
-                  {isZh ? "同比" : "YoY"}:{" "}
+                  {tr("同比")}:{" "}
                   <span className={priceIndex[priceIndex.length - 1].yearOverYear! >= 0 ? "text-red-600 font-semibold" : "text-green-600 font-semibold"}>
                     {priceIndex[priceIndex.length - 1].yearOverYear! >= 0 ? "+" : ""}
                     {priceIndex[priceIndex.length - 1].yearOverYear}%
@@ -270,7 +270,7 @@ export default function InsightsClient() {
       {/* Listing Trend */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          {isZh ? "上架趋势" : "Listing Trend"}
+          {tr("上架趋势")}
         </h2>
         <div className="flex items-end gap-1 h-40">
           {data.listingTrend.map((item, idx) => {
@@ -293,7 +293,7 @@ export default function InsightsClient() {
         {/* Category Distribution */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            {isZh ? "品类分布 TOP 10" : "Category Distribution TOP 10"}
+            {tr("品类分布 TOP 10")}
           </h2>
           <div className="space-y-2">
             {data.categoryDistribution.map((cat, idx) => (
@@ -311,7 +311,7 @@ export default function InsightsClient() {
                   </div>
                 </div>
                 <span className="text-xs text-gray-500 w-20 text-right">
-                  ¥{(cat.avgPrice / 10000).toFixed(1)}{isZh ? "万" : "k"}
+                  ¥{(cat.avgPrice / 10000).toFixed(1)}{tr("万")}
                 </span>
               </div>
             ))}
@@ -321,7 +321,7 @@ export default function InsightsClient() {
         {/* Brand Distribution */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            {isZh ? "品牌热度 TOP 10" : "Brand Popularity TOP 10"}
+            {tr("品牌热度 TOP 10")}
           </h2>
           <div className="space-y-2">
             {data.brandDistribution.map((brand, idx) => (
@@ -339,7 +339,7 @@ export default function InsightsClient() {
                   </div>
                 </div>
                 <span className="text-xs text-gray-500 w-20 text-right">
-                  ¥{(brand.avgPrice / 10000).toFixed(1)}{isZh ? "万" : "k"}
+                  ¥{(brand.avgPrice / 10000).toFixed(1)}{tr("万")}
                 </span>
               </div>
             ))}
@@ -350,7 +350,7 @@ export default function InsightsClient() {
       {/* Price Range Distribution */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          {isZh ? "价格区间分布" : "Price Range Distribution"}
+          {tr("价格区间分布")}
         </h2>
         <div className="flex items-end gap-4 h-40">
           {data.priceRangeDistribution.map((range, idx) => {
@@ -372,7 +372,7 @@ export default function InsightsClient() {
       {/* Region Distribution */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          {isZh ? "区域分布 TOP 10" : "Regional Distribution TOP 10"}
+          {tr("区域分布 TOP 10")}
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           {data.regionDistribution.map((region, idx) => (
@@ -383,7 +383,7 @@ export default function InsightsClient() {
               <span className="text-xs text-gray-400">#{idx + 1}</span>
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-700 truncate">{region.region}</p>
-                <p className="text-xs text-gray-400">{region.count} {isZh ? "台" : "units"}</p>
+                <p className="text-xs text-gray-400">{region.count} {tr("台")}</p>
               </div>
             </div>
           ))}
@@ -393,15 +393,15 @@ export default function InsightsClient() {
       {/* Year Distribution */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          {isZh ? "年份分布" : "Year Distribution"}
+          {tr("年份分布")}
         </h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-200">
-                <th className="text-left py-2 px-3 text-gray-500 font-medium">{isZh ? "年份" : "Year"}</th>
-                <th className="text-right py-2 px-3 text-gray-500 font-medium">{isZh ? "数量" : "Count"}</th>
-                <th className="text-right py-2 px-3 text-gray-500 font-medium">{isZh ? "均价" : "Avg Price"}</th>
+                <th className="text-left py-2 px-3 text-gray-500 font-medium">{tr("年份")}</th>
+                <th className="text-right py-2 px-3 text-gray-500 font-medium">{tr("数量")}</th>
+                <th className="text-right py-2 px-3 text-gray-500 font-medium">{tr("均价")}</th>
               </tr>
             </thead>
             <tbody>
@@ -410,7 +410,7 @@ export default function InsightsClient() {
                   <td className="py-2 px-3 text-gray-700">{item.year}</td>
                   <td className="py-2 px-3 text-right text-gray-600">{item.count}</td>
                   <td className="py-2 px-3 text-right text-gray-600">
-                    ¥{(item.avgPrice / 10000).toFixed(2)}{isZh ? "万" : "k"}
+                    ¥{(item.avgPrice / 10000).toFixed(2)}{tr("万")}
                   </td>
                 </tr>
               ))}
@@ -423,17 +423,17 @@ export default function InsightsClient() {
       {data.topArbitrage.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            {isZh ? "套利榜单 TOP 10" : "Arbitrage Ranking TOP 10"}
+            {tr("套利榜单 TOP 10")}
           </h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-2 px-3 text-gray-500 font-medium">#</th>
-                  <th className="text-left py-2 px-3 text-gray-500 font-medium">{isZh ? "设备" : "Equipment"}</th>
-                  <th className="text-right py-2 px-3 text-gray-500 font-medium">{isZh ? "国内价" : "Domestic"}</th>
-                  <th className="text-right py-2 px-3 text-gray-500 font-medium">{isZh ? "国外价" : "Foreign"}</th>
-                  <th className="text-right py-2 px-3 text-gray-500 font-medium">{isZh ? "价差%" : "Diff%"}</th>
+                  <th className="text-left py-2 px-3 text-gray-500 font-medium">{tr("设备")}</th>
+                  <th className="text-right py-2 px-3 text-gray-500 font-medium">{tr("国内价")}</th>
+                  <th className="text-right py-2 px-3 text-gray-500 font-medium">{tr("国外价")}</th>
+                  <th className="text-right py-2 px-3 text-gray-500 font-medium">{tr("价差%")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -445,10 +445,10 @@ export default function InsightsClient() {
                       <span className="text-gray-400 ml-2">{item.year}</span>
                     </td>
                     <td className="py-2 px-3 text-right text-gray-600">
-                      ¥{(item.domesticPrice / 10000).toFixed(1)}{isZh ? "万" : "k"}
+                      ¥{(item.domesticPrice / 10000).toFixed(1)}{tr("万")}
                     </td>
                     <td className="py-2 px-3 text-right text-gray-600">
-                      ¥{(item.foreignPrice / 10000).toFixed(1)}{isZh ? "万" : "k"}
+                      ¥{(item.foreignPrice / 10000).toFixed(1)}{tr("万")}
                     </td>
                     <td className="py-2 px-3 text-right">
                       <span className={`font-semibold ${item.priceDiffPercent > 30 ? "text-red-600" : "text-orange-600"}`}>

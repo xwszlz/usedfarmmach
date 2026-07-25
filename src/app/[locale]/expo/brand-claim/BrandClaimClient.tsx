@@ -16,6 +16,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import Link from "next/link";
+import { useTr } from "@/lib/i18n-tr";
 
 export default function BrandClaimClient({ locale }: { locale: string }) {
   const searchParams = useSearchParams();
@@ -23,6 +24,7 @@ export default function BrandClaimClient({ locale }: { locale: string }) {
   const brandSlug = searchParams.get("slug") || "";
 
   const isZh = locale === "zh";
+  const tr = useTr();
 
   const [form, setForm] = useState({
     brandName,
@@ -53,10 +55,10 @@ export default function BrandClaimClient({ locale }: { locale: string }) {
       if (data.success) {
         setSubmitted(true);
       } else {
-        alert(isZh ? "提交失败，请稍后重试" : "Submission failed, please try again");
+        alert(tr("提交失败，请稍后重试"));
       }
     } catch {
-      alert(isZh ? "网络错误" : "Network error");
+      alert(tr("网络错误"));
     } finally {
       setSubmitting(false);
     }

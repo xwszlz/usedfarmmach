@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Building2, Globe, Video, BarChart3, Shield, ChevronRight, CheckCircle2, Sparkles } from "lucide-react";
+import { useTr } from "@/lib/i18n-tr";
 
 interface SelfBoothLandingProps {
   locale: string;
@@ -11,20 +12,21 @@ interface SelfBoothLandingProps {
 export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
   const t = useTranslations();
   const isZh = locale === "zh";
+  const tr = useTr();
 
   const tiers = [
     {
-      name: isZh ? "免费版" : "Free",
-      price: isZh ? "¥0/年" : "¥0/yr",
-      period: isZh ? "永久免费" : "Always Free",
+      name: tr("免费版"),
+      price: tr("¥0/年"),
+      period: tr("永久免费"),
       features: [
-        isZh ? "品牌收录于品牌库" : "Brand listed in directory",
-        isZh ? "5台展品上线" : "5 exhibits online",
-        isZh ? "中文展示" : "Chinese language",
-        isZh ? "基础浏览量统计" : "Basic page views",
-        isZh ? "邮箱询盘通知" : "Email inquiry alerts",
+        tr("品牌收录于品牌库"),
+        tr("5台展品上线"),
+        tr("中文展示"),
+        tr("基础浏览量统计"),
+        tr("邮箱询盘通知"),
       ],
-      cta: isZh ? "免费开通" : "Start Free",
+      cta: tr("免费开通"),
       ctaHref: "/expo/brand-claim?tier=free",
       popular: false,
       gradient: "from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900",
@@ -32,56 +34,56 @@ export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
     },
     {
       name: isZh ? "Pro" : "Pro",
-      price: isZh ? "¥380/年" : "¥380/yr",
-      period: isZh ? "日均¥1.04" : "¥1.04/day",
+      price: tr("¥380/年"),
+      period: tr("日均¥1.04"),
       features: [
-        isZh ? "品牌库优先收录" : "Priority brand listing",
-        isZh ? "20台展品" : "20 exhibits",
-        isZh ? "中文+英文双语" : "Chinese + English",
-        isZh ? "3条产品视频" : "3 product videos",
-        isZh ? "月度浏览/询盘报告" : "Monthly analytics report",
-        isZh ? "邮件+短信询盘通知" : "Email + SMS alerts",
+        tr("品牌库优先收录"),
+        tr("20台展品"),
+        tr("中文+英文双语"),
+        tr("3条产品视频"),
+        tr("月度浏览/询盘报告"),
+        tr("邮件+短信询盘通知"),
       ],
-      cta: isZh ? "开通Pro" : "Get Pro",
+      cta: tr("开通Pro"),
       ctaHref: "/expo/brand-claim?tier=pro",
       popular: true,
       gradient: "from-blue-500 to-cyan-500",
       border: "border-blue-500",
     },
     {
-      name: isZh ? "旗舰版" : "Flagship",
-      price: isZh ? "¥980/年" : "¥980/yr",
-      period: isZh ? "日均¥2.68" : "¥2.68/day",
+      name: tr("旗舰版"),
+      price: tr("¥980/年"),
+      period: tr("日均¥2.68"),
       features: [
-        isZh ? "品牌库置顶展示" : "Top brand placement",
-        isZh ? "50台展品" : "50 exhibits",
-        isZh ? "中/英/俄三语" : "Chinese/English/Russian",
-        isZh ? "10条产品视频" : "10 product videos",
-        isZh ? "周度报告+竞品对比" : "Weekly report + competitor",
-        isZh ? "优先SEO排名" : "Priority SEO ranking",
-        isZh ? "月轮播推荐位" : "Monthly featured slot",
+        tr("品牌库置顶展示"),
+        tr("50台展品"),
+        tr("中/英/俄三语"),
+        tr("10条产品视频"),
+        tr("周度报告+竞品对比"),
+        tr("优先SEO排名"),
+        tr("月轮播推荐位"),
       ],
-      cta: isZh ? "开通旗舰" : "Get Flagship",
+      cta: tr("开通旗舰"),
       ctaHref: "/expo/brand-claim?tier=flagship",
       popular: false,
       gradient: "from-purple-500 to-pink-500",
       border: "border-purple-500",
     },
     {
-      name: isZh ? "战略版" : "Strategic",
-      price: isZh ? "¥2,880/年" : "¥2,880/yr",
-      period: isZh ? "日均¥7.89" : "¥7.89/day",
+      name: tr("战略版"),
+      price: tr("¥2,880/年"),
+      period: tr("日均¥7.89"),
       features: [
-        isZh ? "品牌库首页推荐" : "Homepage featured",
-        isZh ? "无限展品" : "Unlimited exhibits",
-        isZh ? "全8语种覆盖" : "All 8 languages",
-        isZh ? "无限视频+VR展示" : "Unlimited video + VR",
-        isZh ? "实时数据+行业对比" : "Real-time + industry data",
-        isZh ? "SEO置顶+品牌词保护" : "Top SEO + brand term",
-        isZh ? "季度专题置顶位" : "Quarterly featured",
-        isZh ? "1对1客户经理" : "Dedicated account mgr",
+        tr("品牌库首页推荐"),
+        tr("无限展品"),
+        tr("全8语种覆盖"),
+        tr("无限视频+VR展示"),
+        tr("实时数据+行业对比"),
+        tr("SEO置顶+品牌词保护"),
+        tr("季度专题置顶位"),
+        tr("1对1客户经理"),
       ],
-      cta: isZh ? "联系开通" : "Contact Us",
+      cta: tr("联系开通"),
       ctaHref: "/expo/brand-claim?tier=strategic",
       popular: false,
       gradient: "from-amber-500 to-orange-600",
@@ -90,12 +92,12 @@ export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
   ];
 
   const brandAssets = [
-    { num: "309", label: isZh ? "品牌已收录" : "Brands Listed" },
-    { num: "618", label: isZh ? "配件入库" : "Parts in DB" },
-    { num: "14", label: isZh ? "品类手册" : "Manuals" },
-    { num: "8", label: isZh ? "语种覆盖" : "Languages" },
-    { num: "180+", label: isZh ? "月均询盘" : "Avg Monthly Inquiries" },
-    { num: "28届", label: isZh ? "地头展背书" : "Field Expo Heritage" },
+    { num: "309", label: tr("品牌已收录") },
+    { num: "618", label: tr("配件入库") },
+    { num: "14", label: tr("品类手册") },
+    { num: "8", label: tr("语种覆盖") },
+    { num: "180+", label: tr("月均询盘") },
+    { num: "28届", label: tr("地头展背书") },
   ];
 
   return (
@@ -105,15 +107,13 @@ export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-8 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
             <p className="mb-3 inline-block rounded-full bg-white/20 px-4 py-1 text-sm font-semibold">
-              {isZh ? "✨ 品牌入库 · 全球可见" : "✨ Brands In · World Sees"}
+              {tr("✨ 品牌入库 · 全球可见")}
             </p>
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-              {isZh ? "开通您的自助展台" : "Open Your Self-Expo Booth"}
+              {tr("开通您的自助展台")}
             </h1>
             <p className="mt-4 text-lg text-green-100">
-              {isZh
-                ? "5分钟完成注册，自动生成品牌专属页面，纳入「永不落幕的农机世界展会」体系"
-                : "5-minute registration, auto-generated brand page, join the Always-On Expo system."}
+              {tr("5分钟完成注册，自动生成品牌专属页面，纳入「永不落幕的农机世界展会」体系")}
             </p>
           </div>
 
@@ -133,29 +133,29 @@ export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
       <section className="border-b border-gray-200 py-12 dark:border-gray-800">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h2 className="mb-8 text-center text-2xl font-bold text-gray-900 dark:text-white">
-            {isZh ? "为什么选择自助展台？" : "Why Choose Self-Expo Booth?"}
+            {tr("为什么选择自助展台？")}
           </h2>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {[
               {
                 icon: <Globe className="h-8 w-8 text-green-600" />,
-                title: isZh ? "永久在线" : "Always Online",
-                desc: isZh ? "不受线下展会时间限制，24小时×365天持续曝光，买家随时访问" : "24/7/365 global exposure, buyers visit anytime",
+                title: tr("永久在线"),
+                desc: tr("不受线下展会时间限制，24小时×365天持续曝光，买家随时访问"),
               },
               {
                 icon: <Building2 className="h-8 w-8 text-blue-600" />,
-                title: isZh ? "自主发布" : "Self-Publish",
-                desc: isZh ? "品牌信息、展品、视频、联系方式全部自助管理，实时更新" : "Manage brand info, products, videos, and contacts — all self-service",
+                title: tr("自主发布"),
+                desc: tr("品牌信息、展品、视频、联系方式全部自助管理，实时更新"),
               },
               {
                 icon: <Video className="h-8 w-8 text-purple-600" />,
-                title: isZh ? "多语种展示" : "Multi-Language",
-                desc: isZh ? "从中文到8语种，覆盖200+国家买家，Pro版起即含英/俄" : "From Chinese to 8 languages, covering 200+ country buyers",
+                title: tr("多语种展示"),
+                desc: tr("从中文到8语种，覆盖200+国家买家，Pro版起即含英/俄"),
               },
               {
                 icon: <BarChart3 className="h-8 w-8 text-amber-600" />,
-                title: isZh ? "数据驱动" : "Data-Driven",
-                desc: isZh ? "浏览量、询盘量、来源分析一目了然，优化参展策略" : "Page views, inquiries, source analysis — optimize your strategy",
+                title: tr("数据驱动"),
+                desc: tr("浏览量、询盘量、来源分析一目了然，优化参展策略"),
               },
             ].map((item, i) => (
               <div key={i} className="rounded-xl border border-gray-200 p-6 dark:border-gray-800">
@@ -172,7 +172,7 @@ export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
       <section className="py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h2 className="mb-10 text-center text-2xl font-bold text-gray-900 dark:text-white">
-            {isZh ? "选择适合您的版本" : "Choose Your Tier"}
+            {tr("选择适合您的版本")}
           </h2>
           <div className="grid gap-6 lg:grid-cols-4">
             {tiers.map((tier, i) => (
@@ -183,7 +183,7 @@ export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
                 {tier.popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-blue-600 px-4 py-1 text-xs font-bold text-white shadow">
                     <Sparkles className="mr-1 inline-block h-3 w-3" />
-                    {isZh ? "推荐" : "Popular"}
+                    {tr("推荐")}
                   </div>
                 )}
                 <div className="mb-6">
@@ -222,10 +222,10 @@ export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
       <section id="payment" className="py-12">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <h2 className="mb-3 text-center text-2xl font-bold text-gray-900 dark:text-white">
-            {isZh ? "扫码付款" : "Scan to Pay"}
+            {tr("扫码付款")}
           </h2>
           <p className="mb-8 text-center text-sm text-gray-500">
-            {isZh ? "选择版本后，使用微信或支付宝扫码付款，付款确认后24小时内开通" : "Scan to pay after tier selection. Activated within 24 hours after payment confirmed."}
+            {tr("选择版本后，使用微信或支付宝扫码付款，付款确认后24小时内开通")}
           </p>
           <div className="grid gap-6 sm:grid-cols-2">
             {/* WeChat */}
@@ -259,7 +259,7 @@ export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
             </div>
           </div>
           <p className="mt-6 text-center text-xs text-gray-400">
-            {isZh ? "付款后请将截图发送至 932133255@qq.com 或致电 +86 18633878701 确认" : "After payment, send screenshot to 932133255@qq.com or call +86 18633878701."}
+            {tr("付款后请将截图发送至 932133255@qq.com 或致电 +86 18633878701 确认")}
           </p>
         </div>
       </section>
@@ -268,15 +268,15 @@ export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
       <section className="bg-gray-50 py-12 dark:bg-gray-900">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h2 className="mb-10 text-center text-2xl font-bold text-gray-900 dark:text-white">
-            {isZh ? "5步开通自助展台" : "5 Steps to Open Your Booth"}
+            {tr("5步开通自助展台")}
           </h2>
           <div className="grid gap-6 sm:grid-cols-5">
             {[
-              { step: "1", title: isZh ? "注册账号" : "Register", desc: isZh ? "填写企业信息，选择版本" : "Company info & tier selection" },
-              { step: "2", title: isZh ? "品牌档案" : "Brand Profile", desc: isZh ? "上传Logo、简介、定位、品类" : "Logo, intro, positioning" },
-              { step: "3", title: isZh ? "发布展品" : "List Products", desc: isZh ? "上传机型照片、视频、参数" : "Upload products, photos, videos" },
-              { step: "4", title: isZh ? "提交审核" : "Submit for Review", desc: isZh ? "AI自动审+人工抽检" : "AI review + human spot-check" },
-              { step: "5", title: isZh ? "开通上线" : "Go Live!", desc: isZh ? "获得专属品牌页和二维码" : "Get your brand page & QR code" },
+              { step: "1", title: tr("注册账号"), desc: tr("填写企业信息，选择版本") },
+              { step: "2", title: tr("品牌档案"), desc: tr("上传Logo、简介、定位、品类") },
+              { step: "3", title: tr("发布展品"), desc: tr("上传机型照片、视频、参数") },
+              { step: "4", title: tr("提交审核"), desc: tr("AI自动审+人工抽检") },
+              { step: "5", title: tr("开通上线"), desc: tr("获得专属品牌页和二维码") },
             ].map((s, i) => (
               <div key={i} className="rounded-xl bg-white p-6 text-center shadow-sm dark:bg-gray-800">
                 <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-lg font-bold text-green-700 dark:bg-green-900 dark:text-green-300">
@@ -295,25 +295,23 @@ export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
         <div className="mx-auto max-w-2xl px-4 text-center sm:px-6 lg:px-8">
           <Shield className="mx-auto mb-4 h-10 w-10 text-green-600" />
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {isZh ? "已有309个品牌入驻，下一个就是您" : "309 Brands Already In — You're Next"}
+            {tr("已有309个品牌入驻，下一个就是您")}
           </h2>
           <p className="mt-3 text-gray-600 dark:text-gray-400">
-            {isZh
-              ? "品牌入库即获全球曝光。从免费版开始，无风险试水。"
-              : "Brand Listing = Global Exposure. Start free, no risk."}
+            {tr("品牌入库即获全球曝光。从免费版开始，无风险试水。")}
           </p>
           <div className="mt-6 flex justify-center gap-4">
             <Link
               href={`/${locale}/expo/brand-claim`}
               className="rounded-lg bg-green-600 px-8 py-3 font-semibold text-white shadow-lg transition hover:bg-green-700"
             >
-              {isZh ? "免费开通→" : "Start Free →"}
+              {tr("免费开通→")}
             </Link>
             <Link
               href={`/${locale}/expo`}
               className="rounded-lg border border-gray-300 px-8 py-3 font-semibold text-gray-800 transition hover:bg-gray-50 dark:border-gray-600 dark:text-white dark:hover:bg-gray-800"
             >
-              {isZh ? "浏览展会" : "Browse Expo"}
+              {tr("浏览展会")}
             </Link>
           </div>
         </div>

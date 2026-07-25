@@ -25,8 +25,15 @@ const PROTECTED_PATHS = [
 const ADMIN_PATHS = ["/api/admin", "/admin"];
 const ADMIN_ROLES = ["admin", "super_admin"];
 
-// 仅超级管理员可访问（super_admin 专属路径，P0 收紧）
-const SUPER_ADMIN_PATHS = ["/admin/system", "/api/admin/system"];
+// 仅超级管理员可访问（super_admin 专属路径，P0 收紧 + P1 显式补全）
+const SUPER_ADMIN_PATHS = [
+  "/admin/system",
+  "/api/admin/role",
+  "/api/admin/system",
+  "/api/admin/system/audit",
+  "/api/admin/system/config",
+  "/api/admin/system/compliance",
+];
 
 function getTokenFromRequest(request: NextRequest): string | null {
   const authHeader = request.headers.get("authorization");

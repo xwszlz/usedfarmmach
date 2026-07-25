@@ -10,7 +10,9 @@ export const MEMBERSHIP_TIERS = {
   free: {
     label: { zh: '免费用户', en: 'Free', ru: 'Бесплатно' },
     valuationsPerMonth: 5,   // 每月免费估价次数
-    publishesPerMonth: 1,      // 每月免费发布产品数
+    publishesPerMonth: 5,      // 每月免费发布产品数（P1：1 → 5）
+    inquiriesPerMonth: 5,     // 每月免费询盘次数（P1 新增）
+    contactsPerMonth: 5,       // 每月查看联系方式次数（P1 新增）
     credits: 10,               // 注册赠送积分
     freeValuationsPerMonth: 5,
     canViewSellerContact: true, // 能否查看卖家联系方式
@@ -23,7 +25,9 @@ export const MEMBERSHIP_TIERS = {
   basic: {
     label: { zh: '普通会员', en: 'Basic', ru: 'Базовый' },
     valuationsPerMonth: 50,
-    publishesPerMonth: 10,
+    publishesPerMonth: 50,     // P1：10 → 50
+    inquiriesPerMonth: 50,
+    contactsPerMonth: 50,
     canViewSellerContact: true,
     canExportData: false,
     canSeeArbitrage: true,
@@ -35,6 +39,8 @@ export const MEMBERSHIP_TIERS = {
     label: { zh: '高级会员', en: 'Premium', ru: 'Премиум' },
     valuationsPerMonth: -1,      // -1 = 无限
     publishesPerMonth: -1,
+    inquiriesPerMonth: -1,
+    contactsPerMonth: -1,
     canViewSellerContact: true,
     canExportData: true,
     canSeeArbitrage: true,
@@ -46,6 +52,8 @@ export const MEMBERSHIP_TIERS = {
     label: { zh: '企业会员', en: 'Enterprise', ru: 'Корпоративный' },
     valuationsPerMonth: -1,
     publishesPerMonth: -1,
+    inquiriesPerMonth: -1,
+    contactsPerMonth: -1,
     canViewSellerContact: true,
     canExportData: true,
     canSeeArbitrage: true,
@@ -154,3 +162,19 @@ export function getMonthlyQuotaUsed(
     shouldReset,
   };
 }
+
+// ── P1 超管与角色集 ──
+/** 超级管理员数量上限（多超管治理基线；石家庄铁家伙维持 super_admin 不降级） */
+export const SUPER_ADMIN_MAX = 3;
+
+/** 可赋予的用户角色集合（含 partner_limited 受限合作方） */
+export const ROLE_SET = [
+  "buyer",
+  "seller",
+  "editor",
+  "admin",
+  "super_admin",
+  "partner_limited",
+] as const;
+
+export type AppRole = (typeof ROLE_SET)[number];

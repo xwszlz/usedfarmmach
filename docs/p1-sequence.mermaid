@@ -1,0 +1,76 @@
+%% ===== 4.1 额度闸门：受保护动作（以「发布」为例） =====
+sequenceDiagram
+    autonumber
+    actor U as 用户(浏览器)
+    participant PC as MembershipCard/发布表单
+    participant RT as POST /api/products
+    participant Auth as getUserFromRequest
+    participant QG as QuotaGuard
+    participant DB as Prisma/Postgres
+    participant UL as UsageLog
+
+    U->>PC: 提交发布
+    PC->>RT: fetch('/api/products', POST)
+    RT->>Auth: cookie 鉴权
+    Auth-->>RT: user(含 membershipTier/用量字段)
+    RT->>QG: consumeQuota(user,'publish')
+    QG->>QG: ensureQuotaWindow(惰性重置)
+    QG->>DB: 读 usagePublish + getQuotaLimit(tier)
+    alt 已超额(used>=limit 且 limit!=-1)
+        QG-->>RT: {ok:false, remaining:0, resetAt, upgradeUrl}
+        RT-->>U: 403 QUOTA_EXCEEDED + 升级引导(置灰)
+    else 余量充足
+        QG->>DB: user.update(usagePublish increment 1)
+        QG->>UL: create({userId, action:'publish', tier, periodStart})
+        QG-->>RT: {ok:true, remaining, resetAt}
+        RT->>DB: 真正创建 Product
+        RT-->>U: 200 发布成功
+    end
+
+%% ===== 4.2 超管角色管理（双层校验 + 审计） =====
+sequenceDiagram
+    autonumber
+    actor A as super_admin
+    participant RM as RoleManager.tsx
+    participant MW as Middleware
+    participant RT as POST /api/admin/system/role
+    participant DB as Prisma/Postgres
+    participant AL as PiiAuditLog
+
+    A->>RM: 选择用户→目标角色→提交
+    RM->>MW: fetch('/api/admin/system/role', POST)
+    MW->>MW: verifyTokenEdge + SUPER_ADMIN_PATHS 命中
+    alt role != super_admin
+        MW-->>RM: 403 Forbidden: super admin only
+    else super_admin
+        MW->>RT: 透传(注入 x-user-id/role)
+        RT->>RT: checkAdmin() 仅 super_admin
+        alt 目标=super_admin 且已达 SUPER_ADMIN_MAX
+            RT-->>RM: 409 SUPER_ADMIN_CAP
+        else 通过
+            RT->>DB: user.update({role})
+            RT->>AL: writePiiAuditLog(actorId,targetUserId,field:'role',action:'role_change')
+            RT-->>RM: 200 {success:true}
+            RM-->>A: 列表提示「操作已留痕」
+        end
+    end
+
+%% ===== 4.3 邮件双轨路由（业务零改动） =====
+sequenceDiagram
+    autonumber
+    participant S as sendTemplateEmail
+    participant R as EmailRouter.selectProviderForUser
+    participant U as User(收件人)
+    participant P as EmailProvider
+    participant DB as EmailSendLog
+
+    S->>R: selectProviderForUser(user)
+    R->>U: 读 country / preferredLanguage
+    alt 国内(zh-CN 且 country∈CN/空且 locale=zh)
+        R-->>S: AliyunDirectMailProvider(备案后生效,否则降级 console)
+    else 其他
+        R-->>S: ResendProvider(无 key 降级 console)
+    end
+    S->>P: provider.send({to,subject,html,text})
+    S->>DB: create({userId,type,provider:name,recipientHash:sha256,status})
+    S-->>S: 返回 {ok,error?}

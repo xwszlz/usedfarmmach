@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
+import { useTr } from "@/lib/i18n-tr";
   Plus, Trash2, Save, LogIn, LogOut, Package, Eye, BarChart3,
   ExternalLink, Loader2, Image as ImageIcon
 } from "lucide-react";
@@ -42,7 +43,7 @@ interface BoothData {
 }
 
 export default function BoothManageClient({ locale }: BoothManageClientProps) {
-  const isZh = locale === "zh";
+  const tr = useTr();
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [booth, setBooth] = useState<BoothData | null>(null);
@@ -126,7 +127,7 @@ export default function BoothManageClient({ locale }: BoothManageClientProps) {
   }
 
   async function deleteShowcaseItem(id: string) {
-    if (!confirm(isZh ? "确定删除该展品？" : "Delete this item?")) return;
+    if (!confirm(tr("确定删除该展品？"))) return;
     try {
       await fetch(`/api/expo/booth/manage?id=${id}`, { method: "DELETE" });
       await fetchBooth();
@@ -150,15 +151,15 @@ export default function BoothManageClient({ locale }: BoothManageClientProps) {
       <div className="mx-auto max-w-md px-4 py-20">
         <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-800 dark:bg-gray-900">
           <h1 className="mb-2 text-center text-2xl font-bold text-gray-900 dark:text-white">
-            {isZh ? "自助展台管理" : "Booth Management"}
+            {tr("自助展台管理")}
           </h1>
           <p className="mb-6 text-center text-sm text-gray-500">
-            {isZh ? "登录后管理您的展品和询盘" : "Login to manage your booth"}
+            {tr("登录后管理您的展品和询盘")}
           </p>
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                {isZh ? "账号" : "Username"}
+                {tr("账号")}
               </label>
               <input
                 type="text"
@@ -170,7 +171,7 @@ export default function BoothManageClient({ locale }: BoothManageClientProps) {
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                {isZh ? "密码" : "Password"}
+                {tr("密码")}
               </label>
               <input
                 type="password"
@@ -188,11 +189,11 @@ export default function BoothManageClient({ locale }: BoothManageClientProps) {
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-3 font-semibold text-white transition hover:bg-green-700"
             >
               <LogIn className="h-4 w-4" />
-              {isZh ? "登录" : "Login"}
+              {tr("登录")}
             </button>
           </form>
           <p className="mt-4 text-center text-xs text-gray-400">
-            {isZh ? "新入驻品牌请联系管理员获取账号" : "Contact admin for account"}
+            {tr("新入驻品牌请联系管理员获取账号")}
           </p>
         </div>
       </div>
@@ -206,7 +207,7 @@ export default function BoothManageClient({ locale }: BoothManageClientProps) {
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {isZh ? "我的自助展台" : "My Self-Expo Booth"}
+            {tr("我的自助展台")}
           </h1>
           <p className="text-sm text-gray-500">
             {user.companyName} · {user.username}
@@ -219,7 +220,7 @@ export default function BoothManageClient({ locale }: BoothManageClientProps) {
               className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300"
             >
               <Eye className="h-4 w-4" />
-              {isZh ? "查看展台" : "View Booth"}
+              {tr("查看展台")}
             </Link>
           )}
           <button
@@ -227,7 +228,7 @@ export default function BoothManageClient({ locale }: BoothManageClientProps) {
             className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300"
           >
             <LogOut className="h-4 w-4" />
-            {isZh ? "退出" : "Logout"}
+            {tr("退出")}
           </button>
         </div>
       </div>
@@ -237,17 +238,17 @@ export default function BoothManageClient({ locale }: BoothManageClientProps) {
         <div className="mb-8 grid grid-cols-3 gap-4">
           <div className="rounded-xl border border-gray-200 p-4 text-center dark:border-gray-800">
             <div className="text-2xl font-bold text-green-600">{booth.showcaseItems.length}</div>
-            <div className="text-sm text-gray-500">{isZh ? "展品数" : "Items"}</div>
+            <div className="text-sm text-gray-500">{tr("展品数")}</div>
           </div>
           <div className="rounded-xl border border-gray-200 p-4 text-center dark:border-gray-800">
             <div className="text-2xl font-bold text-blue-600">
               {booth.showcaseItems.reduce((s, i) => s + i.viewCount, 0)}
             </div>
-            <div className="text-sm text-gray-500">{isZh ? "总浏览" : "Views"}</div>
+            <div className="text-sm text-gray-500">{tr("总浏览")}</div>
           </div>
           <div className="rounded-xl border border-gray-200 p-4 text-center dark:border-gray-800">
             <div className="text-2xl font-bold text-purple-600">{booth._count.expoInquiries}</div>
-            <div className="text-sm text-gray-500">{isZh ? "询盘" : "Inquiries"}</div>
+            <div className="text-sm text-gray-500">{tr("询盘")}</div>
           </div>
         </div>
       )}
@@ -257,14 +258,14 @@ export default function BoothManageClient({ locale }: BoothManageClientProps) {
         <>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {isZh ? "展品管理" : "Item Management"}
+              {tr("展品管理")}
             </h2>
             <button
               onClick={() => setEditForm({ isNew: true, deviceType: "", brand: "", model: "" })}
               className="inline-flex items-center gap-1 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700"
             >
               <Plus className="h-4 w-4" />
-              {isZh ? "添加展品" : "Add Item"}
+              {tr("添加展品")}
             </button>
           </div>
 
@@ -273,7 +274,7 @@ export default function BoothManageClient({ locale }: BoothManageClientProps) {
             {booth.showcaseItems.length === 0 && (
               <div className="rounded-xl border border-dashed border-gray-300 p-8 text-center text-gray-500 dark:border-gray-700">
                 <Package className="mx-auto mb-2 h-10 w-10" />
-                <p>{isZh ? "还没有展品，点击上方添加" : "No items yet. Click Add Item."}</p>
+                <p>{tr("还没有展品，点击上方添加")}</p>
               </div>
             )}
 
@@ -291,7 +292,7 @@ export default function BoothManageClient({ locale }: BoothManageClientProps) {
                       <span className={`rounded px-2 py-0.5 text-xs ${
                         item.status === "published" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
                       }`}>
-                        {item.status === "published" ? (isZh ? "已发布" : "Published") : (isZh ? "草稿" : "Draft")}
+                        {item.status === "published" ? (tr("已发布")) : (tr("草稿"))}
                       </span>
                     </div>
                     {item.year && (
@@ -313,7 +314,7 @@ export default function BoothManageClient({ locale }: BoothManageClientProps) {
                       }}
                       className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm transition hover:bg-gray-50 dark:border-gray-600"
                     >
-                      {isZh ? "编辑" : "Edit"}
+                      {tr("编辑")}
                     </button>
                     <button
                       onClick={() => deleteShowcaseItem(item.id)}
@@ -331,45 +332,45 @@ export default function BoothManageClient({ locale }: BoothManageClientProps) {
           {editForm.deviceType !== undefined && (
             <div className="mt-8 rounded-xl border border-green-200 bg-green-50 p-6 dark:border-green-900 dark:bg-green-950">
               <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-                {editForm.isNew ? (isZh ? "添加展品" : "Add Item") : (isZh ? "编辑展品" : "Edit Item")}
+                {editForm.isNew ? (tr("添加展品")) : (tr("编辑展品"))}
               </h3>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {isZh ? "设备类型 *" : "Device Type *"}
+                    {tr("设备类型 *")}
                   </label>
                   <input
                     value={editForm.deviceType || ""}
                     onChange={(e) => setEditForm({ ...editForm, deviceType: e.target.value })}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800"
-                    placeholder={isZh ? "例如：拖拉机" : "e.g. Tractor"}
+                    placeholder={tr("例如：拖拉机")}
                   />
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {isZh ? "品牌" : "Brand"}
+                    {tr("品牌")}
                   </label>
                   <input
                     value={editForm.brand || ""}
                     onChange={(e) => setEditForm({ ...editForm, brand: e.target.value })}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800"
-                    placeholder={isZh ? "例如：东方红" : "e.g. YTO"}
+                    placeholder={tr("例如：东方红")}
                   />
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {isZh ? "型号" : "Model"}
+                    {tr("型号")}
                   </label>
                   <input
                     value={editForm.model || ""}
                     onChange={(e) => setEditForm({ ...editForm, model: e.target.value })}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800"
-                    placeholder={isZh ? "例如：LX2004" : "e.g. LX2004"}
+                    placeholder={tr("例如：LX2004")}
                   />
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {isZh ? "年份" : "Year"}
+                    {tr("年份")}
                   </label>
                   <input
                     type="number"
@@ -381,7 +382,7 @@ export default function BoothManageClient({ locale }: BoothManageClientProps) {
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {isZh ? "工作小时" : "Hours"}
+                    {tr("工作小时")}
                   </label>
                   <input
                     type="number"
@@ -393,7 +394,7 @@ export default function BoothManageClient({ locale }: BoothManageClientProps) {
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {isZh ? "价格 (¥)" : "Price (CNY)"}
+                    {tr("价格 (¥)")}
                   </label>
                   <input
                     type="number"
@@ -405,14 +406,14 @@ export default function BoothManageClient({ locale }: BoothManageClientProps) {
                 </div>
                 <div className="sm:col-span-2">
                   <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {isZh ? "描述" : "Description"}
+                    {tr("描述")}
                   </label>
                   <textarea
                     value={editForm.description || ""}
                     onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                     rows={3}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800"
-                    placeholder={isZh ? "机器状况、备注信息..." : "Machine condition, notes..."}
+                    placeholder={tr("机器状况、备注信息...")}
                   />
                 </div>
               </div>
@@ -421,7 +422,7 @@ export default function BoothManageClient({ locale }: BoothManageClientProps) {
                   onClick={() => setEditForm({})}
                   className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50 dark:border-gray-600"
                 >
-                  {isZh ? "取消" : "Cancel"}
+                  {tr("取消")}
                 </button>
                 <button
                   onClick={() => saveShowcaseItem(editForm)}
@@ -429,7 +430,7 @@ export default function BoothManageClient({ locale }: BoothManageClientProps) {
                   className="inline-flex items-center gap-1 rounded-lg bg-green-600 px-6 py-2 text-sm font-medium text-white transition hover:bg-green-700 disabled:opacity-50"
                 >
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                  {isZh ? "保存" : "Save"}
+                  {tr("保存")}
                 </button>
               </div>
             </div>
@@ -442,17 +443,17 @@ export default function BoothManageClient({ locale }: BoothManageClientProps) {
         <div className="rounded-xl border border-dashed border-gray-300 p-12 text-center dark:border-gray-700">
           <Package className="mx-auto mb-3 h-12 w-12 text-gray-400" />
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            {isZh ? "您还没有自助展台" : "No Booth Yet"}
+            {tr("您还没有自助展台")}
           </h2>
           <p className="mt-2 text-gray-500">
-            {isZh ? "请先通过品牌入驻提交申请，审核通过后即可管理展台" : "Submit a brand claim to get started."}
+            {tr("请先通过品牌入驻提交申请，审核通过后即可管理展台")}
           </p>
           <Link
             href={`/${locale}/expo/brand-claim`}
             className="mt-4 inline-flex items-center gap-1 rounded-lg bg-green-600 px-6 py-3 font-medium text-white transition hover:bg-green-700"
           >
             <ExternalLink className="h-4 w-4" />
-            {isZh ? "去入驻" : "Claim Booth"}
+            {tr("去入驻")}
           </Link>
         </div>
       )}

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Calendar, MapPin, Clock, Play, ChevronRight, Users, Image as ImageIcon } from "lucide-react";
+import { useTr } from "@/lib/i18n-tr";
 
 interface FieldExpoPreviewProps {
   locale: string;
@@ -32,6 +33,7 @@ const DEMO_SCHEDULE = [
 export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
   const t = useTranslations();
   const isZh = locale === "zh";
+  const tr = useTr();
 
   // Countdown calculation (target: 2026-07-29)
   const target = new Date("2026-07-29T09:00:00+08:00");
@@ -49,10 +51,10 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
             {/* Left: Text */}
             <div>
               <p className="mb-2 inline-block rounded-full bg-white/20 px-3 py-1 text-sm font-medium">
-                🔥 {isZh ? "第28届 · 真机下地 · 实效演示" : "28th Edition · Live Demos"}
+                🔥 {tr("第28届 · 真机下地 · 实效演示")}
               </p>
               <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
-                {isZh ? "河北农机新机具新技术推广演示会" : "Hebei Agricultural Machinery Expo"}
+                {tr("河北农机新机具新技术推广演示会")}
               </h1>
               <div className="mt-6 space-y-3 text-lg text-green-100">
                 <div className="flex items-center gap-2">
@@ -61,11 +63,11 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
                 </div>
                 <div className="flex items-center gap-2">
                   <MapPin className="h-5 w-5" />
-                  <span>{isZh ? "石家庄·元氏县·神雕农机" : "Yuanshi County, Shijiazhuang"}</span>
+                  <span>{tr("石家庄·元氏县·神雕农机")}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Users className="h-5 w-5" />
-                  <span>{isZh ? "~20家国内头部农机品牌" : "~20 Top Domestic Brands"}</span>
+                  <span>{tr("~20家国内头部农机品牌")}</span>
                 </div>
               </div>
 
@@ -86,13 +88,13 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
                   className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 font-semibold text-green-700 shadow-lg transition hover:bg-green-50"
                 >
                   <Play className="h-5 w-5" />
-                  {isZh ? "查看演示时间" : "Demo Schedule"}
+                  {tr("查看演示时间")}
                 </a>
                 <Link
                   href={`/${locale}/expo/china-brands`}
                   className="inline-flex items-center gap-2 rounded-lg border border-white/30 bg-white/10 px-6 py-3 font-semibold text-white backdrop-blur-sm transition hover:bg-white/20"
                 >
-                  {isZh ? "浏览品牌库" : "Browse Brands"}
+                  {tr("浏览品牌库")}
                   <ChevronRight className="h-4 w-4" />
                 </Link>
               </div>
@@ -107,7 +109,7 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
                   className="h-auto w-full max-w-md rounded-lg shadow-2xl"
                 />
                 <p className="mt-3 text-center text-base font-medium text-white">
-                  🔥 {isZh ? "线下实地演示 · 5场作业" : "5 Live Field Demos"}
+                  🔥 {tr("线下实地演示 · 5场作业")}
                 </p>
               </div>
             </div>
@@ -121,19 +123,19 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
           <div className="grid grid-cols-2 gap-4 text-center sm:grid-cols-4">
             <div>
               <div className="text-2xl font-bold text-green-600">~20</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">{isZh ? "参展品牌" : "Exhibitors"}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">{tr("参展品牌")}</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-green-600">5+</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">{isZh ? "品类覆盖" : "Categories"}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">{tr("品类覆盖")}</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-green-600">5场</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">{isZh ? "实地作业演示" : "Live Demos"}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">{tr("实地作业演示")}</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-green-600">全天</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">{isZh ? "线上直播" : "Live Streaming"}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">{tr("线上直播")}</div>
             </div>
           </div>
         </div>
@@ -143,15 +145,15 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
       <section className="py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h2 className="mb-8 text-2xl font-bold text-gray-900 dark:text-white">
-            {isZh ? "参展企业 & 展品预告" : "Exhibitors & Products"}
+            {tr("参展企业 & 展品预告")}
           </h2>
           <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
             <table className="w-full text-left text-sm">
               <thead className="bg-gray-50 dark:bg-gray-900">
                 <tr>
-                  <th className="px-4 py-3 font-semibold text-gray-700 dark:text-gray-300">{isZh ? "企业" : "Company"}</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700 dark:text-gray-300">{isZh ? "核心展品" : "Products"}</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700 dark:text-gray-300">{isZh ? "品类" : "Category"}</th>
+                  <th className="px-4 py-3 font-semibold text-gray-700 dark:text-gray-300">{tr("企业")}</th>
+                  <th className="px-4 py-3 font-semibold text-gray-700 dark:text-gray-300">{tr("核心展品")}</th>
+                  <th className="px-4 py-3 font-semibold text-gray-700 dark:text-gray-300">{tr("品类")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
@@ -167,7 +169,7 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
                       )}
                       {e.inLib && (
                         <span className="ml-2 inline-block rounded bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900 dark:text-blue-200">
-                          {isZh ? "品牌库已收录" : "In Brand Lib"}
+                          {tr("品牌库已收录")}
                         </span>
                       )}
                     </td>
@@ -183,7 +185,7 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
             </table>
           </div>
           <p className="mt-4 text-sm text-gray-500">
-            {isZh ? "以上为已公布参展企业（仅限来源·北方农业机械公众号），更多企业请以现场为准。" : "List based on published information. More exhibitors at the event."}
+            {tr("以上为已公布参展企业（仅限来源·北方农业机械公众号），更多企业请以现场为准。")}
           </p>
         </div>
       </section>
@@ -192,7 +194,7 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
       <section id="demo-schedule" className="bg-gray-50 py-12 dark:bg-gray-900">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h2 className="mb-8 text-2xl font-bold text-gray-900 dark:text-white">
-            {isZh ? "实地作业演示时间表" : "Live Demo Schedule"}
+            {tr("实地作业演示时间表")}
           </h2>
           <div className="space-y-3">
             {DEMO_SCHEDULE.map((s, i) => (
@@ -214,14 +216,14 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
       <section className="py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h2 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white">
-            {isZh ? "神雕农机 · 平台实力" : "Platform Strength"}
+            {tr("神雕农机 · 平台实力")}
           </h2>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             {[
-              { num: "309", label: isZh ? "品牌收录" : "Brands" },
-              { num: "618", label: isZh ? "配件入库" : "Parts" },
-              { num: "14", label: isZh ? "品类手册" : "Manuals" },
-              { num: "8", label: isZh ? "语种覆盖" : "Languages" },
+              { num: "309", label: tr("品牌收录") },
+              { num: "618", label: tr("配件入库") },
+              { num: "14", label: tr("品类手册") },
+              { num: "8", label: tr("语种覆盖") },
             ].map((stat, i) => (
               <div key={i} className="rounded-xl border border-gray-200 p-4 text-center dark:border-gray-800">
                 <div className="text-3xl font-bold text-green-600">{stat.num}</div>
@@ -236,23 +238,23 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
       <section className="bg-gradient-to-br from-green-700 to-green-500 py-12 text-white">
         <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
           <h2 className="text-2xl font-bold">
-            {isZh ? "品牌入库，全球可见" : "Brands In, World Sees"}
+            {tr("品牌入库，全球可见")}
           </h2>
           <p className="mt-3 text-green-100">
-            {isZh ? "入驻神雕农机，参与永不落幕的农机世界展会" : "Join Shendiao for the Always-On Expo"}
+            {tr("入驻神雕农机，参与永不落幕的农机世界展会")}
           </p>
           <div className="mt-6 flex justify-center gap-4">
             <Link
               href={`/${locale}/expo`}
               className="rounded-lg bg-white px-8 py-3 font-semibold text-green-700 shadow-lg transition hover:bg-green-50"
             >
-              {isZh ? "进入世界农机博览会" : "Enter World Expo"}
+              {tr("进入世界农机博览会")}
             </Link>
             <Link
               href={`/${locale}/expo/booth`}
               className="rounded-lg border border-white/30 bg-white/10 px-8 py-3 font-semibold backdrop-blur-sm transition hover:bg-white/20"
             >
-              {isZh ? "开通自助展台" : "Open Self-Expo Booth"}
+              {tr("开通自助展台")}
             </Link>
           </div>
         </div>

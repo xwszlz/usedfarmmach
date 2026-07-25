@@ -31,6 +31,13 @@ model User {
   lastLoginAt           DateTime?
   membershipExpiresAt   DateTime?
   membershipTier        String               @default("free")
+  /// P1 额度：当前自然月用量窗口起点（惰性重置判定依据）
+  usagePeriodStart     DateTime?
+  /// P1 各动作月度独立计数器（互不挤占：发布/询盘/AI估值/查看联系方式）
+  usagePublish         Int                  @default(0)
+  usageInquiry        Int                  @default(0)
+  usageAiValuation    Int                  @default(0)
+  usageViewContact     Int                  @default(0)
   username              String?              @unique
   resetToken            String?
   resetTokenExpires     DateTime?
@@ -114,6 +121,19 @@ model EmailSendLog {
   @@index([userId, createdAt])
   @@index([type, createdAt])
   @@index([recipientHash, createdAt])
+}
+
+/// P1 额度消费流水（独立于积分账本 CreditTransaction，红线解耦：额度消费只写 UsageLog）
+model UsageLog {
+  id          String   @id @default(cuid())
+  userId      String // 消费动作所属用户
+  action      String // publish | inquiry | aiValuation | viewContact
+  tier        String // 触发时的会员等级（快照）
+  periodStart DateTime // 所属自然月起点
+  createdAt   DateTime @default(now())
+
+  @@index([userId, periodStart])
+  @@index([action, periodStart])
 }
 
 model Brand {
@@ -906,7 +926,9 @@ model Auction {
   askingPrice        Float
   bargainNo          String              @unique
   announcementNo     String?
+  announcementHtml   String?             @db.Text
   contractTemplateNo String?
+  contractHtml       String?             @db.Text
   evaluationPrice    Float?
   knownFlaws         String?
   minParticipants    Int                 @default(3)

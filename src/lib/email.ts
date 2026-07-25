@@ -19,6 +19,7 @@ import {
   TencentSesProvider,
   type EmailProvider,
 } from "./email/provider";
+import { selectProviderForUser } from "./email/routing";
 import {
   renderVerifyEmail,
   renderResetPassword,
@@ -187,7 +188,18 @@ async function sendTemplateEmail(
       break;
   }
 
-  const selected = selectProvider();
+  // P1-c C1：按收件人属地路由（国内→国内通道；其余→Resend）。
+  // 业务调用方零改动；匿名/无 userId 场景回退全局 selectProvider()。
+  let selected = selectProvider();
+  if (opts.userId) {
+    const recipient = await prisma.user.findUnique({
+      where: { id: opts.userId },
+      select: { country: true, preferredLanguage: true },
+    });
+    if (recipient) {
+      selected = selectProviderForUser(recipient);
+    }
+  }
   const providerName = selected.name;
   const recipientHash = sha256Email(opts.to);
   const type = TYPE_MAP[template];

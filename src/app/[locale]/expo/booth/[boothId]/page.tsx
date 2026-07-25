@@ -11,8 +11,9 @@ export default async function BoothDetailPage({
 }) {
   const { locale, boothId } = await params;
 
-  const booth = await prisma.booth.findUnique({
-    where: { id: boothId },
+  // 支持两种入参：booth.id（地图/卖家/认领链接）或 brand.expoSlug（品牌馆卡片链接）
+  const booth = await prisma.booth.findFirst({
+    where: { OR: [{ id: boothId }, { brand: { expoSlug: boothId } }] },
     include: {
       merchant: {
         select: { id: true, username: true, companyName: true, phone: true, email: true, country: true },
