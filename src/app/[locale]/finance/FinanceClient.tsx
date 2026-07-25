@@ -200,6 +200,7 @@ function ApplicationModal({
 }) {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<string>("");
+  const tr = useTr();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

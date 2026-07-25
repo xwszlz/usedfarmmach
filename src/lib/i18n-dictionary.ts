@@ -4,14 +4,1577 @@
 import type { I18nEntry } from "./i18n-types";
 
 export const I18N_DICT: Record<string, I18nEntry> = {
-  "zh-CN": {
-    "en": "en-US"
+  "报价已提交！卖家将审阅您的报价并通过平台回复。": {
+    "en": "Offer submitted! Seller will review and respond."
   },
-  "🚜": {
-    "en": "🚜"
+  "报价失败，请先登录": {
+    "en": "Offer failed, please login first"
   },
-  "zh": {
-    "en": "en"
+  "提交失败，请先登录": {
+    "en": "Failed, please login first"
+  },
+  "已接受报价，交易达成！": {
+    "en": "Offer accepted! Deal made!"
+  },
+  "操作失败": {
+    "en": "Action failed",
+    "ru": "Действие не выполнено",
+    "es": "Error de acción",
+    "pt": "Falha na ação",
+    "ar": "فشل الإجراء",
+    "fr": "Échec de l'action",
+    "hi": "क्रिया विफल"
+  },
+  "已拒绝该报价": {
+    "en": "Offer rejected"
+  },
+  "已接受卖家还价，交易达成！": {
+    "en": "Accepted seller's quote! Deal made!"
+  },
+  "还价已发送给买家": {
+    "en": "Quote sent to buyers"
+  },
+  "已保存最低接受价（仅您可见）": {
+    "en": "Floor price saved (private)"
+  },
+  "公告": {
+    "en": "Notice",
+    "ru": "Уведомление",
+    "es": "Aviso",
+    "pt": "Aviso",
+    "ar": "إشعار",
+    "fr": "Avis",
+    "hi": "सूचना"
+  },
+  "成交价": {
+    "en": "Deal Price",
+    "ru": "Цена сделки",
+    "es": "Precio de venta",
+    "pt": "Preço do negócio",
+    "ar": "سعر البيع",
+    "fr": "Prix de vente",
+    "hi": "सौदा मूल्य"
+  },
+  "卖家要价": {
+    "en": "Asking Price",
+    "ru": "Запрашиваемая цена продавца",
+    "es": "Precio pedido del vendedor",
+    "pt": "Preço pedido do vendedor",
+    "ar": "السعر المطلوب من البائع",
+    "fr": "Prix demandé par le vendeur",
+    "hi": "विक्रेता का मांग मूल्य"
+  },
+  "平台自营": {
+    "en": "Platform",
+    "ru": "Платформа",
+    "es": "Plataforma",
+    "pt": "Plataforma",
+    "ar": "المنصة",
+    "fr": "Plateforme",
+    "hi": "प्लेटफ़ॉर्म"
+  },
+  "车辆信息": {
+    "en": "Vehicle Info",
+    "ru": "Информация о технике",
+    "es": "Información del vehículo",
+    "pt": "Informações do veículo",
+    "ar": "معلومات المركبة",
+    "fr": "Infos véhicule",
+    "hi": "वाहन जानकारी"
+  },
+  "品牌型号": {
+    "en": "Model",
+    "ru": "Марка и модель",
+    "es": "Marca y modelo",
+    "pt": "Marca e modelo",
+    "ar": "العلامة والموديل",
+    "fr": "Marque et modèle",
+    "hi": "ब्रांड और मॉडल"
+  },
+  "常州爱科 MF3404": {
+    "en": "Changzhou AGCO MF3404"
+  },
+  "车牌号": {
+    "en": "Plate"
+  },
+  "最大马力": {
+    "en": "Max Power"
+  },
+  "匹": {
+    "en": "HP"
+  },
+  "出厂日期": {
+    "en": "Mfg Date"
+  },
+  "驱动形式": {
+    "en": "Drive"
+  },
+  "排放标准": {
+    "en": "Emission"
+  },
+  "国三": {
+    "en": "China III"
+  },
+  "发动机品牌": {
+    "en": "Engine"
+  },
+  "爱科动力": {
+    "en": "AGCO Power"
+  },
+  "参考评估价": {
+    "en": "Evaluation Price",
+    "ru": "Оценочная цена",
+    "es": "Precio de evaluación",
+    "pt": "Preço de avaliação",
+    "ar": "سعر التقييم",
+    "fr": "Prix d'évaluation",
+    "hi": "मूल्यांकन मूल्य"
+  },
+  "评估基准日：2025年8月 · 仅供参考": {
+    "en": "Evaluation date: Aug 2025 · reference only"
+  },
+  "权属文件已上传": {
+    "en": "Title Documents Uploaded",
+    "ru": "Документы о праве собственности загружены",
+    "es": "Documentos de título cargados",
+    "pt": "Documentos de título enviados",
+    "ar": "تم رفع وثائق الملكية",
+    "fr": "Documents de titre téléversés",
+    "hi": "स्वामित्व दस्तावेज़ अपलोड"
+  },
+  "来源合同等权属证明可预约现场查验": {
+    "en": "Source contract & title docs available for on-site inspection"
+  },
+  "已知瑕疵": {
+    "en": "Known Flaws",
+    "ru": "Известные недостатки",
+    "es": "Defectos conocidos",
+    "pt": "Defeitos conhecidos",
+    "ar": "عيوب معروفة",
+    "fr": "Défauts connus",
+    "hi": "ज्ञात खामियां"
+  },
+  "发动机工作时长": {
+    "en": "Engine Hours",
+    "ru": "Моточасы двигателя",
+    "es": "Horas de motor",
+    "pt": "Horas do motor",
+    "ar": "ساعات المحرك",
+    "fr": "Heures moteur",
+    "hi": "इंजन घंटे"
+  },
+  "小时": {
+    "en": "h"
+  },
+  "询价公告全文": {
+    "en": "Full Inquiry Announcement",
+    "ru": "Полное объявление запроса",
+    "es": "Anuncio completo de consulta",
+    "pt": "Anúncio completo de consulta",
+    "ar": "نص إشعار الاستفسار الكامل",
+    "fr": "Annonce complète de la demande",
+    "hi": "पूर्ण पूछताछ घोषणा"
+  },
+  "买卖合同模板预览": {
+    "en": "Sales Contract Preview",
+    "ru": "Предпросмотр договора купли-продажи",
+    "es": "Vista previa del contrato",
+    "pt": "Prévia do contrato",
+    "ar": "معاينة عقد البيع",
+    "fr": "Aperçu du contrat",
+    "hi": "बिक्री अनुबंध पूर्वावलोकन"
+  },
+  "权属与过户告知": {
+    "en": "Title & Transfer",
+    "ru": "Право собственности и передача",
+    "es": "Título y transferencia",
+    "pt": "Título e transferência",
+    "ar": "الملكية والنقل",
+    "fr": "Titre et transfert",
+    "hi": "स्वामित्व और हस्तांतरण"
+  },
+  "卖方如实披露标的物权属状况：本标的暂无农机登记证书，仅有江苏金融租赁购买合同，权属文件不完整。卖方不协助办理过户手续。": {
+    "en": "Seller truthfully discloses title status: this unit has no registration certificate; only a Jiangsu Financial Leasing purchase contract is available. Seller does not assist with transfer."
+  },
+  "买方已充分知悉标的物权属文件不全的现状，自愿承担因此可能导致的过户风险。卖方已如实披露权属状况，不存在隐瞒或虚假陈述。买方不得以权属文件不全为由要求解除合同或要求卖方赔偿。": {
+    "en": "Buyer acknowledges incomplete title documents and voluntarily assumes transfer risks. Seller has truthfully disclosed title status without concealment or misrepresentation. Buyer may not cancel or claim for incomplete title documents."
+  },
+  "提交您的报价": {
+    "en": "Submit Your Offer",
+    "ru": "Отправить ваше предложение",
+    "es": "Envíe su oferta",
+    "pt": "Envie sua proposta",
+    "ar": "أرسل عرضك",
+    "fr": "Envoyez votre offre",
+    "hi": "अपना ऑफर जमा करें"
+  },
+  "请输入您的心理价位，卖家将审阅后决定是否接受。您的报价对其他买家不可见。": {
+    "en": "Enter your price. The seller will review and respond. Your offer is private."
+  },
+  "询价须知": {
+    "en": "Inquiry Notice",
+    "ru": "Информация о запросе",
+    "es": "Aviso de consulta",
+    "pt": "Aviso de consulta",
+    "ar": "إشعار الاستفسار",
+    "fr": "Avis de demande",
+    "hi": "पूछताछ सूचना"
+  },
+  "本功能为在线询价/报价，不是拍卖。": {
+    "en": "This is an online inquiry/quote, not an auction."
+  },
+  "卖家可接受或拒绝任何报价，无需说明理由。": {
+    "en": "Seller may accept or reject any offer."
+  },
+  "报价相互不可见，不存在竞价。": {
+    "en": "Offers are private — no bidding competition."
+  },
+  "建议先预约看车，实地查验后再报价。": {
+    "en": "We recommend inspecting the equipment before offering."
+  },
+  "卖家还价": {
+    "en": "Seller's Counter-Offer",
+    "ru": "Встречное предложение продавца",
+    "es": "Contraoferta del vendedor",
+    "pt": "Contraproposta do vendedor",
+    "ar": "عرض البائع المضاد",
+    "fr": "Contre-offre du vendeur",
+    "hi": "विक्रेता का काउंटर-ऑफर"
+  },
+  "接受此还价": {
+    "en": "Accept this quote",
+    "ru": "Принять это предложение",
+    "es": "Aceptar esta oferta",
+    "pt": "Aceitar esta proposta",
+    "ar": "اقبل هذا العرض",
+    "fr": "Accepter cette offre",
+    "hi": "इस ऑफर को स्वीकार करें"
+  },
+  "输入您的报价金额": {
+    "en": "Enter your offer amount",
+    "ru": "Введите сумму предложения",
+    "es": "Ingrese el monto de su oferta",
+    "pt": "Digite o valor da proposta",
+    "ar": "أدخل مبلغ عرضك",
+    "fr": "Entrez le montant de votre offre",
+    "hi": "अपनी ऑफर राशि दर्ज करें"
+  },
+  "提交报价": {
+    "en": "Submit Offer",
+    "ru": "Отправить предложение",
+    "es": "Enviar oferta",
+    "pt": "Enviar proposta",
+    "ar": "إرسال عرض",
+    "fr": "Envoyer l'offre",
+    "hi": "ऑफर जमा करें"
+  },
+  "预约看车": {
+    "en": "Book Inspection",
+    "ru": "Запись на осмотр",
+    "es": "Reservar inspección",
+    "pt": "Agendar inspeção",
+    "ar": "حجز معاينة",
+    "fr": "Réserver une inspection",
+    "hi": "निरीक्षण बुक करें"
+  },
+  "关于保证金": {
+    "en": "About Deposit"
+  },
+  "本平台不强制收取保证金。如卖家要求缴纳诚意金，由买卖双方自行约定金额和支付方式，平台不代收、不验证、不托管。": {
+    "en": "The platform does not require deposits. Any earnest money is agreed between buyer and seller directly — the platform does not collect, verify, or hold funds."
+  },
+  "卖家工作台：给出还价，或设置内部最低接受价": {
+    "en": "Seller tools: send a counter-offer or set your private floor price"
+  },
+  "向买家还价": {
+    "en": "Counter-offer to buyers",
+    "ru": "Встречное предложение покупателям",
+    "es": "Contraoferta a compradores",
+    "pt": "Contraproposta aos compradores",
+    "ar": "عرض مضاد للمشترين",
+    "fr": "Contre-offre aux acheteurs",
+    "hi": "खरीदारों को काउंटर-ऑफर"
+  },
+  "还价金额": {
+    "en": "Counter price",
+    "ru": "Сумма встречного предложения",
+    "es": "Monto de contraoferta",
+    "pt": "Valor da contraproposta",
+    "ar": "القيمة المضادة",
+    "fr": "Montant de la contre-offre",
+    "hi": "काउंटर मूल्य"
+  },
+  "发送还价": {
+    "en": "Send"
+  },
+  "还价留言（选填）": {
+    "en": "Message (optional)",
+    "ru": "Сообщение (необязательно)",
+    "es": "Mensaje (opcional)",
+    "pt": "Mensagem (opcional)",
+    "ar": "رسالة (اختياري)",
+    "fr": "Message (optionnel)",
+    "hi": "संदेश (वैकल्पिक)"
+  },
+  "内部最低接受价（仅您可见，不向买家展示）": {
+    "en": "Internal floor price (private)",
+    "ru": "Внутренняя мин. цена (только для вас)",
+    "es": "Precio mínimo interno (privado)",
+    "pt": "Preço mínimo interno (privado)",
+    "ar": "الحد الأدنى الداخلي (خاص)",
+    "fr": "Prix plancher interne (privé)",
+    "hi": "आंतरिक न्यूनतम मूल्य (निजी)"
+  },
+  "最低接受价": {
+    "en": "Min accept price",
+    "ru": "Минимальная приемлемая цена",
+    "es": "Precio mínimo aceptable",
+    "pt": "Preço mínimo aceitável",
+    "ar": "الحد الأدنى للقبول",
+    "fr": "Prix minimum accepté",
+    "hi": "न्यूनतम स्वीकृत मूल्य"
+  },
+  "保存": {
+    "en": "Save",
+    "ru": "Сохранить",
+    "es": "Guardar",
+    "pt": "Salvar",
+    "ar": "حفظ",
+    "fr": "Enregistrer",
+    "hi": "सहेजें"
+  },
+  "当前最低接受价": {
+    "en": "Current floor"
+  },
+  "交易已达成": {
+    "en": "Deal Made"
+  },
+  "付款截止倒计时": {
+    "en": "Payment Deadline"
+  },
+  "截止时间": {
+    "en": "Deadline"
+  },
+  "买卖合同": {
+    "en": "Sales Contract"
+  },
+  "合同编号": {
+    "en": "Contract No."
+  },
+  "查看完整合同条款": {
+    "en": "View full contract terms"
+  },
+  "交付与过户": {
+    "en": "Delivery & Transfer"
+  },
+  "看货满意后，双方协商交付安排。大额交易建议通过担保支付保障资金安全。": {
+    "en": "After inspection, both parties agree on delivery. For large deals, use escrow payment for fund safety."
+  },
+  "权属保证": {
+    "en": "Title Guarantee"
+  },
+  "卖方应如实披露标的物权属状况。对明知或应知而未披露的重大瑕疵，卖方依法承担责任。": {
+    "en": "Seller must truthfully disclose title status. Seller remains liable for known but undisclosed defects."
+  },
+  "该询价已关闭": {
+    "en": "This inquiry is closed"
+  },
+  "交易风险提示": {
+    "en": "Risk Disclosure"
+  },
+  "设备现状说明": {
+    "en": "Equipment Condition"
+  },
+  "标的物按实物现状交付，建议报价前实地查验。": {
+    "en": "Sold as-is. Inspect before offering."
+  },
+  "对明知或应知而未披露的重大瑕疵，卖方仍依法承担责任。平台仅提供信息展示与增值服务，不收取交易服务费、不碰支付。": {
+    "en": "Seller remains liable for known but undisclosed defects. Platform provides information display and value-added services only — no transaction fees, no payment handling."
+  },
+  "收到的报价": {
+    "en": "Received Offers"
+  },
+  "报价仅您可见，买家之间无法看到彼此报价": {
+    "en": "Offers visible only to you"
+  },
+  "匿名用户": {
+    "en": "Anonymous"
+  },
+  "已成交": {
+    "en": "Sold",
+    "ru": "Продано",
+    "es": "Vendido",
+    "pt": "Vendido",
+    "ar": "تم البيع",
+    "fr": "Vendu",
+    "hi": "बिका"
+  },
+  "已拒绝": {
+    "en": "Rejected",
+    "ru": "Отклонено",
+    "es": "Rechazado",
+    "pt": "Rejeitado",
+    "ar": "مرفوض",
+    "fr": "Rejeté",
+    "hi": "अस्वीकृत"
+  },
+  "待处理": {
+    "en": "pending"
+  },
+  "接受": {
+    "en": "Accept"
+  },
+  "拒绝": {
+    "en": "Reject"
+  },
+  "我的报价记录": {
+    "en": "My Offer History"
+  },
+  "待卖家回复": {
+    "en": "Pending"
+  },
+  "您的报价仅卖家可见，其他买家无法查看。": {
+    "en": "Your offer is visible only to the seller."
+  },
+  "查看询价规则与交易保障": {
+    "en": "View inquiry rules & guarantees"
+  },
+  "请填写姓名和手机号": {
+    "en": "Please fill in name and phone"
+  },
+  "请确认已知瑕疵和风险自担": {
+    "en": "Please confirm flaws and risks"
+  },
+  "请先阅读并确认询价公告": {
+    "en": "Please read and confirm the announcement"
+  },
+  "提交失败": {
+    "en": "Failed"
+  },
+  "网络错误，请重试": {
+    "en": "Network error"
+  },
+  "凭证上传失败": {
+    "en": "Upload failed"
+  },
+  "文件上传失败": {
+    "en": "Upload failed"
+  },
+  "上传失败，请重试": {
+    "en": "Upload failed"
+  },
+  "询价报名 · 验车预约": {
+    "en": "Inquiry Registration"
+  },
+  "诚意金（如需）": {
+    "en": "Earnest Money (if applicable)"
+  },
+  "报名完成": {
+    "en": "Registration Complete"
+  },
+  "公告信息": {
+    "en": "Announcement Info"
+  },
+  "公告编号": {
+    "en": "Notice No.",
+    "ru": "№ уведомления",
+    "es": "N.º de aviso",
+    "pt": "N.º do aviso",
+    "ar": "رقم الإشعار",
+    "fr": "N° d'avis",
+    "hi": "सूचना सं."
+  },
+  "标的物": {
+    "en": "Item"
+  },
+  "参考要价": {
+    "en": "Asking Price"
+  },
+  "参考加价": {
+    "en": "Reference Increment"
+  },
+  "（仅参考）": {
+    "en": " (ref only)"
+  },
+  "建议诚意金": {
+    "en": "Suggested Earnest"
+  },
+  "询价时间": {
+    "en": "Inquiry Time"
+  },
+  "已知瑕疵告知": {
+    "en": "Known Flaws"
+  },
+  "我已知晓上述瑕疵，愿意按现状参与询价": {
+    "en": "I acknowledge the above flaws"
+  },
+  "姓名": {
+    "en": "Name"
+  },
+  "请输入姓名": {
+    "en": "Enter your name"
+  },
+  "手机号": {
+    "en": "Phone"
+  },
+  "请输入手机号": {
+    "en": "Enter your phone"
+  },
+  "期望验车日期": {
+    "en": "Preferred Inspection Date"
+  },
+  "询价公告摘要": {
+    "en": "Announcement Summary"
+  },
+  "收起": {
+    "en": "Collapse"
+  },
+  "展开全文": {
+    "en": "Expand"
+  },
+  "标的物：麦赛福格森MF3404农用拖拉机": {
+    "en": "Item: Massey Ferguson MF3404 Tractor"
+  },
+  "参考评估价：¥850,000（评估基准日2025年8月，仅供参考）": {
+    "en": "Evaluation: ¥850,000 (Aug 2025, reference only)"
+  },
+  "询价时间：2026年7月25日10:00": {
+    "en": "Inquiry Date: July 25, 2026 10:00"
+  },
+  "付款截止：2026年7月27日23:59": {
+    "en": "Payment Deadline: July 27, 2026 23:59"
+  },
+  "已知瑕疵：缺少前配重及后悬挂": {
+    "en": "Known Flaws: Missing front weight & rear hitch"
+  },
+  "出售方通过合法渠道取得标的物，确认为合法所有权人。标的按现状交付，建议实地查验后报价。": {
+    "en": "Seller acquired the item through legal channels and confirms legal title. Sold as-is; inspect before offering."
+  },
+  "完整公告请在询价详情页查看": {
+    "en": "Full announcement available on the inquiry detail page"
+  },
+  "我已阅读询价公告，了解标的物状况和交易规则": {
+    "en": "I have read the announcement and understand the terms"
+  },
+  "我已阅读公告，知悉标的物以现状交付，风险自担。": {
+    "en": "I have read the announcement and accept the item as-is."
+  },
+  "提交中...": {
+    "en": "Submitting..."
+  },
+  "提交报名": {
+    "en": "Submit Registration"
+  },
+  "报名提交成功！": {
+    "en": "Registration submitted!"
+  },
+  "请缴纳保证金后上传转账凭证": {
+    "en": "Please pay deposit and upload proof"
+  },
+  "诚意金说明（双方自行约定）": {
+    "en": "Earnest Money (Optional, by Agreement)"
+  },
+  "建议金额": {
+    "en": "Suggested Amount"
+  },
+  "（可协商）": {
+    "en": "(negotiable)"
+  },
+  "诚意金由买卖双方自行约定，平台不代收、不验证、不托管": {
+    "en": "Earnest money agreed between buyer and seller; platform does not handle funds"
+  },
+  "如约定诚意金，请线下银行转账至卖方指定账户": {
+    "en": "If agreed, bank transfer to seller's account"
+  },
+  "转账完成后截图保存": {
+    "en": "Take screenshot after transfer"
+  },
+  "点击下方按钮上传转账凭证（仅通知卖家）": {
+    "en": "Click button below to upload proof (notifies seller)"
+  },
+  "重要提示：诚意金非保证金。是否需要诚意金由买卖双方自行约定。平台不介入资金往来。": {
+    "en": "Important: This is not a mandatory deposit. Platform does not handle funds."
+  },
+  "凭证已上传": {
+    "en": "Proof uploaded"
+  },
+  "点击上传诚意金转账截图（如适用）": {
+    "en": "Click to upload transfer screenshot (if applicable)"
+  },
+  "请先登录后再上传诚意金凭证。您也可以联系卖家线下确认。": {
+    "en": "Please login first to upload earnest money proof."
+  },
+  "稍后上传，先完成报名": {
+    "en": "Upload later, finish registration"
+  },
+  "报名完成！": {
+    "en": "Registration Complete!"
+  },
+  "关闭": {
+    "en": "Close",
+    "ru": "Закрыть",
+    "es": "Cerrar",
+    "pt": "Fechar",
+    "ar": "إغلاق",
+    "fr": "Fermer",
+    "hi": "बंद करें"
+  },
+  "登录后即可发起在线询价与报价": {
+    "en": "Sign in to start an online inquiry"
+  },
+  "登录": {
+    "en": "Login",
+    "ru": "Войти",
+    "es": "Iniciar sesión",
+    "pt": "Entrar",
+    "ar": "تسجيل الدخول",
+    "fr": "Connexion",
+    "hi": "लॉग इन"
+  },
+  "在线询价": {
+    "en": "Price Inquiry"
+  },
+  "询价中": {
+    "en": "Open",
+    "ru": "Открыт",
+    "es": "Abierta",
+    "pt": "Aberta",
+    "ar": "مفتوح",
+    "fr": "Ouverte",
+    "hi": "खुला"
+  },
+  "首页": {
+    "en": "Home",
+    "ru": "Главная",
+    "es": "Inicio",
+    "pt": "Início",
+    "ar": "الرئيسية",
+    "fr": "Accueil",
+    "hi": "होम"
+  },
+  "AI农机工程师认证": {
+    "en": "AI Engineer Certification"
+  },
+  "AI农机工程师认证体系": {
+    "en": "AI Agricultural Machinery Engineer Certification"
+  },
+  "全球首个农机AI操控认证体系，涵盖AI编程、人机协同、多机调度、数据决策等八维技能，五级认证从AI学徒到首席操控师，证书绑定平台派单权限。": {
+    "en": "The world's first agricultural machinery AI control certification system, covering 8-dimensional skills including AI programming, human-machine collaboration, multi-machine scheduling, and data-driven decision making. 5-level certification from AI Apprentice to Chief Controller, with certificates linked to platform dispatch authority."
+  },
+  "AI编程": {
+    "en": "AI Programming"
+  },
+  "农机AI任务编程与参数调优": {
+    "en": "Agricultural machinery AI task programming and parameter tuning"
+  },
+  "人机协同": {
+    "en": "Human-Machine Collaboration"
+  },
+  "人机协同作业策略与应急接管": {
+    "en": "Human-machine collaboration strategies and emergency takeover"
+  },
+  "多机调度": {
+    "en": "Multi-Machine Scheduling"
+  },
+  "多台农机协同调度与路径优化": {
+    "en": "Multi-machine coordination and path optimization"
+  },
+  "数据决策": {
+    "en": "Data-Driven Decision Making"
+  },
+  "作业数据分析与决策优化": {
+    "en": "Operational data analysis and decision optimization"
+  },
+  "传统操控": {
+    "en": "Traditional Operation"
+  },
+  "农机基础操控与田间作业": {
+    "en": "Basic machinery operation and field work"
+  },
+  "安全规范": {
+    "en": "Safety Standards"
+  },
+  "农机安全操作规范与风险评估": {
+    "en": "Machinery safety protocols and risk assessment"
+  },
+  "维护保养": {
+    "en": "Maintenance"
+  },
+  "农机日常维护与故障排除": {
+    "en": "Daily maintenance and troubleshooting"
+  },
+  "应急处理": {
+    "en": "Emergency Response"
+  },
+  "紧急情况处理与应急预案": {
+    "en": "Emergency handling and contingency planning"
+  },
+  "线下服务网络": {
+    "en": "Service Network"
+  },
+  "全国省级服务中心+县域服务网点，提供设备检测、维修、评估、交易等线下服务": {
+    "en": "Provincial service centers and county-level service points across China"
+  },
+  "服务网点": {
+    "en": "Centers"
+  },
+  "覆盖省份": {
+    "en": "Provinces"
+  },
+  "省级中心": {
+    "en": "Provincial"
+  },
+  "县域网点": {
+    "en": "County"
+  },
+  "搜索省份、城市、网点名称...": {
+    "en": "Search province, city, center..."
+  },
+  "服务网点数据暂时无法加载，请稍后重试": {
+    "en": "Service center data is temporarily unavailable. Please try again later."
+  },
+  "服务网点正在建设中，敬请期待": {
+    "en": "Service centers are being set up. Stay tuned."
+  },
+  "如需线下服务，请拨打客服热线：400-888-XXXX": {
+    "en": "For offline service, call: 400-888-XXXX"
+  },
+  "浏览设备": {
+    "en": "Browse"
+  },
+  "查看设备参数、图片、评估报告、风险告知，全面了解设备现状": {
+    "en": "Review specs, photos, appraisal, and risk disclosures"
+  },
+  "实地查验设备状况，确认设备信息无误后再报价": {
+    "en": "Inspect equipment in person before making an offer"
+  },
+  "输入您的心理价位，一对一提交给卖家。报价相互不可见": {
+    "en": "Submit your price privately to the seller. Offers are not visible to others"
+  },
+  "卖家回复": {
+    "en": "Seller Response"
+  },
+  "卖家审阅后可接受、拒绝。卖方可接受或拒绝任何报价": {
+    "en": "Seller reviews and accepts or rejects. Seller may accept or reject any offer"
+  },
+  "成交交付": {
+    "en": "Deal & Delivery"
+  },
+  "确认成交后，签署买卖合同，线下交接设备与全套法律文件": {
+    "en": "Sign contract, arrange delivery with full legal documents"
+  },
+  "资金安全": {
+    "en": "Fund Safety"
+  },
+  "平台不代收代付任何资金。买卖双方直接交易，资金直达。保证金由双方自行约定，平台不介入": {
+    "en": "No escrow — direct buyer-seller transactions. Deposits agreed between parties, platform does not handle funds"
+  },
+  "信息透明": {
+    "en": "Transparency"
+  },
+  "设备现状、已知瑕疵、评估报告、法律文件全部公开公示。卖方对故意隐瞒的重大瑕疵依法承担责任": {
+    "en": "Full disclosure of condition, defects, appraisal, and legal docs. Seller liable for concealed defects"
+  },
+  "法律保障": {
+    "en": "Legal Protection"
+  },
+  "附江苏金融租赁购买合同等现有权属文件。因标的物暂无农机登记证书，过户存在障碍，卖方不协助办理过户手续。买方应在交易前自行了解过户可行性并自担风险。": {
+    "en": "Jiangsu Financial Leasing purchase contract and available title documents provided. Transfer assistance not available due to missing registration certificate. Buyer assumes transfer risks."
+  },
+  "权责对等": {
+    "en": "Fair Liability"
+  },
+  "买卖双方违约责任对等。卖方无法交付须赔偿，买方逾期付款同样承担责任": {
+    "en": "Mutual liability. Seller liable for non-delivery, buyer liable for late payment"
+  },
+  "本平台提供的是在线询价/报价服务，不是拍卖。卖家有权接受或拒绝任何报价，无需说明理由": {
+    "en": "This is an online inquiry/quote service, not an auction. Seller may accept or reject any offer without explanation"
+  },
+  "报价相互不可见，不存在公开竞价。买家之间无法看到彼此的报价": {
+    "en": "Offers are private — buyers cannot see each other's offers. No public bidding"
+  },
+  "部分设备通过租赁渠道取得，权属文件可能存在不完整的情形。卖方如实披露权属状况，不协助办理过户手续，买方应自行了解过户可行性并自担风险。": {
+    "en": "Some equipment acquired via leasing. Title documents may be incomplete. Seller discloses title status truthfully and does not assist with transfer. Buyer assumes transfer risks."
+  },
+  "设备可能存在零部件缺失（如前配重、后悬挂等），详情页已公示。建议实地验机后再报价": {
+    "en": "Equipment may have missing parts (disclosed on listing). In-person inspection recommended"
+  },
+  "平台不设定保证金、不设定加价幅度、不设定最低启动人数。交易条款由买卖双方在合同中约定": {
+    "en": "Platform sets no deposit, no increment, no minimum participants. Terms agreed in the contract"
+  },
+  "交易为线下交付。请在签署合同前仔细阅读格式条款（特别是瑕疵告知、过户事宜、违约责任）": {
+    "en": "Delivery is offline. Review standard terms carefully (defects, transfer, liability) before signing"
+  },
+  "在线询价和拍卖有什么区别？": {
+    "en": "What's the difference between inquiry and auction?"
+  },
+  "在线询价是买家一对一提交报价、卖家决定是否成交的模式。与拍卖有本质区别：①不存在公开竞价，报价相互不可见；②卖方可接受或拒绝任何报价；③不设固定加价幅度；④不设最低启动人数；⑤平台不设定保证金。这是一种价格协商服务，不是拍卖活动。": {
+    "en": "Online inquiry lets buyers submit private offers and sellers decide whether to accept. Key differences from auctions: (1) no public bidding — offers are private; (2) seller may accept or reject any offer; (3) no fixed increment; (4) no minimum participants; (5) platform sets no deposit. This is a price negotiation service, not an auction."
+  },
+  "设备无法过户怎么办？": {
+    "en": "What if the equipment can't be transferred?"
+  },
+  "卖方如实披露标的物权属状况。本标的暂无农机登记证书，仅有江苏金融租赁购买合同，权属文件不完整。卖方不协助办理过户手续。买方应在报价前自行了解标的物能否在所在地办理过户登记及上牌使用，因无法过户或上牌导致的全部风险由买方自行承担。卖方不存在隐瞒或虚假陈述的，买方不得以权属文件不全为由要求解除合同或索赔。": {
+    "en": "Seller truthfully discloses title status. This unit has no agricultural machinery registration certificate; only a Jiangsu Financial Leasing purchase contract is available. Seller does not assist with transfer. Buyer assumes all transfer/registration risks. Buyer may not cancel or claim for incomplete title documents if seller has not concealed or misrepresented."
+  },
+  "如何确保设备质量？": {
+    "en": "How is equipment quality ensured?"
+  },
+  "卖方如实告知已知瑕疵（缺少前配重、后悬挂等），标的物按现状交付。卖方对经合理查验可发现的瑕疵不承担担保责任，但对明知或应知而未披露的重大瑕疵，以及因故意隐瞒或虚假陈述导致的损失，仍依法承担责任。买方在交付后发现隐蔽瑕疵的，应在约定期限内书面通知卖方。": {
+    "en": "Seller discloses known defects. Equipment sold as-is. Seller not liable for discoverable defects but remains liable for known but undisclosed defects or misrepresentation. Buyer should report hidden defects within the agreed period."
+  },
+  "需要交保证金吗？": {
+    "en": "Is a deposit required?"
+  },
+  "本平台不强制收取保证金。如卖家要求缴纳诚意金，由买卖双方自行约定金额和支付方式，平台不代收、不验证、不托管。这与拍卖不同——拍卖中保证金是参与竞拍的门槛，而在询价模式中，保证金（如有）仅是双方的商业安排。": {
+    "en": "The platform does not require deposits. Any earnest money is agreed between buyer and seller directly — the platform does not collect, verify, or hold funds. Unlike auctions, deposits here are a commercial arrangement between parties."
+  },
+  "成交后违约责任如何？": {
+    "en": "What about liability for breach?"
+  },
+  "买卖双方违约责任对等。买方逾期付款：保证金（如有）不予退还 + 合同解除 + 六个月内不得参与同类询价。卖方无法交付：退还已付款项 + 支付合同总价5%-10%违约金 + 赔偿实际损失。卖方权属虚假或隐瞒重大瑕疵：买方有权解除合同并要求赔偿。": {
+    "en": "Liability is mutual. Buyer late payment: deposit (if any) forfeited + contract cancelled + 6-month restriction. Seller non-delivery: full refund + 5-10% penalty + actual losses. Title fraud or concealed defects: buyer may cancel and claim damages."
+  },
+  "成交后服务费怎么收？": {
+    "en": "Are there service fees after closing?"
+  },
+  "本功能为信息发布与价格协商撮合服务，平台不收取任何交易服务费、佣金或成交手续费。会员费、AI估值费等属于增值信息服务费，与设备交易无关。买卖双方按合同约定自行完成交易及资金收付。": {
+    "en": "This feature is an information and price-inquiry matching service. The platform charges no transaction service fees, commissions, or closing fees. Membership and AI valuation fees are value-added information service fees, unrelated to equipment transactions. Buyers and sellers complete transactions and payments per their contract."
+  },
+  "询价规则与合规公示": {
+    "en": "Inquiry Rules & Compliance"
+  },
+  "透明交易 · 合规先行 · 保障双方权益": {
+    "en": "Transparent · Compliant · Protected"
+  },
+  "合规声明": {
+    "en": "Compliance Declaration"
+  },
+  "一、非拍卖声明：": {
+    "en": "1. Non-Auction Declaration: "
+  },
+  "本平台提供的「在线询价」功能不属于《中华人民共和国拍卖法》规制的拍卖活动。其核心区别在于：①不存在公开竞价（报价相互不可见）；②不存在价高者得（卖方可接受或拒绝任何报价）；③不设固定加价幅度；④不设最低启动人数；⑤平台不设定保证金。本功能为买卖双方就二手农机设备进行价格协商的交易撮合服务。": {
+    "en": "The 'Online Inquiry' feature is not an auction under the PRC Auction Law. Key distinctions: (1) no public bidding (offers are private); (2) no highest-bidder-wins (seller may accept or reject any offer); (3) no fixed increment; (4) no minimum participants; (5) platform sets no deposit. This is a price negotiation service."
+  },
+  "二、平台定位：": {
+    "en": "2. Platform Role: "
+  },
+  "平台作为信息中介和居间人，仅提供信息发布和沟通工具。平台不参与定价、不代收代付资金、不设定竞价规则、不确定成交结果、不承担交易担保责任。买卖双方应自行判断交易风险，遵守相关法律法规。": {
+    "en": "The platform serves as an information intermediary. It does not set prices, handle funds, define bidding rules, determine outcomes, or guarantee transactions. Both parties assess risks independently."
+  },
+  "三、信息披露：": {
+    "en": "3. Information Disclosure: "
+  },
+  "所有设备信息均真实披露，包括已知瑕疵、租赁取得渠道、无法过户风险等。卖方对明知或应知而未披露的重大瑕疵，以及因故意隐瞒或虚假陈述导致的损失，依法承担责任。": {
+    "en": "All equipment information is truthfully disclosed, including known defects, leasing acquisition sources, and transfer risks. Seller remains liable for known but undisclosed defects."
+  },
+  "四、权属保证：": {
+    "en": "4. Title Guarantee: "
+  },
+  "卖方如实披露标的物权属状况。因部分标的暂无农机登记证书等权属文件，过户存在障碍，卖方不协助办理过户手续。买方应在交易前自行了解过户可行性并自担风险。卖方已如实披露不存在隐瞒或虚假陈述的，买方不得以此为由要求解除合同或索赔。": {
+    "en": "Seller truthfully discloses title status. Some units lack registration certificates; transfer is obstructed. Seller does not assist with transfer. Buyer assumes transfer risks. Buyer may not cancel or claim if seller has not concealed or misrepresented."
+  },
+  "询价流程": {
+    "en": "Inquiry Process"
+  },
+  "交易保障": {
+    "en": "Transaction Guarantees"
+  },
+  "平台服务说明": {
+    "en": "Platform Services"
+  },
+  "信息撮合平台": {
+    "en": "Information Platform"
+  },
+  "平台不收取任何交易服务费": {
+    "en": "No transaction fees charged"
+  },
+  "本平台定位为农机设备信息发布与交流平台，提供信息展示、AI估值参考等增值服务。平台不参与交易撮合、不代收代付任何交易资金、不收取任何与成交相关的服务费或佣金。买卖双方自行完成交易，资金直接往来。": {
+    "en": "This platform provides equipment information display and AI valuation services. We do not facilitate transactions, handle funds, or charge transaction-based fees. Buyers and sellers transact directly."
+  },
+  "会员服务": {
+    "en": "Membership"
+  },
+  "免费 / ¥99 / ¥299 / ¥999": {
+    "en": "Free / ¥99 / ¥299 / ¥999"
+  },
+  "不同等级会员可享受不同的信息查看次数、AI估值次数等增值权益": {
+    "en": "Tiered access to listing views, AI valuations, and premium features"
+  },
+  "AI智能估值": {
+    "en": "AI Valuation"
+  },
+  "按次付费": {
+    "en": "Pay-per-use"
+  },
+  "基于设备参数、市场行情、使用年限等数据，提供参考估值报告": {
+    "en": "Data-driven valuation reports based on specs, market data, and usage"
+  },
+  "重要说明": {
+    "en": "Important Notice"
+  },
+  "平台不收取任何与交易相关的服务费、佣金或手续费。交易完全由买卖双方自行协商完成。": {
+    "en": "The platform charges no transaction-related fees. All transactions are conducted directly between buyers and sellers."
+  },
+  "平台不代收代付任何交易资金，不设资金池，不提供资金托管或担保服务。": {
+    "en": "The platform does not handle, hold, or escrow any transaction funds."
+  },
+  "保证金（如有）由买卖双方自行约定和收付，平台不设定金额、不验证凭证、不参与纠纷处理。": {
+    "en": "Any deposits are agreed and handled solely between parties. The platform does not set amounts, verify payments, or mediate disputes."
+  },
+  "会员费和AI估值费属于增值信息服务费，与交易无关，开具增值税发票。": {
+    "en": "Membership and AI valuation fees are for value-added information services, unrelated to transactions. VAT invoices provided."
+  },
+  "风险提示": {
+    "en": "Risk Warnings"
+  },
+  "格式条款特别提示": {
+    "en": "Standard Terms Notice"
+  },
+  "根据《中华人民共和国民法典》第496条，本平台特别提示您注意以下条款（完整条款详见买卖合同）：": {
+    "en": "Per PRC Civil Code Art. 496, please note the following terms (full terms in the sales contract):"
+  },
+  "瑕疵告知及免责：": {
+    "en": "Defects & Disclaimer: "
+  },
+  "标的物按现状交付。卖方对经合理查验可发现的瑕疵不承担担保责任，但对明知或应知而未披露的重大瑕疵，以及因故意隐瞒或虚假陈述导致的损失，仍依法承担责任。": {
+    "en": "Sold as-is. Seller not liable for discoverable defects but remains liable for concealed defects or misrepresentation."
+  },
+  "过户事宜：": {
+    "en": "Transfer: "
+  },
+  "因部分标的物暂无农机登记证书，过户存在障碍，卖方不协助办理过户手续。买方应在交易前自行了解过户可行性并自担风险。": {
+    "en": "Some units lack registration certificates; transfer is obstructed. Seller does not assist with transfer. Buyer assumes transfer risks."
+  },
+  "违约责任：": {
+    "en": "Liability: "
+  },
+  "买卖双方违约责任对等。卖方无法交付须退还已付款项并支付违约金；买方逾期付款保证金不予退还。": {
+    "en": "Mutual liability. Seller refunds plus penalty for non-delivery; buyer forfeits deposit for late payment."
+  },
+  "非拍卖声明：": {
+    "en": "Non-Auction: "
+  },
+  "本功能为在线询价/报价，不是拍卖。卖方可接受或拒绝任何报价。报价相互不可见。": {
+    "en": "This is an inquiry/quote service, not an auction. Seller may accept or reject any offer. Offers are private."
+  },
+  "请在签署买卖合同前仔细阅读上述条款。如有疑问，可咨询专业律师。": {
+    "en": "Please review these terms carefully before signing the contract. Consult a lawyer if needed."
+  },
+  "常见问题": {
+    "en": "FAQ"
+  },
+  "返回询价列表": {
+    "en": "Back to Listings"
+  },
+  "请先登录": {
+    "en": "Please login first",
+    "ru": "Сначала войдите",
+    "es": "Inicie sesión primero",
+    "pt": "Faça login primeiro",
+    "ar": "يرجى تسجيل الدخول أولاً",
+    "fr": "Connectez-vous d'abord",
+    "hi": "पहले लॉग इन करें"
+  },
+  "去登录": {
+    "en": "Login"
+  },
+  "总询价": {
+    "en": "Total"
+  },
+  "进行中": {
+    "en": "Active",
+    "ru": "В процессе",
+    "es": "En curso",
+    "pt": "Em andamento",
+    "ar": "قيد التنفيذ",
+    "fr": "En cours",
+    "hi": "प्रगति पर"
+  },
+  "待回复": {
+    "en": "Pending"
+  },
+  "我的询价": {
+    "en": "My Offers"
+  },
+  "浏览询价": {
+    "en": "Browse All"
+  },
+  "全部": {
+    "en": "All",
+    "ru": "Все",
+    "es": "Todos",
+    "pt": "Todos",
+    "ar": "الكل",
+    "fr": "Tous",
+    "hi": "सभी"
+  },
+  "我出价的": {
+    "en": "My Bids"
+  },
+  "我报名的": {
+    "en": "My Registrations"
+  },
+  "我发布的": {
+    "en": "My Listings"
+  },
+  "暂无询价记录": {
+    "en": "No offers yet"
+  },
+  "去询价": {
+    "en": "Start negotiating"
+  },
+  "买家": {
+    "en": "Buyer",
+    "ru": "Покупатель",
+    "es": "Comprador",
+    "pt": "Comprador",
+    "ar": "المشتري",
+    "fr": "Acheteur",
+    "hi": "खरीदार"
+  },
+  "卖家": {
+    "en": "Seller",
+    "ru": "Продавец",
+    "es": "Vendedor",
+    "pt": "Vendedor",
+    "ar": "البائع",
+    "fr": "Vendeur",
+    "hi": "विक्रेता"
+  },
+  "已报名": {
+    "en": "Registered",
+    "ru": "Зарегистрирован",
+    "es": "Inscrito",
+    "pt": "Inscrito",
+    "ar": "مسجل",
+    "fr": "Inscrit",
+    "hi": "पंजीकृत"
+  },
+  "诚意金已确认": {
+    "en": "Earnest confirmed"
+  },
+  "待上传诚意金": {
+    "en": "Earnest pending"
+  },
+  "我的报价": {
+    "en": "My Offer",
+    "ru": "Мои предложения",
+    "es": "Mis ofertas",
+    "pt": "Minhas propostas",
+    "ar": "عروضي",
+    "fr": "Mes offres",
+    "hi": "मेरे ऑफर"
+  },
+  "要价": {
+    "en": "Asking",
+    "ru": "Запрашиваемая цена",
+    "es": "Precio pedido",
+    "pt": "Preço pedido",
+    "ar": "السعر المطلوب",
+    "fr": "Prix demandé",
+    "hi": "मांग मूल्य"
+  },
+  "一对一报价，透明询价，高效成交高价值农机设备": {
+    "en": "Private offers, transparent inquiry, efficient deals"
+  },
+  "正在询价": {
+    "en": "Active"
+  },
+  "万": {
+    "en": "k"
+  },
+  "起询价": {
+    "en": "Min Price"
+  },
+  "询价规则": {
+    "en": "Rules"
+  },
+  "暂无询价商品": {
+    "en": "No bargains available"
+  },
+  "马力": {
+    "en": "HP"
+  },
+  "暂无数据": {
+    "en": "No data available"
+  },
+  "数据洞察中心": {
+    "en": "Market Insights Center"
+  },
+  "实时掌握农机市场动态，数据驱动决策": {
+    "en": "Real-time farm machinery market data for data-driven decisions"
+  },
+  "在售设备": {
+    "en": "Active Listings"
+  },
+  "本期新增": {
+    "en": "new this period"
+  },
+  "平均价格": {
+    "en": "Avg Price"
+  },
+  "已售设备": {
+    "en": "Sold Equipment"
+  },
+  "累计成交": {
+    "en": "Total sold"
+  },
+  "询价总数": {
+    "en": "Total Inquiries"
+  },
+  "价格指数走势": {
+    "en": "Price Index Trend"
+  },
+  "（基准日 2026-01-01 = 100）": {
+    "en": "(Base: Jan 2026 = 100)"
+  },
+  "环比": {
+    "en": "MoM"
+  },
+  "同比": {
+    "en": "YoY"
+  },
+  "上架趋势": {
+    "en": "Listing Trend"
+  },
+  "品类分布 TOP 10": {
+    "en": "Category Distribution TOP 10"
+  },
+  "品牌热度 TOP 10": {
+    "en": "Brand Popularity TOP 10"
+  },
+  "价格区间分布": {
+    "en": "Price Range Distribution"
+  },
+  "区域分布 TOP 10": {
+    "en": "Regional Distribution TOP 10"
+  },
+  "台": {
+    "en": "units"
+  },
+  "年份分布": {
+    "en": "Year Distribution"
+  },
+  "年份": {
+    "en": "Year",
+    "ru": "Год",
+    "es": "Año",
+    "pt": "Ano",
+    "ar": "السنة",
+    "fr": "Année",
+    "hi": "वर्ष"
+  },
+  "数量": {
+    "en": "Count"
+  },
+  "均价": {
+    "en": "Avg Price"
+  },
+  "套利榜单 TOP 10": {
+    "en": "Arbitrage Ranking TOP 10"
+  },
+  "设备": {
+    "en": "Equipment"
+  },
+  "国内价": {
+    "en": "Domestic"
+  },
+  "国外价": {
+    "en": "Foreign"
+  },
+  "价差%": {
+    "en": "Diff%"
+  },
+  "金融保险服务": {
+    "en": "Financial & Insurance Services"
+  },
+  "农机贷款、交易保险、设备租赁 — 一站式金融服务助力交易": {
+    "en": "Equipment loans, trade insurance, leasing — one-stop financial services"
+  },
+  "贷款": {
+    "en": "Loans"
+  },
+  "保险": {
+    "en": "Insurance"
+  },
+  "租赁": {
+    "en": "Leasing"
+  },
+  "暂无金融产品": {
+    "en": "No financial services available"
+  },
+  "年利率": {
+    "en": "Interest Rate"
+  },
+  "最高额度": {
+    "en": "Max Amount"
+  },
+  "最长期限": {
+    "en": "Max Term"
+  },
+  "月": {
+    "en": "mo"
+  },
+  "首付比例": {
+    "en": "Down Payment"
+  },
+  "保费率": {
+    "en": "Premium Rate"
+  },
+  "立即申请": {
+    "en": "Apply Now"
+  },
+  "申请提交成功！我们会尽快联系您。": {
+    "en": "Application submitted! We'll contact you soon."
+  },
+  "申请失败": {
+    "en": "Application failed"
+  },
+  "申请": {
+    "en": "Apply"
+  },
+  "申请人姓名 *": {
+    "en": "Applicant Name *"
+  },
+  "联系电话 *": {
+    "en": "Phone *"
+  },
+  "邮箱": {
+    "en": "Email"
+  },
+  "公司名称": {
+    "en": "Company Name"
+  },
+  "申请金额 (元) *": {
+    "en": "Amount (CNY) *"
+  },
+  "期限 (月)": {
+    "en": "Term (months)"
+  },
+  "用途说明": {
+    "en": "Purpose"
+  },
+  "申请条件": {
+    "en": "Requirements"
+  },
+  "提交申请": {
+    "en": "Submit Application"
+  },
+  "卖家工作台": {
+    "en": "Seller Workbench"
+  },
+  "管理买家对您设备的报价谈判与售前咨询": {
+    "en": "Manage buyer negotiations and pre-sales inquiries"
+  },
+  "报价谈判": {
+    "en": "Negotiations"
+  },
+  "售前咨询": {
+    "en": "Inquiries"
+  },
+  "暂无进行中的询价谈判": {
+    "en": "No active negotiations yet"
+  },
+  "买家在产品页点击「立即询价」后将自动生成谈判会话": {
+    "en": "Buyers start a negotiation from the product page"
+  },
+  "已回复": {
+    "en": "Replied"
+  },
+  "已关闭": {
+    "en": "Closed"
+  },
+  "暂无咨询记录": {
+    "en": "No inquiries yet"
+  },
+  "创立": {
+    "en": "Est."
+  },
+  "进入展位": {
+    "en": "Enter Booth"
+  },
+  "官网": {
+    "en": "Website"
+  },
+  "热销": {
+    "en": "HOT"
+  },
+  "全球标杆馆 · 主馆": {
+    "en": "Global Pavilion · Main Hall"
+  },
+  "品牌": {
+    "en": "Brand",
+    "ru": "Бренд",
+    "es": "Marca",
+    "pt": "Marca",
+    "ar": "العلامة التجارية",
+    "fr": "Marque",
+    "hi": "ब्रांड"
+  },
+  "全球标杆": {
+    "en": "Global Benchmark"
+  },
+  "农机品牌殿堂": {
+    "en": "Machinery Hall"
+  },
+  "约翰迪尔、克拉斯、凯斯、纽荷兰、芬特、麦赛弗格森——全球农机行业的技术标杆与品质参照。汇聚全球顶尖品牌，建立国际最高标准。": {
+    "en": "John Deere, CLAAS, Case IH, New Holland, Fendt, Massey Ferguson — the world's leading agricultural machinery benchmarks. Discover international standards and cutting-edge technology."
+  },
+  "国际品牌": {
+    "en": "Global Brands"
+  },
+  "旗舰·核心·精选": {
+    "en": "Flagship · Premium · Selected"
+  },
+  "标杆机型": {
+    "en": "Benchmark Models"
+  },
+  "最新技术前沿": {
+    "en": "Latest Technology"
+  },
+  "覆盖国家": {
+    "en": "Countries"
+  },
+  "欧美日主要产区": {
+    "en": "Major markets"
+  },
+  "行业年限": {
+    "en": "Years of Legacy"
+  },
+  "百年品牌传承": {
+    "en": "Heritage brands"
+  },
+  "品牌等级": {
+    "en": "Tier"
+  },
+  "产品品类": {
+    "en": "Category"
+  },
+  "品牌阵容": {
+    "en": "Brand Lineup"
+  },
+  "共": {
+    "en": ""
+  },
+  "个品牌": {
+    "en": "brands"
+  },
+  "清除筛选": {
+    "en": "Clear"
+  },
+  "暂无符合条件的品牌": {
+    "en": "No brands match your filters"
+  },
+  "尝试调整筛选条件": {
+    "en": "Try adjusting your filters"
+  },
+  "标杆机型展示": {
+    "en": "Benchmark Models"
+  },
+  "精选": {
+    "en": "Showing"
+  },
+  "台热门机型": {
+    "en": "featured models"
+  },
+  "全部展厅": {
+    "en": "All Showroom"
+  },
+  "中国制造 vs 国际标杆": {
+    "en": "Chinese vs Global Benchmark"
+  },
+  "想知道中国品牌与国际标杆的差距有多大？进入品类对比厅，横向参数对比，理性决策。": {
+    "en": "Want to see how Chinese brands compare to global benchmarks? Visit the Comparison Hall for side-by-side specs."
+  },
+  "进入品类对比厅": {
+    "en": "Comparison Hall"
+  },
+  "查看中国品牌": {
+    "en": "Chinese Brands"
+  },
+  "品类对比厅 · 功能厅": {
+    "en": "Comparison Hall · Function Hall"
+  },
+  "同品类中外品牌横向参数对比——价格、马力、性能、技术差距一目了然。理性决策，选择最适合的农机。": {
+    "en": "Side-by-side comparison of Chinese and international brands by category — price, power, performance, and technology gaps at a glance."
+  },
+  " 对比": {
+    "en": " Comparison"
+  },
+  "中国品牌": {
+    "en": "Brands"
+  },
+  "款": {
+    "en": "models"
+  },
+  "暂无中国品牌展品": {
+    "en": "No Chinese models"
+  },
+  "国际标杆": {
+    "en": "International"
+  },
+  "暂无国际品牌展品": {
+    "en": "No international models"
+  },
+  "价格对比摘要": {
+    "en": "Price Comparison Summary"
+  },
+  "中国品牌均价": {
+    "en": "Chinese Avg Price"
+  },
+  "国际品牌均价": {
+    "en": "International Avg Price"
+  },
+  "价格比": {
+    "en": "Price Ratio"
+  },
+  "找到最适合的农机": {
+    "en": "Find the Right Machinery"
+  },
+  "中国品牌解决'买得到、买得起、修得好'，国际品牌解决'极致性能、超大马力'——按需选择。": {
+    "en": "Chinese brands solve affordability and availability; international brands deliver peak performance — choose what fits your needs."
+  },
+  "中国品牌馆": {
+    "en": "China Pavilion"
+  },
+  "国际标杆馆": {
+    "en": "Global Pavilion"
+  },
+  "旗舰": {
+    "en": "Flagship"
+  },
+  "高端": {
+    "en": "High"
+  },
+  "中端": {
+    "en": "Mid"
+  },
+  "标准": {
+    "en": "Standard"
+  },
+  "中国品牌馆 · 主馆": {
+    "en": "China Pavilion · Main Hall"
+  },
+  "中国农机品牌走向世界": {
+    "en": "Chinese Farm Machinery Goes Global"
+  },
+  "42个中国农机品牌，覆盖拖拉机、收割机、播种机、植保无人机全品类。2025年中国农机出口674亿元，同比增长32.3%——中国制造正在改变全球农业装备格局。": {
+    "en": "42 Chinese agricultural machinery brands, covering tractors, harvesters, planters, and drones. China's farm machinery exports reached ¥67.4 billion in 2025, up 32.3% YoY."
+  },
+  "旗舰机型": {
+    "en": "Models"
+  },
+  "品类全覆盖": {
+    "en": "Categories"
+  },
+  "全部品牌": {
+    "en": "All"
+  },
+  "品类：": {
+    "en": "Category:"
+  },
+  "出口": {
+    "en": "Export"
+  },
+  "旗舰机型展示": {
+    "en": "Flagship Models"
+  },
+  "中国农机，全球机遇": {
+    "en": "Chinese Machinery, Global Opportunities"
+  },
+  "从展示到成交，365天不间断。让您的中国农机品牌走向世界每一个田间。": {
+    "en": "From display to deal, 365 days a year. Take your Chinese machinery brand to every field worldwide."
+  },
+  "进入线上展厅": {
+    "en": "Enter Showroom"
+  },
+  "提交失败，请稍后重试": {
+    "en": "Submission failed, please try again"
+  },
+  "网络错误": {
+    "en": "Network error"
+  },
+  "第28届 · 真机下地 · 实效演示": {
+    "en": "28th Edition · Live Demos"
+  },
+  "河北农机新机具新技术推广演示会": {
+    "en": "Hebei Agricultural Machinery Expo"
+  },
+  "石家庄·元氏县·神雕农机": {
+    "en": "Yuanshi County, Shijiazhuang"
+  },
+  "~20家国内头部农机品牌": {
+    "en": "~20 Top Domestic Brands"
+  },
+  "查看演示时间": {
+    "en": "Demo Schedule"
+  },
+  "浏览品牌库": {
+    "en": "Browse Brands"
+  },
+  "线下实地演示 · 5场作业": {
+    "en": "5 Live Field Demos"
+  },
+  "参展品牌": {
+    "en": "Exhibitors"
+  },
+  "品类覆盖": {
+    "en": "Categories"
+  },
+  "实地作业演示": {
+    "en": "Live Demos"
+  },
+  "线上直播": {
+    "en": "Live Streaming"
+  },
+  "参展企业 & 展品预告": {
+    "en": "Exhibitors & Products"
+  },
+  "企业": {
+    "en": "Company"
+  },
+  "核心展品": {
+    "en": "Products"
+  },
+  "品类": {
+    "en": "Category"
+  },
+  "品牌库已收录": {
+    "en": "In Brand Lib"
+  },
+  "以上为已公布参展企业（仅限来源·北方农业机械公众号），更多企业请以现场为准。": {
+    "en": "List based on published information. More exhibitors at the event."
+  },
+  "实地作业演示时间表": {
+    "en": "Live Demo Schedule"
+  },
+  "神雕农机 · 平台实力": {
+    "en": "Platform Strength"
+  },
+  "品牌收录": {
+    "en": "Brands"
+  },
+  "配件入库": {
+    "en": "Parts in Stock"
+  },
+  "品类手册": {
+    "en": "Manuals"
+  },
+  "语种覆盖": {
+    "en": "Languages"
+  },
+  "品牌入库，全球可见": {
+    "en": "Brands In, World Sees"
+  },
+  "入驻神雕农机，参与永不落幕的农机世界展会": {
+    "en": "Join Shendiao for the Always-On Expo"
+  },
+  "进入世界农机博览会": {
+    "en": "Enter World Expo"
+  },
+  "开通自助展台": {
+    "en": "Open Self-Expo Booth"
   },
   "免费版": {
     "en": "Free"
@@ -39,9 +1602,6 @@ export const I18N_DICT: Record<string, I18nEntry> = {
   },
   "免费开通": {
     "en": "Start Free"
-  },
-  "Pro": {
-    "en": "Pro"
   },
   "¥380/年": {
     "en": "¥380/yr"
@@ -141,15 +1701,6 @@ export const I18N_DICT: Record<string, I18nEntry> = {
   },
   "品牌已收录": {
     "en": "Brands Listed"
-  },
-  "配件入库": {
-    "en": "Parts in Stock"
-  },
-  "品类手册": {
-    "en": "Manuals"
-  },
-  "语种覆盖": {
-    "en": "Languages"
   },
   "月均询盘": {
     "en": "Avg Monthly Inquiries"
@@ -253,216 +1804,6 @@ export const I18N_DICT: Record<string, I18nEntry> = {
   "浏览展会": {
     "en": "Browse Expo"
   },
-  "暂无数据": {
-    "en": "No data available"
-  },
-  "数据洞察中心": {
-    "en": "Market Insights Center"
-  },
-  "实时掌握农机市场动态，数据驱动决策": {
-    "en": "Real-time farm machinery market data for data-driven decisions"
-  },
-  "在售设备": {
-    "en": "Active Listings"
-  },
-  "本期新增": {
-    "en": "new this period"
-  },
-  "平均价格": {
-    "en": "Avg Price"
-  },
-  "万": {
-    "en": "k"
-  },
-  "已售设备": {
-    "en": "Sold Equipment"
-  },
-  "累计成交": {
-    "en": "Total sold"
-  },
-  "询价总数": {
-    "en": "Total Inquiries"
-  },
-  "待处理": {
-    "en": "pending"
-  },
-  "价格指数走势": {
-    "en": "Price Index Trend"
-  },
-  "（基准日 2026-01-01 = 100）": {
-    "en": "(Base: Jan 2026 = 100)"
-  },
-  "环比": {
-    "en": "MoM"
-  },
-  "同比": {
-    "en": "YoY"
-  },
-  "上架趋势": {
-    "en": "Listing Trend"
-  },
-  "品类分布 TOP 10": {
-    "en": "Category Distribution TOP 10"
-  },
-  "品牌热度 TOP 10": {
-    "en": "Brand Popularity TOP 10"
-  },
-  "价格区间分布": {
-    "en": "Price Range Distribution"
-  },
-  "区域分布 TOP 10": {
-    "en": "Regional Distribution TOP 10"
-  },
-  "台": {
-    "en": "units"
-  },
-  "年份分布": {
-    "en": "Year Distribution"
-  },
-  "年份": {
-    "en": "Year",
-    "ru": "Год",
-    "es": "Año",
-    "pt": "Ano",
-    "ar": "السنة",
-    "fr": "Année",
-    "hi": "वर्ष"
-  },
-  "数量": {
-    "en": "Count"
-  },
-  "均价": {
-    "en": "Avg Price"
-  },
-  "套利榜单 TOP 10": {
-    "en": "Arbitrage Ranking TOP 10"
-  },
-  "设备": {
-    "en": "Equipment"
-  },
-  "国内价": {
-    "en": "Domestic"
-  },
-  "国外价": {
-    "en": "Foreign"
-  },
-  "价差%": {
-    "en": "Diff%"
-  },
-  "创立": {
-    "en": "Est."
-  },
-  "进入展位": {
-    "en": "Enter Booth"
-  },
-  "官网": {
-    "en": "Website"
-  },
-  "热销": {
-    "en": "HOT"
-  },
-  "全球标杆馆 · 主馆": {
-    "en": "Global Pavilion · Main Hall"
-  },
-  "品牌": {
-    "en": "Brand",
-    "ru": "Бренд",
-    "es": "Marca",
-    "pt": "Marca",
-    "ar": "العلامة التجارية",
-    "fr": "Marque",
-    "hi": "ब्रांड"
-  },
-  "全球标杆": {
-    "en": "Global Benchmark"
-  },
-  "农机品牌殿堂": {
-    "en": "Machinery Hall"
-  },
-  "约翰迪尔、克拉斯、凯斯、纽荷兰、芬特、麦赛弗格森——全球农机行业的技术标杆与品质参照。汇聚全球顶尖品牌，建立国际最高标准。": {
-    "en": "John Deere, CLAAS, Case IH, New Holland, Fendt, Massey Ferguson — the world's leading agricultural machinery benchmarks. Discover international standards and cutting-edge technology."
-  },
-  "国际品牌": {
-    "en": "Global Brands"
-  },
-  "旗舰·核心·精选": {
-    "en": "Flagship · Premium · Selected"
-  },
-  "标杆机型": {
-    "en": "Benchmark Models"
-  },
-  "最新技术前沿": {
-    "en": "Latest Technology"
-  },
-  "覆盖国家": {
-    "en": "Countries"
-  },
-  "欧美日主要产区": {
-    "en": "Major markets"
-  },
-  "行业年限": {
-    "en": "Years of Legacy"
-  },
-  "百年品牌传承": {
-    "en": "Heritage brands"
-  },
-  "品牌等级": {
-    "en": "Tier"
-  },
-  "全部": {
-    "en": "All",
-    "ru": "Все",
-    "es": "Todos",
-    "pt": "Todos",
-    "ar": "الكل",
-    "fr": "Tous",
-    "hi": "सभी"
-  },
-  "产品品类": {
-    "en": "Category"
-  },
-  "品牌阵容": {
-    "en": "Brand Lineup"
-  },
-  "共": {
-    "en": ""
-  },
-  "个品牌": {
-    "en": "brands"
-  },
-  "清除筛选": {
-    "en": "Clear"
-  },
-  "暂无符合条件的品牌": {
-    "en": "No brands match your filters"
-  },
-  "尝试调整筛选条件": {
-    "en": "Try adjusting your filters"
-  },
-  "标杆机型展示": {
-    "en": "Benchmark Models"
-  },
-  "精选": {
-    "en": "Showing"
-  },
-  "台热门机型": {
-    "en": "featured models"
-  },
-  "全部展厅": {
-    "en": "All Showroom"
-  },
-  "中国制造 vs 国际标杆": {
-    "en": "Chinese vs Global Benchmark"
-  },
-  "想知道中国品牌与国际标杆的差距有多大？进入品类对比厅，横向参数对比，理性决策。": {
-    "en": "Want to see how Chinese brands compare to global benchmarks? Visit the Comparison Hall for side-by-side specs."
-  },
-  "进入品类对比厅": {
-    "en": "Comparison Hall"
-  },
-  "查看中国品牌": {
-    "en": "Chinese Brands"
-  },
   "确定删除该展品？": {
     "en": "Delete this item?"
   },
@@ -477,15 +1818,6 @@ export const I18N_DICT: Record<string, I18nEntry> = {
   },
   "密码": {
     "en": "Password"
-  },
-  "登录": {
-    "en": "Login",
-    "ru": "Войти",
-    "es": "Iniciar sesión",
-    "pt": "Entrar",
-    "ar": "تسجيل الدخول",
-    "fr": "Connexion",
-    "hi": "लॉग इन"
   },
   "新入驻品牌请联系管理员获取账号": {
     "en": "Contact admin for account"
@@ -571,15 +1903,6 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "fr": "Annuler",
     "hi": "रद्द करें"
   },
-  "保存": {
-    "en": "Save",
-    "ru": "Сохранить",
-    "es": "Guardar",
-    "pt": "Salvar",
-    "ar": "حفظ",
-    "fr": "Enregistrer",
-    "hi": "सहेजें"
-  },
   "您还没有自助展台": {
     "en": "No Booth Yet"
   },
@@ -589,333 +1912,6 @@ export const I18N_DICT: Record<string, I18nEntry> = {
   "去入驻": {
     "en": "Claim Booth"
   },
-  "金融保险服务": {
-    "en": "Financial & Insurance Services"
-  },
-  "农机贷款、交易保险、设备租赁 — 一站式金融服务助力交易": {
-    "en": "Equipment loans, trade insurance, leasing — one-stop financial services"
-  },
-  "贷款": {
-    "en": "Loans"
-  },
-  "保险": {
-    "en": "Insurance"
-  },
-  "租赁": {
-    "en": "Leasing"
-  },
-  "暂无金融产品": {
-    "en": "No financial services available"
-  },
-  "年利率": {
-    "en": "Interest Rate"
-  },
-  "最高额度": {
-    "en": "Max Amount"
-  },
-  "最长期限": {
-    "en": "Max Term"
-  },
-  "月": {
-    "en": "mo"
-  },
-  "首付比例": {
-    "en": "Down Payment"
-  },
-  "保费率": {
-    "en": "Premium Rate"
-  },
-  "立即申请": {
-    "en": "Apply Now"
-  },
-  "申请提交成功！我们会尽快联系您。": {
-    "en": "Application submitted! We'll contact you soon."
-  },
-  "申请失败": {
-    "en": "Application failed"
-  },
-  "请先登录": {
-    "en": "Please login first",
-    "ru": "Сначала войдите",
-    "es": "Inicie sesión primero",
-    "pt": "Faça login primeiro",
-    "ar": "يرجى تسجيل الدخول أولاً",
-    "fr": "Connectez-vous d'abord",
-    "hi": "पहले लॉग इन करें"
-  },
-  "申请": {
-    "en": "Apply"
-  },
-  "关闭": {
-    "en": "Close",
-    "ru": "Закрыть",
-    "es": "Cerrar",
-    "pt": "Fechar",
-    "ar": "إغلاق",
-    "fr": "Fermer",
-    "hi": "बंद करें"
-  },
-  "申请人姓名 *": {
-    "en": "Applicant Name *"
-  },
-  "联系电话 *": {
-    "en": "Phone *"
-  },
-  "邮箱": {
-    "en": "Email"
-  },
-  "公司名称": {
-    "en": "Company Name"
-  },
-  "申请金额 (元) *": {
-    "en": "Amount (CNY) *"
-  },
-  "期限 (月)": {
-    "en": "Term (months)"
-  },
-  "用途说明": {
-    "en": "Purpose"
-  },
-  "申请条件": {
-    "en": "Requirements"
-  },
-  "提交申请": {
-    "en": "Submit Application"
-  },
-  "第28届 · 真机下地 · 实效演示": {
-    "en": "28th Edition · Live Demos"
-  },
-  "河北农机新机具新技术推广演示会": {
-    "en": "Hebei Agricultural Machinery Expo"
-  },
-  "石家庄·元氏县·神雕农机": {
-    "en": "Yuanshi County, Shijiazhuang"
-  },
-  "~20家国内头部农机品牌": {
-    "en": "~20 Top Domestic Brands"
-  },
-  "查看演示时间": {
-    "en": "Demo Schedule"
-  },
-  "浏览品牌库": {
-    "en": "Browse Brands"
-  },
-  "线下实地演示 · 5场作业": {
-    "en": "5 Live Field Demos"
-  },
-  "参展品牌": {
-    "en": "Exhibitors"
-  },
-  "品类覆盖": {
-    "en": "Categories"
-  },
-  "实地作业演示": {
-    "en": "Live Demos"
-  },
-  "线上直播": {
-    "en": "Live Streaming"
-  },
-  "参展企业 & 展品预告": {
-    "en": "Exhibitors & Products"
-  },
-  "企业": {
-    "en": "Company"
-  },
-  "核心展品": {
-    "en": "Products"
-  },
-  "品类": {
-    "en": "Category"
-  },
-  "品牌库已收录": {
-    "en": "In Brand Lib"
-  },
-  "以上为已公布参展企业（仅限来源·北方农业机械公众号），更多企业请以现场为准。": {
-    "en": "List based on published information. More exhibitors at the event."
-  },
-  "实地作业演示时间表": {
-    "en": "Live Demo Schedule"
-  },
-  "神雕农机 · 平台实力": {
-    "en": "Platform Strength"
-  },
-  "品牌收录": {
-    "en": "Brands"
-  },
-  "品牌入库，全球可见": {
-    "en": "Brands In, World Sees"
-  },
-  "入驻神雕农机，参与永不落幕的农机世界展会": {
-    "en": "Join Shendiao for the Always-On Expo"
-  },
-  "进入世界农机博览会": {
-    "en": "Enter World Expo"
-  },
-  "开通自助展台": {
-    "en": "Open Self-Expo Booth"
-  },
-  "品类对比厅 · 功能厅": {
-    "en": "Comparison Hall · Function Hall"
-  },
-  "同品类中外品牌横向参数对比——价格、马力、性能、技术差距一目了然。理性决策，选择最适合的农机。": {
-    "en": "Side-by-side comparison of Chinese and international brands by category — price, power, performance, and technology gaps at a glance."
-  },
-  " 对比": {
-    "en": " Comparison"
-  },
-  "中国品牌": {
-    "en": "Chinese Brands"
-  },
-  "款": {
-    "en": "models"
-  },
-  "暂无中国品牌展品": {
-    "en": "No Chinese models"
-  },
-  "国际标杆": {
-    "en": "International"
-  },
-  "暂无国际品牌展品": {
-    "en": "No international models"
-  },
-  "价格对比摘要": {
-    "en": "Price Comparison Summary"
-  },
-  "中国品牌均价": {
-    "en": "Chinese Avg Price"
-  },
-  "国际品牌均价": {
-    "en": "International Avg Price"
-  },
-  "价格比": {
-    "en": "Price Ratio"
-  },
-  "找到最适合的农机": {
-    "en": "Find the Right Machinery"
-  },
-  "中国品牌解决'买得到、买得起、修得好'，国际品牌解决'极致性能、超大马力'——按需选择。": {
-    "en": "Chinese brands solve affordability and availability; international brands deliver peak performance — choose what fits your needs."
-  },
-  "中国品牌馆": {
-    "en": "China Pavilion"
-  },
-  "国际标杆馆": {
-    "en": "Global Pavilion"
-  },
-  "旗舰": {
-    "en": "Flagship"
-  },
-  "高端": {
-    "en": "High"
-  },
-  "中端": {
-    "en": "Mid"
-  },
-  "标准": {
-    "en": "Standard"
-  },
-  "首页": {
-    "en": "Home",
-    "ru": "Главная",
-    "es": "Inicio",
-    "pt": "Início",
-    "ar": "الرئيسية",
-    "fr": "Accueil",
-    "hi": "होम"
-  },
-  "AI农机工程师认证": {
-    "en": "AI Engineer Certification"
-  },
-  "AI农机工程师认证体系": {
-    "en": "AI Agricultural Machinery Engineer Certification"
-  },
-  "全球首个农机AI操控认证体系，涵盖AI编程、人机协同、多机调度、数据决策等八维技能，五级认证从AI学徒到首席操控师，证书绑定平台派单权限。": {
-    "en": "The world's first agricultural machinery AI control certification system, covering 8-dimensional skills including AI programming, human-machine collaboration, multi-machine scheduling, and data-driven decision making. 5-level certification from AI Apprentice to Chief Controller, with certificates linked to platform dispatch authority."
-  },
-  "AI编程": {
-    "en": "AI Programming"
-  },
-  "农机AI任务编程与参数调优": {
-    "en": "Agricultural machinery AI task programming and parameter tuning"
-  },
-  "人机协同": {
-    "en": "Human-Machine Collaboration"
-  },
-  "人机协同作业策略与应急接管": {
-    "en": "Human-machine collaboration strategies and emergency takeover"
-  },
-  "多机调度": {
-    "en": "Multi-Machine Scheduling"
-  },
-  "多台农机协同调度与路径优化": {
-    "en": "Multi-machine coordination and path optimization"
-  },
-  "数据决策": {
-    "en": "Data-Driven Decision Making"
-  },
-  "作业数据分析与决策优化": {
-    "en": "Operational data analysis and decision optimization"
-  },
-  "传统操控": {
-    "en": "Traditional Operation"
-  },
-  "农机基础操控与田间作业": {
-    "en": "Basic machinery operation and field work"
-  },
-  "安全规范": {
-    "en": "Safety Standards"
-  },
-  "农机安全操作规范与风险评估": {
-    "en": "Machinery safety protocols and risk assessment"
-  },
-  "维护保养": {
-    "en": "Maintenance"
-  },
-  "农机日常维护与故障排除": {
-    "en": "Daily maintenance and troubleshooting"
-  },
-  "应急处理": {
-    "en": "Emergency Response"
-  },
-  "紧急情况处理与应急预案": {
-    "en": "Emergency handling and contingency planning"
-  },
-  "线下服务网络": {
-    "en": "Service Network"
-  },
-  "全国省级服务中心+县域服务网点，提供设备检测、维修、评估、交易等线下服务": {
-    "en": "Provincial service centers and county-level service points across China"
-  },
-  "服务网点": {
-    "en": "Centers"
-  },
-  "覆盖省份": {
-    "en": "Provinces"
-  },
-  "省级中心": {
-    "en": "Provincial"
-  },
-  "县域网点": {
-    "en": "County"
-  },
-  "搜索省份、城市、网点名称...": {
-    "en": "Search province, city, center..."
-  },
-  "服务网点数据暂时无法加载，请稍后重试": {
-    "en": "Service center data is temporarily unavailable. Please try again later."
-  },
-  "服务网点正在建设中，敬请期待": {
-    "en": "Service centers are being set up. Stay tuned."
-  },
-  "如需线下服务，请拨打客服热线：400-888-XXXX": {
-    "en": "For offline service, call: 400-888-XXXX"
-  },
-  "提交失败，请稍后重试": {
-    "en": "Submission failed, please try again"
-  },
-  "网络错误": {
-    "en": "Network error"
-  },
   "提交": {
     "ru": "Отправить",
     "es": "Enviar",
@@ -923,24 +1919,6 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "ar": "إرسال",
     "fr": "Envoyer",
     "hi": "जमा करें",
-    "en": ""
-  },
-  "提交报价": {
-    "ru": "Отправить предложение",
-    "es": "Enviar oferta",
-    "pt": "Enviar proposta",
-    "ar": "إرسال عرض",
-    "fr": "Envoyer l'offre",
-    "hi": "ऑफर जमा करें",
-    "en": ""
-  },
-  "提交您的报价": {
-    "ru": "Отправить ваше предложение",
-    "es": "Envíe su oferta",
-    "pt": "Envie sua proposta",
-    "ar": "أرسل عرضك",
-    "fr": "Envoyez votre offre",
-    "hi": "अपना ऑफर जमा करें",
     "en": ""
   },
   "确认": {
@@ -1060,24 +2038,6 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "hi": "स्वीकृत",
     "en": ""
   },
-  "已拒绝": {
-    "ru": "Отклонено",
-    "es": "Rechazado",
-    "pt": "Rejeitado",
-    "ar": "مرفوض",
-    "fr": "Rejeté",
-    "hi": "अस्वीकृत",
-    "en": ""
-  },
-  "进行中": {
-    "ru": "В процессе",
-    "es": "En curso",
-    "pt": "Em andamento",
-    "ar": "قيد التنفيذ",
-    "fr": "En cours",
-    "hi": "प्रगति पर",
-    "en": ""
-  },
   "已完成": {
     "ru": "Завершено",
     "es": "Completado",
@@ -1085,15 +2045,6 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "ar": "مكتمل",
     "fr": "Terminé",
     "hi": "पूर्ण",
-    "en": ""
-  },
-  "已成交": {
-    "ru": "Продано",
-    "es": "Vendido",
-    "pt": "Vendido",
-    "ar": "تم البيع",
-    "fr": "Vendu",
-    "hi": "बिका",
     "en": ""
   },
   "已取消": {
@@ -1168,15 +2119,6 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "hi": "काउंटर-ऑफर",
     "en": ""
   },
-  "卖家还价": {
-    "ru": "Встречное предложение продавца",
-    "es": "Contraoferta del vendedor",
-    "pt": "Contraproposta do vendedor",
-    "ar": "عرض البائع المضاد",
-    "fr": "Contre-offre du vendeur",
-    "hi": "विक्रेता का काउंटर-ऑफर",
-    "en": ""
-  },
   "议价": {
     "ru": "Торг",
     "es": "Negociación",
@@ -1204,60 +2146,6 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "hi": "पूछताछ",
     "en": ""
   },
-  "询价中": {
-    "ru": "Открыт",
-    "es": "Abierta",
-    "pt": "Aberta",
-    "ar": "مفتوح",
-    "fr": "Ouverte",
-    "hi": "खुला",
-    "en": ""
-  },
-  "成交价": {
-    "ru": "Цена сделки",
-    "es": "Precio de venta",
-    "pt": "Preço do negócio",
-    "ar": "سعر البيع",
-    "fr": "Prix de vente",
-    "hi": "सौदा मूल्य",
-    "en": ""
-  },
-  "要价": {
-    "ru": "Запрашиваемая цена",
-    "es": "Precio pedido",
-    "pt": "Preço pedido",
-    "ar": "السعر المطلوب",
-    "fr": "Prix demandé",
-    "hi": "मांग मूल्य",
-    "en": ""
-  },
-  "卖家要价": {
-    "ru": "Запрашиваемая цена продавца",
-    "es": "Precio pedido del vendedor",
-    "pt": "Preço pedido do vendedor",
-    "ar": "السعر المطلوب من البائع",
-    "fr": "Prix demandé par le vendeur",
-    "hi": "विक्रेता का मांग मूल्य",
-    "en": ""
-  },
-  "公告": {
-    "ru": "Уведомление",
-    "es": "Aviso",
-    "pt": "Aviso",
-    "ar": "إشعار",
-    "fr": "Avis",
-    "hi": "सूचना",
-    "en": ""
-  },
-  "公告编号": {
-    "ru": "№ уведомления",
-    "es": "N.º de aviso",
-    "pt": "N.º do aviso",
-    "ar": "رقم الإشعار",
-    "fr": "N° d'avis",
-    "hi": "सूचना सं.",
-    "en": ""
-  },
   "保证金": {
     "ru": "Залог",
     "es": "Depósito",
@@ -1265,24 +2153,6 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "ar": "وديعة",
     "fr": "Dépôt",
     "hi": "जमा राशि",
-    "en": ""
-  },
-  "预约看车": {
-    "ru": "Запись на осмотр",
-    "es": "Reservar inspección",
-    "pt": "Agendar inspeção",
-    "ar": "حجز معاينة",
-    "fr": "Réserver une inspection",
-    "hi": "निरीक्षण बुक करें",
-    "en": ""
-  },
-  "操作失败": {
-    "ru": "Действие не выполнено",
-    "es": "Error de acción",
-    "pt": "Falha na ação",
-    "ar": "فشل الإجراء",
-    "fr": "Échec de l'action",
-    "hi": "क्रिया विफल",
     "en": ""
   },
   "价格": {
@@ -1321,24 +2191,6 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "hi": "प्रकार",
     "en": ""
   },
-  "卖家": {
-    "ru": "Продавец",
-    "es": "Vendedor",
-    "pt": "Vendedor",
-    "ar": "البائع",
-    "fr": "Vendeur",
-    "hi": "विक्रेता",
-    "en": ""
-  },
-  "买家": {
-    "ru": "Покупатель",
-    "es": "Comprador",
-    "pt": "Comprador",
-    "ar": "المشتري",
-    "fr": "Acheteur",
-    "hi": "खरीदार",
-    "en": ""
-  },
   "产品": {
     "ru": "Товар",
     "es": "Producto",
@@ -1364,168 +2216,6 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "ar": "الوقت",
     "fr": "Heure",
     "hi": "समय",
-    "en": ""
-  },
-  "最低接受价": {
-    "ru": "Минимальная приемлемая цена",
-    "es": "Precio mínimo aceptable",
-    "pt": "Preço mínimo aceitável",
-    "ar": "الحد الأدنى للقبول",
-    "fr": "Prix minimum accepté",
-    "hi": "न्यूनतम स्वीकृत मूल्य",
-    "en": ""
-  },
-  "内部最低接受价（仅您可见，不向买家展示）": {
-    "ru": "Внутренняя мин. цена (только для вас)",
-    "es": "Precio mínimo interno (privado)",
-    "pt": "Preço mínimo interno (privado)",
-    "ar": "الحد الأدنى الداخلي (خاص)",
-    "fr": "Prix plancher interne (privé)",
-    "hi": "आंतरिक न्यूनतम मूल्य (निजी)",
-    "en": ""
-  },
-  "向买家还价": {
-    "ru": "Встречное предложение покупателям",
-    "es": "Contraoferta a compradores",
-    "pt": "Contraproposta aos compradores",
-    "ar": "عرض مضاد للمشترين",
-    "fr": "Contre-offre aux acheteurs",
-    "hi": "खरीदारों को काउंटर-ऑफर",
-    "en": ""
-  },
-  "还价金额": {
-    "ru": "Сумма встречного предложения",
-    "es": "Monto de contraoferta",
-    "pt": "Valor da contraproposta",
-    "ar": "القيمة المضادة",
-    "fr": "Montant de la contre-offre",
-    "hi": "काउंटर मूल्य",
-    "en": ""
-  },
-  "还价留言（选填）": {
-    "ru": "Сообщение (необязательно)",
-    "es": "Mensaje (opcional)",
-    "pt": "Mensagem (opcional)",
-    "ar": "رسالة (اختياري)",
-    "fr": "Message (optionnel)",
-    "hi": "संदेश (वैकल्पिक)",
-    "en": ""
-  },
-  "接受此还价": {
-    "ru": "Принять это предложение",
-    "es": "Aceptar esta oferta",
-    "pt": "Aceitar esta proposta",
-    "ar": "اقبل هذا العرض",
-    "fr": "Accepter cette offre",
-    "hi": "इस ऑफर को स्वीकार करें",
-    "en": ""
-  },
-  "输入您的报价金额": {
-    "ru": "Введите сумму предложения",
-    "es": "Ingrese el monto de su oferta",
-    "pt": "Digite o valor da proposta",
-    "ar": "أدخل مبلغ عرضك",
-    "fr": "Entrez le montant de votre offre",
-    "hi": "अपनी ऑफर राशि दर्ज करें",
-    "en": ""
-  },
-  "询价须知": {
-    "ru": "Информация о запросе",
-    "es": "Aviso de consulta",
-    "pt": "Aviso de consulta",
-    "ar": "إشعار الاستفسار",
-    "fr": "Avis de demande",
-    "hi": "पूछताछ सूचना",
-    "en": ""
-  },
-  "询价公告全文": {
-    "ru": "Полное объявление запроса",
-    "es": "Anuncio completo de consulta",
-    "pt": "Anúncio completo de consulta",
-    "ar": "نص إشعار الاستفسار الكامل",
-    "fr": "Annonce complète de la demande",
-    "hi": "पूर्ण पूछताछ घोषणा",
-    "en": ""
-  },
-  "买卖合同模板预览": {
-    "ru": "Предпросмотр договора купли-продажи",
-    "es": "Vista previa del contrato",
-    "pt": "Prévia do contrato",
-    "ar": "معاينة عقد البيع",
-    "fr": "Aperçu du contrat",
-    "hi": "बिक्री अनुबंध पूर्वावलोकन",
-    "en": ""
-  },
-  "权属与过户告知": {
-    "ru": "Право собственности и передача",
-    "es": "Título y transferencia",
-    "pt": "Título e transferência",
-    "ar": "الملكية والنقل",
-    "fr": "Titre et transfert",
-    "hi": "स्वामित्व और हस्तांतरण",
-    "en": ""
-  },
-  "车辆信息": {
-    "ru": "Информация о технике",
-    "es": "Información del vehículo",
-    "pt": "Informações do veículo",
-    "ar": "معلومات المركبة",
-    "fr": "Infos véhicule",
-    "hi": "वाहन जानकारी",
-    "en": ""
-  },
-  "品牌型号": {
-    "ru": "Марка и модель",
-    "es": "Marca y modelo",
-    "pt": "Marca e modelo",
-    "ar": "العلامة والموديل",
-    "fr": "Marque et modèle",
-    "hi": "ब्रांड और मॉडल",
-    "en": ""
-  },
-  "参考评估价": {
-    "ru": "Оценочная цена",
-    "es": "Precio de evaluación",
-    "pt": "Preço de avaliação",
-    "ar": "سعر التقييم",
-    "fr": "Prix d'évaluation",
-    "hi": "मूल्यांकन मूल्य",
-    "en": ""
-  },
-  "已知瑕疵": {
-    "ru": "Известные недостатки",
-    "es": "Defectos conocidos",
-    "pt": "Defeitos conhecidos",
-    "ar": "عيوب معروفة",
-    "fr": "Défauts connus",
-    "hi": "ज्ञात खामियां",
-    "en": ""
-  },
-  "发动机工作时长": {
-    "ru": "Моточасы двигателя",
-    "es": "Horas de motor",
-    "pt": "Horas do motor",
-    "ar": "ساعات المحرك",
-    "fr": "Heures moteur",
-    "hi": "इंजन घंटे",
-    "en": ""
-  },
-  "权属文件已上传": {
-    "ru": "Документы о праве собственности загружены",
-    "es": "Documentos de título cargados",
-    "pt": "Documentos de título enviados",
-    "ar": "تم رفع وثائق الملكية",
-    "fr": "Documents de titre téléversés",
-    "hi": "स्वामित्व दस्तावेज़ अपलोड",
-    "en": ""
-  },
-  "平台自营": {
-    "ru": "Платформа",
-    "es": "Plataforma",
-    "pt": "Plataforma",
-    "ar": "المنصة",
-    "fr": "Plateforme",
-    "hi": "प्लेटफ़ॉर्म",
     "en": ""
   },
   "卖出": {
@@ -1564,15 +2254,6 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "hi": "जल्द आ रहा",
     "en": ""
   },
-  "我的报价": {
-    "ru": "Мои предложения",
-    "es": "Mis ofertas",
-    "pt": "Minhas propostas",
-    "ar": "عروضي",
-    "fr": "Mes offres",
-    "hi": "मेरे ऑफर",
-    "en": ""
-  },
   "报名": {
     "ru": "Зарегистрироваться",
     "es": "Inscribirse",
@@ -1580,15 +2261,6 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "ar": "التسجيل",
     "fr": "S'inscrire",
     "hi": "पंजीकरण",
-    "en": ""
-  },
-  "已报名": {
-    "ru": "Зарегистрирован",
-    "es": "Inscrito",
-    "pt": "Inscrito",
-    "ar": "مسجل",
-    "fr": "Inscrit",
-    "hi": "पंजीकृत",
     "en": ""
   },
   "已成交 · {n} 人参与询价": {
@@ -1689,5 +2361,59 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "ar": "مستخدم",
     "fr": "Utilisateur",
     "hi": "उपयोगकर्ता"
+  },
+  "标的物：": {
+    "en": "Item:",
+    "ru": "Позиция:",
+    "es": "Artículo:",
+    "pt": "Item:",
+    "ar": "البند:",
+    "fr": "Article :",
+    "hi": "वस्तु:"
+  },
+  "参考评估价：": {
+    "en": "Evaluation:",
+    "ru": "Оценка:",
+    "es": "Evaluación:",
+    "pt": "Avaliação:",
+    "ar": "التقييم:",
+    "fr": "Évaluation :",
+    "hi": "मूल्यांकन:"
+  },
+  "询价时间：": {
+    "en": "Inquiry Time:",
+    "ru": "Время запроса:",
+    "es": "Hora de consulta:",
+    "pt": "Hora da consulta:",
+    "ar": "وقت الاستفسار:",
+    "fr": "Heure de demande :",
+    "hi": "पूछताछ समय:"
+  },
+  "付款截止：": {
+    "en": "Payment Deadline:",
+    "ru": "Срок оплаты:",
+    "es": "Fecha límite:",
+    "pt": "Prazo de pagamento:",
+    "ar": "موعد الدفع:",
+    "fr": "Échéance de paiement :",
+    "hi": "भुगतान समय सीमा:"
+  },
+  "已知瑕疵：": {
+    "en": "Known Flaws:",
+    "ru": "Известные недостатки:",
+    "es": "Defectos conocidos:",
+    "pt": "Defeitos conhecidos:",
+    "ar": "عيوب معروفة:",
+    "fr": "Défauts connus :",
+    "hi": "ज्ञात खामियां:"
+  },
+  "（评估基准日2025年8月，仅供参考）": {
+    "en": "(Aug 2025, reference only)",
+    "ru": "(авг. 2025 г., только для справки)",
+    "es": "(ago. 2025, solo referencia)",
+    "pt": "(ago. 2025, apenas referência)",
+    "ar": "(أغسطس 2025، للمرجعية فقط)",
+    "fr": "(août 2025, à titre indicatif)",
+    "hi": "(अगस्त 2025, केवल संदर्भ)"
   }
 };

@@ -2,8 +2,8 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import {
 import { useTr } from "@/lib/i18n-tr";
+import {
   Globe,
   Tractor,
   Wheat,
