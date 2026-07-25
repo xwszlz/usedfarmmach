@@ -821,5 +821,86 @@
     "sourceUsed": "पुराना",
     "sourceNew": "नया",
     "sourceShowcase": "प्रदर्शन"
+  },
+  "cn": {
+    "common": {
+      "serviceFee": "मूल्य वर्धित सूचना सेवा शुल्क",
+      "notTransactionFee": "लेन-देन शुल्क नहीं",
+      "icpDisplay": "ICP पंजीकरण संख्या: {icp}",
+      "dataLocalized": "डेटा स्थानीय रूप से संग्रहीत",
+      "complianceNote": "सभी गारंटीकृत लेन-देन केवल WeChat मिनी प्रोग्राम के माध्यम से होते हैं।",
+      "trustSeller": "विश्वसनीय विक्रेता",
+      "verified": "सत्यापित"
+    },
+    "publish": {
+      "title": "लिस्टिंग प्रकाशित करें",
+      "subtitle": "देश भर के खरीदारों तक पहुँचने के लिए मशीनरी की जानकारी भरें",
+      "basicInfo": "मूल जानकारी",
+      "brand": "ब्रांड",
+      "selectBrand": "ब्रांड चुनें",
+      "category": "श्रेणी",
+      "selectCategory": "श्रेणी चुनें",
+      "modelName": "मॉडल",
+      "year": "वर्ष",
+      "workingHours": "कार्य घंटे",
+      "priceCny": "मूल्य (CNY)",
+      "location": "स्थान",
+      "description": "विवरण",
+      "conditionCard": "वाहन स्थिति कार्ड",
+      "required": "आवश्यक",
+      "conditionCardDesc": "8 स्थिति डेटा बिंदु प्रदान करें",
+      "feeNote": "शुल्क के बारे में",
+      "feeDetail": "केवल सूचना सेवा शुल्क। प्रकाशन मुफ्त।",
+      "submit": "प्रकाशित करें",
+      "tips": "सुझाव",
+      "tip1": "स्थिति की जानकारी सटीक सुनिश्चित करें",
+      "complianceTitle": "अनुपालन सूचना",
+      "complianceDesc": "सभी धनराशि केवल WeChat मिनी प्रोग्राम के माध्यम से।"
+    },
+    "verify": {
+      "title": "स्वामित्व सत्यापन",
+      "subtitle": "समीक्षा के लिए दस्तावेज़ अपलोड करें",
+      "step1Title": "दस्तावेज़ अपलोड करें",
+      "step2Title": "प्लेटफ़ॉर्म समीक्षा",
+      "step3Title": "बैज प्राप्त करें",
+      "applyForm": "सत्यापन अनुरोध सबमिट करें",
+      "certType": "सत्यापन प्रकार",
+      "ownership": "स्वामित्व सत्यापन",
+      "identity": "पहचान सत्यापन",
+      "full": "पूर्ण सत्यापन",
+      "submit": "अनुरोध सबमिट करें"
+    },
+    "inquiry": {
+      "title": "पूछताछ केंद्र",
+      "subtitle": "खोजें → पूछताछ भेजें",
+      "seller": "विक्रेता",
+      "price": "मूल्य",
+      "location": "स्थान",
+      "sendInquiry": "पूछताछ भेजें"
+    },
+    "intel": {
+      "title": "मूल्य सूचकांक और बाजार खुफिया",
+      "subtitle": "बाजार विश्लेषण",
+      "priceIndexTitle": "मूल्य सूचकांक",
+      "marketAnalysis": "बाजार विश्लेषण",
+      "filter": "फ़िल्टर"
+    },
+    "expo": {
+      "title": "प्रदर्शनियाँ और क्षेत्रीय कार्यक्रम",
+      "subtitle": "राष्ट्रीय कार्यक्रम",
+      "all": "सभी",
+      "viewDetails": "विवरण",
+      "register": "पंजीकरण"
+    },
+    "govDashboard": {
+      "title": "सरकारी डैशबोर्ड",
+      "subtitle": "संचलन डेटा अवलोकन",
+      "totalListings": "कुल लिस्टिंग",
+      "verifiedCount": "सत्यापित",
+      "inquiryCount": "पूछताछ",
+      "status": "स्थिति",
+      "verified": "सत्यापित",
+      "pending": "लंबित"
+    }
   }
 }

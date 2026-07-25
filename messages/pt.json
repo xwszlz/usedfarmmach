@@ -821,5 +821,86 @@
     "sourceUsed": "Usado",
     "sourceNew": "Novo",
     "sourceShowcase": "Showcase"
+  },
+  "cn": {
+    "common": {
+      "serviceFee": "Taxa de serviço de informação de valor acrescentado",
+      "notTransactionFee": "Não é comissão de transação",
+      "icpDisplay": "N.º de registo ICP: {icp}",
+      "dataLocalized": "Dados armazenados localmente",
+      "complianceNote": "Todas as transações garantidas são realizadas exclusivamente através do Mini Programa WeChat.",
+      "trustSeller": "Vendedor de confiança",
+      "verified": "Verificado"
+    },
+    "publish": {
+      "title": "Publicar anúncio",
+      "subtitle": "Preencha informações da máquina para alcançar compradores nacionais",
+      "basicInfo": "Informações básicas",
+      "brand": "Marca",
+      "selectBrand": "Selecionar marca",
+      "category": "Categoria",
+      "selectCategory": "Selecionar categoria",
+      "modelName": "Modelo",
+      "year": "Ano",
+      "workingHours": "Horas de trabalho",
+      "priceCny": "Preço (CNY)",
+      "location": "Localização",
+      "description": "Descrição",
+      "conditionCard": "Cartão de estado do veículo",
+      "required": "Obrigatório",
+      "conditionCardDesc": "Forneça 8 dados de estado",
+      "feeNote": "Sobre taxas",
+      "feeDetail": "Apenas taxa de serviço de informação. Publicação gratuita.",
+      "submit": "Publicar",
+      "tips": "Dicas",
+      "tip1": "Garanta informações precisas do estado",
+      "complianceTitle": "Aviso de conformidade",
+      "complianceDesc": "Todos os fundos através do Mini Programa WeChat apenas."
+    },
+    "verify": {
+      "title": "Verificação de propriedade",
+      "subtitle": "Carregue documentos para revisão",
+      "step1Title": "Carregar documentos",
+      "step2Title": "Revisão da plataforma",
+      "step3Title": "Obter selo",
+      "applyForm": "Enviar pedido de verificação",
+      "certType": "Tipo de verificação",
+      "ownership": "Verificação de propriedade",
+      "identity": "Verificação de identidade",
+      "full": "Verificação completa",
+      "submit": "Enviar pedido"
+    },
+    "inquiry": {
+      "title": "Central de consultas",
+      "subtitle": "Descubra → Envie uma consulta",
+      "seller": "Vendedor",
+      "price": "Preço",
+      "location": "Localização",
+      "sendInquiry": "Enviar consulta"
+    },
+    "intel": {
+      "title": "Índice de preços e inteligência de mercado",
+      "subtitle": "Análise de mercado",
+      "priceIndexTitle": "Índice de preços",
+      "marketAnalysis": "Análise de mercado",
+      "filter": "Filtros"
+    },
+    "expo": {
+      "title": "Exposições e eventos de campo",
+      "subtitle": "Eventos nacionais",
+      "all": "Todos",
+      "viewDetails": "Detalhes",
+      "register": "Registrar"
+    },
+    "govDashboard": {
+      "title": "Painel governamental",
+      "subtitle": "Visão geral dos dados de circulação",
+      "totalListings": "Total de anúncios",
+      "verifiedCount": "Verificados",
+      "inquiryCount": "Consultas",
+      "status": "Estado",
+      "verified": "Verificado",
+      "pending": "Pendente"
+    }
   }
 }

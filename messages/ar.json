@@ -821,5 +821,86 @@
     "sourceUsed": "مستعمل",
     "sourceNew": "جديد",
     "sourceShowcase": "عرض"
+  },
+  "cn": {
+    "common": {
+      "serviceFee": "رسوم خدمة المعلومات ذات القيمة المضافة",
+      "notTransactionFee": "ليست رسوم معاملة",
+      "icpDisplay": "رقم تسجيل ICP: {icp}",
+      "dataLocalized": "البيانات مخزنة محلياً",
+      "complianceNote": "جميع معاملات الضمان تتم عبر برنامج WeChat المصغر فقط.",
+      "trustSeller": "بائع موثوق",
+      "verified": "تم التحقق"
+    },
+    "publish": {
+      "title": "نشر إعلان",
+      "subtitle": "املأ معلومات المعدات للوصول إلى المشترين في جميع أنحاء البلاد",
+      "basicInfo": "معلومات أساسية",
+      "brand": "العلامة التجارية",
+      "selectBrand": "اختر العلامة التجارية",
+      "category": "الفئة",
+      "selectCategory": "اختر الفئة",
+      "modelName": "الموديل",
+      "year": "السنة",
+      "workingHours": "ساعات العمل",
+      "priceCny": "السعر (CNY)",
+      "location": "الموقع",
+      "description": "الوصف",
+      "conditionCard": "بطاقة حالة المركبة",
+      "required": "مطلوب",
+      "conditionCardDesc": "تقديم 8 نقاط بيانات عن الحالة",
+      "feeNote": "حول الرسوم",
+      "feeDetail": "رسوم خدمة معلومات فقط. النشر مجاني.",
+      "submit": "نشر الإعلان",
+      "tips": "نصائح",
+      "tip1": "تأكد من دقة معلومات الحالة",
+      "complianceTitle": "إشعار الامتثال",
+      "complianceDesc": "جميع الأموال عبر WeChat Mini Program فقط."
+    },
+    "verify": {
+      "title": "التحقق من الملكية",
+      "subtitle": "رفع المستندات للتحقق",
+      "step1Title": "رفع المستندات",
+      "step2Title": "مراجعة المنصة",
+      "step3Title": "الحصول على الشارة",
+      "applyForm": "تقديم طلب التحقق",
+      "certType": "نوع التحقق",
+      "ownership": "التحقق من الملكية",
+      "identity": "التحقق من الهوية",
+      "full": "تحقق كامل",
+      "submit": "إرسال الطلب"
+    },
+    "inquiry": {
+      "title": "مركز الاستفسار",
+      "subtitle": "اكتشف ← أرسل استفساراً",
+      "seller": "البائع",
+      "price": "السعر",
+      "location": "الموقع",
+      "sendInquiry": "إرسال استفسار"
+    },
+    "intel": {
+      "title": "مؤشر الأسعار والذكاء السوقي",
+      "subtitle": "تحليل السوق",
+      "priceIndexTitle": "مؤشر الأسعار",
+      "marketAnalysis": "تحليل السوق",
+      "filter": "عوامل التصفية"
+    },
+    "expo": {
+      "title": "المعارض والفعاليات الميدانية",
+      "subtitle": "الفعاليات الوطنية",
+      "all": "الكل",
+      "viewDetails": "التفاصيل",
+      "register": "تسجيل"
+    },
+    "govDashboard": {
+      "title": "لوحة حكومية",
+      "subtitle": "نظرة عامة على بيانات التداول",
+      "totalListings": "إجمالي الإعلانات",
+      "verifiedCount": "تم التحقق",
+      "inquiryCount": "الاستفسارات",
+      "status": "الحالة",
+      "verified": "تم التحقق",
+      "pending": "قيد الانتظار"
+    }
   }
 }

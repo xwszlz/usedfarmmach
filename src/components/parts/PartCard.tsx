@@ -2,6 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { AiBadge } from "@/components/ui/ai-badge";
 import { Wrench, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { getImageUrl } from "@/lib/image-url";
@@ -44,11 +45,14 @@ export default function PartCard({ part, locale }: PartCardProps) {
         {/* Image */}
         <div className="aspect-[4/3] bg-gray-100 relative overflow-hidden">
           {part.images && part.images.length > 0 ? (
-            <img
-              src={getImageUrl(part.images[0])}
-              alt={partName}
-              className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
-            />
+            <>
+              <img
+                src={getImageUrl(part.images[0])}
+                alt={partName}
+                className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              <AiBadge position="bottom-left" />
+            </>
           ) : (
             <div className="flex items-center justify-center h-full bg-gradient-to-br from-gray-50 to-gray-100">
               <Wrench className="h-12 w-12 text-gray-300" />

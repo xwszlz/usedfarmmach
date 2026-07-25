@@ -3,29 +3,46 @@ import createMiddleware from "next-intl/middleware";
 // 注意：不能用 @/lib/auth.ts（jsonwebtoken 是 Node.js-only，middleware 是 Edge Runtime）
 import { verifyTokenEdge } from "@/lib/auth-edge";
 
-// next-intl 国际化中间件（自动检测浏览器语言）
-const intlMiddleware = createMiddleware({
-  locales: ["zh", "en", "ru", "es", "pt", "ar", "fr", "hi"],
-  defaultLocale: "zh",
-  localePrefix: "always",
-  localeDetection: true, // 根据 Accept-Language 自动切换
-});
+// ============================================================
+// SITE 判断（Edge Runtime 无法直接读 process.env 文件系统，
+// 但 Vercel Edge 支持 process.env.SITE；本地 dev 也给默认值）
+// ============================================================
+function detectSiteFromHost(host: string): "com" | "cn" {
+  if (host.includes("usedfarmmach.cn")) return "cn";
+  return "com";
+}
 
-// 需要登录的路径
+// ============================================================
+// next-intl 中间件工厂（按 SITE 动态生成 locales）
+// ============================================================
+function createIntlMiddleware(site: "com" | "cn") {
+  const configs: Record<string, { locales: string[]; defaultLocale: string }> = {
+    com: { locales: ["zh", "en", "ru", "es", "pt", "ar", "fr", "hi"], defaultLocale: "en" },
+    cn: { locales: ["zh", "en"], defaultLocale: "zh" },
+  };
+  const cfg = configs[site];
+  return createMiddleware({
+    locales: cfg.locales,
+    defaultLocale: cfg.defaultLocale,
+    localePrefix: "always",
+    localeDetection: true,
+  });
+}
+
+// ============================================================
+// 鉴权相关常量
+// ============================================================
 const PROTECTED_PATHS = [
   "/api/seller",
-  // "/api/inquiries" 已移除：允许匿名用户提交询价，route 内部仅 try 关联 buyerId
   "/api/demands",
   "/api/agents/orchestrator",
   "/seller",
   "/admin",
 ];
 
-// 仅管理员可访问（admin + super_admin）
 const ADMIN_PATHS = ["/api/admin", "/admin"];
 const ADMIN_ROLES = ["admin", "super_admin"];
 
-// 仅超级管理员可访问（super_admin 专属路径，P0 收紧 + P1 显式补全）
 const SUPER_ADMIN_PATHS = [
   "/admin/system",
   "/api/admin/role",
@@ -47,8 +64,11 @@ function getTokenFromRequest(request: NextRequest): string | null {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const host = request.headers.get("host") || "";
+  const site = detectSiteFromHost(host);
 
-  // 静态资源路径：跳过所有中间件处理（直接由 Next.js static file serving 处理）
+  // ============================================================
+  // 静态资源路径跳过（直接由 Next.js static serving 处理）
+  // ============================================================
   const STATIC_PATHS = [
     "/daily-reports/",
     "/_next/",
@@ -63,14 +83,46 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // .cn → .com 全站301跳转
-  if (host.includes("usedfarmmach.cn")) {
-    const url = new URL(request.url);
-    url.hostname = "usedfarmmach.com";
-    return NextResponse.redirect(url, 301);
+  // ============================================================
+  // 双站路由逻辑（反转旧 .cn→.com 301 跳转）
+  // ============================================================
+  if (site === "cn") {
+    // .cn 站：正常放行。可在此处加「境外用户欢迎语」而非拦截。
+    // 注意：.cn 站按 (cn) 路由分组处理，路径不变。
+  } else {
+    // .com 站：检测境内 IP → 301 跳 .cn
+    const ipCountry =
+      request.headers.get("x-vercel-ip-country") ||
+      request.headers.get("cf-ipcountry") ||
+      "";
+
+    if (ipCountry === "CN") {
+      // 已知注册类 API path：不重定向（避免破坏 JSON 响应流），
+      // 注入 x-domestic-redirect 标记后放行，由 register 路由返回 403 + 前端横幅感知。
+      const isRegisterApi =
+        pathname.startsWith("/api/") &&
+        (pathname.includes("/auth/register") ||
+          pathname.includes("/register") ||
+          pathname.includes("/api/(com)/auth"));
+
+      if (isRegisterApi) {
+        const res = NextResponse.next();
+        res.headers.set("x-domestic-redirect", "1");
+        return res;
+      }
+
+      // 其余 .com 境内访问：301 跳国内站（保留完整路径）
+      const url = new URL(request.url);
+      url.hostname = "usedfarmmach.cn";
+      const redirect = NextResponse.redirect(url, 301);
+      redirect.headers.set("x-domestic-redirect", "1");
+      return redirect;
+    }
   }
 
-  // API 路由：跳过 next-intl，只做 auth 检查
+  // ============================================================
+  // API 路由处理（先于 next-intl，避免国际化干扰 API 路径）
+  // ============================================================
   if (pathname.startsWith("/api/")) {
     const isProtected = PROTECTED_PATHS.some((p) => pathname.startsWith(p));
     if (!isProtected) {
@@ -101,7 +153,6 @@ export async function middleware(request: NextRequest) {
       );
     }
 
-    // super_admin 专属路径收紧：仅 super_admin 可进入
     const isSuperAdminPath = SUPER_ADMIN_PATHS.some((p) => pathname.startsWith(p));
     if (isSuperAdminPath && payload.role !== "super_admin") {
       return NextResponse.json(
@@ -119,7 +170,10 @@ export async function middleware(request: NextRequest) {
     });
   }
 
-  // 页面路由：先执行 next-intl 中间件（处理 locale 路由）
+  // ============================================================
+  // 页面路由：按 SITE 动态创建 next-intl 中间件
+  // ============================================================
+  const intlMiddleware = createIntlMiddleware(site);
   const intlResponse = intlMiddleware(request);
 
   // 如果 next-intl 返回了重定向，直接返回
@@ -142,7 +196,7 @@ export async function middleware(request: NextRequest) {
         { status: 401 }
       );
     }
-    const loginUrl = new URL("/zh/login", request.url);
+    const loginUrl = new URL(`/${site === "cn" ? "zh" : "en"}/login`, request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }
@@ -156,7 +210,7 @@ export async function middleware(request: NextRequest) {
         { status: 401 }
       );
     }
-    const loginUrl = new URL("/zh/login", request.url);
+    const loginUrl = new URL(`/${site === "cn" ? "zh" : "en"}/login`, request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }
@@ -170,7 +224,7 @@ export async function middleware(request: NextRequest) {
     );
   }
 
-  // super_admin 专属路径收紧：仅 super_admin 可进入
+  // super_admin 专属路径收紧
   const isSuperAdminPath = SUPER_ADMIN_PATHS.some((p) => pathname.startsWith(p));
   if (isSuperAdminPath && payload.role !== "super_admin") {
     return NextResponse.json(

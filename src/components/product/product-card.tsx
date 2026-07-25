@@ -9,6 +9,7 @@ import { ArbitrageBadge } from "./arbitrage-badge";
 import { PriceDisplay } from "./price-display";
 import { calculateArbitragePercent } from "@/lib/utils";
 import { getImageUrl, generateImageAlt } from "@/lib/image-url";
+import { AiBadge } from "@/components/ui/ai-badge";
 import type { Product } from "@/types";
 
 interface ProductCardProps {
@@ -116,26 +117,29 @@ export function ProductCard({ product, locale }: ProductCardProps) {
         {/* Image */}
         <div className="relative h-48 overflow-hidden bg-gray-100">
           {primaryImage ? (
-            <img
-              src={primaryImage}
-              alt={generateImageAlt(brandName, product.modelName, product.year, categoryName, locale, {
-                location: product.location || undefined,
-                condition: product.condition,
-              })}
-              className="h-full w-full object-cover transition-transform group-hover:scale-105"
-              loading="lazy"
-              onError={(e) => {
-                const img = e.currentTarget;
-                // 重试一次（可能是 OSS 偶发超时）
-                if (!img.dataset.retried) {
-                  img.dataset.retried = '1';
-                  img.src = primaryImage + (primaryImage.includes('?') ? '&' : '?') + '_r=' + Date.now();
-                } else {
-                  // 重试失败，显示占位图
-                  img.style.display = 'none';
-                }
-              }}
-            />
+            <>
+              <img
+                src={primaryImage}
+                alt={generateImageAlt(brandName, product.modelName, product.year, categoryName, locale, {
+                  location: product.location || undefined,
+                  condition: product.condition,
+                })}
+                className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                loading="lazy"
+                onError={(e) => {
+                  const img = e.currentTarget;
+                  // 重试一次（可能是 OSS 偶发超时）
+                  if (!img.dataset.retried) {
+                    img.dataset.retried = '1';
+                    img.src = primaryImage + (primaryImage.includes('?') ? '&' : '?') + '_r=' + Date.now();
+                  } else {
+                    // 重试失败，显示占位图
+                    img.style.display = 'none';
+                  }
+                }}
+              />
+              <AiBadge position="bottom-left" />
+            </>
           ) : (
             // 无图占位：显示品牌名+品类图标
             <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">

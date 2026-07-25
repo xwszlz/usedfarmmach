@@ -1,0 +1,73 @@
+# ============================================================
+# Dockerfile.cn — .cn 国内站阿里云部署镜像
+# 基于 Next.js standalone 输出模式
+# ============================================================
+FROM node:20-alpine AS base
+
+# 设置时区
+RUN apk add --no-cache tzdata && \
+    cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    echo "Asia/Shanghai" > /etc/timezone
+
+# ============================================================
+# 依赖安装阶段
+# ============================================================
+FROM base AS deps
+WORKDIR /app
+
+COPY package.json package-lock.json* ./
+RUN npm ci --only=production && \
+    npm cache clean --force
+
+# ============================================================
+# 构建阶段
+# ============================================================
+FROM base AS builder
+WORKDIR /app
+
+COPY package.json package-lock.json* ./
+RUN npm ci
+
+COPY . .
+
+# 设置 .cn 站点标识
+ENV SITE=cn
+ENV NEXT_PUBLIC_SITE=cn
+ENV NODE_ENV=production
+
+# Prisma 生成 + Next.js 构建（standalone 输出）
+RUN npx prisma generate
+RUN npm run build
+
+# ============================================================
+# 运行阶段
+# ============================================================
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV SITE=cn
+ENV NEXT_PUBLIC_SITE=cn
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+
+# 非 root 用户运行（安全最佳实践）
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs && \
+    mkdir -p /app/.next/cache/images && \
+    chown -R nextjs:nodejs /app
+
+# 从 builder 复制 standalone 构建产物
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+
+USER nextjs
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/zh || exit 1
+
+CMD ["node", "server.js"]

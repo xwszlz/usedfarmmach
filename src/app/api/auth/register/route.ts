@@ -4,6 +4,7 @@ import { hashPassword, signToken, ensureJwtSecret, setTokenCookie } from "@/lib/
 import { registerSchema } from "@/lib/validators";
 import { grantRegisterGiftIfNeeded } from "@/lib/credits/grant";
 import { sendVerificationEmail } from "@/lib/email-actions";
+import { isComSite } from "@/config/site";
 
 export async function POST(request: NextRequest) {
   ensureJwtSecret();
@@ -19,6 +20,18 @@ export async function POST(request: NextRequest) {
     }
 
     const { username, email, password, confirmPassword, phone, companyName, country, role, dataCrossBorderConsent } = parsed.data;
+
+    // 注册层境内排除（仅 .com 国际站生效）：境内用户（手机号 +86 或 country=CN）不允许注册 .com
+    if (isComSite() && (phone?.startsWith("+86") || country === "CN")) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "境内用户暂不支持 .com 国际站，请前往 usedfarmmach.cn",
+          code: "DOMESTIC_USER_NOT_ALLOWED",
+        },
+        { status: 403 }
+      );
+    }
 
     // 检查用户名是否已存在
     const existingUsername = await prisma.user.findUnique({ where: { username } });

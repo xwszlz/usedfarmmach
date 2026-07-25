@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Phone, Mail, MapPin, MessageSquare, Package, Play, Award, ChevronLeft, ChevronRight, X, Sparkles, TrendingUp, Globe } from "lucide-react";
 import type { BoothData } from "../types";
+import { AiBadge } from "@/components/ui/ai-badge";
 
 export default function FlagshipBooth({ booth, locale, onInquiry }: {
   booth: BoothData;
@@ -61,7 +62,10 @@ export default function FlagshipBooth({ booth, locale, onInquiry }: {
       {/* Cinematic Hero */}
       <div className="relative h-[480px] w-full overflow-hidden">
         {heroImages.length > 0 ? (
-          <img src={heroImages[heroIdx]} alt={booth.name} className="h-full w-full object-cover" />
+          <>
+            <img src={heroImages[heroIdx]} alt={booth.name} className="h-full w-full object-cover" />
+            <AiBadge />
+          </>
         ) : (
           <div className="h-full bg-gradient-to-br from-slate-800 via-blue-900 to-slate-950" />
         )}
@@ -140,8 +144,11 @@ export default function FlagshipBooth({ booth, locale, onInquiry }: {
             <div className="grid gap-6 rounded-3xl border border-white/10 bg-slate-900 p-6 sm:grid-cols-2">
               <div className="relative overflow-hidden rounded-2xl bg-slate-800">
                 {featured.images?.[0] && (
-                  <img src={featured.images[0]} alt={featured.model || ""} className="aspect-square w-full object-cover cursor-pointer"
-                    onClick={() => setLightbox(featured.images[0])} />
+                  <>
+                    <img src={featured.images[0]} alt={featured.model || ""} className="aspect-square w-full object-cover cursor-pointer"
+                      onClick={() => setLightbox(featured.images[0])} />
+                    <AiBadge position="bottom-left" />
+                  </>
                 )}
               </div>
               <div className="flex flex-col justify-center">
@@ -183,7 +190,10 @@ export default function FlagshipBooth({ booth, locale, onInquiry }: {
               >
                 <div className="relative aspect-square overflow-hidden bg-slate-800">
                   {item.images?.[0] ? (
-                    <img src={item.images[0]} alt={item.model || item.deviceType} className="h-full w-full object-cover transition group-hover:scale-110" />
+                    <>
+                      <img src={item.images[0]} alt={item.model || item.deviceType} className="h-full w-full object-cover transition group-hover:scale-110" />
+                      <AiBadge position="bottom-left" />
+                    </>
                   ) : (
                     <div className="flex h-full items-center justify-center text-slate-600"><Package className="h-10 w-10" /></div>
                   )}
