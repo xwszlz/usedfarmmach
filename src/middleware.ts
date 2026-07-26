@@ -97,15 +97,13 @@ export async function middleware(request: NextRequest) {
       "";
 
     if (ipCountry === "CN") {
-      // 已知注册类 API path：不重定向（避免破坏 JSON 响应流），
-      // 注入 x-domestic-redirect 标记后放行，由 register 路由返回 403 + 前端横幅感知。
-      const isRegisterApi =
-        pathname.startsWith("/api/") &&
-        (pathname.includes("/auth/register") ||
-          pathname.includes("/register") ||
-          pathname.includes("/api/(com)/auth"));
+      // 所有 /api/* 路径不重定向，避免 API 客户端（微信小程序 / 第三方调用 / curl）
+      // 被白名单或 redirect 限制拦截。所有 API 一律走 .com，确保数据源一致。
+      // 注：此规则覆盖了 2026-07-26 之前的"仅注册类 API 豁免"，因为注册豁免粒度太细，
+      // 小程序其他接口（/products、/inquiries、/subscribe 等）仍被 301 拦截，导致 errno:600002。
+      const isApiPath = pathname.startsWith("/api/");
 
-      if (isRegisterApi) {
+      if (isApiPath) {
         const res = NextResponse.next();
         res.headers.set("x-domestic-redirect", "1");
         return res;
