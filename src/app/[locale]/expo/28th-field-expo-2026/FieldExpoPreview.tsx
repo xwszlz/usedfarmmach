@@ -29,16 +29,16 @@ interface FieldVideo {
 }
 
 const EXHIBITORS = [
-  { name: "唐山鑫万达实业", product: "青贮饲料收获割台·智能压捆机", category: "青储机", inLib: true, brandSlug: "BR-唐山鑫万达" },
-  { name: "郑州龙丰农业机械", product: "1LFT-455液压自动调幅犁·驱播机", category: "耕地机", inLib: true, brandSlug: "BR-郑州龙丰" },
-  { name: "中机美诺科技", product: "9360C自走式饲料收获机", category: "青储机", inLib: true, brandSlug: "BR-中机美诺" },
-  { name: "西安亚澳农机", product: "旋播施肥一体机", category: "播种机", inLib: true, brandSlug: "BR-西安亚澳" },
-  { name: "河北利裕丰机械", product: "9QZ-2600B青饲料收获机", category: "青储机", inLib: true, brandSlug: "BR-河北利裕丰" },
-  { name: "宁晋县陆风制动", product: "深松联合整地机", category: "整地机械", inLib: true, brandSlug: "BR-宁晋陆风" },
-  { name: "石家庄美迪机械", product: "9QS-6000S青饲料收获机", category: "青储机", inLib: true, brandSlug: "BR-石家庄美迪" },
-  { name: "山东当康农业装备", product: "驱动耙播种机", category: "播种机", inLib: true, brandSlug: "BR-山东当康" },
-  { name: "晋州市冀丰农机", product: "雷沃4QZ-3QA2青饲料收获机", category: "青储机", inLib: true, brandSlug: "BR-晋州冀丰" },
-  { name: "河北农哈哈机械", product: "播种机·智能耕整设备", category: "播种机", inLib: true, brandSlug: "BR-河北农哈哈" },
+  { name: "唐山鑫万达实业", product: "青贮饲料收获割台·智能压捆机", category: "青储机", boothId: "cms334utv0002135i2j3ynnk0" },
+  { name: "郑州龙丰农业机械", product: "1LFT-455液压自动调幅犁·驱播机", category: "耕地机", boothId: "cms334v5f0007135imbya7sy7" },
+  { name: "中机美诺科技", product: "9360C自走式饲料收获机", category: "青储机", boothId: "cms334vc6000c135ipuah7hmc" },
+  { name: "西安亚澳农机", product: "旋播施肥一体机", category: "播种机", boothId: "cms334vix000h135iu2x9xp96" },
+  { name: "河北利裕丰机械", product: "9QZ-2600B青饲料收获机", category: "青储机", boothId: "cms334vpp000m135ifyw65vrc" },
+  { name: "宁晋县陆风制动", product: "深松联合整地机", category: "整地机械", boothId: "cms334vwh000r135i3zqwf1yy" },
+  { name: "石家庄美迪机械", product: "9QS-6000S青饲料收获机", category: "青储机", boothId: "cms334w37000w135i64f96sq9" },
+  { name: "山东当康农业装备", product: "驱动耙播种机", category: "播种机", boothId: "cms334w9v0011135it8v3pkeu" },
+  { name: "晋州市冀丰农机", product: "雷沃4QZ-3QA2青饲料收获机", category: "青储机", boothId: "cms334wgj0016135ia4acdntq" },
+  { name: "河北农哈哈机械", product: "播种机·智能耕整设备", category: "播种机", boothId: "cms334wn7001b135ihlh2hir9" },
 ];
 
 const DEMO_SCHEDULE = [
@@ -277,14 +277,14 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
                 {EXHIBITORS.map((e, i) => (
                   <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-900/50">
                     <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
-                      {e.inLib && e.brandSlug ? (
-                        <Link href={`/${locale}/expo/china-brands`} className="text-green-600 hover:underline dark:text-green-400">
+                      {e.boothId ? (
+                        <Link href={`/${locale}/expo/booth/${e.boothId}`} className="text-green-600 hover:underline dark:text-green-400">
                           {e.name}
                         </Link>
                       ) : (
                         <span>{e.name}</span>
                       )}
-                      {e.inLib && (
+                      {e.boothId && (
                         <Link
                           href={`/${locale}/expo/china-brands`}
                           className="ml-2 inline-block rounded bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-blue-700 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:hover:bg-blue-800"
