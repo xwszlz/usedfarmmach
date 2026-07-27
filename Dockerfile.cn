@@ -25,6 +25,12 @@ RUN npm ci --only=production && \
 FROM base AS builder
 WORKDIR /app
 
+# 构建期需要 DATABASE_URL（prisma client 生成 / next build 可能连库）。
+# 通过 --build-arg 从 CI 注入；运行时容器仍使用 ECS 主机 /opt/cn/.env.cn 的
+# DATABASE_URL_CN，二者作用域不同、互不冲突。
+ARG DATABASE_URL
+ENV DATABASE_URL=$DATABASE_URL
+
 COPY package.json package-lock.json* ./
 RUN npm ci
 
