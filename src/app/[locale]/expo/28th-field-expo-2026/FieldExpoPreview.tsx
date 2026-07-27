@@ -2,11 +2,30 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { Calendar, MapPin, Clock, Play, ChevronRight, Users, Image as ImageIcon } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  Clock,
+  Play,
+  ChevronRight,
+  Users,
+  Image as ImageIcon,
+  Upload,
+  Loader2,
+} from "lucide-react";
 import { useTr } from "@/lib/i18n-tr";
+import { useState, useEffect } from "react";
 
 interface FieldExpoPreviewProps {
   locale: string;
+}
+
+interface FieldVideo {
+  id: string;
+  brandName: string;
+  machineType: string;
+  url: string;
+  uploadedAt: string;
 }
 
 const EXHIBITORS = [
@@ -41,6 +60,30 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
   const diff = target.getTime() - now.getTime();
   const days = Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
   const hours = Math.max(0, Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)));
+
+  // Field videos state
+  const [videos, setVideos] = useState<FieldVideo[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchVideos = async () => {
+      try {
+        const res = await fetch("/api/field-videos/list");
+        if (res.ok) {
+          const data = await res.json();
+          const list: FieldVideo[] = (data.videos || []).slice(0, 6);
+          setVideos(list);
+        }
+      } catch (e) {
+        console.error("Failed to fetch field videos", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchVideos();
+    const interval = setInterval(fetchVideos, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950">
@@ -148,6 +191,73 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
         </div>
       </div>
 
+      {/* Demo Schedule (moved before Exhibitors) */}
+      <section id="demo-schedule" className="bg-gray-50 py-12 dark:bg-gray-900">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <h2 className="mb-8 text-2xl font-bold text-gray-900 dark:text-white">
+            {tr("实地作业演示时间表")}
+          </h2>
+          <div className="space-y-3">
+            {DEMO_SCHEDULE.map((s, i) => (
+              <div key={i} className="flex items-center gap-4 rounded-lg bg-white p-4 shadow-sm dark:bg-gray-800">
+                <div className="flex-shrink-0 rounded-lg bg-green-100 px-3 py-2 text-center dark:bg-green-900">
+                  <div className="text-sm font-bold text-green-700 dark:text-green-300">{s.time}</div>
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium text-gray-900 dark:text-white">{s.event}</div>
+                  <div className="text-sm text-gray-500">{s.machines}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Field Videos - Live Demo */}
+      <section className="border-b border-gray-200 bg-gray-50 py-12 dark:border-gray-800 dark:bg-gray-900">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{tr("现场作业视频集锦")}</h2>
+            <Link
+              href={`/${locale}/expo/field-videos`}
+              className="inline-flex items-center gap-2 rounded-lg bg-amber-400 px-5 py-2.5 font-semibold text-amber-900 shadow transition hover:bg-amber-300"
+            >
+              <Upload className="h-4 w-4" />
+              {tr("上传作业视频")}
+            </Link>
+          </div>
+          <p className="mb-6 text-sm text-gray-500">{tr("扫码上传您的现场作业视频，即刻展示在大屏上")}</p>
+
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+            </div>
+          ) : videos.length === 0 ? (
+            <div className="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center dark:border-gray-700">
+              <Play className="mx-auto h-12 w-12 text-gray-300 dark:text-gray-600" />
+              <p className="mt-4 text-sm text-gray-500">{tr("暂无现场视频，期待您的上传")}</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {videos.map((video) => (
+                <div
+                  key={video.id}
+                  className="group relative overflow-hidden rounded-xl bg-white shadow-sm dark:bg-gray-800"
+                >
+                  <div className="aspect-video bg-gray-200 dark:bg-gray-700">
+                    <video src={video.url} className="h-full w-full object-cover" controls />
+                  </div>
+                  <div className="p-3">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">{video.brandName}</p>
+                    <p className="text-xs text-gray-500">{video.machineType}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* Exhibitor List */}
       <section className="py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -168,16 +278,19 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
                   <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-900/50">
                     <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
                       {e.inLib && e.brandSlug ? (
-                        <Link href={`/${locale}/expo`} className="text-green-600 hover:underline dark:text-green-400">
+                        <Link href={`/${locale}/expo/china-brands`} className="text-green-600 hover:underline dark:text-green-400">
                           {e.name}
                         </Link>
                       ) : (
                         <span>{e.name}</span>
                       )}
                       {e.inLib && (
-                        <span className="ml-2 inline-block rounded bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900 dark:text-blue-200">
+                        <Link
+                          href={`/${locale}/expo/china-brands`}
+                          className="ml-2 inline-block rounded bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-blue-700 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:hover:bg-blue-800"
+                        >
                           {tr("品牌库已收录")}
-                        </span>
+                        </Link>
                       )}
                     </td>
                     <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{e.product}</td>
@@ -194,28 +307,6 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
           <p className="mt-4 text-sm text-gray-500">
             {tr("以上为已公布参展企业（仅限来源·北方农业机械公众号），更多企业请以现场为准。")}
           </p>
-        </div>
-      </section>
-
-      {/* Demo Schedule */}
-      <section id="demo-schedule" className="bg-gray-50 py-12 dark:bg-gray-900">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 className="mb-8 text-2xl font-bold text-gray-900 dark:text-white">
-            {tr("实地作业演示时间表")}
-          </h2>
-          <div className="space-y-3">
-            {DEMO_SCHEDULE.map((s, i) => (
-              <div key={i} className="flex items-center gap-4 rounded-lg bg-white p-4 shadow-sm dark:bg-gray-800">
-                <div className="flex-shrink-0 rounded-lg bg-green-100 px-3 py-2 text-center dark:bg-green-900">
-                  <div className="text-sm font-bold text-green-700 dark:text-green-300">{s.time}</div>
-                </div>
-                <div className="flex-1">
-                  <div className="font-medium text-gray-900 dark:text-white">{s.event}</div>
-                  <div className="text-sm text-gray-500">{s.machines}</div>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
