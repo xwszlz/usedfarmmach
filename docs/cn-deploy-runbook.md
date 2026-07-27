@@ -84,8 +84,8 @@ sudo -u deploy vim /opt/cn/.env.cn   # 逐项填真实值
 必填项核对（详见 `.env.cn.example` 注释）：
 - `SITE=cn`、`NEXT_PUBLIC_SITE=cn`、`NEXT_PUBLIC_APP_URL=https://usedfarmmach.cn`
 - `DATABASE_URL_CN=postgresql://...`（**境内 RDS**）
-- `JWT_SECRET`、`OSS_REGION=oss-cn-beijing`、`OSS_*`
-- `WECHAT_PAY_*`（6 项必填 + `WECHAT_PAY_PLATFORM_CERT` 可选）
+- `JWT_SECRET`、`OSS_REGION=oss-cn-beijing`、`OSS_BUCKET=usedfarmmach-oss`、`OSS_*`
+- `WECHAT_PAY_*`（7 项必填：`WECHAT_PAY_APP_ID` / `WECHAT_PAY_MCH_ID` / `WECHAT_PAY_API_V3_KEY` / `WECHAT_PAY_SERIAL_NO` / `WECHAT_PAY_PRIVATE_KEY` / `WECHAT_PAY_NOTIFY_URL` / `WECHAT_PAY_SUB_MERCHANT_ID` + `WECHAT_PAY_PLATFORM_CERT` 可选）
 - `CN_ICP_NO=冀ICP备XXXXXXXX号`（备案前占位；备案后替换真实号）
 
 **红线校验**：确认文件中 **没有** 任何 `DATABASE_URL=`（境外 Neon）、非 `oss-cn-beijing` 的 OSS、`WECHAT_*` 支付资金类变量（仅 `WECHAT_PAY_*` 命名空间合法）。
