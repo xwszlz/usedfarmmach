@@ -778,10 +778,10 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
               </div>
             </Link>
 
-            {/* Category Comparison */}
+            {/* Rising & Specialty */}
             <Link
-              href={`/${locale}/expo/compare`}
-              className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 p-8 text-white shadow-lg transition-all hover:shadow-2xl hover:scale-[1.02]"
+              href={`/${locale}/expo/showroom`}
+              className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-600 to-indigo-700 p-8 text-white shadow-lg transition-all hover:shadow-2xl hover:scale-[1.02]"
             >
               <div className="absolute top-4 right-4 text-6xl opacity-20">⚖️</div>
               <h3 className="mb-2 text-2xl font-bold">
