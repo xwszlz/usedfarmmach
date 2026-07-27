@@ -318,7 +318,7 @@ export default function ShowroomClient({
               }`}
             >
               <span className="text-base">🇨🇳</span>
-              {t("中国品牌馆", "China Pavilion", "Китайский зал")}
+              {t("全球领袖馆", "Global Leaders Pavilion", "Зал мировых лидеров")}
               <span className={`rounded-full px-1.5 text-xs ${activePavilion === "china" ? "bg-white/20" : "bg-gray-200"}`}>
                 {chinaCount}
               </span>
@@ -332,7 +332,7 @@ export default function ShowroomClient({
               }`}
             >
               <span className="text-base">🌍</span>
-              {t("国际标杆馆", "Global Pavilion", "Международный зал")}
+              {t("行业中坚馆", "Industry Pillars Pavilion", "Зал отраслевых лидеров")}
               <span className={`rounded-full px-1.5 text-xs ${activePavilion === "global" ? "bg-white/20" : "bg-gray-200"}`}>
                 {globalCount}
               </span>

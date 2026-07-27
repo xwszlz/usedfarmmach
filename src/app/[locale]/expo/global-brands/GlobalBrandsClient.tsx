@@ -679,14 +679,14 @@ export default function GlobalBrandsClient({
             {tr("中国制造 vs 国际标杆")}
           </h2>
           <p className="mx-auto mb-8 max-w-2xl text-lg text-amber-100">
-            {tr("想知道中国品牌与国际标杆的差距有多大？进入品类对比厅，横向参数对比，理性决策。")}
+            {tr("想知道顶尖品牌与行业腰部品牌的差距？进入新锐专业馆，横向参数对比，理性决策。")}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Link
               href={`/${locale}/expo/compare`}
               className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3.5 font-semibold text-amber-600 shadow-lg transition hover:bg-amber-50 hover:shadow-xl"
             >
-              {tr("进入品类对比厅")}
+              {tr("进入新锐专业馆")}
               <ChevronRight className="h-4 w-4" />
             </Link>
             <Link
