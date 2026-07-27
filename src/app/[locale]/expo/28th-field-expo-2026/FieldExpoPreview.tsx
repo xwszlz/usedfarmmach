@@ -97,6 +97,13 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
                   {tr("浏览品牌库")}
                   <ChevronRight className="h-4 w-4" />
                 </Link>
+                <Link
+                  href={`/${locale}/expo/field-videos`}
+                  className="inline-flex items-center gap-2 rounded-lg bg-amber-400 px-6 py-3 font-semibold text-amber-900 shadow-lg transition hover:bg-amber-300"
+                >
+                  <Play className="h-5 w-5" />
+                  {tr("上传作业视频")}
+                </Link>
               </div>
             </div>
 

@@ -42,6 +42,7 @@ jobs:
         run: |
           docker build \
             --build-arg SITE=cn \
+            --build-arg DATABASE_URL=${{ secrets.DATABASE_URL_CN }} \
             -t usedfarmmach-cn:latest \
             -f Dockerfile.cn .
 
