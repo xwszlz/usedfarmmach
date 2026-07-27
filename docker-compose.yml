@@ -1,0 +1,60 @@
+# ============================================================
+# docker-compose.yml — .cn 国内站（阿里云 ECS 北京）
+# 双 service：
+#   - nginx：对外 80/443，反代 + SSL
+#   - app  ：仅内部网络 app:3000，不暴露宿主机端口
+#
+# 运行时环境变量由 ECS 主机 /opt/cn/.env.cn 提供（env_file），
+# 绝不通过 CI 注入（避免进入 CI 日志）。
+#
+# 部署基目录约定（ECS 主机）：/opt/cn
+#   /opt/cn/docker-compose.yml   <- 本文件
+#   /opt/cn/.env.cn              <- 运行时 secrets（主机持有）
+#   /opt/cn/deploy/nginx/*       <- nginx 配置 + ssl 证书
+#
+# 使用方式（CI 通过 deploy 用户 SSH 后在 /opt/cn 执行）：
+#   export CN_IMAGE=registry.cn-beijing.aliyuncs.com/<ns>/usedfarmmach-cn:<sha>
+#   docker compose -f /opt/cn/docker-compose.yml --env-file /opt/cn/.env.cn up -d app
+# ============================================================
+version: "3.8"
+
+services:
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: cn-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deploy/nginx/conf.d:/etc/nginx/conf.d:ro
+      # SSL 证书挂载（Let's Encrypt / 阿里云 DV）：将证书放到 ./deploy/nginx/ssl/cn/
+      - ./deploy/nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - app
+    restart: unless-stopped
+    networks:
+      - cn-net
+
+  app:
+    image: ${CN_IMAGE}
+    container_name: cn-app
+    # 不暴露宿主机端口，仅内部网络可达（由 nginx 反代）
+    expose:
+      - "3000"
+    env_file:
+      - /opt/cn/.env.cn
+    restart: unless-stopped
+    # 注：alpine 默认无 curl，使用 busybox wget（与 Dockerfile.cn HEALTHCHECK 一致）
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/zh"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 30s
+    networks:
+      - cn-net
+
+networks:
+  cn-net:
+    driver: bridge

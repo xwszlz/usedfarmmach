@@ -36,7 +36,7 @@ jobs:
           SITE: cn
           DATABASE_URL: ${{ secrets.DATABASE_URL_CN }}
           NEXT_PUBLIC_SITE: cn
-          NEXT_PUBLIC_APP_URL: ${{ secrets.CN_APP_URL }}
+          NEXT_PUBLIC_APP_URL: https://usedfarmmach.cn
 
       - name: Build Docker image
         run: |
@@ -59,33 +59,25 @@ jobs:
           docker push "$IMAGE_TAG"
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
 
+      # ----------------------------------------------------------
+      # 部署到阿里云 ECS（北京）
+      # 通过 SSH 以 deploy 用户登入 ECS，由主机执行 deploy/deploy-cn.sh。
+      # 安全红线：运行时 secrets（DATABASE_URL_CN / JWT_SECRET / OSS_* / WECHAT_PAY_*）
+      # 一律由 ECS 主机 /opt/cn/.env.cn 提供，CI 绝不注入（避免进入 CI 日志）。
+      # 镜像由上方 ACR 步骤 build + push，标签写入 env.IMAGE_TAG。
+      # 阿里云 ACR 若尚未开通：保留下方 ssh-action 结构，但 build/push 段需改为
+      # 其它镜像仓库（如 Docker Hub / 阿里云 ACR 开通后填 ALIYUN_ACR_* secrets），
+      # 并确保 ECS 主机已 docker login 到对应私有仓库。
+      # ----------------------------------------------------------
       - name: Deploy to Aliyun ECS
-        env:
-          ALIYUN_ACCESS_KEY: ${{ secrets.ALIYUN_ACCESS_KEY }}
-          ALIYUN_SECRET_KEY: ${{ secrets.ALIYUN_SECRET_KEY }}
-          ALIYUN_REGION: ${{ secrets.ALIYUN_REGION || 'cn-beijing' }}
-          ALIYUN_ECS_INSTANCE_ID: ${{ secrets.ALIYUN_ECS_INSTANCE_ID }}
-          IMAGE_TAG: ${{ env.IMAGE_TAG }}
-        run: |
-          # 通过 SSH 部署到 ECS（需要提前配置部署密钥）
-          # 此处使用阿里云 CLI + ECS 运维助手，或自行替换为 SSH 部署脚本
-          echo "Deploying $IMAGE_TAG to ECS instance $ALIYUN_ECS_INSTANCE_ID..."
-          # 示例：通过 SSH 拉取镜像并重启容器
-          # ssh deploy@your-ecs-ip "
-          #   docker pull $IMAGE_TAG &&
-          #   docker stop usedfarmmach-cn || true &&
-          #   docker rm usedfarmmach-cn || true &&
-          #   docker run -d --name usedfarmmach-cn \
-          #     -p 3000:3000 \
-          #     -e DATABASE_URL=${{ secrets.DATABASE_URL_CN }} \
-          #     -e SITE=cn \
-          #     -e NEXT_PUBLIC_SITE=cn \
-          #     -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
-          #     -e OSS_REGION=${{ secrets.OSS_REGION }} \
-          #     -e OSS_ACCESS_KEY_ID=${{ secrets.OSS_ACCESS_KEY_ID }} \
-          #     -e OSS_ACCESS_KEY_SECRET=${{ secrets.OSS_ACCESS_KEY_SECRET }} \
-          #     -e OSS_BUCKET=${{ secrets.OSS_BUCKET }} \
-          #     -e OSS_ENDPOINT=${{ secrets.OSS_ENDPOINT }} \
-          #     -e CN_ICP_NO=${{ secrets.CN_ICP_NO }} \
-          #     $IMAGE_TAG
-          # "
+        uses: appleboy/ssh-action@v1
+        with:
+          host: 101.200.125.199
+          username: deploy
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            # 镜像标签与 build 阶段推送的完全一致（env.IMAGE_TAG 即上方 push 的引用）
+            export CN_IMAGE="${{ env.IMAGE_TAG }}"
+            cd /opt/cn
+            bash /opt/cn/deploy/deploy-cn.sh

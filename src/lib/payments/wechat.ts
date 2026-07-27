@@ -108,14 +108,15 @@ export interface CreateGuaranteeIntentResult {
   };
 }
 
-/** 是否已配置收付通（5 项必填） */
+/** 是否已配置收付通（6 项必填：AppID / MchId / APIv3Key / SerialNo / PrivateKey / NotifyUrl） */
 export function isConfigured(): boolean {
   return !!(
     APP_ID &&
     MCH_ID &&
     API_V3_KEY &&
     SERIAL_NO &&
-    PRIVATE_KEY
+    PRIVATE_KEY &&
+    NOTIFY_URL
   );
 }
 
