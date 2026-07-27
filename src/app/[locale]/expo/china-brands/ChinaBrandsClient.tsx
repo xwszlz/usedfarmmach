@@ -403,7 +403,7 @@ export default function ChinaBrandsClient({
           {/* Badge */}
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium backdrop-blur-md">
             <span className="text-2xl">🇨🇳</span>
-            <span>中国品牌馆 · 主馆</span>
+            <span>行业中坚馆 · 主馆</span>
             <span className="ml-1 rounded-full bg-white/20 px-2 py-0.5 text-xs">
               105品牌
             </span>

@@ -1384,16 +1384,16 @@ export const I18N_DICT: Record<string, I18nEntry> = {
   "中国制造 vs 国际标杆": {
     "en": "Chinese vs Global Benchmark"
   },
-  "想知道中国品牌与国际标杆的差距有多大？进入品类对比厅，横向参数对比，理性决策。": {
+  "想知道中国品牌与国际标杆的差距有多大？进入新锐专业馆，横向参数对比，理性决策。": {
     "en": "Want to see how Chinese brands compare to global benchmarks? Visit the Comparison Hall for side-by-side specs."
   },
-  "进入品类对比厅": {
+  "进入新锐专业馆": {
     "en": "Comparison Hall"
   },
   "查看中国品牌": {
     "en": "Chinese Brands"
   },
-  "品类对比厅 · 功能厅": {
+  "新锐专业馆 · 功能厅": {
     "en": "Comparison Hall · Function Hall"
   },
   "同品类中外品牌横向参数对比——价格、马力、性能、技术差距一目了然。理性决策，选择最适合的农机。": {
@@ -1435,10 +1435,10 @@ export const I18N_DICT: Record<string, I18nEntry> = {
   "中国品牌解决'买得到、买得起、修得好'，国际品牌解决'极致性能、超大马力'——按需选择。": {
     "en": "Chinese brands solve affordability and availability; international brands deliver peak performance — choose what fits your needs."
   },
-  "中国品牌馆": {
+  "全球领袖馆": {
     "en": "China Pavilion"
   },
-  "国际标杆馆": {
+  "行业中坚馆": {
     "en": "Global Pavilion"
   },
   "旗舰": {
@@ -1453,7 +1453,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
   "标准": {
     "en": "Standard"
   },
-  "中国品牌馆 · 主馆": {
+  "全球领袖馆 · 主馆": {
     "en": "China Pavilion · Main Hall"
   },
   "中国农机品牌走向世界": {

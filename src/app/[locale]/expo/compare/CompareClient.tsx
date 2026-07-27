@@ -90,7 +90,7 @@ export default function CompareClient({
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-blue-500/30 px-4 py-1.5 text-sm font-medium backdrop-blur-sm">
             <Scale className="h-4 w-4" />
-            {tr("品类对比厅 · 功能厅")}
+            {tr("新锐专业馆 · 功能厅")}
           </div>
           <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">
             {tr("中国制造 vs 国际标杆")}
@@ -259,16 +259,16 @@ export default function CompareClient({
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link
-              href={`/${locale}/expo/china-brands`}
+              href={`/${locale}/expo/global-brands`}
               className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 font-semibold text-red-600 transition hover:bg-red-50"
             >
-              🇨🇳 {tr("中国品牌馆")}
+              🏆 {tr("全球领袖馆")}
             </Link>
             <Link
-              href={`/${locale}/expo/global-brands`}
+              href={`/${locale}/expo/china-brands`}
               className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 font-semibold text-amber-600 transition hover:bg-amber-50"
             >
-              🌍 {tr("国际标杆馆")}
+              💪 {tr("行业中坚馆")}
             </Link>
           </div>
         </div>

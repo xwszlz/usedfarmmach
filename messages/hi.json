@@ -293,12 +293,12 @@
     "researchDesc": "Industry reports, policy analysis, market trends"
   },
   "expoHome": {
-    "chinaHall": "China Brands Hall",
-    "chinaHallDesc": "Leading Chinese machinery brands showcase",
-    "intlHall": "International Hall",
-    "intlHallDesc": "Global renowned machinery brands",
-    "compareHall": "Comparison Hall",
-    "compareHallDesc": "Cross-brand specs and price comparison",
+    "chinaHall": "Global Leaders Pavilion",
+    "chinaHallDesc": "John Deere, CLAAS, Fendt — world top machinery leaders flagship models",
+    "intlHall": "Industry Pillars Pavilion",
+    "intlHallDesc": "YTO, Lovol, World, Zoomlion — regional powerhouses bridging global markets",
+    "compareHall": "Rising & Specialty Pavilion",
+    "compareHallDesc": "DJI, XAG, specialty brands & niche players — curated by category",
     "enterHall": "Enter Hall"
   },
   "research": {
