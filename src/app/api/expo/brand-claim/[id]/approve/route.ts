@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { hashPassword, signToken, setTokenCookie } from "@/lib/auth";
 import { sendEmail } from "@/lib/email";
+import { sendSms } from "@/lib/sms";
 import { nanoid } from "nanoid";
 
 /**
@@ -11,10 +12,16 @@ import { nanoid } from "nanoid";
  * 将 pending 的 brand_claim 转为：
  *   1. User（merchant 角色，自动生成账号密码）
  *   2. Booth（关联到用户，关联到始终展 Expo）
- *   3. 发送入驻成功邮件（含登录凭证）
+ *   3. 发送入驻成功邮件（含登录凭证，修复无效邮箱跳过逻辑）
+ *   4. 发送入驻成功短信（含登录凭证，新增短信通道）
+ *
+ * 邮件 / 短信任一失败均不阻断审批流程（non-blocking），仅记录日志并在响应中反映状态。
  */
 
 const EXPO_SLUG = "always-on-expo";
+
+/** 11 位手机号校验（国内手机号） */
+const PHONE_RE = /^1\d{10}$/;
 
 export async function POST(
   request: NextRequest,
@@ -101,12 +108,19 @@ export async function POST(
       data: { status: "approved" },
     });
 
-    // 7. 发送入驻通知邮件
-    try {
-      await sendEmail({
-        to: claim.email || claim.phone + "@unknown.com",
-        subject: `🎉 ${brandName} 已成功入驻神雕农机·始终展`,
-        html: `
+    // 7. 发送入驻通知邮件（修复：无效邮箱则跳过，并在响应中标记）
+    const emailValid = !!claim.email && claim.email.includes("@");
+    let emailSent = false;
+    let emailSkippedReason: string | undefined;
+    const recipientEmail = emailValid ? (claim.email ?? "") : "";
+
+    if (emailValid) {
+      try {
+        // sendEmail 旧式签名返回 boolean：true=成功，false=缺 key / API 失败（已内部降级记录）
+        emailSent = await sendEmail({
+          to: recipientEmail,
+          subject: `🎉 ${brandName} 已成功入驻神雕农机·始终展`,
+          html: `
           <h2>祝贺您，${claim.name}！</h2>
           <p><strong>${brandName}</strong> 已成功入驻 <strong>神雕农机·永不落幕的农机世界展会</strong>。</p>
           <h3>您的自助展台信息</h3>
@@ -119,10 +133,52 @@ export async function POST(
           <p><a href="https://usedfarmmach.com/zh/expo/booth/${booth.id}" style="background:#16a34a;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:16px;">进入我的展台 →</a></p>
           <p style="margin-top:24px;color:#666;font-size:12px;">建议首次登录后立即修改密码。</p>
         `,
-        text: `祝贺您！${brandName} 已成功入驻神雕农机始终展。\n登录账号：${username}\n登录密码：${rawPassword}\n\n登录后管理展品：https://usedfarmmach.com/zh/expo/booth/manage`,
+          text: `祝贺您！${brandName} 已成功入驻神雕农机始终展。\n登录账号：${username}\n登录密码：${rawPassword}\n\n登录后管理展品：https://usedfarmmach.com/zh/expo/booth/manage`,
+        });
+        if (!emailSent) {
+          // sendEmail 在缺 RESEND_API_KEY 或 API 失败时返回 false（已内部打印日志）
+          console.warn(`[approve] 邮件发送未成功（返回 false），claim=${claim.id}`);
+        }
+      } catch (emailErr) {
+        // 防止异常继续阻断审批流程
+        console.error("Approval email failed:", emailErr);
+        emailSent = false;
+      }
+    } else {
+      emailSkippedReason = "no_valid_email";
+      console.warn(`[approve] 跳过邮件发送：claim=${claim.id} 无有效邮箱（email=${claim.email ?? "null"}）`);
+    }
+
+    // 8. 发送入驻通知短信（新增通道）
+    const phoneValid = PHONE_RE.test(claim.phone || "");
+    let smsSent = false;
+    if (phoneValid) {
+      const smsResult = await sendSms({
+        phone: claim.phone,
+        templateParams: {
+          brand: brandName || claim.company || "",
+          account: username,
+          password: rawPassword,
+        },
       });
-    } catch (emailErr) {
-      console.error("Approval email failed:", emailErr);
+      smsSent = smsResult.success;
+      if (!smsResult.success) {
+        console.error("[approve] 短信发送失败:", smsResult.error ?? "unknown");
+      }
+    } else {
+      console.warn(`[approve] 跳过短信发送：claim=${claim.id} 手机号无效（phone=${claim.phone ?? "null"}）`);
+    }
+
+    // 9. 汇总通知状态，供前端展示
+    let notifySummary: string;
+    if (emailSent && smsSent) {
+      notifySummary = "email+sms均成功";
+    } else if (smsSent) {
+      notifySummary = "仅短信成功";
+    } else if (emailSent) {
+      notifySummary = "仅邮件成功";
+    } else {
+      notifySummary = "均失败需手动通知";
     }
 
     return NextResponse.json({
@@ -133,8 +189,12 @@ export async function POST(
         username,
         rawPassword,
         url: `/expo/booth/${booth.id}`,
+        emailSent,
+        emailSkippedReason,
+        smsSent,
+        notifySummary,
       },
-      message: `Brand approved. Booth created. Login credentials emailed to ${claim.email || "N/A"}.`,
+      message: `Brand approved. Booth created. Notify summary: ${notifySummary}.`,
     });
   } catch (error) {
     console.error("Approve error:", error);

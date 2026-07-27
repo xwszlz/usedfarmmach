@@ -31,7 +31,26 @@ export function AdminRegActions({ registrations: initialRegs }: AdminRegActionsP
       const res = await fetch(`/api/expo/brand-claim/${id}/approve`, { method: "POST" });
       const json = await res.json();
       if (json.success) {
-        alert(`✅ 通过成功！\n\n账号：${json.data.username}\n密码：${json.data.rawPassword}\n展台链接：${json.data.url}\n\n请将账号密码通过邮件/短信发给品牌方。`);
+        const d = json.data ?? {};
+        const summary: string = d.notifySummary ?? "";
+        // 根据后端汇总状态区分展示（emoji 区分状态，保持简单 UI）
+        let head = "";
+        if (summary === "email+sms均成功") {
+          head = "✅ 通过成功！凭证已通过邮件+短信发送给品牌方。";
+        } else if (summary === "仅短信成功") {
+          head = "⚠️ 通过成功！凭证已通过短信发送。邮件渠道失败，请手动补发邮件通知品牌方。";
+        } else if (summary === "仅邮件成功") {
+          head = "⚠️ 通过成功！凭证已通过邮件发送。短信渠道失败，请手动补发短信通知品牌方。";
+        } else {
+          // 均失败 / 未知（缺 notifySummary 时按失败处理，提示手动通知）
+          head = "❌ 通过成功！但邮件和短信均未发送成功，请手动将以下凭证通知品牌方：";
+        }
+        const creds =
+          `账号：${d.username}\n` +
+          `密码：${d.rawPassword}\n` +
+          `展台链接：${d.url}`;
+        // 凭据仍可查看（折叠在提示中），便于管理员手动补发
+        alert(`${head}\n\n${creds}`);
         setRegs(regs.map((r) => (r.id === id ? { ...r, status: "approved" } : r)));
       } else {
         alert(`❌ 通过失败：${json.error}`);
