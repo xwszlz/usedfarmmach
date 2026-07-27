@@ -834,29 +834,86 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
         </div>
       </section>
 
-      {/* Pricing Teaser */}
-      <section className="bg-gradient-to-r from-red-600 to-amber-600 py-12">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+      {/* ShenDiao Expo Pricing */}
+      <section className="bg-gradient-to-br from-green-700 via-green-600 to-emerald-700 py-16">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-10 text-center">
+            <h2 className="text-3xl font-bold text-white">
+              {locale === "zh" ? "神雕展 · 四档服务" : "ShenDiao Expo · 4 Tiers"}
+            </h2>
+            <p className="mt-2 text-green-100">
+              {locale === "zh"
+                ? "地头展免费参加 → 现场了解神雕展 → 选档开通"
+                : "Free field expo → Explore ShenDiao Expo → Choose your tier"}
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-4">
             {[
-              { name: locale === "zh" ? "基础展位" : "Basic", price: "¥380", period: locale === "zh" ? "/年" : "/yr", desc: locale === "zh" ? "5款产品展示" : "5 products" },
-              { name: locale === "zh" ? "优选展位" : "Premium", price: "¥980", period: locale === "zh" ? "/年" : "/yr", desc: locale === "zh" ? "20款产品+视频" : "20 products + video", highlight: true },
-              { name: locale === "zh" ? "旗舰展位" : "Flagship", price: "¥2,880", period: locale === "zh" ? "/年" : "/yr", desc: locale === "zh" ? "不限量+VR+优先推荐" : "Unlimited + VR + priority" },
-            ].map((tier) => (
-              <div
-                key={tier.name}
-                className={`rounded-xl p-6 text-center ${
-                  tier.highlight ? "bg-white/20 ring-2 ring-white" : "bg-white/10"
-                }`}
-              >
-                <h3 className="mb-2 text-lg font-semibold text-white">{tier.name}</h3>
-                <div className="mb-1">
-                  <span className="text-3xl font-bold text-white">{tier.price}</span>
-                  <span className="text-sm text-white/80">{tier.period}</span>
+              {
+                name: locale === "zh" ? "🆓 免费版" : "🆓 Free",
+                price: "¥0",
+                tag: locale === "zh" ? "免费开通" : "Free",
+                items: locale === "zh"
+                  ? ["品牌收录309库","3台中文上线","基础浏览数据","被动接收询盘"]
+                  : ["Brand listing","3 products CN","Basic views","Passive inquiries"],
+                color: "bg-white/10",
+                priceColor: "text-green-200",
+              },
+              {
+                name: locale === "zh" ? "🟢 标准版" : "🟢 Standard",
+                price: "¥188",
+                tag: locale === "zh" ? "试水入门" : "Entry",
+                items: locale === "zh"
+                  ? ["品牌故事页","10台·配件匹配","查看浏览数据","接收买家询价"]
+                  : ["Brand story","10+ parts match","View analytics","Receive inquiries"],
+                color: "bg-white/15 ring-2 ring-green-300",
+                priceColor: "text-white",
+              },
+              {
+                name: locale === "zh" ? "🟡 优选版" : "🟡 Premium",
+                price: "¥288",
+                tag: locale === "zh" ? "主推首选" : "Popular",
+                items: locale === "zh"
+                  ? ["品牌墙露出","30台·中英双语","月度报告+海外推送","询价报价+视频3条"]
+                  : ["Brand wall","30 CN/EN","Monthly report","Quotes + 3 videos"],
+                color: "bg-white/20 ring-2 ring-amber-300",
+                priceColor: "text-amber-200",
+              },
+              {
+                name: locale === "zh" ? "🔴 旗舰版" : "🔴 Flagship",
+                price: "¥388",
+                tag: locale === "zh" ? "最超值" : "Best Value",
+                items: locale === "zh"
+                  ? ["策展品牌故事页","不限量·中英俄","VR看机+AI估值","周报+竞品+直播"]
+                  : ["Curated story","Unlimited CN/EN/RU","VR + AI valuation","Weekly+benchmark+live"],
+                color: "bg-white/20 ring-2 ring-orange-300",
+                priceColor: "text-orange-200",
+              },
+            ].map((tier, i) => (
+              <div key={i} className={`rounded-xl p-5 text-center backdrop-blur transition-all hover:scale-105 ${tier.color}`}>
+                <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-green-200">{tier.tag}</div>
+                <h3 className="mb-1 text-lg font-bold text-white">{tier.name}</h3>
+                <div className="mb-3">
+                  <span className={`text-3xl font-bold ${tier.priceColor}`}>{tier.price}</span>
+                  <span className="text-sm text-green-200">{locale === "zh" ? "/年" : "/yr"}</span>
                 </div>
-                <p className="text-sm text-white/80">{tier.desc}</p>
+                <div className="space-y-1.5 text-left">
+                  {tier.items.map((item, j) => (
+                    <div key={j} className="flex items-start gap-2 text-sm text-green-50">
+                      <span className="mt-0.5 text-green-300">▸</span>
+                      <span>{item}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
+          </div>
+          <div className="mt-6 text-center">
+            <p className="text-sm text-green-200">
+              {locale === "zh"
+                ? "地头展免费参展 | 神雕展免费版¥0开通 | 现场签约享早鸟权益"
+                : "Free field expo | Free ShenDiao Expo tier | Early bird at expo"}
+            </p>
           </div>
         </div>
       </section>
