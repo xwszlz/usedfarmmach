@@ -61,23 +61,40 @@ export default function FieldVideosPage() {
     setUploading(true);
     setMessage(null);
     try {
-      // Read file as base64
-      const buffer = await file.arrayBuffer();
-      const base64 = Buffer.from(buffer).toString("base64");
       const mimeType = file.type || "video/mp4";
-      const dataUrl = `data:${mimeType};base64,${base64}`;
 
-      const res = await fetch("/api/field-videos/upload", {
+      // 1) Get signed upload URL
+      const signRes = await fetch(
+        `/api/field-videos/upload?filename=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(mimeType)}`,
+        { method: "GET" }
+      );
+      const sign = await signRes.json();
+      if (!sign.success) throw new Error(sign.error || "Failed to get upload URL");
+
+      // 2) Upload directly to OSS (bypasses Vercel body limit)
+      const ossForm = new FormData();
+      ossForm.append("OSSAccessKeyId", sign.data.accessKeyId);
+      ossForm.append("policy", sign.data.policy);
+      ossForm.append("signature", sign.data.signature);
+      ossForm.append("key", sign.data.key);
+      ossForm.append("Content-Type", mimeType);
+      ossForm.append("success_action_status", "200");
+      ossForm.append("file", file, file.name);
+
+      const ossRes = await fetch(sign.data.url, { method: "POST", body: ossForm });
+      if (!ossRes.ok) throw new Error(`OSS upload failed (${ossRes.status})`);
+
+      // 3) Confirm metadata
+      const confRes = await fetch("/api/field-videos/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          videoData: dataUrl,
+          finalUrl: sign.data.finalUrl,
           brandName: brandName.trim(),
           machineType: machineType.trim() || (isZh ? "现场作业" : "Field Demo"),
-          folder: "field-expo-videos",
         }),
       });
-      const result = await res.json();
+      const result = await confRes.json();
       if (result.success) {
         setMessage({ type: "success", text: isZh ? "上传成功！视频已发布到大屏" : "Uploaded! Video is now live" });
         setBrandName("");
