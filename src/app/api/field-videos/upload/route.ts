@@ -18,6 +18,45 @@ function getOSSCredentials() {
   return { accessKeyId: envId, accessKeySecret: envSecret };
 }
 
+const DB_KEY = "uploads/field-expo-videos/db.json";
+
+async function readDB(): Promise<any[]> {
+  try {
+    const res = await fetch(`${OSS_HOST}/${DB_KEY}`);
+    if (res.ok) {
+      const text = await res.text();
+      return JSON.parse(text);
+    }
+  } catch {}
+  return [];
+}
+
+async function writeDB(db: any[]) {
+  const creds = getOSSCredentials();
+  const content = Buffer.from(JSON.stringify(db, null, 2));
+  const expiration = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+  const policyObj = {
+    expiration,
+    conditions: [
+      { bucket: OSS_BUCKET },
+      ["eq", "$key", DB_KEY],
+      ["content-length-range", 0, 1024 * 1024],
+    ],
+  };
+  const policyBase64 = Buffer.from(JSON.stringify(policyObj)).toString("base64");
+  const signature = crypto.createHmac("sha1", creds.accessKeySecret).update(policyBase64).digest("base64");
+  const formData = new FormData();
+  formData.append("OSSAccessKeyId", creds.accessKeyId);
+  formData.append("policy", policyBase64);
+  formData.append("signature", signature);
+  formData.append("key", DB_KEY);
+  formData.append("success_action_status", "200");
+  const blob = new Blob([content], { type: "application/json" });
+  formData.append("file", blob, "db.json");
+  const res = await fetch(OSS_HOST, { method: "POST", body: formData });
+  if (!res.ok) throw new Error("Failed to write DB to OSS");
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { videoData, brandName, machineType, folder } = await req.json();
@@ -25,7 +64,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Missing videoData or brandName" }, { status: 400 });
     }
 
-    // Parse base64
     const matches = videoData.match(/^data:(.+?);base64,(.+)$/);
     if (!matches) {
       return NextResponse.json({ success: false, error: "Invalid video data format" }, { status: 400 });
@@ -33,7 +71,6 @@ export async function POST(req: NextRequest) {
     const mimeType = matches[1];
     const buffer = Buffer.from(matches[2], "base64");
 
-    // Check size (100MB)
     if (buffer.length > 100 * 1024 * 1024) {
       return NextResponse.json({ success: false, error: "Video exceeds 100MB" }, { status: 400 });
     }
@@ -42,7 +79,7 @@ export async function POST(req: NextRequest) {
     const safeFolder = folder?.replace(/[^a-z0-9-]/g, "") || "field-expo-videos";
     const key = `uploads/${safeFolder}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
-    // OSS signature
+    // OSS upload
     const creds = getOSSCredentials();
     const expiration = new Date(Date.now() + 15 * 60 * 1000).toISOString();
     const policyObj = {
@@ -56,7 +93,6 @@ export async function POST(req: NextRequest) {
     const policyBase64 = Buffer.from(JSON.stringify(policyObj)).toString("base64");
     const signature = crypto.createHmac("sha1", creds.accessKeySecret).update(policyBase64).digest("base64");
 
-    // Upload to OSS
     const formData = new FormData();
     formData.append("OSSAccessKeyId", creds.accessKeyId);
     formData.append("policy", policyBase64);
@@ -73,12 +109,8 @@ export async function POST(req: NextRequest) {
 
     const url = `${OSS_HOST}/${key}`;
 
-    // Store in DB (simple file-based storage for expo)
-    const fs = require("fs");
-    const path = require("path");
-    const dbPath = path.join(process.cwd(), "field-videos-db.json");
-    let db: any[] = [];
-    try { db = JSON.parse(fs.readFileSync(dbPath, "utf8")); } catch {}
+    // Store metadata in OSS-based DB (serverless-safe)
+    const db = await readDB();
     db.push({
       id: crypto.randomUUID(),
       url,
@@ -86,7 +118,7 @@ export async function POST(req: NextRequest) {
       machineType: machineType || "现场作业",
       uploadedAt: new Date().toISOString(),
     });
-    fs.writeFileSync(dbPath, JSON.stringify(db, null, 2));
+    await writeDB(db);
 
     return NextResponse.json({ success: true, data: { url } });
   } catch (e: any) {
