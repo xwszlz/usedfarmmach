@@ -1,10 +1,10 @@
 {
-  "date": "2026-07-22",
-  "eurCny": 7.93,
+  "date": "2026-07-29",
+  "eurCny": 7.94,
   "eurRub": 87.4,
   "usdCny": 7.25,
   "productCount": 18,
-  "totalCount": 93,
+  "totalCount": 96,
   "topArbitrage": [
     {
       "model": "CLAAS 850青储机(2018)",
@@ -14,9 +14,9 @@
     },
     {
       "model": "Krone 1290XC(2014)",
-      "rate": "877%",
-      "intlPrice": "135.0万",
-      "domPrice": "13万"
+      "rate": "882%",
+      "intlPrice": "135.5万",
+      "domPrice": "13.8万"
     },
     {
       "model": "Kuhn 890大方捆(2014)",
@@ -26,8 +26,8 @@
     },
     {
       "model": "CLAAS 5300RC(2020)",
-      "rate": "337.8%",
-      "intlPrice": "78.8万",
+      "rate": "339.4%",
+      "intlPrice": "79.1万",
       "domPrice": "18万"
     },
     {
@@ -46,8 +46,8 @@
     "非洲"
   ],
   "keyEvents": [
-    "河北农机地头展7/23-24明天报到!",
-    "EUR/CNY 7.93创7月新高(+0.6%)",
-    "ECB议息会议7/22-23进行中"
+    "河北农机地头展(7/23-24)已圆满收官, 展后跟进中",
+    "EUR/CNY 7.94维持7月高位",
+    "ICP备案河北省管局审核中, 预计8月初"
   ]
 }
