@@ -19,10 +19,12 @@ function getOSSCredentials() {
 }
 
 const DB_KEY = "uploads/field-expo-videos/db.json";
+const MAX_SIZE = 100 * 1024 * 1024;
+const ALLOWED_EXT = ["mp4", "mov", "m4v", "webm", "quicktime"];
 
 async function readDB(): Promise<any[]> {
   try {
-    const res = await fetch(`${OSS_HOST}/${DB_KEY}`);
+    const res = await fetch(`${OSS_HOST}/${DB_KEY}`, { cache: "no-store" });
     if (res.ok) {
       const text = await res.text();
       return JSON.parse(text);
@@ -57,70 +59,68 @@ async function writeDB(db: any[]) {
   if (!res.ok) throw new Error("Failed to write DB to OSS");
 }
 
+function signPut(folder: string, filename: string, contentType: string) {
+  const creds = getOSSCredentials();
+  const key = `uploads/${folder}/${filename}`;
+  const expiration = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+  const policyObj = {
+    expiration,
+    conditions: [
+      { bucket: OSS_BUCKET },
+      ["eq", "$key", key],
+      ["content-length-range", 0, MAX_SIZE],
+      ["eq", "$Content-Type", contentType],
+    ],
+  };
+  const policyBase64 = Buffer.from(JSON.stringify(policyObj)).toString("base64");
+  const signature = crypto.createHmac("sha1", creds.accessKeySecret).update(policyBase64).digest("base64");
+  return { key, policyBase64, signature, accessKeyId: creds.accessKeyId };
+}
+
+// 1. Client asks for a signed upload URL
+export async function GET(req: NextRequest) {
+  const url = new URL(req.url);
+  const filename = url.searchParams.get("filename") || `video_${Date.now()}.mp4`;
+  const contentType = url.searchParams.get("contentType") || "video/mp4";
+  const folder = url.searchParams.get("folder") || "field-expo-videos";
+  const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const ext = safeName.split(".").pop()?.toLowerCase() || "mp4";
+  if (!ALLOWED_EXT.includes(ext)) {
+    return NextResponse.json({ success: false, error: "Invalid file extension" }, { status: 400 });
+  }
+  const finalName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const sig = signPut(folder, finalName, contentType);
+  return NextResponse.json({
+    success: true,
+    data: {
+      url: OSS_HOST,
+      key: sig.key,
+      policy: sig.policyBase64,
+      signature: sig.signature,
+      accessKeyId: sig.accessKeyId,
+      maxSize: MAX_SIZE,
+      finalUrl: `${OSS_HOST}/${sig.key}`,
+    },
+  });
+}
+
+// 2. After successful upload, client confirms with metadata
 export async function POST(req: NextRequest) {
   try {
-    const { videoData, brandName, machineType, folder } = await req.json();
-    if (!videoData || !brandName) {
-      return NextResponse.json({ success: false, error: "Missing videoData or brandName" }, { status: 400 });
+    const { finalUrl, brandName, machineType } = await req.json();
+    if (!finalUrl || !brandName) {
+      return NextResponse.json({ success: false, error: "Missing finalUrl or brandName" }, { status: 400 });
     }
-
-    const matches = videoData.match(/^data:(.+?);base64,(.+)$/);
-    if (!matches) {
-      return NextResponse.json({ success: false, error: "Invalid video data format" }, { status: 400 });
-    }
-    const mimeType = matches[1];
-    const buffer = Buffer.from(matches[2], "base64");
-
-    if (buffer.length > 100 * 1024 * 1024) {
-      return NextResponse.json({ success: false, error: "Video exceeds 100MB" }, { status: 400 });
-    }
-
-    const ext = mimeType === "video/mp4" ? "mp4" : mimeType === "video/quicktime" ? "mov" : "mp4";
-    const safeFolder = folder?.replace(/[^a-z0-9-]/g, "") || "field-expo-videos";
-    const key = `uploads/${safeFolder}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
-
-    // OSS upload
-    const creds = getOSSCredentials();
-    const expiration = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-    const policyObj = {
-      expiration,
-      conditions: [
-        { bucket: OSS_BUCKET },
-        ["eq", "$key", key],
-        ["content-length-range", 0, 100 * 1024 * 1024],
-      ],
-    };
-    const policyBase64 = Buffer.from(JSON.stringify(policyObj)).toString("base64");
-    const signature = crypto.createHmac("sha1", creds.accessKeySecret).update(policyBase64).digest("base64");
-
-    const formData = new FormData();
-    formData.append("OSSAccessKeyId", creds.accessKeyId);
-    formData.append("policy", policyBase64);
-    formData.append("signature", signature);
-    formData.append("key", key);
-    formData.append("success_action_status", "200");
-    const blob = new Blob([buffer], { type: mimeType });
-    formData.append("file", blob, `video.${ext}`);
-
-    const uploadRes = await fetch(OSS_HOST, { method: "POST", body: formData });
-    if (!uploadRes.ok) {
-      return NextResponse.json({ success: false, error: "OSS upload failed" }, { status: 500 });
-    }
-
-    const url = `${OSS_HOST}/${key}`;
-
-    // Store metadata in OSS-based DB (serverless-safe)
     const db = await readDB();
     db.push({
       id: crypto.randomUUID(),
-      url,
+      url: finalUrl,
       brandName,
       machineType: machineType || "现场作业",
       uploadedAt: new Date().toISOString(),
     });
     await writeDB(db);
-
-    return NextResponse.json({ success: true, data: { url } });
+    return NextResponse.json({ success: true, data: { url: finalUrl } });
   } catch (e: any) {
     return NextResponse.json({ success: false, error: e.message }, { status: 500 });
   }
