@@ -54,8 +54,10 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
   const hours = Math.max(0, Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)));
 
   // Field videos state
-  const [videos, setVideos] = useState<FieldVideo[]>([]);
+  const [allVideos, setAllVideos] = useState<FieldVideo[]>([]);
+  const [showAll, setShowAll] = useState(false);
   const [loading, setLoading] = useState(true);
+
 
   useEffect(() => {
     const fetchVideos = async () => {
@@ -63,8 +65,7 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
         const res = await fetch("/api/field-videos/list");
         if (res.ok) {
           const data = await res.json();
-          const list: FieldVideo[] = (data.videos || []).slice(0, 6);
-          setVideos(list);
+          setAllVideos(data.videos || []);
         }
       } catch (e) {
         console.error("Failed to fetch field videos", e);
@@ -197,7 +198,7 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
             </div>
-          ) : videos.length === 0 ? (
+          ) : allVideos.length === 0 ? (
             <div className="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center dark:border-gray-700">
               <Play className="mx-auto h-12 w-12 text-gray-300 dark:text-gray-600" />
               <p className="mt-4 text-sm text-gray-500">{tr("暂无现场视频，期待您的上传")}</p>
@@ -205,13 +206,13 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
           ) : (
             <>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {videos.slice(0, 12).map((video) => (
+                {(showAll ? allVideos : allVideos.slice(0, 12)).map((video) => (
                   <div
                     key={video.id}
                     className="group relative overflow-hidden rounded-xl bg-white shadow-sm dark:bg-gray-800"
                   >
                     <div className="aspect-video bg-gray-200 dark:bg-gray-700">
-                      <video src={video.url} className="h-full w-full object-cover" controls />
+                      <video src={video.url} className="h-full w-full object-cover" controls preload="none" />
                     </div>
                     <div className="p-3">
                       <p className="text-sm font-medium text-gray-900 dark:text-white">{video.brandName}</p>
@@ -220,10 +221,20 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
                   </div>
                 ))}
               </div>
-              {videos.length > 12 && (
+              {!showAll && allVideos.length > 12 && (
+                <div className="mt-4 text-center">
+                  <button
+                    onClick={() => setShowAll(true)}
+                    className="rounded-lg bg-green-600 px-6 py-2.5 text-sm font-semibold text-white shadow transition hover:bg-green-500"
+                  >
+                    显示全部 {allVideos.length} 个视频
+                  </button>
+                </div>
+              )}
+              {showAll && (
                 <div className="mt-4 text-center">
                   <p className="text-sm text-gray-500">
-                    显示最新 12 个视频 · 共 <span className="font-bold text-green-600">{videos.length}</span> 个 · 每30秒自动刷新
+                    共 <span className="font-bold text-green-600">{allVideos.length}</span> 个视频 · 每30秒自动刷新
                   </p>
                 </div>
               )}
