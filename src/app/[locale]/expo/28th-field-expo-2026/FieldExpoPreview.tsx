@@ -41,14 +41,6 @@ const EXHIBITORS = [
   { name: "河北农哈哈机械", product: "播种机·智能耕整设备", category: "播种机", boothId: "cms334wn7001b135ihlh2hir9" },
 ];
 
-const DEMO_SCHEDULE = [
-  { time: "10:00-10:30", event: "拖拉机耕地演示", machines: "东方红/雷沃" },
-  { time: "10:45-11:15", event: "联合收割机作业演示", machines: "雷沃/CLAAS" },
-  { time: "11:30-12:00", event: "青储机/打捆机演示", machines: "中机美诺/利裕丰" },
-  { time: "14:00-14:30", event: "植保无人机演示", machines: "大疆/极飞" },
-  { time: "15:00-15:30", event: "综合联合作业", machines: "耕-种-管-收全链" },
-];
-
 export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
   const t = useTranslations();
   const isZh = locale === "zh";
@@ -126,26 +118,19 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
 
               {/* CTA Buttons */}
               <div className="mt-6 flex flex-wrap gap-3">
-                <a
-                  href="#demo-schedule"
-                  className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 font-semibold text-green-700 shadow-lg transition hover:bg-green-50"
+                <Link
+                  href={`/${locale}/expo/field-videos`}
+                  className="inline-flex items-center gap-2 rounded-lg bg-amber-400 px-6 py-3 font-semibold text-amber-900 shadow-lg transition hover:bg-amber-300"
                 >
-                  <Play className="h-5 w-5" />
-                  {tr("查看演示时间")}
-                </a>
+                  <Upload className="h-5 w-5" />
+                  {tr("上传作业视频")}
+                </Link>
                 <Link
                   href={`/${locale}/expo/china-brands`}
                   className="inline-flex items-center gap-2 rounded-lg border border-white/30 bg-white/10 px-6 py-3 font-semibold text-white backdrop-blur-sm transition hover:bg-white/20"
                 >
                   {tr("浏览品牌库")}
                   <ChevronRight className="h-4 w-4" />
-                </Link>
-                <Link
-                  href={`/${locale}/expo/field-videos`}
-                  className="inline-flex items-center gap-2 rounded-lg bg-amber-400 px-6 py-3 font-semibold text-amber-900 shadow-lg transition hover:bg-amber-300"
-                >
-                  <Play className="h-5 w-5" />
-                  {tr("上传作业视频")}
                 </Link>
               </div>
             </div>
@@ -191,27 +176,7 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
         </div>
       </div>
 
-      {/* Demo Schedule (moved before Exhibitors) */}
-      <section id="demo-schedule" className="bg-gray-50 py-12 dark:bg-gray-900">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 className="mb-8 text-2xl font-bold text-gray-900 dark:text-white">
-            {tr("实地作业演示时间表")}
-          </h2>
-          <div className="space-y-3">
-            {DEMO_SCHEDULE.map((s, i) => (
-              <div key={i} className="flex items-center gap-4 rounded-lg bg-white p-4 shadow-sm dark:bg-gray-800">
-                <div className="flex-shrink-0 rounded-lg bg-green-100 px-3 py-2 text-center dark:bg-green-900">
-                  <div className="text-sm font-bold text-green-700 dark:text-green-300">{s.time}</div>
-                </div>
-                <div className="flex-1">
-                  <div className="font-medium text-gray-900 dark:text-white">{s.event}</div>
-                  <div className="text-sm text-gray-500">{s.machines}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Demo Schedule removed */}
 
       {/* Field Videos - Live Demo */}
       <section className="border-b border-gray-200 bg-gray-50 py-12 dark:border-gray-800 dark:bg-gray-900">
