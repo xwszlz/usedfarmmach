@@ -178,7 +178,7 @@ export default function FieldVideosPage() {
                 className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-green-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUpFromLine className="h-4 w-4" />}
-                {uploading ? t("上传中...", "Uploading...") : t("上传到大屏", "Upload to Gallery")}
+                {uploading ? t("上传中...", "Uploading...") : t("上传到集锦", "Upload to Gallery")}
               </button>
               {message && (
                 <div
