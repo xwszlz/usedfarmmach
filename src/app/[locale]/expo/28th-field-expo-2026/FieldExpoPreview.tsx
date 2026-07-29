@@ -336,14 +336,16 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
 }
 
 function VideoCard({ video }: { video: FieldVideo }) {
+  const posterUrl = video.url + "?x-oss-process=video/snapshot,t_2000,f_jpg,w_600";
   const [playing, setPlaying] = useState(false);
   return (
     <div className="group relative overflow-hidden rounded-xl bg-white shadow-sm dark:bg-gray-800">
-      <div className="relative aspect-video bg-gradient-to-br from-green-700 to-emerald-800 flex items-center justify-center">
+      <div className="relative aspect-video bg-gray-200 dark:bg-gray-700">
+        <img src={posterUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
         {playing ? (
           <video
             src={video.url}
-            className="h-full w-full object-cover"
+            className="absolute inset-0 h-full w-full object-cover z-10"
             controls
             autoPlay
             onEnded={() => setPlaying(false)}
@@ -351,12 +353,11 @@ function VideoCard({ video }: { video: FieldVideo }) {
         ) : (
           <button
             onClick={() => setPlaying(true)}
-            className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-white transition hover:bg-black/20"
+            className="absolute inset-0 z-20 flex items-center justify-center transition hover:bg-black/20"
           >
-            <div className="rounded-full bg-white/20 p-4 backdrop-blur">
-              <Play className="h-8 w-8" />
+            <div className="rounded-full bg-white/20 p-4 backdrop-blur transition group-hover:bg-white/40">
+              <Play className="h-8 w-8 text-white" />
             </div>
-            <span className="text-xs font-medium">{video.brandName}</span>
           </button>
         )}
       </div>
