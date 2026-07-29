@@ -238,22 +238,31 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
               <p className="mt-4 text-sm text-gray-500">{tr("暂无现场视频，期待您的上传")}</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {videos.map((video) => (
-                <div
-                  key={video.id}
-                  className="group relative overflow-hidden rounded-xl bg-white shadow-sm dark:bg-gray-800"
-                >
-                  <div className="aspect-video bg-gray-200 dark:bg-gray-700">
-                    <video src={video.url} className="h-full w-full object-cover" controls />
+            <>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {videos.slice(0, 12).map((video) => (
+                  <div
+                    key={video.id}
+                    className="group relative overflow-hidden rounded-xl bg-white shadow-sm dark:bg-gray-800"
+                  >
+                    <div className="aspect-video bg-gray-200 dark:bg-gray-700">
+                      <video src={video.url} className="h-full w-full object-cover" controls />
+                    </div>
+                    <div className="p-3">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{video.brandName}</p>
+                      <p className="text-xs text-gray-500">{video.machineType}</p>
+                    </div>
                   </div>
-                  <div className="p-3">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">{video.brandName}</p>
-                    <p className="text-xs text-gray-500">{video.machineType}</p>
-                  </div>
+                ))}
+              </div>
+              {videos.length > 12 && (
+                <div className="mt-4 text-center">
+                  <p className="text-sm text-gray-500">
+                    显示最新 12 个视频 · 共 <span className="font-bold text-green-600">{videos.length}</span> 个 · 每30秒自动刷新
+                  </p>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </div>
       </section>
