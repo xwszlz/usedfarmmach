@@ -207,18 +207,7 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
             <>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {(showAll ? allVideos : allVideos.slice(0, 12)).map((video) => (
-                  <div
-                    key={video.id}
-                    className="group relative overflow-hidden rounded-xl bg-white shadow-sm dark:bg-gray-800"
-                  >
-                    <div className="aspect-video bg-gray-200 dark:bg-gray-700">
-                      <video src={video.url} className="h-full w-full object-cover" controls preload="none" />
-                    </div>
-                    <div className="p-3">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">{video.brandName}</p>
-                      <p className="text-xs text-gray-500">{video.machineType}</p>
-                    </div>
-                  </div>
+                  <VideoCard key={video.id} video={video} />
                 ))}
               </div>
               {!showAll && allVideos.length > 12 && (
@@ -342,6 +331,39 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
           </div>
         </div>
       </section>
+    </div>
+  );
+}
+
+function VideoCard({ video }: { video: FieldVideo }) {
+  const [playing, setPlaying] = useState(false);
+  return (
+    <div className="group relative overflow-hidden rounded-xl bg-white shadow-sm dark:bg-gray-800">
+      <div className="relative aspect-video bg-gradient-to-br from-green-700 to-emerald-800 flex items-center justify-center">
+        {playing ? (
+          <video
+            src={video.url}
+            className="h-full w-full object-cover"
+            controls
+            autoPlay
+            onEnded={() => setPlaying(false)}
+          />
+        ) : (
+          <button
+            onClick={() => setPlaying(true)}
+            className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-white transition hover:bg-black/20"
+          >
+            <div className="rounded-full bg-white/20 p-4 backdrop-blur">
+              <Play className="h-8 w-8" />
+            </div>
+            <span className="text-xs font-medium">{video.brandName}</span>
+          </button>
+        )}
+      </div>
+      <div className="p-3">
+        <p className="text-sm font-medium text-gray-900 dark:text-white">{video.brandName}</p>
+        <p className="text-xs text-gray-500">{video.machineType}</p>
+      </div>
     </div>
   );
 }
