@@ -13,24 +13,24 @@ export function ExpoEntrance({ locale }: ExpoEntranceProps) {
 
   const halls = [
     {
-      href: "/expo/china-brands",
+      href: "/expo/showroom?pavilion=global_leader",
       titleKey: "expoHome.chinaHall",
       descKey: "expoHome.chinaHallDesc",
-      metric: locale === "zh" ? "60+ 品牌" : "60+ Brands",
+      metric: locale === "zh" ? "26+ 品牌" : "26+ Brands",
       gradient: "from-red-500 to-orange-500",
     },
     {
-      href: "/expo/global-brands",
+      href: "/expo/showroom?pavilion=industry_pillar",
       titleKey: "expoHome.intlHall",
       descKey: "expoHome.intlHallDesc",
-      metric: locale === "zh" ? "45+ 品牌" : "45+ Brands",
+      metric: locale === "zh" ? "40+ 品牌" : "40+ Brands",
       gradient: "from-blue-500 to-cyan-500",
     },
     {
-      href: "/expo/compare",
+      href: "/expo/showroom?pavilion=rising_specialty",
       titleKey: "expoHome.compareHall",
       descKey: "expoHome.compareHallDesc",
-      metric: locale === "zh" ? "跨品牌对比" : "Cross-brand",
+      metric: locale === "zh" ? "105+ 品牌" : "105+ Brands",
       gradient: "from-purple-500 to-pink-500",
     },
   ];

@@ -108,13 +108,16 @@ export default async function ShowroomPage({
     distinct: ["brand"],
   });
 
-  // Pavilion counts for tab badges
-  const [chinaCount, globalCount] = await Promise.all([
+  // Pavilion counts for tab badges (real DB enum values)
+  const [globalLeaderCount, industryPillarCount, risingSpecialtyCount] = await Promise.all([
     prisma.showcaseItem.count({
-      where: { status: "published", itemType: "new", booth: { pavilion: "china" } },
+      where: { status: "published", itemType: "new", booth: { pavilion: "global_leader" } },
     }),
     prisma.showcaseItem.count({
-      where: { status: "published", itemType: "new", booth: { pavilion: "global" } },
+      where: { status: "published", itemType: "new", booth: { pavilion: "industry_pillar" } },
+    }),
+    prisma.showcaseItem.count({
+      where: { status: "published", itemType: "new", booth: { pavilion: "rising_specialty" } },
     }),
   ]);
 
@@ -190,8 +193,9 @@ export default async function ShowroomPage({
         initialBrands={brands}
         mapBooths={JSON.parse(JSON.stringify(mapBooths))}
         locale={locale}
-        chinaCount={chinaCount}
-        globalCount={globalCount}
+        globalLeaderCount={globalLeaderCount}
+        industryPillarCount={industryPillarCount}
+        risingSpecialtyCount={risingSpecialtyCount}
       />
     </>
   );
