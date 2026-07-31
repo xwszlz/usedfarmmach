@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import ExhibitionMap from "@/components/expo/ExhibitionMap";
@@ -54,7 +55,7 @@ interface FilterOption {
   label: string;
 }
 
-type PavilionTab = "all" | "china" | "global";
+type PavilionTab = "all" | "global_leader" | "industry_pillar" | "rising_specialty";
 
 export default function ShowroomClient({
   initialItems,
@@ -63,8 +64,9 @@ export default function ShowroomClient({
   initialBrands,
   mapBooths,
   locale,
-  chinaCount,
-  globalCount,
+  globalLeaderCount,
+  industryPillarCount,
+  risingSpecialtyCount,
 }: {
   initialItems: ShowroomItem[];
   initialTotal: number;
@@ -72,13 +74,20 @@ export default function ShowroomClient({
   initialBrands: FilterOption[];
   mapBooths: unknown[];
   locale: string;
-  chinaCount: number;
-  globalCount: number;
+  globalLeaderCount: number;
+  industryPillarCount: number;
+  risingSpecialtyCount: number;
 }) {
+  const searchParams = useSearchParams();
   const [items, setItems] = useState(initialItems);
   const [total, setTotal] = useState(initialTotal);
   const [loading, setLoading] = useState(false);
-  const [activePavilion, setActivePavilion] = useState<PavilionTab>("all");
+  const urlPavilion = searchParams.get("pavilion") as PavilionTab | null;
+  const [activePavilion, setActivePavilion] = useState<PavilionTab>(
+    urlPavilion && ["all", "global_leader", "industry_pillar", "rising_specialty"].includes(urlPavilion)
+      ? urlPavilion
+      : "all"
+  );
   const [selectedHall, setSelectedHall] = useState<string>("");
   const [selectedBrand, setSelectedBrand] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -220,6 +229,15 @@ export default function ShowroomClient({
     }
   }, [activePavilion, selectedHall, selectedBrand, searchQuery]);
 
+  // Auto-apply pavilion filter when arriving from homepage card link (?pavilion=xxx)
+  useEffect(() => {
+    if (urlPavilion && urlPavilion !== "all" && activePavilion === urlPavilion) {
+      applyFilters();
+    }
+    // Only run on mount; intentionally omitting applyFilters to avoid re-fetching
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const switchPavilion = useCallback(async (pavilion: PavilionTab) => {
     setActivePavilion(pavilion);
     setLoading(true);
@@ -310,31 +328,45 @@ export default function ShowroomClient({
               </span>
             </button>
             <button
-              onClick={() => switchPavilion("china")}
+              onClick={() => switchPavilion("global_leader")}
               className={`flex items-center gap-2 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition ${
-                activePavilion === "china"
+                activePavilion === "global_leader"
                   ? "bg-red-600 text-white"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
             >
-              <span className="text-base">🇨🇳</span>
+              <span className="text-base">🏆</span>
               {t("全球领袖馆", "Global Leaders Pavilion", "Зал мировых лидеров")}
-              <span className={`rounded-full px-1.5 text-xs ${activePavilion === "china" ? "bg-white/20" : "bg-gray-200"}`}>
-                {chinaCount}
+              <span className={`rounded-full px-1.5 text-xs ${activePavilion === "global_leader" ? "bg-white/20" : "bg-gray-200"}`}>
+                {globalLeaderCount}
               </span>
             </button>
             <button
-              onClick={() => switchPavilion("global")}
+              onClick={() => switchPavilion("industry_pillar")}
               className={`flex items-center gap-2 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition ${
-                activePavilion === "global"
+                activePavilion === "industry_pillar"
                   ? "bg-amber-600 text-white"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
             >
               <span className="text-base">🌍</span>
               {t("行业中坚馆", "Industry Pillars Pavilion", "Зал отраслевых лидеров")}
-              <span className={`rounded-full px-1.5 text-xs ${activePavilion === "global" ? "bg-white/20" : "bg-gray-200"}`}>
-                {globalCount}
+              <span className={`rounded-full px-1.5 text-xs ${activePavilion === "industry_pillar" ? "bg-white/20" : "bg-gray-200"}`}>
+                {industryPillarCount}
+              </span>
+            </button>
+            <button
+              onClick={() => switchPavilion("rising_specialty")}
+              className={`flex items-center gap-2 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition ${
+                activePavilion === "rising_specialty"
+                  ? "bg-purple-600 text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              <span className="text-base">🚀</span>
+              {t("新锐专业馆", "Rising Specialty Pavilion", "Зал новых специальностей")}
+              <span className={`rounded-full px-1.5 text-xs ${activePavilion === "rising_specialty" ? "bg-white/20" : "bg-gray-200"}`}>
+                {risingSpecialtyCount}
               </span>
             </button>
 
