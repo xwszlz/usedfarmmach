@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { ArrowUpFromLine, Play, X, Loader2, Camera, Smartphone } from "lucide-react";
+import { trackView } from "@/lib/stats";
+import { VideoPlayBadge } from "@/components/stats/VideoPlayBadge";
 
 interface VideoEntry {
   id: string;
@@ -10,6 +12,8 @@ interface VideoEntry {
   brandName: string;
   machineType: string;
   uploadedAt: string;
+  playCount?: number;
+  source?: string;
 }
 
 // ── 模拟已存在的视频（现场上传后补充）──
@@ -27,6 +31,24 @@ export default function FieldVideosPage() {
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [playingVideo, setPlayingVideo] = useState<string | null>(null);
+  const [playCounts, setPlayCounts] = useState<Record<string, number>>({});
+
+  // 拉取列表后用服务端返回的 playCount 初始化本地播放量
+  const applyPlayCounts = (list: VideoEntry[]) => {
+    const init: Record<string, number> = {};
+    list.forEach((v) => {
+      if (v.id) init[v.id] = v.playCount ?? 0;
+    });
+    setPlayCounts(init);
+  };
+
+  const handlePlay = async (v: VideoEntry) => {
+    const latest = await trackView("fieldVideo", v.id);
+    setPlayCounts((prev) => ({
+      ...prev,
+      [v.id]: latest !== null ? latest : (prev[v.id] ?? v.playCount ?? 0) + 1,
+    }));
+  };
 
   // Auto-refresh gallery
   const fetchVideos = async () => {
@@ -34,7 +56,10 @@ export default function FieldVideosPage() {
       const res = await fetch("/api/field-videos/list");
       if (res.ok) {
         const data = await res.json();
-        if (data.videos) setVideos(data.videos);
+        if (data.videos) {
+          setVideos(data.videos);
+          applyPlayCounts(data.videos);
+        }
       }
     } catch {}
   };
@@ -239,14 +264,22 @@ export default function FieldVideosPage() {
                       controls
                       className="h-full w-full object-cover"
                       poster={v.url + "?x-oss-process=video/snapshot,t_1000,f_jpg,w_800"}
+                      onPlay={() => handlePlay(v)}
                     />
                   </div>
-                  <div className="p-3">
-                    <h3 className="text-sm font-semibold text-white">{v.brandName}</h3>
-                    <p className="text-xs text-gray-400">{v.machineType}</p>
-                    <p className="mt-1 text-xs text-gray-600">
-                      {new Date(v.uploadedAt).toLocaleString(isZh ? "zh-CN" : "en-US")}
-                    </p>
+                  <div className="flex items-center justify-between p-3">
+                    <div className="min-w-0">
+                      <h3 className="truncate text-sm font-semibold text-white">{v.brandName}</h3>
+                      <p className="text-xs text-gray-400">{v.machineType}</p>
+                      <p className="mt-1 text-xs text-gray-600">
+                        {new Date(v.uploadedAt).toLocaleString(isZh ? "zh-CN" : "en-US")}
+                      </p>
+                    </div>
+                    <VideoPlayBadge
+                      playCount={playCounts[v.id] ?? v.playCount ?? 0}
+                      locale={locale}
+                      badgeLabel={isZh ? "地头展现场" : "Field Demo"}
+                    />
                   </div>
                 </div>
               ))}

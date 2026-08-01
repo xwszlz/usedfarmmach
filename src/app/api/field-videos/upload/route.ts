@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
+import { prisma } from "@/lib/db";
 
 const OSS_BUCKET = "usedfarmmach-oss";
 const OSS_REGION = "oss-cn-beijing";
@@ -120,6 +121,27 @@ export async function POST(req: NextRequest) {
       uploadedAt: new Date().toISOString(),
     });
     await writeDB(db);
+
+    // 双写 FieldVideo（统计/看板用）：保留 OSS db.json 兼容，同时落库供 track/排行使用。
+    // source='qr'（地头展扫码上传）；按 url 去重，避免重复创建。
+    try {
+      const existing = await prisma.fieldVideo.findFirst({ where: { url: finalUrl } });
+      if (!existing) {
+        await prisma.fieldVideo.create({
+          data: {
+            url: finalUrl,
+            title: brandName,
+            machineType: machineType || "现场作业",
+            source: "qr",
+            playCount: 0,
+          },
+        });
+      }
+    } catch (dbErr) {
+      // 双写失败不影响 OSS 写入主流程（大屏旧链路仍可用）
+      console.error("[field-videos/upload] 双写 FieldVideo 失败（已忽略）：", dbErr);
+    }
+
     return NextResponse.json({ success: true, data: { url: finalUrl } });
   } catch (e: any) {
     return NextResponse.json({ success: false, error: e.message }, { status: 500 });

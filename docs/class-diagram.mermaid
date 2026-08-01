@@ -1,125 +1,64 @@
 classDiagram
-    class SellerAiAssistantProps {
-        +File[] imageFiles
-        +File? videoFile
-        +boolean autoTrigger
-        +Record~string, any~? existingFormValues
-        +function onFill(data)
-        +function? onValidationErrors(missingFields)
-        +string[]? imageUrls
+    class Product {
+        +String id
+        +String sellerId
+        +String categoryId
+        +Int viewCount
+        +videos ProductVideo[]
+    }
+    class ProductVideo {
+        +String id
+        +String productId
+        +String url
+        +String title
+        +Int playCount
+    }
+    class Category {
+        +String id
+        +String parentId
+        +String nameZh
+        +String nameEn
+        +Int viewCount
+    }
+    class FieldVideo {
+        +String id
+        +String boothId
+        +String url
+        +String title
+        +String machineType
+        +Int playCount
+        +String source
+        +DateTime createdAt
+        +booth Booth
+    }
+    class SiteStat {
+        +String id
+        +Int totalPageViews
+        +Int totalProductViews
+        +Int totalCategoryViews
+        +Int totalVideoPlays
+        +DateTime updatedAt
+    }
+    class Booth {
+        +String id
+        +String merchantId
+    }
+    class TrackController {
+        +POST track(scope,id) number
+        -shouldSkipTracking(req) bool
+    }
+    class StatsController {
+        +GET views(role,sellerId,type) Overview
     }
 
-    class AiRecognizedData {
-        +string? brand
-        +string? modelName
-        +number? year
-        +string? enginePower
-        +string? engineType
-        +string? driveSystem
-        +string? overallLength
-        +string? overallWidth
-        +string? overallHeight
-        +string? netWeight
-        +string? mainConfig
-        +number? workingHours
-        +string? condition
-        +string? priceMode
-        +string? tradeTerm
-        +string? tradePort
-        +boolean isChineseBrand
-        +number confidence
-        +string? category
-        +string? location
-        +string? country
-        +string? province
-        +string? city
-        +number? referencePrice
-    }
-
-    class SellerAiAssistant_State {
-        -boolean recognizing
-        -AiRecognizedData? recognized
-        -string? error
-        -string phase
-        -string engineMode
-        -Set~string~ checkedFields
-        -Set~string~ conflictFields
-    }
-
-    class SpecificationTableProps {
-        +string brandName
-        +string modelName
-        +number year
-        +number? workingHours
-        +string? engineType
-        +number? enginePower
-        +string? driveSystem
-        +string? mainConfig
-        +number? overallLength
-        +number? overallWidth
-        +number? overallHeight
-        +number? netWeight
-        +string conditionLabel
-        +string locale
-        +string categoryName
-        +string? location
-    }
-
-    class ProductUpdateBody {
-        +string? brandName
-        +string? categoryName
-        +string? modelName
-        +number? year
-        +string? condition
-        +number? enginePower
-        +string? engineType
-        +string? driveSystem
-        +number? overallLength
-        +number? overallWidth
-        +number? overallHeight
-        +number? netWeight
-        +string? mainConfig
-        +string? location
-        +string? country
-        +string? province
-        +string? city
-        +string? priceMode
-        +string? tradeTerm
-        +string? tradePort
-        +boolean? isChineseBrand
-    }
-
-    class ProductEditData {
-        +string id
-        +string brandId
-        +string brandName
-        +string categoryId
-        +string categoryName
-        +string modelName
-        +number year
-        +number? workingHours
-        +string condition
-        +number priceCny
-        +string location
-        +string? country
-        +string? province
-        +string? city
-        +number? enginePower
-        +string? engineType
-        +string? driveSystem
-        +number? overallLength
-        +number? overallWidth
-        +number? overallHeight
-        +number? netWeight
-        +string? mainConfig
-        +string priceMode
-        +string tradeTerm
-        +string? tradePort
-        +boolean isChineseBrand
-        +object[] images
-    }
-
-    SpecificationTableProps --> SpecificationTable : 渲染规格表
-    SellerAiAssistantProps --> SellerAiAssistant : 渲染AI助手
-    ProductUpdateBody --> "PUT /api/seller/products/[id]" : 请求体
-    ProductEditData --> "edit/page.tsx" : 页面初始化
+    Product "1" o-- "0..*" ProductVideo
+    Booth "1" o-- "0..*" FieldVideo
+    TrackController ..> Product : increment viewCount
+    TrackController ..> ProductVideo : increment playCount
+    TrackController ..> Category : increment viewCount
+    TrackController ..> FieldVideo : increment playCount
+    TrackController ..> SiteStat : increment totals
+    StatsController ..> SiteStat : read O(1)
+    StatsController ..> Category : ranking
+    StatsController ..> ProductVideo : ranking
+    StatsController ..> FieldVideo : ranking

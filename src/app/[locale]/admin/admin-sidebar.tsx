@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Package, Settings, FileText, Tent, Boxes, Shield, Bot, Gavel, FileSignature, ShieldCheck, ScrollText, SlidersHorizontal, Activity } from "lucide-react";
+import { LayoutDashboard, Users, Package, Settings, FileText, Tent, Boxes, Shield, Bot, Gavel, FileSignature, ShieldCheck, ScrollText, SlidersHorizontal, Activity, BarChart3 } from "lucide-react";
 
 export function AdminSidebar({ role }: { role: string }) {
   const t = useTranslations("nav");
@@ -32,6 +32,7 @@ export function AdminSidebar({ role }: { role: string }) {
     { href: `/${locale}/admin/expo/manage`, label: "展会内容管理", icon: Boxes, hideForEditor: false },
     { href: `/${locale}/admin/orchestrator`, label: "智能体调度", icon: Bot, hideForEditor: true },
     { href: `/${locale}/admin/export-compliance`, label: "出口合规", icon: Shield, hideForEditor: false },
+    { href: `/${locale}/admin/analytics/views`, label: "浏览量看板", icon: BarChart3, hideForEditor: true },
   ];
 
   const visibleLinks = links.filter((l) => !(isEditor && l.hideForEditor));

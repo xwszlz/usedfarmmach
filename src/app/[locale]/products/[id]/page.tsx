@@ -27,6 +27,8 @@ import { SellerTrustCard } from "@/components/seller/seller-trust-card";
 import BlockchainTrace from "@/components/blockchain/blockchain-trace";
 import Link from "next/link";
 import { Wrench } from "lucide-react";
+import { ProductViewBadge } from "@/components/stats/ProductViewBadge";
+import { ProductVideoGallery } from "@/components/stats/ProductVideoGallery";
 
 export const dynamic = "force-dynamic";
 
@@ -228,6 +230,10 @@ export default async function ProductDetailPage({
         <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
           {mainTitle}
         </h1>
+        {/* 浏览量标注：挂载即 track('product') 并展示最新累计值 */}
+        <div className="mt-3">
+          <ProductViewBadge productId={product.id} initialViewCount={product.viewCount} locale={locale} />
+        </div>
       </div>
 
       {/* ================================================================ */}
@@ -346,32 +352,19 @@ export default async function ProductDetailPage({
         {/* Right Column: Video + AI Deep Analysis */}
         <div className="space-y-6">
           {/* ================================================================ */}
-          {/*  SECTION 4 — Video Area                                         */}
+          {/*  SECTION 4 — Video Area（onPlay 调 track('video') 并展示播放量）  */}
           {/* ================================================================ */}
           {product.videos.length > 0 && (
-            <div className="space-y-3">
-              {product.videos.map((video, idx) => (
-                <div key={video.id} className="overflow-hidden rounded-lg bg-black">
-                  <video
-                    src={getVideoUrl(video.url)}
-                    controls
-                    playsInline
-                    crossOrigin="anonymous"
-                    className="h-auto w-full"
-                    preload="metadata"
-                    poster={getImageUrl(product.images[0]?.url)}
-                  >
-                    {locale === "zh" ? "您的浏览器不支持视频播放" : locale === "ru" ? "Ваш браузер не поддерживает воспроизведение видео" : "Your browser does not support video playback"}
-                  </video>
-                  {product.videos.length > 1 && (
-                    <div className="bg-gray-900 px-3 py-1.5 text-xs text-gray-300">
-                      {locale === "zh" ? `视频` : locale === "ru" ? "Видео" : "Video"} {idx + 1}/{product.videos.length}
-                      {video.title && ` — ${video.title}`}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+            <ProductVideoGallery
+              videos={product.videos.map((v) => ({
+                id: v.id,
+                url: getVideoUrl(v.url),
+                title: v.title ?? null,
+                playCount: v.playCount ?? 0,
+              }))}
+              posterUrl={product.images[0] ? getImageUrl(product.images[0].url) : undefined}
+              locale={locale}
+            />
           )}
 
           {/* ================================================================ */}

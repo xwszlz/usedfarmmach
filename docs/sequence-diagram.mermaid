@@ -1,35 +1,37 @@
 sequenceDiagram
-    actor Seller as 卖家
-    participant EditPage as 编辑页<br/>edit/page.tsx
-    participant GETAPI as GET /api/seller/products/[id]
-    participant Prisma as Prisma DB
-    participant AIAsst as AI助手组件<br/>ai-assistant.tsx
-    participant Recognize as /api/agents/seller-helper/recognize
-    participant PUTAPI as PUT /api/seller/products/[id]
-    participant ListPage as 卖家产品列表
+    participant U as 访客浏览器
+    participant P as 产品详情页(SSR)
+    participant B as ProductViewBadge
+    participant A as /api/stats/track
+    participant DB as Prisma/PostgreSQL
 
-    Seller->>EditPage: 从产品列表点击"编辑"
-    EditPage->>GETAPI: GET /api/seller/products/[id]
-    GETAPI->>Prisma: findUnique(include: brand, category, images)
-    Prisma-->>GETAPI: 产品完整数据
-    GETAPI-->>EditPage: JSON {product: {...}}
-    EditPage-->>Seller: 表单预填充显示
+    Note over U,DB: 流程1 产品详情页浏览计数
+    U->>P: 打开 /[locale]/products/[id]
+    P->>U: 渲染页面 + <ProductViewBadge productId initialViewCount>
+    U->>B: 组件挂载(onMount)
+    B->>A: POST {scope:'product', id}
+    A->>DB: product.update(increment viewCount) + select viewCount
+    A->>DB: siteStat.update(increment totalPageViews, totalProductViews)
+    DB-->>A: 最新 viewCount
+    A-->>B: {count}
+    B-->>U: 渲染 "🔥 已被浏览 N 次"
 
-    Seller->>EditPage: 点击"重新AI识别"
-    EditPage->>AIAsst: 传入 imageUrls (已有图片URL)
-    AIAsst->>Recognize: POST {imageUrls, isChineseBrand}
-    Recognize-->>AIAsst: 识别结果 AiRecognizedData
+    Note over U,DB: 流程2 视频播放计数
+    U->>P: 点击播放 <video onPlay>
+    P->>A: POST {scope:'video'|'fieldVideo', id}
+    A->>DB: productVideo/fieldVideo.update(increment playCount)
+    A->>DB: siteStat.update(increment totalVideoPlays)
+    DB-->>A: 最新 playCount
+    A-->>P: {count}
+    P-->>U: 渲染 "▶ 播放 N 次"
 
-    AIAsst->>AIAsst: 比对 existingFormValues<br/>确定 checkedFields + conflictFields
-    AIAsst-->>EditPage: 渲染字段级checkbox列表<br/>冲突字段黄色警告
-
-    Seller->>AIAsst: 勾选/取消字段，点击"填充已选字段"
-    AIAsst->>EditPage: onFill(checkedData) + onValidationErrors([])
-
-    Seller->>EditPage: 修改表单其他项，点击"保存"
-    EditPage->>PUTAPI: PUT /api/seller/products/[id]
-    PUTAPI->>PUTAPI: 校验 sellerId 权限
-    PUTAPI->>Prisma: product.update({data: {...}})
-    Prisma-->>PUTAPI: 更新成功
-    PUTAPI-->>EditPage: {success: true}
-    EditPage->>ListPage: 跳转到产品列表
+    Note over U,DB: 流程3 后台看板轮询
+    participant C as ViewsAnalyticsClient
+    U->>C: 打开看板页
+    C->>A: GET /api/admin/analytics/views (每30s)
+    A->>DB: siteStat.findUnique('global') -> overview
+    A->>DB: category.findMany(orderBy viewCount desc, take10)
+    A->>DB: productVideo + fieldVideo union(orderBy playCount desc)
+    DB-->>A: 数据
+    A-->>C: {overview, categoryRanking, videoRanking}
+    C-->>U: 4数字卡 + 栏目排行 + 视频排行(类型切换)

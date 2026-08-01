@@ -182,6 +182,8 @@ model Category {
   nameAr   String     @default("")
   nameFr   String     @default("")
   nameHi   String     @default("")
+  /// 栏目（Category）访问量统计（product_view_stats），additive
+  viewCount Int       @default(0)
   parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children Category[] @relation("CategoryHierarchy")
   demands  Demand[]
@@ -232,6 +234,8 @@ model Product {
   promotedUntil         DateTime?
   promotedAt            DateTime?
   refreshedAt           DateTime?
+  /// 网站浏览量统计（product_view_stats）：产品详情页访问累计，默认 0，additive 不破坏既有字段
+  viewCount             Int       @default(0)
   promotions            Promotion[]
   arbitrageTopCaches    ArbitrageTopCache[]
   auctions              Auction[]
@@ -277,6 +281,8 @@ model ProductVideo {
   fileSize         Int?
   moderatedAt      DateTime?
   moderationStatus String?   @default("pending")
+  /// 产品视频播放量统计（product_view_stats），additive
+  playCount        Int       @default(0)
   product          Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId])
@@ -1396,6 +1402,7 @@ model Booth {
   merchant      User?          @relation(fields: [merchantId], references: [id])
   expoInquiries ExpoInquiry[]
   showcaseItems ShowcaseItem[]
+  fieldVideos   FieldVideo[]
 
   @@index([expoId, status])
   @@index([hall, status])
@@ -1970,4 +1977,43 @@ model AccountLink {
   @@index([comUserId])
   @@index([cnUserId])
   @@index([linkToken])
+}
+
+// ============================================================
+// 网站浏览量统计（product_view_stats）
+// 全部为 additive 变更：只新增模型，不修改/删除既有表，
+// 保证 .com（Neon）与 .cn（阿里云 PG）migrate deploy 幂等安全。
+// ============================================================
+
+/// 地头展现场作业视频（扫码上传）：与 ProductVideo 平级，专承现场视频播放统计。
+/// 历史真源为 OSS db.json（见 scripts/migrate-field-videos.ts）。
+model FieldVideo {
+  id          String   @id @default(cuid())
+  /// 关联展位（可空）：历史 QR 上传无 booth 上下文 → null；卖家维度过滤据此生效
+  boothId     String?
+  /// 视频 OSS 直链
+  url         String
+  /// 品牌名 / 标题
+  title       String?
+  /// 机型标签（大屏展示/过滤）
+  machineType String?
+  /// 播放量统计（product_view_stats）
+  playCount   Int      @default(0)
+  /// 溯源：'qr'（地头展扫码）| 'showcase'（展台展品视频，本期迁移跳过）
+  source      String   @default("qr")
+  createdAt   DateTime @default(now())
+  booth       Booth?   @relation(fields: [boothId], references: [id], onDelete: SetNull)
+
+  @@index([boothId])
+  @@index([source])
+}
+
+/// 网站总览单例行（O(1) 读取，避免运行时 sum）。固定 id = 'global'，两站各自独立计数。
+model SiteStat {
+  id                String   @id
+  totalPageViews    Int      @default(0) // 仅 product + category 页面访问（视频播放不计入 PV）
+  totalProductViews Int      @default(0)
+  totalCategoryViews Int     @default(0)
+  totalVideoPlays   Int      @default(0) // video + fieldVideo 播放合计
+  updatedAt         DateTime @updatedAt
 }
