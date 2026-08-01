@@ -1,8 +1,9 @@
 # ============================================================
 # docker-compose.yml — .cn 国内站（阿里云 ECS 北京）
-# 双 service：
+# 三 service：
 #   - nginx：对外 80/443，反代 + SSL
 #   - app  ：仅内部网络 app:3000，不暴露宿主机端口
+#   - postgres：ECS 本地 PG（docker postgres:16 + volume，数据不出境，零额外采购）
 #
 # 运行时环境变量由 ECS 主机 /opt/cn/.env.cn 提供（env_file），
 # 绝不通过 CI 注入（避免进入 CI 日志）。
@@ -44,6 +45,10 @@ services:
       - "3000"
     env_file:
       - /opt/cn/.env.cn
+    # 依赖本地 PG（ECS 内 docker postgres:16）；PG 健康后才启动 app，避免迁移竞态
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
     # 注：alpine 默认无 curl，使用 busybox wget（与 Dockerfile.cn HEALTHCHECK 一致）
     healthcheck:
@@ -54,6 +59,29 @@ services:
       start_period: 30s
     networks:
       - cn-net
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: cn-postgres
+    environment:
+      POSTGRES_USER: ${CN_DB_USER:-cn_app}
+      POSTGRES_PASSWORD: ${CN_DB_PASSWORD:-change_me_strong_password}
+      POSTGRES_DB: ${CN_DB_NAME:-usedfarmmach_cn}
+    volumes:
+      - cn-pg-data:/var/lib/postgresql/data
+    expose:
+      - "5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${CN_DB_USER:-cn_app} -d ${CN_DB_NAME:-usedfarmmach_cn}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - cn-net
+
+volumes:
+  cn-pg-data:
 
 networks:
   cn-net:
