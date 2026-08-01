@@ -1,11 +1,12 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Card, CardContent } from "@/components/ui/card";
-import { Eye, Shield, Zap, Handshake, Users } from "lucide-react";
+import { Award, Eye, Shield, Zap, Handshake, Users } from "lucide-react";
 
 export default function AboutClient() {
   const t = useTranslations("about");
+  const locale = useLocale();
 
   const values = [
     {
@@ -88,6 +89,23 @@ export default function AboutClient() {
             </h2>
             <p className="mx-auto max-w-2xl text-gray-600 leading-relaxed">
               {t("teamText")}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 行业资质与协会关系 — 合规口径（唯一标准称谓，含分会层级） */}
+      <div className="mb-8">
+        <Card className="border-0 bg-primary-50 shadow-sm">
+          <CardContent className="p-8 text-center">
+            <Award className="mx-auto mb-4 h-10 w-10 text-primary-500" />
+            <h2 className="mb-4 text-xl font-bold text-gray-900">
+              {locale === "zh" ? "行业资质与协会关系" : "Industry Credentials & Association"}
+            </h2>
+            <p className="mx-auto max-w-2xl text-gray-600 leading-relaxed">
+              {locale === "zh"
+                ? "神雕农机是中国农机流通协会·二手农机流通分会副会长单位，深耕二手农机流通领域。神雕农机展、神雕云展、神雕展翼为神雕农机自有品牌，独立运营，不代表协会官方。"
+                : "Shendiao Agricultural Machinery is a Vice-President Unit of the Used Farm Machinery Circulation Branch under the China Agricultural Machinery Circulation Association. Shendiao Agri-Machinery Expo™, Shendiao Cloud Expo™, and Shendiao WingShow™ are proprietary brands of Shendiao, operated independently and not representing the Association."}
             </p>
           </CardContent>
         </Card>
