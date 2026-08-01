@@ -81,7 +81,7 @@ export default async function ComparePage({
           { name: locale === "zh" ? "首页" : "Home", url: `${BASE_URL}/${locale}` },
           { name: locale === "zh" ? "农机博览会" : "EXPO", url: `${BASE_URL}/${locale}/expo` },
           {
-            name: locale === "zh" ? "新锐专业馆" : "Rising & Specialty Pavilion",
+            name: locale === "zh" ? "新锐专业馆" : "Rising Innovators Hall",
             url: `${BASE_URL}/${locale}/expo/compare`,
           },
         ]}

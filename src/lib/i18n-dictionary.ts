@@ -1300,9 +1300,6 @@ export const I18N_DICT: Record<string, I18nEntry> = {
   "热销": {
     "en": "HOT"
   },
-  "全球标杆馆 · 主馆": {
-    "en": "Global Pavilion · Main Hall"
-  },
   "品牌": {
     "en": "Brand",
     "ru": "Бренд",
@@ -1311,9 +1308,6 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "ar": "العلامة التجارية",
     "fr": "Marque",
     "hi": "ब्रांड"
-  },
-  "全球标杆": {
-    "en": "Global Benchmark"
   },
   "农机品牌殿堂": {
     "en": "Machinery Hall"
@@ -1436,10 +1430,10 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "en": "Chinese brands solve affordability and availability; international brands deliver peak performance — choose what fits your needs."
   },
   "全球领袖馆": {
-    "en": "China Pavilion"
+    "en": "Global Leaders Hall"
   },
   "行业中坚馆": {
-    "en": "Global Pavilion"
+    "en": "China Backbone Hall"
   },
   "旗舰": {
     "en": "Flagship"
@@ -1454,7 +1448,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "en": "Standard"
   },
   "全球领袖馆 · 主馆": {
-    "en": "China Pavilion · Main Hall"
+    "en": "Global Leaders Hall · Main Hall"
   },
   "中国农机品牌走向世界": {
     "en": "Chinese Farm Machinery Goes Global"

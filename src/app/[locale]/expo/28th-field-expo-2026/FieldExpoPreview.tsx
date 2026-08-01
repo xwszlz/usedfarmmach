@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useTr } from "@/lib/i18n-tr";
 import { useState, useEffect } from "react";
+import { isCnSite } from "@/config/site";
 
 interface FieldExpoPreviewProps {
   locale: string;
@@ -44,6 +45,7 @@ const EXHIBITORS = [
 export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
   const t = useTranslations();
   const isZh = locale === "zh";
+  const isCn = isCnSite();
   const tr = useTr();
 
   // Countdown calculation (target: 2026-07-29)
@@ -87,11 +89,18 @@ export function FieldExpoPreview({ locale }: FieldExpoPreviewProps) {
             {/* Left: Text */}
             <div>
               <p className="mb-2 inline-block rounded-full bg-white/20 px-3 py-1 text-sm font-medium">
-                🔥 {tr("第28届 · 真机下地 · 实效演示")}
+                🔥 {isCn ? tr("第28届 · 真机下地 · 实效演示") : (isZh ? "真实作业验证" : "Real Operation Verification")}
               </p>
               <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
                 {tr("河北农机新机具新技术推广演示会")}
               </h1>
+              {!isCn && (
+                <p className="mt-3 text-base text-green-100">
+                  {isZh
+                    ? "神雕展翼™ — 神雕农机展旗下的真实作业视频验证模块"
+                    : "Shendiao WingShow™ — Field Operation Video Show by Shendiao Agri-Machinery Expo™"}
+                </p>
+              )}
               <div className="mt-6 space-y-3 text-lg text-green-100">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-5 w-5" />

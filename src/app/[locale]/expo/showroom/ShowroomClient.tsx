@@ -336,7 +336,7 @@ export default function ShowroomClient({
               }`}
             >
               <span className="text-base">🏆</span>
-              {t("全球领袖馆", "Global Leaders Pavilion", "Зал мировых лидеров")}
+              {t("全球领袖馆", "Global Leaders Hall", "Зал мировых лидеров")}
               <span className={`rounded-full px-1.5 text-xs ${activePavilion === "global_leader" ? "bg-white/20" : "bg-gray-200"}`}>
                 {globalLeaderCount}
               </span>
@@ -350,7 +350,7 @@ export default function ShowroomClient({
               }`}
             >
               <span className="text-base">🌍</span>
-              {t("行业中坚馆", "Industry Pillars Pavilion", "Зал отраслевых лидеров")}
+              {t("行业中坚馆", "China Backbone Hall", "Зал отраслевых лидеров")}
               <span className={`rounded-full px-1.5 text-xs ${activePavilion === "industry_pillar" ? "bg-white/20" : "bg-gray-200"}`}>
                 {industryPillarCount}
               </span>
@@ -364,7 +364,7 @@ export default function ShowroomClient({
               }`}
             >
               <span className="text-base">🚀</span>
-              {t("新锐专业馆", "Rising Specialty Pavilion", "Зал новых специальностей")}
+              {t("新锐专业馆", "Rising Innovators Hall", "Зал новых специальностей")}
               <span className={`rounded-full px-1.5 text-xs ${activePavilion === "rising_specialty" ? "bg-white/20" : "bg-gray-200"}`}>
                 {risingSpecialtyCount}
               </span>

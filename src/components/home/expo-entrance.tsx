@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { ArrowRight } from "lucide-react";
+import { isCnSite } from "@/config/site";
 
 interface ExpoEntranceProps {
   locale: string;
@@ -10,40 +11,56 @@ interface ExpoEntranceProps {
 
 export function ExpoEntrance({ locale }: ExpoEntranceProps) {
   const t = useTranslations();
+  const isCn = isCnSite();
 
   const halls = [
     {
       href: "/expo/showroom?pavilion=global_leader",
-      titleKey: "expoHome.chinaHall",
-      descKey: "expoHome.chinaHallDesc",
+      titleKey: "expoHome.globalLeadersHall",
+      descKey: "expoHome.globalLeadersHallDesc",
       metric: locale === "zh" ? "26+ 品牌" : "26+ Brands",
       gradient: "from-red-500 to-orange-500",
     },
     {
       href: "/expo/showroom?pavilion=industry_pillar",
-      titleKey: "expoHome.intlHall",
-      descKey: "expoHome.intlHallDesc",
+      titleKey: "expoHome.industryPillarsHall",
+      descKey: "expoHome.industryPillarsHallDesc",
       metric: locale === "zh" ? "40+ 品牌" : "40+ Brands",
       gradient: "from-blue-500 to-cyan-500",
     },
     {
       href: "/expo/showroom?pavilion=rising_specialty",
-      titleKey: "expoHome.compareHall",
-      descKey: "expoHome.compareHallDesc",
+      titleKey: "expoHome.risingSpecialtyHall",
+      descKey: "expoHome.risingSpecialtyHallDesc",
       metric: locale === "zh" ? "105+ 品牌" : "105+ Brands",
       gradient: "from-purple-500 to-pink-500",
     },
   ];
+
+  const heading = isCn
+    ? locale === "zh"
+      ? "世界农机博览会"
+      : "World Agricultural Machinery Expo"
+    : locale === "zh"
+      ? "全球农机博览会"
+      : "Global Agri-Machinery Expo";
+  const subheading = isCn
+    ? locale === "zh"
+      ? "汇聚全球顶尖农机品牌"
+      : "Bringing Together the World's Top Machinery Brands"
+    : locale === "zh"
+      ? "汇聚全球农机，服务全球买家"
+      : "Connecting the World's Machinery with Global Buyers";
 
   return (
     <section className="py-12">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-10 text-center">
           <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
-            {locale === "zh" ? "世界农机博览会" : "World Agricultural Machinery Expo"}
+            {heading}
           </h2>
           <p className="mt-3 text-gray-600 dark:text-gray-400">
-            {locale === "zh" ? "汇聚全球顶尖农机品牌" : "Bringing Together the World's Top Machinery Brands"}
+            {subheading}
           </p>
         </div>
 
