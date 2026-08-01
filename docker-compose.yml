@@ -3,7 +3,9 @@
 # 三 service：
 #   - nginx：对外 80/443，反代 + SSL
 #   - app  ：仅内部网络 app:3000，不暴露宿主机端口
-#   - postgres：ECS 本地 PG（docker postgres:16 + volume，数据不出境，零额外采购）
+#   - postgres：ECS 本地 PG（docker postgres:16 + volume，数据不出境，零额外采购）。
+#               ⚠️ 仅「合规终态·境内」模式使用；当前「方案A·临时默认」模式下 .cn 连 Neon，
+#               此容器仍会启动但 app 不连它（无害，可忽略或停掉省资源）。
 #
 # 运行时环境变量由 ECS 主机 /opt/cn/.env.cn 提供（env_file），
 # 绝不通过 CI 注入（避免进入 CI 日志）。
@@ -45,7 +47,9 @@ services:
       - "3000"
     env_file:
       - /opt/cn/.env.cn
-    # 依赖本地 PG（ECS 内 docker postgres:16）；PG 健康后才启动 app，避免迁移竞态
+    # 数据库由 env_file(/opt/cn/.env.cn) 的 DATABASE_URL_CN 决定：
+    # 当前默认=方案A·Neon（数据出境，备案前临时）；备案后改回 cn-postgres 境内库。
+    # 此处 depends_on 本地 postgres 仅为「合规终态·境内」模式准备；方案A模式下 postgres 空跑无害。
     depends_on:
       postgres:
         condition: service_healthy
