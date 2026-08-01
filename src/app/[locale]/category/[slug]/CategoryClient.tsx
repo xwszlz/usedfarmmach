@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import Link from "next/link";
 import { ProductGrid } from "@/components/product/product-grid";
+import { CategoryViewBadge } from "@/components/stats/CategoryViewBadge";
 import { ArrowLeft, Wheat, ChevronRight } from "lucide-react";
 import type { Product, Category as CategoryType } from "@/types";
 
@@ -11,6 +12,7 @@ interface CategoryWithSlug extends CategoryType {
   slug: string;
   productCount: number;
   nameRu?: string;
+  viewCount?: number;
 }
 
 interface CategoryPageData {
@@ -120,6 +122,16 @@ export default function CategoryClientPage({ initialLocale, initialSlug }: Props
             </p>
           </div>
         </div>
+      </div>
+
+      {/* 栏目浏览量标注：挂载即 track('category') 并展示最新累计值 */}
+      <div className="mb-6">
+        <CategoryViewBadge
+          categoryId={data.category.id}
+          categoryName={categoryName}
+          initialViewCount={data.category.viewCount ?? 0}
+          locale={locale}
+        />
       </div>
 
       {data.children && data.children.length > 0 && (

@@ -7,14 +7,21 @@ import { ProductFilters } from "@/components/product/product-filters";
 import { Pagination } from "@/components/ui/pagination";
 import { ProductGridSkeleton } from "@/components/ui/skeleton";
 import { BuyerMatchCard } from "@/components/buyer/buyer-match-card";
+import { CategoryViewBadge } from "@/components/stats/CategoryViewBadge";
 import type { Product, ProductFilters as Filters, PaginatedResponse } from "@/types";
+
+interface CategoryOption {
+  value: string;
+  label: string;
+  id: string;
+}
 
 interface Props {
   initialProducts?: Product[];
   initialTotal?: number;
   initialTotalPages?: number;
   initialBrands?: { value: string; label: string }[];
-  initialCategories?: { value: string; label: string }[];
+  initialCategories?: CategoryOption[];
   initialLocations?: { value: string; label: string }[];
 }
 
@@ -40,7 +47,7 @@ export default function ProductsClient({
   const [seoHydrated, setSeoHydrated] = useState(initialProducts.length > 0);
 
   const [brands, setBrands] = useState<{ value: string; label: string }[]>(initialBrands);
-  const [categories, setCategories] = useState<{ value: string; label: string }[]>(initialCategories);
+  const [categories, setCategories] = useState<CategoryOption[]>(initialCategories);
   const [locations, setLocations] = useState<{ value: string; label: string }[]>(initialLocations);
 
   // Only fetch filter options if not provided from SSR
@@ -154,6 +161,22 @@ export default function ProductsClient({
       <div className="mt-6 mb-4 text-sm text-gray-500">
         {t("total", { count: total })}
       </div>
+
+      {/* 栏目筛选生效时挂栏目浏览量标注：track('category') 并展示最新累计值 */}
+      {filters.category &&
+        (() => {
+          const activeCategory = categories.find((c) => c.value === filters.category);
+          if (!activeCategory || !activeCategory.id) return null;
+          return (
+            <div className="mb-4">
+              <CategoryViewBadge
+                categoryId={activeCategory.id}
+                categoryName={activeCategory.label}
+                locale={locale}
+              />
+            </div>
+          );
+        })()}
 
       {loading ? (
         <ProductGridSkeleton />

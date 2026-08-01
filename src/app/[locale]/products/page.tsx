@@ -104,7 +104,7 @@ export default async function ProductsPage({
         initialTotal={total}
         initialTotalPages={totalPages}
         initialBrands={brands.map((b: any) => ({ value: toSlug(b.nameEn), label: getLabel(b) }))}
-        initialCategories={categories.map((c: any) => ({ value: toSlug(c.nameEn), label: getLabel(c) }))}
+        initialCategories={categories.map((c: any) => ({ value: toSlug(c.nameEn), label: getLabel(c), id: c.id }))}
         initialLocations={locations.filter((l: any) => l.location).map((l: any) => ({ value: l.location, label: l.location }))}
       />
     </>
