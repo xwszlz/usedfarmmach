@@ -131,7 +131,7 @@ export default async function GlobalBrandsPage({
           { name: locale === "zh" ? "首页" : "Home", url: `${BASE_URL}/${locale}` },
           { name: locale === "zh" ? "农机博览会" : "EXPO", url: `${BASE_URL}/${locale}/expo` },
           {
-            name: locale === "zh" ? "全球标杆馆" : "Global Pavilion",
+            name: locale === "zh" ? "全球领袖馆" : "Global Leaders Hall",
             url: `${BASE_URL}/${locale}/expo/global-brands`,
           },
         ]}

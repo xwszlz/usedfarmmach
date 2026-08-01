@@ -292,12 +292,12 @@
     "researchDesc": "行业报告、政策解读、市场趋势"
   },
   "expoHome": {
-    "chinaHall": "全球领袖馆",
-    "chinaHallDesc": "John Deere、CLAAS、Fendt、久保田—全球农机巨头标志机型",
-    "intlHall": "行业中坚馆",
-    "intlHallDesc": "东方红YTO、雷沃、沃得、中联—行业腰部品牌对标全球",
-    "compareHall": "新锐专业馆",
-    "compareHallDesc": "大疆农业、极飞科技、专业细分品牌—按品类精挑细选",
+    "globalLeadersHall": "全球领袖馆",
+    "globalLeadersHallDesc": "John Deere、CLAAS、Fendt、久保田—全球农机巨头标志机型",
+    "industryPillarsHall": "行业中坚馆",
+    "industryPillarsHallDesc": "东方红YTO、雷沃、沃得、中联—行业腰部品牌对标全球",
+    "risingSpecialtyHall": "新锐专业馆",
+    "risingSpecialtyHallDesc": "大疆农业、极飞科技、专业细分品牌—按品类精挑细选",
     "enterHall": "进入展馆"
   },
   "research": {

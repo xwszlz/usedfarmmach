@@ -43,8 +43,8 @@ const localizedMeta: Record<string, Record<string, { title: string; description:
       description: "永不落幕的农机世界展会 — 全球首个365天在线农机展会平台。虚拟展位、AI供需匹配、跨境交易担保。中国二手农机源头直达全球买家。",
     },
     en: {
-      title: "The Always-On Global Farm Machinery Expo | 365-Day Online Exhibition | AgriTrade",
-      description: "The world's first 365-day online farm machinery expo. Virtual booths, AI supply-demand matching, cross-border escrow. Chinese used machinery sources direct to global buyers.",
+      title: "Global Agri-Machinery Expo | The Always-On 365-Day Online Exhibition | AgriTrade",
+      description: "Shendiao Agri-Machinery Expo™ — the world's first 365-day online farm machinery expo. Virtual booths, AI supply-demand matching, cross-border escrow. Verified machinery from China and beyond, direct to global buyers.",
     },
     ru: {
       title: "Всемирная выставка сельхозтехники без выходных | АгриТрейд",

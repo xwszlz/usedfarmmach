@@ -292,12 +292,12 @@
     "researchDesc": "Industry reports, policy analysis, market trends"
   },
   "expoHome": {
-    "chinaHall": "Global Leaders Pavilion",
-    "chinaHallDesc": "John Deere, CLAAS, Fendt — world top machinery leaders flagship models",
-    "intlHall": "Industry Pillars Pavilion",
-    "intlHallDesc": "YTO, Lovol, World, Zoomlion — regional powerhouses bridging global markets",
-    "compareHall": "Rising & Specialty Pavilion",
-    "compareHallDesc": "DJI, XAG, specialty brands & niche players — curated by category",
+    "globalLeadersHall": "Global Leaders Hall",
+    "globalLeadersHallDesc": "John Deere, CLAAS, Fendt — world top machinery leaders, flagship models on display",
+    "industryPillarsHall": "China Backbone Hall",
+    "industryPillarsHallDesc": "YTO, Lovol, World, Zoomlion — proven China-based suppliers, part of a global supply mix",
+    "risingSpecialtyHall": "Rising Innovators Hall",
+    "risingSpecialtyHallDesc": "DJI, XAG, specialty brands & niche players — curated by merit",
     "enterHall": "Enter Hall"
   },
   "research": {

@@ -463,14 +463,14 @@ export default function GlobalBrandsClient({
           {/* Badge */}
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium backdrop-blur-md">
             <Globe className="h-4 w-4" />
-            <span>{tr("全球标杆馆 · 主馆")}</span>
+            <span>{tr("全球领袖馆 · 主馆")}</span>
             <span className="ml-1 rounded-full bg-white/20 px-2 py-0.5 text-xs">
               {brands.length} {tr("品牌")}
             </span>
           </div>
 
           <h1 className="mb-4 text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
-            {tr("全球标杆")}
+            {tr("全球领袖馆")}
             <span className="block bg-gradient-to-r from-yellow-300 to-amber-200 bg-clip-text text-transparent">
               {tr("农机品牌殿堂")}
             </span>

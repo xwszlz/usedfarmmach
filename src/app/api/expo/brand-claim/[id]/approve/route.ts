@@ -96,7 +96,7 @@ export async function POST(
         template: "standard",
         status: "published",
         sortIndex: 0,
-        pavilion: "china",
+        pavilion: "industry_pillar",
         tier: "free",
         intro: `${brandName} 已入驻神雕农机·永不落幕的农机世界展会。`,
       },

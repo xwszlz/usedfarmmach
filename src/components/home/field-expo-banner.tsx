@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Calendar, MapPin, Play, Clock } from "lucide-react";
 import { useState, useEffect } from "react";
+import { isCnSite } from "@/config/site";
 
 interface FieldExpoBannerProps {
   locale: string;
@@ -11,6 +12,7 @@ interface FieldExpoBannerProps {
 
 export function FieldExpoBanner({ locale }: FieldExpoBannerProps) {
   const isZh = locale === "zh";
+  const isCn = isCnSite();
   const [days, setDays] = useState(5);
   const [hours, setHours] = useState(0);
 
@@ -34,33 +36,42 @@ export function FieldExpoBanner({ locale }: FieldExpoBannerProps) {
           {/* Left: text */}
           <div className="flex items-center gap-3">
             <div className="hidden rounded-lg bg-white/20 px-3 py-1 text-sm font-bold text-white sm:block">
-              🔥 {isZh ? "地头展" : "Field Expo"}
+              🔥 {isCn ? (isZh ? "地头展" : "Field Expo") : (isZh ? "真实作业验证" : "Real Operation Videos")}
             </div>
             <div className="text-center text-sm text-white sm:text-left">
               <span className="font-semibold">
-                {isZh ? "第28届河北农机推广演示会" : "28th Hebei Agri Machinery Expo"}
+                {isCn
+                  ? (isZh ? "第28届河北农机推广演示会" : "28th Hebei Agri Machinery Expo")
+                  : (isZh ? "神雕展翼 · 真实作业视频" : "Shendiao WingShow™ · Field Operation Videos")}
               </span>
-              <div className="flex items-center gap-2 text-green-100">
-                <Calendar className="h-3 w-3" />
-                <span>{isZh ? "7/29 · 元氏 · 神雕农机" : "Jul 29 · Yuanshi"}</span>
-                <Clock className="ml-1 h-3 w-3" />
-                <span>
-                  {isZh
-                    ? `倒计时 ${days}天 ${hours}小时`
-                    : `${days}d ${hours}h`}
-                </span>
-              </div>
+              {isCn ? (
+                <div className="flex items-center gap-2 text-green-100">
+                  <Calendar className="h-3 w-3" />
+                  <span>{isZh ? "7/29 · 元氏 · 神雕农机" : "Jul 29 · Yuanshi"}</span>
+                  <Clock className="ml-1 h-3 w-3" />
+                  <span>
+                    {isZh
+                      ? `倒计时 ${days}天 ${hours}小时`
+                      : `${days}d ${hours}h`}
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-green-100">
+                  <Play className="h-3 w-3" />
+                  <span>{isZh ? "真机下地 · 实效验证" : "Real machines. Real fields."}</span>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Right: CTA */}
           <div className="flex items-center gap-2">
             <Link
-              href={`/${locale}/expo/28th-field-expo-2026`}
+              href={`/${locale}${isCn ? "/expo/28th-field-expo-2026" : "/expo/field-videos"}`}
               className="inline-flex items-center gap-1.5 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-green-700 shadow transition hover:bg-green-50"
             >
               <Play className="h-4 w-4" />
-              {isZh ? "展会详情" : "Expo Details"}
+              {isCn ? (isZh ? "展会详情" : "Expo Details") : (isZh ? "观看作业视频" : "Watch Videos")}
             </Link>
           </div>
         </div>

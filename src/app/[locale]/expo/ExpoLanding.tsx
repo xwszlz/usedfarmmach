@@ -16,6 +16,7 @@ import {
   Send,
   Loader2,
 } from "lucide-react";
+import { isCnSite } from "@/config/site";
 
 interface ExpoLandingProps {
   locale: string;
@@ -639,8 +640,37 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   ship: <Ship className="h-8 w-8 text-primary-600" />,
 };
 
+// .com 全球叙事覆盖：仅 .com 生效，主语从"中国农机"切换为"全球农机"；
+// .cn 保留中国供给端叙事（沿用 TEXTS[locale]）。两站共用母品牌名 Shendiao Agri-Machinery Expo™。
+const GLOBAL_NARRATIVE: Record<
+  string,
+  { badge: string; title: string; subtitle: string; introTitle: string; introBody: string }
+> = {
+  zh: {
+    badge: "全球农机博览会 · 让全球农机走向世界",
+    title: "永不落幕的全球农机博览会",
+    subtitle:
+      "全球农机品牌 365 天在线展示，从约翰迪尔到大疆，从拖拉机到植保无人机——汇聚全球供给，服务全球买家。",
+    introTitle: "全球农机的世界舞台",
+    introBody:
+      "传统展会一年 3 天，错过等一年。我们把展会搬到线上，让全球农机品牌 365 天 24 小时向全球买家展示。全球领袖馆为旗舰，中国中坚馆为核心供给，新锐专业馆为补充——三馆联动，按品牌全球影响力客观分级。结合 AI 供需匹配、跨境交易担保与国际物流，让全球农机走向每一块农田。",
+  },
+  en: {
+    badge: "Global Agri-Machinery Expo — The World's Farm Machinery, Connected",
+    title: "The Always-On Global Agri-Machinery Expo",
+    subtitle:
+      "Verified machinery brands from China and beyond, on display 365 days a year — from John Deere to DJI, from tractors to drones. A global supply meeting global buyers.",
+    introTitle: "A Global Stage for the World's Farm Machinery",
+    introBody:
+      "Traditional expos last 3 days a year — miss it and wait another year. We bring the expo online, showcasing verified machinery brands from around the world to international buyers 24/7/365. The Global Leaders Hall is the flagship, the China Backbone Hall is the core supply mix, and the Rising Innovators Hall is the curated supplement — three halls working together, tiered objectively by global brand influence. Combined with AI matching, cross-border escrow, and international logistics, we bring the world's farm machinery to every field.",
+  },
+};
+
 export function ExpoLanding({ locale }: ExpoLandingProps) {
-  const t = TEXTS[locale] || TEXTS.zh;
+  const cn = isCnSite();
+  const base = TEXTS[locale] || TEXTS.zh;
+  const narrative = cn ? null : GLOBAL_NARRATIVE[locale] || GLOBAL_NARRATIVE.en;
+  const t = narrative ? { ...base, ...narrative } : base;
   const [formData, setFormData] = useState({
     company: "",
     contact: "",
@@ -730,18 +760,18 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
         <p className="text-lg leading-relaxed text-gray-600">{t.introBody}</p>
       </section>
 
-      {/* Three Pavilions Entry */}
+      {/* Three Pavilions Entry (value-tiered, not nationality-based) */}
       <section className="bg-gradient-to-b from-gray-50 to-white py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            {/* China Pavilion */}
+            {/* Global Leaders Hall */}
             <Link
               href={`/${locale}/expo/global-brands`}
               className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-600 to-red-700 p-8 text-white shadow-lg transition-all hover:shadow-2xl hover:scale-[1.02]"
             >
-              <div className="absolute top-4 right-4 text-6xl opacity-20">🇨🇳</div>
+              <div className="absolute top-4 right-4 text-6xl opacity-20">🏆</div>
               <h3 className="mb-2 text-2xl font-bold">
-                {locale === "zh" ? "全球领袖馆" : locale === "ru" ? "Зал мировых лидеров" : "Global Leaders Pavilion"}
+                {locale === "zh" ? "全球领袖馆" : locale === "ru" ? "Зал мировых лидеров" : "Global Leaders Hall"}
               </h3>
               <p className="text-sm text-red-100">
                 {locale === "zh"
@@ -756,21 +786,21 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
               </div>
             </Link>
 
-            {/* Global Pavilion */}
+            {/* China Backbone Hall */}
             <Link
               href={`/${locale}/expo/china-brands`}
               className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-600 to-orange-700 p-8 text-white shadow-lg transition-all hover:shadow-2xl hover:scale-[1.02]"
             >
-              <div className="absolute top-4 right-4 text-6xl opacity-20">🌍</div>
+              <div className="absolute top-4 right-4 text-6xl opacity-20">🏭</div>
               <h3 className="mb-2 text-2xl font-bold">
-                {locale === "zh" ? "行业中坚馆" : locale === "ru" ? "Зал отраслевых лидеров" : "Industry Pillars Pavilion"}
+                {locale === "zh" ? "行业中坚馆" : locale === "ru" ? "Зал отраслевых лидеров" : "China Backbone Hall"}
               </h3>
               <p className="text-sm text-amber-100">
                 {locale === "zh"
                   ? "东方红YTO、雷沃、沃得、中联、马恒达等行业腰部品牌，对标全球的强者"
                   : locale === "ru"
                     ? "YTO, Lovol, World, Zoomlion, Mahindra — крупные региональные игроки"
-                    : "YTO, Lovol, World, Zoomlion, Mahindra — regional powerhouses"}
+                    : "YTO, Lovol, World, Zoomlion, Mahindra — proven China-based suppliers"}
               </p>
               <div className="mt-4 flex items-center gap-2 text-sm font-medium">
                 {locale === "zh" ? "进入中坚馆" : locale === "ru" ? "Войти" : "Enter"}
@@ -778,14 +808,14 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
               </div>
             </Link>
 
-            {/* Rising & Specialty */}
+            {/* Rising Innovators Hall */}
             <Link
-              href={`/${locale}/expo/showroom`}
+              href={`/${locale}/expo/showroom?pavilion=rising_specialty`}
               className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-600 to-indigo-700 p-8 text-white shadow-lg transition-all hover:shadow-2xl hover:scale-[1.02]"
             >
-              <div className="absolute top-4 right-4 text-6xl opacity-20">⚖️</div>
+              <div className="absolute top-4 right-4 text-6xl opacity-20">🚀</div>
               <h3 className="mb-2 text-2xl font-bold">
-                {locale === "zh" ? "新锐专业馆" : locale === "ru" ? "Зал новых брендов" : "Rising & Specialty Pavilion"}
+                {locale === "zh" ? "新锐专业馆" : locale === "ru" ? "Зал новых брендов" : "Rising Innovators Hall"}
               </h3>
               <p className="text-sm text-blue-100">
                 {locale === "zh"
@@ -834,19 +864,20 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
         </div>
       </section>
 
-      {/* ShenDiao Expo Pricing */}
-      <section className="bg-gradient-to-br from-green-700 via-green-600 to-emerald-700 py-16">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-10 text-center">
-            <h2 className="text-3xl font-bold text-white">
-              {locale === "zh" ? "神雕展 · 四档服务" : "ShenDiao Expo · 4 Tiers"}
-            </h2>
-            <p className="mt-2 text-green-100">
-              {locale === "zh"
-                ? "地头展免费参加 → 现场了解神雕展 → 选档开通"
-                : "Free field expo → Explore ShenDiao Expo → Choose your tier"}
-            </p>
-          </div>
+      {/* ShenDiao Expo — dual-site framing */}
+      {cn ? (
+        <section className="bg-gradient-to-br from-green-700 via-green-600 to-emerald-700 py-16">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+            <div className="mb-10 text-center">
+              <h2 className="text-3xl font-bold text-white">
+                {locale === "zh" ? "神雕展 · 四档服务" : "ShenDiao Expo · 4 Tiers"}
+              </h2>
+              <p className="mt-2 text-green-100">
+                {locale === "zh"
+                  ? "地头展免费参加 → 现场了解神雕展 → 选档开通"
+                  : "Free field expo → Explore ShenDiao Expo → Choose your tier"}
+              </p>
+            </div>
           <div className="grid grid-cols-1 gap-5 md:grid-cols-4">
             {[
               {
@@ -915,8 +946,38 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
                 : "Free field expo | Free ShenDiao Expo tier | Early bird at expo"}
             </p>
           </div>
-        </div>
-      </section>
+          </div>
+        </section>
+      ) : (
+        <section className="bg-gradient-to-br from-green-700 via-green-600 to-emerald-700 py-16">
+          <div className="mx-auto max-w-4xl px-4 py-16 text-center sm:px-6 lg:px-8">
+            <div className="mb-10">
+              <h2 className="text-3xl font-bold text-white">
+                {locale === "zh" ? "神雕展翼 · 真实作业验证" : "Shendiao WingShow™ · Real Operation Verification"}
+              </h2>
+              <p className="mt-2 text-green-100">
+                {locale === "zh"
+                  ? "田间实拍作业视频，为平台每一台展机提供真实工况佐证"
+                  : "Authentic field-operation footage backing every machine on the platform"}
+              </p>
+            </div>
+            <p className="mx-auto max-w-2xl text-green-50">
+              {locale === "zh"
+                ? "神雕展翼™ 是神雕农机博览会旗下的真实作业视频验证模块。我们深入田间地头，实拍农机真实作业全过程，为全球买家提供可核验的设备工况证据——不止看参数，更看实战。"
+                : "Shendiao WingShow™ is the field-verification video module of Shendiao Agri-Machinery Expo™. We film real on-field operation to give global buyers verifiable proof of a machine's true working condition — beyond specs, into the field."}
+            </p>
+            <div className="mt-8">
+              <Link
+                href={`/${locale}/expo/field-videos`}
+                className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 font-semibold text-green-700 transition-transform hover:scale-105"
+              >
+                {locale === "zh" ? "观看真实作业视频" : "Watch field operation videos"}
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Inquiry Form */}
       <section id="inquiry-form" className="mx-auto max-w-2xl px-4 py-16 sm:px-6 lg:px-8">
