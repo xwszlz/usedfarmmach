@@ -115,6 +115,30 @@ async function fetchHomeProducts() {
   }
 }
 
+/**
+ * 安全查询首页展会三馆展品数（与 Showroom 页口径一致，避免首页/展厅数字矛盾）。
+ * 复用 Showroom 的 showcaseItem.count 逻辑；DB 失败时返回 null，由展示组件降级。
+ */
+async function fetchExpoPavilionCounts() {
+  try {
+    const [globalLeader, industryPillar, risingSpecialty] = await Promise.all([
+      prisma.showcaseItem.count({
+        where: { status: "published", itemType: "new", booth: { pavilion: "global_leader" } },
+      }),
+      prisma.showcaseItem.count({
+        where: { status: "published", itemType: "new", booth: { pavilion: "industry_pillar" } },
+      }),
+      prisma.showcaseItem.count({
+        where: { status: "published", itemType: "new", booth: { pavilion: "rising_specialty" } },
+      }),
+    ]);
+    return { globalLeader, industryPillar, risingSpecialty };
+  } catch (err) {
+    console.error("[HomePage] 展会馆展品数查询失败（返回空以避免 500）:", err);
+    return null;
+  }
+}
+
 export default async function HomePage({
   params,
 }: {
@@ -126,6 +150,7 @@ export default async function HomePage({
   const { topProduct, hotProducts, rankedProducts } = await fetchHomeProducts();
   const topReportData = DAILY_REPORT_RANKING[0];
   const initialArticles = await fetchLatestArticles(3);
+  const expoCounts = await fetchExpoPavilionCounts();
 
 
   return (
@@ -152,7 +177,7 @@ export default async function HomePage({
       <RecruitmentBanner locale={locale} />
       <HotEquipment products={hotProducts} locale={locale} />
       <DailyReportSection locale={locale} initialArticles={initialArticles} />
-      <ExpoEntrance locale={locale} />
+      <ExpoEntrance locale={locale} counts={expoCounts} />
       <PartsEntrance locale={locale} />
       <ServicesEntrance locale={locale} />
       <CTASection locale={locale} />

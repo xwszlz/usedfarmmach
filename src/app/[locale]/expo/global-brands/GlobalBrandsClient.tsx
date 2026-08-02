@@ -475,6 +475,9 @@ export default function GlobalBrandsClient({
               {tr("农机品牌殿堂")}
             </span>
           </h1>
+          <span className="mt-3 block text-2xl font-semibold text-amber-100/90">
+            {locale === "zh" ? "神雕云展™ · 神雕农机展™" : "Shendiao Cloud Expo™ · Shendiao Agri-Machinery Expo™"}
+          </span>
           <p className="max-w-2xl text-lg leading-relaxed text-amber-100">
             {tr("约翰迪尔、克拉斯、凯斯、纽荷兰、芬特、麦赛弗格森——全球农机行业的技术标杆与品质参照。汇聚全球顶尖品牌，建立国际最高标准。")}
           </p>

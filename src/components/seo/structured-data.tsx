@@ -14,6 +14,8 @@ import {
   generateLocalBusinessJsonLd,
   generateHowToJsonLd,
   generateCourseJsonLd,
+  generateEventJsonLd,
+  generateVideoObjectJsonLd,
 } from "@/lib/jsonld";
 
 // ─────── Generic JSON-LD Script ───────
@@ -167,4 +169,26 @@ export function CourseStructuredData({
   modules: CourseModuleData[];
 }) {
   return <JsonLd data={generateCourseJsonLd(locale, courseName, courseDescription, modules)} />;
+}
+
+// ─────── Event (Virtual Expo) ───────
+
+export function EventStructuredData({ locale }: { locale: string }) {
+  return <JsonLd data={generateEventJsonLd(locale)} />;
+}
+
+// ─────── VideoObject (Shendiao WingShow) ───────
+
+interface VideoObjectData {
+  name: string;
+  description: string;
+  contentUrl: string;
+  thumbnailUrl?: string;
+  uploadDate: string;
+  duration?: string;
+  locale: string;
+}
+
+export function VideoObjectStructuredData(props: VideoObjectData) {
+  return <JsonLd data={generateVideoObjectJsonLd(props)} />;
 }

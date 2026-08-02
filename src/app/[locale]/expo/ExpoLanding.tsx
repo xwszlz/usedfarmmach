@@ -61,7 +61,7 @@ const TEXTS: Record<string, {
     cta: "立即申请参展",
     introTitle: "世界农机的全球舞台",
     introBody:
-      "传统展会一年3天，错过等一年。我们将展会搬到线上，让全球农机品牌365天24小时向全球买家展示。全球领袖馆为旗舰，行业中坚馆为核心，新锐专业馆为补充——三馆联动，按品牌全球影响力客观分级，从展示到成交的完整闭环。结合AI供需匹配、跨境交易担保和国际物流服务，让全球农机走向每一块农田。",
+      "传统展会一年3天，错过等一年。我们将展会搬到线上，让全球农机品牌365天24小时向全球买家展示。全球领袖馆为旗舰，中国中坚馆为核心，新锐专业馆为补充——三馆联动，按品牌全球影响力客观分级，从展示到成交的完整闭环。结合AI供需匹配、跨境交易担保和国际物流服务，让全球农机走向每一块农田。",
     featuresTitle: "核心亮点",
     features: [
       {
@@ -671,6 +671,7 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
   const base = TEXTS[locale] || TEXTS.zh;
   const narrative = cn ? null : GLOBAL_NARRATIVE[locale] || GLOBAL_NARRATIVE.en;
   const t = narrative ? { ...base, ...narrative } : base;
+  const expoTitle = cn && locale === "zh" ? "神雕农机展™——中国农机的世界舞台" : t.title;
   const [formData, setFormData] = useState({
     company: "",
     contact: "",
@@ -729,7 +730,7 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
             {t.badge}
           </div>
           <h1 className="mb-6 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl md:text-6xl">
-            {t.title}
+            {expoTitle}
           </h1>
           <p className="mx-auto mb-10 max-w-3xl text-lg text-gray-600 sm:text-xl">
             {t.subtitle}
@@ -793,7 +794,7 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
             >
               <div className="absolute top-4 right-4 text-6xl opacity-20">🏭</div>
               <h3 className="mb-2 text-2xl font-bold">
-                {locale === "zh" ? "行业中坚馆" : locale === "ru" ? "Зал отраслевых лидеров" : "China Backbone Hall"}
+                {locale === "zh" ? "中国中坚馆" : locale === "ru" ? "Зал отраслевых лидеров" : "China Backbone Hall"}
               </h3>
               <p className="text-sm text-amber-100">
                 {locale === "zh"

@@ -572,7 +572,7 @@ export default function ManageClient({ brands, booths, items }: Props) {
                     </div>
                     <div>
                       <label className="text-xs text-gray-500">分区</label>
-                      <div className="text-sm text-gray-900">{booth.pavilion === "global_leader" ? "全球领袖馆" : booth.pavilion === "industry_pillar" ? "行业中坚馆" : "新锐专业馆"}</div>
+                      <div className="text-sm text-gray-900">{booth.pavilion === "global_leader" ? "全球领袖馆" : booth.pavilion === "industry_pillar" ? "中国中坚馆" : "新锐专业馆"}</div>
                     </div>
                     <div>
                       <label className="text-xs text-gray-500">状态</label>

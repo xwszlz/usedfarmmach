@@ -7,32 +7,42 @@ import { isCnSite } from "@/config/site";
 
 interface ExpoEntranceProps {
   locale: string;
+  counts?: { globalLeader: number; industryPillar: number; risingSpecialty: number } | null;
 }
 
-export function ExpoEntrance({ locale }: ExpoEntranceProps) {
+export function ExpoEntrance({ locale, counts }: ExpoEntranceProps) {
   const t = useTranslations();
   const isCn = isCnSite();
+
+  // 实时展品数优先；DB 查询失败（counts 为 null）时降级为旧硬编码文案
+  const label = locale === "zh" ? "展品" : "Exhibits";
+  const metricFor = (n?: number) =>
+    counts && typeof n === "number"
+      ? `${n} ${label}`
+      : locale === "zh"
+      ? "26+ 品牌"
+      : "26+ Brands";
 
   const halls = [
     {
       href: "/expo/showroom?pavilion=global_leader",
       titleKey: "expoHome.globalLeadersHall",
       descKey: "expoHome.globalLeadersHallDesc",
-      metric: locale === "zh" ? "26+ 品牌" : "26+ Brands",
+      metric: metricFor(counts?.globalLeader),
       gradient: "from-red-500 to-orange-500",
     },
     {
       href: "/expo/showroom?pavilion=industry_pillar",
       titleKey: "expoHome.industryPillarsHall",
       descKey: "expoHome.industryPillarsHallDesc",
-      metric: locale === "zh" ? "40+ 品牌" : "40+ Brands",
+      metric: metricFor(counts?.industryPillar),
       gradient: "from-blue-500 to-cyan-500",
     },
     {
       href: "/expo/showroom?pavilion=rising_specialty",
       titleKey: "expoHome.risingSpecialtyHall",
       descKey: "expoHome.risingSpecialtyHallDesc",
-      metric: locale === "zh" ? "105+ 品牌" : "105+ Brands",
+      metric: metricFor(counts?.risingSpecialty),
       gradient: "from-purple-500 to-pink-500",
     },
   ];
@@ -56,6 +66,11 @@ export function ExpoEntrance({ locale }: ExpoEntranceProps) {
     <section className="py-12">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-10 text-center">
+          {!isCn && (
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-red-100 px-4 py-1.5 text-sm font-semibold text-red-700">
+              Shendiao Agri-Machinery Expo™
+            </div>
+          )}
           <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
             {heading}
           </h2>
@@ -98,6 +113,24 @@ export function ExpoEntrance({ locale }: ExpoEntranceProps) {
             </Link>
           ))}
         </div>
+
+        {!isCn && (
+          <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <Link
+              href={`/${locale}/expo/showroom`}
+              className="inline-flex items-center gap-2 rounded-full bg-red-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-red-700"
+            >
+              {locale === "zh" ? "我是买家 · 浏览全球供给" : "I'm a Buyer · Browse Global Supply"}
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
+              href={`/${locale}/expo`}
+              className="inline-flex items-center gap-2 rounded-full border border-red-600 px-6 py-3 text-sm font-semibold text-red-700 transition hover:bg-red-50"
+            >
+              {locale === "zh" ? "我是展商 · 申请参展" : "I'm an Exhibitor · Apply to Join"}
+            </Link>
+          </div>
+        )}
       </div>
     </section>
   );

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ExpoLanding } from "./ExpoLanding";
 import { generatePageMetadata } from "@/lib/seo-metadata";
+import { EventStructuredData } from "@/components/seo/structured-data";
 
 export async function generateMetadata({
   params,

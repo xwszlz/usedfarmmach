@@ -58,6 +58,12 @@ export default function PartCard({ part, locale }: PartCardProps) {
               <Wrench className="h-12 w-12 text-gray-300" />
             </div>
           )}
+          {/* Stock badge */}
+          <div className="absolute top-2 left-2">
+            <Badge className={`text-xs ${stockInfo.className} shadow-sm`}>
+              {isZh ? stockInfo.zh : stockInfo.en}
+            </Badge>
+          </div>
           {/* OEM/Aftermarket badge */}
           {part.isOEM && (
             <div className="absolute top-2 right-2">

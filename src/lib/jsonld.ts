@@ -33,6 +33,23 @@ export function generateOrganizationJsonLd(locale: string) {
       availableLanguage: ["Chinese", "English", "Russian", "Spanish", "Portuguese", "Arabic", "French", "Hindi"],
     },
     sameAs: ["https://usedfarmmach.com"],
+    subOrganization: [
+      {
+        "@type": "Organization",
+        name: locale === "zh" ? "神雕农机展™" : "Shendiao Agri-Machinery Expo™",
+        url: `${BASE_URL}/${locale}/expo`,
+      },
+      {
+        "@type": "Organization",
+        name: locale === "zh" ? "神雕云展™" : "Shendiao Cloud Expo™",
+        url: `${BASE_URL}/${locale}/expo/showroom`,
+      },
+      {
+        "@type": "Organization",
+        name: locale === "zh" ? "神雕展翼™" : "Shendiao WingShow™",
+        url: `${BASE_URL}/${locale}/expo/field-videos`,
+      },
+    ],
   };
 }
 
@@ -357,5 +374,67 @@ export function generateCourseJsonLd(locale: string, courseName: string, courseD
       name: m.name,
       description: m.description,
     })),
+  };
+}
+
+// ─────── Event (Virtual Expo) ───────
+
+export function generateEventJsonLd(locale: string) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    name:
+      locale === "zh"
+        ? "神雕农机展™ · 全球农机线上博览会"
+        : "Shendiao Agri-Machinery Expo™ · Global Virtual Machinery Expo",
+    description:
+      locale === "zh"
+        ? "365天不间断的全球农机线上博览会，汇聚全球买卖家，AI供需匹配、跨境交易担保与国际物流一站式服务。"
+        : "An always-on global virtual farm machinery expo connecting buyers and sellers worldwide — AI matching, cross-border escrow & international logistics.",
+    startDate: "2024-01-01T00:00",
+    endDate: "2030-12-31T23:59",
+    eventAttendanceMode: "https://schema.org/OnlineEventAttendanceMode",
+    eventStatus: "https://schema.org/EventScheduled",
+    location: {
+      "@type": "VirtualLocation",
+      url: `${BASE_URL}/${locale}/expo`,
+    },
+    organizer: {
+      "@type": "Organization",
+      name: locale === "zh" ? "石家庄神雕农机科技有限公司" : "Shijiazhuang Shendiao Agricultural Machinery Technology Co., Ltd.",
+      url: `${BASE_URL}/${locale}`,
+    },
+    inLanguage: "zh,en,ru,es,pt,ar,fr,hi",
+  };
+}
+
+// ─────── VideoObject (Shendiao WingShow field verification) ───────
+
+interface VideoObjectData {
+  name: string;
+  description: string;
+  contentUrl: string;
+  thumbnailUrl?: string;
+  uploadDate: string;
+  duration?: string;
+  locale: string;
+}
+
+export function generateVideoObjectJsonLd(video: VideoObjectData) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    name: video.name,
+    description: video.description,
+    contentUrl: video.contentUrl,
+    ...(video.thumbnailUrl ? { thumbnailUrl: video.thumbnailUrl } : {}),
+    uploadDate: video.uploadDate,
+    ...(video.duration ? { duration: video.duration } : {}),
+    publisher: {
+      "@type": "Organization",
+      name: video.locale === "zh" ? "神雕展翼™" : "Shendiao WingShow™",
+      url: `${BASE_URL}/${video.locale}/expo/field-videos`,
+    },
+    inLanguage: "zh,en,ru,es,pt,ar,fr,hi",
   };
 }
