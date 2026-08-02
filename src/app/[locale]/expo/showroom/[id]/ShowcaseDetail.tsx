@@ -430,7 +430,7 @@ export default function ShowcaseDetail({
               {/* Price */}
               <div className="mb-5 rounded-lg bg-gradient-to-r from-red-50 to-amber-50 p-4">
                 <div className="text-sm text-gray-500">
-                  {isNew ? t("指导价", "MSRP", "Рекоменд. цена") : t("展会展价", "Expo Price", "Цена")}
+                  {isNew ? t("厂商指导价", "MSRP", "Рекоменд. цена") : t("展会展价", "Expo Price", "Цена")}
                 </div>
                 <div className="text-3xl font-bold text-red-700">
                   {formatPrice()}

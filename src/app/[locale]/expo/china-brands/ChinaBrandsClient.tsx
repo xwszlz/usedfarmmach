@@ -403,7 +403,7 @@ export default function ChinaBrandsClient({
           {/* Badge */}
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium backdrop-blur-md">
             <span className="text-2xl">🇨🇳</span>
-            <span>行业中坚馆 · 主馆</span>
+            <span>中国中坚馆 · 主馆</span>
             <span className="ml-1 rounded-full bg-white/20 px-2 py-0.5 text-xs">
               105品牌
             </span>
@@ -415,6 +415,9 @@ export default function ChinaBrandsClient({
               走向世界
             </span>
           </h1>
+          <span className="mt-3 block text-2xl font-semibold text-red-100/90">
+            {locale === "zh" ? "神雕云展™ · 神雕农机展™" : "Shendiao Cloud Expo™ · Shendiao Agri-Machinery Expo™"}
+          </span>
           <p className="max-w-2xl text-lg leading-relaxed text-red-100">
             42个中国农机品牌，覆盖拖拉机、收割机、播种机、植保无人机全品类。2025年中国农机出口674亿元，同比增长32.3%——中国制造正在改变全球农业装备格局。
           </p>

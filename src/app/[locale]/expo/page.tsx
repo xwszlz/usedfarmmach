@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ExpoLanding } from "./ExpoLanding";
 import { generatePageMetadata } from "@/lib/seo-metadata";
+import { EventStructuredData } from "@/components/seo/structured-data";
 
 export async function generateMetadata({
   params,
@@ -17,5 +18,10 @@ export default async function ExpoPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  return <ExpoLanding locale={locale} />;
+  return (
+    <>
+      <EventStructuredData locale={locale} />
+      <ExpoLanding locale={locale} />
+    </>
+  );
 }

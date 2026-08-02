@@ -1432,7 +1432,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
   "全球领袖馆": {
     "en": "Global Leaders Hall"
   },
-  "行业中坚馆": {
+  "中国中坚馆": {
     "en": "China Backbone Hall"
   },
   "旗舰": {

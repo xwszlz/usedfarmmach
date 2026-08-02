@@ -110,7 +110,7 @@ export default async function ChinaBrandsPage({
           { name: locale === "zh" ? "首页" : "Home", url: `${BASE_URL}/${locale}` },
           { name: locale === "zh" ? "农机博览会" : "EXPO", url: `${BASE_URL}/${locale}/expo` },
           {
-            name: locale === "zh" ? "行业中坚馆" : "China Backbone Hall",
+            name: locale === "zh" ? "中国中坚馆" : "China Backbone Hall",
             url: `${BASE_URL}/${locale}/expo/china-brands`,
           },
         ]}

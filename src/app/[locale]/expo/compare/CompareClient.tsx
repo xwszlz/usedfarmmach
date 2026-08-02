@@ -95,6 +95,9 @@ export default function CompareClient({
           <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">
             {tr("中国制造 vs 国际标杆")}
           </h1>
+          <span className="mt-3 block text-2xl font-semibold text-blue-100/90">
+            {locale === "zh" ? "神雕云展™ · 神雕农机展™" : "Shendiao Cloud Expo™ · Shendiao Agri-Machinery Expo™"}
+          </span>
           <p className="max-w-2xl text-lg text-blue-100">
             {tr("同品类中外品牌横向参数对比——价格、马力、性能、技术差距一目了然。理性决策，选择最适合的农机。")}
           </p>
@@ -268,7 +271,7 @@ export default function CompareClient({
               href={`/${locale}/expo/china-brands`}
               className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 font-semibold text-amber-600 transition hover:bg-amber-50"
             >
-              💪 {tr("行业中坚馆")}
+              💪 {tr("中国中坚馆")}
             </Link>
           </div>
         </div>
