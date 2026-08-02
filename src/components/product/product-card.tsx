@@ -9,7 +9,7 @@ import { ArbitrageBadge } from "./arbitrage-badge";
 import { PriceDisplay } from "./price-display";
 import { calculateArbitragePercent } from "@/lib/utils";
 import { getImageUrl, generateImageAlt } from "@/lib/image-url";
-import { AiBadge } from "@/components/ui/ai-badge";
+
 import type { Product } from "@/types";
 
 interface ProductCardProps {
@@ -138,7 +138,6 @@ export function ProductCard({ product, locale }: ProductCardProps) {
                   }
                 }}
               />
-              <AiBadge position="bottom-left" />
             </>
           ) : (
             // 无图占位：显示品牌名+品类图标
