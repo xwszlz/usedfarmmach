@@ -18,5 +18,10 @@ export default async function ExpoPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  return <ExpoLanding locale={locale} />;
+  return (
+    <>
+      <EventStructuredData locale={locale} />
+      <ExpoLanding locale={locale} />
+    </>
+  );
 }
