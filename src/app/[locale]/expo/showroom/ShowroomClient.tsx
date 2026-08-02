@@ -300,18 +300,11 @@ export default function ShowroomClient({
               "Шэньдяо Облачная Выставка™ · Онлайн-павильон Выставки Шэньдяо™"
             )}
           </p>
-          <h1 className="text-3xl font-bold sm:text-4xl lg:text-5xl">
-            {t(
-              "中国农机 · 走向世界",
-              "Chinese Farm Machinery Goes Global",
-              "Китайская сельхозтехника — всему миру"
-            )}
-          </h1>
           <p className="mt-3 text-red-100 text-lg">
             {t(
-              `${total}台中国精品农机在线展示 · 32+民族品牌 · 全球买家365天随时参观`,
-              `${total} premium Chinese machines on display · 32+ national brands · 365-day access for global buyers`,
-              `${total} китайских машин · 32+ брендов · доступ 365 дней`
+              `${total}台精品农机在线展示 · 全球买家365天随时参观`,
+              `${total} premium machines on display · 365-day access for global buyers`,
+              `${total} машин · доступ 365 дней`
             )}
           </p>
         </div>
