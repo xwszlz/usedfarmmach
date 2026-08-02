@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import ExhibitionMap from "@/components/expo/ExhibitionMap";
+import { AiBadge } from "@/components/ui/ai-badge";
 
 interface BrandRel {
   id: string;
@@ -46,6 +47,7 @@ interface ShowroomItem {
   priceRange: string | null;
   isFeatured: boolean;
   isNewLaunch: boolean;
+  aiGenerated?: boolean;
   coverImage: string | null;
   createdAt: string;
 }
@@ -523,6 +525,10 @@ export default function ShowroomClient({
                         🇨🇳 {t("中国制造", "Made in China", "Сделано в Китае")}
                       </span>
                     )}
+                    {/* AI Generated Image Badge */}
+                    {item.aiGenerated && (
+                      <AiBadge position="bottom-right" />
+                    )}
                   </div>
 
                   {/* Content */}
@@ -563,7 +569,7 @@ export default function ShowroomClient({
                         </span>
                         {item.msrpCny && (
                           <span className="ml-1 text-xs text-gray-400">
-                            {t("厂商指导价", "MSRP", "Рекоменд. цена")}
+                            {t("指导价", "MSRP", "Рекоменд. цена")}
                           </span>
                         )}
                       </div>
