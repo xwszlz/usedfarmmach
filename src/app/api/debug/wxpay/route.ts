@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
   const NOTIFY_URL = process.env.WECHAT_NOTIFY_URL || "";
 
   const EXPECTED_APPID = "wx8ac59ab483285cb4";
-  const EXPECTED_MCH = "1748329455";
+  const EXPECTED_MCH = "1748919698";
 
   const mask = (v: string, head = 6, tail = 4) =>
     v.length <= head + tail ? v : `${v.slice(0, head)}...${v.slice(-tail)}`;
