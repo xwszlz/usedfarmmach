@@ -1,5 +1,11 @@
 generator client {
   provider = "prisma-client-js"
+  // R4.1 修复：Docker 构建（node:22-alpine/musl）需要 openssl3 引擎（libssl.so.3）。
+  // Alpine 3.19+ 无 openssl1.1-compat，默认生成的 linux-musl-openssl-1.1.x 引擎
+  // 会因缺 libssl.so.1.1 加载失败（Error loading shared library）。
+  // 显式生成 linux-musl-openssl-3.0.x（配合 Dockerfile.cn base 阶段 apk add openssl）。
+  // .com（Vercel）/ 本机开发仍用 native，不受影响。
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
