@@ -9,6 +9,14 @@ RUN apk add --no-cache tzdata && \
     cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     echo "Asia/Shanghai" > /etc/timezone
 
+# R4.1 修复：Prisma musl 引擎依赖 libssl。
+# Alpine 3.19+ 已移除 openssl1.1-compat（提供 libssl.so.1.1 的包），
+# 故安装 openssl3（提供 libssl.so.3），并配合 prisma/schema.prisma 的
+# binaryTargets = linux-musl-openssl-3.0.x 使用 openssl3 引擎。
+# 放 base 阶段：builder（构建期 prisma generate/next build）与
+# runner（运行期 server.js 加载引擎）均继承，二者都需要。
+RUN apk add --no-cache openssl
+
 # ============================================================
 # 依赖安装阶段
 # ============================================================
