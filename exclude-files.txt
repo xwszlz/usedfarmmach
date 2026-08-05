@@ -1,0 +1,13 @@
+.git
+node_modules
+.next
+.vscode
+.idea
+.env
+.env.local
+.env.production
+*.log
+*.tmp
+*.bat
+*.ps1
+exclude-files.txt

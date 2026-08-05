@@ -1,0 +1,126 @@
+classDiagram
+    class User {
+        +id: string
+        +role: string
+        +membershipTier: string
+        +membershipExpiresAt: DateTime
+        +usagePeriodStart: DateTime
+        +usagePublish: int
+        +usageInquiry: int
+        +usageAiValuation: int
+        +usageViewContact: int
+        +country: string
+        +preferredLanguage: string
+    }
+    class UsageLog {
+        +id: string
+        +userId: string
+        +action: string
+        +tier: string
+        +periodStart: DateTime
+        +createdAt: DateTime
+    }
+    class PiiAuditLog {
+        +id: string
+        +actorId: string
+        +targetUserId: string
+        +field: string
+        +action: string
+        +purpose: string
+        +createdAt: DateTime
+    }
+    class EmailSendLog {
+        +id: string
+        +userId: string
+        +type: string
+        +provider: string
+        +recipientHash: string
+        +status: string
+        +createdAt: DateTime
+    }
+    class QuotaConfig {
+        <<constants>>
+        +QUOTA_ACTIONS: string[]
+        +getQuotaLimit(tier, action): number|-1
+        +SUPER_ADMIN_MAX: int
+    }
+    class QuotaGuard {
+        +ensureQuotaWindow(user): void
+        +getQuotaState(user): QuotaState
+        +consumeQuota(user, action): QuotaResult
+    }
+    class EmailRouter {
+        +selectProviderForUser(user): EmailProvider
+    }
+    class EmailProvider {
+        <<interface>>
+        +name: string
+        +send(input): EmailSendResult
+    }
+    class ResendProvider
+    class ConsoleProvider
+    class AliyunDirectMailProvider
+    class TencentSesProvider
+    class ApiUserQuota {
+        +GET(request): NextResponse
+    }
+    class ProductCreateRoute {
+        +POST(request): NextResponse
+    }
+    class InquiryCreateRoute {
+        +POST(request): NextResponse
+    }
+    class ValuationRoute {
+        +POST(request): NextResponse
+    }
+    class RevealEmailRoute {
+        +POST(request): NextResponse
+    }
+    class AdminSystemRoleRoute {
+        +POST(request): NextResponse
+    }
+    class AdminSystemAuditRoute {
+        +GET(request): NextResponse
+    }
+    class AdminSystemConfigRoute {
+        +GET(request): NextResponse
+    }
+    class AdminSystemComplianceRoute {
+        +GET(request): NextResponse
+    }
+    class MembershipCard {
+        +renderQuotaPanel()
+        +onOverLimit()
+    }
+    class RoleManagerPage {
+        +changeRole()
+    }
+    class AuditLogPage
+    class ConfigPage
+    class CompliancePage
+
+    QuotaGuard ..> User : 读/增计数
+    QuotaGuard ..> UsageLog : 写消费流水
+    QuotaGuard ..> QuotaConfig : 读上限
+    EmailRouter ..> User : 读 country/locale
+    EmailRouter ..> EmailProvider : 返回实例
+    EmailProvider <|.. ResendProvider
+    EmailProvider <|.. ConsoleProvider
+    EmailProvider <|.. AliyunDirectMailProvider
+    EmailProvider <|.. TencentSesProvider
+    ProductCreateRoute ..> QuotaGuard : consumeQuota(publish)
+    InquiryCreateRoute ..> QuotaGuard : consumeQuota(inquiry)
+    ValuationRoute ..> QuotaGuard : consumeQuota(aiValuation)
+    RevealEmailRoute ..> QuotaGuard : consumeQuota(viewContact)
+    RevealEmailRoute ..> PiiAuditLog : writePiiAuditLog
+    ApiUserQuota ..> QuotaGuard : getQuotaState
+    MembershipCard ..> ApiUserQuota : fetch(quota)
+    AdminSystemRoleRoute ..> User : update(role)
+    AdminSystemRoleRoute ..> PiiAuditLog : writePiiAuditLog
+    AdminSystemAuditRoute ..> PiiAuditLog : 查
+    AdminSystemAuditRoute ..> EmailSendLog : 查
+    AdminSystemComplianceRoute ..> EmailSendLog : 出境计数
+    RoleManagerPage ..> AdminSystemRoleRoute : fetch(POST)
+    AuditLogPage ..> AdminSystemAuditRoute : fetch
+    ConfigPage ..> AdminSystemConfigRoute : fetch
+    CompliancePage ..> AdminSystemComplianceRoute : fetch

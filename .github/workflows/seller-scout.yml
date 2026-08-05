@@ -1,0 +1,116 @@
+# #1 卖方采集 Agent — 每日定时采集工作流
+# 触发：每天 06:00 UTC+8 (前一天 22:00 UTC)
+# 行为：运行 Python 采集脚本 → 导入到 Neon DB（容错模式）
+
+name: Seller Scout Daily
+
+on:
+  schedule:
+    # 每天 UTC 22:00 = 北京时间 06:00
+    - cron: "0 22 * * *"
+  workflow_dispatch: # 支持手动触发
+
+jobs:
+  scrape-and-import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install Python dependencies
+        run: pip install urllib3
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Run Agriaffaires scraper
+        id: scrape
+        continue-on-error: true
+        run: python scripts/scrape_agriaffaires.py
+        env:
+          PYTHONIOENCODING: utf-8
+
+      - name: Run domestic seller scraper
+        id: scrape_domestic
+        continue-on-error: true
+        run: python ../scripts/seller_scout_domestic_scraper.py
+        working-directory: ./scripts
+        env:
+          PYTHONIOENCODING: utf-8
+          HTTPS_PROXY: ""
+
+      - name: Check scrape results
+        id: check
+        run: |
+          TOTAL=0
+          if [ -f scripts/agriaffaires_data.json ]; then
+            COUNT=$(python3 -c "import json; d=json.load(open('scripts/agriaffaires_data.json')); print(d.get('totalListings', 0))")
+            TOTAL=$((TOTAL + COUNT))
+            echo "✅ 国际采集: $COUNT 条"
+          else
+            echo "⚠️ 国际采集文件不存在"
+            echo '{"scrapedAt":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","source":"agriaffaires","totalListings":0,"withPrice":0,"priceOnRequest":0,"listings":[]}' > scripts/agriaffaires_data.json
+          fi
+          if [ -f scripts/domestic_sellers_data_v2.json ]; then
+            DCOUNT=$(python3 -c "import json; d=json.load(open('scripts/domestic_sellers_data_v2.json')); print(d.get('totalListings', 0))")
+            TOTAL=$((TOTAL + DCOUNT))
+            echo "✅ 国内采集: $DCOUNT 条"
+          else
+            echo "⚠️ 国内采集文件不存在"
+          fi
+          echo "listing_count=$TOTAL" >> $GITHUB_OUTPUT
+          echo "📊 总计: $TOTAL 条"
+
+      - name: Import international data to database
+        id: import
+        if: env.DATABASE_URL != ''
+        continue-on-error: true
+        run: npx tsx scripts/import-seller-scout.ts
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Import domestic data to database
+        id: import_domestic
+        if: env.DATABASE_URL != '' && hashFiles('scripts/domestic_sellers_data_v2.json') != ''
+        continue-on-error: true
+        run: npx tsx scripts/import-seller-scout-domestic.ts
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Skip import (no DATABASE_URL)
+        if: env.DATABASE_URL == ''
+        run: echo "⚠️ DATABASE_URL secret 未配置，跳过数据库导入"
+
+      - name: Upload scrape data as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agriaffaires-data-${{ github.run_number }}
+          path: scripts/agriaffaires_data.json
+          retention-days: 30
+
+      - name: Report status
+        if: always()
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📊 Seller Scout Daily 报告"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "采集条数: ${{ steps.check.outputs.listing_count || 0 }}"
+          echo "采集状态: ${{ steps.scrape.outcome }}"
+          echo "导入状态: ${{ steps.import.outcome || 'skipped' }}"
+          echo "时间: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

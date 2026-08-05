@@ -1,0 +1,51 @@
+classDiagram
+    class User {
+      +String id
+      +String? email
+      +String? phone
+      +String role
+      +String? companyName
+      +String? country
+      +Boolean emailPending
+      +Boolean emailVerified
+      +notifications Notification[]
+    }
+    class PiiAuditLog {
+      +String id
+      +String actorId
+      +String targetUserId
+      +String field
+      +String action
+      +DateTime createdAt
+    }
+    class Notification {
+      +String id
+      +String userId
+      +String type
+      +String title
+      +String? body
+      +String? link
+      +Boolean read
+    }
+    class PiiService {
+      <<lib/pii.ts>>
+      +maskEmail(raw) string
+      +maskPhone(raw) string
+      +canViewFullPii(role) boolean
+      +piiResponse(user, opts) object
+      +profileCompleteness(user) Completeness
+    }
+    class CreditGrantService {
+      <<lib/credits/grant.ts>>
+      +grantRegisterGiftIfNeeded(userId) Promise~{granted,amount}~
+    }
+    class NotifyService {
+      <<lib/notify.ts>>
+      +createInAppNotification(input) Promise~void~
+      +sendWechatSubscribeMessage(input) Promise~{delivered:false}~
+    }
+    User "1" --> "0..*" Notification : 站内信
+    PiiAuditLog ..> User : actorId / targetUserId
+    PiiService ..> User : 序列化/脱敏
+    CreditGrantService ..> User : 幂等发分(经 UserMilestone)
+    NotifyService ..> Notification : 写入

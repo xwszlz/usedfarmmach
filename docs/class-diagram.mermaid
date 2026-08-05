@@ -1,0 +1,64 @@
+classDiagram
+    class Product {
+        +String id
+        +String sellerId
+        +String categoryId
+        +Int viewCount
+        +videos ProductVideo[]
+    }
+    class ProductVideo {
+        +String id
+        +String productId
+        +String url
+        +String title
+        +Int playCount
+    }
+    class Category {
+        +String id
+        +String parentId
+        +String nameZh
+        +String nameEn
+        +Int viewCount
+    }
+    class FieldVideo {
+        +String id
+        +String boothId
+        +String url
+        +String title
+        +String machineType
+        +Int playCount
+        +String source
+        +DateTime createdAt
+        +booth Booth
+    }
+    class SiteStat {
+        +String id
+        +Int totalPageViews
+        +Int totalProductViews
+        +Int totalCategoryViews
+        +Int totalVideoPlays
+        +DateTime updatedAt
+    }
+    class Booth {
+        +String id
+        +String merchantId
+    }
+    class TrackController {
+        +POST track(scope,id) number
+        -shouldSkipTracking(req) bool
+    }
+    class StatsController {
+        +GET views(role,sellerId,type) Overview
+    }
+
+    Product "1" o-- "0..*" ProductVideo
+    Booth "1" o-- "0..*" FieldVideo
+    TrackController ..> Product : increment viewCount
+    TrackController ..> ProductVideo : increment playCount
+    TrackController ..> Category : increment viewCount
+    TrackController ..> FieldVideo : increment playCount
+    TrackController ..> SiteStat : increment totals
+    StatsController ..> SiteStat : read O(1)
+    StatsController ..> Category : ranking
+    StatsController ..> ProductVideo : ranking
+    StatsController ..> FieldVideo : ranking

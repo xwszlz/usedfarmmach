@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import "../lib/theme/design-tokens.css";
+
+@layer base {
+  * {
+    @apply border-gray-200 dark:border-gray-700;
+  }
+  body {
+    @apply antialiased;
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
+  }
+}

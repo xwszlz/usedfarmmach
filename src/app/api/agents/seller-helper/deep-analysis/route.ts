@@ -1,0 +1,588 @@
+/**
+ * POST /api/agents/seller-helper/deep-analysis
+ * AI深度分析 — 双引擎版（国内农机/国际农机）
+ *
+ * V2.1 升级（2026-07-12）：
+ *   双引擎架构 — 国内农机走豆包(补贴参考价) / 国际农机走Gemini(FOB出口价)
+ *   接受 isChineseBrand 参数，自动切换分析prompt
+ *
+ * Body: { imageUrls?: string[], imageDataUris?: string[], videoUrls?: string[], isChineseBrand?: boolean }
+ * Response: { success: true, data: { analysis: "Markdown报告", structured: {...}, model: "..." } }
+ */
+
+import { NextRequest, NextResponse } from "next/server";
+import axios from "axios";
+import { calculateValuation } from "@/lib/valuation/formulas";
+
+export const dynamic = "force-dynamic";
+export const maxDuration = 120; // 豆包深度分析需要更长时间
+
+const ARK_API_KEY = process.env.ARK_API_KEY || "";
+const ARK_BASE_URL = process.env.ARK_BASE_URL || "https://ark.cn-beijing.volces.com/api/v3";
+const ARK_MODEL_ID = process.env.ARK_MODEL_ID || "doubao-1-5-vision-pro-32k";
+
+// 备用：Gemini 和 OpenRouter（与 recognize 路由共享配置）
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || "";
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
+
+/**
+ * 国际农机深度分析 Prompt — FOB出口价、全球市场
+ */
+const INTERNATIONAL_ANALYSIS_PROMPT = `你是一位拥有20年经验的资深二手农业机械专家和评估师，精通 John Deere、CLAAS、New Holland、Kubota、Massey Ferguson、Case IH 等全球主流品牌的拖拉机、收获机、打捆机、播种机等各类农机设备。
+
+请根据用户提供的农机照片和视频（可能包含整机全貌、铭牌、驾驶室、发动机、轮胎底盘、工作视频等），结合你的专业知识库，给出一份**详尽的深度分析报告**。
+
+报告必须包含以下部分（用 Markdown 格式输出）：
+
+## 一、设备识别
+- 品牌（英文标准名）
+- 具体型号
+- 生产年份（或年份范围）
+- 识别依据（从哪张照片/视频的什么特征判断的）
+
+## 二、技术参数解读
+基于你对该型号的专业知识，列出关键技术参数：
+- 发动机：型号、额定马力(HP)、排量、缸数
+- 传动系统：驱动方式(2WD/4WD)、变速箱档位数
+- 液压系统：提升力、输出流量
+- 尺寸重量：长×宽×高(mm)、整机重量(kg)
+- 燃油箱容量、PTO功率等
+- 如果照片中有铭牌信息，以铭牌为准；否则根据你的专业知识补充
+
+## 三、设备现状评估（六维度评分）
+从以下6个维度评估设备现状，每个维度打分（1-10分，10分为最佳）：
+- 外观漆面（喷漆完整性、褪色程度）— 评分及说明
+- 锈蚀程度（车身、底盘、关键部件锈蚀情况）— 评分及说明
+- 轮胎/履带（磨损程度、花纹深度、是否需要更换）— 评分及说明
+- 驾驶室/操作台（整洁度、仪表功能、座椅状况）— 评分及说明
+- 液压渗漏（管路、接头、油缸是否有渗漏）— 评分及说明
+- 整体印象（保养水平、使用痕迹、维保记录）— 评分及说明
+最后给出综合评价和总体评分。
+
+## 四、操作与维修要点
+基于你的专业知识，给出该型号农机的：
+- 日常操作注意事项
+- 定期保养项目及周期（工作小时数）
+- 常见故障及排除方法
+- 易损件清单
+- 关键操作技巧
+
+## 五、市场参考价格
+- 国内二手市场参考价（人民币）
+- 国际二手市场参考价（美元）
+- FOB天津港出口参考价（美元）
+- 影响价格的关键因素分析
+- 该型号在当前市场的供需情况
+
+## 六、购买建议
+- 该设备的优缺点总结
+- 适合的作业场景
+- 选购时需要重点检查的部位
+- 询价空间分析
+
+## 七、资源与文档
+- 官方使用说明书获取途径（官网链接或经销商联系方式）
+- 零件目录/Parts Manual 查询地址
+- 维修手册下载链接（如有）
+- 技术培训视频或资料推荐
+- 该品牌在中国的授权服务商信息（如有）
+
+## 八、结构化数据（JSON）
+最后附上一个JSON代码块，包含可被程序解析的结构化数据：
+\`\`\`json
+{
+  "brand": "品牌",
+  "modelName": "型号",
+  "year": 年份,
+  "enginePower": "马力",
+  "engineType": "发动机类型",
+  "driveSystem": "驱动方式",
+  "overallLength": "长mm",
+  "overallWidth": "宽mm",
+  "overallHeight": "高mm",
+  "netWeight": "重量kg",
+  "mainConfig": "主要配置",
+  "condition": "excellent|good|fair|poor",
+  "conditionScores": {
+    "exterior": 1-10,
+    "rust": 1-10,
+    "tires": 1-10,
+    "cabin": 1-10,
+    "hydraulic": 1-10,
+    "overall": 1-10
+  },
+  "estimatedPriceCny": 估值人民币,
+  "estimatedPriceUsd": 估值美元,
+  "fobPriceUsd": FOB美元,
+  "isChineseBrand": false,
+  "confidence": 0.0-1.0
+}
+\`\`\`
+
+重要提示：
+1. **请充分利用你的专业知识**，不要仅依赖照片信息
+2. 报告内容要详实、专业、有深度，至少2000字
+3. **市场价格请严格以「估值引擎参考数据」为准**，在此基础上分析影响因素，不要自行编造价格
+4. FOB价格需考虑设备状况、年份和出口物流成本`;
+
+/**
+ * 国内农机深度分析 Prompt — 补贴参考价、国内市场行情
+ */
+const DOMESTIC_ANALYSIS_PROMPT = `你是一位拥有20年经验的中国资深农业机械专家和评估师，精通东方红、雷沃、沃得、福田、久保田（国产）、洋马、井关、时风、五征、常发、星光、中联重科等国内主流品牌的拖拉机、收割机、插秧机、播种机、植保机、打捆机等各类农机设备。你对中国农机购置补贴政策、各省补贴额度、二手农机交易市场行情有深入了解。
+
+请根据用户提供的农机照片和视频（可能包含整机全貌、铭牌、驾驶室、发动机、轮胎底盘、工作视频等），结合你的专业知识库，给出一份**详尽的深度分析报告**。
+
+报告必须包含以下部分（用 Markdown 格式输出）：
+
+## 一、设备识别
+- 品牌（中文标准名）
+- 具体型号
+- 生产年份（或年份范围）
+- 识别依据（从哪张照片/视频的什么特征判断的）
+
+## 二、技术参数解读
+基于你对该型号的专业知识，列出关键技术参数：
+- 发动机：型号、额定马力(HP)、排量、缸数
+- 传动系统：驱动方式(两驱/四驱)、变速箱档位数
+- 液压系统：提升力、输出流量
+- 尺寸重量：长×宽×高(mm)、整机重量(kg)
+- 燃油箱容量、PTO功率等
+- 如果照片中有铭牌信息，以铭牌为准；否则根据你的专业知识补充
+
+## 三、设备现状评估（六维度评分）
+从以下6个维度评估设备现状，每个维度打分（1-10分，10分为最佳）：
+- 外观漆面（喷漆完整性、褪色程度）— 评分及说明
+- 锈蚀程度（车身、底盘、关键部件锈蚀情况）— 评分及说明
+- 轮胎/履带（磨损程度、花纹深度、是否需要更换）— 评分及说明
+- 驾驶室/操作台（整洁度、仪表功能、座椅状况）— 评分及说明
+- 液压渗漏（管路、接头、油缸是否有渗漏）— 评分及说明
+- 整体印象（保养水平、使用痕迹、维保记录）— 评分及说明
+最后给出综合评价和总体评分。
+
+## 四、操作与维修要点
+- 日常操作注意事项
+- 定期保养项目及周期（工作小时数）
+- 常见故障及排除方法
+- 易损件清单及参考价格
+- 关键操作技巧
+
+## 五、补贴与市场参考价格
+- 该型号新机购置补贴额度（中央补贴+地方补贴，如有）
+- 新机市场参考价（含补贴后价格）
+- 二手市场参考价（人民币）
+- 各地区价格差异分析（如山东、河南、东北等主产区）
+- 二手保值率分析（按年份折旧曲线）
+- 出口可行性评估（如有出口潜力，给出FOB参考价）
+
+## 六、购买建议
+- 该设备的优缺点总结
+- 适合的作业场景和地块规模
+- 选购时需要重点检查的部位
+- 询价空间分析
+- 售后服务与配件供应情况
+
+## 七、资源与文档
+- 官方使用说明书获取途径（官网链接或经销商联系方式）
+- 零件目录/配件手册查询地址
+- 维修手册下载链接（如有）
+- 技术培训视频或资料推荐
+- 该品牌在中国的授权服务商信息
+
+## 八、结构化数据（JSON）
+最后附上一个JSON代码块，包含可被程序解析的结构化数据：
+\`\`\`json
+{
+  "brand": "品牌",
+  "modelName": "型号",
+  "year": 年份,
+  "enginePower": "马力",
+  "engineType": "发动机类型",
+  "driveSystem": "驱动方式",
+  "overallLength": "长mm",
+  "overallWidth": "宽mm",
+  "overallHeight": "高mm",
+  "netWeight": "重量kg",
+  "mainConfig": "主要配置",
+  "condition": "excellent|good|fair|poor",
+  "conditionScores": {
+    "exterior": 1-10,
+    "rust": 1-10,
+    "tires": 1-10,
+    "cabin": 1-10,
+    "hydraulic": 1-10,
+    "overall": 1-10
+  },
+  "subsidyAmount": 补贴金额元,
+  "newMachinePrice": 新机价格元,
+  "estimatedPriceCny": 二手估值人民币,
+  "fobPriceUsd": FOB美元或null,
+  "isChineseBrand": true,
+  "confidence": 0.0-1.0
+}
+\`\`\`
+
+重要提示：
+1. **请充分利用你的专业知识**，不要仅依赖照片信息
+2. 报告内容要详实、专业、有深度，至少2000字
+3. 补贴金额请根据你的知识给出合理估算，并注明是中央补贴还是含地方补贴
+4. **市场价格请严格以「估值引擎参考数据」为准**，在此基础上分析影响因素，不要自行编造价格
+5. 如果该型号有出口潜力（如沃得、雷沃在东南亚、中亚有市场），请给出出口参考价`;
+
+/**
+ * 构建豆包API的多模态消息内容
+ */
+function buildDoubaoContent(
+  images: string[],
+  videos: string[],
+  prompt: string
+): Array<Record<string, unknown>> {
+  const content: Array<Record<string, unknown>> = [
+    { type: "text", text: prompt },
+  ];
+
+  // 图片
+  for (const url of images) {
+    content.push({
+      type: "image_url",
+      image_url: { url },
+    });
+  }
+
+  // 视频（豆包支持 video_url 类型）
+  for (const url of videos) {
+    content.push({
+      type: "video_url",
+      video_url: { url },
+    });
+  }
+
+  return content;
+}
+
+/**
+ * 调用豆包 API
+ */
+async function callDoubao(
+  content: Array<Record<string, unknown>>
+): Promise<string> {
+  console.log(
+    `[DeepAnalysis] 豆包调用: model=${ARK_MODEL_ID}, ` +
+    `图片数=${content.filter((c) => c.type === "image_url").length}, ` +
+    `视频数=${content.filter((c) => c.type === "video_url").length}`
+  );
+
+  const response = await axios.post(
+    `${ARK_BASE_URL}/chat/completions`,
+    {
+      model: ARK_MODEL_ID,
+      messages: [{ role: "user", content }],
+      max_tokens: 4096,
+      temperature: 0.7,
+      top_p: 0.9,
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${ARK_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      timeout: 90000, // 90秒超时（图片下载~20s + 长prompt + 大量生成）
+    }
+  );
+
+  const result = response.data as any;
+  const text = result.choices?.[0]?.message?.content || "";
+
+  if (!text || text.trim().length < 50) {
+    throw new Error("豆包返回空响应或响应过短");
+  }
+
+  return text;
+}
+
+// ── 下载图片并转为 base64 ──
+async function downloadImageAsBase64(url: string): Promise<{ mimeType: string; data: string }> {
+  const response = await axios.get(url, {
+    responseType: "arraybuffer",
+    timeout: 20000,
+  });
+  const contentType = response.headers["content-type"] || "image/jpeg";
+  const base64 = Buffer.from(new Uint8Array(response.data as ArrayBuffer)).toString("base64");
+  return { mimeType: contentType.split(";")[0], data: base64 };
+}
+
+/**
+ * 备用：调用 Gemini API（用于深度分析）
+ */
+async function callGeminiDeep(
+  images: string[],
+  videos: string[],
+  prompt: string
+): Promise<string> {
+  const parts: Array<Record<string, unknown>> = [{ text: prompt }];
+
+  for (const url of images) {
+    if (url.startsWith("data:")) {
+      const [mimeInfo, base64Data] = url.split(",");
+      const mimeType = mimeInfo.replace("data:", "").split(";")[0] || "image/jpeg";
+      parts.push({ inline_data: { mime_type: mimeType, data: base64Data } });
+    } else {
+      // 公开 URL → 下载后转 base64 inline_data
+      try {
+        const { mimeType, data } = await downloadImageAsBase64(url);
+        parts.push({ inline_data: { mime_type: mimeType, data } });
+      } catch (err: any) {
+        console.warn(`[DeepAnalysis] 下载图片失败 ${url}:`, err.message?.substring(0, 80));
+      }
+    }
+  }
+
+  // Gemini 不直接支持视频，跳过视频（prompt 中已描述视频链接）
+  if (videos.length > 0) {
+    parts.push({ text: `[相关视频] ${videos.join("\n")}` });
+  }
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY}`;
+  console.log(`[DeepAnalysis] Gemini 备用调用，图片数=${images.length}, 视频数=${videos.length}`);
+
+  const response = await axios.post(
+    url,
+    {
+      contents: [{ role: "user", parts }],
+      generationConfig: {
+        max_output_tokens: 8192,
+        temperature: 0.7,
+        top_p: 0.9,
+      },
+    },
+    {
+      headers: { "Content-Type": "application/json" },
+      timeout: 90000,
+    }
+  );
+
+  const result = response.data as any;
+  if (result.promptFeedback?.blockReason) {
+    throw new Error(`Gemini 安全过滤: ${result.promptFeedback.blockReason}`);
+  }
+
+  const candidate = result.candidates?.[0];
+  if (!candidate) throw new Error("Gemini 无候选结果");
+  if (candidate.finishReason === "SAFETY") throw new Error("Gemini 安全拦截");
+
+  const text = candidate.content?.parts?.[0]?.text || "";
+  if (!text || text.trim().length < 50) throw new Error("Gemini 返回空响应");
+
+  return text;
+}
+
+/**
+ * 从Markdown报告中提取JSON结构化数据
+ */
+function extractStructured(analysisText: string): Record<string, any> | null {
+  // 找 ```json ... ``` 代码块
+  const jsonMatch = analysisText.match(/```json\s*([\s\S]*?)```/);
+  if (jsonMatch) {
+    try {
+      return JSON.parse(jsonMatch[1].trim());
+    } catch {
+      // 尝试提取花括号内容
+      const braceMatch = jsonMatch[1].match(/\{[\s\S]*\}/);
+      if (braceMatch) {
+        try {
+          return JSON.parse(braceMatch[0]);
+        } catch {
+          // ignore
+        }
+      }
+    }
+  }
+
+  // 尝试从全文提取 JSON
+  const fullJsonMatch = analysisText.match(/\{[\s\S]*"brand"[\s\S]*\}/);
+  if (fullJsonMatch) {
+    try {
+      return JSON.parse(fullJsonMatch[0]);
+    } catch {
+      // ignore
+    }
+  }
+
+  return null;
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    console.log(`[DeepAnalysis] 收到请求: ${JSON.stringify({
+      imageUrls: (body.imageUrls || []).length,
+      imageDataUris: (body.imageDataUris || []).length,
+      videoUrls: (body.videoUrls || []).length,
+      isChineseBrand: body.isChineseBrand,
+      productName: body.productName,
+      brandName: body.brandName,
+      year: body.year,
+      enginePower: body.enginePower,
+    })}`);
+    const imageUrls: string[] = body.imageUrls || [];
+    const imageDataUris: string[] = body.imageDataUris || [];
+    const videoUrls: string[] = body.videoUrls || [];
+    const isChineseBrand = body.isChineseBrand as boolean | undefined;
+    const productName = body.productName as string | undefined;
+    const brandName = body.brandName as string | undefined;
+    const year = body.year as number | undefined;
+    const enginePower = body.enginePower as string | undefined;
+
+    const images = [...imageUrls, ...imageDataUris];
+
+    if (images.length === 0 && videoUrls.length === 0) {
+      return NextResponse.json(
+        { success: false, error: "需要至少一张图片或一段视频", code: "NO_MEDIA" },
+        { status: 400 }
+      );
+    }
+
+    // 双引擎Prompt选择
+    let activePrompt = isChineseBrand ? DOMESTIC_ANALYSIS_PROMPT : INTERNATIONAL_ANALYSIS_PROMPT;
+
+    // 注入已知参数作为上下文（让AI以已知信息为准，照片作为辅助验证）
+    const knownParams: string[] = [];
+    if (brandName) knownParams.push(`- 品牌：${brandName}`);
+    if (productName) knownParams.push(`- 型号：${productName}`);
+    if (year) knownParams.push(`- 年份：${year}`);
+    if (enginePower) knownParams.push(`- 马力：${enginePower} HP`);
+    if (knownParams.length > 0) {
+      activePrompt += `\n\n⚠️ 已知信息（请以此为准，照片作为辅助验证）：\n${knownParams.join("\n")}`;
+    }
+    // 调用估值引擎获取真实参考价（价格统一核心逻辑）
+    let valuationContext = "";
+    let valuationPrice: number | null = null;
+    try {
+      const enginePowerNum = enginePower ? parseInt(String(enginePower).replace(/[^0-9]/g, "")) : undefined;
+      const valuationInput: any = {
+        brand: brandName || "未知品牌",
+        modelName: productName || "",
+        category: productName || "拖拉机",
+        year: year || 2020,
+        enginePower: enginePowerNum,
+        condition: "good",
+      };
+      const valuationResult = calculateValuation(valuationInput);
+      valuationPrice = valuationResult.estimatedValue;
+      valuationContext = `\n\n⚠️ 估值引擎参考数据（请严格以此为基础撰写价格分析，不要自行编造价格）：\n- AI二手参考估值：¥${valuationResult.estimatedValue.toLocaleString()}\n- 估值区间：¥${valuationResult.priceRange.low.toLocaleString()} - ¥${valuationResult.priceRange.high.toLocaleString()}\n- 新机基准价：¥${valuationResult.basePrice.toLocaleString()}\n- 品牌系数：${valuationResult.brandFactor.toFixed(2)}\n- 年份折旧：${Math.round((1 - valuationResult.yearFactor) * 100)}%\n- 估值引擎版本：${valuationResult.version}`;
+      const dataSourceDesc = valuationResult.details.find((d: any) => d.label === "基准价来源")?.description || "估值引擎";
+      valuationContext += `\n- 数据来源：${dataSourceDesc}`;
+      console.log(`[DeepAnalysis] 估值引擎成功: ¥${valuationResult.estimatedValue.toLocaleString()}`);
+    } catch (e) {
+      console.warn("[DeepAnalysis] 估值引擎调用失败:", e);
+    }
+    activePrompt += valuationContext;
+
+    const engineLabel = isChineseBrand ? "国内(DOMESTIC)" : "国际(INTERNATIONAL)";
+    console.log(`[DeepAnalysis] 引擎模式: ${engineLabel}, isChineseBrand: ${isChineseBrand}`);
+
+    let analysisText = "";
+    let modelUsed = "";
+    const errors: string[] = [];
+
+    // ===== 模型选择：国内→豆包优先；国际→Gemini优先 =====
+    // 国内品牌或未定义时首选豆包；国际品牌跳过豆包直接走Gemini
+    if (isChineseBrand !== false) {
+      // 首选：豆包
+      if (ARK_API_KEY) {
+        try {
+          console.log(`[DeepAnalysis] 首选豆包: ${ARK_MODEL_ID}, 引擎: ${engineLabel}, 图片数: ${images.length}`);
+          const content = buildDoubaoContent(images, videoUrls, activePrompt);
+          analysisText = await callDoubao(content);
+          modelUsed = `豆包 ${ARK_MODEL_ID} [${engineLabel}]`;
+        } catch (error: any) {
+          const msg = `[豆包] ${error.message || ""}`.substring(0, 150);
+          console.warn("[DeepAnalysis] 豆包失败:", msg);
+          errors.push(msg);
+        }
+      } else {
+        errors.push("[豆包] ARK_API_KEY未配置");
+      }
+    }
+
+    // Gemini：国际品牌首选 / 国内品牌豆包失败后降级
+    if (!analysisText && GOOGLE_API_KEY) {
+      try {
+        const geminiRole = isChineseBrand === false ? "国际首选" : "降级备用";
+        console.log(`[DeepAnalysis] Gemini ${geminiRole}, 引擎: ${engineLabel}`);
+        analysisText = await callGeminiDeep(images, videoUrls, activePrompt);
+        modelUsed = `Gemini 2.5 Flash [${engineLabel}]`;
+      } catch (error: any) {
+        const msg = `[Gemini] ${error.message || ""}`.substring(0, 150);
+        console.warn("[DeepAnalysis] Gemini 失败:", msg);
+        errors.push(msg);
+      }
+    } else if (!analysisText) {
+      errors.push("[Gemini] GOOGLE_API_KEY未配置");
+    }
+
+    // 备用：OpenRouter
+    if (!analysisText && OPENROUTER_API_KEY) {
+      try {
+        console.log(`[DeepAnalysis] 降级到 OpenRouter, 引擎: ${engineLabel}`);
+        const content = buildDoubaoContent(images, [], activePrompt); // OpenRouter 不支持 video_url
+        const response = await axios.post(
+          "https://openrouter.ai/api/v1/chat/completions",
+          {
+            model: "google/gemini-2.0-flash-001:free",
+            messages: [{ role: "user", content }],
+            max_tokens: 4096,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+              "Content-Type": "application/json",
+              "HTTP-Referer": "https://usedfarmmach.com",
+              "X-Title": "Seller Helper Deep Analysis",
+            },
+            timeout: 90000,
+          }
+        );
+        analysisText = (response.data as any)?.choices?.[0]?.message?.content || "";
+        modelUsed = `OpenRouter Gemini Flash [${engineLabel}]`;
+      } catch (error: any) {
+        const msg = `[OpenRouter] ${error.message || ""}`.substring(0, 150);
+        console.warn("[DeepAnalysis] OpenRouter 失败:", msg);
+        errors.push(msg);
+      }
+    } else if (!analysisText) {
+      errors.push("[OpenRouter] OPENROUTER_API_KEY未配置");
+    }
+
+    if (!analysisText || analysisText.trim().length < 50) {
+      return NextResponse.json({
+        success: false,
+        error: "AI深度分析服务暂时不可用，请稍后重试或使用快速识别功能",
+        code: "ALL_MODELS_FAILED",
+        retryable: true,
+        debug: errors.length > 0 ? errors.map(e => e.substring(0, 120)) : ["未捕获到模型错误"],
+      }, { status: 503 });
+    }
+
+    // 提取结构化数据
+    const structured = extractStructured(analysisText);
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        analysis: analysisText,
+        structured: structured || {},
+        model: modelUsed,
+        valuationPrice,
+        mediaCount: { images: images.length, videos: videoUrls.length },
+      },
+    });
+
+  } catch (error: any) {
+    console.error("[DeepAnalysis] 未处理异常:", error);
+    return NextResponse.json({
+      success: false,
+      error: "AI深度分析暂时不可用，请稍后重试",
+      code: "MANUAL_FALLBACK",
+    }, { status: 500 });
+  }
+}

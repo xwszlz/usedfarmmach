@@ -1,0 +1,98 @@
+{
+  "brands": {
+    "john-deere": {
+      "nameEn": "John Deere",
+      "nameZh": "约翰迪尔",
+      "models": {
+        "4450": { "enginePower": 130, "netWeight": 6200, "overallLength": 4550, "overallWidth": 2130, "overallHeight": 2710, "driveSystem": "2WD", "notes": "经典中型拖拉機" },
+        "6603": { "enginePower": 145, "netWeight": 6800, "overallLength": 4720, "overallWidth": 2240, "overallHeight": 2790, "driveSystem": "2WD", "notes": "6603系列" },
+        "7800": { "enginePower": 180, "netWeight": 8200, "overallLength": 5080, "overallWidth": 2440, "overallHeight": 2960, "driveSystem": "4WD", "notes": "7800系列" }
+      }
+    },
+    "claas": {
+      "nameEn": "CLAAS",
+      "nameZh": "克拉斯",
+      "models": {
+        "JAGUAR 850": { "enginePower": 450, "netWeight": 13500, "overallLength": 9800, "overallWidth": 2990, "overallHeight": 3800, "driveSystem": "4WD", "notes": "青贮收获机" },
+        "JAGUAR 870": { "enginePower": 480, "netWeight": 14000, "overallLength": 10000, "overallWidth": 3000, "overallHeight": 3900, "driveSystem": "4WD", "notes": "青贮收获机" },
+        "JAGUAR 970": { "enginePower": 500, "netWeight": 14500, "overallLength": 10200, "overallWidth": 3050, "overallHeight": 3950, "driveSystem": "4WD", "notes": "旗舰青贮機" },
+        "DOMINATOR 105": { "enginePower": 235, "netWeight": 9500, "overallLength": 8500, "overallWidth": 3600, "overallHeight": 3800, "driveSystem": "4WD", "notes": "联合收割机" },
+        "2200": { "enginePower": 180, "netWeight": 8000, "overallLength": 7200, "overallWidth": 2800, "overallHeight": 3400, "driveSystem": "2WD", "notes": "联合收割机" },
+        "3300": { "enginePower": 220, "netWeight": 10000, "overallLength": 7800, "overallWidth": 3000, "overallHeight": 3600, "driveSystem": "2WD", "notes": "联合收割机" },
+        "5300": { "enginePower": 280, "netWeight": 12000, "overallLength": 8500, "overallWidth": 3200, "overallHeight": 3800, "driveSystem": "4WD", "notes": "联合收割机" }
+      }
+    },
+    "new-holland": {
+      "nameEn": "New Holland",
+      "nameZh": "纽荷兰",
+      "models": {
+        "1290": { "enginePower": 210, "netWeight": 8500, "overallLength": 6100, "overallWidth": 2500, "overallHeight": 3100, "driveSystem": "4WD", "notes": "打捆機" },
+        "BB1290PLUS": { "enginePower": 220, "netWeight": 9000, "overallLength": 6300, "overallWidth": 2550, "overallHeight": 3200, "driveSystem": "4WD", "notes": "方捆打捆機" },
+        "5070": { "enginePower": 70, "netWeight": 3200, "overallLength": 3800, "overallWidth": 1800, "overallHeight": 2400, "driveSystem": "2WD", "notes": "小型拖拉机" },
+        "9080": { "enginePower": 280, "netWeight": 11000, "overallLength": 7800, "overallWidth": 3000, "overallHeight": 3500, "driveSystem": "4WD", "notes": "联合收割机" },
+        "1270": { "enginePower": 200, "netWeight": 8000, "overallLength": 6000, "overallWidth": 2480, "overallHeight": 3050, "driveSystem": "4WD", "notes": "打捆機" },
+        "870": { "enginePower": 160, "netWeight": 6800, "overallLength": 5200, "overallWidth": 2300, "overallHeight": 2800, "driveSystem": "4WD", "notes": "中型拖拉机" },
+        "FX38": { "enginePower": 250, "netWeight": 10500, "overallLength": 7500, "overallWidth": 2900, "overallHeight": 3600, "driveSystem": "4WD", "notes": "青贮收获机" },
+        "FX48": { "enginePower": 300, "netWeight": 11500, "overallLength": 7800, "overallWidth": 2980, "overallHeight": 3700, "driveSystem": "4WD", "notes": "青贮收获机" },
+        "FX50": { "enginePower": 330, "netWeight": 12000, "overallLength": 8000, "overallWidth": 3000, "overallHeight": 3750, "driveSystem": "4WD", "notes": "青贮收获机" }
+      }
+    },
+    "case-ih": {
+      "nameEn": "Case IH",
+      "nameZh": "凯斯",
+      "models": {
+        "7110": { "enginePower": 160, "netWeight": 7500, "overallLength": 4900, "overallWidth": 2440, "overallHeight": 2900, "driveSystem": "2WD", "notes": "拖拉机" },
+        "7120": { "enginePower": 175, "netWeight": 7800, "overallLength": 4950, "overallWidth": 2440, "overallHeight": 2920, "driveSystem": "2WD", "notes": "拖拉机" },
+        "7220": { "enginePower": 190, "netWeight": 8200, "overallLength": 5080, "overallWidth": 2540, "overallHeight": 3000, "driveSystem": "4WD", "notes": "拖拉机" },
+        "MX110": { "enginePower": 110, "netWeight": 5500, "overallLength": 4300, "overallWidth": 2200, "overallHeight": 2700, "driveSystem": "2WD", "notes": "紧凑型拖拉机" },
+        "MX135": { "enginePower": 135, "netWeight": 6000, "overallLength": 4500, "overallWidth": 2300, "overallHeight": 2750, "driveSystem": "2WD", "notes": "紧凑型拖拉机" },
+        "MX150": { "enginePower": 150, "netWeight": 6300, "overallLength": 4600, "overallWidth": 2350, "overallHeight": 2780, "driveSystem": "4WD", "notes": "紧凑型拖拉机" },
+        "MX170": { "enginePower": 170, "netWeight": 6800, "overallLength": 4700, "overallWidth": 2400, "overallHeight": 2820, "driveSystem": "4WD", "notes": "紧凑型拖拉机" }
+      }
+    },
+    "massey-ferguson": {
+      "nameEn": "Massey Ferguson",
+      "nameZh": "麦赛福格森",
+      "models": {
+        "3090": { "enginePower": 90, "netWeight": 4200, "overallLength": 4000, "overallWidth": 2050, "overallHeight": 2550, "driveSystem": "2WD", "notes": "拖拉機" },
+        "6290": { "enginePower": 135, "netWeight": 5600, "overallLength": 4600, "overallWidth": 2200, "overallHeight": 2750, "driveSystem": "2WD", "notes": "拖拉機" },
+        "1404B": { "enginePower": 140, "netWeight": 5800, "overallLength": 4650, "overallWidth": 2250, "overallHeight": 2800, "driveSystem": "4WD", "notes": "拖拉機" },
+        "1840": { "enginePower": 80, "netWeight": 4500, "overallLength": 5200, "overallWidth": 2400, "overallHeight": 2700, "driveSystem": "PTO", "notes": "方捆打捆機" }
+      }
+    },
+    "mtz": {
+      "nameEn": "MTZ/Belarus",
+      "nameZh": "明斯克",
+      "models": {
+        "820": { "enginePower": 80, "netWeight": 4100, "overallLength": 3930, "overallWidth": 1970, "overallHeight": 2785, "driveSystem": "2WD", "notes": "MTZ-82经典" },
+        "920": { "enginePower": 92, "netWeight": 4300, "overallLength": 4000, "overallWidth": 2000, "overallHeight": 2800, "driveSystem": "2WD", "notes": "升级型" },
+        "1221": { "enginePower": 130, "netWeight": 5200, "overallLength": 4400, "overallWidth": 2100, "overallHeight": 2850, "driveSystem": "4WD", "notes": "大马力型" },
+        "2104": { "enginePower": 158, "netWeight": 7000, "overallLength": 5000, "overallWidth": 2400, "overallHeight": 3100, "driveSystem": "4WD", "notes": "重型拖拉機" }
+      }
+    },
+    "kubota": {
+      "nameEn": "Kubota",
+      "nameZh": "久保田",
+      "models": {
+        "985": { "enginePower": 95, "netWeight": 3800, "overallLength": 4100, "overallWidth": 1950, "overallHeight": 2600, "driveSystem": "2WD", "notes": "拖拉機" },
+        "688Q": { "enginePower": 68, "netWeight": 3200, "overallLength": 5600, "overallWidth": 2100, "overallHeight": 2700, "driveSystem": "4WD", "notes": "聯合收割機" }
+      }
+    },
+    "krone": {
+      "nameEn": "Krone",
+      "nameZh": "科罗尼",
+      "models": {
+        "BIG PACK 1290": { "enginePower": 200, "netWeight": 9800, "overallLength": 7800, "overallWidth": 2500, "overallHeight": 3100, "driveSystem": "PTO", "notes": "方捆打捆机" },
+        "BIG PACK 1270": { "enginePower": 180, "netWeight": 9000, "overallLength": 7500, "overallWidth": 2480, "overallHeight": 3000, "driveSystem": "PTO", "notes": "方捆打捆机" },
+        "BIG M 450": { "enginePower": 480, "netWeight": 13000, "overallLength": 10500, "overallWidth": 3000, "overallHeight": 4000, "driveSystem": "4WD", "notes": "自走割草机" }
+      }
+    },
+    "mchale": {
+      "nameEn": "McHale",
+      "nameZh": "麦克海尔",
+      "models": {
+        "F550": { "enginePower": 90, "netWeight": 5500, "overallLength": 5800, "overallWidth": 2500, "overallHeight": 2700, "driveSystem": "PTO", "notes": "圆捆打捆机兼缠膜" }
+      }
+    }
+  }
+}

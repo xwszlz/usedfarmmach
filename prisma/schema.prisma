@@ -1,0 +1,2019 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                    String               @id @default(cuid())
+  email                 String?              @unique
+  phone                 String?
+  /// 邮箱待补全标记：小程序无邮箱注册自动置 true；web 注册有邮箱则 false
+  emailPending          Boolean              @default(false)
+  /// 邮箱是否已验证：阶段0补全即视为已验证（自证）；阶段1改为令牌验证后置 true
+  emailVerified         Boolean              @default(false)
+  /// 数据出境单独同意时间（留痕合规证据，比仅校验更强）
+  consentCrossBorderAt  DateTime?
+  passwordHash          String
+  role                  String               @default("buyer")
+  companyName           String?
+  country               String?
+  preferredLanguage     String               @default("zh")
+  credits               Int                  @default(0)
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  freeValuationsResetAt DateTime             @default(now())
+  freeValuationsUsed    Int                  @default(0)
+  isActive              Boolean              @default(true)
+  lastLoginAt           DateTime?
+  membershipExpiresAt   DateTime?
+  membershipTier        String               @default("free")
+  /// P1 额度：当前自然月用量窗口起点（惰性重置判定依据）
+  usagePeriodStart     DateTime?
+  /// P1 各动作月度独立计数器（互不挤占：发布/询盘/AI估值/查看联系方式）
+  usagePublish         Int                  @default(0)
+  usageInquiry        Int                  @default(0)
+  usageAiValuation    Int                  @default(0)
+  usageViewContact     Int                  @default(0)
+  username              String?              @unique
+  resetToken            String?
+  resetTokenExpires     DateTime?
+  wxOpenid              String?
+  miniOpenid            String?              @unique
+  inviteCode            String?              @unique
+  invitedViaCode        String?
+  lifetime              Boolean              @default(false)
+  badges                String[]             @default([])
+  deviceFingerprint     String?
+  registerIp            String?
+  apiKeys               ApiKey[]
+  auctionsAsSeller      Auction[]            @relation("AuctionSeller")
+  auctionsAsWinner      Auction[]            @relation("AuctionWinner")
+  auctionBids           Bid[]                @relation("AuctionBidder")
+  expoBooths            Booth[]
+  certifications        Certification[]
+  creditTransactions    CreditTransaction[]
+  creditLots            CreditLot[]
+  checkIns              CheckIn[]
+  milestones            UserMilestone[]
+  invitationsSent       Invitation[]          @relation("Inviter")
+  invitationReceived    Invitation?           @relation("Invitee")
+  serviceOrders         ServiceOrder[]
+  promotions            Promotion[]
+  demands               Demand[]
+  contractsAsBuyer      ElectronicContract[] @relation("ContractBuyer")
+  contractsAsSeller     ElectronicContract[] @relation("ContractSeller")
+  escrowAsBuyer         EscrowOrder[]        @relation("EscrowBuyer")
+  escrowAsSeller        EscrowOrder[]        @relation("EscrowSeller")
+  expoInquiries         ExpoInquiry[]
+  favorites             Favorite[]
+  followers             Follow[]             @relation("FollowSeller")
+  following             Follow[]             @relation("FollowFollower")
+  inquiries             Inquiry[]
+  notifications         Notification[]
+  inspectionBookings    InspectionBooking[]
+  inspectionReports     InspectionReport[]
+  loanApplications      LoanApplication[]
+  expoOrdersAsBuyer     Order[]              @relation("OrderBuyer")
+  expoOrdersAsSeller    Order[]              @relation("OrderSeller")
+  products              Product[]
+  expoQuotesAsBuyer     Quote[]              @relation("QuoteBuyer")
+  expoQuotesAsSeller    Quote[]              @relation("QuoteSeller")
+  rentalListings        RentalListing[]
+  expoReviewsReceived   Review[]             @relation("ReviewReviewee")
+  expoReviewsGiven      Review[]             @relation("ReviewReviewer")
+  savedSearches         SavedSearch[]
+  sellerRatingsGiven    SellerRating[]       @relation("SellerRatingsGiven")
+  sellerRatingsReceived SellerRating[]       @relation("SellerRatingsReceived")
+  // 分站新增关联
+  stripeCustomer        StripeCustomer?
+  stripeSubscriptions   StripeSubscription[]
+  guaranteeIntentsAsBuyer  GuaranteeIntent[] @relation("GuaranteeBuyer")
+  guaranteeIntentsAsSeller GuaranteeIntent[] @relation("GuaranteeSeller")
+  accountLinksAsCom     AccountLink[]       @relation("AccountLinkCom")
+  accountLinksAsCn      AccountLink[]       @relation("AccountLinkCn")
+}
+
+/// PII 访问审计：记录谁、何时、读了哪个用户的哪个 PII 字段、用途（保留 ≥6 个月）
+model PiiAuditLog {
+  id           String   @id @default(cuid())
+  actorId      String   // 操作人（admin/super_admin）userId
+  targetUserId String   // 被查看的用户
+  field        String   // 如 "email" | "phone"
+  action       String   @default("view_full") // view_full | export
+  purpose      String?  // 用途备注（可选）
+  createdAt    DateTime @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([targetUserId, createdAt])
+}
+
+/// 邮件发送日志（阶段 1 新增，additive 不影响任何现有表）
+/// 记录"向用户发过哪类邮件、经哪个服务商、收件人是谁（仅 hash）"，
+/// 用于跨境传输追溯、限流排查、PIPIA 与 10 万人阈值监控。
+/// 注意：recipientHash = SHA-256(email)，【不存明文邮箱】，避免二次扩散 PII。
+model EmailSendLog {
+  id            String    @id @default(cuid())
+  userId        String?  // 目标用户（站内/本人场景有值；匿名找回场景可空）
+  type          String    // verify_email | reset_password | complete_profile_reminder
+  provider      String    // resend | aliyun_directmail | tencent_ses | console
+  recipientHash String    // 收件邮箱 SHA-256 摘要（不存明文）
+  status        String    @default("sent") // sent | failed
+  ip            String?   // 触发来源 IP（风控/追溯）
+  createdAt     DateTime  @default(now())
+
+  @@index([userId, createdAt])
+  @@index([type, createdAt])
+  @@index([recipientHash, createdAt])
+}
+
+/// P1 额度消费流水（独立于积分账本 CreditTransaction，红线解耦：额度消费只写 UsageLog）
+model UsageLog {
+  id          String   @id @default(cuid())
+  userId      String // 消费动作所属用户
+  action      String // publish | inquiry | aiValuation | viewContact | guarantee
+  tier        String // 触发时的会员等级（快照）
+  periodStart DateTime // 所属自然月起点
+  createdAt   DateTime @default(now())
+
+  @@index([userId, periodStart])
+  @@index([action, periodStart])
+}
+
+model Brand {
+  id              String         @id @default(cuid())
+  nameZh          String
+  nameEn          String
+  originCountry   String
+  isImported      Boolean        @default(false)
+  nameRu          String         @default("")
+  nameEs          String         @default("")
+  namePt          String         @default("")
+  nameAr          String         @default("")
+  nameFr          String         @default("")
+  nameHi          String         @default("")
+  brandTier       String?
+  establishedYear Int?
+  expoCoverUrl    String?
+  expoLogoUrl     String?
+  expoSlug        String?        @unique
+  expoStory       String?
+  exportVolume    String?
+  isChineseBrand  Boolean        @default(false)
+  officialWebsite String?
+  Booth           Booth[]
+  demands         Demand[]
+  products        Product[]
+  showcaseItems   ShowcaseItem[]
+  valuations      Valuation[]
+}
+
+model Category {
+  id       String     @id @default(cuid())
+  nameZh   String
+  nameEn   String
+  parentId String?
+  nameRu   String     @default("")
+  nameEs   String     @default("")
+  namePt   String     @default("")
+  nameAr   String     @default("")
+  nameFr   String     @default("")
+  nameHi   String     @default("")
+  /// 栏目（Category）访问量统计（product_view_stats），additive
+  viewCount Int       @default(0)
+  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryHierarchy")
+  demands  Demand[]
+  products Product[]
+}
+
+model Product {
+  id                    String               @id @default(cuid())
+  sellerId              String
+  brandId               String
+  categoryId            String
+  modelName             String
+  year                  Int
+  workingHours          Int?
+  condition             String
+  priceCny              Float
+  priceUsd              Float?
+  location              String
+  descriptionZh         String?
+  descriptionEn         String?
+  aiGenerated           Boolean              @default(false)
+  status                String               @default("active")
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  descriptionRu         String?
+  descriptionEs         String?
+  descriptionPt         String?
+  descriptionAr         String?
+  descriptionFr         String?
+  descriptionHi         String?
+  driveSystem           String?
+  enginePower           Int?
+  engineType            String?
+  mainConfig            String?
+  netWeight             Float?
+  overallHeight         Float?
+  overallLength         Float?
+  overallWidth          Float?
+  priceMode             String               @default("por")
+  standardDescriptionEn String?
+  tradePort             String?
+  tradeTerm             String               @default("FOB")
+  latitude              Float?
+  longitude             Float?
+  city                  String?
+  country               String?
+  province              String?
+  promotedUntil         DateTime?
+  promotedAt            DateTime?
+  refreshedAt           DateTime?
+  /// 网站浏览量统计（product_view_stats）：产品详情页访问累计，默认 0，additive 不破坏既有字段
+  viewCount             Int       @default(0)
+  promotions            Promotion[]
+  arbitrageTopCaches    ArbitrageTopCache[]
+  auctions              Auction[]
+  blockchainRecords     BlockchainRecord[]
+  contracts             ElectronicContract[]
+  escrowOrders          EscrowOrder[]
+  favorites             Favorite[]
+  govMachineryData      GovMachineryData?
+  inquiries             Inquiry[]
+  inspectionReports     InspectionReport[]
+  internationalPrices   InternationalPrice[]
+  loanApplications      LoanApplication[]
+  machineryIdentity     MachineryIdentity?
+  maintenanceRecords    MaintenanceRecord[]
+  brand                 Brand                @relation(fields: [brandId], references: [id])
+  category              Category             @relation(fields: [categoryId], references: [id])
+  seller                User                 @relation(fields: [sellerId], references: [id])
+  images                ProductImage[]
+  videos                ProductVideo[]
+  rentalListing         RentalListing?
+  warranties            Warranty[]
+}
+
+model ProductImage {
+  id         String  @id @default(cuid())
+  productId  String
+  url        String
+  sortOrder  Int     @default(0)
+  isPrimary  Boolean @default(false)
+  angleLabel String?
+  product    Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
+model ProductVideo {
+  id               String    @id @default(cuid())
+  productId        String
+  url              String
+  sortOrder        Int       @default(0)
+  title            String?
+  duration         Int?
+  fileSize         Int?
+  moderatedAt      DateTime?
+  moderationStatus String?   @default("pending")
+  /// 产品视频播放量统计（product_view_stats），additive
+  playCount        Int       @default(0)
+  product          Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
+model Subscriber {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  source       String   @default("miniprogram")
+  isActive     Boolean  @default(true)
+  subscribedAt DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([email])
+  @@index([isActive])
+}
+
+model Demand {
+  id             String    @id @default(cuid())
+  buyerId        String
+  targetCountry  String
+  categoryId     String?
+  brandId        String?
+  budgetMinUsd   Float?
+  budgetMaxUsd   Float?
+  quantity       Int       @default(1)
+  deadlineMonths Int?
+  description    String?
+  status         String    @default("active")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  brand          Brand?    @relation(fields: [brandId], references: [id])
+  buyer          User      @relation(fields: [buyerId], references: [id])
+  category       Category? @relation(fields: [categoryId], references: [id])
+}
+
+model Inquiry {
+  id                 String           @id @default(cuid())
+  productId          String
+  buyerId            String?
+  source             String           @default("web") // "web" | "miniprogram"（Q8 打通）
+  guaranteeIntentId  String?          // 关联担保交易意向（可选）
+  name               String
+  email              String?
+  phone              String?
+  company            String?
+  message            String?
+  status             String           @default("pending")
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  buyer              User?            @relation(fields: [buyerId], references: [id])
+  product            Product          @relation(fields: [productId], references: [id])
+  guaranteeIntent    GuaranteeIntent? @relation(fields: [guaranteeIntentId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  body      String?
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([userId, createdAt])
+}
+
+model InternationalPrice {
+  id              String    @id @default(cuid())
+  productId       String
+  priceForeignCny Float
+  priceForeignRaw Float?
+  currency        String    @default("EUR")
+  exchangeRate    Float?
+  source          String
+  sourceUrl       String?
+  sourceDate      String?
+  country         String?
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  confidenceScore Float     @default(0.5)
+  isActive        Boolean   @default(true)
+  lastVerified    DateTime?
+  product         Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
+model Valuation {
+  id                String  @id @default(cuid())
+  productId         String?
+  brandId           String
+  modelName         String
+  year              Int
+  workingHours      Int?
+  estimatedPriceCny Float
+  estimatedPriceUsd Float
+  confidenceScore   Float   @default(0.5)
+  factors           String?
+  brand             Brand   @relation(fields: [brandId], references: [id])
+}
+
+model CreditTransaction {
+  id         String    @id @default(cuid())
+  userId     String
+  type       String
+  amount     Int
+  balance    Int
+  reason     String?
+  relatedId  String?
+  account    String?   // gift | recharge | mixed（扣减跨账户时）
+  lotId      String?   // 入账时关联批次
+  expiresAt  DateTime? // 入账时冗余批次过期时间
+  breakdown  String?   // 扣减拆分 JSON：[{lotId, account, amount}]
+  operatorId String?   // admin_adjust / 确认充值的操作人
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId, type, createdAt])
+}
+
+model ExchangeRate {
+  id             String   @id @default(cuid())
+  baseCurrency   String   @default("CNY")
+  targetCurrency String
+  rate           Float
+  source         String   @default("exchangerate-api")
+  lastUpdated    DateTime @default(now())
+  effectiveDate  DateTime
+
+  @@unique([baseCurrency, targetCurrency, effectiveDate])
+  @@index([baseCurrency, targetCurrency])
+}
+
+model ArbitrageTopCache {
+  id               String   @id @default(cuid())
+  productId        String
+  rank             Int
+  domesticPrice    Float
+  foreignPrice     Float
+  priceDiff        Float
+  priceDiffPercent Float
+  profitMargin     Float?
+  lastCalculated   DateTime @default(now())
+  validUntil       DateTime
+  product          Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, rank])
+  @@index([rank])
+  @@index([validUntil])
+}
+
+model Article {
+  id             String    @id @default(cuid())
+  slug           String    @unique
+  titleZh        String
+  titleEn        String?
+  titleRu        String?
+  contentZh      String
+  contentEn      String?
+  contentRu      String?
+  excerptZh      String?
+  excerptEn      String?
+  excerptRu      String?
+  coverImage     String?
+  status         String    @default("draft")
+  category       String?
+  tags           String?
+  sourcePlatform String?
+  sourceUrl      String?
+  metaTitle      String?
+  metaDesc       String?
+  keywords       String?
+  publishedAt    DateTime?
+  viewCount      Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  tagsEn         String?
+  tagsRu         String?
+  contentEs      String?
+  contentPt      String?
+  excerptEs      String?
+  excerptPt      String?
+  tagsEs         String?
+  tagsPt         String?
+  titleEs        String?
+  titlePt        String?
+  contentAr      String?
+  contentFr      String?
+  contentHi      String?
+  excerptAr      String?
+  excerptFr      String?
+  excerptHi      String?
+  tagsAr         String?
+  tagsFr         String?
+  tagsHi         String?
+  titleAr        String?
+  titleFr        String?
+  titleHi        String?
+  isPinned       Boolean   @default(false)
+
+  @@index([status, publishedAt])
+  @@index([category])
+  @@index([sourcePlatform])
+}
+
+model MarketIntel {
+  id                String   @id @default(cuid())
+  date              DateTime
+  icon              String
+  region            String
+  tags              String
+  text              String
+  url               String?
+  detailedContent   String?
+  dataSummary       String?
+  actionTips        String?
+  sortOrder         Int      @default(0)
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  detailedContentEn String?
+  detailedContentRu String?
+  regionEn          String?
+  regionRu          String?
+  tagsEn            String?
+  tagsRu            String?
+  textEn            String?
+  textRu            String?
+  detailedContentEs String?
+  detailedContentPt String?
+  regionEs          String?
+  regionPt          String?
+  tagsEs            String?
+  tagsPt            String?
+  textEs            String?
+  textPt            String?
+  detailedContentAr String?
+  detailedContentFr String?
+  detailedContentHi String?
+  regionAr          String?
+  regionFr          String?
+  regionHi          String?
+  tagsAr            String?
+  tagsFr            String?
+  tagsHi            String?
+  textAr            String?
+  textFr            String?
+  textHi            String?
+
+  @@index([date])
+  @@index([isActive, date])
+}
+
+model ChatSession {
+  id        String        @id @default(cuid())
+  visitorId String
+  productId String?
+  locale    String        @default("en")
+  status    String        @default("active")
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  messages  ChatMessage[]
+
+  @@index([visitorId, status])
+  @@index([productId])
+  @@index([updatedAt])
+}
+
+model RawListing {
+  id             String    @id @default(cuid())
+  source         String
+  sourceUrl      String
+  status         String    @default("pending")
+  brandName      String
+  modelName      String
+  year           Int?
+  workingHours   Int?
+  condition      String?
+  priceRaw       Float?
+  currency       String?
+  priceCny       Float?
+  location       String
+  sellerName     String?
+  sellerPhone    String?
+  sellerWechat   String?
+  sellerWhatsapp String?
+  images         String?
+  contentHash    String    @unique
+  scrapedAt      DateTime  @default(now())
+  reviewedAt     DateTime?
+  reviewedBy     String?
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([status, scrapedAt])
+  @@index([source, scrapedAt])
+  @@index([contentHash])
+}
+
+model ChatMessage {
+  id        String      @id @default(cuid())
+  sessionId String
+  role      String
+  content   String
+  intent    String?
+  metadata  String?
+  createdAt DateTime    @default(now())
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
+}
+
+model AgentDefinition {
+  id           String        @id @default(cuid())
+  agentId      String        @unique
+  name         String
+  description  String?
+  version      String        @default("0.1.0")
+  triggerType  String        @default("manual")
+  schedule     String?
+  endpoint     String?
+  dependencies String?
+  status       String        @default("active")
+  lastRunAt    DateTime?
+  nextRunAt    DateTime?
+  config       String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  runs         AgentRunLog[]
+
+  @@index([status, agentId])
+}
+
+model AgentRunLog {
+  id           String          @id @default(cuid())
+  agentId      String
+  triggeredBy  String          @default("manual")
+  status       String
+  startedAt    DateTime        @default(now())
+  completedAt  DateTime?
+  durationMs   Int?
+  result       String?
+  errorMessage String?
+  metadata     String?
+  createdAt    DateTime        @default(now())
+  agent        AgentDefinition @relation(fields: [agentId], references: [agentId], onDelete: Cascade)
+
+  @@index([agentId, startedAt])
+  @@index([status, startedAt])
+}
+
+model MachineryIdentity {
+  id              String           @id @default(cuid())
+  productId       String           @unique
+  qrCode          String           @unique
+  serialNo        String?
+  manufactureDate String?
+  factoryName     String?
+  factoryLocation String?
+  verifyHash      String?
+  isVerified      Boolean          @default(false)
+  verifiedAt      DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  events          MachineryEvent[]
+  product         Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([qrCode])
+}
+
+model MachineryEvent {
+  id          String            @id @default(cuid())
+  identityId  String
+  eventType   String
+  title       String
+  description String?
+  operator    String?
+  location    String?
+  evidence    String?
+  metadata    String?
+  eventDate   DateTime          @default(now())
+  createdAt   DateTime          @default(now())
+  identity    MachineryIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@index([identityId, eventDate])
+  @@index([eventType])
+}
+
+model Certification {
+  id                  String    @id @default(cuid())
+  userId              String
+  certType            String
+  status              String    @default("pending")
+  applicantName       String
+  contactPhone        String
+  contactEmail        String?
+  businessLicenseNo   String?
+  businessLicenseImg  String?
+  legalPerson         String?
+  registeredCapital   String?
+  businessScope       String?
+  personnelName       String?
+  personnelCertNo     String?
+  personnelCertImg    String?
+  personnelLevel      String?
+  productId           String?
+  inspectionReportNo  String?
+  inspectionReportImg String?
+  inspectionGrade     String?
+  inspectionDate      DateTime?
+  inspectionOrg       String?
+  reviewedBy          String?
+  reviewedAt          DateTime?
+  reviewNote          String?
+  validUntil          DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, certType])
+  @@index([status])
+  @@index([certType, status])
+}
+
+model ServiceCenter {
+  id                 String              @id @default(cuid())
+  name               String
+  level              String              @default("county")
+  province           String
+  city               String?
+  district           String?
+  address            String
+  longitude          Float?
+  latitude           Float?
+  contactPerson      String?
+  contactPhone       String?
+  services           String?
+  businessHours      String?
+  images             String?
+  description        String?
+  isActive           Boolean             @default(true)
+  sortOrder          Int                 @default(0)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  maintenanceRecords MaintenanceRecord[]
+
+  @@index([province, level])
+  @@index([isActive])
+  @@index([level, isActive])
+}
+
+model InspectionReport {
+  id              String    @id @default(cuid())
+  productId       String
+  inspectorId     String?
+  inspectorName   String
+  inspectionOrg   String?
+  inspectionDate  DateTime  @default(now())
+  overallGrade    String
+  overallScore    Int
+  inspectionItems String
+  summary         String?
+  recommendations String?
+  photos          String?
+  reportPdfUrl    String?
+  status          String    @default("published")
+  validUntil      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  inspector       User?     @relation(fields: [inspectorId], references: [id])
+  product         Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([overallGrade])
+  @@index([status, inspectionDate])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([userId, createdAt])
+}
+
+model Follow {
+  id                  String   @id @default(cuid())
+  userId              String
+  sellerId            String
+  createdAt           DateTime @default(now())
+  notificationEnabled Boolean  @default(true)
+  seller              User     @relation("FollowSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+  user                User     @relation("FollowFollower", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, sellerId])
+  @@index([userId, createdAt])
+  @@index([sellerId])
+  @@index([notificationEnabled])
+}
+
+model SavedSearch {
+  id             String    @id @default(cuid())
+  userId         String
+  name           String
+  filters        String
+  notifyOnNew    Boolean   @default(false)
+  lastNotifiedAt DateTime?
+  createdAt      DateTime  @default(now())
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model SellerRating {
+  id             String   @id @default(cuid())
+  sellerId       String
+  raterId        String
+  productId      String?
+  score          Int
+  comment        String?
+  itemMatchScore Int?
+  serviceScore   Int?
+  logisticsScore Int?
+  createdAt      DateTime @default(now())
+  rater          User     @relation("SellerRatingsGiven", fields: [raterId], references: [id], onDelete: Cascade)
+  seller         User     @relation("SellerRatingsReceived", fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@unique([sellerId, raterId, productId])
+  @@index([sellerId, createdAt])
+  @@index([raterId])
+}
+
+model PriceIndex {
+  id             String   @id @default(cuid())
+  date           DateTime
+  category       String?
+  brand          String?
+  region         String?
+  indexValue     Float
+  avgPriceCny    Float
+  sampleCount    Int
+  monthOverMonth Float?
+  yearOverYear   Float?
+  metadata       String?
+  createdAt      DateTime @default(now())
+
+  @@unique([date, category, brand, region])
+  @@index([date])
+  @@index([category, date])
+  @@index([brand, date])
+}
+
+model IndustryReport {
+  id            String    @id @default(cuid())
+  title         String
+  reportType    String
+  period        String
+  summary       String
+  content       String
+  coverImage    String?
+  keyMetrics    String?
+  topBrands     String?
+  topCategories String?
+  priceTrends   String?
+  status        String    @default("draft")
+  publishedAt   DateTime?
+  viewCount     Int       @default(0)
+  downloadCount Int       @default(0)
+  authorId      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([status, publishedAt])
+  @@index([reportType, period])
+}
+
+model ElectronicContract {
+  id              String     @id @default(cuid())
+  contractNo      String     @unique
+  productId       String
+  sellerId        String
+  buyerId         String
+  title           String
+  contractType    String     @default("sale")
+  tradeTerm       String     @default("FOB")
+  productInfo     String
+  priceCny        Float
+  priceUsd        Float?
+  currency        String     @default("CNY")
+  paymentMethod   String?
+  deliveryDate    DateTime?
+  deliveryAddress String?
+  terms           String
+  attachments     String?
+  status          String     @default("draft")
+  sellerSignedAt  DateTime?
+  buyerSignedAt   DateTime?
+  sellerSignature String?
+  buyerSignature  String?
+  pdfUrl          String?
+  validFrom       DateTime?
+  validUntil      DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  buyer           User       @relation("ContractBuyer", fields: [buyerId], references: [id])
+  product         Product    @relation(fields: [productId], references: [id])
+  seller          User       @relation("ContractSeller", fields: [sellerId], references: [id])
+  warranties      Warranty[]
+
+  @@index([sellerId, status])
+  @@index([buyerId, status])
+  @@index([productId])
+  @@index([status, createdAt])
+}
+
+model Auction {
+  id                 String              @id @default(cuid())
+  productId          String
+  sellerId           String
+  title              String
+  description        String?
+  startPrice         Float               @default(0)
+  reservePrice       Float?
+  priceIncrement     Float               @default(5000)
+  deposit            Float               @default(0)
+  startTime          DateTime?
+  endTime            DateTime?
+  status             String              @default("active")
+  winnerId           String?
+  winningBid         Float?
+  totalBids          Int                 @default(0)
+  totalBidders       Int                 @default(0)
+  settledAt          DateTime?
+  contractId         String?
+  coverImage         String?
+  viewCount          Int                 @default(0)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  acceptedBidId      String?             @unique
+  acceptedPrice      Float?
+  sellerQuoteAmount  Float?
+  sellerQuoteMsg     String?
+  sellerQuoteAt      DateTime?
+  askingPrice        Float
+  bargainNo          String              @unique
+  announcementNo     String?
+  announcementHtml   String?             @db.Text
+  contractTemplateNo String?
+  contractHtml       String?             @db.Text
+  evaluationPrice    Float?
+  knownFlaws         String?
+  minParticipants    Int                 @default(3)
+  paymentDeadline    DateTime?
+  product            Product             @relation(fields: [productId], references: [id])
+  seller             User                @relation("AuctionSeller", fields: [sellerId], references: [id])
+  winner             User?               @relation("AuctionWinner", fields: [winnerId], references: [id])
+  bids               Bid[]
+  inspectionBookings InspectionBooking[]
+
+  @@index([status, createdAt])
+  @@index([sellerId])
+  @@index([productId])
+}
+
+model Bid {
+  id        String   @id @default(cuid())
+  auctionId String
+  bidderId  String
+  amount    Float
+  isWinning Boolean  @default(false)
+  createdAt DateTime @default(now())
+  status    String   @default("pending")
+  auction   Auction  @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+  bidder    User     @relation("AuctionBidder", fields: [bidderId], references: [id], onDelete: Cascade)
+
+  @@index([auctionId, amount])
+  @@index([bidderId])
+}
+
+model InspectionBooking {
+  id                 String    @id @default(cuid())
+  auctionId          String
+  userId             String?
+  name               String
+  phone              String
+  preferredDate      DateTime?
+  flawConfirmed      Boolean   @default(false)
+  riskConfirmed      Boolean   @default(false)
+  depositAmount      Float?
+  depositPaid        Boolean   @default(false)
+  depositProofUrl    String?
+  depositConfirmedAt DateTime?
+  status             String    @default("pending")
+  type               String    @default("bargain")
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  auction            Auction   @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+  user               User?     @relation(fields: [userId], references: [id])
+
+  @@index([auctionId, status])
+  @@index([userId])
+  @@index([status, createdAt])
+}
+
+model ContractTemplate {
+  id                     String   @id @default(cuid())
+  templateNo             String   @unique
+  title                  String
+  contractType           String   @default("sale")
+  sellerName             String
+  sellerCreditCode       String?
+  sellerAddress          String?
+  sellerPhone            String?
+  sellerLegalPerson      String?
+  bankName               String?
+  bankAccountName        String?
+  bankAccountNo          String?
+  content                String
+  paymentDays            Int      @default(2)
+  deliveryDays           Int      @default(3)
+  transferResponsibility String   @default("buyer")
+  courtJurisdiction      String?
+  status                 String   @default("active")
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@index([status])
+  @@index([contractType])
+}
+
+model FinancialService {
+  id           String            @id @default(cuid())
+  serviceName  String
+  serviceType  String
+  provider     String
+  providerLogo String?
+  interestRate Float?
+  maxAmount    Float?
+  maxTerm      Int?
+  downPayment  Float?
+  coverage     String?
+  premium      Float?
+  description  String?
+  requirements String?
+  isActive     Boolean           @default(true)
+  sortOrder    Int               @default(0)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  applications LoanApplication[]
+
+  @@index([serviceType, isActive])
+}
+
+model LoanApplication {
+  id             String           @id @default(cuid())
+  userId         String
+  serviceId      String
+  productId      String?
+  applicantName  String
+  contactPhone   String
+  contactEmail   String?
+  companyName    String?
+  appliedAmount  Float
+  appliedTerm    Int?
+  purpose        String?
+  idCardUrl      String?
+  assetProofUrl  String?
+  status         String           @default("pending")
+  reviewedBy     String?
+  reviewedAt     DateTime?
+  reviewNote     String?
+  approvedAmount Float?
+  metadata       String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  product        Product?         @relation(fields: [productId], references: [id])
+  service        FinancialService @relation(fields: [serviceId], references: [id])
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([status, createdAt])
+}
+
+model Warranty {
+  id           String              @id @default(cuid())
+  productId    String
+  contractId   String?
+  warrantyType String
+  coverage     String
+  startDate    DateTime
+  endDate      DateTime
+  status       String              @default("active")
+  provider     String?
+  terms        String?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  records      MaintenanceRecord[]
+  contract     ElectronicContract? @relation(fields: [contractId], references: [id])
+  product      Product             @relation(fields: [productId], references: [id])
+
+  @@index([productId, status])
+  @@index([endDate])
+}
+
+model MaintenanceRecord {
+  id              String         @id @default(cuid())
+  productId       String
+  warrantyId      String?
+  serviceCenterId String?
+  maintenanceType String
+  title           String
+  description     String?
+  cost            Float?
+  status          String         @default("scheduled")
+  scheduledDate   DateTime?
+  completedDate   DateTime?
+  technician      String?
+  partsReplaced   String?
+  photos          String?
+  notes           String?
+  rating          Int?
+  ratingComment   String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  product         Product        @relation(fields: [productId], references: [id])
+  serviceCenter   ServiceCenter? @relation(fields: [serviceCenterId], references: [id])
+  warranty        Warranty?      @relation(fields: [warrantyId], references: [id])
+
+  @@index([productId, status])
+  @@index([status, scheduledDate])
+}
+
+model ApiKey {
+  id               String    @id @default(cuid())
+  key              String    @unique
+  userId           String
+  name             String
+  organization     String?
+  scope            String    @default("read")
+  rateLimitPerHour Int       @default(100)
+  rateLimitPerDay  Int       @default(1000)
+  totalRequests    Int       @default(0)
+  lastUsedAt       DateTime?
+  status           String    @default("active")
+  expiresAt        DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([status])
+}
+
+model GovSubsidyPolicy {
+  id             String    @id @default(cuid())
+  title          String
+  policyNumber   String?
+  region         String
+  category       String
+  machineryTypes String?
+  subsidyAmount  Float?
+  subsidyRatio   Float?
+  maxSubsidy     Float?
+  effectiveDate  DateTime
+  expiryDate     DateTime?
+  description    String
+  requirements   String?
+  applicationUrl String?
+  source         String?
+  status         String    @default("active")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([region, status])
+  @@index([category, status])
+  @@index([effectiveDate])
+}
+
+model GovMachineryData {
+  id                 String    @id @default(cuid())
+  productId          String?   @unique
+  registrationNo     String?
+  plateNumber        String?
+  ownerName          String?
+  brandName          String
+  modelName          String
+  category           String
+  enginePower        Float?
+  emissionStandard   String?
+  inspectionDate     DateTime?
+  inspectionResult   String?
+  registrationStatus String?   @default("active")
+  dataSource         String    @default("gov_registry")
+  verifiedAt         DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  product            Product?  @relation(fields: [productId], references: [id])
+
+  @@index([brandName, category])
+  @@index([registrationNo])
+}
+
+model OverseasWarehouse {
+  id            String   @id @default(cuid())
+  name          String
+  nameEn        String   @default("")
+  country       String
+  city          String
+  address       String
+  warehouseType String
+  capacity      Float?
+  area          Float?
+  services      String?
+  contactName   String?
+  contactPhone  String?
+  contactEmail  String?
+  latitude      Float?
+  longitude     Float?
+  status        String   @default("active")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([country, status])
+  @@index([warehouseType, status])
+}
+
+model BlockchainRecord {
+  id           String    @id @default(cuid())
+  productId    String
+  blockIndex   Int
+  previousHash String
+  currentHash  String
+  eventType    String
+  eventData    String
+  timestamp    DateTime  @default(now())
+  operatorId   String?
+  operatorName String?
+  isVerified   Boolean   @default(false)
+  verifiedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  product      Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, blockIndex])
+  @@index([currentHash])
+}
+
+model RentalListing {
+  id                String   @id @default(cuid())
+  productId         String   @unique
+  ownerId           String
+  rentalType        String
+  pricePerDay       Float?
+  pricePerMonth     Float?
+  pricePerYear      Float?
+  deposit           Float?
+  minRentalPeriod   Int?
+  maxRentalPeriod   Int?
+  deliveryAvailable Boolean  @default(false)
+  deliveryFee       Float?
+  status            String   @default("available")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  owner             User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([status, rentalType])
+  @@index([ownerId, status])
+}
+
+model EscrowOrder {
+  id               String          @id @default(cuid())
+  orderNo          String          @unique
+  productId        String
+  buyerId          String
+  sellerId         String
+  amount           Float
+  platformFee      Float           @default(0)
+  sellerAmount     Float           @default(0)
+  paymentMethod    String
+  paymentStatus    String          @default("pending_deposit")
+  paidAt           DateTime?
+  escrowStartedAt  DateTime?
+  releasedAt       DateTime?
+  refundedAt       DateTime?
+  cancelledAt      DateTime?
+  buyerConfirmed   Boolean         @default(false)
+  buyerConfirmedAt DateTime?
+  autoReleaseAt    DateTime?
+  deliveryAddress  String?
+  deliveryCompany  String?
+  trackingNo       String?
+  shippedAt        DateTime?
+  disputeStatus    String?
+  disputeReason    String?
+  disputeOpenedAt  DateTime?
+  metadata         String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  balanceAmount    Float           @default(0)
+  balanceExpiredAt DateTime?
+  balanceMethod    String?
+  balancePaidAt    DateTime?
+  depositAmount    Float           @default(0)
+  depositExpiredAt DateTime?
+  depositPaidAt    DateTime?
+  buyer            User            @relation("EscrowBuyer", fields: [buyerId], references: [id])
+  product          Product         @relation(fields: [productId], references: [id])
+  seller           User            @relation("EscrowSeller", fields: [sellerId], references: [id])
+  payments         PaymentRecord[]
+
+  @@index([buyerId, paymentStatus])
+  @@index([sellerId, paymentStatus])
+  @@index([productId])
+  @@index([paymentStatus, createdAt])
+  @@index([autoReleaseAt])
+}
+
+model PaymentRecord {
+  id            String      @id @default(cuid())
+  orderId       String
+  paymentMethod String
+  transactionId String?
+  prepayId      String?
+  tradeNo       String?
+  amount        Float
+  status        String      @default("pending")
+  rawRequest    String?
+  rawResponse   String?
+  rawCallback   String?
+  paidAt        DateTime?
+  callbackAt    DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  order         EscrowOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([transactionId])
+  @@index([status])
+}
+
+model ExpoRegistration {
+  id           String   @id @default(cuid())
+  name         String
+  phone        String
+  wechat       String?
+  email        String?
+  company      String?
+  country      String?
+  category     String?
+  boothType    String?
+  intentDevice String?
+  visitDate    String?
+  message      String?
+  source       String   @default("website")
+  expoType     String   @default("virtual")
+  locale       String?
+  status       String   @default("pending")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@index([expoType, status])
+  @@index([source])
+}
+
+model Expo {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  type        String
+  status      String    @default("active")
+  startDate   DateTime
+  endDate     DateTime?
+  location    String?
+  description String?
+  bannerUrl   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  booths      Booth[]
+
+  @@index([status, startDate])
+  @@index([type, status])
+}
+
+model Booth {
+  id            String         @id @default(cuid())
+  expoId        String
+  merchantId    String?
+  name          String
+  hall          String
+  template      String         @default("standard")
+  status        String         @default("empty")
+  sortIndex     Int            @default(0)
+  coverImage    String?
+  intro         String?
+  logoUrl       String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  brandId       String?
+  pavilion      String         @default("china")
+  tier          String         @default("standard")
+  brand         Brand?         @relation(fields: [brandId], references: [id])
+  expo          Expo           @relation(fields: [expoId], references: [id], onDelete: Cascade)
+  merchant      User?          @relation(fields: [merchantId], references: [id])
+  expoInquiries ExpoInquiry[]
+  showcaseItems ShowcaseItem[]
+  fieldVideos   FieldVideo[]
+
+  @@index([expoId, status])
+  @@index([hall, status])
+  @@index([merchantId])
+  @@index([pavilion, status])
+  @@index([tier, status])
+  @@index([brandId])
+}
+
+model ShowcaseItem {
+  id            String        @id @default(cuid())
+  boothId       String
+  deviceType    String
+  brand         String?
+  model         String?
+  year          Int?
+  workingHours  Int?
+  condition     String?
+  price         Float?
+  currency      String        @default("CNY")
+  images        String[]
+  videos        String[]
+  specs         String?
+  description   String?
+  productId     String?
+  status        String        @default("draft")
+  sortIndex     Int           @default(0)
+  viewCount     Int           @default(0)
+  inquiryCount  Int           @default(0)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  arModelUrl    String?
+  brandId       String?
+  brochureUrl   String?
+  country       String?
+  descriptionAr String?
+  descriptionEn String?
+  descriptionEs String?
+  descriptionFr String?
+  descriptionHi String?
+  descriptionPt String?
+  descriptionRu String?
+  descriptionZh String?
+  hotScore      Float         @default(0)
+  isChineseMade Boolean?      @default(false)
+  isFeatured    Boolean       @default(false)
+  isNewLaunch   Boolean       @default(false)
+  itemType      String        @default("used")
+  launchYear    Int?
+  machineTier   String?
+  msrpCny       Float?
+  msrpUsd       Float?
+  origin        String?
+  priceRange    String?
+  series        String?
+  inquiries     ExpoInquiry[]
+  booth         Booth         @relation(fields: [boothId], references: [id], onDelete: Cascade)
+  brandRel      Brand?        @relation(fields: [brandId], references: [id])
+
+  @@index([boothId, status])
+  @@index([deviceType, status])
+  @@index([brand, status])
+  @@index([itemType, status])
+  @@index([country, status])
+  @@index([priceRange, status])
+  @@index([hotScore])
+  @@index([isNewLaunch, status])
+}
+
+model ExpoInquiry {
+  id             String        @id @default(cuid())
+  showcaseItemId String?
+  boothId        String?
+  merchantId     String?
+  buyerId        String?
+  buyerName      String
+  buyerPhone     String
+  buyerEmail     String?
+  buyerWechat    String?
+  buyerCountry   String?
+  message        String
+  intent         String?
+  status         String        @default("new")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  booth          Booth?        @relation(fields: [boothId], references: [id])
+  buyer          User?         @relation(fields: [buyerId], references: [id])
+  showcaseItem   ShowcaseItem? @relation(fields: [showcaseItemId], references: [id])
+
+  @@index([status, createdAt])
+  @@index([boothId, status])
+  @@index([showcaseItemId])
+  @@index([buyerId])
+}
+
+model Quote {
+  id             String   @id @default(cuid())
+  inquiryId      String?
+  showcaseItemId String?
+  buyerId        String
+  sellerId       String
+  price          Float
+  currency       String   @default("CNY")
+  quantity       Int      @default(1)
+  deliveryTime   String?
+  paymentTerms   String?
+  validUntil     DateTime
+  counterPrice   Float?
+  status         String   @default("pending")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  buyer          User     @relation("QuoteBuyer", fields: [buyerId], references: [id])
+  seller         User     @relation("QuoteSeller", fields: [sellerId], references: [id])
+
+  @@index([buyerId, status])
+  @@index([sellerId, status])
+  @@index([status, validUntil])
+}
+
+model Order {
+  id              String   @id @default(cuid())
+  orderNo         String   @unique
+  quoteId         String?
+  buyerId         String
+  sellerId        String
+  items           String
+  totalAmount     Float
+  currency        String   @default("CNY")
+  status          String   @default("pending_payment")
+  paymentMethod   String?
+  paymentId       String?
+  escrowStatus    String?
+  trackingNumber  String?
+  shippingCompany String?
+  contractUrl     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  buyer           User     @relation("OrderBuyer", fields: [buyerId], references: [id])
+  seller          User     @relation("OrderSeller", fields: [sellerId], references: [id])
+
+  @@index([buyerId, status])
+  @@index([sellerId, status])
+  @@index([status, createdAt])
+  @@index([orderNo])
+}
+
+model Review {
+  id             String    @id @default(cuid())
+  orderId        String
+  reviewerId     String
+  revieweeId     String
+  rating         Int
+  content        String?
+  images         String[]
+  itemMatchScore Int?
+  serviceScore   Int?
+  logisticsScore Int?
+  reply          String?
+  repliedAt      DateTime?
+  status         String    @default("published")
+  createdAt      DateTime  @default(now())
+  reviewee       User      @relation("ReviewReviewee", fields: [revieweeId], references: [id], onDelete: Cascade)
+  reviewer       User      @relation("ReviewReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  @@index([revieweeId, status])
+  @@index([reviewerId])
+  @@index([orderId])
+}
+
+/// Level 1: 整机品类（拖拉机、收割机等14大类）
+model MachineType {
+  id         String      @id @default(cuid())
+  code       String      @unique
+  nameZh     String
+  nameEn     String
+  nameRu     String      @default("")
+  nameEs     String      @default("")
+  namePt     String      @default("")
+  nameAr     String      @default("")
+  nameFr     String      @default("")
+  nameHi     String      @default("")
+  imageUrl   String?
+  sortOrder  Int         @default(0)
+  isActive   Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  subSystems SubSystem[]
+
+  @@index([isActive, sortOrder])
+}
+
+/// Level 2: 子系统（动力、液压、传动等9大系统，按整机品类分组）
+model SubSystem {
+  id              String           @id @default(cuid())
+  code            String
+  nameZh          String
+  nameEn          String
+  nameRu          String           @default("")
+  nameEs          String           @default("")
+  namePt          String           @default("")
+  nameAr          String           @default("")
+  nameFr          String           @default("")
+  nameHi          String           @default("")
+  machineTypeId   String
+  sortOrder       Int              @default(0)
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  componentGroups ComponentGroup[]
+  machineType     MachineType      @relation(fields: [machineTypeId], references: [id])
+
+  @@unique([machineTypeId, code])
+  @@index([machineTypeId, isActive])
+}
+
+/// Level 3: 部件组（液压泵、滤芯等，按子系统分组）
+model ComponentGroup {
+  id          String    @id @default(cuid())
+  code        String
+  nameZh      String
+  nameEn      String
+  nameRu      String    @default("")
+  nameEs      String    @default("")
+  namePt      String    @default("")
+  nameAr      String    @default("")
+  nameFr      String    @default("")
+  nameHi      String    @default("")
+  subSystemId String
+  sortOrder   Int       @default(0)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  subSystem   SubSystem @relation(fields: [subSystemId], references: [id])
+  parts       Part[]
+
+  @@unique([subSystemId, code])
+  @@index([subSystemId, isActive])
+}
+
+/// Level 4: 配件（具体SKU，关联到部件组）
+model Part {
+  id                 String              @id @default(cuid())
+  sku                String              @unique
+  nameZh             String
+  nameEn             String
+  nameRu             String              @default("")
+  nameEs             String              @default("")
+  namePt             String              @default("")
+  nameAr             String              @default("")
+  nameFr             String              @default("")
+  nameHi             String              @default("")
+  brand              String
+  oemNumber          String?
+  componentGroupId   String
+  price              Float
+  currency           String              @default("CNY")
+  stockStatus        String              @default("in_stock")
+  images             String[]
+  descriptionZh      String?
+  descriptionEn      String?
+  descriptionRu      String?
+  specs              Json?
+  isActive           Boolean             @default(true)
+  isOEM              Boolean             @default(false)
+  isAftermarket      Boolean             @default(false)
+  dataSource         String              @default("manual")
+  dataQuality        String              @default("verified")
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  compatibleMachines CompatibleMachine[]
+  componentGroup     ComponentGroup      @relation(fields: [componentGroupId], references: [id])
+
+  @@index([componentGroupId, isActive])
+  @@index([brand, isActive])
+  @@index([sku])
+  @@index([oemNumber])
+  @@index([stockStatus, isActive])
+}
+
+/// 配件兼容机型（多对多，一个配件可兼容多个整机型号）
+model CompatibleMachine {
+  id        String  @id @default(cuid())
+  partId    String
+  brand     String
+  model     String
+  yearRange String?
+  notes     String?
+  part      Part    @relation(fields: [partId], references: [id], onDelete: Cascade)
+
+  @@index([partId])
+  @@index([brand, model])
+}
+
+/// 旧配件数据备份（原Part模型，不再使用，仅保留数据）
+model PartLegacy {
+  id               String   @id @default(cuid())
+  nameZh           String
+  nameEn           String   @default("")
+  nameRu           String   @default("")
+  brand            String
+  category         String
+  price            Float
+  currency         String   @default("CNY")
+  stockStatus      String   @default("in_stock")
+  compatibleModels String[]
+  images           String[]
+  descriptionZh    String?
+  descriptionEn    String?
+  descriptionRu    String?
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([category, isActive])
+  @@index([brand, isActive])
+  @@map("part_legacy")
+}
+
+/// 积分批次：每笔入账一个批次，支撑分类余额/扣减顺序/过期任务
+model CreditLot {
+  id              String   @id @default(cuid())
+  userId          String
+  account         String   // gift | recharge
+  sourceType      String   // register_gift|cert_gift|invite_reward|checkin|first_order_reward|recharge|admin_adjust|migration
+  sourceId        String?  // milestoneId / serviceOrderId / adminUserId
+  initialAmount   Int
+  remainingAmount Int
+  expiresAt       DateTime // gift=+90天 recharge=+1年（入账时刻起算）
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, account, expiresAt])
+  @@index([expiresAt, remainingAmount])
+}
+
+/// 每日签到（day 为 Asia/Shanghai 的 YYYY-MM-DD 字符串，彻底规避时区换算）
+model CheckIn {
+  id        String   @id @default(cuid())
+  userId    String
+  day       String
+  credits   Int      @default(1)
+  streakDay Int      @default(1)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, day])
+  @@index([userId, day])
+}
+
+/// 邀请关系（被邀请人唯一；三档奖励状态机）
+model Invitation {
+  id                   String   @id @default(cuid())
+  inviterId            String
+  inviteeId            String   @unique
+  code                 String
+  status               String   @default("bound") // bound | risk_hold | completed
+  certRewarded         Boolean  @default(false)
+  firstPublishRewarded Boolean  @default(false)
+  firstPayRewarded     Boolean  @default(false)
+  riskFlag             String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  inviter              User     @relation("Inviter", fields: [inviterId], references: [id], onDelete: Cascade)
+  invitee              User     @relation("Invitee", fields: [inviteeId], references: [id], onDelete: Cascade)
+
+  @@index([inviterId, createdAt])
+}
+
+/// 一次性奖励里程碑（E3 幂等核心）
+model UserMilestone {
+  id        String   @id @default(cuid())
+  userId    String
+  event     String   // register_gift|cert_personal|cert_enterprise|first_publish|first_inquiry|first_deal
+  relatedId String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, event])
+}
+
+/// 服务订单：积分充值包 + 套餐（个人收款码人工确认的载体）
+model ServiceOrder {
+  id            String    @id @default(cuid())
+  orderNo       String    @unique
+  userId        String
+  orderType     String    // credit_pack | membership
+  sku           String    // pack10|pack30|pack60|pack150 | plan_basic|plan_premium|plan_enterprise
+  amountCny     Float
+  credits       Int       @default(0)
+  status        String    @default("pending") // pending|paid|closed|rejected|refunded
+  screenshotUrl String?
+  note          String?
+  adminNote     String?
+  confirmedBy   String?
+  confirmedAt   DateTime?
+  closedAt      DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status, createdAt])
+  @@index([status, createdAt])
+}
+
+/// 推广位（置顶/刷新/首页推荐位台账）
+model Promotion {
+  id          String    @id @default(cuid())
+  userId      String
+  productId   String
+  type        String    // top | refresh | home_feature
+  creditsCost Int
+  startAt     DateTime  @default(now())
+  endAt       DateTime?
+  status      String    @default("active") // active | expired | cancelled
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([type, status, endAt])
+}
+
+/// 每日名额计数器（首页推荐位每日 10 个，原子防超卖）
+model DailyQuota {
+  id   String @id @default(cuid())
+  day  String
+  type String
+  used Int    @default(0)
+
+  @@unique([day, type])
+}
+
+/// 系统配置（运营参数/合规文案/收款码图）
+model SystemConfig {
+  key       String   @id
+  value     String
+  updatedBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// 风控审核队列（E6：命中规则不直拒，进人工）
+model RiskReview {
+  id           String    @id @default(cuid())
+  relationType String    // invitation | register
+  relationId   String
+  rule         String    // same_device | same_phone | same_payaccount | multi_register_ip
+  status       String    @default("pending") // pending | approved | rejected
+  handledBy    String?
+  handledAt    DateTime?
+  note         String?
+  createdAt    DateTime  @default(now())
+
+  @@index([status, createdAt])
+}
+
+/// 深度估值报告订单（付费报告，信任模式人工确认收款）
+model ValuationReportOrder {
+  id              String   @id @default(cuid())
+  orderNo         String   @unique
+  tier            String   // basic | standard | premium
+  price           Float
+  paymentMethod   String?  // wechat | alipay
+  paid            Boolean  @default(false)
+  status          String   @default("created") // created|paid|generating|completed|failed
+  reportHtml      String?
+  productInfo     Json?
+  valuationResult Json?
+  productName     String?
+  productId       String?
+  userId          String?  // 关联下单用户（可选，未登录为空）
+  createdAt       DateTime @default(now())
+  paidAt          DateTime?
+  completedAt     DateTime?
+  updatedAt       DateTime @updatedAt
+
+  @@index([orderNo])
+  @@index([status, createdAt])
+}
+
+// ============================================================
+// 分站新增模型（T02 — .com 专属 + .cn 专属 + 跨站关联）
+// 注意：两站同源 schema，各自 prisma migrate deploy 到自己的库
+// ============================================================
+
+/// .com 专属：Stripe 客户关联
+model StripeCustomer {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  stripeCustomerId String   @unique
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscriptions    StripeSubscription[]
+
+  @@index([stripeCustomerId])
+}
+
+/// .com 专属：Stripe 增值服务订阅（仅外币）
+model StripeSubscription {
+  id               String            @id @default(cuid())
+  userId           String
+  stripeCustomerId String
+  plan             String            // valuation_pack|intel_pack|premium|enterprise
+  currency         String            // USD|EUR|GBP
+  status           String            @default("active") // active|canceled|past_due
+  currentPeriodEnd DateTime
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  customer         StripeCustomer    @relation(fields: [stripeCustomerId], references: [id], onDelete: Cascade)
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoices         StripeInvoice[]
+
+  @@index([userId, status])
+  @@index([stripeCustomerId, status])
+}
+
+/// .com 专属：Stripe 账单/发票
+model StripeInvoice {
+  id               String              @id @default(cuid())
+  subscriptionId   String
+  stripeInvoiceId  String              @unique
+  amount           Float
+  currency         String              @default("USD")
+  status           String              @default("paid") // paid|open|uncollectible|void
+  paidAt           DateTime?
+  periodStart      DateTime?
+  periodEnd       DateTime?
+  createdAt        DateTime            @default(now())
+  subscription     StripeSubscription  @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([subscriptionId])
+  @@index([stripeInvoiceId])
+}
+
+/// .cn 专属：担保交易意向（资金在微信小程序收付通闭环）
+model GuaranteeIntent {
+  id                 String    @id @default(cuid())
+  inquiryId          String?   // 可选关联询价
+  productId          String
+  buyerUserId        String
+  sellerUserId       String
+  amountCny          Float
+  wechatSubMerchantId String   // 卖家子商户号
+  wechatOrderNo      String?   // 微信支付订单号（支付成功后回写）
+  status             String    @default("created") // created|paying|paid|delivered|completed|refunded|disputed
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  buyer              User      @relation("GuaranteeBuyer", fields: [buyerUserId], references: [id])
+  seller             User      @relation("GuaranteeSeller", fields: [sellerUserId], references: [id])
+  inquiries          Inquiry[]
+
+  @@index([buyerUserId, status])
+  @@index([sellerUserId, status])
+  @@index([wechatOrderNo])
+}
+
+/// 跨站账户关联（Q5 — 仅存 token，不复制 PII）
+model AccountLink {
+  id        String   @id @default(cuid())
+  comUserId String   // .com 站 userId
+  cnUserId  String   // .cn 站 userId
+  linkToken String   // 关联 token（sha256 hash）
+  method    String   // email|phone|manual
+  linkedAt  DateTime @default(now())
+  createdAt DateTime @default(now())
+  comUser   User     @relation("AccountLinkCom", fields: [comUserId], references: [id], onDelete: Cascade)
+  cnUser    User     @relation("AccountLinkCn", fields: [cnUserId], references: [id], onDelete: Cascade)
+
+  @@unique([comUserId, cnUserId])
+  @@index([comUserId])
+  @@index([cnUserId])
+  @@index([linkToken])
+}
+
+// ============================================================
+// 网站浏览量统计（product_view_stats）
+// 全部为 additive 变更：只新增模型，不修改/删除既有表，
+// 保证 .com（Neon）与 .cn（阿里云 PG）migrate deploy 幂等安全。
+// ============================================================
+
+/// 地头展现场作业视频（扫码上传）：与 ProductVideo 平级，专承现场视频播放统计。
+/// 历史真源为 OSS db.json（见 scripts/migrate-field-videos.ts）。
+model FieldVideo {
+  id          String   @id @default(cuid())
+  /// 关联展位（可空）：历史 QR 上传无 booth 上下文 → null；卖家维度过滤据此生效
+  boothId     String?
+  /// 视频 OSS 直链
+  url         String
+  /// 品牌名 / 标题
+  title       String?
+  /// 机型标签（大屏展示/过滤）
+  machineType String?
+  /// 播放量统计（product_view_stats）
+  playCount   Int      @default(0)
+  /// 溯源：'qr'（地头展扫码）| 'showcase'（展台展品视频，本期迁移跳过）
+  source      String   @default("qr")
+  createdAt   DateTime @default(now())
+  booth       Booth?   @relation(fields: [boothId], references: [id], onDelete: SetNull)
+
+  @@index([boothId])
+  @@index([source])
+}
+
+/// 网站总览单例行（O(1) 读取，避免运行时 sum）。固定 id = 'global'，两站各自独立计数。
+model SiteStat {
+  id                String   @id
+  totalPageViews    Int      @default(0) // 仅 product + category 页面访问（视频播放不计入 PV）
+  totalProductViews Int      @default(0)
+  totalCategoryViews Int     @default(0)
+  totalVideoPlays   Int      @default(0) // video + fieldVideo 播放合计
+  updatedAt         DateTime @updatedAt
+}

@@ -1,0 +1,35 @@
+sequenceDiagram
+    autonumber
+    actor U as 用户(浏览器)
+    participant MC as MembershipCard
+    participant CL as CreditTransactionList
+    participant RF as RechargeForm
+    participant ME as GET /api/user/me
+    participant TX as GET /api/credits/transactions
+    participant RC as POST /api/credits/recharge
+    participant Auth as getTokenFromHeaders+verifyToken
+    participant DB as Prisma/Postgres
+
+    Note over U,RF: 登录态以 httpOnly Cookie(token) 持有，浏览器自动随请求发送
+    U->>MC: 进入 /[locale]/credits
+    MC->>ME: fetch('/api/user/me') 不附 Bearer
+    ME->>Auth: 从 cookie 提取并校验 token
+    Auth-->>ME: payload(userId)
+    ME->>DB: user.findUnique → credits/membershipTier/...
+    DB-->>ME: 真实用户数据
+    ME-->>MC: 200 {success:true,data:{credits,...}}
+    MC-->>U: 显示真实积分(如 10)与会员状态
+
+    U->>CL: 挂载加载明细
+    CL->>TX: fetch('/api/credits/transactions')
+    TX->>Auth: cookie 鉴权
+    Auth-->>TX: payload
+    TX->>DB: creditTransaction.findMany(userId, desc, 分页)
+    DB-->>TX: 真实流水
+    TX-->>CL: 200 {success:true,data:{list,total}}
+    CL-->>U: 渲染真实积分明细
+
+    U->>RF: 查看充值/升级区
+    RF-->>U: 展示"即将上线"(t('comingSoon'))，不发起请求
+    U->>RC: (不应发生) 尝试充值
+    RC-->>U: 503 {success:false,error:'充值升级即将上线',code:'COMING_SOON'}

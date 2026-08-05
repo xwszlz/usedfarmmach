@@ -1,0 +1,66 @@
+classDiagram
+    class AuthHelper {
+        +getTokenFromHeaders(headers): string|null
+        +verifyToken(token): Payload|null
+        +verifyTokenEdge(token): Payload|null
+    }
+    class UserMeRoute {
+        +GET(request): NextResponse
+    }
+    class CreditsTransactionsRoute {
+        +GET(request): NextResponse
+    }
+    class CreditsRechargeRoute {
+        +POST(request): NextResponse
+    }
+    class AdminCreditsRoute {
+        +POST(request): NextResponse
+        -checkAdmin(req): Payload|null
+    }
+    class Middleware {
+        +middleware(request)
+        -SUPER_ADMIN_API_PATHS
+    }
+    class User {
+        +id: string
+        +credits: int
+        +membershipTier: string
+        +membershipExpiresAt: DateTime
+        +emailVerified: bool
+        +role: string
+    }
+    class CreditTransaction {
+        +id: string
+        +userId: string
+        +type: string
+        +amount: int
+        +balance: int
+        +reason: string
+        +createdAt: DateTime
+    }
+    class MembershipCard {
+        +fetchUserMe()
+    }
+    class CreditTransactionList {
+        +fetchTransactions()
+    }
+    class RechargeForm {
+        +renderComingSoon()
+    }
+    class DowngradeScript {
+        +main(): void
+    }
+
+    AuthHelper <.. UserMeRoute : 调用
+    AuthHelper <.. CreditsTransactionsRoute : 调用
+    AuthHelper <.. AdminCreditsRoute : 调用
+    UserMeRoute ..> User : 读聚焦字段
+    CreditsTransactionsRoute ..> CreditTransaction : 查(userId)
+    AdminCreditsRoute ..> User : 更新 credits
+    AdminCreditsRoute ..> CreditTransaction : 写流水(operatorId)
+    Middleware ..> AdminCreditsRoute : 前置门禁
+    Middleware ..> AuthHelper : verifyTokenEdge
+    MembershipCard ..> UserMeRoute : fetch(cookie)
+    CreditTransactionList ..> CreditsTransactionsRoute : fetch(cookie)
+    RechargeForm ..> CreditsRechargeRoute : 不调用(置灰)
+    DowngradeScript ..> User : update(role)

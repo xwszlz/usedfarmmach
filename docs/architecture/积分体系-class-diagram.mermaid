@@ -1,0 +1,143 @@
+classDiagram
+    class User {
+        +String id
+        +Int credits
+        +String membershipTier
+        +DateTime? membershipExpiresAt
+        +Boolean lifetime
+        +String? inviteCode
+        +String[] badges
+        +String? deviceFingerprint
+        +String? registerIp
+    }
+    class CreditLot {
+        +String id
+        +String account
+        +String sourceType
+        +Int initialAmount
+        +Int remainingAmount
+        +DateTime expiresAt
+    }
+    class CreditTransaction {
+        +String id
+        +String type
+        +Int amount
+        +Int balance
+        +String? account
+        +String? breakdown
+        +String? relatedId
+    }
+    class CheckIn {
+        +String userId
+        +String day
+        +Int credits
+        +Int streakDay
+    }
+    class Invitation {
+        +String inviterId
+        +String inviteeId
+        +Boolean certRewarded
+        +Boolean firstPublishRewarded
+        +Boolean firstPayRewarded
+        +String status
+    }
+    class UserMilestone {
+        +String userId
+        +String event
+        +String? relatedId
+    }
+    class ServiceOrder {
+        +String orderNo
+        +String orderType
+        +String sku
+        +Float amountCny
+        +Int credits
+        +String status
+    }
+    class Promotion {
+        +String productId
+        +String type
+        +Int creditsCost
+        +DateTime? endAt
+        +String status
+    }
+    class DailyQuota {
+        +String day
+        +String type
+        +Int used
+    }
+    class SystemConfig {
+        +String key
+        +String value
+    }
+    class RiskReview {
+        +String relationType
+        +String relationId
+        +String rule
+        +String status
+    }
+
+    class CreditService {
+        +grantCredits(input) GrantResult
+        +deductCredits(tx, userId, amount, meta) DeductResult
+        +expireLots(batchSize) ExpireReport
+        +getSummary(userId) CreditSummary
+    }
+    class MilestoneService {
+        +grantOnce(userId, event, reward, relatedId) boolean
+    }
+    class CheckInService {
+        +checkIn(userId) CheckInResult
+        +getStatus(userId) CheckInStatus
+    }
+    class InviteService {
+        +bind(inviteeId, code, ctx) BindResult
+        +rewardOnCert(inviteeId) void
+        +rewardOnFirstPublish(inviteeId, productId) void
+        +rewardOnFirstPay(inviteeId, amountCny) void
+    }
+    class OrderService {
+        +createOrder(userId, sku) ServiceOrder
+        +confirmPaid(adminId, orderId) void
+        +rejectOrder(adminId, orderId, note) void
+        +closeExpiredOrders() int
+    }
+    class MallService {
+        +purchase(userId, productId, item, opts) Promotion
+        +getHomeFeatureAvailability() int
+    }
+    class MembershipService {
+        +isActive(user) boolean
+        +isUnlimitedPublisher(user) boolean
+        +activateFromOrder(tx, user, order) void
+    }
+    class ConfigService {
+        +get(key, fallback) T
+        +set(key, value, operatorId) void
+    }
+
+    User "1" --> "*" CreditLot
+    User "1" --> "*" CreditTransaction
+    User "1" --> "*" CheckIn
+    User "1" --> "*" Invitation : inviter
+    User "1" --> "0..1" Invitation : invitee
+    User "1" --> "*" UserMilestone
+    User "1" --> "*" ServiceOrder
+    User "1" --> "*" Promotion
+    CreditLot "1" --> "0..*" CreditTransaction : lotId
+    CreditService ..> CreditLot
+    CreditService ..> CreditTransaction
+    MilestoneService ..> UserMilestone
+    MilestoneService ..> CreditService : grant
+    CheckInService ..> CheckIn
+    CheckInService ..> CreditService : grant
+    InviteService ..> Invitation
+    InviteService ..> RiskReview
+    InviteService ..> CreditService : grant
+    OrderService ..> ServiceOrder
+    OrderService ..> CreditService : grant
+    OrderService ..> MembershipService : activate
+    MallService ..> Promotion
+    MallService ..> DailyQuota
+    MallService ..> CreditService : deduct
+    MembershipService ..> SystemConfig : annual_billing_enabled

@@ -1,0 +1,27 @@
+import type { Metadata } from "next";
+import { ExpoLanding } from "./ExpoLanding";
+import { generatePageMetadata } from "@/lib/seo-metadata";
+import { EventStructuredData } from "@/components/seo/structured-data";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return generatePageMetadata("expo", locale, "/expo");
+}
+
+export default async function ExpoPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  return (
+    <>
+      <EventStructuredData locale={locale} />
+      <ExpoLanding locale={locale} />
+    </>
+  );
+}

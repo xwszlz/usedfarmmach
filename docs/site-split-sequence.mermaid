@@ -1,0 +1,67 @@
+sequenceDiagram
+    actor B as 国内买家(网站)
+    participant W as .cn 网站(发布/询价)
+    participant API as POST /api/(cn)/trade/intent
+    participant DB as Prisma/阿里云RDS
+    participant MP as 微信小程序(收付通)
+    participant WP as 微信支付平台
+    participant S as 卖家子商户
+
+    B->>W: 查看车源 → 发起询价/担保意向
+    W->>API: {productId, priceCny, inquiryId?}
+    API->>DB: 写 Inquiry(source=web) + GuaranteeIntent(status=created)
+    API-->>W: 返回小程序跳转参数(intentId, 产品/报价) + 小程序码
+    B->>MP: 扫码进入小程序 → 确认担保交易
+    MP->>WP: 电商收付通下单(平台商户+卖家子商户)
+    WP->>S: 资金直进卖家子商户(平台不碰钱)
+    WP-->>MP: 支付成功
+    MP->>API: /api/(cn)/trade/callback {intentId, wechatOrderNo}
+    API->>DB: 更新 GuaranteeIntent=paid + 写 UsageLog(担保成立)
+    API-->>W: 网站轮询/通知 → 展示「担保交易已成立」
+
+---
+
+sequenceDiagram
+    actor U as 境外用户(.com)
+    participant P as 增值服务页(AI估值/情报)
+    participant API as POST /api/(com)/billing/checkout
+    participant S as Stripe
+    participant WH as /api/webhooks/stripe
+    participant DB as Neon DB
+
+    U->>P: 选择增值包(外币)
+    P->>API: {sku, currency}
+    API->>S: 创建 Checkout Session(仅外币)
+    S-->>API: sessionUrl
+    API-->>U: 重定向 Stripe 收银台
+    U->>S: 境外信用卡支付
+    S->>WH: webhook: checkout.session.completed
+    WH->>DB: 写 StripeSubscription/Invoice + 开通权益(QuotaGuard/会员)
+    WH-->>API: 200
+
+---
+
+sequenceDiagram
+    actor CN as 境内IP用户
+    participant EDGE as Vercel Edge / 中间件
+    participant GEO as GeoService
+    participant APP as .com App
+    participant REG as POST /api/(com)/auth/register
+    participant DB as Neon DB
+
+    CN->>EDGE: 请求 usedfarmmach.com
+    EDGE->>GEO: 读 x-vercel-ip-country / cf-ipcountry
+    alt country == CN
+        GEO-->>EDGE: CN
+        EDGE-->>CN: 301 → usedfarmmach.cn(原 path)
+    else 非 CN
+        EDGE->>APP: 放行
+        CN->>REG: 注册(填 phone/country)
+        REG->>REG: 校验 phone 非 +86 且 country!=CN
+        alt 命中境内标识
+            REG-->>CN: 403 DOMESTIC_USER_NOT_ALLOWED + 引导 .cn
+        else 通过
+            REG->>DB: 创建境外 User(consentCrossBorderAt?)
+            REG-->>CN: 200 注册成功
+        end
+    end

@@ -1,0 +1,26 @@
+[
+  {
+    "productId": "cmpdknl8s00e511kwiy4tzjax",
+    "bestImageNumber": 1,
+    "success": true,
+    "message": "最佳图片已是sortOrder=0，无需更新",
+    "oldSortOrder": 0,
+    "newSortOrder": 0
+  },
+  {
+    "productId": "cmpdknii2000111kwcau06hey",
+    "bestImageNumber": 7,
+    "success": true,
+    "message": "成功更新封面图",
+    "oldSortOrder": 6,
+    "newSortOrder": 0
+  },
+  {
+    "productId": "cmpdknj9v004b11kwqvki68wr",
+    "bestImageNumber": 4,
+    "success": true,
+    "message": "成功更新封面图",
+    "oldSortOrder": 3,
+    "newSortOrder": 0
+  }
+]

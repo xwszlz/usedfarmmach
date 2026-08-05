@@ -1,0 +1,73 @@
+%% 4.1 后台查看用户列表（脱敏 → 角色校验 → 完整需留痕）
+sequenceDiagram
+    participant A as Admin(浏览器)
+    participant P as admin/users/page.tsx (Server)
+    participant DB as Prisma/Neon
+    participant T as users-table.tsx (Client)
+    participant R as /admin/users/[id]/reveal-email
+    participant L as PiiAuditLog
+
+    A->>P: 访问 /admin/users
+    P->>P: verifyToken + 角色门禁(仅 admin/super_admin)
+    P->>DB: findMany(users, select 必要字段)
+    DB-->>P: users[]
+    P->>P: 逐条 maskEmail() + profileCompleteness()
+    P-->>T: 下发 { emailMasked, completeness, roleViewer }
+    T->>A: 渲染脱敏列表 + 完整度列
+    A->>T: 点击某行"显示邮箱"
+    T->>R: POST { id, purpose }
+    R->>R: checkAdmin(role)
+    R->>L: 写审计(actor,target,field=email)
+    R->>DB: findUnique(email)
+    DB-->>R: email(明文)
+    R-->>T: { email: 明文 }
+    T->>A: 就地展示完整邮箱（仅本次）
+    Note over R,L: 非 admin 角色 → 403 拒绝，不返回明文
+
+%% 4.2 小程序用户 web 补全邮箱（提交 → 设 emailVerified → 触发发分幂等）
+sequenceDiagram
+    participant U as 用户(小程序→web)
+    participant F as complete-profile-form.tsx
+    participant API as /api/user/profile
+    participant DB as Prisma/Neon
+    participant G as grantRegisterGiftIfNeeded
+    participant M as UserMilestone / CreditLot
+
+    U->>F: 打开 /account/complete-profile
+    F->>U: 展示表单 + "数据出境单独同意"勾选
+    U->>F: 填 email/公司/国家/密码 + 勾选同意
+    F->>API: POST { email, ..., dataCrossBorderConsent:true }
+    API->>API: verifyToken(本人) + completeProfileSchema 校验
+    API->>DB: update(userId, { email, companyName, country, passwordHash?, emailVerified:true, emailPending:false })
+    API->>G: grantRegisterGiftIfNeeded(userId)
+    G->>M: 查 UserMilestone(register_gift)
+    alt 已存在（重复提交）
+        M-->>G: 已发 → granted:false
+    else 首次
+        G->>M: 建 Milestone + CreditLot(gift) + CreditTransaction + credits+=
+        M-->>G: granted:true, amount
+    end
+    G-->>API: { granted, amount }
+    API-->>F: 200 { emailVerified:true, emailPending:false, credits }
+    F->>U: 提示"资料已补全，积分已发放(如有)"
+
+%% 4.3 管理员手动重置密码 + 站内信通知（0-4）
+sequenceDiagram
+    participant Admin as 管理员
+    participant UI as users-table.tsx (重置弹窗)
+    participant API as /admin/reset-user-password
+    participant DB as Prisma/Neon
+    participant N as createInAppNotification
+    participant NB as Notification 模型
+
+    Admin->>UI: 点击"重置密码" → 输入新密码
+    UI->>API: POST { userId, newPassword }
+    API->>API: checkAdmin(role)
+    API->>DB: update(userId, { passwordHash: bcrypt(newPassword) })
+    API->>N: createInAppNotification({ userId, type:"password_reset", title, body, link })
+    N->>NB: insert Notification
+    NB-->>N: ok
+    N-->>API: notified:true
+    API-->>UI: 200 { notified:true }
+    UI->>Admin: 提示"已重置并通知用户(站内信)"
+    Note over API,N: 不发送邮件；订阅消息为 stub
