@@ -12,6 +12,31 @@ env:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    # R3 修复：构建期使用 GitHub Actions 内置临时 PostgreSQL service。
+    # 仅在本 job 的 runner（ubuntu-latest）上有效；构建期连接串与运行期
+    # （ECS 主机 /opt/cn/.env.cn 的 DATABASE_URL_CN，host=cn-postgres）完全分离。
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # 构建期数据库 URL（仅 CI 构建使用，指向上面 postgres service）：
+      # - CI_DATABASE_URL：runner 步骤（prisma generate / next build）用 localhost
+      # - CI_DATABASE_URL_DOCKER：docker build 的 builder 阶段用 host.docker.internal
+      #   （build 容器内 localhost 指容器自身，需经 host-gateway 到达 runner 上发布的
+      #    service 端口；配合下方 --add-host=host.docker.internal:host-gateway）
+      CI_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres?schema=public
+      CI_DATABASE_URL_DOCKER: postgresql://postgres:postgres@host.docker.internal:5432/postgres?schema=public
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -28,47 +53,73 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL_CN }}
+          DATABASE_URL: ${{ env.CI_DATABASE_URL }}
 
       - name: Build Next.js (standalone, SITE=cn)
         run: npm run build
         env:
           SITE: cn
-          DATABASE_URL: ${{ secrets.DATABASE_URL_CN }}
+          # db.ts 在 SITE=cn 时读 DATABASE_URL_CN（next build ISR 预渲染会真实连库）；
+          # schema.prisma 的 datasource 读 DATABASE_URL（prisma generate 需变量存在）。
+          # 两者都指向构建期临时 postgres service，不再使用 secrets.DATABASE_URL_CN
+          # （其指向 ECS 内网 cn-postgres，GitHub Actions 不可达）。
+          DATABASE_URL: ${{ env.CI_DATABASE_URL }}
+          DATABASE_URL_CN: ${{ env.CI_DATABASE_URL }}
           NEXT_PUBLIC_SITE: cn
           NEXT_PUBLIC_APP_URL: https://usedfarmmach.cn
 
       - name: Build Docker image
         run: |
+          # docker build 的 builder 阶段容器内 localhost 指容器自身，
+          # 故用 host.docker.internal + host-gateway 到达 runner 上发布的 service 端口。
           docker build \
+            --add-host=host.docker.internal:host-gateway \
             --build-arg SITE=cn \
-            --build-arg DATABASE_URL=${{ secrets.DATABASE_URL_CN }} \
+            --build-arg DATABASE_URL=${{ env.CI_DATABASE_URL }} \
+            --build-arg DATABASE_URL_CN=${{ env.CI_DATABASE_URL_DOCKER }} \
             -t usedfarmmach-cn:latest \
             -f Dockerfile.cn .
 
-      - name: Login to Aliyun Container Registry
-        uses: aliyun/acr-login@v1
-        with:
-          login-server: ${{ secrets.ALIYUN_ACR_REGISTRY }}
-          username: ${{ secrets.ALIYUN_ACR_USERNAME }}
-          password: ${{ secrets.ALIYUN_ACR_PASSWORD }}
-
-      - name: Tag and push Docker image
+      - name: Install ossutil (Aliyun OSS CLI)
         run: |
-          IMAGE_TAG="${{ secrets.ALIYUN_ACR_REGISTRY }}/usedfarmmach-cn:${GITHUB_SHA::8}"
-          docker tag usedfarmmach-cn:latest "$IMAGE_TAG"
-          docker push "$IMAGE_TAG"
-          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+          # 阿里云官方 ossutil 1.7.19（Linux x86_64），解压后二进制名为 ossutil
+          curl -fSL --retry 3 -o /tmp/ossutil.zip \
+            https://gosspublic.alicdn.com/ossutil/1.7.19/ossutil-v1.7.19-linux-amd64.zip
+          rm -rf /tmp/ossutil-x && mkdir -p /tmp/ossutil-x
+          unzip -o /tmp/ossutil.zip -d /tmp/ossutil-x
+          BIN="$(find /tmp/ossutil-x -maxdepth 2 -type f \( -name 'ossutil' -o -name 'ossutil64' \) | head -1)"
+          if [ -z "$BIN" ]; then
+            echo "ERROR: ossutil 解压产物中未找到可执行文件" >&2
+            exit 1
+          fi
+          sudo install -m 0755 "$BIN" /usr/local/bin/ossutil
+          ossutil --version
+
+      - name: Save and compress Docker image
+        run: |
+          set -euo pipefail
+          # 镜像 tag 与 OSS 对象名均以完整 commit SHA 命名（cn-app-<sha>.tar.gz）
+          docker tag usedfarmmach-cn:latest "usedfarmmach-cn:${{ github.sha }}"
+          mkdir -p /tmp/cn-images
+          docker save "usedfarmmach-cn:${{ github.sha }}" | gzip -9 > "/tmp/cn-images/cn-app-${{ github.sha }}.tar.gz"
+          ls -lh /tmp/cn-images/
+
+      - name: Upload image tarball to Aliyun OSS
+        run: |
+          # 复用现有 bucket usedfarmmach-oss（北京，与 ECS 同地域）
+          ossutil cp -f "/tmp/cn-images/cn-app-${{ github.sha }}.tar.gz" \
+            "oss://usedfarmmach-oss/cn-images/cn-app-${{ github.sha }}.tar.gz" \
+            -e oss-cn-beijing.aliyuncs.com \
+            -i "${{ secrets.OSS_ACCESS_KEY_ID }}" \
+            -k "${{ secrets.OSS_ACCESS_KEY_SECRET }}"
 
       # ----------------------------------------------------------
       # 部署到阿里云 ECS（北京）
       # 通过 SSH 以 deploy 用户登入 ECS，由主机执行 deploy/deploy-cn.sh。
       # 安全红线：运行时 secrets（DATABASE_URL_CN / JWT_SECRET / OSS_* / WECHAT_PAY_*）
       # 一律由 ECS 主机 /opt/cn/.env.cn 提供，CI 绝不注入（避免进入 CI 日志）。
-      # 镜像由上方 ACR 步骤 build + push，标签写入 env.IMAGE_TAG。
-      # 阿里云 ACR 若尚未开通：保留下方 ssh-action 结构，但 build/push 段需改为
-      # 其它镜像仓库（如 Docker Hub / 阿里云 ACR 开通后填 ALIYUN_ACR_* secrets），
-      # 并确保 ECS 主机已 docker login 到对应私有仓库。
+      # 镜像包已上传 OSS（cn-images/cn-app-<sha>.tar.gz），脚本内从 OSS 下载 + docker load；
+      # OSS 对象名以完整 commit SHA 命名，与上方上传一致。
       # ----------------------------------------------------------
       - name: Deploy to Aliyun ECS
         uses: appleboy/ssh-action@v1
@@ -78,7 +129,7 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
             set -euo pipefail
-            # 镜像标签与 build 阶段推送的完全一致（env.IMAGE_TAG 即上方 push 的引用）
-            export CN_IMAGE="${{ env.IMAGE_TAG }}"
+            # 与上传阶段一致的 commit SHA：脚本据此推导对象名 cn-app-<sha>.tar.gz 与镜像 tag
+            export CN_IMAGE_REF="${{ github.sha }}"
             cd /opt/cn
             bash /opt/cn/deploy/deploy-cn.sh

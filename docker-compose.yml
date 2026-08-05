@@ -14,7 +14,8 @@
 #   /opt/cn/deploy/nginx/*       <- nginx 配置 + ssl 证书
 #
 # 使用方式（CI 通过 deploy 用户 SSH 后在 /opt/cn 执行）：
-#   export CN_IMAGE=registry.cn-beijing.aliyuncs.com/<ns>/usedfarmmach-cn:<sha>
+#   镜像包已由 deploy/deploy-cn.sh 从 OSS 下载并 docker load（tag: usedfarmmach-cn:<sha>）：
+#   export CN_IMAGE=usedfarmmach-cn:<git commit sha>
 #   docker compose -f /opt/cn/docker-compose.yml --env-file /opt/cn/.env.cn up -d app
 # ============================================================
 version: "3.8"
@@ -39,6 +40,9 @@ services:
 
   app:
     image: ${CN_IMAGE}
+    # 镜像一律由 deploy-cn.sh docker load 到本地（OSS 方案无 registry），
+    # 禁止 compose 尝试从远端拉取。
+    pull_policy: never
     container_name: cn-app
     # 不暴露宿主机端口，仅内部网络可达（由 nginx 反代）
     expose:
