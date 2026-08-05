@@ -49,14 +49,14 @@ flowchart LR
 | 对外访问 | **阿里云拦截未备案域名的 80/443，不得对外** | 80/443 正常放行 |
 | 验证方式 | 仅 ECS 内网/`localhost`：`ssh` 进 ECS 后 `curl -H "Host: usedfarmmach.cn" http://127.0.0.1:3000/zh`；可选临时高位端口(8443)浏览器自测 | 直接 `https://usedfarmmach.cn/zh` 公网验证 |
 | 备案号 | 站底显示占位「冀ICP备XXXXXXXX号」 | 注入真实 `CN_ICP_NO`，站底显示真实备案号并链 `https://beian.miit.gov.cn` |
-| 部署动作 | 可 Build + 推 ACR + 在 ECS 起容器（仅内部可达） | 切 DNS + 启用 80/443 + 全量公网流量 |
+| 部署动作 | 可 Build + 上传 OSS 镜像包 + 在 ECS 起容器（仅内部可达） | 切 DNS + 启用 80/443 + 全量公网流量 |
 
 ### 1.3 关键架构决策
 
-1. **运行时 env 由 ECS 主机持有，CI 只推镜像**：所有敏感变量（`DATABASE_URL_CN`/`JWT_SECRET`/`OSS_*`/`WECHAT_PAY_*`）放 ECS `/opt/cn/.env.cn`，通过 `docker-compose --env-file` 注入。**绝不**在 `deploy-cn.yml` 用 `${{ secrets.X }}` 直接 `-e` 注入（会进 CI 日志）。CI 仅 `docker build` + 推 ACR。安全红线。
+1. **运行时 env 由 ECS 主机持有，CI 只推镜像**：所有敏感变量（`DATABASE_URL_CN`/`JWT_SECRET`/`OSS_*`/`WECHAT_PAY_*`）放 ECS `/opt/cn/.env.cn`，通过 `docker-compose --env-file` 注入。**绝不**在 `deploy-cn.yml` 用 `${{ secrets.X }}` 直接 `-e` 注入（会进 CI 日志）。CI 仅 `docker build` + `docker save | gzip` 上传 OSS 镜像包。安全红线。
 2. **docker-compose 双 service**：`nginx`(对外 80/443) + `app`(仅内部网络 `app:3000`，不暴露宿主机端口)。Nginx `proxy_pass http://app:3000`。
 3. **数据库推荐 RDS PG 北京**：同地域低延迟、自动备份/高可用、运维省心；RDS 白名单放 ECS 私网 IP。预算敏感可用 ECS 本地 PG（docker `postgres:16` + volume），但需自管备份。
-4. **镜像标签固定**：CI 推 `registry/usedfarmmach-cn:${GITHUB_SHA::8}`；部署时 `CN_IMAGE` 写入主机 env，compose 用 `image: ${CN_IMAGE}` 拉取并 `up -d`。
+4. **镜像版本固定（OSS tarball）**：CI 构建后 `docker save` + `gzip` 得 `cn-app-<完整SHA>.tar.gz`，上传 `oss://usedfarmmach-oss/cn-images/`；ECS 由 deploy-cn.sh 下载 + `docker load`（tag `usedfarmmach-cn:<SHA>`），compose 用 `image: ${CN_IMAGE}` 起容器。
 
 ---
 
@@ -129,14 +129,14 @@ flowchart LR
 |---|---|---|---|
 | 主机软件 | Docker + docker-compose-plugin | 需装 | ECS 未预装，T-A 手动装 |
 | 证书 | certbot (Let's Encrypt) 或 阿里云免费 DV 证书 | 待定 | 推荐 certbot 自动续期 |
-| 镜像仓库 | 阿里云 ACR | **待确认是否已开通** | registry 地址/命名空间/用户名/密码 → GH secrets `ALIYUN_ACR_*` |
+| 镜像仓库 | 阿里云 OSS（bucket `usedfarmmach-oss`，北京） | **已复用（弃用 ACR，费用≈0）** | CI 用 `OSS_ACCESS_KEY_ID` / `OSS_ACCESS_KEY_SECRET` 上传 `cn-images/cn-app-<SHA>.tar.gz`；ECS 下载 + docker load |
 | 数据库 | 阿里云 RDS PG（北京） | **待确认是否需新购** | 或 ECS 本地 PG；RDS 白名单放 ECS 私网 IP |
 | 对象存储 | 阿里云 OSS（北京 bucket） | 待确认 bucket/endpoint | images 已 allowlist `oss-cn-beijing` |
 | 支付 | 微信收付通商户号 + 证书 | 待提供 6 项+可选证书 | 可先占位跑通，支付功能推迟上线 |
 | DNS | 阿里云 DNS / Cloudflare | 现状 Cloudflare+Vercel | T-H 切到 ECS |
 | 部署密钥 | SSH 部署钥 | 待提供 | 私钥存 GH secret `DEPLOY_SSH_KEY` |
 | 备案 | usedfarmmach.cn ICP | 管局审核中 | 备案号下来前不得对外 |
-| 可选 | 阿里云 AccessKey | 视方案 | 用 SSH+ACR 方案时**不需要**；仅阿里云 CLI RunCommand 方案需要 |
+| 可选 | 阿里云 AccessKey | 已用 | OSS 方案**必需**：`OSS_ACCESS_KEY_ID` / `OSS_ACCESS_KEY_SECRET`（RAM 子用户，仅 OSS 读写 usedfarmmach-oss 权限）→ 同时写入 GH secrets 与 ECS `/opt/cn/.env.cn` |
 
 ---
 
@@ -146,7 +146,7 @@ flowchart LR
 2. **SITE 切换机制**：`SITE=cn` 激活 .cn；`next.config.js` 注入 `NEXT_PUBLIC_SITE`；`Dockerfile.cn` 与 `deploy-cn.yml` 都必须设 `SITE=cn` + `NEXT_PUBLIC_SITE=cn`。
 3. **standalone 产物路径**：仅 `SITE=cn` 时 `output:'standalone'`；产物 `.next/standalone/server.js` 由 `Dockerfile.cn` COPY 并作 `CMD`。
 4. **双库选择**：`src/lib/db.ts` 按 `SITE` 选 `DATABASE_URL_CN`/`DATABASE_URL`；CI 构建期已把 `DATABASE_URL_CN` 映射成 `DATABASE_URL` 供 `prisma generate/build`，运行时容器只需 `DATABASE_URL_CN`。
-5. **secrets 不进 CI 日志**：运行时 env 一律由 ECS 主机 `/opt/cn/.env.cn`（`env_file`）提供；CI 只 build + 推 ACR。
+5. **secrets 不进 CI 日志**：运行时 env 一律由 ECS 主机 `/opt/cn/.env.cn`（`env_file`）提供；CI 只 build + 上传 OSS 镜像包。
 6. **ICP 号渲染约定**：仅 `isCnSite()` 时显示，链接 `https://beian.miit.gov.cn`；值来自 `siteConfig.compliance.icpNo` ← `CN_ICP_NO`。
 
 ---
@@ -175,7 +175,7 @@ flowchart LR
 
 ## 7. 待明确事项（需用户拍板 / 提供）
 
-1. **阿里云 ACR 是否已开通**？registry 地址、命名空间、用户名、密码 → GH secrets `ALIYUN_ACR_*`。
+1. **OSS AccessKey 是否已配好**？`OSS_ACCESS_KEY_ID` / `OSS_ACCESS_KEY_SECRET`（RAM 子用户，仅 OSS 读写 usedfarmmach-oss 权限）→ GH secrets `OSS_ACCESS_KEY_ID` / `OSS_ACCESS_KEY_SECRET`，并填入 ECS `/opt/cn/.env.cn`。
 2. **RDS PG（北京）是否已购**？实例连接串？还是用 ECS 本地 PG？→ 决定 T-B 具体步骤。
 3. **SSH 部署公钥怎么放**？现有 ECS 登录密钥对，还是新建 `deploy` 专用密钥对、私钥存 GH secret `DEPLOY_SSH_KEY`？→ 决定 T-D 方案。
 4. **备案号预计何时下来**？决定 T-H / 对外时间窗口（当前管局审核中 ~9 工作日）。

@@ -27,11 +27,11 @@
 | 阿里云 RDS PostgreSQL（北京） | 境内库，得到 `DATABASE_URL_CN` | 运维/DBA |
 | 阿里云 OSS（oss-cn-beijing） | 得到 `OSS_*` 一组凭证 | 运维 |
 | 微信支付「电商收付通」子商户 | 得到 `WECHAT_PAY_*` 一组凭证（仅担保交易） | 业务 |
-| 阿里云 ACR 命名空间 | 得到 `ALIYUN_ACR_*` 一组凭证 | 运维 |
+| 阿里云 ACR 命名空间 | ~~得到 `ALIYUN_ACR_*` 一组凭证~~（**已弃用**，改 OSS 存镜像包） | 运维 |
 | 域名 `usedfarmmach.cn` | 已实名，待 ICP 备案 | 业务 |
 | ICP 备案 | 取得真实 `CN_ICP_NO` 前不得公开 | 业务 |
 | SSL 证书 | 备案通过后下发 `.cn` 证书（`fullchain.pem` + `privkey.pem`） | 运维 |
-| GitHub Secrets | `DATABASE_URL_CN` / `DEPLOY_SSH_KEY` / `ALIYUN_ACR_*` | 负责人 |
+| GitHub Secrets | `DEPLOY_SSH_KEY` / `OSS_ACCESS_KEY_ID` / `OSS_ACCESS_KEY_SECRET`（`ALIYUN_ACR_*` 已弃用） | 负责人 |
 
 ---
 
@@ -92,16 +92,19 @@ sudo -u deploy vim /opt/cn/.env.cn   # 逐项填真实值
 
 ---
 
-## ④ 登录阿里云 ACR
+## ④ 安装并配置 ossutil（ECS 侧，镜像下载用）
 
-部署主机需能拉取私有镜像，提前登录一次（凭据缓存在 `deploy` 用户）：
+镜像包存放在 OSS（非私有 registry），ECS 需用 ossutil 下载。deploy-cn.sh 会自动幂等安装到 `/opt/cn/bin/ossutil` 并从 `.env.cn` 读取 `OSS_ACCESS_KEY_ID/SECRET`；如需手动验证：
 
 ```bash
-sudo -u deploy docker login \
-  -u "$ALIYUN_ACR_USERNAME" \
-  -p "$ALIYUN_ACR_PASSWORD" \
-  "$ALIYUN_ACR_REGISTRY"
-# 变量来自 ALIYUN_ACR_* secrets；也可在 deploy/deploy-cn.sh 中按需自动登录
+# 安装（deploy-cn.sh 已内置等价逻辑；此处为手动步骤）
+curl -fSL -o /tmp/ossutil.zip https://gosspublic.alicdn.com/ossutil/1.7.19/ossutil-v1.7.19-linux-amd64.zip
+unzip -o /tmp/ossutil.zip -d /tmp/ossutil-x
+sudo install -m 0755 "$(find /tmp/ossutil-x -maxdepth 2 -type f -name 'ossutil*' | head -1)" /usr/local/bin/ossutil
+
+# 手动下载镜像包（凭据取自 /opt/cn/.env.cn，此处示意）
+ossutil cp -f "oss://usedfarmmach-oss/cn-images/cn-app-<SHA>.tar.gz" /opt/cn/images/ \
+  -e oss-cn-beijing.aliyuncs.com -i "$OSS_ACCESS_KEY_ID" -k "$OSS_ACCESS_KEY_SECRET"
 ```
 
 ---
@@ -110,15 +113,16 @@ sudo -u deploy docker login \
 
 代码合入 `main`（或手动 `workflow_dispatch`）即触发 `.github/workflows/deploy-cn.yml`：
 
-1. 安装依赖 → `prisma generate`（取 `secrets.DATABASE_URL_CN`）→ `next build`（SITE=cn）。
-2. `docker build --build-arg SITE=cn --build-arg DATABASE_URL=${{ secrets.DATABASE_URL_CN }} -f Dockerfile.cn` → 打标签 → 推 ACR。
-3. `appleboy/ssh-action` 以 `deploy` 登 ECS，执行 `/opt/cn/deploy/deploy-cn.sh`：
-   - `docker compose -f /opt/cn/docker-compose.yml --env-file /opt/cn/.env.cn pull app`
+1. 安装依赖 → `prisma generate`（GitHub Actions 内置临时 postgres service）→ `next build`（SITE=cn）。
+2. `docker build --build-arg SITE=cn ... -f Dockerfile.cn` → `docker save | gzip` 得 `cn-app-<SHA>.tar.gz` → ossutil 上传 `oss://usedfarmmach-oss/cn-images/`。
+3. `appleboy/ssh-action` 以 `deploy` 登 ECS，执行 `/opt/cn/deploy/deploy-cn.sh`（`CN_IMAGE_REF=<SHA>` 由 CI 注入）：
+   - ossutil 从 OSS 下载 `cn-app-<SHA>.tar.gz` → `docker load`
    - `up -d app`（滚动替换，依赖 `app` 健康检查 `healthy`）
+   - `prisma db push` 幂等初始化表结构（R1）
    - `nginx -s reload`（若 nginx 容器已在跑）
 
 > CI **不注入** 任何运行时密钥——ECS 用本地 `/opt/cn/.env.cn`（`env_file`）供给 app 容器。
-> 镜像标签 = `registry.cn-beijing.aliyuncs.com/<ACR_NS>/usedfarmmach-cn:<GITHUB_SHA前8位>`。
+> 镜像包名 = `cn-app-<完整GITHUB_SHA>.tar.gz`（对象路径 `cn-images/`）；镜像 tag = `usedfarmmach-cn:<完整SHA>`。
 
 ---
 
@@ -156,9 +160,9 @@ curl -H "Host: usedfarmmach.cn" http://127.0.0.1:3000/zh
 | --- | --- |
 | app 健康检查一直 `unhealthy` | `docker compose -f /opt/cn/docker-compose.yml --env-file /opt/cn/.env.cn logs app` 查启动日志；多为 `.env.cn` 缺 `DATABASE_URL_CN` 或 RDS 白名单问题 |
 | nginx 502 | 确认 `app` 容器在 `cn-net` 内且 `upstream app { server app:3000; }` 可达；`docker network inspect cn-net` |
-| 镜像拉取 401 | 重新执行步骤 ④ `docker login` ACR |
+| 镜像包下载失败（OSS 401/404/超时） | 核对 `/opt/cn/.env.cn` 的 `OSS_ACCESS_KEY_ID/SECRET` 与 bucket `usedfarmmach-oss`；`ossutil ls oss://usedfarmmach-oss/cn-images/` 确认对象存在；重试 `bash /opt/cn/deploy/deploy-cn.sh` |
 | 数据库连不上 | 核对 `.env.cn` 的 `DATABASE_URL_CN` 为境内 RDS；RDS 安全组放行 ECS 私网 IP |
-| 上线后需回滚 | `docker compose` 指定上一镜像标签 `up -d app`（保留历史 tag 即可快速回退） |
+| 上线后需回滚 | 指定上一 SHA 镜像包：`CN_IMAGE_REF=<上一SHA> bash /opt/cn/deploy/deploy-cn.sh`（OSS 保留历史 tarball，`docker load` 即可快速回退） |
 
 **核心日志命令**：
 ```bash

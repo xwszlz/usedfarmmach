@@ -128,7 +128,7 @@ const isApiPath = pathname === "/api" || pathname.startsWith("/api/");
 | # | 事项 | 状态 | 说明 |
 |---|---|---|---|
 | U1 | **OSS AccessKey 填入 ECS .env.cn** | ⏳（密钥已备，待落主机） | `OSS_ACCESS_KEY_ID` / `OSS_ACCESS_KEY_SECRET` 当前为 `your-aliyun-access-key-id` 占位；oss-upload.ts 运行时读取。将已备好的 RAM 子用户 Key（仅 OSS 写 usedfarmmach-oss 权限）填入 ECS `/opt/cn/.env.cn` |
-| U2 | **GitHub secrets 配置** | ⏳ 用户提供 | 需配置：`DEPLOY_SSH_KEY`（deploy 用户私钥，见 U3）、`ALIYUN_ACR_REGISTRY`、`ALIYUN_ACR_USERNAME`、`ALIYUN_ACR_PASSWORD`（ACR 登录）、`DATABASE_URL_CN`（**CI 可达**的境内构建库，见 R3） |
+| U2 | **GitHub secrets 配置** | ⏳ 用户提供 | 需配置：`DEPLOY_SSH_KEY`（deploy 用户私钥，见 U3）、`OSS_ACCESS_KEY_ID`、`OSS_ACCESS_KEY_SECRET`（OSS 镜像包上传，与 .env.cn 同款 RAM 子用户 Key，见 §6）。~~`ALIYUN_ACR_*`~~ 已弃用；`DATABASE_URL_CN` 不再需要（R3 已用 CI 内置 postgres service） |
 | U3 | **ECS deploy 用户 + SSH 免密** | ⏳ 用户操作 | workflow 以 `deploy` 用户 SSH 到 `101.200.125.199`；需在 ECS 创建 deploy 用户、配 sudo/权限（docker 组）、将公钥加入 authorized_keys；`DEPLOY_SSH_KEY` 对应私钥写入 GitHub secret |
 | U4 | **ECS 主机 /opt/cn 目录初始化** | ⏳ 用户操作 | 放置 `docker-compose.yml`（仓库版）、`.env.cn`（填 U1 等真实值）、`deploy/nginx/*`；首次执行 `docker compose up -d postgres` 建本地 PG 卷 |
 | U5 | **SSL 证书** | ⏳ 用户提供 | 阿里云免费 DV 或 Let's Encrypt；`fullchain.pem` + `privkey.pem` 放 ECS `/opt/cn/deploy/nginx/ssl/cn/`（仓库无 ssl/ 目录） |
@@ -200,3 +200,108 @@ const isApiPath = pathname === "/api" || pathname.startsWith("/api/");
 
 - 构建期 service 是**空库**（无表无数据）。当前各页面构建期查询的表结构由 ECS 运行时 `prisma db push` 初始化（§1.1），构建期仅需**连接成功**；若未来出现「构建期查询空表」报错，需再评估（构建期执行 migrate 或改动态渲染）。
 - 本分支仅提交：`.github/workflows/deploy-cn.yml`、`Dockerfile.cn`、本报告文件；未 push、未开 PR（main 受保护，由主理人处理）。
+
+---
+
+## 6. OSS 镜像方案（弃用 ACR）— 2026-08-05 追加
+
+> 用户拍板弃用阿里云 ACR 企业版（¥314/月），改用**阿里云 OSS 存镜像 tarball**：
+> 复用现有 bucket `usedfarmmach-oss`（北京 `oss-cn-beijing`，与 ECS 同地域，费用近乎免费）。
+> 分支：`feat/cn-oss-registry`（基于 `feat/cn-ci-fix` HEAD=59ed35d，**未 push、未开 PR**）。
+
+### 6.1 目标架构
+
+```
+CI（GitHub Actions）
+  docker build（R3：内置临时 postgres service）
+    → docker tag usedfarmmach-cn:<SHA>
+    → docker save | gzip > cn-app-<SHA>.tar.gz
+    → ossutil cp → oss://usedfarmmach-oss/cn-images/cn-app-<SHA>.tar.gz
+
+ECS（101.200.125.199, deploy 用户）
+  deploy-cn.sh（CN_IMAGE_REF=<SHA>）
+    → 幂等安装 ossutil（/opt/cn/bin/ossutil）
+    → 从 .env.cn 读取 OSS_ACCESS_KEY_ID/SECRET
+    → ossutil cp 下载 cn-app-<SHA>.tar.gz
+    → docker load -i
+    → docker compose up -d app（image: ${CN_IMAGE}=usedfarmmach-cn:<SHA>，pull_policy: never）
+    → prisma db push 幂等建表（R1，保留）
+    → 等健康检查 → reload nginx
+```
+
+### 6.2 改动清单
+
+| 文件 | 改动 |
+|---|---|
+| `.github/workflows/deploy-cn.yml` | 删除 ACR login（aliyun/acr-login@v1）+ push 步骤，替换为：① Install ossutil（官方二进制 1.7.19，linux-amd64 zip，解压后 `install` 到 /usr/local/bin）；② Save and compress（`docker tag usedfarmmach-cn:latest usedfarmmach-cn:${{ github.sha }}` + `docker save | gzip -9` → `/tmp/cn-images/cn-app-${{ github.sha }}.tar.gz`）；③ Upload to OSS（`ossutil cp -f ... -e oss-cn-beijing.aliyuncs.com -i ${{ secrets.OSS_ACCESS_KEY_ID }} -k ${{ secrets.OSS_ACCESS_KEY_SECRET }}`）。Deploy 步骤改为 `export CN_IMAGE_REF="${{ github.sha }}"`（不再用 `env.IMAGE_TAG`）。services postgres（R3）与 CI_DATABASE_URL* 未动 |
+| `deploy/deploy-cn.sh` | ① 入参由 `CN_IMAGE`（ACR 全引用）改为 `CN_IMAGE_REF`（commit SHA），脚本推导 `CN_IMAGE_FILE=cn-app-<REF>.tar.gz`、`CN_IMAGE=usedfarmmach-cn:<REF>`、`OSS_OBJECT=oss://usedfarmmach-oss/cn-images/<FILE>`；② 删除 ACR 登录块与 `docker compose pull`；③ 新增 `load_oss_env()`（环境变量优先，否则从 `.env.cn` grep 提取 OSS_ACCESS_KEY_ID/SECRET，**不 source 整个文件**，规避 WECHAT_PAY_PRIVATE_KEY 多行值破坏语法）；④ 新增 `install_ossutil()`（幂等：已装则跳过；下载官方 1.7.19 zip → unzip 优先、python3 zipfile 兜底 → `install` 到 `/opt/cn/bin/ossutil`，避免 /usr/local/bin 权限问题）；⑤ 新增下载 + `docker load -i`；⑥ R1 prisma db push 块从 `feat/cn-phase0`（ec75739）**恢复**（当前 feat/cn-ci-fix 的 deploy-cn.sh 因分支未合并而缺失该块，主理人要求保留 R1，故从 phase0 取回） |
+| `docker-compose.yml` | 头部注释改为 OSS 用法；app service 增加 `pull_policy: never`（镜像一律本地 docker load，禁止 compose 远端拉取） |
+| `docs/cn-deploy-architecture.md` | ACR 相关 7 处 → OSS 方案（§1.2 部署动作、§1.3 决策 1/4、§4 外部服务表、§5 约定 5、§7 待明确 1） |
+| `docs/cn-deploy-runbook.md` | 前置表（ACR 行标注已弃用）、GitHub Secrets 行、§④ 登录 ACR → 安装并配置 ossutil、§⑤ 流程改 OSS、故障排查（镜像拉取 401 → OSS 下载失败）、回滚说明 |
+| `docs/cn-phase0-report-2026-08-05.md` | U2 secrets 更新 + 本 §6 |
+
+### 6.3 ossutil 安装 / 配置命令
+
+**CI（GitHub Actions，ubuntu-latest）**
+```bash
+curl -fSL --retry 3 -o /tmp/ossutil.zip \
+  https://gosspublic.alicdn.com/ossutil/1.7.19/ossutil-v1.7.19-linux-amd64.zip
+rm -rf /tmp/ossutil-x && mkdir -p /tmp/ossutil-x
+unzip -o /tmp/ossutil.zip -d /tmp/ossutil-x
+BIN="$(find /tmp/ossutil-x -maxdepth 2 -type f \( -name 'ossutil' -o -name 'ossutil64' \) | head -1)"
+sudo install -m 0755 "$BIN" /usr/local/bin/ossutil
+# 上传时凭据直接走 secrets（-e/-i/-k，不落盘 config 文件）
+```
+
+**ECS（deploy-cn.sh 内幂等安装到 /opt/cn/bin/ossutil，无需 sudo）**
+```bash
+# 核心逻辑：已存在则跳过；否则下载 zip → unzip 或 python3 zipfile 解压 → install 到 /opt/cn/bin/ossutil
+# 凭据：环境变量优先，否则从 /opt/cn/.env.cn grep 提取 OSS_ACCESS_KEY_ID / OSS_ACCESS_KEY_SECRET
+```
+
+### 6.4 上传 / 下载 / load 全链路命令示例
+
+```bash
+# ---- CI 上传 ----
+docker tag usedfarmmach-cn:latest "usedfarmmach-cn:<SHA>"
+docker save "usedfarmmach-cn:<SHA>" | gzip -9 > "cn-app-<SHA>.tar.gz"
+ossutil cp -f "cn-app-<SHA>.tar.gz" \
+  "oss://usedfarmmach-oss/cn-images/cn-app-<SHA>.tar.gz" \
+  -e oss-cn-beijing.aliyuncs.com -i "$OSS_ACCESS_KEY_ID" -k "$OSS_ACCESS_KEY_SECRET"
+
+# ---- ECS 下载 + load ----
+ossutil cp -f "oss://usedfarmmach-oss/cn-images/cn-app-<SHA>.tar.gz" "/opt/cn/images/" \
+  -e oss-cn-beijing.aliyuncs.com -i "$OSS_ACCESS_KEY_ID" -k "$OSS_ACCESS_KEY_SECRET"
+docker load -i "/opt/cn/images/cn-app-<SHA>.tar.gz"
+export CN_IMAGE="usedfarmmach-cn:<SHA>"
+docker compose -f /opt/cn/docker-compose.yml --env-file /opt/cn/.env.cn up -d app
+```
+
+### 6.5 版本命名约定
+
+- **OSS 对象**：`cn-images/cn-app-<完整git commit SHA>.tar.gz`（CI 用 `${{ github.sha }}`）
+- **镜像 tag**：`usedfarmmach-cn:<完整SHA>`（`docker load` 后 compose 用 `image: ${CN_IMAGE}` 匹配）
+- **脚本入参**：`CN_IMAGE_REF=<SHA>`（deploy-cn.sh 据此推导对象名与 tag；可被 `CN_IMAGE_FILE` / `CN_IMAGE` 覆盖）
+- 历史版本 tarball 保留在 OSS（低成本），回滚 = `CN_IMAGE_REF=<上一SHA> bash deploy-cn.sh`
+
+### 6.6 GitHub secrets 变更
+
+| secret | 状态 | 说明 |
+|---|---|---|
+| `OSS_ACCESS_KEY_ID` | **新增** ⏳ | 与 ECS `/opt/cn/.env.cn` 同款 RAM 子用户 Key（仅 OSS 读写 usedfarmmach-oss 权限） |
+| `OSS_ACCESS_KEY_SECRET` | **新增** ⏳ | 同上 |
+| `ALIYUN_ACR_REGISTRY/USERNAME/PASSWORD` | **弃用** | workflow 已无引用，可删除 |
+| `DEPLOY_SSH_KEY` | 不变 | deploy 用户私钥 |
+| `DATABASE_URL_CN` | 不再需要 | R3 已用 CI 内置 postgres service |
+
+### 6.7 风险点
+
+| # | 风险 | 级别 | 说明与缓解 |
+|---|---|---|---|
+| O1 | **镜像体积 / 上传耗时** | 中 | Next.js standalone 镜像（node:22-alpine）约 300–800MB 未压缩，gzip -9 后约 100–250MB；CI 上传受 GitHub→阿里云公网带宽影响，预计 1–5 分钟。缓解：`gzip -9` 已用；若过慢可降 `-1`（体积略增）；OSS 与 ECS 同地域，下载走内网/公网同地域延迟低 |
+| O2 | **OSS 流量费** | 低 | 上传走公网（约 0.5 元/GB 上行，阿里云上行一般免流量费，仅下行计费）；ECS 同地域下载走**内网免流量**（deploy 脚本用公网 endpoint，同地域仍走内网链路计费为 0）。单次部署流量成本可忽略 |
+| O3 | **失败重试** | 中 | `ossutil cp -f` 自带断点/重试；CI 下载/上传失败会整步失败可重跑（workflow_dispatch）。ECS 侧 `curl --retry 3` + ossutil 内部重试；若下载中断，重新执行脚本即续传覆盖 |
+| O4 | **ECS deploy-cn.sh 需同步** | **高** | ECS 上 `/opt/cn/deploy/deploy-cn.sh` 是主机侧快照，**必须手动替换为新版**（否则仍走 docker pull ACR 会失败）。合入 PR 前需 `scp deploy/deploy-cn.sh deploy@101.200.125.199:/opt/cn/deploy/` |
+| O5 | **OSS 对象被覆盖 / 误删** | 低 | 对象名含 SHA 天然防覆盖；误删可重跑 CI 重新上传；建议 RAM 子用户仅授 `oss:PutObject`/`oss:GetObject` 最小权限，勿给 DeleteObject |
+| O6 | **gzip 损坏静默失败** | 低 | `docker load -i` 对损坏 gzip 会报错中止（set -euo pipefail）；CI 上传后可用 `ossutil ls` 核对大小。可选加固：CI 计算 sha256 随包上传、ECS 下载后校验 |
+| O7 | **compose pull_policy: never 兼容性** | 低 | `pull_policy` 为 Compose spec 字段（compose v2.20+）；ECS 若为旧版 compose 会忽略该键（仅告警），不影响 `up -d`（镜像已本地加载） |
