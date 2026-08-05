@@ -55,16 +55,6 @@ jobs:
         env:
           DATABASE_URL: ${{ env.CI_DATABASE_URL }}
 
-      - name: Init build database schema
-        # R4 修复：构建期临时 postgres service 只有空库无表，ISR 预渲染真实连库查询
-        # （如 miniapp/brands-categories 的 prisma.category.findMany）会因
-        # "table does not exist"（P2021）失败。用 prisma db push 按仓库 schema 建好
-        # 全部表结构（空表无数据），与 R1 部署期做法一致；--skip-generate 不再重复生成
-        # client（上一步已生成）。migrations 仅 2 个增量、依赖历史基础表，空库必须 db push。
-        run: npx prisma db push --skip-generate
-        env:
-          DATABASE_URL: ${{ env.CI_DATABASE_URL }}
-
       - name: Build Next.js (standalone, SITE=cn)
         run: npm run build
         env:
