@@ -101,7 +101,8 @@ export async function middleware(request: NextRequest) {
       // 被白名单或 redirect 限制拦截。所有 API 一律走 .com，确保数据源一致。
       // 注：此规则覆盖了 2026-07-26 之前的"仅注册类 API 豁免"，因为注册豁免粒度太细，
       // 小程序其他接口（/products、/inquiries、/subscribe 等）仍被 301 拦截，导致 errno:600002。
-      const isApiPath = pathname.startsWith("/api/");
+      // 注：同时豁免精确的 "/api"（无尾斜杠），startsWith("/api/") 不覆盖它。
+      const isApiPath = pathname === "/api" || pathname.startsWith("/api/");
 
       if (isApiPath) {
         const res = NextResponse.next();
