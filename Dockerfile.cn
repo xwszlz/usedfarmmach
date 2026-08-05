@@ -25,11 +25,15 @@ RUN npm ci --only=production && \
 FROM base AS builder
 WORKDIR /app
 
-# 构建期需要 DATABASE_URL（prisma client 生成 / next build 可能连库）。
-# 通过 --build-arg 从 CI 注入；运行时容器仍使用 ECS 主机 /opt/cn/.env.cn 的
-# DATABASE_URL_CN，二者作用域不同、互不冲突。
+# 构建期数据库连接串，通过 --build-arg 从 CI 注入（GitHub Actions 内置临时 postgres service）：
+# - DATABASE_URL：schema.prisma 的 datasource env("DATABASE_URL")，prisma generate 需变量存在
+# - DATABASE_URL_CN：db.ts 在 SITE=cn 时读取，next build（ISR 预渲染）会真实连接
+# 运行时容器仍使用 ECS 主机 /opt/cn/.env.cn 的 DATABASE_URL_CN（host=cn-postgres），
+# 二者作用域不同、互不冲突。
 ARG DATABASE_URL
 ENV DATABASE_URL=$DATABASE_URL
+ARG DATABASE_URL_CN
+ENV DATABASE_URL_CN=$DATABASE_URL_CN
 
 COPY package.json package-lock.json* ./
 RUN npm ci

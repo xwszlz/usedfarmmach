@@ -12,6 +12,31 @@ env:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    # R3 修复：构建期使用 GitHub Actions 内置临时 PostgreSQL service。
+    # 仅在本 job 的 runner（ubuntu-latest）上有效；构建期连接串与运行期
+    # （ECS 主机 /opt/cn/.env.cn 的 DATABASE_URL_CN，host=cn-postgres）完全分离。
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # 构建期数据库 URL（仅 CI 构建使用，指向上面 postgres service）：
+      # - CI_DATABASE_URL：runner 步骤（prisma generate / next build）用 localhost
+      # - CI_DATABASE_URL_DOCKER：docker build 的 builder 阶段用 host.docker.internal
+      #   （build 容器内 localhost 指容器自身，需经 host-gateway 到达 runner 上发布的
+      #    service 端口；配合下方 --add-host=host.docker.internal:host-gateway）
+      CI_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres?schema=public
+      CI_DATABASE_URL_DOCKER: postgresql://postgres:postgres@host.docker.internal:5432/postgres?schema=public
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -28,21 +53,30 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL_CN }}
+          DATABASE_URL: ${{ env.CI_DATABASE_URL }}
 
       - name: Build Next.js (standalone, SITE=cn)
         run: npm run build
         env:
           SITE: cn
-          DATABASE_URL: ${{ secrets.DATABASE_URL_CN }}
+          # db.ts 在 SITE=cn 时读 DATABASE_URL_CN（next build ISR 预渲染会真实连库）；
+          # schema.prisma 的 datasource 读 DATABASE_URL（prisma generate 需变量存在）。
+          # 两者都指向构建期临时 postgres service，不再使用 secrets.DATABASE_URL_CN
+          # （其指向 ECS 内网 cn-postgres，GitHub Actions 不可达）。
+          DATABASE_URL: ${{ env.CI_DATABASE_URL }}
+          DATABASE_URL_CN: ${{ env.CI_DATABASE_URL }}
           NEXT_PUBLIC_SITE: cn
           NEXT_PUBLIC_APP_URL: https://usedfarmmach.cn
 
       - name: Build Docker image
         run: |
+          # docker build 的 builder 阶段容器内 localhost 指容器自身，
+          # 故用 host.docker.internal + host-gateway 到达 runner 上发布的 service 端口。
           docker build \
+            --add-host=host.docker.internal:host-gateway \
             --build-arg SITE=cn \
-            --build-arg DATABASE_URL=${{ secrets.DATABASE_URL_CN }} \
+            --build-arg DATABASE_URL=${{ env.CI_DATABASE_URL }} \
+            --build-arg DATABASE_URL_CN=${{ env.CI_DATABASE_URL_DOCKER }} \
             -t usedfarmmach-cn:latest \
             -f Dockerfile.cn .
 
