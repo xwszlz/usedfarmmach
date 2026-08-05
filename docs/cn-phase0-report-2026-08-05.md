@@ -380,3 +380,73 @@ docker compose -f /opt/cn/docker-compose.yml --env-file /opt/cn/.env.cn up -d ap
 | R4-1 | 分支名 `cn-ci-schema`（非 `feat/cn-ci-schema`） | 本机 `refs/heads/feat/` 嵌套目录无法创建（外部进程删除嵌套 ref）；单层 ref 正常。合入时 `git branch -m` 改名即可，提交内容不受影响 |
 | R4-2 | 工作树文件偶发被删 | 操作期间 `commit_hash.txt`/`exclude-*.txt` 曾被外部进程删除，已 `git restore` 恢复；不影响已提交历史。若继续出现，建议在健康机器上处理 |
 | R4-3 | 构建期库仍为空数据 | 见 7.4；需要内容时先跑 `scripts/seed-cn-base-data.mjs`（R2/U8） |
+
+#### 7.6 R4.1 libssl 修复（Docker 镜像构建）— 2026-08-05 追加
+
+> 处置：R4 生效后 runner 上 next build 53/53 通过 ✅，但 **docker build 的 builder 阶段**再失败。
+> 分支：`cn-ci-libssl`（commit `8cd982d`，基于 0a59a58=合入的 R4 #35；**未 push、未开 PR**）。
+
+**失败现象**（Dockerfile.cn:50 `RUN npm run build`）：
+```
+Error loading shared library libssl.so.1.1: No such file or directory
+(needed by /app/node_modules/.prisma/client/libquery_engine-linux-musl.so.node)
+... sitemap.xml/route: /sitemap.xml Export encountered errors
+```
+
+**根因**：builder 阶段 base 为 `node:22-alpine`（**musl**）。Prisma 默认生成
+`linux-musl-openssl-1.1.x` 引擎，依赖 `libssl.so.1.1`；但 Alpine 3.19+ 只提供
+openssl3（`libssl.so.3`），且 **`openssl1.1-compat` 包已被移除**（Alpine gitlab
+aports#15575：3.18 可用、3.19 起移入 edge/testing 并弃用）→ 引擎加载失败 → next
+build 里 sitemap.xml route 连库导出挂掉。（runner 上 Build Next.js 成功是因
+ubuntu/glibc 用 native 引擎。）
+
+**为什么不能用 `apk add openssl1.1-compat`**：node:22-alpine 是 Alpine ≥3.19，
+该包不存在，`apk add` 会报 `ERROR: unable to select packages: openssl1.1-compat
+(no such package)`——原方案会在 CI 再挂一次。改用官方支持的 openssl3 路径。
+
+**改动（2 文件 +14 行，最小化）**：
+1. `Dockerfile.cn` base 阶段（tzdata 之后）新增：
+   ```dockerfile
+   # R4.1 修复：Prisma musl 引擎依赖 libssl。
+   # Alpine 3.19+ 已移除 openssl1.1-compat（提供 libssl.so.1.1 的包），
+   # 故安装 openssl3（提供 libssl.so.3），并配合 prisma/schema.prisma 的
+   # binaryTargets = linux-musl-openssl-3.0.x 使用 openssl3 引擎。
+   # 放 base 阶段：builder（构建期 prisma generate/next build）与
+   # runner（运行期 server.js 加载引擎）均继承，二者都需要。
+   RUN apk add --no-cache openssl
+   ```
+   放 base 而非 builder 单点：builder 构建期 generate 需 openssl3 CLI 检测版本；
+   runner 运行期加载同一引擎也需 `libssl.so.3`（Alpine base 自带 libssl3 库，
+   openssl CLI 用于 Prisma 运行时 openssl 版本探测）。
+2. `prisma/schema.prisma` generator 新增：
+   ```prisma
+   generator client {
+     provider = "prisma-client-js"
+     // R4.1 修复：Docker 构建（node:22-alpine/musl）需要 openssl3 引擎（libssl.so.3）。
+     // Alpine 3.19+ 无 openssl1.1-compat，默认生成的 linux-musl-openssl-1.1.x 引擎
+     // 会因缺 libssl.so.1.1 加载失败（Error loading shared library）。
+     // 显式生成 linux-musl-openssl-3.0.x（配合 Dockerfile.cn base 阶段 apk add openssl）。
+     // .com（Vercel）/ 本机开发仍用 native，不受影响。
+     binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+   }
+   ```
+   `binaryTargets` 让 prisma 确定性生成 openssl3 musl 引擎（不再依赖容器内
+   openssl 探测的默认值），`.com`/Vercel 仍用 native，无影响。
+
+**sitemap 隐患分析**（team-lead 要求顺带检查）：
+- `src/app/sitemap.ts`：`export const revalidate = 86400`，构建期真实连库导出
+  sitemap.xml；查询 Product/Article(×2)/Brand/Category 五张表——全部是普通表，
+  **R4 的 `prisma db push` 已按 schema 建全**，空库返回空数组不会报错。
+- 本次报错 `sitemap.xml Export encountered errors` 的根因不是缺表，而是引擎
+  **加载失败**（libssl）发生在任何查询之前；本修复让引擎能加载，sitemap 即正常。
+- 无其他函数/视图依赖；结论：sitemap 已被 R4 + R4.1 完整覆盖，无需额外改动。
+
+**验证**：`npx prisma@5.14.0 validate` 通过（含 binaryTargets 后 schema 仍有效；
+需设置 DATABASE_URL 环境变量，不实际连库）。未跑 docker（按要求轻量验证），
+CI 真跑效果以合入后为准。
+
+**遗留说明**：
+- 分支名 `cn-ci-libssl`（单层，同 R4 原因）；合入时 `git branch -m cn-ci-libssl
+  feat/cn-ci-libssl` 还原目标名。
+- 若后续 Alpine 大版本把 openssl3 也弃用，需同步调整 binaryTargets（本方案随
+  Prisma 官方支持列表走，比依赖 compat 包更稳）。
