@@ -32,6 +32,7 @@ OSS_BUCKET="usedfarmmach-oss"
 OSS_ENDPOINT="oss-cn-beijing.aliyuncs.com"
 OSS_IMAGE_PREFIX="cn-images"
 OSSUTIL_BIN="$DEPLOY_DIR/bin/ossutil"
+OSSUTIL_CP_DIR="$DEPLOY_DIR/tmp/ossutil_checkpoint"
 IMAGE_NAME="usedfarmmach-cn"
 IMAGE_DIR="$DEPLOY_DIR/images"
 
@@ -105,8 +106,13 @@ install_ossutil() {
 }
 
 # ossutil 1.x：-e/-i/-k 可置于子命令后（与官方文档示例一致）
+# --checkpoint-dir 指向 deploy 用户可写的 $DEPLOY_DIR/tmp 子目录，
+# 避免 ossutil 默认在当前工作目录（/opt/cn，root 属主、deploy 无写权限）
+# 创建 .ossutil_checkpoint 时报 permission denied。
 ossutil_cp() {
-  "$OSSUTIL_BIN" "$@" -e "$OSS_ENDPOINT" -i "$OSS_ACCESS_KEY_ID" -k "$OSS_ACCESS_KEY_SECRET"
+  mkdir -p "$OSSUTIL_CP_DIR"
+  "$OSSUTIL_BIN" "$@" -e "$OSS_ENDPOINT" -i "$OSS_ACCESS_KEY_ID" -k "$OSS_ACCESS_KEY_SECRET" \
+    --checkpoint-dir "$OSSUTIL_CP_DIR"
 }
 
 # ------------------------------------------------------------
