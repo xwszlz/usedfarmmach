@@ -131,6 +131,17 @@ jobs:
       # 镜像包已上传 OSS（cn-images/cn-app-<sha>.tar.gz），脚本内从 OSS 下载 + docker load；
       # OSS 对象名以完整 commit SHA 命名，与上方上传一致。
       # ----------------------------------------------------------
+      # 部署前先把仓库最新的 deploy/deploy-cn.sh 同步到 ECS，
+      # 避免 ECS 本地旧脚本（缺少 R4/#37/#38 等修复）导致部署失败。
+      - name: Sync deploy script to ECS
+        uses: appleboy/scp-action@v1
+        with:
+          host: 101.200.125.199
+          username: deploy
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          source: "deploy/deploy-cn.sh"
+          target: "/opt/cn"
+
       - name: Deploy to Aliyun ECS
         uses: appleboy/ssh-action@v1
         with:
