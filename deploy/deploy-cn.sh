@@ -153,7 +153,7 @@ if [ -z "$DB_URL_CN" ]; then
   exit 1
 fi
 docker cp cn-app:/app/prisma/schema.prisma /tmp/cn-schema.prisma
-docker run --rm --network cn-net \
+docker run --rm --network cn_cn-net \
   -e DATABASE_URL="$DB_URL_CN" \
   -v /tmp/cn-schema.prisma:/app/schema.prisma \
   -w /app \
