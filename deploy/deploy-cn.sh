@@ -145,7 +145,12 @@ export CN_IMAGE
 #       - 后续执行：仅按 schema 增量同步（--accept-data-loss 允许破坏性变更，
 #         阶段0 新库无风险；上线后如需严格变更管理请引入 baseline 迁移）。
 # 实现：schema.prisma 从 app 镜像内复制（Dockerfile.cn 已 COPY /app/prisma），
-#       再用一次性 node:22-alpine 容器 + npx prisma 执行，无需改动镜像。
+#       再用一次性 node:22-slim 容器 + npx prisma 执行，无需改动镜像。
+# 注意：绝不可用 node:*-alpine —— Prisma 5.x 的 query/schema engine 二进制是
+#       glibc 构建，在 Alpine（musl）上无法加载，会报 "Error load..." 非 JSON
+#       响应导致 "Could not parse schema engine response"；且 Alpine 默认不带
+#       openssl/libssl，触发 "Prisma failed to detect the libssl/openssl version"。
+#       node:22-slim 为 Debian bookworm，自带 libssl3，Prisma 5.14 可正常加载引擎。
 # 注意：prisma CLI 读取 schema 内 env("DATABASE_URL")，此处显式传入
 #       .env.cn 的 DATABASE_URL_CN（境内 cn-postgres，数据不出境红线）。
 # ------------------------------------------------------------
@@ -170,7 +175,7 @@ docker run --rm --network cn_cn-net \
   -e DATABASE_URL="$DB_URL_CN" \
   -v "$SCHEMA_TMP":/app/schema.prisma \
   -w /app \
-  node:22-alpine \
+  node:22-slim \
   npx --yes prisma@5.14.0 db push --skip-generate --accept-data-loss --schema=/app/schema.prisma
 
 echo "==> 表结构就绪，重启 app 应用新表"
