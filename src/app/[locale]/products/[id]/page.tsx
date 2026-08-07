@@ -29,6 +29,7 @@ import Link from "next/link";
 import { Wrench } from "lucide-react";
 import { ProductViewBadge } from "@/components/stats/ProductViewBadge";
 import { ProductVideoGallery } from "@/components/stats/ProductVideoGallery";
+import CompatiblePartsSection from "@/components/parts/CompatiblePartsSection";
 
 export const dynamic = "force-dynamic";
 
@@ -500,6 +501,11 @@ export default async function ProductDetailPage({
         productName={`${brandName} ${product.modelName}`}
         askingPrice={product.priceCny}
       />
+
+      {/* Compatible Parts (适配零部件) — 按品牌运行时匹配 */}
+      <div className="mt-6">
+        <CompatiblePartsSection productId={product.id} locale={locale} />
+      </div>
 
       {/* Inspection Report (设备检验报告) */}
       <div className="mt-6">
