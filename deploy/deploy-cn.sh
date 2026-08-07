@@ -148,9 +148,12 @@ export CN_IMAGE
 #       再用一次性 node:22-slim 容器 + npx prisma 执行，无需改动镜像。
 # 注意：绝不可用 node:*-alpine —— Prisma 5.x 的 query/schema engine 二进制是
 #       glibc 构建，在 Alpine（musl）上无法加载，会报 "Error load..." 非 JSON
-#       响应导致 "Could not parse schema engine response"；且 Alpine 默认不带
-#       openssl/libssl，触发 "Prisma failed to detect the libssl/openssl version"。
-#       node:22-slim 为 Debian bookworm，自带 libssl3，Prisma 5.14 可正常加载引擎。
+#       响应导致 "Could not parse schema engine response"。
+# 注意：node:22-slim 是极简 Debian 镜像，默认不含 openssl 二进制，Prisma 5.14 的
+#       engine 加载依赖 libssl，且需要 openssl 二进制做版本探测，否则报
+#       "Prisma failed to detect the libssl/openssl version ... Defaulting to
+#       openssl-1.1.x" 并 Schema engine error。故容器内先 apt-get 安装 openssl
+#       再执行 npx prisma（见下方 docker run 的 sh -c 包裹）。
 # 注意：prisma CLI 读取 schema 内 env("DATABASE_URL")，此处显式传入
 #       .env.cn 的 DATABASE_URL_CN（境内 cn-postgres，数据不出境红线）。
 # ------------------------------------------------------------
@@ -176,7 +179,7 @@ docker run --rm --network cn_cn-net \
   -v "$SCHEMA_TMP":/app/schema.prisma \
   -w /app \
   node:22-slim \
-  npx --yes prisma@5.14.0 db push --skip-generate --accept-data-loss --schema=/app/schema.prisma
+  sh -c "apt-get update -y >/dev/null 2>&1 && apt-get install -y openssl >/dev/null 2>&1; npx --yes prisma@5.14.0 db push --skip-generate --accept-data-loss --schema=/app/schema.prisma"
 
 echo "==> 表结构就绪，重启 app 应用新表"
 docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" restart app
