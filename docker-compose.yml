@@ -56,7 +56,7 @@ services:
     restart: unless-stopped
     # 注：alpine 默认无 curl，使用 busybox wget（与 Dockerfile.cn HEALTHCHECK 一致）
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/zh"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/zh"]
       interval: 30s
       timeout: 3s
       retries: 3
