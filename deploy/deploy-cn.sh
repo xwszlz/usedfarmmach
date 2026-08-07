@@ -144,16 +144,15 @@ export CN_IMAGE
 #       - 首次执行：空库全量建表；
 #       - 后续执行：仅按 schema 增量同步（--accept-data-loss 允许破坏性变更，
 #         阶段0 新库无风险；上线后如需严格变更管理请引入 baseline 迁移）。
-# 实现：schema.prisma 从 app 镜像内复制（Dockerfile.cn 已 COPY /app/prisma），
-#       再用一次性 node:22-slim 容器 + npx prisma 执行，无需改动镜像。
-# 注意：绝不可用 node:*-alpine —— Prisma 5.x 的 query/schema engine 二进制是
-#       glibc 构建，在 Alpine（musl）上无法加载，会报 "Error load..." 非 JSON
-#       响应导致 "Could not parse schema engine response"。
-# 注意：node:22-slim 是极简 Debian 镜像，默认不含 openssl 二进制，Prisma 5.14 的
-#       engine 加载依赖 libssl，且需要 openssl 二进制做版本探测，否则报
-#       "Prisma failed to detect the libssl/openssl version ... Defaulting to
-#       openssl-1.1.x" 并 Schema engine error。故容器内先 apt-get 安装 openssl
-#       再执行 npx prisma（见下方 docker run 的 sh -c 包裹）。
+# 实现：复用已加载到 ECS 的 app 镜像（cn-app）直接 docker exec 跑 db push，
+#       不再另起外部镜像、也不在容器内 apt-get（内部网络 cn_cn-net 连不上
+#       Debian 源会超时）。app 镜像基于 node:22-alpine，已在 base 阶段 apk 安装
+#       openssl，且 schema 的 binaryTargets = linux-musl-openssl-3.0.x，自带可用的
+#       prisma musl 引擎；本次在 runner 阶段额外全局安装 prisma CLI
+#       （npm install -g prisma@5.14.0），故容器内已具备离线执行 db push 的一切条件。
+# 说明：绝不可另起 node:*-alpine/slim 一次性容器跑 prisma——纯 alpine 未装 openssl
+#       且需外网 npx 拉 CLI，既缺 libssl 又受内网限制；直接复用 cn-app 最稳，且
+#       cn-app 已在 cn_cn-net 上，能解析 cn-postgres:5432。
 # 注意：prisma CLI 读取 schema 内 env("DATABASE_URL")，此处显式传入
 #       .env.cn 的 DATABASE_URL_CN（境内 cn-postgres，数据不出境红线）。
 # ------------------------------------------------------------
@@ -166,20 +165,11 @@ if [ -z "$DB_URL_CN" ]; then
   echo "ERROR: .env.cn 缺少 DATABASE_URL_CN，无法初始化数据库" >&2
   exit 1
 fi
-# schema.prisma 临时文件固定写在 deploy 用户可写的 $DEPLOY_DIR/tmp 下，
-# 而非 /tmp：docker cp 写入 /tmp 的文件会变成 root 属主，后续运行（或 sticky-bit
-# /tmp）下 deploy 用户无法覆盖，报 "unlinkat ... operation not permitted"。
-# 先确保目录存在，并删除可能残留的 root 属主旧文件，避免 docker cp 被阻塞。
-SCHEMA_TMP="$DEPLOY_DIR/tmp/cn-schema.prisma"
-mkdir -p "$DEPLOY_DIR/tmp"
-rm -f "$SCHEMA_TMP"
-docker cp cn-app:/app/prisma/schema.prisma "$SCHEMA_TMP"
-docker run --rm --network cn_cn-net \
-  -e DATABASE_URL="$DB_URL_CN" \
-  -v "$SCHEMA_TMP":/app/schema.prisma \
-  -w /app \
-  node:22-slim \
-  sh -c "apt-get update -y >/dev/null 2>&1 && apt-get install -y openssl >/dev/null 2>&1; npx --yes prisma@5.14.0 db push --skip-generate --accept-data-loss --schema=/app/schema.prisma"
+# 复用已加载的 app 镜像（自带 prisma musl+openssl3 引擎与 prisma CLI，且就在
+# cn_cn-net 上能解析 cn-postgres:5432），docker exec 离线执行 db push，无需外网、
+# 不触发 apt 超时。schema 用容器内已 COPY 的 /app/prisma/schema.prisma。
+docker exec -e DATABASE_URL="$DB_URL_CN" cn-app \
+  prisma db push --skip-generate --accept-data-loss --schema=/app/prisma/schema.prisma
 
 echo "==> 表结构就绪，重启 app 应用新表"
 docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" restart app
