@@ -143,6 +143,17 @@ jobs:
           source: "deploy/deploy-cn.sh"
           target: "/opt/cn"
 
+      # R47 教训：docker-compose.yml 之前没 sync 到 ECS，PR #47 改的 healthcheck
+      # 在 ECS 上根本看不见，cn-app 一直用旧 compose 配置。下面补上同步步骤。
+      - name: Sync docker-compose.yml to ECS
+        uses: appleboy/scp-action@v1
+        with:
+          host: 101.200.125.199
+          username: deploy
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          source: "docker-compose.yml"
+          target: "/opt/cn"
+
       - name: Deploy to Aliyun ECS
         uses: appleboy/ssh-action@v1
         with:
