@@ -158,10 +158,17 @@ if [ -z "$DB_URL_CN" ]; then
   echo "ERROR: .env.cn 缺少 DATABASE_URL_CN，无法初始化数据库" >&2
   exit 1
 fi
-docker cp cn-app:/app/prisma/schema.prisma /tmp/cn-schema.prisma
+# schema.prisma 临时文件固定写在 deploy 用户可写的 $DEPLOY_DIR/tmp 下，
+# 而非 /tmp：docker cp 写入 /tmp 的文件会变成 root 属主，后续运行（或 sticky-bit
+# /tmp）下 deploy 用户无法覆盖，报 "unlinkat ... operation not permitted"。
+# 先确保目录存在，并删除可能残留的 root 属主旧文件，避免 docker cp 被阻塞。
+SCHEMA_TMP="$DEPLOY_DIR/tmp/cn-schema.prisma"
+mkdir -p "$DEPLOY_DIR/tmp"
+rm -f "$SCHEMA_TMP"
+docker cp cn-app:/app/prisma/schema.prisma "$SCHEMA_TMP"
 docker run --rm --network cn_cn-net \
   -e DATABASE_URL="$DB_URL_CN" \
-  -v /tmp/cn-schema.prisma:/app/schema.prisma \
+  -v "$SCHEMA_TMP":/app/schema.prisma \
   -w /app \
   node:22-alpine \
   npx --yes prisma@5.14.0 db push --skip-generate --accept-data-loss --schema=/app/schema.prisma
