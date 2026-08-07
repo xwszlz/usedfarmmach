@@ -416,6 +416,171 @@ export async function getPartById(id: string): Promise<PartDetail | null> {
 }
 
 /**
+ * 产品详情页「适配零部件」查询
+ *
+ * 匹配策略（运行时，双层）：
+ * 1. 品牌级：CM.brand 与产品品牌名（nameEn/nameZh）精确匹配，取该品牌全部兼容配件
+ * 2. 兜底：品牌无匹配时，返回通用配件（有 compatibleMachines 记录但品牌不特定，
+ *    或按 componentGroup 归类的通用件，如液压/电气/润滑等）
+ *
+ * 产品 modelName 与 CM.model（完整型号如 "Lexion 770"）不重叠，不做型号级匹配
+ * （2026-08-06 数据核查结论：精确=0，品牌级=20/25，无=5/25）。
+ */
+export async function getCompatiblePartsForProduct(params: {
+  brandEn: string;
+  brandZh: string;
+  modelName: string;
+  limit?: number;
+}): Promise<{
+  parts: PartListItem[];
+  matchedBy: "brand" | "generic" | "none";
+  matchDetail: { brand: string; model: string } | null;
+}> {
+  const { brandEn, brandZh, modelName, limit = 8 } = params;
+
+  // 候选品牌名（英文优先，中文兜底）
+  const brandCandidates = [brandEn, brandZh].filter(Boolean);
+
+  // 品牌级匹配：CM.brand 命中任一候选品牌
+  const brandMatched = await prisma.compatibleMachine.findMany({
+    where: { brand: { in: brandCandidates } },
+    select: { partId: true },
+    distinct: ["partId"],
+  });
+
+  if (brandMatched.length > 0) {
+    const partIds = brandMatched.map((m) => m.partId);
+    const parts = await prisma.part.findMany({
+      where: { id: { in: partIds }, isActive: true },
+      orderBy: [{ stockStatus: "asc" }, { createdAt: "desc" }],
+      take: limit,
+      select: PART_LIST_SELECT,
+    });
+    return {
+      parts: parts.map(mapPartListItem),
+      matchedBy: "brand",
+      matchDetail: { brand: brandEn || brandZh, model: modelName },
+    };
+  }
+
+  // 兜底：通用配件（品牌为通用件品牌，如 SKF / Bosch / 通用）
+  const GENERIC_BRANDS = ["SKF", "Bosch", "通用", "Generic", "Standard"];
+  const genericMatched = await prisma.part.findMany({
+    where: {
+      isActive: true,
+      brand: { in: GENERIC_BRANDS },
+    },
+    orderBy: [{ stockStatus: "asc" }, { createdAt: "desc" }],
+    take: limit,
+    select: PART_LIST_SELECT,
+  });
+
+  if (genericMatched.length > 0) {
+    return {
+      parts: genericMatched.map(mapPartListItem),
+      matchedBy: "generic",
+      matchDetail: { brand: brandEn || brandZh, model: modelName },
+    };
+  }
+
+  return {
+    parts: [],
+    matchedBy: "none",
+    matchDetail: { brand: brandEn || brandZh, model: modelName },
+  };
+}
+
+// ─── PartListItem 查询/映射公共片段 ───────────────────────
+
+const PART_LIST_SELECT = {
+  id: true,
+  sku: true,
+  nameZh: true,
+  nameEn: true,
+  nameRu: true,
+  brand: true,
+  oemNumber: true,
+  price: true,
+  currency: true,
+  stockStatus: true,
+  images: true,
+  isOEM: true,
+  componentGroup: {
+    select: {
+      code: true,
+      nameZh: true,
+      nameEn: true,
+      subSystem: {
+        select: {
+          code: true,
+          nameZh: true,
+          nameEn: true,
+          machineType: {
+            select: { code: true, nameZh: true, nameEn: true },
+          },
+        },
+      },
+    },
+  },
+} satisfies Prisma.PartSelect;
+
+function mapPartListItem(p: {
+  id: string;
+  sku: string;
+  nameZh: string;
+  nameEn: string;
+  nameRu: string;
+  brand: string;
+  oemNumber: string | null;
+  price: number;
+  currency: string;
+  stockStatus: string;
+  images: string[];
+  isOEM: boolean;
+  componentGroup: {
+    code: string;
+    nameZh: string;
+    nameEn: string;
+    subSystem: {
+      code: string;
+      nameZh: string;
+      nameEn: string;
+      machineType: { code: string; nameZh: string; nameEn: string };
+    };
+  };
+}): PartListItem {
+  return {
+    id: p.id,
+    sku: p.sku,
+    nameZh: p.nameZh,
+    nameEn: p.nameEn,
+    nameRu: p.nameRu,
+    brand: p.brand,
+    oemNumber: p.oemNumber,
+    price: p.price,
+    currency: p.currency,
+    stockStatus: p.stockStatus,
+    images: p.images,
+    isOEM: p.isOEM,
+    componentGroup: {
+      code: p.componentGroup.code,
+      nameZh: p.componentGroup.nameZh,
+      nameEn: p.componentGroup.nameEn,
+    },
+    subSystem: {
+      code: p.componentGroup.subSystem.code,
+      nameZh: p.componentGroup.subSystem.nameZh,
+      nameEn: p.componentGroup.subSystem.nameEn,
+    },
+    machineType: {
+      code: p.componentGroup.subSystem.machineType.code,
+      nameZh: p.componentGroup.subSystem.machineType.nameZh,
+      nameEn: p.componentGroup.subSystem.machineType.nameEn,
+    },
+  };
+}
+
+/**
  * 获取同部件组的关联配件（用于详情页推荐）
  */
 export async function getRelatedParts(
