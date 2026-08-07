@@ -82,7 +82,10 @@ jobs:
         run: |
           # docker build 的 builder 阶段容器内 localhost 指容器自身，
           # 故用 host.docker.internal + host-gateway 到达 runner 上发布的 service 端口。
+          # --no-cache 强制全量重建，确保 Dockerfile.cn 的 HEALTHCHECK 等最终 image config
+          # 一定被重新计算（之前出现过构建缓存复用旧 HEALTHCHECK 的诡异 bug，先禁掉缓存）。
           docker build \
+            --no-cache \
             --add-host=host.docker.internal:host-gateway \
             --build-arg SITE=cn \
             --build-arg DATABASE_URL=${{ env.CI_DATABASE_URL }} \
