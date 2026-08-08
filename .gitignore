@@ -76,3 +76,6 @@ nul
 .workbuddy/
 .vercel-env-check.txt
 .vercel-env-verify.txt
+
+# build/temporary directory created by automation jobs
+_pull_tmp/
