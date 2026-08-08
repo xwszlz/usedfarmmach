@@ -51,7 +51,6 @@
       "viewContact": "View Contact"
     }
   },
-
   "common": {
     "appName": "Shennong AgriTrade",
     "appSlogan": "Plataforma Global de Maquinaria Agrícola Usada",
@@ -154,7 +153,8 @@
     "services": "Services",
     "research": "Research",
     "credits": "Centro de puntos",
-    "arbitrageAnalysis": "Análisis arbitraje"
+    "arbitrageAnalysis": "Análisis arbitraje",
+    "machineryExpo": "Expo de maquinaria"
   },
   "hero": {
     "arenaTitle": "AI Machinery Arena",

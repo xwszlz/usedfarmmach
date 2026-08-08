@@ -3,14 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
-  Globe,
-  Clock,
-  TrendingUp,
-  Shield,
-  Bot,
-  Ship,
   CheckCircle2,
   ArrowRight,
   Send,
@@ -631,15 +625,6 @@ const TEXTS: Record<string, {
   },
 };
 
-const ICON_MAP: Record<string, React.ReactNode> = {
-  clock: <Clock className="h-8 w-8 text-primary-600" />,
-  globe: <Globe className="h-8 w-8 text-primary-600" />,
-  bot: <Bot className="h-8 w-8 text-primary-600" />,
-  shield: <Shield className="h-8 w-8 text-primary-600" />,
-  trending: <TrendingUp className="h-8 w-8 text-primary-600" />,
-  ship: <Ship className="h-8 w-8 text-primary-600" />,
-};
-
 // .com 全球叙事覆盖：仅 .com 生效，主语从"中国农机"切换为"全球农机"；
 // .cn 保留中国供给端叙事（沿用 TEXTS[locale]）。两站共用母品牌名 Shendiao Agri-Machinery Expo™。
 const GLOBAL_NARRATIVE: Record<
@@ -831,37 +816,6 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
               </div>
             </Link>
           </div>
-        </div>
-      </section>
-
-      {/* Features Grid */}
-      <section className="bg-gray-50 py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 className="mb-12 text-center text-3xl font-bold text-gray-900">{t.featuresTitle}</h2>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {t.features.map((f, i) => (
-              <Card key={i} className="border-0 shadow-md transition-shadow hover:shadow-lg">
-                <CardContent className="p-6">
-                  <div className="mb-4">{ICON_MAP[f.icon]}</div>
-                  <h3 className="mb-2 text-lg font-semibold text-gray-900">{f.title}</h3>
-                  <p className="text-sm text-gray-600">{f.desc}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Benefits */}
-      <section className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
-        <h2 className="mb-8 text-center text-3xl font-bold text-gray-900">{t.benefitsTitle}</h2>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          {t.benefits.map((b, i) => (
-            <div key={i} className="flex items-start gap-3 rounded-lg bg-amber-50 p-4">
-              <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600" />
-              <span className="text-sm text-gray-700">{b}</span>
-            </div>
-          ))}
         </div>
       </section>
 
