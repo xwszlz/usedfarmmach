@@ -170,6 +170,8 @@ model Brand {
   exportVolume    String?
   isChineseBrand  Boolean        @default(false)
   officialWebsite String?
+  /// 厂家总部所在地（产地）：自由文本，粒度灵活（国家/州/省/市），与产品级"设备所在地"(Product.country/province/city)区分
+  headquartersLocation String?
   Booth           Booth[]
   demands         Demand[]
   products        Product[]

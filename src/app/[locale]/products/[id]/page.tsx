@@ -8,7 +8,7 @@ import { SpecificationTable } from "@/components/product/specification-table";
 import { StandardDescription } from "@/components/product/standard-description";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeftRight, Info, Mail, MessageCircle, Phone } from "lucide-react";
+import { ArrowLeftRight, Globe, ExternalLink, Info, Mail, MessageCircle, Phone } from "lucide-react";
 import { getImageUrl, getVideoUrl, generateImageAlt } from "@/lib/image-url";
 import { formatPrice } from "@/lib/utils";
 import ArbitrageCalculatorSection from "@/components/product/arbitrage-calculator-section";
@@ -190,6 +190,12 @@ export default async function ProductDetailPage({
 
   const mainTitle = buildMainTitle(brandName, product.modelName, product.year, categoryName, product.enginePower ?? null, locale);
 
+  // 产地与设备位置：厂家总部(品牌级, 自由文本) + 原厂官网；设备所在地(产品级 country/province/city)
+  const hq = product.brand.headquartersLocation || null;
+  const officialWeb = product.brand.officialWebsite || null;
+  const equipmentLocation =
+    [product.country, product.province, product.city].filter(Boolean).join(" / ") || null;
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <ProductStructuredData
@@ -275,6 +281,51 @@ export default async function ProductDetailPage({
             location={product.location || ""}
             locale={locale}
           />
+
+          {/* ================================================================ */}
+          {/*  产地与设备位置 — 厂家总部(产地)+原厂官网 / 设备所在地             */}
+          {/* ================================================================ */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="h-5 w-5 text-primary-600" />
+                {locale === "zh" ? "产地与设备位置" : "Origin & Equipment Location"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* 厂家总部（产地）+ 原厂官网 */}
+              <div>
+                <p className="mb-1 text-xs text-gray-500">
+                  {locale === "zh" ? "厂家总部（产地）" : "Manufacturer HQ (Origin)"}
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-medium text-gray-900">
+                    {hq || (locale === "zh" ? "待定" : "TBD")}
+                  </span>
+                  {officialWeb && (
+                    <a
+                      href={officialWeb}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700"
+                    >
+                      {locale === "zh" ? "官网" : "Official Site"}
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  )}
+                </div>
+              </div>
+              {/* 设备所在地 */}
+              <div>
+                <p className="mb-1 text-xs text-gray-500">
+                  {locale === "zh" ? "设备所在地" : "Equipment Location"}
+                </p>
+                <p className="text-sm font-medium text-gray-900">
+                  {equipmentLocation || (locale === "zh" ? "待定" : "TBD")}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* ================================================================ */}
           {/*  SECTION 5 — Product Description (moved up below specs)           */}
