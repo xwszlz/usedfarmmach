@@ -1,5 +1,6 @@
 import { useTranslations } from "next-intl";
 import { DisclaimerBanner } from "@/components/expo/DisclaimerBanner";
+import { CnFooter } from "@/components/cn/CnFooter";
 
 interface FooterProps {
   locale: string;
@@ -9,7 +10,8 @@ export function Footer({ locale }: FooterProps) {
   const t = useTranslations("footer");
 
   return (
-    <footer className="border-t border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-950">
+    <>
+      <footer className="border-t border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-950">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           {/* Brand */}
@@ -125,6 +127,8 @@ export function Footer({ locale }: FooterProps) {
           {t("copyright")}
         </div>
       </div>
-    </footer>
+      </footer>
+      <CnFooter />
+    </>
   );
 }
