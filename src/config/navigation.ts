@@ -41,8 +41,9 @@ export const mainNav: TopNavItem[] = [
   {
     labelKey: "nav.buyMachinery",
     children: [
-      { href: "/products", labelKey: "nav.browseEquipment" },
+      { href: "/products", labelKey: "nav.machinery" },
       { href: "/auctions", labelKey: "nav.bargain", spotlight: true },
+      { href: "/expo", labelKey: "nav.machineryExpo" },
       { href: "/parts", labelKey: "nav.parts" },
     ],
   },

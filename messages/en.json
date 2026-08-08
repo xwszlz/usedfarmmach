@@ -51,7 +51,6 @@
       "viewContact": "View Contact"
     }
   },
-
   "common": {
     "appName": "AgriTrade",
     "appSlogan": "Global Used Farm Machinery Trading Platform",
@@ -153,7 +152,8 @@
     "expo": "Expo",
     "services": "Services",
     "research": "Research",
-    "credits": "Credits Center"
+    "credits": "Credits Center",
+    "machineryExpo": "Machinery Expo"
   },
   "hero": {
     "arenaTitle": "Can You Command Farm Machines with AI?",

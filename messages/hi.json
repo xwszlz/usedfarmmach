@@ -51,7 +51,6 @@
       "viewContact": "View Contact"
     }
   },
-
   "common": {
     "appName": "शेनॉन्ग एग्रीट्रेड",
     "appSlogan": "वैश्विक पुरानी कृषि मशीनरी ट्रेडिंग प्लेटफॉर्म",
@@ -154,7 +153,8 @@
     "services": "Services",
     "research": "Research",
     "credits": "पॉइंट सेंटर",
-    "arbitrageAnalysis": "आर्बिट्राज विश्लेषण"
+    "arbitrageAnalysis": "आर्बिट्राज विश्लेषण",
+    "machineryExpo": "मशीनरी एक्सपो"
   },
   "hero": {
     "arenaTitle": "AI Machinery Arena",

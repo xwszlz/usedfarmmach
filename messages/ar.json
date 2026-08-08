@@ -51,7 +51,6 @@
       "viewContact": "View Contact"
     }
   },
-
   "common": {
     "appName": "شينونغ أغري تريد",
     "appSlogan": "منصة عالمية لتجارة الآلات الزراعية المستعملة",
@@ -154,7 +153,8 @@
     "services": "Services",
     "research": "Research",
     "credits": "مركز النقاط",
-    "arbitrageAnalysis": "تحليل المراجحة"
+    "arbitrageAnalysis": "تحليل المراجحة",
+    "machineryExpo": "معرض المعدات"
   },
   "hero": {
     "arenaTitle": "AI Machinery Arena",
