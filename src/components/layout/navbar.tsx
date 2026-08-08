@@ -2,9 +2,9 @@
 
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { Globe, Menu, X, Store, LayoutDashboard } from "lucide-react";
-import { useState, useEffect } from "react";
-import { mainNav, type NavItem } from "@/config/navigation";
+import { Globe, Menu, X, Store, LayoutDashboard, ChevronDown } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { mainNav, isDropdown, type NavItem, type TopNavItem } from "@/config/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/lib/theme/theme-toggle";
@@ -74,11 +74,15 @@ export function Navbar({ locale }: NavbarProps) {
           />
         </Link>
 
-        {/* Desktop nav — 8 items flat */}
-        <nav className="hidden items-center gap-2 lg:flex">
-          {navItems.map((item) => (
-            <DesktopNavItem key={item.href} item={item} locale={locale} t={t} />
-          ))}
+        {/* Desktop nav — grouped with dropdowns */}
+        <nav className="hidden items-center gap-1 lg:flex">
+          {navItems.map((item) =>
+            isDropdown(item) ? (
+              <DesktopDropdown key={item.labelKey} item={item} locale={locale} t={t} isLoggedIn={!!user} />
+            ) : (
+              <DesktopNavItem key={item.href} item={item} locale={locale} t={t} />
+            )
+          )}
         </nav>
 
         {/* Right side */}
@@ -138,9 +142,13 @@ export function Navbar({ locale }: NavbarProps) {
       {mobileOpen && (
         <div className="border-t border-gray-200 dark:border-gray-700 md:hidden">
           <div className="space-y-1 px-4 py-3">
-            {navItems.map((item) => (
-              <MobileNavItem key={item.href} item={item} locale={locale} t={t} setMobileOpen={setMobileOpen} />
-            ))}
+            {navItems.map((item) =>
+              isDropdown(item) ? (
+                <MobileDropdown key={item.labelKey} item={item} locale={locale} t={t} setMobileOpen={setMobileOpen} isLoggedIn={!!user} />
+              ) : (
+                <MobileNavItem key={item.href} item={item} locale={locale} t={t} setMobileOpen={setMobileOpen} />
+              )
+            )}
             <div className="flex gap-2 pt-2">
               {user ? (
                 <>
@@ -252,6 +260,136 @@ function MobileNavItem({ item, locale, t, setMobileOpen }: MobileNavItemProps) {
     >
       {label}
     </Link>
+  );
+}
+
+interface DesktopDropdownProps {
+  item: TopNavItem & { children: NavItem[] };
+  locale: string;
+  t: (key: string) => string;
+  /** 是否已登录（用于"发布产品"入口未登录时跳登录页） */
+  isLoggedIn?: boolean;
+}
+
+/** 桌面端下拉菜单（hover 展开） */
+function DesktopDropdown({ item, locale, t, isLoggedIn }: DesktopDropdownProps) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const label = t(item.labelKey);
+
+  useEffect(() => {
+    if (!open) return;
+    const onMouseLeave = () => setOpen(false);
+    const onMouseEnter = () => setOpen(true);
+    const el = ref.current;
+    if (!el) return;
+    el.addEventListener("mouseleave", onMouseLeave);
+    el.addEventListener("mouseenter", onMouseEnter);
+    return () => {
+      el.removeEventListener("mouseleave", onMouseLeave);
+      el.removeEventListener("mouseenter", onMouseEnter);
+    };
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+      <button
+        type="button"
+        className={cn(
+          "flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm font-medium transition-colors",
+          open
+            ? "bg-gray-100 text-primary-600 dark:bg-gray-800 dark:text-primary-400"
+            : "text-gray-600 hover:bg-gray-100 hover:text-primary-600 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-primary-400"
+        )}
+        aria-expanded={open}
+      >
+        <span>{label}</span>
+        <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")} />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-full z-50 mt-1 min-w-[13rem] rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg dark:border-gray-700 dark:bg-gray-900">
+          {item.children.map((child) => {
+            const childLabel = t(child.labelKey);
+            // 「发布产品」未登录时跳登录页（带回跳），登录后直达发布页
+            const isPublish = child.href === "/seller/products/new";
+            const href = isPublish && !isLoggedIn
+              ? `/${locale}/auth/login?redirect=${encodeURIComponent(`/${locale}/seller/products/new`)}`
+              : `/${locale}${child.href}`;
+            return (
+              <Link
+                key={child.href + child.labelKey}
+                href={href}
+                className={cn(
+                  "flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors",
+                  child.spotlight
+                    ? "font-bold text-white bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 hover:brightness-110"
+                    : child.highlight
+                    ? "font-medium text-brand-accent bg-brand-accent-light hover:bg-brand-accent/20 dark:text-brand-accent"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-primary-600 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-primary-400"
+                )}
+              >
+                {childLabel}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface MobileDropdownProps {
+  item: TopNavItem & { children: NavItem[] };
+  locale: string;
+  t: (key: string) => string;
+  setMobileOpen: (open: boolean) => void;
+  isLoggedIn?: boolean;
+}
+
+/** 移动端下拉：点击标题展开子项 */
+function MobileDropdown({ item, locale, t, setMobileOpen, isLoggedIn }: MobileDropdownProps) {
+  const [open, setOpen] = useState(false);
+  const label = t(item.labelKey);
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
+      >
+        <span>{label}</span>
+        <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} />
+      </button>
+      {open && (
+        <div className="ml-3 space-y-0.5 border-l border-gray-200 pl-3 dark:border-gray-700">
+          {item.children.map((child) => {
+            const isPublish = child.href === "/seller/products/new";
+            const href = isPublish && !isLoggedIn
+              ? `/${locale}/auth/login?redirect=${encodeURIComponent(`/${locale}/seller/products/new`)}`
+              : `/${locale}${child.href}`;
+            return (
+              <Link
+                key={child.href + child.labelKey}
+                href={href}
+                onClick={() => setMobileOpen(false)}
+                className={cn(
+                  "block rounded-lg px-3 py-2 text-sm",
+                  child.spotlight
+                    ? "font-bold text-orange-600 dark:text-orange-400"
+                    : child.highlight
+                    ? "font-medium text-brand-accent dark:text-brand-accent"
+                    : "text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
+                )}
+              >
+                {t(child.labelKey)}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
