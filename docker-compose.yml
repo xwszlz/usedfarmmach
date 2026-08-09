@@ -55,6 +55,8 @@ services:
     # 显式设 0.0.0.0 让 Next.js 绑所有接口，环回也通。
     environment:
       HOSTNAME: 0.0.0.0
+      SITE: cn
+      NEXT_PUBLIC_SITE: cn
     # 依赖本地 PG（ECS 内 docker postgres:16）；PG 健康后才启动 app，避免迁移竞态
     depends_on:
       postgres:
