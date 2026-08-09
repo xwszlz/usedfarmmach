@@ -109,7 +109,7 @@ export const siteConfigMap: SiteConfigMap = {
       miniAppQr: true,
     },
     compliance: {
-      icpNo: process.env.CN_ICP_NO ?? "冀ICP备XXXXXXXX号",
+      icpNo: process.env.CN_ICP_NO ?? "冀ICP备2024053719号-4",
       dataLocalized: true,
       serveDomesticUsers: true,
     },
