@@ -3,7 +3,7 @@
 # 三 service：
 #   - nginx：对外 80/443，反代 + SSL
 #   - app  ：仅内部网络 app:3000，不暴露宿主机端口
-#   - postgres：ECS 本地 PG（docker postgres:16 + volume，数据不出境，零额外采购）
+#   - postgres：ECS 本地 PG（docker postgres:17 + volume，数据不出境，零额外采购）
 #
 # 运行时环境变量由 ECS 主机 /opt/cn/.env.cn 提供（env_file），
 # 绝不通过 CI 注入（避免进入 CI 日志）。
@@ -18,8 +18,6 @@
 #   export CN_IMAGE=usedfarmmach-cn:<git commit sha>
 #   docker compose -f /opt/cn/docker-compose.yml --env-file /opt/cn/.env.cn up -d app
 # ============================================================
-version: "3.8"
-
 services:
   nginx:
     image: nginx:1.27-alpine
@@ -73,7 +71,7 @@ services:
       - cn-net
 
   postgres:
-    image: postgres:16-alpine
+    image: postgres:17-alpine
     container_name: cn-postgres
     environment:
       POSTGRES_USER: ${CN_DB_USER:-cn_app}
