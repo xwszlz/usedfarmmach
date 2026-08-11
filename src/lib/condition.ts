@@ -1,6 +1,6 @@
 /**
  * Normalize a raw Product.condition value into the canonical i18n suffix used by
- * messages/*/products.detail.condition{Excellent,Good,Fair,Poor}.
+ * messages/{locale}/products.detail.condition{Excellent,Good,Fair,Poor}.
  *
  * The DB stores `condition` as a free-form string (Prisma `String`, not an enum).
  * It historically held English grades ("Good", "excellent"), but the migrated
