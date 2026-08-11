@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { normalizeCondition } from "@/lib/condition";
 import { MapPin, Clock, Play, ShieldCheck, Ship } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -106,7 +107,12 @@ export function ProductCard({ product, locale }: ProductCardProps) {
   const realArbitrage = intlPrice?.priceForeignCny
     ? Math.round(((product.priceCny - intlPrice.priceForeignCny) / intlPrice.priceForeignCny) * 100)
     : arbitrage;
-  const conditionLabel = td(`condition${product.condition.charAt(0).toUpperCase() + product.condition.slice(1)}`);
+  const conditionSuffix = normalizeCondition(product.condition);
+  const conditionLabel = conditionSuffix
+    ? td.has(`condition${conditionSuffix}`)
+      ? td(`condition${conditionSuffix}`)
+      : conditionSuffix
+    : "";
 
   const cardTitle = buildCardTitle(product, locale);
   const priceLine = buildPriceLine(product, locale);
