@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeftRight, Info, Mail, MessageCircle, Phone } from "lucide-react";
 import { getImageUrl, getVideoUrl, generateImageAlt } from "@/lib/image-url";
 import { formatPrice } from "@/lib/utils";
+import { normalizeCondition } from "@/lib/condition";
 import ArbitrageCalculatorSection from "@/components/product/arbitrage-calculator-section";
 import { QuickContact } from "@/components/product/quick-contact";
 import { InquiryActions } from "@/components/product/inquiry-actions";
@@ -167,7 +168,12 @@ export default async function ProductDetailPage({
   const brandName = (product.brand as any)[langKey2] || product.brand.nameEn || product.brand.nameZh;
   const categoryName = (product.category as any)[langKey2] || product.category.nameEn || product.category.nameZh;
   const description = (product as any)[`description${locale.charAt(0).toUpperCase()}${locale.slice(1)}`] || product.descriptionEn;
-  const conditionLabel = t(`condition${product.condition.charAt(0).toUpperCase() + product.condition.slice(1)}`);
+  const conditionSuffix = normalizeCondition(product.condition);
+  const conditionLabel = conditionSuffix
+    ? t.has(`condition${conditionSuffix}`)
+      ? t(`condition${conditionSuffix}`)
+      : conditionSuffix
+    : "";
 
   // Use real international price from 神雕日报 if available, fallback to simple USD conversion
   const latestIntlPrice = product.internationalPrices[0] || null;
