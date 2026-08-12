@@ -188,6 +188,17 @@ for i in $(seq 1 30); do
   sleep 3
 done
 
+echo "==> 导入今日文章与市场情报到 cn-postgres（幂等，失败不阻塞部署）"
+DB_URL_CN="$(grep -E '^DATABASE_URL_CN=' "$ENV_FILE" | head -1 | cut -d= -f2-)"
+if [ -z "$DB_URL_CN" ]; then
+  echo "WARN: .env.cn 缺少 DATABASE_URL_CN，跳过内容导入"
+else
+  docker exec -e DATABASE_URL="$DB_URL_CN" -e DATABASE_URL_CN="$DB_URL_CN" cn-app \
+    node scripts/import-articles-to-cn.js || echo "WARN: articles import failed"
+  docker exec -e DATABASE_URL="$DB_URL_CN" -e DATABASE_URL_CN="$DB_URL_CN" cn-app \
+    node scripts/import-intelligence-to-cn.js || echo "WARN: intelligence import failed"
+fi
+
 echo "==> reload nginx（应用最新证书 / 配置）"
 docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T nginx nginx -s reload || \
   docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" restart nginx
