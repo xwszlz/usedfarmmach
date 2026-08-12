@@ -397,6 +397,42 @@ model Valuation {
   brand             Brand   @relation(fields: [brandId], references: [id])
 }
 
+/// 全品牌全球基准价（与库存 Product 解耦）
+/// 用途：建立"品牌×机型×源站"的全球二手机基准价指数，独立于我们是否进货。
+/// 采集：fetch-benchmark.js 多源轻量爬虫（Agroline/Mascus/TractorHouse/e-farm/Avito/OLX…），
+///       agent WebSearch 研究种子作为初始锚定价。
+/// 准确性： priceForeign/medianPrice 取自样本中位（非均值），listingCount 为样本量，
+///         confidenceScore 随源数与时效动态评分，lastVerified 超 30/60 天分别标黄/红。
+model BrandBenchmark {
+  id              String   @id @default(cuid())
+  brand           String   // 品牌标识，对齐 Brand.nameEn（小写），如 "claas" / "john-deere"
+  brandNameZh     String?
+  model           String   // 机型，如 "Jaguar 970" / "8R 410" / "BigX 1180"
+  category        String   // tractor | harvester | forage | baler | soil | ...
+  sourceSite      String   // agroline | machinerypete | mascus | tractorhouse | efarm | avito | olx | research-seed
+  priceForeign    Float    // 该源样本的基准外币价（中位）
+  currency        String   @default("EUR")
+  priceCny        Float    // 按采集日汇率折算的人民币
+  exchangeRate    Float?   // 采集日 foreign→CNY 汇率
+  sourceUrl       String?  // 样本来源页（列表/搜索结果）
+  sourceDate      String?  // 采集日 YYYY-MM-DD
+  confidenceScore Float    @default(0.5)
+  sampleSize      Int      @default(1)   // 该源参与计算的有效样本数
+  medianPrice     Float?   // 该源样本外币中位价（与 priceForeign 通常一致）
+  listingCount    Int      @default(0)   // 该源检索到的挂牌总数（用于计数展示）
+  priceType       String   @default("listing") // listing(挂牌) | sold(成交) | asking(要价)
+  region          String?  // EU | US | RU | UA | GLOBAL
+  lastVerified    DateTime?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([brand, model])
+  @@index([category])
+  @@index([sourceSite])
+  @@index([brand, sourceSite])
+}
+
 model CreditTransaction {
   id         String    @id @default(cuid())
   userId     String
