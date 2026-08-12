@@ -1,0 +1,293 @@
+[
+  {
+    "brand": "john-deere", "brandNameZh": "约翰迪尔", "model": "8R 410", "category": "tractor",
+    "sourceSite": "machinerypete", "currency": "USD", "priceForeign": 380000, "priceCny": 2755000,
+    "exchangeRate": 7.25, "sourceUrl": null, "sourceDate": "2026-08-12",
+    "confidenceScore": 0.45, "sampleSize": 1, "medianPrice": 380000, "listingCount": 1,
+    "priceType": "listing", "region": "US"
+  },
+  {
+    "brand": "john-deere", "brandNameZh": "约翰迪尔", "model": "6R 250", "category": "tractor",
+    "sourceSite": "machinerypete", "currency": "USD", "priceForeign": 180000, "priceCny": 1305000,
+    "exchangeRate": 7.25, "sourceUrl": null, "sourceDate": "2026-08-12",
+    "confidenceScore": 0.45, "sampleSize": 1, "medianPrice": 180000, "listingCount": 1,
+    "priceType": "listing", "region": "US"
+  },
+  {
+    "brand": "new-holland", "brandNameZh": "纽荷兰", "model": "T7.315", "category": "tractor",
+    "sourceSite": "machinerypete", "currency": "USD", "priceForeign": 200000, "priceCny": 1450000,
+    "exchangeRate": 7.25, "sourceUrl": null, "sourceDate": "2026-08-12",
+    "confidenceScore": 0.45, "sampleSize": 1, "medianPrice": 200000, "listingCount": 1,
+    "priceType": "listing", "region": "US"
+  },
+  {
+    "brand": "new-holland", "brandNameZh": "纽荷兰", "model": "T8.435", "category": "tractor",
+    "sourceSite": "machinerypete", "currency": "USD", "priceForeign": 380000, "priceCny": 2755000,
+    "exchangeRate": 7.25, "sourceUrl": null, "sourceDate": "2026-08-12",
+    "confidenceScore": 0.45, "sampleSize": 1, "medianPrice": 380000, "listingCount": 1,
+    "priceType": "listing", "region": "US"
+  },
+  {
+    "brand": "new-holland", "brandNameZh": "纽荷兰", "model": "FR920", "category": "forage_harvester",
+    "sourceSite": "machinerypete", "currency": "USD", "priceForeign": 420000, "priceCny": 3045000,
+    "exchangeRate": 7.25, "sourceUrl": null, "sourceDate": "2026-08-12",
+    "confidenceScore": 0.45, "sampleSize": 1, "medianPrice": 420000, "listingCount": 1,
+    "priceType": "listing", "region": "US"
+  },
+  {
+    "brand": "case-ih", "brandNameZh": "凯斯", "model": "Magnum 380", "category": "tractor",
+    "sourceSite": "machinerypete", "currency": "USD", "priceForeign": 249900, "priceCny": 1811775,
+    "exchangeRate": 7.25, "sourceUrl": null, "sourceDate": "2026-08-12",
+    "confidenceScore": 0.6, "sampleSize": 3, "medianPrice": 249900, "listingCount": 3,
+    "priceType": "listing", "region": "US"
+  },
+  {
+    "brand": "case-ih", "brandNameZh": "凯斯", "model": "Axial-Flow 8240", "category": "combine",
+    "sourceSite": "machinerypete", "currency": "USD", "priceForeign": 450000, "priceCny": 3262500,
+    "exchangeRate": 7.25, "sourceUrl": null, "sourceDate": "2026-08-12",
+    "confidenceScore": 0.45, "sampleSize": 1, "medianPrice": 450000, "listingCount": 1,
+    "priceType": "listing", "region": "US"
+  },
+  {
+    "brand": "massey-ferguson", "brandNameZh": "麦赛福格森", "model": "8S.305", "category": "tractor",
+    "sourceSite": "agroline", "currency": "EUR", "priceForeign": 200000, "priceCny": 1580000,
+    "exchangeRate": 7.9, "sourceUrl": null, "sourceDate": "2026-08-12",
+    "confidenceScore": 0.45, "sampleSize": 1, "medianPrice": 200000, "listingCount": 1,
+    "priceType": "listing", "region": "EU"
+  },
+  {
+    "brand": "massey-ferguson", "brandNameZh": "麦赛福格森", "model": "MF 7700", "category": "tractor",
+    "sourceSite": "agroline", "currency": "EUR", "priceForeign": 130000, "priceCny": 1027000,
+    "exchangeRate": 7.9, "sourceUrl": null, "sourceDate": "2026-08-12",
+    "confidenceScore": 0.45, "sampleSize": 1, "medianPrice": 130000, "listingCount": 1,
+    "priceType": "listing", "region": "EU"
+  },
+  {
+    "brand": "fendt", "brandNameZh": "芬特", "model": "1050 Vario", "category": "tractor",
+    "sourceSite": "agroline", "currency": "EUR", "priceForeign": 400000, "priceCny": 3160000,
+    "exchangeRate": 7.9, "sourceUrl": null, "sourceDate": "2026-08-12",
+    "confidenceScore": 0.45, "sampleSize": 1, "medianPrice": 400000, "listingCount": 1,
+    "priceType": "listing", "region": "EU"
+  },
+  {
+    "brand": "fendt", "brandNameZh": "芬特", "model": "724 Vario", "category": "tractor",
+    "sourceSite": "agroline", "currency": "EUR", "priceForeign": 160000, "priceCny": 1264000,
+    "exchangeRate": 7.9, "sourceUrl": null, "sourceDate": "2026-08-12",
+    "confidenceScore": 0.45, "sampleSize": 1, "medianPrice": 160000, "listingCount": 1,
+    "priceType": "listing", "region": "EU"
+  },
+  {
+    "brand": "valtra", "brandNameZh": "维特拉", "model": "T254 Versu", "category": "tractor",
+    "sourceSite": "agroline", "currency": "EUR", "priceForeign": 100000, "priceCny": 790000,
+    "exchangeRate": 7.9,
+    "sourceUrl": "https://agroline.cn/-/sale/wheel-tractors/Valtra/T254-Versu--23040322005949576500",
+    "sourceDate": "2026-08-12",
+    "confidenceScore": 0.6, "sampleSize": 3, "medianPrice": 100000, "listingCount": 3,
+    "priceType": "listing", "region": "EU"
+  },
+  {
+    "brand": "valtra", "brandNameZh": "维特拉", "model": "T254 Versu", "category": "tractor",
+    "sourceSite": "tractorhouse", "currency": "USD", "priceForeign": 95124, "priceCny": 689649,
+    "exchangeRate": 7.25, "sourceUrl": "https://www.tractorhouse.com/listings/for-sale/valtra/t254v/tractors-175-hp-to-299-hp/1108",
+    "sourceDate": "2026-08-12",
+    "confidenceScore": 0.55, "sampleSize": 2, "medianPrice": 95124, "listingCount": 2,
+    "priceType": "listing", "region": "US"
+  },
+  {
+    "brand": "valtra", "brandNameZh": "维特拉", "model": "N175", "category": "tractor",
+    "sourceSite": "agroline", "currency": "EUR", "priceForeign": 75000, "priceCny": 592500,
+    "exchangeRate": 7.9, "sourceUrl": null, "sourceDate": "2026-08-12",
+    "confidenceScore": 0.45, "sampleSize": 1, "medianPrice": 75000, "listingCount": 1,
+    "priceType": "listing", "region": "EU"
+  },
+  {
+    "brand": "deutz-fahr", "brandNameZh": "道依茨法尔", "model": "9340 TTV", "category": "tractor",
+    "sourceSite": "agroline", "currency": "EUR", "priceForeign": 110000, "priceCny": 869000,
+    "exchangeRate": 7.9,
+    "sourceUrl": "https://agroline.cn/-/sale/wheel-tractors/Deutz-Fahr/Agrotron-9340-TTV--25062502450348708300",
+    "sourceDate": "2026-08-12",
+    "confidenceScore": 0.6, "sampleSize": 3, "medianPrice": 110000, "listingCount": 3,
+    "priceType": "listing", "region": "EU"
+  },
+  {
+    "brand": "deutz-fahr", "brandNameZh": "道依茨法尔", "model": "7250 TTV", "category": "tractor",
+    "sourceSite": "agroline", "currency": "EUR", "priceForeign": 90000, "priceCny": 711000,
+    "exchangeRate": 7.9, "sourceUrl": null, "sourceDate": "2026-08-12",
+    "confidenceScore": 0.5, "sampleSize": 2, "medianPrice": 90000, "listingCount": 2,
+    "priceType": "listing", "region": "EU"
+  },
+  {
+    "brand": "kubota", "brandNameZh": "久保田", "model": "M7171", "category": "tractor",
+    "sourceSite": "agroline", "currency": "EUR", "priceForeign": 55000, "priceCny": 434500,
+    "exchangeRate": 7.9,
+    "sourceUrl": "https://agroline.cn/-/sale/wheel-tractors/Kubota/M7171-Premium-KVT--26061901064798456100",
+    "sourceDate": "2026-08-12",
+    "confidenceScore": 0.6, "sampleSize": 3, "medianPrice": 55000, "listingCount": 3,
+    "priceType": "listing", "region": "EU"
+  },
+  {
+    "brand": "kubota", "brandNameZh": "久保田", "model": "M135", "category": "tractor",
+    "sourceSite": "agroline", "currency": "EUR", "priceForeign": 35000, "priceCny": 276500,
+    "exchangeRate": 7.9, "sourceUrl": null, "sourceDate": "2026-08-12",
+    "confidenceScore": 0.45, "sampleSize": 1, "medianPrice": 35000, "listingCount": 1,
+    "priceType": "listing", "region": "EU"
+  },
+  {
+    "brand": "yto", "brandNameZh": "东方红", "model": "LX2204", "category": "tractor",
+    "sourceSite": "mascus", "currency": "CNY", "priceForeign": 360000, "priceCny": 360000,
+    "exchangeRate": 1, "sourceUrl": null, "sourceDate": "2026-08-12",
+    "confidenceScore": 0.5, "sampleSize": 2, "medianPrice": 360000, "listingCount": 2,
+    "priceType": "listing", "region": "GLOBAL"
+  },
+  {
+    "brand": "yto", "brandNameZh": "东方红", "model": "MF704", "category": "tractor",
+    "sourceSite": "mascus", "currency": "CNY", "priceForeign": 150000, "priceCny": 150000,
+    "exchangeRate": 1, "sourceUrl": null, "sourceDate": "2026-08-12",
+    "confidenceScore": 0.45, "sampleSize": 1, "medianPrice": 150000, "listingCount": 1,
+    "priceType": "listing", "region": "GLOBAL"
+  },
+  {
+    "brand": "lovol", "brandNameZh": "雷沃", "model": "M2004-5G", "category": "tractor",
+    "sourceSite": "mascus", "currency": "CNY", "priceForeign": 200000, "priceCny": 200000,
+    "exchangeRate": 1, "sourceUrl": "https://www.nongjitong.com/ershou/2026/533405.html",
+    "sourceDate": "2026-08-12",
+    "confidenceScore": 0.5, "sampleSize": 2, "medianPrice": 200000, "listingCount": 2,
+    "priceType": "listing", "region": "GLOBAL"
+  },
+  {
+    "brand": "lovol", "brandNameZh": "雷沃", "model": "GE80", "category": "combine",
+    "sourceSite": "mascus", "currency": "CNY", "priceForeign": 180000, "priceCny": 180000,
+    "exchangeRate": 1, "sourceUrl": null, "sourceDate": "2026-08-12",
+    "confidenceScore": 0.45, "sampleSize": 1, "medianPrice": 180000, "listingCount": 1,
+    "priceType": "listing", "region": "GLOBAL"
+  },
+  {
+    "brand": "mccormick", "brandNameZh": "麦考密克", "model": "X7.210", "category": "tractor",
+    "sourceSite": "agroline", "currency": "EUR", "priceForeign": 70000, "priceCny": 553000,
+    "exchangeRate": 7.9, "sourceUrl": null, "sourceDate": "2026-08-12",
+    "confidenceScore": 0.45, "sampleSize": 1, "medianPrice": 70000, "listingCount": 1,
+    "priceType": "listing", "region": "EU"
+  },
+  {
+    "brand": "mccormick", "brandNameZh": "麦考密克", "model": "X8.680", "category": "tractor",
+    "sourceSite": "agroline", "currency": "EUR", "priceForeign": 110000, "priceCny": 869000,
+    "exchangeRate": 7.9,
+    "sourceUrl": "https://www.agriaffaires.it/usato/trattore-agricolo/46828752/mc-cormick-x5-35.html",
+    "sourceDate": "2026-08-12",
+    "confidenceScore": 0.6, "sampleSize": 3, "medianPrice": 110000, "listingCount": 3,
+    "priceType": "listing", "region": "EU"
+  },
+  {
+    "brand": "claas", "brandNameZh": "克拉斯", "model": "Jaguar 970", "category": "forage_harvester",
+    "sourceSite": "agroline", "currency": "EUR", "priceForeign": 380000, "priceCny": 3002000,
+    "exchangeRate": 7.9, "sourceUrl": null, "sourceDate": "2026-08-12",
+    "confidenceScore": 0.45, "sampleSize": 1, "medianPrice": 380000, "listingCount": 1,
+    "priceType": "listing", "region": "EU"
+  },
+  {
+    "brand": "claas", "brandNameZh": "克拉斯", "model": "Lexion 8600", "category": "combine",
+    "sourceSite": "agroline", "currency": "EUR", "priceForeign": 400000, "priceCny": 3160000,
+    "exchangeRate": 7.9, "sourceUrl": null, "sourceDate": "2026-08-12",
+    "confidenceScore": 0.45, "sampleSize": 1, "medianPrice": 400000, "listingCount": 1,
+    "priceType": "listing", "region": "EU"
+  },
+  {
+    "brand": "claas", "brandNameZh": "克拉斯", "model": "Xerion 5000", "category": "tractor",
+    "sourceSite": "agroline", "currency": "EUR", "priceForeign": 280000, "priceCny": 2212000,
+    "exchangeRate": 7.9, "sourceUrl": null, "sourceDate": "2026-08-12",
+    "confidenceScore": 0.45, "sampleSize": 1, "medianPrice": 280000, "listingCount": 1,
+    "priceType": "listing", "region": "EU"
+  },
+  {
+    "brand": "krone", "brandNameZh": "科罗尼", "model": "BigX 1180", "category": "forage_harvester",
+    "sourceSite": "agroline", "currency": "EUR", "priceForeign": 450000, "priceCny": 3555000,
+    "exchangeRate": 7.9, "sourceUrl": null, "sourceDate": "2026-08-12",
+    "confidenceScore": 0.45, "sampleSize": 1, "medianPrice": 450000, "listingCount": 1,
+    "priceType": "listing", "region": "EU"
+  },
+  {
+    "brand": "krone", "brandNameZh": "科罗尼", "model": "BiG Pack 1290", "category": "baler",
+    "sourceSite": "agroline", "currency": "EUR", "priceForeign": 120000, "priceCny": 948000,
+    "exchangeRate": 7.9, "sourceUrl": null, "sourceDate": "2026-08-12",
+    "confidenceScore": 0.45, "sampleSize": 1, "medianPrice": 120000, "listingCount": 1,
+    "priceType": "listing", "region": "EU"
+  },
+  {
+    "brand": "vermeer", "brandNameZh": "维米尔", "model": "604 Pro", "category": "baler",
+    "sourceSite": "machinerypete", "currency": "USD", "priceForeign": 48000, "priceCny": 348000,
+    "exchangeRate": 7.25,
+    "sourceUrl": "https://www.equipmentlocator.com/en-GB/Equipment/5315379/2022-Vermeer-604-Pro-G3-Baler-Round-For-Sale",
+    "sourceDate": "2026-08-12",
+    "confidenceScore": 0.6, "sampleSize": 3, "medianPrice": 48000, "listingCount": 3,
+    "priceType": "listing", "region": "US"
+  },
+  {
+    "brand": "vermeer", "brandNameZh": "维米尔", "model": "WR360", "category": "mower_tedder",
+    "sourceSite": "machinerypete", "currency": "USD", "priceForeign": 30000, "priceCny": 217500,
+    "exchangeRate": 7.25, "sourceUrl": null, "sourceDate": "2026-08-12",
+    "confidenceScore": 0.4, "sampleSize": 1, "medianPrice": 30000, "listingCount": 1,
+    "priceType": "listing", "region": "US"
+  },
+  {
+    "brand": "mchale", "brandNameZh": "麦克海尔", "model": "Fusion 3 Plus", "category": "baler",
+    "sourceSite": "agroline", "currency": "EUR", "priceForeign": 90000, "priceCny": 711000,
+    "exchangeRate": 7.9,
+    "sourceUrl": "https://www.traktorpool.de/gebraucht/a-Gruenlandgeraete/11/b-Press-Wickelkombinationen/1083/c-McHale/74",
+    "sourceDate": "2026-08-12",
+    "confidenceScore": 0.6, "sampleSize": 3, "medianPrice": 90000, "listingCount": 3,
+    "priceType": "listing", "region": "EU"
+  },
+  {
+    "brand": "mchale", "brandNameZh": "麦克海尔", "model": "V660", "category": "baler",
+    "sourceSite": "agroline", "currency": "EUR", "priceForeign": 55000, "priceCny": 434500,
+    "exchangeRate": 7.9, "sourceUrl": null, "sourceDate": "2026-08-12",
+    "confidenceScore": 0.45, "sampleSize": 1, "medianPrice": 55000, "listingCount": 1,
+    "priceType": "listing", "region": "EU"
+  },
+  {
+    "brand": "kuhn", "brandNameZh": "库恩", "model": "VB 3190", "category": "baler",
+    "sourceSite": "agroline", "currency": "EUR", "priceForeign": 40000, "priceCny": 316000,
+    "exchangeRate": 7.9, "sourceUrl": null, "sourceDate": "2026-08-12",
+    "confidenceScore": 0.45, "sampleSize": 1, "medianPrice": 40000, "listingCount": 1,
+    "priceType": "listing", "region": "EU"
+  },
+  {
+    "brand": "kuhn", "brandNameZh": "库恩", "model": "GA 4121", "category": "mower_tedder",
+    "sourceSite": "agroline", "currency": "EUR", "priceForeign": 25000, "priceCny": 197500,
+    "exchangeRate": 7.9, "sourceUrl": null, "sourceDate": "2026-08-12",
+    "confidenceScore": 0.45, "sampleSize": 1, "medianPrice": 25000, "listingCount": 1,
+    "priceType": "listing", "region": "EU"
+  },
+  {
+    "brand": "lemken", "brandNameZh": "雷肯", "model": "Rubin 10", "category": "soil",
+    "sourceSite": "agroline", "currency": "EUR", "priceForeign": 32000, "priceCny": 252800,
+    "exchangeRate": 7.9,
+    "sourceUrl": "https://www.agriaffaires.it/usato/aratri-stoppiatori/45380966/lemken-rubin-10.html",
+    "sourceDate": "2026-08-12",
+    "confidenceScore": 0.6, "sampleSize": 3, "medianPrice": 32000, "listingCount": 3,
+    "priceType": "listing", "region": "EU"
+  },
+  {
+    "brand": "lemken", "brandNameZh": "雷肯", "model": "Juwel 8", "category": "soil",
+    "sourceSite": "agroline", "currency": "EUR", "priceForeign": 25000, "priceCny": 197500,
+    "exchangeRate": 7.9, "sourceUrl": null, "sourceDate": "2026-08-12",
+    "confidenceScore": 0.45, "sampleSize": 1, "medianPrice": 25000, "listingCount": 1,
+    "priceType": "listing", "region": "EU"
+  },
+  {
+    "brand": "amazone", "brandNameZh": "阿玛松", "model": "Cenius", "category": "soil",
+    "sourceSite": "agroline", "currency": "EUR", "priceForeign": 30000, "priceCny": 237000,
+    "exchangeRate": 7.9,
+    "sourceUrl": "https://www.technikboerse.com/en/view/second-hand-machine/cultivator/12275258/amazone-cenius-7003-2tx.html",
+    "sourceDate": "2026-08-12",
+    "confidenceScore": 0.6, "sampleSize": 3, "medianPrice": 30000, "listingCount": 3,
+    "priceType": "listing", "region": "EU"
+  },
+  {
+    "brand": "amazone", "brandNameZh": "阿玛松", "model": "ZA-TS", "category": "soil",
+    "sourceSite": "agroline", "currency": "EUR", "priceForeign": 25000, "priceCny": 197500,
+    "exchangeRate": 7.9, "sourceUrl": null, "sourceDate": "2026-08-12",
+    "confidenceScore": 0.45, "sampleSize": 1, "medianPrice": 25000, "listingCount": 1,
+    "priceType": "listing", "region": "EU"
+  }
+]
