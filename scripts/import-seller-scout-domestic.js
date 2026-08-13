@@ -1,25 +1,32 @@
 // ───────────────────────────────────────────────
-// #1 卖方采集 Agent — 国内卖家数据导入脚本
-// 将 seller_scout_domestic_scraper.py 采集的 JSON
-// 导入 RawListing 表（去重）
-// 用法: tsx scripts/import-seller-scout-domestic.ts
+// #1 卖方采集 Agent — 国内卖家数据导入脚本（ECS 镜像内 node 运行版）
+// 将 seller_scout_domestic_scraper.py 采集的 JSON 导入 RawListing 表（去重）。
+//
+// 与 import-seller-scout-domestic.ts 逻辑一致，但：
+//   1) 纯 CJS，可被生产镜像（npm ci --only=production，无 tsx）直接 `node` 运行；
+//   2) SITE-aware + 合规护栏：国内卖家数据（含手机号等个人信息）必须写入
+//      境内 cn-postgres（数据不出境红线）。无 DATABASE_URL_CN 且非 .cn 站点时
+//      直接拒绝导入，杜绝中国卖家信息写入 Neon/境外库。
+//
+// 用法（cn-scout 容器内）: node scripts/import-seller-scout-domestic.js
 // ───────────────────────────────────────────────
 
-import { PrismaClient } from "@prisma/client";
-import * as fs from "fs";
-import * as path from "path";
-import * as crypto from "crypto";
+const { PrismaClient } = require("@prisma/client");
+const fs = require("fs");
+const path = require("path");
+const crypto = require("crypto");
 
-// ── 合规护栏：国内卖方数据（含手机号等个人信息）必须写入境内 cn-postgres ──
-// 数据不出境红线：仅当存在 DATABASE_URL_CN（或显式 SITE=cn）时才允许入库，
-// 目标一律为 cn-postgres；否则直接拒绝，避免中国卖家信息写入 Neon/境外库。
-// 注：生产镜像无 tsx，本地/agent 触发时使用本 .ts；ECS 生产路径由 .js + cron sidecar 执行。
+const EXCHANGE_RATE_EUR_CNY = 7.91;
+
+// ── 合规护栏：国内数据必须落境内库 ──
+// 容器 env_file(.env.cn) 提供 DATABASE_URL_CN（cn-postgres）；DATABASE_URL 在容器内为 ""（假值）。
+// 仅当存在 DATABASE_URL_CN（或显式 SITE=cn）时才允许入库，目标一律为 cn-postgres。
 const isCnSite = process.env.SITE === "cn" || !!process.env.DATABASE_URL_CN;
 const dbUrl =
   process.env.DATABASE_URL_CN || (isCnSite ? process.env.DATABASE_URL : null);
 if (!dbUrl) {
   console.error(
-    "❌ 合规拦截：国内卖方数据必须写入境内 cn-postgres（数据不出境红线）。"
+    "❌ 合规拦截：国内卖方数据（含卖家手机号等个人信息）必须写入境内 cn-postgres（数据不出境红线）。"
   );
   console.error(
     "   当前环境未设置 DATABASE_URL_CN 且非 .cn 站点，已拒绝导入，以免中国卖家信息出境。"
@@ -30,49 +37,22 @@ if (!dbUrl) {
 const prisma = new PrismaClient({
   datasources: { db: { url: dbUrl } },
 });
-const EXCHANGE_RATE_EUR_CNY = 7.91;
 
-interface DomesticListing {
-  brand: string;
-  modelName: string;
-  year: number | null;
-  engineHours: number | null;
-  priceCny: number | null;
-  priceEur: number | null;
-  country: string;
-  location: string;
-  sellerName?: string;
-  sellerPhone?: string;
-  source: string;
-  sourceDate: string;
-  sourceUrl?: string;
-}
-
-interface DomesticOutput {
-  scrapedAt: string;
-  source: string;
-  totalListings: number;
-  withPrice: number;
-  priceOnRequest: number;
-  platformStats?: Record<string, number>;
-  listings: DomesticListing[];
-}
-
-function generateContentHash(listing: DomesticListing): string {
+function generateContentHash(listing) {
   const key = `${listing.brand}|${listing.modelName}|${listing.year || ""}|${listing.location}|${listing.priceCny || listing.priceEur || ""}`;
   return crypto.createHash("md5").update(key).digest("hex");
 }
 
-async function importFromJson(jsonPath: string) {
+async function importFromJson(jsonPath) {
   console.log(`📂 读取采集数据: ${jsonPath}`);
 
   if (!fs.existsSync(jsonPath)) {
-    console.error(`❌ 文件不存在: ${jsonPath}`);
+    console.error(`❌ 文件不存在: ${jsonPath}（爬虫可能未产出，跳过导入）`);
     return { imported: 0, skipped: 0, errors: 1 };
   }
 
   const raw = fs.readFileSync(jsonPath, "utf-8");
-  const data: DomesticOutput = JSON.parse(raw);
+  const data = JSON.parse(raw);
 
   console.log(`📊 采集概览: ${data.totalListings} 条 (${data.withPrice} 有价格)`);
   if (data.platformStats) {
@@ -107,7 +87,9 @@ async function importFromJson(jsonPath: string) {
       condition: null,
       priceRaw: l.item.priceEur || l.item.priceCny || null,
       currency: l.item.priceEur ? "EUR" : l.item.priceCny ? "CNY" : null,
-      priceCny: l.item.priceCny || (l.item.priceEur ? Math.round(l.item.priceEur * EXCHANGE_RATE_EUR_CNY) : null),
+      priceCny:
+        l.item.priceCny ||
+        (l.item.priceEur ? Math.round(l.item.priceEur * EXCHANGE_RATE_EUR_CNY) : null),
       location: l.item.location || "中国",
       sellerName: l.item.sellerName || null,
       sellerPhone: l.item.sellerPhone || null,
@@ -141,7 +123,7 @@ async function main() {
   const jsonPath = path.join(__dirname, "domestic_sellers_data_v2.json");
 
   console.log("=".repeat(60));
-  console.log("🚜 #1 卖方采集 Agent — 国内卖家导入");
+  console.log("🚜 #1 卖方采集 Agent — 国内卖家导入（cn-postgres）");
   console.log("=".repeat(60));
 
   const result = await importFromJson(jsonPath);

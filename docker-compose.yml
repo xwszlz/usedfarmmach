@@ -90,6 +90,29 @@ services:
     networks:
       - cn-net
 
+  # ── #1 卖方采集定时任务 sidecar ──
+  # 复用 cn-app 同一镜像（已内置 python3 + requests + 爬虫/入库脚本 + crond）。
+  # 以 root 运行 busybox crond 前台进程，每日 07:10(Asia/Shanghai) 在容器内跑
+  # 爬虫 -> 写入 cn-postgres(RawListing)。国内平台仅境内 IP 可达，故必须在 ECS 运行。
+  # 数据合规：入库脚本 SITE-aware，国内卖家信息只落 cn-postgres（数据不出境红线）。
+  scout:
+    image: ${CN_IMAGE}
+    container_name: cn-scout
+    env_file:
+      - /opt/cn/.env.cn
+    environment:
+      SITE: cn
+      NEXT_PUBLIC_SITE: cn
+    user: "0:0"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - cn-net
+    # 前台运行 cron 守护；定时任务见镜像内 /var/spool/cron/crontabs/root
+    command: ["crond", "-f", "-L", "/dev/stdout", "-c", "/var/spool/cron/crontabs"]
+
 volumes:
   cn-pg-data:
 
