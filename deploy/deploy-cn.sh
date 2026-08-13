@@ -156,8 +156,9 @@ export CN_IMAGE
 # 注意：prisma CLI 读取 schema 内 env("DATABASE_URL")，此处显式传入
 #       .env.cn 的 DATABASE_URL_CN（境内 cn-postgres，数据不出境红线）。
 # ------------------------------------------------------------
-echo "==> 拉起 app 容器（首次拉起，表结构尚未初始化）"
-docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d app
+echo "==> 拉起 app + scout 容器（首次拉起，表结构尚未初始化）"
+echo "    scout 为 #1 卖方采集定时 sidecar（每日 07:10 北京时间跑爬虫->入库 cn-postgres）"
+docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d app scout
 
 echo "==> 初始化数据库表结构（prisma db push，幂等）"
 DB_URL_CN="$(grep -E '^DATABASE_URL_CN=' "$ENV_FILE" | head -1 | cut -d= -f2-)"

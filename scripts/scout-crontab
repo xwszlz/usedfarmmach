@@ -1,0 +1,4 @@
+# 国内 #1 卖方采集 — 每日 07:10 北京时间
+# 容器 TZ=Asia/Shanghai（Dockerfile.cn 已设），busybox crond 按本地时间调度。
+# 由 cn-scout 容器读取（/var/spool/cron/crontabs/root）。
+10 7 * * * sh /app/scripts/run-domestic-scout.sh >> /var/log/scout.log 2>&1
