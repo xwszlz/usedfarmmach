@@ -136,7 +136,7 @@ async function prepareDailyReportInput() {
 - 文件：`src/app/api/cron/benchmark/route.ts`
 - 在返回结果中增加 `lastVerified` 时间戳写入，便于下游检查。
 
-### 步骤 3：新增 `daily-pipeline` 虚拟 Agent（PR #68）
+### 步骤 3：新增 `daily-pipeline` 虚拟 Agent（PR #69）
 
 - 文件：`src/lib/agents/orchestrator/types.ts`、`src/lib/agents/orchestrator/agent.ts`
 - 新增 `daily-pipeline` 的执行逻辑：
@@ -146,7 +146,7 @@ async function prepareDailyReportInput() {
   4. 触发 AI 日报生成（调用现有生成脚本/endpoint）；失败则告警。
 - 所有步骤写入同一条 `agentRunLog.result.pipeline` 数组，便于在 Orchestrator 后台看整条链路。
 
-### 步骤 4：AI 日报接入 BrandBenchmark（PR #68）
+### 步骤 4：AI 日报接入 BrandBenchmark（PR #69）
 
 - 文件：日报生成脚本（需定位到具体文件，当前由 WorkBuddy automation `ai` 触发）
 - 新增输入：
@@ -155,7 +155,7 @@ async function prepareDailyReportInput() {
   - 俄线代理状态（若未配 `RESIDENTIAL_PROXY`，报告里诚实标注"俄线待激活"）。
 - 新增输出：在日报 MD 中增加 `### 全球基准价指数（18品牌）` 章节。
 
-### 步骤 5：企微告警与监控卡片（PR #68）
+### 步骤 5：企微告警与监控卡片（PR #69）
 
 - 复用 `scripts/push-daily-to-wecom.js` 的 webhook 能力。
 - 新增 `scripts/alert-pipeline.js`：
@@ -213,7 +213,7 @@ async function prepareDailyReportInput() {
 
 ## 九、下一步行动
 
-1. 用户确认本方案后，按 PR #67（时间调整）、PR #68（pipeline + 数据融合）分批实施。
+1. 用户确认本方案后，按 PR #67（时间调整）、PR #69（pipeline + 数据融合）分批实施。
 2. 先改时间槽（步骤 1、2），观察 1–2 天无冲突后再做 pipeline（步骤 3、4、5）。
 3. 俄线住宅代理配置后，BrandBenchmark 会自然产出俄线数据，日报无需额外改动即可展示。
 
