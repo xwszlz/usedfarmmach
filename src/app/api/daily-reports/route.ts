@@ -239,7 +239,6 @@ export async function GET() {
           slug: a.slug || "",
         });
       }
-      await prisma.$disconnect();
     } catch (e) {
       console.warn("[daily-reports] DB fallback failed:", e instanceof Error ? e.message : e);
     }
