@@ -1,11 +1,10 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { PrismaClient } from '@prisma/client';
 import BlogDetailClient from './BlogDetailClient';
+import { prisma } from '@/lib/db';
 import { getHreflangLanguages } from "@/components/seo/hreflang-head";
 import { ArticleStructuredData, BreadcrumbStructuredData } from "@/components/seo/structured-data";
 
-const prisma = new PrismaClient();
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
 
 interface Props {

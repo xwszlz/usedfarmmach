@@ -27,7 +27,35 @@ const path = require('path');
 const https = require('https');
 const http = require('http');
 
-const prisma = new PrismaClient();
+// —— SITE-aware 数据库客户端（镜像 src/lib/db.ts 的选库逻辑）——
+// benchmark-engine 是 CommonJS 双用途模块：既被 Next.js 路由
+// (src/app/api/cron/benchmark/route.ts) 在服务端导入，也可被
+// node CLI 脚本 (scripts/fetch-benchmark.js) 直接运行。
+// 由于是纯 CJS（require 语法、无 TS 路径别名），无法 import TS 单例
+// @/lib/db，故在此自行按 SITE 选择 DATABASE_URL_CN / DATABASE_URL，
+// 确保 .cn 环境下写入中国境内库，与 db.ts 行为一致。
+//
+// 数据合规说明：本模块写入的 brandBenchmark 为公开的境外农机市场
+// 采集价（价格/机型/源站），不含用户 PII 与资金担保数据，不触发
+// 「数据出境本地化红线」；但为避免 .cn 定时任务误写 Neon，仍按
+// SITE 显式指定连接串（非默认 DATABASE_URL 直连）。
+function resolveBenchmarkDatabaseUrl() {
+  const site = process.env.SITE || 'com';
+  if (site === 'cn') {
+    const url = process.env.DATABASE_URL_CN;
+    if (!url) {
+      throw new Error('[benchmark-engine] SITE=cn 但未设置 DATABASE_URL_CN 环境变量。');
+    }
+    return url;
+  }
+  const url = process.env.DATABASE_URL;
+  if (!url) {
+    throw new Error('[benchmark-engine] 未设置 DATABASE_URL 环境变量。');
+  }
+  return url;
+}
+
+const prisma = new PrismaClient({ datasources: { db: { url: resolveBenchmarkDatabaseUrl() } } });
 
 // —— FX 兜底常量（离线时使用）——
 const FX_FALLBACK = { EUR: 7.90, USD: 7.25, RUB: 0.090, GBP: 9.20, CNY: 1 };
