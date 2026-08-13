@@ -20,6 +20,7 @@
  */
 
 const { PrismaClient } = require('@prisma/client');
+const cheerio = require('cheerio');
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
@@ -233,7 +234,7 @@ function buildSearchUrl(source, target) {
   const q = encodeURIComponent(`${target.nameEn} ${target.model}`);
   switch (source.key) {
     case 'agroline':
-      return `https://www.google.com/search?q=${encodeURIComponent(`${target.nameEn} ${target.model} site:agroline.com`)}`;
+      return `https://www.agroline.com/search_text.php?query=${encodeURIComponent(`${target.nameEn} ${target.model}`)}`;
     case 'machinerypete':
       return `https://www.machinerypete.com/search?q=${q}`;
     case 'mascus':
@@ -280,7 +281,135 @@ function extractPrices(text, currency) {
   return found;
 }
 
-// —— 聚合：中位价 + IQR 离群过滤 + 置信度 ——
+// —— 结构化解析（Agroline / Mascus 等规整列表页）——
+function norm(s) {
+  return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+// 卡片标题是否与目标品牌+机型相关（避免抓到无关/填充件）
+function isRelevant(title, target) {
+  const t = norm(title);
+  if (!t.includes(norm(target.nameEn))) return false;
+  const tokens = norm(target.model).match(/[a-z0-9]+/g) || [];
+  return tokens.length ? tokens.every((tok) => t.includes(tok)) : false;
+}
+// 数字解析（兼容欧式 1.234,56 / 美式 1,234.56 / 纯数字）
+function parseNum(raw) {
+  const s = String(raw).replace(/[^\d.,]/g, '');
+  if (s.includes(',') && s.includes('.')) {
+    if (/,\d{2}$/.test(s)) return parseFloat(s.replace(/\./g, '').replace(',', '.'));
+    return parseFloat(s.replace(/,/g, ''));
+  }
+  if (s.includes(',')) {
+    const parts = s.split(',');
+    if (parts.length === 2 && parts[1].length === 3 && !parts[0].includes('.')) return parseFloat(s.replace(/,/g, ''));
+    return parseFloat(s.replace(',', '.'));
+  }
+  return parseFloat(s);
+}
+// 从价格文本抽取指定币种的金额（找不到返回 null → 用于跳过"价格面议"）
+function extractCurrencyAmount(text, preferredCur) {
+  const patterns = [
+    { cur: 'EUR', re: /€\s*([\d][\d .,\s]{2,})/ },
+    { cur: 'USD', re: /(?:US\$|\$)\s*([\d][\d .,\s]{2,})/ },
+    { cur: 'RUB', re: /([\d][\d .,\s]{3,})\s*(?:₽|руб)/ },
+    { cur: 'GBP', re: /£\s*([\d][\d .,\s]{2,})/ },
+  ];
+  let fallback = null;
+  for (const p of patterns) {
+    const m = text.match(p.re);
+    if (m) {
+      const n = parseNum(m[1]);
+      if (n && n > 500 && n < 1e8) {
+        if (p.cur === preferredCur) return { amount: n, currency: p.cur };
+        if (!fallback) fallback = { amount: n, currency: p.cur };
+      }
+    }
+  }
+  return fallback;
+}
+
+// 按源站选择解析策略；非结构化源回退正则
+function parseListings(source, html, target) {
+  if (source.key === 'agroline') return parseAgroline(html, target, source);
+  if (source.key === 'mascus') return parseMascus(html, target, source);
+  const prices = extractPrices(html, source.currency);
+  return prices.map((p) => ({ priceForeign: p, currency: source.currency }));
+}
+
+// Agroline：服务端渲染，卡片 = .sales-list-item，标题在 a[href*="/-/"]，价格 .price-value
+function parseAgroline(html, target, source) {
+  const $ = cheerio.load(html);
+  const out = [];
+  $('.sales-list-item').each((_, el) => {
+    const card = $(el);
+    const link = card.find('a[href*="/-/"]').first();
+    const title = link.text().trim() || card.find('a').first().text().trim();
+    if (!isRelevant(title, target)) return;
+    const priceText = card.find('[class*="price-value"]').first().text();
+    const amt = extractCurrencyAmount(priceText, 'EUR');
+    if (!amt) return; // 跳过 Price on request / 无价
+    out.push({ priceForeign: amt.amount, currency: amt.currency, title: title.trim(), url: link.attr('href') });
+  });
+  return out;
+}
+
+// Mascus：React 客户端渲染，原始 HTML 多为拍卖填充件；仅接受含真实数字价格的卡片
+function parseMascus(html, target, source) {
+  const $ = cheerio.load(html);
+  const out = [];
+  $('[class*="SearchResultItem_brandmodel"]').each((_, el) => {
+    const card = $(el).closest('[class*="SearchResultItem"]');
+    if (!card.length) return;
+    const title = $(el).text().trim();
+    if (!isRelevant(title, target)) return;
+    const priceText = card.find('[class*="priceWrapper"]').first().text();
+    const amt = extractCurrencyAmount(priceText, source ? source.currency : null);
+    if (!amt) return;
+    out.push({ priceForeign: amt.amount, currency: amt.currency, title, url: card.find('a').first().attr('href') });
+  });
+  return out;
+}
+
+// —— 聚合（多币种 → 统一折算 CNY，IQR 离群过滤 + 置信度）——
+function aggregateListings(listings, fx, opts = {}) {
+  if (!listings.length) return null;
+  const cnyList = [];
+  const foreignByCur = {};
+  for (const l of listings) {
+    const rate = fx[l.currency] || FX_FALLBACK[l.currency] || 1;
+    cnyList.push(Math.round(l.priceForeign * rate));
+    (foreignByCur[l.currency] = foreignByCur[l.currency] || []).push(l.priceForeign);
+  }
+  const sorted = cnyList.slice().sort((a, b) => a - b);
+  const q1 = quantile(sorted, 0.25);
+  const q3 = quantile(sorted, 0.75);
+  const iqr = q3 - q1;
+  const lo = q1 - 1.5 * iqr;
+  const hi = q3 + 1.5 * iqr;
+  const clean = sorted.filter((n) => n >= lo && n <= hi);
+  const finalCny = clean.length >= 3 ? clean : sorted;
+  const medianCny = medianOf(finalCny);
+  let domCur = null, max = 0;
+  for (const [c, arr] of Object.entries(foreignByCur)) {
+    if (arr.length > max) { max = arr.length; domCur = c; }
+  }
+  const medianForeign = medianOf(foreignByCur[domCur].slice().sort((a, b) => a - b));
+  const rate = fx[domCur] || FX_FALLBACK[domCur] || 1;
+  const sampleSize = finalCny.length;
+  return {
+    priceForeign: round2(medianForeign),
+    medianPrice: round2(medianForeign),
+    currency: domCur,
+    priceCny: round2(medianCny),
+    exchangeRate: round4(rate),
+    sampleSize,
+    listingCount: listings.length,
+    confidenceScore: round2(confidenceScore({ sources: 1, sampleSize, ageDays: 0 })),
+    priceType: opts.priceType || 'listing',
+  };
+}
+
+// —— 聚合（旧版：单价币种，兼容回退）——
 function aggregate(listings, source, fx, opts = {}) {
   if (!listings.length) return null;
   const nums = listings.map((l) => l.priceForeign).sort((a, b) => a - b);
@@ -373,10 +502,9 @@ async function fetchOneTarget(target, fx, timeoutMs) {
   const url = buildSearchUrl(source, target);
   try {
     const html = await httpGet(url, { timeout: timeoutMs });
-    const prices = extractPrices(html, source.currency);
-    if (!prices.length) return { status: 'skip', reason: 'no-price' };
-    const listings = prices.map((p) => ({ priceForeign: p }));
-    const agg = aggregate(listings, source, fx, { priceType: 'listing' });
+    const listings = parseListings(source, html, target);
+    if (!listings.length) return { status: 'skip', reason: 'no-listing' };
+    const agg = aggregateListings(listings, fx, { priceType: 'listing' });
     if (!agg) return { status: 'skip', reason: 'no-agg' };
     await upsertBenchmark({
       ...target,
@@ -385,7 +513,7 @@ async function fetchOneTarget(target, fx, timeoutMs) {
       sourceDate: new Date().toISOString().slice(0, 10),
       region: source.region,
     });
-    return { status: 'ok' };
+    return { status: 'ok', count: listings.length };
   } catch (e) {
     return { status: 'failed', reason: e.message };
   }
@@ -480,6 +608,12 @@ module.exports = {
   buildSearchUrl,
   extractPrices,
   aggregate,
+  parseListings,
+  parseAgroline,
+  parseMascus,
+  extractCurrencyAmount,
+  isRelevant,
+  aggregateListings,
   upsertBenchmark,
   fetchOneTarget,
   runRefresh,
