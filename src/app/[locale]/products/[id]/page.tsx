@@ -8,7 +8,7 @@ import { SpecificationTable } from "@/components/product/specification-table";
 import { StandardDescription } from "@/components/product/standard-description";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeftRight, Info, Mail, MessageCircle, Phone } from "lucide-react";
+import { ArrowLeftRight, Info, Mail, MessageCircle, Phone, Shield } from "lucide-react";
 import { getImageUrl, getVideoUrl, generateImageAlt } from "@/lib/image-url";
 import { formatPrice } from "@/lib/utils";
 import { normalizeCondition } from "@/lib/condition";
@@ -16,6 +16,7 @@ import ArbitrageCalculatorSection from "@/components/product/arbitrage-calculato
 import { QuickContact } from "@/components/product/quick-contact";
 import { InquiryActions } from "@/components/product/inquiry-actions";
 import InquirySection from "@/components/product/inquiry-section";
+import { GuaranteeTradeButton } from "@/components/product/guarantee-trade-button";
 import { ValuationCard } from "@/components/valuation/valuation-card";
 import DeepAnalysisCard from "@/components/product/deep-analysis-card";
 import { getHreflangLanguages } from "@/components/seo/hreflang-head";
@@ -27,6 +28,7 @@ import { FavoriteButton } from "@/components/favorite/favorite-button";
 import { SellerTrustCard } from "@/components/seller/seller-trust-card";
 import BlockchainTrace from "@/components/blockchain/blockchain-trace";
 import Link from "next/link";
+import { siteConfig } from "@/config/site";
 import { Wrench } from "lucide-react";
 import { ProductViewBadge } from "@/components/stats/ProductViewBadge";
 import { ProductVideoGallery } from "@/components/stats/ProductVideoGallery";
@@ -496,6 +498,32 @@ export default async function ProductDetailPage({
           </CardContent>
         </Card>
       </div>
+
+      {/* ================================================================ */}
+      {/*  担保交易（.cn 专属 · 微信收付通 · 资金托管）                    */}
+      {/* ================================================================ */}
+      {siteConfig.payments.wechatPay && (
+        <div className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-emerald-600" />
+                担保交易 · 资金托管
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-gray-500">
+                通过微信收付通完成担保支付：资金由微信托管，您确认收货后自动分账给卖家，平台不碰资金。
+              </p>
+              <GuaranteeTradeButton
+                productId={product.id}
+                productName={`${brandName} ${product.modelName}`}
+                priceCny={product.priceCny}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* ================================================================ */}
       {/*  统一在线询价栏目（阶段0-A：所有产品自动开通，单一入口）        */}

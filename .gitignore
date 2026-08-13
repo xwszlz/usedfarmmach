@@ -79,3 +79,4 @@ nul
 
 # build/temporary directory created by automation jobs
 _pull_tmp/
+_trash/
