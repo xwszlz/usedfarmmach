@@ -34,12 +34,19 @@ export interface ScoutOutput {
 
 /** 找到仓库根目录：当前是 /api/agents/seller-scout 或 /lib/agents/seller-scout */
 function findRepoRoot(): string {
-  // process.cwd() 在 Vercel 上是仓库根目录
-  // 在本地可能是 usedfarmmach 子目录
+  // 向上爬到"包含 scripts/ 目录"的那一层作为仓库根，
+  // 避免 cwd 是 usedfarmmach 还是其父目录造成的路径偏差
+  // （此前 domestic/international 分支都额外拼了 usedfarmmach 段，导致双重目录、读不到文件）。
+  let dir = process.cwd();
+  for (let i = 0; i < 6; i++) {
+    if (fs.existsSync(path.join(dir, "scripts"))) return dir;
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  // 回退：沿用旧逻辑
   const cwd = process.cwd();
-  // 如果当前在 usedfarmmach 子目录
   if (path.basename(cwd) === "usedfarmmach") return cwd;
-  // 否则尝试找 usedfarmmach 子目录
   const subdir = path.join(cwd, "usedfarmmach");
   if (fs.existsSync(subdir)) return subdir;
   return cwd;
@@ -119,7 +126,7 @@ export async function executeSellerScout(input: ScoutInput): Promise<ScoutOutput
         log(`  爬虫 exit=${r.ok ? 0 : 1}`);
         if (r.stdout) log(`  stdout: ${r.stdout.slice(-300)}`);
 
-        const resultPath = path.join(repoRoot, "usedfarmmach", "scripts", "domestic_sellers_data_v2.json");
+        const resultPath = path.join(scriptsDir, "domestic_sellers_data_v2.json");
         if (fs.existsSync(resultPath)) {
           try {
             const data = JSON.parse(fs.readFileSync(resultPath, "utf-8"));
@@ -135,10 +142,10 @@ export async function executeSellerScout(input: ScoutInput): Promise<ScoutOutput
           }
 
           if (!dryRun) {
-            const importScript = path.join(repoRoot, "usedfarmmach", "scripts", "import-seller-scout-domestic.ts");
+            const importScript = path.join(scriptsDir, "import-seller-scout-domestic.ts");
             if (fs.existsSync(importScript)) {
               log("  ▶ 导入国内数据...");
-              const ir = runTsx(importScript, path.join(repoRoot, "usedfarmmach"));
+              const ir = runTsx(importScript, repoRoot);
               log(`  导入 exit=${ir.ok ? 0 : 1}`);
               if (ir.ok) importsRun += 1;
             }
@@ -161,7 +168,7 @@ export async function executeSellerScout(input: ScoutInput): Promise<ScoutOutput
         log(`  爬虫 exit=${r.ok ? 0 : 1}`);
         if (r.stdout) log(`  stdout: ${r.stdout.slice(-300)}`);
 
-        const resultPath = path.join(repoRoot, "usedfarmmach", "scripts", "agriaffaires_data.json");
+        const resultPath = path.join(scriptsDir, "agriaffaires_data.json");
         if (fs.existsSync(resultPath)) {
           try {
             const data = JSON.parse(fs.readFileSync(resultPath, "utf-8"));
@@ -173,10 +180,10 @@ export async function executeSellerScout(input: ScoutInput): Promise<ScoutOutput
           }
 
           if (!dryRun) {
-            const importScript = path.join(repoRoot, "usedfarmmach", "scripts", "import-seller-scout.ts");
+            const importScript = path.join(scriptsDir, "import-seller-scout.ts");
             if (fs.existsSync(importScript)) {
               log("  ▶ 导入国际数据...");
-              const ir = runTsx(importScript, path.join(repoRoot, "usedfarmmach"));
+              const ir = runTsx(importScript, repoRoot);
               log(`  导入 exit=${ir.ok ? 0 : 1}`);
               if (ir.ok) importsRun += 1;
             }

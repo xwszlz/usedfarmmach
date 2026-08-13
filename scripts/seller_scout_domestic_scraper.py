@@ -51,7 +51,8 @@ BRANDS = [
 ]
 
 # 输出文件
-OUTPUT_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "usedfarmmach", "scripts", "domestic_sellers_data_v2.json")
+# 输出文件：写在脚本同级（scripts/）目录下，与 import-seller-scout-domestic.ts 的 __dirname 一致
+OUTPUT_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "domestic_sellers_data_v2.json")
 
 
 def get_session():
