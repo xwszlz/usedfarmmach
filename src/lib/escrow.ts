@@ -2,9 +2,7 @@
  * 担保交易共享工具库
  */
 
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/db";
 
 /**
  * 生成订单号：SD-ESC-YYYYMMDD-XXXXXX

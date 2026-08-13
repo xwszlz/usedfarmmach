@@ -11,6 +11,7 @@
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
+import { prisma } from "@/lib/db";
 
 export const dynamic = 'force-dynamic';
 
@@ -212,9 +213,7 @@ export async function GET() {
   // 如果本地JSON没有文章，尝试从数据库获取最近3篇
   if (articles.length === 0) {
     try {
-      // 动态导入Prisma（仅在服务端可用）
-      const { PrismaClient } = await import("@prisma/client");
-      const prisma = new PrismaClient();
+      // 使用 SITE-aware Prisma 单例（来自 @/lib/db），避免绕过 db.ts 直连默认库
       const dbArticles = await prisma.article.findMany({
         where: { status: "published" },
         orderBy: { publishedAt: "desc" },
