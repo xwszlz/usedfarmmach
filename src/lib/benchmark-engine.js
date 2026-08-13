@@ -21,6 +21,7 @@
 
 const { PrismaClient } = require('@prisma/client');
 const cheerio = require('cheerio');
+const { HttpsProxyAgent } = require('https-proxy-agent');
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
@@ -176,35 +177,34 @@ function buildTargets() {
   return targets;
 }
 
-// —— 简单 GET（带 UA + 超时），失败时抛错由调用方降级 ——
-function httpGet(url, { timeout = 12000, headers = {} } = {}) {
+// —— 简单 GET（带 UA + 超时 + 可选住宅代理），失败时抛错由调用方降级 ——
+// proxy: 住宅代理 URL（如 https://user:pass@host:port）；俄线源经此破反爬
+function httpGet(url, { timeout = 12000, headers = {}, proxy = null } = {}) {
+  const opts = {
+    timeout,
+    headers: {
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+      'Accept-Language': 'en-US,en;q=0.9',
+      ...headers,
+    },
+  };
+  if (proxy) opts.agent = new HttpsProxyAgent(proxy);
   return new Promise((resolve, reject) => {
     const lib = url.startsWith('https') ? https : http;
-    const req = lib.get(
-      url,
-      {
-        timeout,
-        headers: {
-          'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
-          'Accept-Language': 'en-US,en;q=0.9',
-          ...headers,
-        },
-      },
-      (res) => {
-        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-          return httpGet(res.headers.location, { timeout, headers }).then(resolve, reject);
-        }
-        if (res.statusCode !== 200) {
-          res.resume();
-          return reject(new Error(`HTTP ${res.statusCode}`));
-        }
-        let data = '';
-        res.setEncoding('utf8');
-        res.on('data', (c) => (data += c));
-        res.on('end', () => resolve(data));
+    const req = lib.get(url, opts, (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        return httpGet(res.headers.location, { timeout, headers, proxy }).then(resolve, reject);
       }
-    );
+      if (res.statusCode !== 200) {
+        res.resume();
+        return reject(new Error(`HTTP ${res.statusCode}`));
+      }
+      let data = '';
+      res.setEncoding('utf8');
+      res.on('data', (c) => (data += c));
+      res.on('end', () => resolve(data));
+    });
     req.on('timeout', () => req.destroy(new Error('timeout')));
     req.on('error', reject);
   });
@@ -500,8 +500,14 @@ async function fetchOneTarget(target, fx, timeoutMs) {
   const source = SOURCES.find((s) => s.key === target.sourceSite);
   if (!source) return { status: 'skip', reason: 'no-source' };
   const url = buildSearchUrl(source, target);
+  // 俄线源：若配置了住宅代理则强制走代理破反爬（Avito/OLX 从数据中心 IP 必被 403/429）
+  const proxy = target.russian && process.env.RESIDENTIAL_PROXY ? process.env.RESIDENTIAL_PROXY : null;
   try {
-    const html = await httpGet(url, { timeout: timeoutMs });
+    const html = await httpGet(url, {
+      timeout: timeoutMs,
+      proxy,
+      headers: target.russian ? { 'Accept-Language': 'ru-RU,ru;q=0.9' } : {},
+    });
     const listings = parseListings(source, html, target);
     if (!listings.length) return { status: 'skip', reason: 'no-listing' };
     const agg = aggregateListings(listings, fx, { priceType: 'listing' });
