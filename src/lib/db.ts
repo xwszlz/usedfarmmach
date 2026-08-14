@@ -60,9 +60,12 @@ function createPrismaClient(): PrismaClient {
 export const prisma: PrismaClient =
   globalForPrisma.prisma ?? createPrismaClient();
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
+// 始终将 prisma 缓存到 globalThis（包括生产环境）。
+// 在 Vercel Serverless / 容器化部署下，每个函数实例在并发请求时会多次 import 本模块；
+// 若不缓存，每次 import 都会新建 PrismaClient 并占用一条数据库连接，迅速耗尽连接池，
+// 导致 SSR 数据库查询超时并抛出 "Application error: a server-side exception"。
+// 生产环境也必须复用单例，这是 Prisma 官方推荐做法。
+globalForPrisma.prisma = prisma;
 
 /**
  * 获取当前站点对应的数据库 URL（用于诊断/管理工具）。
