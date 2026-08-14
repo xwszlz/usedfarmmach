@@ -1,4 +1,4 @@
-import { Wrench, Calendar, Clock, Cpu, Gauge, Cog, Settings, Ruler, Weight, CheckCircle2, MapPin, Tag } from "lucide-react";
+import { Wrench, Calendar, Clock, Cpu, Gauge, Cog, Settings, Ruler, Weight, CheckCircle2, MapPin, Tag, ExternalLink } from "lucide-react";
 
 interface SpecRow {
   label: string;
@@ -8,6 +8,7 @@ interface SpecRow {
 
 interface SpecificationTableProps {
   brandName: string;
+  brandOfficialWebsite?: string | null;
   modelName: string;
   year: number;
   workingHours: number | null;
@@ -81,6 +82,7 @@ const LABELS: Record<string, Record<string, string>> = {
 
 export function SpecificationTable({
   brandName,
+  brandOfficialWebsite,
   modelName,
   year,
   workingHours,
@@ -162,10 +164,31 @@ export function SpecificationTable({
     <div className="overflow-hidden rounded-lg border border-gray-200">
       <table className="w-full">
         <tbody>
-          {rows.map((row, idx) => (
+          {/* 品牌行：右侧带「品牌官网」链接（仅当 officialWebsite 存在时显示） */}
+          <tr className="bg-white">
+            <td className="flex items-center gap-2 px-4 py-3 text-sm font-medium text-gray-600">
+              {rows[0].icon}
+              {rows[0].label}
+            </td>
+            <td className="px-4 py-3 text-sm text-gray-900">
+              <span>{brandName}</span>
+              {brandOfficialWebsite && (
+                <a
+                  href={brandOfficialWebsite}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-2 inline-flex items-center gap-1 text-sm font-medium text-primary-600 hover:underline"
+                >
+                  {locale === "zh" ? "品牌官网" : "Official Website"}
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+              )}
+            </td>
+          </tr>
+          {rows.slice(1).map((row, idx) => (
             <tr
               key={row.label}
-              className={idx % 2 === 0 ? "bg-white" : "bg-gray-50/50"}
+              className={(idx + 1) % 2 === 0 ? "bg-gray-50/50" : "bg-white"}
             >
               <td className="flex items-center gap-2 px-4 py-3 text-sm font-medium text-gray-600">
                 {row.icon}
