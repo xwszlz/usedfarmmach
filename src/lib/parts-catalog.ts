@@ -10,6 +10,7 @@
 
 import { prisma } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
+import type { PartCardData } from "@/components/parts/PartCard";
 
 // ─── 类型定义 ───────────────────────────────────────────
 
@@ -658,4 +659,62 @@ export async function getRelatedParts(
       nameEn: p.componentGroup.subSystem.machineType.nameEn,
     },
   }));
+}
+
+/**
+ * 整机精选配对层查询（MachinePart）
+ *
+ * 优先于 getCompatiblePartsForProduct 使用：返回该机器人工/脚本配对的
+ * 全部适配配件（97 台二手农机配对层）。
+ * 通过 partSource + partId 运行时关联 Part / PartLegacy，映射为 PartCardData。
+ * 若该产品无配对记录，返回空数组，由调用方回退到品牌/通用件匹配。
+ */
+export async function getMachinePairedParts(
+  productId: string,
+  limit = 200
+): Promise<PartCardData[]> {
+  const rows = await prisma.machinePart.findMany({
+    where: { machineId: productId },
+    orderBy: [{ rank: "asc" }, { id: "asc" }],
+    take: limit,
+  });
+  if (rows.length === 0) return [];
+
+  const partIds = rows.filter((r) => r.partSource === "Part").map((r) => r.partId);
+  const legacyIds = rows
+    .filter((r) => r.partSource === "part_legacy")
+    .map((r) => r.partId);
+
+  const [partRows, legacyRows] = await Promise.all([
+    partIds.length
+      ? prisma.part.findMany({ where: { id: { in: partIds } } })
+      : Promise.resolve([] as any[]),
+    legacyIds.length
+      ? prisma.partLegacy.findMany({ where: { id: { in: legacyIds } } })
+      : Promise.resolve([] as any[]),
+  ]);
+
+  const partMap = new Map(partRows.map((p) => [p.id, p as any]));
+  const legacyMap = new Map(legacyRows.map((p) => [p.id, p as any]));
+
+  const out: PartCardData[] = [];
+  for (const r of rows) {
+    const p = r.partSource === "Part" ? partMap.get(r.partId) : legacyMap.get(r.partId);
+    if (!p) continue;
+    out.push({
+      id: p.id,
+      sku: p.sku ?? "",
+      nameZh: p.nameZh,
+      nameEn: p.nameEn ?? "",
+      nameRu: p.nameRu ?? "",
+      brand: p.brand,
+      oemNumber: p.oemNumber ?? null,
+      price: p.price,
+      currency: p.currency ?? "CNY",
+      stockStatus: p.stockStatus ?? "in_stock",
+      images: p.images ?? [],
+      isOEM: p.isOEM ?? false,
+    });
+  }
+  return out;
 }
