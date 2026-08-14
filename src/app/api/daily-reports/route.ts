@@ -60,6 +60,68 @@ function getRecentReports(limit = 7): Array<{ date: string; title: string }> {
   }
 }
 
+// 6. 数据态势板块（基准价指数 / 跨境套利 / 国内采集）— 纯追加、失败隔离、可一键关闭
+// 复用 /api/benchmark 同源查询逻辑；任何异常被吞掉返回 available:false，绝不影响原有四块。
+async function getBenchmarkSection(today: string) {
+  // 一键开关：默认 on；设为 off 整个新增板块不渲染、不查询
+  const enabled = (process.env.DAILY_BENCHMARK_SECTION || "on").toLowerCase() !== "off";
+  if (!enabled) {
+    return { available: false as const, enabled: false as const, reason: "disabled" };
+  }
+  try {
+    const [benchmark, arbitrageCount, domesticCount] = await Promise.all([
+      prisma.brandBenchmark.findMany({
+        where: { isActive: true },
+        orderBy: [{ sourceSite: "asc" }, { brand: "asc" }, { model: "asc" }],
+        take: 300,
+        select: {
+          id: true,
+          sourceSite: true,
+          brand: true,
+          brandNameZh: true,
+          model: true,
+          category: true,
+          priceForeign: true,
+          currency: true,
+          priceCny: true,
+          sampleSize: true,
+          medianPrice: true,
+          listingCount: true,
+          region: true,
+          lastVerified: true,
+          confidenceScore: true,
+        },
+      }),
+      prisma.internationalPrice.count({ where: { isActive: true } }),
+      prisma.rawListing.count({ where: { source: { startsWith: "domestic_" } } }),
+    ]);
+
+    const sampleTotal = benchmark.reduce((s, b) => s + (b.sampleSize || 0), 0);
+    const freshCount = benchmark.filter((b) => {
+      if (!b.lastVerified) return false;
+      const days = (Date.now() - new Date(b.lastVerified).getTime()) / 86400000;
+      return days <= 2;
+    }).length;
+
+    return {
+      available: true as const,
+      enabled: true as const,
+      date: today,
+      summary: {
+        benchmarkCount: benchmark.length,
+        freshCount,
+        arbitrageCount,
+        sampleTotal,
+        domesticCount,
+      },
+      benchmark,
+    };
+  } catch (e) {
+    console.warn("[daily-reports] benchmark section failed:", e instanceof Error ? e.message : e);
+    return { available: false as const, enabled: true as const, reason: "query_failed" };
+  }
+}
+
 export async function GET() {
   const today = getTodayStr();
 
@@ -247,6 +309,9 @@ export async function GET() {
   // 5. 历史日报列表
   const recentReports = getRecentReports(7);
 
+  // 6. 数据态势板块（纯追加字段，不影响原有 reports/articles/recentReports）
+  const benchmarkSection = await getBenchmarkSection(today);
+
   return NextResponse.json({
     success: true,
     date: today,
@@ -258,5 +323,6 @@ export async function GET() {
     },
     articles,
     recentReports,
+    benchmark: benchmarkSection,
   });
 }
