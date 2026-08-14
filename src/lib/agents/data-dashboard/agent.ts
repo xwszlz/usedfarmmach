@@ -1,5 +1,8 @@
+import fs from "fs";
+import path from "path";
 import { prisma } from "@/lib/db";
 import type { DashboardInput, DashboardResult, DashboardStatus, DashboardMetrics } from "./types";
+import { getAgentStatus } from "@/lib/agents/orchestrator/agent";
 
 export const AGENT_NAME = "data-dashboard";
 export const AGENT_VERSION = "0.1.0";
@@ -138,6 +141,77 @@ export class DataDashboardAgent {
 
   async getStatus(): Promise<DashboardStatus> {
     return { ok: true, agentName: AGENT_NAME, version: AGENT_VERSION };
+  }
+
+  /** 每日流水线四段：schedule=当前实际 cron，target=目标 4 段式（北京时区） */
+  private readonly PIPELINE = [
+    { key: "seller-scout", label: "① 卖方采集", schedule: "0 6 * * *", target: "0 6 * * *", source: "GitHub Actions", note: "Python 爬虫，每日 06:00 北京（已对齐）" },
+    { key: "price-intel", label: "② 国际价格刷新", schedule: "0 7 * * 1", target: "30 6 * * *", source: "Vercel Cron", note: "当前仅周一 07:00；目标每日 06:30（待对齐）" },
+    { key: "brand-benchmark", label: "③ 品牌基准价", schedule: "30 7 * * *", target: "0 7 * * *", source: "Vercel Cron", note: "当前 07:30；目标 07:00（待对齐，18 品牌 × 7 来源）" },
+    { key: "daily-report", label: "④ AI 日报", schedule: "30 7 * * *", target: "30 7 * * *", source: "Vercel Cron", note: "每日 07:30 北京（本次新增，已对齐）" },
+  ] as const;
+
+  private getLatestReportDate(): string | null {
+    const dir = path.join(process.cwd(), "public", "daily-reports");
+    if (!fs.existsSync(dir)) return null;
+    const files = fs.readdirSync(dir).filter((f) => f.includes("跨境套利日报") && f.endsWith(".md"));
+    if (files.length === 0) return null;
+    files.sort();
+    return files[files.length - 1].replace("_跨境套利日报.md", "");
+  }
+
+  /**
+   * 调度总览大屏：聚合智能体运行状态、每日流水线、数据层统计、最新日报。
+   * 这是「智能体群调度中心」每天看的核心视图。
+   */
+  async getSchedulingOverview(): Promise<Record<string, unknown>> {
+    const [agentStatus, rawBySource, lastRaw, productTotal, productActive, benchmarkCount, intlCount] = await Promise.all([
+      getAgentStatus({ includeHistory: true, historyLimit: 3 }),
+      prisma.rawListing.groupBy({ by: ["source"], _count: { _all: true } }),
+      prisma.rawListing.findFirst({ orderBy: { scrapedAt: "desc" }, select: { scrapedAt: true } }),
+      prisma.product.count(),
+      prisma.product.count({ where: { status: "active" } }),
+      prisma.brandBenchmark.count({ where: { isActive: true } }),
+      prisma.internationalPrice.count(),
+    ]);
+
+    const agentMap = new Map((agentStatus.agents as any[]).map((a) => [a.agentId, a]));
+
+    // 流水线：叠加各段最近运行
+    const pipeline = this.PIPELINE.map((stage) => {
+      const agent = agentMap.get(stage.key);
+      return {
+        ...stage,
+        lastRunAt: agent?.lastRunAt || null,
+        lastRunStatus: agent?.lastRunStatus || null,
+        running: agent?.recentRuns?.[0]?.status === "running" || false,
+      };
+    });
+
+    // 数据层统计
+    let domestic = 0;
+    let intl = 0;
+    for (const r of rawBySource) {
+      if (r.source === "agriaffaires") intl += r._count._all;
+      else domestic += r._count._all;
+    }
+    const dataLayer = {
+      rawListing: { total: domestic + intl, domestic, intl, lastScrapedAt: lastRaw?.scrapedAt?.toISOString() || null },
+      product: { total: productTotal, active: productActive },
+      brandBenchmark: { active: benchmarkCount },
+      internationalPrice: { count: intlCount },
+    };
+
+    return {
+      ok: true,
+      view: "scheduling-overview",
+      generatedAt: new Date().toISOString(),
+      agents: agentStatus.agents,
+      agentSummary: agentStatus.summary,
+      pipeline,
+      dataLayer,
+      latestDailyReport: this.getLatestReportDate(),
+    };
   }
 }
 

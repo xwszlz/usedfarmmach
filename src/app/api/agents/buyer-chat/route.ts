@@ -7,6 +7,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { buyerChatAgent } from "@/lib/agents/buyer-chat/agent";
 import { ChatLocale } from "@/lib/agents/buyer-chat/types";
+import { mpOrWebGuard } from "@/lib/mp-auth";
 
 const chatInputSchema = z.object({
   sessionId: z.string().optional(),
@@ -18,6 +19,8 @@ const chatInputSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const guard = mpOrWebGuard(request);
+  if (guard) return NextResponse.json(guard.body, { status: guard.status });
   try {
     const body = await request.json();
     const parsed = chatInputSchema.safeParse(body);

@@ -21,6 +21,7 @@ import { findCountryInText } from "@/lib/location-data";
 import { resolveBrand } from "@/lib/agents/seller-helper/resolve-brand";
 import { resolveCategory, getCategorySynonymPrompt } from "@/lib/agents/seller-helper/resolve-category";
 import { prisma } from "@/lib/db";
+import { mpOrWebGuard } from "@/lib/mp-auth";
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
 const OPENROUTER_BASE = "https://openrouter.ai/api/v1";
@@ -721,6 +722,8 @@ async function getCategoryPromptFragment(): Promise<string> {
 }
 
 export async function POST(request: NextRequest) {
+  const guard = mpOrWebGuard(request);
+  if (guard) return NextResponse.json(guard.body, { status: guard.status });
   try {
     const body = await request.json();
     const imageUrls: string[] = body.imageUrls || [];

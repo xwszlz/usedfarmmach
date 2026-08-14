@@ -13,7 +13,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as path from "path";
 import * as fs from "fs";
-import { executeSellerScout } from "@/lib/agents/seller-scout/execute";
+import { executeSellerScout, getSellerScoutStats } from "@/lib/agents/seller-scout/execute";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -44,6 +44,14 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   const repoRoot = process.cwd();
   const scriptsDir = path.join(repoRoot, "scripts");
+
+  // 回读 DB 真实统计（无论本地/云端都能看到当前采集量）
+  let dbStats: Awaited<ReturnType<typeof getSellerScoutStats>> | null = null;
+  try {
+    dbStats = await getSellerScoutStats();
+  } catch (e: any) {
+    dbStats = null; // DB 不可用时降级为仅返回脚本探测
+  }
 
   const domesticPy = fs.existsSync(path.join(scriptsDir, "seller_scout_domestic_scraper.py"));
   const intlPy = fs.existsSync(path.join(scriptsDir, "scrape_agriaffaires.py"));
@@ -79,5 +87,6 @@ export async function GET() {
       domestic: domesticStats,
       international: intlStats,
     },
+    dbStats,
   });
 }

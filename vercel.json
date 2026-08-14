@@ -12,6 +12,10 @@
     {
       "path": "/api/cron/benchmark?token=2234e4ead3e570c2aa3b0cd3747315367dc6040c42ae74e0749aae480cf2826e",
       "schedule": "30 23 * * *"
+    },
+    {
+      "path": "/api/cron/daily-report?token=2234e4ead3e570c2aa3b0cd3747315367dc6040c42ae74e0749aae480cf2826e",
+      "schedule": "30 23 * * *"
     }
   ]
 }
