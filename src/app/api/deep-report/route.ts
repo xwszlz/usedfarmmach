@@ -44,7 +44,8 @@ let _prisma: PrismaClient | null = null;
 let _prismaInit: Promise<PrismaClient | null> | null = null;
 
 async function getPrisma(): Promise<PrismaClient | null> {
-  if (!process.env.DATABASE_URL) return null;
+  const dbUrl = process.env.SITE === 'cn' ? process.env.DATABASE_URL_CN : process.env.DATABASE_URL;
+  if (!dbUrl) return null;
   if (_prisma) return _prisma;
   if (!_prismaInit) {
     _prismaInit = import("@/lib/db")
