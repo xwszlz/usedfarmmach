@@ -5,6 +5,7 @@ import { useLocale } from "next-intl";
 import Link from "next/link";
 import { useTr } from "@/lib/i18n-tr";
 import { AuctionLicenseBadge } from "@/components/auction/auction-license-badge";
+import { InternalTestBanner } from "@/components/auction/internal-test-banner";
 
 interface Bargain {
   id: string;
@@ -51,12 +52,48 @@ const CONDITION_MAP: Record<string, { zh: string; en: string }> = {
   poor: { zh: "较差", en: "Poor" },
 };
 
+/** 真实拍卖上线后的差异化能力预览（P1 内部演示用，取证后陆续开放） */
+const LIVE_PREVIEW_FEATURES: { icon: string; title: string; desc: string }[] = [
+  {
+    icon: "🤖",
+    title: "AI 智能保留价",
+    desc: "合法保留价机制，卖方净到手率 >95%，告别强制无底价对卖方的伤害。",
+  },
+  {
+    icon: "🔍",
+    title: "机况卡 2.0",
+    desc: "AI 验机 + 结构化车况报告，单台成本 <¥200，车况透明可追溯。",
+  },
+  {
+    icon: "⚡",
+    title: "T+1 即时结算",
+    desc: "全程中文 + 移动支付，落槌后次日结算，告别半个月账期。",
+  },
+  {
+    icon: "🌾",
+    title: "农业生态嵌入",
+    desc: "展会 / 地头展 / 合作社 / 以旧换新 / 补贴，渠道即流量即信任。",
+  },
+  {
+    icon: "📊",
+    title: "农业数据护城河",
+    desc: "竞价数据 → AI 基准价 → 保留价，越拍越准，形成数据飞轮。",
+  },
+  {
+    icon: "🎯",
+    title: "100% 农机垂直",
+    desc: "只做二手农机，不做工程 / 运输混拍，专业度即壁垒。",
+  },
+];
+
 export default function BargainsClient({
   auctionLicenseNo,
   site,
+  isAdmin,
 }: {
   auctionLicenseNo: string | null;
   site: "com" | "cn";
+  isAdmin: boolean;
 }) {
   const locale = useLocale();
   const isZh = locale === "zh";
@@ -148,6 +185,9 @@ export default function BargainsClient({
           )}
         </div>
       </div>
+
+      {/* 内部测试横幅：仅管理员可见，说明拍卖功能当前为 P1 占位（取证前勿宣传） */}
+      {isAdmin && <InternalTestBanner site={site} />}
 
       {/* 拍卖经营资质公示（S4，仅 .cn 且已取证时渲染） */}
       <AuctionLicenseBadge licenseNo={auctionLicenseNo} variant="channel" />
@@ -321,17 +361,40 @@ export default function BargainsClient({
           </div>
         </>
       ) : (
-        /* 真实拍卖占位（P1 骨架：合规公示 + 通道筹备说明，真实开拍在 P2） */
+        /* 真实拍卖占位（P1 骨架：合规公示 + 通道筹备说明 + 差异化预览，真实开拍在 P2） */
         <div className="max-w-7xl mx-auto px-6 md:px-12 py-8">
-          <div className="text-center py-20 bg-white rounded-2xl border border-gray-200">
-            <div className="text-5xl mb-4">🔨</div>
-            <p className="text-gray-700 text-lg font-semibold">{tr("真实拍卖通道")}</p>
-            <p className="text-gray-400 mt-2">
-              {tr("真实拍卖需持《拍卖经营批准证书》依法开展，通道筹备中")}
-            </p>
-            <p className="text-gray-400 mt-1">
-              {tr("正式开拍后，拍品将在此列出；当前仅作合规公示")}
-            </p>
+          <div className="bg-white rounded-2xl border border-gray-200 p-8 md:p-12">
+            {/* 顶部合规提示 */}
+            <div className="text-center pb-8 border-b border-gray-100">
+              <div className="text-5xl mb-4">🔨</div>
+              <p className="text-gray-800 text-2xl font-bold">{tr("真实拍卖通道")}</p>
+              <p className="text-gray-500 mt-3 max-w-2xl mx-auto leading-relaxed">
+                {tr("真实拍卖需持《拍卖经营批准证书》依法开展，通道筹备中")}
+              </p>
+              <p className="text-gray-400 mt-2 text-sm">
+                {tr("正式开拍后，拍品将在此列出；当前仅作合规公示与内部预览")}
+              </p>
+            </div>
+
+            {/* 上线后将有 — 差异化能力预览（内部演示） */}
+            <div className="pt-8">
+              <p className="text-center text-gray-700 font-semibold">{tr("上线后将有")}</p>
+              <p className="text-center text-gray-400 text-sm mt-1 mb-6">
+                {tr("以下差异化能力将在取得资质后陆续开放（内部预览）")}
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {LIVE_PREVIEW_FEATURES.map((f) => (
+                  <div
+                    key={f.title}
+                    className="rounded-xl border border-gray-200 p-5 transition-colors hover:border-blue-300 hover:bg-blue-50/40"
+                  >
+                    <div className="text-3xl mb-2">{f.icon}</div>
+                    <p className="font-semibold text-gray-800">{f.title}</p>
+                    <p className="text-gray-500 text-sm mt-1 leading-relaxed">{f.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}
