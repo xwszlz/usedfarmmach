@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Package, Settings, FileText, Tent, Boxes, Shield, Bot, Gavel, FileSignature, ShieldCheck, ScrollText, SlidersHorizontal, Activity, BarChart3 } from "lucide-react";
+import { LayoutDashboard, Users, Package, Settings, FileText, Tent, Boxes, Shield, Bot, Gavel, FileSignature, ShieldCheck, ScrollText, SlidersHorizontal, Activity, BarChart3, BadgeCheck } from "lucide-react";
 
 export function AdminSidebar({ role }: { role: string }) {
   const t = useTranslations("nav");
@@ -26,6 +26,7 @@ export function AdminSidebar({ role }: { role: string }) {
     { href: `/${locale}/admin/users`, label: "用户管理", icon: Users, hideForEditor: true },
     { href: `/${locale}/admin/products`, label: "产品管理", icon: Package, hideForEditor: false },
     { href: `/${locale}/admin/auction-bookings`, label: "询价报名管理", icon: Gavel, hideForEditor: false },
+    { href: `/${locale}/admin/auctioneers`, label: "拍卖师挂靠", icon: BadgeCheck, hideForEditor: true },
     { href: `/${locale}/admin/contract-templates`, label: "合同模板管理", icon: FileSignature, hideForEditor: false },
     { href: `/${locale}/seller/products`, label: "卖家产品", icon: FileText, hideForEditor: true },
     { href: `/${locale}/admin/expo`, label: "博览会管理", icon: Tent, hideForEditor: false },

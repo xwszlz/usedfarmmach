@@ -59,6 +59,7 @@ model User {
   auctionsAsSeller      Auction[]            @relation("AuctionSeller")
   auctionsAsWinner      Auction[]            @relation("AuctionWinner")
   auctionBids           Bid[]                @relation("AuctionBidder")
+  auctionRegistrations  AuctionRegistration[]
   expoBooths            Booth[]
   certifications        Certification[]
   creditTransactions    CreditTransaction[]
@@ -965,6 +966,7 @@ model Auction {
   deposit            Float               @default(0)
   startTime          DateTime?
   endTime            DateTime?
+  /// 状态机：BLIND 用 active/completed；LIVE 用 LIVE_DRAFT→LIVE_OPEN(报名+保证金)→LIVE_BIDDING(竞价)→LIVE_HAMMERED(落槌)→LIVE_SETTLED(结算)，流拍=LIVE_PASSED（P2 真实拍卖）
   status             String              @default("active")
   winnerId           String?
   winningBid         Float?
@@ -1001,6 +1003,7 @@ model Auction {
   winner             User?               @relation("AuctionWinner", fields: [winnerId], references: [id])
   bids               Bid[]
   inspectionBookings InspectionBooking[]
+  registrations      AuctionRegistration[]
 
   @@index([status, createdAt])
   @@index([sellerId])
@@ -2113,4 +2116,21 @@ model Settlement {
 
   @@index([status])
   @@index([auctionId])
+}
+/// P2 真实拍卖（LIVE）— 报名与保证金资格
+/// 竞买人报名某场 LIVE 拍卖并缴纳保证金后，eligible=true 方可出价。
+model AuctionRegistration {
+  id               String    @id @default(cuid())
+  auctionId        String
+  bidderId         String
+  depositAmount    Float? // 应缴保证金（取自 auction.deposit）
+  depositPaid      Boolean   @default(false)
+  depositConfirmedAt DateTime?
+  eligible         Boolean   @default(false) // 保证金确认后具备竞价资格
+  registeredAt     DateTime  @default(now())
+  auction          Auction   @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+  bidder           User      @relation(fields: [bidderId], references: [id], onDelete: Cascade)
+
+  @@unique([auctionId, bidderId])
+  @@index([auctionId, eligible])
 }
