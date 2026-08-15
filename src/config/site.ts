@@ -40,6 +40,12 @@ export interface SiteCompliance {
   icpNo: string | null;
   dataLocalized: boolean;
   serveDomesticUsers: boolean;
+  /**
+   * 拍卖经营批准证书编号（S4 公示模块）。
+   * 仅 .cn 读取环境变量 CN_AUCTION_LICENSE_NO；未取证时保持 null，
+   * 对应公示组件一律不渲染，避免"无照虚假公示"反向违规（2024-50号文）。
+   */
+  auctionLicenseNo: string | null;
 }
 
 export interface SiteConfigItem {
@@ -85,6 +91,7 @@ export const siteConfigMap: SiteConfigMap = {
       icpNo: null,
       dataLocalized: false,
       serveDomesticUsers: false,
+      auctionLicenseNo: null,
     },
     version: "1.0.0",
   },
@@ -112,6 +119,7 @@ export const siteConfigMap: SiteConfigMap = {
       icpNo: process.env.CN_ICP_NO ?? "冀ICP备2024053719号-4",
       dataLocalized: true,
       serveDomesticUsers: true,
+      auctionLicenseNo: process.env.CN_AUCTION_LICENSE_NO ?? null,
     },
     version: "1.0.0-cn",
   },

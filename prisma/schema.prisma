@@ -59,6 +59,7 @@ model User {
   auctionsAsSeller      Auction[]            @relation("AuctionSeller")
   auctionsAsWinner      Auction[]            @relation("AuctionWinner")
   auctionBids           Bid[]                @relation("AuctionBidder")
+  auctionRegistrations  AuctionRegistration[]
   expoBooths            Booth[]
   certifications        Certification[]
   creditTransactions    CreditTransaction[]
@@ -965,6 +966,7 @@ model Auction {
   deposit            Float               @default(0)
   startTime          DateTime?
   endTime            DateTime?
+  /// 状态机：BLIND 用 active/completed；LIVE 用 LIVE_DRAFT→LIVE_OPEN(报名+保证金)→LIVE_BIDDING(竞价)→LIVE_HAMMERED(落槌)→LIVE_SETTLED(结算)，流拍=LIVE_PASSED（P2 真实拍卖）
   status             String              @default("active")
   winnerId           String?
   winningBid         Float?
@@ -991,11 +993,17 @@ model Auction {
   knownFlaws         String?
   minParticipants    Int                 @default(3)
   paymentDeadline    DateTime?
+  /// S5 路径C：真实拍卖（LIVE）扩展字段
+  auctionMode        String               @default("BLIND") // BLIND 盲报 | LIVE 真实拍卖
+  hammerPrice        Float?
+  auctioneerId       String?
+  settlementId       String?              @unique
   product            Product             @relation(fields: [productId], references: [id])
   seller             User                @relation("AuctionSeller", fields: [sellerId], references: [id])
   winner             User?               @relation("AuctionWinner", fields: [winnerId], references: [id])
   bids               Bid[]
   inspectionBookings InspectionBooking[]
+  registrations      AuctionRegistration[]
 
   @@index([status, createdAt])
   @@index([sellerId])
@@ -1763,6 +1771,22 @@ model PartLegacy {
   @@map("part_legacy")
 }
 
+/// 整机 × 配件 精选配对层（97 台二手农机 × 适配配件，人工/脚本配对）
+/// 数据来源：deliverables/machine-parts-layer-2026-08-14.csv
+/// 无外键关系，避免灌数时因 id 不匹配报错；配件详情通过 partSource + partId 运行时关联 Part / PartLegacy
+model MachinePart {
+  id         String   @id @default(cuid())
+  machineId  String // 对应 Product.id（二手农机）
+  partId     String // 对应 Part.id 或 PartLegacy.id
+  partSource String // 'Part' | 'part_legacy'
+  matchType  String // 'brand' | 'brand_legacy' | 'model_fuzzy' ...
+  rank       Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@index([machineId])
+  @@index([partId])
+}
+
 /// 积分批次：每笔入账一个批次，支撑分类余额/扣减顺序/过期任务
 model CreditLot {
   id              String   @id @default(cuid())
@@ -2058,4 +2082,56 @@ model SiteStat {
   totalCategoryViews Int     @default(0)
   totalVideoPlays   Int      @default(0) // video + fieldVideo 播放合计
   updatedAt         DateTime @updatedAt
+}
+
+/// 拍卖师档案（路径C：持牌拍卖企业的拍卖师，支持挂靠）。
+/// userId 为逻辑外键（可空：外部挂靠拍卖师无平台账号），不声明 Prisma relation 以最小改动 User 核心模型。
+model Auctioneer {
+  id            String   @id @default(cuid())
+  userId        String?  // 关联平台用户（可空：外部挂靠拍卖师无平台账号）
+  licenseNo     String   @unique // 拍卖师执业证书编号
+  realName      String
+  phone         String?
+  isAffiliated  Boolean  @default(true) // 是否挂靠
+  hostedCount   Int      @default(0)   // 实际主持场次（合规留痕）
+  remark        String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([licenseNo])
+  @@index([isAffiliated])
+}
+
+/// 拍卖价款结算单（对接拍卖证清算，复用收付通结算层；P1 仅建表，P2 真实结算）。
+model Settlement {
+  id          String   @id @default(cuid())
+  auctionId   String   @unique
+  buyerPaid   Float    // 买受人实付（含佣金）
+  hammerPrice Float    // 落槌价（给委托人）
+  commission   Float    // 平台佣金
+  status      String   @default("PENDING") // PENDING | SETTLED | REFUNDED
+  settledAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+  @@index([auctionId])
+}
+
+/// P2 真实拍卖（LIVE）— 报名与保证金资格
+/// 竞买人报名某场 LIVE 拍卖并缴纳保证金后，eligible=true 方可出价。
+model AuctionRegistration {
+  id               String    @id @default(cuid())
+  auctionId        String
+  bidderId         String
+  depositAmount    Float? // 应缴保证金（取自 auction.deposit）
+  depositPaid      Boolean   @default(false)
+  depositConfirmedAt DateTime?
+  eligible         Boolean   @default(false) // 保证金确认后具备竞价资格
+  registeredAt     DateTime  @default(now())
+  auction          Auction   @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+  bidder           User      @relation(fields: [bidderId], references: [id], onDelete: Cascade)
+
+  @@unique([auctionId, bidderId])
+  @@index([auctionId, eligible])
 }
