@@ -16,12 +16,13 @@ type AuthPayload = ReturnType<typeof verifyToken>;
 
 export type Guard =
   | { ok: true; payload: AuthPayload | null }
-  | { error: NextResponse };
+  | { ok: false; error: NextResponse };
 
 /** 真实拍卖（LIVE）仅限 .cn 站点 */
 export function assertCnOnly(): Guard {
   if (!isCnSite()) {
     return {
+      ok: false,
       error: NextResponse.json({ success: false, error: "真实拍卖仅限 .cn 站点" }, { status: 403 }),
     };
   }
@@ -32,11 +33,11 @@ export function assertCnOnly(): Guard {
 export function assertUser(req: NextRequest): Guard {
   const token = getTokenFromHeaders(req.headers);
   if (!token) {
-    return { error: NextResponse.json({ success: false, error: "请先登录" }, { status: 401 }) };
+    return { ok: false, error: NextResponse.json({ success: false, error: "请先登录" }, { status: 401 }) };
   }
   const payload = verifyToken(token);
   if (!payload) {
-    return { error: NextResponse.json({ success: false, error: "Token 无效" }, { status: 401 }) };
+    return { ok: false, error: NextResponse.json({ success: false, error: "Token 无效" }, { status: 401 }) };
   }
   return { ok: true, payload };
 }
@@ -45,14 +46,15 @@ export function assertUser(req: NextRequest): Guard {
 export function assertAuctionAdmin(req: NextRequest): Guard {
   const token = getTokenFromHeaders(req.headers);
   if (!token) {
-    return { error: NextResponse.json({ success: false, error: "请先登录" }, { status: 401 }) };
+    return { ok: false, error: NextResponse.json({ success: false, error: "请先登录" }, { status: 401 }) };
   }
   const payload = verifyToken(token);
   if (!payload) {
-    return { error: NextResponse.json({ success: false, error: "Token 无效" }, { status: 401 }) };
+    return { ok: false, error: NextResponse.json({ success: false, error: "Token 无效" }, { status: 401 }) };
   }
   if (payload.role !== "admin" && payload.role !== "super_admin") {
     return {
+      ok: false,
       error: NextResponse.json({ success: false, error: "权限不足（需管理员）" }, { status: 403 }),
     };
   }
