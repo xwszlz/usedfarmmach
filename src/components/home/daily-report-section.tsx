@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { TrendingUp, ArrowRight, Globe, Newspaper } from "lucide-react";
+import { TrendingUp, ArrowRight, Globe, Newspaper, BarChart3 } from "lucide-react";
 import { getLocalizedData } from "@/config/daily-report-home";
 
 const LABELS: Record<string, {
@@ -16,6 +16,15 @@ const LABELS: Record<string, {
   margin: string;
   viewDetail: string;
   viewAll: string;
+  dataSituationTitle: string;
+  dataSituationSubtitle: string;
+  viewDetailFull: string;
+  benchmarkIndex: string;
+  domesticPending: string;
+  statBenchmark: string;
+  statArbitrage: string;
+  statDomestic: string;
+  statSample: string;
 }> = {
   zh: {
     title: "跨境套利日报",
@@ -28,6 +37,15 @@ const LABELS: Record<string, {
     margin: "毛利率",
     viewDetail: "查看详情",
     viewAll: "查看全部",
+    dataSituationTitle: "每日数据态势",
+    dataSituationSubtitle: "全球基准价指数 · 跨境套利匹配 · 国内卖方采集",
+    viewDetailFull: "查看完整看板",
+    benchmarkIndex: "全球基准价指数（样本）",
+    domesticPending: "国内卖方采集：采集任务部署中，数据待 ECS 跑通后自动入库",
+    statBenchmark: "基准价指数",
+    statArbitrage: "跨境套利匹配",
+    statDomestic: "国内采集挂牌",
+    statSample: "有效样本量",
   },
   en: {
     title: "Cross-Border Arbitrage Daily",
@@ -40,6 +58,15 @@ const LABELS: Record<string, {
     margin: "Margin",
     viewDetail: "View Details",
     viewAll: "View all",
+    dataSituationTitle: "Daily Data Snapshot",
+    dataSituationSubtitle: "Global benchmark · Cross-border arbitrage · Domestic listings",
+    viewDetailFull: "View full dashboard",
+    benchmarkIndex: "Global Benchmark Index (sample)",
+    domesticPending: "Domestic seller scraping: deployment pending, data auto-ingests after ECS run",
+    statBenchmark: "Benchmark",
+    statArbitrage: "Arbitrage Matches",
+    statDomestic: "Domestic Listings",
+    statSample: "Valid Samples",
   },
   ru: {
     title: "Ежедневный арбитраж",
@@ -52,6 +79,15 @@ const LABELS: Record<string, {
     margin: "Маржа",
     viewDetail: "Подробнее",
     viewAll: "Все",
+    dataSituationTitle: "Ежедневный снимок данных",
+    dataSituationSubtitle: "Мировой бенчмарк · Арбитраж · Внутренние объявления",
+    viewDetailFull: "Открыть дашборд",
+    benchmarkIndex: "Мировой бенчмарк (выборка)",
+    domesticPending: "Сбор внутренних объявлений: развертывание, данные появятся после запуска ECS",
+    statBenchmark: "Бенчмарк",
+    statArbitrage: "Арбитраж",
+    statDomestic: "Внутр. объявл.",
+    statSample: "Выборка",
   },
 };
 
@@ -72,6 +108,16 @@ interface ArticleItem {
   title: string;
   date: string;
   category: string;
+}
+
+// 数据态势迷你统计卡（首页新增区块内用）
+function StatCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col rounded-lg border border-indigo-100 bg-white px-4 py-3">
+      <span className="text-xs text-gray-400">{label}</span>
+      <span className="text-lg font-bold text-indigo-700">{value}</span>
+    </div>
+  );
 }
 
 // 行业资讯 - 全部动态拉取最新3篇（固定文章在博客页面通过 isPinned 置顶）
@@ -128,6 +174,31 @@ export function DailyReportSection({ locale, initialArticles = [] }: DailyReport
   }, [locale]);
 
   const intelItems = liveIntel ?? data.marketIntel.map((m) => ({ icon: m.icon, text: m.text }));
+
+  // 新增：从日报总览 API 读取「数据态势」板块（基准价/套利/国内采集）；失败或关闭则不渲染
+  const [benchmarkSection, setBenchmarkSection] = useState<{
+    available: boolean;
+    enabled: boolean;
+    summary?: {
+      benchmarkCount: number;
+      arbitrageCount: number;
+      domesticCount: number;
+      sampleTotal: number;
+      freshCount: number;
+    };
+    benchmark?: Array<{ id: string; brand: string; brandNameZh?: string | null; model: string; priceCny?: number | null }>;
+  } | null>(null);
+
+  useEffect(() => {
+    fetch(`/api/daily-reports`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.benchmark && d.benchmark.enabled) {
+          setBenchmarkSection(d.benchmark);
+        }
+      })
+      .catch(() => setBenchmarkSection(null));
+  }, []);
 
   // 行业资讯 - 优先用 SSR 传入的 initialArticles，然后客户端 fetch 覆盖更新
   const buildArticleItems = (rawList: any[]) =>
@@ -323,6 +394,53 @@ export function DailyReportSection({ locale, initialArticles = [] }: DailyReport
             </div>
           </div>
         </div>
+
+        {/* ============ 新增区块：每日数据态势（纯追加，失败优雅降级为空）============ */}
+        {benchmarkSection && benchmarkSection.available && (
+          <div className="mt-10 rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50/50 to-white p-6 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <BarChart3 className="h-6 w-6 text-indigo-600" />
+                <h3 className="text-xl font-bold text-gray-900">{l.dataSituationTitle}</h3>
+              </div>
+              <Link
+                href={`/${locale}/benchmark`}
+                className="text-xs font-medium text-indigo-600 hover:text-indigo-700 flex items-center gap-0.5"
+              >
+                {l.viewDetailFull}
+                <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+            <p className="mb-5 text-sm text-gray-500">{l.dataSituationSubtitle}</p>
+
+            <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <StatCard label={l.statBenchmark} value={String(benchmarkSection.summary?.benchmarkCount ?? 0)} />
+              <StatCard label={l.statArbitrage} value={String(benchmarkSection.summary?.arbitrageCount ?? 0)} />
+              <StatCard label={l.statDomestic} value={String(benchmarkSection.summary?.domesticCount ?? 0)} />
+              <StatCard label={l.statSample} value={String(benchmarkSection.summary?.sampleTotal ?? 0)} />
+            </div>
+
+            <div className="overflow-hidden rounded-lg border border-indigo-100">
+              <div className="bg-indigo-50/60 px-4 py-2 text-xs font-semibold text-indigo-700">
+                {l.benchmarkIndex}
+              </div>
+              <ul className="divide-y divide-indigo-50">
+                {(benchmarkSection.benchmark || []).slice(0, 5).map((b) => (
+                  <li key={b.id} className="flex items-center justify-between px-4 py-2 text-sm">
+                    <span className="truncate text-gray-700">{b.brandNameZh || b.brand} {b.model}</span>
+                    <span className="ml-3 flex-shrink-0 font-semibold text-gray-900">
+                      ¥{Math.round(b.priceCny || 0).toLocaleString()}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {benchmarkSection.summary?.domesticCount === 0 && (
+              <p className="mt-3 text-xs text-gray-400">{l.domesticPending}</p>
+            )}
+          </div>
+        )}
       </div>
     </section>
   );

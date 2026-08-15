@@ -267,6 +267,7 @@ export default async function ProductDetailPage({
           {/* ================================================================ */}
           <SpecificationTable
             brandName={brandName}
+            brandOfficialWebsite={product.brand?.officialWebsite ?? null}
             modelName={product.modelName}
             year={product.year}
             workingHours={product.workingHours ?? null}
@@ -538,7 +539,10 @@ export default async function ProductDetailPage({
 
       {/* Compatible Parts (适配零部件) — 按品牌运行时匹配 */}
       <div className="mt-6">
-        <CompatiblePartsSection productId={product.id} locale={locale} />
+        <CompatiblePartsSection
+          productId={product.id}
+          locale={locale}
+        />
       </div>
 
       {/* Inspection Report (设备检验报告) */}

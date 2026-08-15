@@ -2117,7 +2117,6 @@ model Settlement {
   @@index([status])
   @@index([auctionId])
 }
-
 /// P2 真实拍卖（LIVE）— 报名与保证金资格
 /// 竞买人报名某场 LIVE 拍卖并缴纳保证金后，eligible=true 方可出价。
 model AuctionRegistration {

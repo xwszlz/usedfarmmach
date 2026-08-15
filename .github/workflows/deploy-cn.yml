@@ -17,7 +17,7 @@ jobs:
     # （ECS 主机 /opt/cn/.env.cn 的 DATABASE_URL_CN，host=cn-postgres）完全分离。
     services:
       postgres:
-        image: postgres:16-alpine
+        image: postgres:17-alpine
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
