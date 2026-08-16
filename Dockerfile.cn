@@ -76,7 +76,8 @@ RUN npm install -g prisma@5.14.0
 
 # #1 卖方采集（境内 ECS 运行）：python3 + requests 供爬虫在容器内直接跑；
 # 脚本随镜像打包，供 cn-scout sidecar 的 crond 调用（详见 docker-compose.yml）。
-RUN apk add --no-cache python3 py3-requests
+# curl 作为 requests 被 WAF（TLS 指纹校验）拦截时的兜底抓取器。
+RUN apk add --no-cache python3 py3-requests curl
 
 # 非 root 用户运行（安全最佳实践）
 RUN addgroup --system --gid 1001 nodejs && \
