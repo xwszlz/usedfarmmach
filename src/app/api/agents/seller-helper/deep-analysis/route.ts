@@ -12,7 +12,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
-import { calculateValuation } from "@/lib/valuation/formulas";
+import { calculateValuationV4 } from "@/lib/valuation/formulas";
+import { CATEGORY_BASE_PRICES, MODEL_BASE_PRICES } from "@/lib/valuation/brand-data";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120; // 豆包深度分析需要更长时间
@@ -124,6 +125,34 @@ const INTERNATIONAL_ANALYSIS_PROMPT = `你是一位拥有20年经验的资深二
 2. 报告内容要详实、专业、有深度，至少2000字
 3. **市场价格请严格以「估值引擎参考数据」为准**，在此基础上分析影响因素，不要自行编造价格
 4. FOB价格需考虑设备状况、年份和出口物流成本`;
+
+/**
+ * 根据型号名推断品类（用于前端未传 category 时的兜底）
+ */
+function inferCategoryFromModelName(modelName: string): string | undefined {
+  if (!modelName) return undefined;
+
+  // 1. 精确/子串匹配 MODEL_BASE_PRICES，按 key 长度降序
+  const sortedEntries = Object.entries(MODEL_BASE_PRICES).sort(
+    (a, b) => b[0].length - a[0].length
+  );
+  for (const [key, val] of sortedEntries) {
+    if (modelName === key || modelName.includes(key)) {
+      return val.category;
+    }
+  }
+
+  // 2. 匹配 CATEGORY_BASE_PRICES 的 key
+  for (const [key] of Object.entries(CATEGORY_BASE_PRICES).sort(
+    (a, b) => b[0].length - a[0].length
+  )) {
+    if (modelName.includes(key)) {
+      return key;
+    }
+  }
+
+  return undefined;
+}
 
 /**
  * 国内农机深度分析 Prompt — 补贴参考价、国内市场行情
@@ -428,6 +457,7 @@ export async function POST(request: NextRequest) {
     const videoUrls: string[] = body.videoUrls || [];
     const isChineseBrand = body.isChineseBrand as boolean | undefined;
     const productName = body.productName as string | undefined;
+    const categoryName = body.category as string | undefined;
     const brandName = body.brandName as string | undefined;
     const year = body.year as number | undefined;
     const enginePower = body.enginePower as string | undefined;
@@ -458,20 +488,25 @@ export async function POST(request: NextRequest) {
     let valuationPrice: number | null = null;
     try {
       const enginePowerNum = enginePower ? parseInt(String(enginePower).replace(/[^0-9]/g, "")) : undefined;
+
+      // 修复：category 与 modelName 分离。优先用前端传入的 category，否则从型号推断。
+      const modelName = productName || "";
+      const category = categoryName || inferCategoryFromModelName(modelName) || "青储机";
+
       const valuationInput: any = {
         brand: brandName || "未知品牌",
-        modelName: productName || "",
-        category: productName || "拖拉机",
+        modelName,
+        category,
         year: year || 2020,
         enginePower: enginePowerNum,
         condition: "good",
       };
-      const valuationResult = calculateValuation(valuationInput);
+      const valuationResult = await calculateValuationV4(valuationInput);
       valuationPrice = valuationResult.estimatedValue;
-      valuationContext = `\n\n⚠️ 估值引擎参考数据（请严格以此为基础撰写价格分析，不要自行编造价格）：\n- AI二手参考估值：¥${valuationResult.estimatedValue.toLocaleString()}\n- 估值区间：¥${valuationResult.priceRange.low.toLocaleString()} - ¥${valuationResult.priceRange.high.toLocaleString()}\n- 新机基准价：¥${valuationResult.basePrice.toLocaleString()}\n- 品牌系数：${valuationResult.brandFactor.toFixed(2)}\n- 年份折旧：${Math.round((1 - valuationResult.yearFactor) * 100)}%\n- 估值引擎版本：${valuationResult.version}`;
+      valuationContext = `\n\n⚠️ 估值引擎参考数据（请严格以此为基础撰写价格分析，不要自行编造价格）：\n- AI二手参考估值：¥${valuationResult.estimatedValue.toLocaleString()}\n- 估值区间：¥${valuationResult.priceRange.low.toLocaleString()} - ¥${valuationResult.priceRange.high.toLocaleString()}\n- 新机基准价：¥${valuationResult.basePrice.toLocaleString()}\n- 品牌系数：${valuationResult.brandFactor.toFixed(2)}\n- 年份折旧：${Math.round((1 - valuationResult.yearFactor) * 100)}%\n- 规格因子：${(valuationResult.specFactor ?? 1.0).toFixed(2)}\n- 估值引擎版本：${valuationResult.version}`;
       const dataSourceDesc = valuationResult.details.find((d: any) => d.label === "基准价来源")?.description || "估值引擎";
       valuationContext += `\n- 数据来源：${dataSourceDesc}`;
-      console.log(`[DeepAnalysis] 估值引擎成功: ¥${valuationResult.estimatedValue.toLocaleString()}`);
+      console.log(`[DeepAnalysis] 估值引擎成功: ¥${valuationResult.estimatedValue.toLocaleString()} (category=${category}, model=${modelName})`);
     } catch (e) {
       console.warn("[DeepAnalysis] 估值引擎调用失败:", e);
     }

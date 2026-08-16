@@ -429,7 +429,8 @@ function DeepAnalysisSection({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           brandName: prefillData.brand,
-          productName: prefillData.category,
+          productName: prefillData.category ? `${prefillData.brand} ${prefillData.category}` : undefined,
+          category: prefillData.category,
           year: prefillData.year,
           enginePower: prefillData.horsepower ? String(prefillData.horsepower) : undefined,
           isChineseBrand: true,

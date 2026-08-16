@@ -201,13 +201,12 @@ export function DeepReportSection({
         setReportHtml(data.data.reportHtml);
         setStep("done");
       } else {
-        // Fallback to mock report
-        setReportHtml(generateMockReport(selectedTier));
-        setStep("done");
+        setError(data.error || (isZh ? "报告生成失败，请重试" : "Failed to generate report"));
+        setStep("select");
       }
     } catch {
-      setReportHtml(generateMockReport(selectedTier));
-      setStep("done");
+      setError(isZh ? "网络错误，请重试" : "Network error, please retry");
+      setStep("select");
     }
   };
 
@@ -268,9 +267,17 @@ export function DeepReportSection({
 
       <div className="p-4">
         {error && (
-          <div className="mb-3 flex items-center gap-2 rounded-lg bg-red-50 p-2.5 text-xs text-red-600">
-            <AlertCircle className="h-4 w-4 shrink-0" />
-            {error}
+          <div className="mb-3 flex items-center justify-between rounded-lg bg-red-50 p-2.5 text-xs text-red-600">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              {error}
+            </div>
+            <button
+              onClick={() => setError(null)}
+              className="rounded bg-red-100 px-2 py-1 font-medium hover:bg-red-200"
+            >
+              {isZh ? "重试" : "Retry"}
+            </button>
           </div>
         )}
 
@@ -515,130 +522,4 @@ export function DeepReportSection({
       </div>
     </div>
   );
-}
-
-// ============================================================
-// Mock report generator (for demo/testing)
-// ============================================================
-
-function generateMockReport(tier: Tier): string {
-  const tierName = TIERS[tier].name;
-  const features = TIERS[tier].features;
-
-  let sections = `
-    <div style="border-bottom: 2px solid #7C3AED; padding-bottom: 8px; margin-bottom: 16px;">
-      <h2 style="margin: 0; color: #7C3AED; font-size: 18px;">深度估值报告 · ${tierName}</h2>
-      <p style="margin: 4px 0 0; color: #999; font-size: 12px;">生成时间: ${new Date().toLocaleString("zh-CN")} | 报告编号: DR${Date.now()}</p>
-    </div>
-  `;
-
-  // Section 1: Market comparison (all tiers)
-  sections += `
-    <h3 style="color: #333; font-size: 15px; margin: 16px 0 8px;">一、市场对比分析</h3>
-    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-      <tr style="background: #F3F4F6;">
-        <th style="padding: 6px; text-align: left; border: 1px solid #E5E7EB;">对比项</th>
-        <th style="padding: 6px; text-align: right; border: 1px solid #E5E7EB;">价格</th>
-        <th style="padding: 6px; text-align: right; border: 1px solid #E5E7EB;">与估值差异</th>
-      </tr>
-      <tr>
-        <td style="padding: 6px; border: 1px solid #E5E7EB;">AI智能估值</td>
-        <td style="padding: 6px; text-align: right; border: 1px solid #E5E7EB; color: #7C3AED; font-weight: bold;">¥101,342</td>
-        <td style="padding: 6px; text-align: right; border: 1px solid #E5E7EB;">基准</td>
-      </tr>
-      <tr>
-        <td style="padding: 6px; border: 1px solid #E5E7EB;">同型号在售均价</td>
-        <td style="padding: 6px; text-align: right; border: 1px solid #E5E7EB;">¥108,500</td>
-        <td style="padding: 6px; text-align: right; border: 1px solid #E5E7EB; color: #10B981;">+7.0%</td>
-      </tr>
-      <tr>
-        <td style="padding: 6px; border: 1px solid #E5E7EB;">近3月成交均价</td>
-        <td style="padding: 6px; text-align: right; border: 1px solid #E5E7EB;">¥98,200</td>
-        <td style="padding: 6px; text-align: right; border: 1px solid #E5E7EB; color: #EF4444;">-3.1%</td>
-      </tr>
-    </table>
-  `;
-
-  // Section 2: Valuation breakdown (all tiers)
-  sections += `
-    <h3 style="color: #333; font-size: 15px; margin: 16px 0 8px;">二、估值依据详细拆解</h3>
-    <div style="background: #F9FAFB; border-radius: 8px; padding: 12px; font-size: 13px;">
-      <div style="margin-bottom: 6px;"><strong>估值公式：</strong>新机基准价 × 折旧系数 × 品牌溢价 × 地区修正 × 补贴趋势</div>
-      <div style="margin-bottom: 4px;">新机基准价: ¥165,000 (马力回归: ¥1,240/HP × 155HP - ¥27,800)</div>
-      <div style="margin-bottom: 4px;">折旧系数: 0.85 (5年, 年均7-8%)</div>
-      <div style="margin-bottom: 4px;">品牌溢价: 1.50 (东方红-高溢价品牌)</div>
-      <div style="margin-bottom: 4px;">地区修正: 0.95 (河北地区)</div>
-      <div style="margin-bottom: 4px;">补贴趋势: 0.97 (2025年补贴退坡29.3%)</div>
-      <div style="border-top: 1px solid #E5E7EB; margin-top: 6px; padding-top: 6px;">
-        <strong>最终估值: ¥101,342</strong> (置信度87%)
-      </div>
-    </div>
-  `;
-
-  // Section 3: Trend analysis (standard + premium)
-  if (tier === "standard" || tier === "premium") {
-    sections += `
-      <h3 style="color: #333; font-size: 15px; margin: 16px 0 8px;">三、价格趋势分析</h3>
-      <div style="background: #F9FAFB; border-radius: 8px; padding: 12px; font-size: 13px;">
-        <p style="margin: 0 0 6px;"><strong>品牌趋势：</strong>东方红品牌近2年二手市场价格上涨3.2%，主要受新机涨价和补贴退坡驱动。</p>
-        <p style="margin: 0 0 6px;"><strong>品类趋势：</strong>轮式拖拉机155马力段属于中大马力区间，市场需求稳定增长，年均涨幅2-4%。</p>
-        <p style="margin: 0 0 6px;"><strong>补贴退坡影响：</strong>2022年中央补贴¥14,134 → 2025年¥9,991（下降29.3%），新机实际购入成本上升，利好二手市场。</p>
-        <p style="margin: 0;"><strong>季节性：</strong>3-5月春耕前为需求高峰，建议在1-2月淡季购入可获更优价格。</p>
-      </div>
-    `;
-  }
-
-  // Section 4: Deep buying advice (standard + premium)
-  if (tier === "standard" || tier === "premium") {
-    sections += `
-      <h3 style="color: #333; font-size: 15px; margin: 16px 0 8px;">四、深度购买建议</h3>
-      <div style="background: #FEF3C7; border-radius: 8px; padding: 12px; font-size: 13px;">
-        <p style="margin: 0 0 6px;"><strong>购买评级：可议价</strong></p>
-        <p style="margin: 0 0 6px;"><strong>合理价格区间：</strong>¥96,000 - ¥106,000</p>
-        <p style="margin: 0 0 6px;"><strong>建议砍价目标：</strong>¥101,000以内（当前卖家报价偏高18.4%）</p>
-        <p style="margin: 0 0 6px;"><strong>最佳购买时机：</strong>1-2月淡季，卖家资金压力大时议价空间更大</p>
-        <p style="margin: 0 0 6px;"><strong>议价策略：</strong>以AI估值¥101,342为锚点，重点强调补贴退坡后新机涨价对二手的传导效应已部分体现</p>
-        <p style="margin: 0;"><strong>风险评估：</strong>低风险。东方红品牌保值率高（品牌系数1.50），5年后残值预计¥68,000-75,000</p>
-      </div>
-    `;
-  }
-
-  // Section 5: Export arbitrage (premium only)
-  if (tier === "premium") {
-    sections += `
-      <h3 style="color: #333; font-size: 15px; margin: 16px 0 8px;">五、出口套利分析</h3>
-      <div style="background: #ECFDF5; border-radius: 8px; padding: 12px; font-size: 13px;">
-        <p style="margin: 0 0 6px;"><strong>中美价差：</strong>同款美国市场均价 $18,500 (约¥133,200)，高于国内估值31.5%</p>
-        <p style="margin: 0 0 6px;"><strong>出口可行性：</strong>可行。中国产拖拉机出口至东南亚/非洲/中亚有显著价格优势</p>
-        <p style="margin: 0 0 6px;"><strong>预估利润：</strong>到岸成本¥115,000 → 目标国售价¥138,000 → 净利润¥23,000 (利润率20%)</p>
-        <p style="margin: 0;"><strong>建议：</strong>如以¥101,342购入，出口至乌兹别克斯坦/肯尼亚利润空间最大</p>
-      </div>
-      <h3 style="color: #333; font-size: 15px; margin: 16px 0 8px;">六、维修成本预估</h3>
-      <div style="background: #F9FAFB; border-radius: 8px; padding: 12px; font-size: 13px;">
-        <p style="margin: 0 0 6px;"><strong>常见故障：</strong>液压系统密封件老化（5年机龄高发）、离合器片磨损</p>
-        <p style="margin: 0 0 6px;"><strong>年均维修费：</strong>¥3,000-5,000（正常使用强度）</p>
-        <p style="margin: 0 0 6px;"><strong>大修周期：</strong>每2000-3000工时一次，费用约¥8,000-15,000</p>
-        <p style="margin: 0;"><strong>建议：</strong>购入后建议预留¥5,000维修基金</p>
-      </div>
-      <h3 style="color: #333; font-size: 15px; margin: 16px 0 8px;">七、投资回报分析</h3>
-      <div style="background: #F9FAFB; border-radius: 8px; padding: 12px; font-size: 13px;">
-        <p style="margin: 0 0 6px;"><strong>5年残值率：</strong>67-72%（东方红品牌保值率优于行业均值）</p>
-        <p style="margin: 0 0 6px;"><strong>年化贬值：</strong>6-7%（低于行业8%均值）</p>
-        <p style="margin: 0 0 6px;"><strong>持有成本：</strong>年维修¥4,000 + 年贬值¥7,000 = 年持有¥11,000</p>
-        <p style="margin: 0;"><strong>投资评级：</strong>稳健型。适合自用+转售双需求</p>
-      </div>
-    `;
-  }
-
-  // Footer
-  sections += `
-    <div style="border-top: 1px solid #E5E7EB; margin-top: 20px; padding-top: 12px;">
-      <p style="margin: 0; color: #999; font-size: 11px;">
-        免责声明：本报告由AI估值引擎基于市场模型自动生成，仅供决策参考，不构成投资或交易建议。
-        实际成交价格受车况、市场供需、谈判等多重因素影响。报告编号: DR${Date.now()} | ${tierName}
-      </p>
-    </div>
-  `;
-
-  return sections;
 }
