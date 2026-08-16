@@ -204,4 +204,17 @@ echo "==> reload nginx（应用最新证书 / 配置）"
 docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T nginx nginx -s reload || \
   docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" restart nginx
 
+# ------------------------------------------------------------
+# 部署后清理（best-effort，失败不阻塞部署结果）
+# 背景：每次部署从 OSS 下载一个 ~229MB 的镜像 tarball 到 /opt/cn/images，
+#       从不清理会导致磁盘被历史版本堆积（曾实测堆积 43 个 / 8.5GB）。
+# 策略：保留最新 3 个 tarball 作为回滚点，删除更旧的；同时回收 docker
+#       悬空镜像（docker load 同名 tag 会留下 <none>:<none> 悬空层）。
+# ------------------------------------------------------------
+echo "==> 清理旧镜像 tarball（保留最新 3 个）"
+ls -1t "$IMAGE_DIR"/*.tar.gz 2>/dev/null | tail -n +4 | xargs -r rm -f || true
+
+echo "==> 回收 Docker 悬空镜像"
+docker image prune -f || true
+
 echo "==> 部署完成：$CN_IMAGE（$CN_IMAGE_FILE）"
