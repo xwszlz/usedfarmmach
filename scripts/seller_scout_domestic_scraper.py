@@ -48,6 +48,11 @@ from urllib.parse import quote, urljoin, urlparse
 # 强制直连、绝不使用代理；curl 兜底也用 --noproxy '*'。
 PROXY = {}  # 永远空：不读取/不使用任何代理
 
+# 住宅代理（可选）：设了则所有请求走该代理，绕过"云IP被国内站点WAF/反爬封禁"。
+# 例：RESIDENTIAL_PROXY = "http://user:pass@cn-residential-proxy:port"
+# 留空=境内直连（当前阿里云ECS直连被各平台WAF及搜索引擎反爬软封禁，需配此代理才出数）。
+RESIDENTIAL_PROXY = os.environ.get("RESIDENTIAL_PROXY", "")
+
 BROWSER_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
@@ -111,30 +116,33 @@ def _is_blocked(html: str) -> bool:
 
 
 def fetch_html(url: str, sess=None, timeout: int = 25) -> str | None:
-    """境内直连抓取。先试 requests（可复用 sess 携带 cookie）；被 WAF 拦截
-    （TLS 指纹/UA 校验）则兜底 curl（带 cookie jar）。返回 HTML 文本；失败返回 None。"""
-    # 1) requests（浏览器头 + 无代理 + 复用 cookie）
+    """抓取。默认境内直连（无代理）；若设了 RESIDENTIAL_PROXY 则走住宅代理
+    （绕过云IP被WAF/反爬封禁）。先试 requests，失败兜底 curl。返回文本或 None。"""
     get = sess.get if sess else requests.get
+    # 住宅代理：解决"阿里云等云IP被国内站点WAF/反爬软封禁"问题
+    proxies = {"http": RESIDENTIAL_PROXY, "https": RESIDENTIAL_PROXY} if RESIDENTIAL_PROXY else {"http": None, "https": None}
     try:
-        r = get(url, headers=BROWSER_HEADERS, timeout=timeout,
-                proxies={"http": None, "https": None}, verify=True)
+        r = get(url, headers=BROWSER_HEADERS, timeout=timeout, proxies=proxies, verify=True)
         if r.status_code == 200 and not _is_blocked(r.text) and len(r.text) > 800:
             return r.text
     except requests.exceptions.SSLError:
         try:
-            r = get(url, headers=BROWSER_HEADERS, timeout=timeout,
-                    proxies={"http": None, "https": None}, verify=False)
+            r = get(url, headers=BROWSER_HEADERS, timeout=timeout, proxies=proxies, verify=False)
             if r.status_code == 200 and not _is_blocked(r.text) and len(r.text) > 800:
                 return r.text
         except Exception:
             pass
     except Exception:
         pass
-    # 2) curl 兜底（境内直连，--noproxy '*'；带 cookie jar 模拟会话）
+    # 2) curl 兜底
     try:
         ua = BROWSER_HEADERS["User-Agent"]
-        cmd = [
-            "curl", "-s", "--max-time", str(timeout), "--noproxy", "*",
+        cmd = ["curl", "-s", "--max-time", str(timeout)]
+        if RESIDENTIAL_PROXY:
+            cmd += ["-x", RESIDENTIAL_PROXY]          # 走住宅代理
+        else:
+            cmd += ["--noproxy", "*"]                 # 直连
+        cmd += [
             "-A", ua,
             "-H", "Accept: " + BROWSER_HEADERS["Accept"],
             "-H", "Accept-Language: " + BROWSER_HEADERS["Accept-Language"],
@@ -492,6 +500,11 @@ def main():
     if test_mode:
         print("🧪 TEST 模式：仅验证连通性，不写文件")
     print("=" * 60)
+
+    if RESIDENTIAL_PROXY:
+        print(f"🌐 住宅代理: 已启用 ({RESIDENTIAL_PROXY[:24]}...)")
+    else:
+        print("🌐 住宅代理: 未配置（阿里云直连，各平台WAF/反爬软封禁，预期 0 条）")
 
     sess = get_session()
     all_listings = []
