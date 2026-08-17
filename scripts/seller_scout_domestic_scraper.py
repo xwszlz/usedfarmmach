@@ -39,7 +39,7 @@ import os
 import sys
 import subprocess
 from datetime import datetime
-from urllib.parse import quote, urljoin
+from urllib.parse import quote, urljoin, urlparse
 
 # ── 配置 ──
 
@@ -387,25 +387,141 @@ def scrape_sifa(sess) -> list:
 
 
 # ═══════════════════════════════════════════════
+# 搜索引擎中介采集（绕开直连 WAF：只打 Bing/Baidu，解析结果摘要）
+# ═══════════════════════════════════════════════
+
+BING_SEARCH = "https://www.bing.com/search?q="
+BAIDU_SEARCH = "https://www.baidu.com/s?wd="
+
+_PROVINCES = ["北京", "天津", "上海", "重庆", "河北", "山西", "辽宁", "吉林", "黑龙江", "江苏",
+              "浙江", "安徽", "福建", "江西", "山东", "河南", "湖北", "湖南", "广东", "海南",
+              "四川", "贵州", "云南", "陕西", "甘肃", "青海", "台湾", "内蒙古", "广西", "西藏",
+              "宁夏", "新疆", "香港", "澳门"]
+
+
+def _clean(s):
+    if not s:
+        return ""
+    s = re.sub(r"<[^>]+>", " ", s)
+    s = re.sub(r"&[a-z]+;", " ", s)
+    return re.sub(r"\s+", " ", s).strip()
+
+
+def _parse_search_blocks(html: str):
+    """从搜索结果页解析 (title, snippet, url) 三元组，兼容 Bing/Baidu。"""
+    blocks = []
+    for b in re.findall(r'<li class="b_algo".*?</li>', html, re.DOTALL):
+        href = re.search(r'<h2[^>]*>\s*<a[^>]*href="([^"]+)"', b)
+        title = re.search(r'<h2[^>]*>\s*<a[^>]*>(.*?)</a>', b, re.DOTALL)
+        snip = re.search(r'<p[^>]*>(.*?)</p>', b, re.DOTALL)
+        if href and title:
+            blocks.append((_clean(title.group(1)), _clean(snip.group(1)) if snip else "", href.group(1)))
+    if blocks:
+        return blocks, "bing"
+    for b in re.findall(r'<div class="result[^"]*c-container[^"]*".*?</div>\s*</div>\s*</div>', html, re.DOTALL):
+        href = re.search(r'<h3[^>]*>\s*<a[^>]*href="([^"]+)"', b)
+        title = re.search(r'<h3[^>]*>\s*<a[^>]*>(.*?)</a>', b, re.DOTALL)
+        snip = re.search(r'class="c-abstract[^"]*">(.*?)</div>', b, re.DOTALL)
+        if href and title:
+            blocks.append((_clean(title.group(1)), _clean(snip.group(1)) if snip else "", href.group(1)))
+    if blocks:
+        return blocks, "baidu"
+    return [], "none"
+
+
+def extract_location(text: str) -> str:
+    """从文本提取省份/城市（best-effort）。"""
+    if not text:
+        return ""
+    for p in _PROVINCES:
+        if p in text:
+            m = re.search(re.escape(p) + r"(?:省|市|自治区)?\s*([\u4e00-\u9fa5]{2,6}?(?:市|区|县))?", text)
+            if m:
+                return (p + (m.group(1) or "")).strip()
+            return p
+    return ""
+
+
+def scrape_via_search(sess, brands=None, max_per_brand=10) -> list:
+    """搜索引擎中介采集：用 Bing/Baidu 搜 '二手农机 <品牌> 价格 出售 现货'，
+    解析结果摘要（标题+摘要+URL），从中提取品牌/价格/地区，绕开直连 WAF（只打搜索引擎，
+    不直连被封的平台域名）。返回记录列表（source=结果域名, sourceUrl=结果URL）。"""
+    results = []
+    brands = brands or BRANDS
+    seen_urls = set()
+    for b in brands:
+        q = f"二手农机 {b['zh']} 价格 出售 现货"
+        for base in (BING_SEARCH, BAIDU_SEARCH):
+            try:
+                html = fetch_html(base + quote(q), sess=sess, timeout=20)
+            except Exception:
+                html = None
+            if not html:
+                continue
+            blocks, engine = _parse_search_blocks(html)
+            for title, snip, url in blocks[:max_per_brand]:
+                if url in seen_urls:
+                    continue
+                seen_urls.add(url)
+                text = title + " " + snip
+                brand_zh = match_brand(text)
+                if not brand_zh:
+                    continue
+                price = normalize_price(title) or normalize_price(snip)
+                loc = extract_location(snip) or extract_location(title)
+                dom = urlparse(url).netloc
+                results.append(_mk(brand_zh, _clean(title), price, None, None, loc, None,
+                                   dom or "search", url))
+            if blocks:
+                break
+        time.sleep(0.5)
+    return results
+
+
+# ═══════════════════════════════════════════════
 # 主流程
 # ═══════════════════════════════════════════════
 
 def main():
-    # ── 命令行：--test 仅跑农机通并打印诊断（用于 ECS 上快速验证连通性）──
+    # ── 命令行：--test 仅跑连通性诊断（农机通直连 + 搜索引擎中介），不写文件 ──
     test_mode = "--test" in sys.argv
 
     print("=" * 60)
-    print(f"🚜 #1 卖方采集 — 国内卖家全平台爬虫 V3.1（ECS 境内 IP 直连）")
+    print(f"🚜 #1 卖方采集 — 国内卖家全平台爬虫 V3.2（搜索引擎中介版）")
     print(f"📅 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     if test_mode:
-        print("🧪 TEST 模式：仅验证农机通连通性，不写文件")
+        print("🧪 TEST 模式：仅验证连通性，不写文件")
     print("=" * 60)
 
     sess = get_session()
     all_listings = []
     platform_stats = {}
 
-    # ── 品牌无关平台（抓一次，内部按品牌过滤）──
+    if test_mode:
+        # 农机通直连诊断（云IP被WAF封时应为0，已知现象）
+        print("▶ 农机通（直连诊断）...", end=" ", flush=True)
+        nj = scrape_nongjitong(sess)
+        print(f"{len(nj)} 条")
+        # 搜索引擎中介（约翰迪尔 样例）
+        print("▶ 搜索引擎中介（约翰迪尔 样例）...", end=" ", flush=True)
+        jd = [b for b in BRANDS if b["id"] == "john-deere"]
+        sr = scrape_via_search(sess, brands=jd)
+        print(f"{len(sr)} 条")
+        print("\n" + "=" * 60)
+        print("🧪 TEST 结果")
+        print(f"   农机通直连命中: {len(nj)}（云IP被WAF封时为0，已知现象）")
+        print(f"   搜索引擎(约翰迪尔)命中: {len(sr)}")
+        if sr:
+            print("   样例:")
+            for r in sr[:3]:
+                print(f"     - [{r['brand']}] {r['modelName'][:40]} | 价={r['priceCny']} | {r['location']} | {r['source']}")
+            print("   ✅ 搜索引擎中介方案可行，去掉 --test 正式运行即可。")
+        else:
+            print("   ⚠️ 搜索引擎也 0 条：Bing/Baidu 可能也封了云IP，需上住宅代理(RESIDENTIAL_PROXY)。")
+        print("=" * 60)
+        return {"source": "domestic_scraper_v3_2_test", "nj": len(nj), "search": len(sr)}
+
+    # ── 正式采集：直连平台(best-effort) + 搜索引擎中介 ──
     brand_agnostic = [
         ("农机通", scrape_nongjitong),
         ("惠农网", scrape_huiminnong),
@@ -413,10 +529,9 @@ def main():
         ("鱼泡机械", scrape_yupao),
         ("公拍网", scrape_gongpai),
         ("司法拍卖", scrape_sifa),
+        ("搜索引擎中介", scrape_via_search),
     ]
     for label, fn in brand_agnostic:
-        if test_mode and label != "农机通":
-            continue
         print(f"▶ {label}...", end=" ", flush=True)
         try:
             lst = fn(sess)
@@ -425,8 +540,7 @@ def main():
             print(f"{len(lst)} 条")
         except Exception as e:
             print(f"失败: {e}")
-        if not test_mode:
-            time.sleep(0.5)
+        time.sleep(0.5)
 
     # ── 去重（按 contentHash）──
     seen = set()
@@ -439,7 +553,7 @@ def main():
             unique.append(item)
 
     output = {
-        "source": "domestic_scraper_v3_1",
+        "source": "domestic_scraper_v3_2",
         "scrapedAt": datetime.now().isoformat(),
         "totalListings": len(unique),
         "withPrice": sum(1 for l in unique if l.get("priceCny") or l.get("priceEur")),
@@ -447,16 +561,6 @@ def main():
         "platformStats": platform_stats,
         "listings": unique,
     }
-
-    # TEST 模式：仅验证连通性，打印诊断后退出
-    if test_mode:
-        print("\n" + "=" * 60)
-        print("🧪 TEST 结果")
-        print(f"   农机通命中条数: {platform_stats.get('农机通', 0)}")
-        print("   若条数>0 且上方诊断 <h4>卡片>0：境内直连成功，可正式运行。")
-        print("   若条数=0：检查是否确实在境内 ECS（境外 IP 必 403），或 WAF 升级。")
-        print("=" * 60)
-        return output
 
     os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
