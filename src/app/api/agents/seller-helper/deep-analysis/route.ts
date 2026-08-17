@@ -513,19 +513,24 @@ export async function POST(request: NextRequest) {
     activePrompt += valuationContext;
 
     const engineLabel = isChineseBrand ? "国内(DOMESTIC)" : "国际(INTERNATIONAL)";
-    console.log(`[DeepAnalysis] 引擎模式: ${engineLabel}, isChineseBrand: ${isChineseBrand}`);
+
+    // 站点感知：国内站 (.cn) 网络环境下优先且强制使用豆包，避免依赖 Google/OpenRouter
+    const site = process.env.SITE || process.env.NEXT_PUBLIC_SITE || "com";
+    const isCnSite = site === "cn";
+    console.log(`[DeepAnalysis] 引擎模式: ${engineLabel}, isChineseBrand: ${isChineseBrand}, site: ${site}, isCnSite: ${isCnSite}`);
 
     let analysisText = "";
     let modelUsed = "";
     const errors: string[] = [];
 
-    // ===== 模型选择：国内→豆包优先；国际→Gemini优先 =====
-    // 国内品牌或未定义时首选豆包；国际品牌跳过豆包直接走Gemini
-    if (isChineseBrand !== false) {
-      // 首选：豆包
+    // ===== 模型选择：国内站强制走豆包；国际站保持原策略 =====
+    // 国内站：豆包为首选+必选，Gemini/OpenRouter 仅作为降级（如果配了 key 且网络可达）
+    // 国际站：国内品牌或未定义时首选豆包；国际品牌跳过豆包直接走 Gemini
+    const shouldTryDoubao = isCnSite || isChineseBrand !== false;
+    if (shouldTryDoubao) {
       if (ARK_API_KEY) {
         try {
-          console.log(`[DeepAnalysis] 首选豆包: ${ARK_MODEL_ID}, 引擎: ${engineLabel}, 图片数: ${images.length}`);
+          console.log(`[DeepAnalysis] 首选豆包: ${ARK_MODEL_ID}, 引擎: ${engineLabel}, 图片数: ${images.length}, 视频数: ${videoUrls.length}`);
           const content = buildDoubaoContent(images, videoUrls, activePrompt);
           analysisText = await callDoubao(content);
           modelUsed = `豆包 ${ARK_MODEL_ID} [${engineLabel}]`;
@@ -539,10 +544,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Gemini：国际品牌首选 / 国内品牌豆包失败后降级
+    // Gemini：国际站国际品牌首选 / 豆包失败后降级；国内站仅作为降级（不强制）
     if (!analysisText && GOOGLE_API_KEY) {
       try {
-        const geminiRole = isChineseBrand === false ? "国际首选" : "降级备用";
+        const geminiRole = isCnSite ? "国内站降级" : (isChineseBrand === false ? "国际首选" : "降级备用");
         console.log(`[DeepAnalysis] Gemini ${geminiRole}, 引擎: ${engineLabel}`);
         analysisText = await callGeminiDeep(images, videoUrls, activePrompt);
         modelUsed = `Gemini 2.5 Flash [${engineLabel}]`;
