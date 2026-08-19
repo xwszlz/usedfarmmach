@@ -7,6 +7,7 @@ import AnalysisReportView from "@/components/valuation/analysis-report-view";
 interface DeepAnalysisCardProps {
   productId: string;
   productName: string;
+  category?: string;
   imageUrls: string[];
   videoUrls?: string[];
   locale?: string;
@@ -19,6 +20,7 @@ interface DeepAnalysisCardProps {
 export default function DeepAnalysisCard({
   productId,
   productName,
+  category,
   imageUrls,
   videoUrls = [],
   locale = "zh",
@@ -61,6 +63,7 @@ export default function DeepAnalysisCard({
           videoUrls: videoUrls.length > 0 ? videoUrls : undefined,
           isChineseBrand,
           productName: productName || undefined,
+          category: category || undefined,
           brandName: brandName || undefined,
           year: year || undefined,
           enginePower: enginePower || undefined,
