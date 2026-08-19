@@ -74,11 +74,6 @@ ENV PORT=3000
 # binaryTargets = linux-musl-openssl-3.0.x，故镜像内 prisma 引擎可直接工作。
 RUN npm install -g prisma@5.14.0
 
-# #1 卖方采集（境内 ECS 运行）：python3 + requests 供爬虫在容器内直接跑；
-# 脚本随镜像打包，供 cn-scout sidecar 的 crond 调用（详见 docker-compose.yml）。
-# curl 作为 requests 被 WAF（TLS 指纹校验）拦截时的兜底抓取器。
-RUN apk add --no-cache python3 py3-requests curl
-
 # 非 root 用户运行（安全最佳实践）
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs && \
@@ -95,12 +90,12 @@ COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/import-articles-to-cn.js ./scripts/import-articles-to-cn.js
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/import-intelligence-to-cn.js ./scripts/import-intelligence-to-cn.js
 
-# #1 卖方采集：爬虫 + 入库 + 运行器随镜像打包（cn-scout sidecar 调用）
-COPY --from=builder --chown=nextjs:nodejs /app/scripts/seller_scout_domestic_scraper.py ./scripts/seller_scout_domestic_scraper.py
+# #1 卖方采集（境内 ECS 运行）：种子台账 + 入库 + 运行器随镜像打包（cn-scout sidecar 调用）。
+# 已移除 Python 爬虫（被国内平台 WAF 拦截且会挂死），改为纯种子台账入库。
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/import-seller-scout-domestic.js ./scripts/import-seller-scout-domestic.js
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/run-domestic-scout.sh ./scripts/run-domestic-scout.sh
 RUN chmod +x ./scripts/run-domestic-scout.sh
-# 国内 WebSearch 台账种子（爬虫被 WAF 拦截时的兜底数据源，随镜像部署，cron 自动回退入库）
+# 国内 WebSearch 台账种子（唯一数据源，随镜像部署，cron 每日自动入库）
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/domestic_sellers_seed.json ./scripts/domestic_sellers_seed.json
 # busybox crond 每日定时任务（cn-scout 容器读取 /var/spool/cron/crontabs/root）
 COPY --from=builder --chown=root:root /app/scripts/scout-crontab /var/spool/cron/crontabs/root
