@@ -6,8 +6,10 @@
  *  - 携带有效 MP_API_KEY 的小程序请求（x-mp-key 头 或 Authorization: Bearer）
  *
  * 若 MP_API_KEY 未配置，则不强制小程序密钥（开发期放行），仅依赖 Web 登录。
+ *
+ * 注：参数类型使用全局 Web Request（NextRequest extends Request），
+ *     无需从 "next/server" 导入 Request（该模块未导出）。
  */
-import type { Request } from "next/server";
 
 export function isMiniProgramRequest(req: Request): boolean {
   const key = process.env.MP_API_KEY || "";
