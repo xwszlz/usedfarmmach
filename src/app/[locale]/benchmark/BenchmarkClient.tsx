@@ -65,6 +65,17 @@ interface DomesticItem {
   reviewedAt: string | null;
 }
 
+interface SpreadItem {
+  brand: string;
+  domesticAvgWan: number;
+  intlAvgWan: number;
+  spreadWan: number;
+  pct: number;
+  direction: "export" | "import";
+  domesticCount: number;
+  intlCount: number;
+}
+
 interface BenchmarkResponse {
   ok: boolean;
   error?: string;
@@ -75,10 +86,12 @@ interface BenchmarkResponse {
     arbitrageCount: number;
     sampleTotal: number;
     domesticCount: number;
+    spreadCount: number;
   };
   benchmark: BenchmarkItem[];
   arbitrage: ArbItem[];
   domestic: DomesticItem[];
+  spread: SpreadItem[];
 }
 
 async function fetchBenchmark(): Promise<BenchmarkResponse> {
@@ -445,8 +458,92 @@ export default function BenchmarkClient() {
         )}
       </section>
 
+      {/* ④ 境内 vs 全球基准价差 */}
+      <section>
+        <div className="flex items-center gap-2 mb-4">
+          <TrendingUp className="h-5 w-5 text-purple-600" />
+          <h2 className="text-xl font-semibold text-gray-900">④ 境内 vs 全球基准价差</h2>
+          <span className="text-sm text-gray-500">（品牌级：境内 RawListing 均价 − 国际 BrandBenchmark 均价）</span>
+        </div>
+        {data.spread.length === 0 ? (
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-6 text-center">
+            <AlertCircle className="h-6 w-6 text-purple-500 mx-auto mb-2" />
+            <p className="text-purple-800 font-medium">价差暂无可计算</p>
+            <p className="text-sm text-purple-700 mt-1">
+              需境内采集（RawListing）与国际基准（BrandBenchmark）同时存在同一品牌才会显示。
+              导入境内台账并补齐欧系基准后此处自动出数。
+            </p>
+          </div>
+        ) : (
+          <div className="bg-white border rounded-lg shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 text-sm">
+                <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
+                  <tr>
+                    <th className="px-4 py-3 text-left">品牌</th>
+                    <th className="px-4 py-3 text-right">境内均价(万)</th>
+                    <th className="px-4 py-3 text-right">国际均价(万)</th>
+                    <th className="px-4 py-3 text-right">价差(万)</th>
+                    <th className="px-4 py-3 text-right">价差%</th>
+                    <th className="px-4 py-3 text-center">方向</th>
+                    <th className="px-4 py-3 text-center">样本</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {data.spread.map((s) => {
+                    const isExport = s.direction === "export";
+                    return (
+                      <tr key={s.brand} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 font-medium text-gray-900">{s.brand}</td>
+                        <td className="px-4 py-3 text-right text-gray-700">
+                          {s.domesticAvgWan.toLocaleString("zh-CN")}
+                        </td>
+                        <td className="px-4 py-3 text-right text-gray-700">
+                          {s.intlAvgWan.toLocaleString("zh-CN")}
+                        </td>
+                        <td
+                          className="px-4 py-3 text-right font-semibold"
+                          style={{ color: isExport ? "#c0392b" : "#27ae60" }}
+                        >
+                          {isExport ? "+" : ""}
+                          {s.spreadWan.toLocaleString("zh-CN")}
+                        </td>
+                        <td
+                          className="px-4 py-3 text-right font-medium"
+                          style={{ color: isExport ? "#c0392b" : "#27ae60" }}
+                        >
+                          {isExport ? "+" : ""}
+                          {s.pct.toFixed(1)}%
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span
+                            className={`text-xs px-2 py-0.5 rounded ${
+                              isExport
+                                ? "text-green-700 bg-green-100"
+                                : "text-amber-700 bg-amber-100"
+                            }`}
+                          >
+                            {isExport ? "出口套利" : "进口方向"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center text-gray-500">
+                          内{s.domesticCount}/外{s.intlCount}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <p className="text-xs text-gray-400 px-4 py-3">
+              说明：品牌级均价受型号/马力结构影响（如百姓网低价小拖拉机会拉低境内拖拉机均价），属指示级；精确套利须同型号/马力/配置逐台比对。
+            </p>
+          </div>
+        )}
+      </section>
+
       <p className="text-xs text-gray-400 text-center">
-        数据更新时间：{new Date(data.generatedAt).toLocaleString("zh-CN")} · 数据源 Neon（新加坡）
+        数据更新时间：{new Date(data.generatedAt).toLocaleString("zh-CN")} · 数据源 Neon（新加坡）／ 境内采集 cn-postgres
       </p>
     </div>
   );
