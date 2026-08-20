@@ -38,6 +38,8 @@ export interface SiteFeatures {
 
 export interface SiteCompliance {
   icpNo: string | null;
+  /** 公安联网备案号（如「冀公网安备13013202000274号」），无则为 null */
+  beianNo: string | null;
   dataLocalized: boolean;
   serveDomesticUsers: boolean;
   /**
@@ -89,6 +91,7 @@ export const siteConfigMap: SiteConfigMap = {
     },
     compliance: {
       icpNo: null,
+      beianNo: null,
       dataLocalized: false,
       serveDomesticUsers: false,
       auctionLicenseNo: null,
@@ -117,6 +120,7 @@ export const siteConfigMap: SiteConfigMap = {
     },
     compliance: {
       icpNo: process.env.CN_ICP_NO ?? "冀ICP备2024053719号-4",
+      beianNo: process.env.CN_BEIAN_NO ?? "冀公网安备13013202000274号",
       dataLocalized: true,
       serveDomesticUsers: true,
       auctionLicenseNo: process.env.CN_AUCTION_LICENSE_NO ?? null,
