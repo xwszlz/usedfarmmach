@@ -616,14 +616,26 @@ function normalizeEuCategory(category) {
   return c || 'soil';
 }
 async function seedEuEvidence(jsonRelPath = 'scripts/eu-benchmark-evidence.json') {
-  const abs = path.isAbsolute(jsonRelPath) ? jsonRelPath : path.join(process.cwd(), jsonRelPath);
-  if (!fs.existsSync(abs)) {
-    console.warn(`⚠️ 欧系证据种子文件不存在，跳过: ${abs}`);
+  // 优先读内联模块（Vercel serverless 下 scripts/ JSON 不被 output-trace 打进 standalone，
+  // 用 require 内联模块可被打包器追踪）；回退读文件（本地/ECS 完整源码目录）。
+  let records = [];
+  try {
+    const inline = require('./eu-benchmark-evidence');
+    records = Array.isArray(inline) ? inline : (inline.records || []);
+  } catch (e) {
+    /* ignore */
+  }
+  if (!records.length) {
+    const abs = path.isAbsolute(jsonRelPath) ? jsonRelPath : path.join(process.cwd(), jsonRelPath);
+    if (fs.existsSync(abs)) {
+      const doc = JSON.parse(fs.readFileSync(abs, 'utf8'));
+      records = Array.isArray(doc) ? doc : (doc.records || []);
+    }
+  }
+  if (!records.length) {
+    console.warn(`⚠️ 欧系证据种子数据不可用（内联与文件均无），跳过`);
     return { ok: true, skipped: true, n: 0, err: 0, records: 0 };
   }
-  const doc = JSON.parse(fs.readFileSync(abs, 'utf8'));
-  const records = Array.isArray(doc) ? doc : (doc.records || []);
-  if (!records.length) return { ok: true, skipped: true, n: 0, err: 0, records: 0 };
 
   // 按 brand+model+sourceSite 分组（同组合的多条挂牌聚合为一行）
   const groups = new Map();
