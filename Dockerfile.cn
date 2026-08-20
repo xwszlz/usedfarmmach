@@ -100,6 +100,12 @@ COPY --from=builder --chown=nextjs:nodejs /app/scripts/domestic_sellers_seed.jso
 # busybox crond 每日定时任务（cn-scout 容器读取 /var/spool/cron/crontabs/root）
 COPY --from=builder --chown=root:root /app/scripts/scout-crontab /var/spool/cron/crontabs/root
 
+# 境外欧系基准价 + 套利情报种子（公开行情，合规可双库；ECS 部署后幂等导入）
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/eu-benchmark-evidence.json ./scripts/eu-benchmark-evidence.json
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/seed-eu-benchmark.js ./scripts/seed-eu-benchmark.js
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/seed-market-intel-arbitrage.js ./scripts/seed-market-intel-arbitrage.js
+COPY --from=builder --chown=nextjs:nodejs /app/market_intel_arbitrage_2026-08-16.json ./market_intel_arbitrage_2026-08-16.json
+
 USER nextjs
 
 EXPOSE 3000
