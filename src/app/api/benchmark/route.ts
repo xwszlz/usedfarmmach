@@ -27,7 +27,7 @@ export async function GET() {
       prisma.rawListing.findMany({
         where: { source: { startsWith: "domestic_" } },
         orderBy: { scrapedAt: "desc" },
-        take: 60,
+        take: 500,
         select: {
           id: true,
           brandName: true,
