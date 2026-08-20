@@ -10,7 +10,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 // @ts-ignore — CommonJS 引擎，类型见 benchmark-engine.d.ts
-import { runRefresh, getFxRates, disconnectBenchmark } from "@/lib/benchmark-engine";
+import { runRefresh, getFxRates, disconnectBenchmark, seedEuEvidence } from "@/lib/benchmark-engine";
 
 export const dynamic = "force-dynamic";
 // 266 目标 / 并发12 / 8s超时 → 最坏 ~184s，需 Vercel Pro（Hobby 上限 60s 会被截断）
@@ -28,6 +28,11 @@ function isValidToken(token: string | null | undefined): boolean {
 
 async function executeRefresh() {
   const startedAt = Date.now();
+  // 先导入欧系农机具证据种子（幂等，公开行情合规可双库；失败降级不阻断实时采集）
+  const seed = await seedEuEvidence().catch((e) => {
+    console.warn("欧系证据种子导入失败:", e instanceof Error ? e.message : String(e));
+    return { ok: false, n: 0, err: 1, error: e instanceof Error ? e.message : String(e) };
+  });
   const fx = await getFxRates();
   const stats = await runRefresh({ fx, concurrency: 12, timeoutMs: 8000 });
   const tookMs = Date.now() - startedAt;
@@ -35,6 +40,7 @@ async function executeRefresh() {
     success: true,
     message: `基准价刷新完成：成功 ${stats.ok} / 跳过(无样本) ${stats.skip} / 失败(网络) ${stats.failed} / 共 ${stats.total}`,
     stats,
+    seed,
     tookMs,
     at: new Date().toISOString(),
   };

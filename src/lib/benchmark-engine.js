@@ -598,6 +598,70 @@ async function seedFromResearch(jsonPath) {
   return { n, err };
 }
 
+// —— 欧系农机具证据种子（WebSearch 逐条挂牌，公开行情，合规可双库 Neon/cn）——
+// 数据：scripts/eu-benchmark-evidence.json
+//       { count, records: [{ source, brand, brandNameZh, model, category, priceForeign, currency, country, url, capturedAt }] }
+// 逻辑：按 brand+model+sourceSite 分组（同组合多条挂牌 → 一行基准价，取中位），
+//       字段映射后走 upsertBenchmark 幂等写入。幂等键与每日采集一致（brand+model+sourceSite）。
+// category 归一化：plough / seed_drill → soil（对齐 benchmark-config 的 CATEGORY）。
+// 合规：境外公开挂牌价（价格/机型/源站），不含境内卖家 PII，可入 Neon 也可复制进 cn-postgres。
+const EU_SEED_FX = { EUR: 7.8, GBP: 9.2, USD: 7.2, CNY: 1 };
+function euCountryToRegion(country) {
+  if (!country) return 'EU';
+  return String(country).toUpperCase() === 'USA' ? 'US' : 'EU';
+}
+function normalizeEuCategory(category) {
+  const c = String(category || '').toLowerCase();
+  if (c === 'plough' || c === 'seed_drill') return 'soil';
+  return c || 'soil';
+}
+async function seedEuEvidence(jsonRelPath = 'scripts/eu-benchmark-evidence.json') {
+  const abs = path.isAbsolute(jsonRelPath) ? jsonRelPath : path.join(process.cwd(), jsonRelPath);
+  if (!fs.existsSync(abs)) {
+    console.warn(`⚠️ 欧系证据种子文件不存在，跳过: ${abs}`);
+    return { ok: true, skipped: true, n: 0, err: 0, records: 0 };
+  }
+  const doc = JSON.parse(fs.readFileSync(abs, 'utf8'));
+  const records = Array.isArray(doc) ? doc : (doc.records || []);
+  if (!records.length) return { ok: true, skipped: true, n: 0, err: 0, records: 0 };
+
+  // 按 brand+model+sourceSite 分组（同组合的多条挂牌聚合为一行）
+  const groups = new Map();
+  for (const r of records) {
+    const key = `${r.brand}||${r.model}||${r.source}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(r);
+  }
+
+  let n = 0, err = 0;
+  for (const list of groups.values()) {
+    const first = list[0];
+    try {
+      const listings = list.map((r) => ({ priceForeign: r.priceForeign, currency: r.currency }));
+      const agg = aggregateListings(listings, EU_SEED_FX, { priceType: 'listing' });
+      if (!agg) continue;
+      await upsertBenchmark({
+        brand: first.brand,
+        brandNameZh: first.brandNameZh,
+        model: first.model,
+        category: normalizeEuCategory(first.category),
+        sourceSite: first.source,
+        ...agg,
+        confidenceScore: 0.6, // WebSearch 逐条验证证据，固定置信度
+        sourceUrl: first.url,
+        sourceDate: first.capturedAt || first.sourceDate || null,
+        region: euCountryToRegion(first.country),
+      });
+      n++;
+    } catch (e) {
+      err++;
+      console.error(`  ✗ ${first.brand} ${first.model} @${first.source}: ${e.message}`);
+    }
+  }
+  console.log(`🌱 欧系证据种子写入：${records.length} 条 → ${n} 行 BrandBenchmark（失败 ${err}）`);
+  return { ok: true, n, err, records: records.length };
+}
+
 // —— 只读报告 ——
 async function report() {
   const rows = await prisma.brandBenchmark.findMany({ where: { isActive: true } });
@@ -652,6 +716,7 @@ module.exports = {
   fetchOneTarget,
   runRefresh,
   seedFromResearch,
+  seedEuEvidence,
   report,
   disconnectBenchmark,
 };

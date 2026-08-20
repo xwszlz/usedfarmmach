@@ -19,6 +19,7 @@ declare module '@/lib/benchmark-engine' {
     sources?: string[];
   }): Promise<RefreshStats>;
   export function seedFromResearch(jsonPath: string): Promise<{ n: number; err: number }>;
+  export function seedEuEvidence(jsonRelPath?: string): Promise<{ ok: boolean; skipped?: boolean; n: number; err: number; records: number }>;
   export function report(): Promise<void>;
   export function disconnectBenchmark(): Promise<void>;
 }
