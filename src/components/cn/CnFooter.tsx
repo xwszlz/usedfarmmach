@@ -70,6 +70,10 @@ export function CnFooter() {
           </a>
         )}
       </div>
+
+      <div className="mt-2 px-4 pb-5 text-center text-sm text-slate-500">
+        © 2026 石家庄神雕农机科技有限公司. 保留所有权利。
+      </div>
     </footer>
   );
 }
