@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
 import { useTr } from "@/lib/i18n-tr";
+import { translate } from "@/lib/i18n-runtime";
 import { AuctionLicenseBadge } from "@/components/auction/auction-license-badge";
 import { InternalTestBanner } from "@/components/auction/internal-test-banner";
 
