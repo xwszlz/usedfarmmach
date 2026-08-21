@@ -1,5 +1,6 @@
 "use client";
 
+import { translate } from "@/lib/i18n-runtime";
 import { useState } from "react";
 import { ChevronDown, ChevronRight, Wrench, Package } from "lucide-react";
 
@@ -99,7 +100,7 @@ export default function PartsCatalogNav({
       <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-2">
         <Package className="h-4 w-4 text-orange-600" />
         <span className="font-semibold text-sm text-gray-800">
-          {isZh ? "配件分类" : "Parts Catalog"}
+          {translate("配件分类", locale)}
         </span>
       </div>
       <div className="max-h-[calc(100vh-300px)] overflow-y-auto py-2">
@@ -113,7 +114,7 @@ export default function PartsCatalogNav({
           }`}
         >
           <Wrench className="h-3.5 w-3.5" />
-          {isZh ? "全部配件" : "All Parts"}
+          {translate("全部配件", locale)}
         </button>
 
         {/* 整机品类列表 */}

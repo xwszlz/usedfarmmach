@@ -1,5 +1,6 @@
 "use client";
 
+import { translate } from "@/lib/i18n-runtime";
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Ship, MapPin, Calculator, Send, CheckCircle2 } from "lucide-react";
@@ -103,18 +104,16 @@ export default function LogisticsQuoteForm({ locale }: { locale: string }) {
         <CardContent className="p-8 text-center">
           <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto mb-4" />
           <h3 className="text-xl font-bold text-gray-900 mb-2">
-            {isZh ? "询价已提交！" : "Quote Request Submitted!"}
+            {translate("询价已提交！", locale)}
           </h3>
           <p className="text-gray-600">
-            {isZh
-              ? "我们的物流顾问将在24小时内联系您，提供详细报价方案。"
-              : "Our logistics advisor will contact you within 24 hours with a detailed quote."}
+            {translate("我们的物流顾问将在24小时内联系您，提供详细报价方案。", locale)}
           </p>
           <button
             onClick={() => setSubmitted(false)}
             className="mt-4 text-sm text-blue-500 hover:underline"
           >
-            {isZh ? "提交新的询价" : "Submit another request"}
+            {translate("提交新的询价", locale)}
           </button>
         </CardContent>
       </Card>
@@ -130,10 +129,10 @@ export default function LogisticsQuoteForm({ locale }: { locale: string }) {
           </div>
           <div>
             <h3 className="text-lg font-bold text-gray-900">
-              {isZh ? "在线询价" : "Online Quote Request"}
+              {translate("在线询价", locale)}
             </h3>
             <p className="text-sm text-gray-500">
-              {isZh ? "填写信息获取运费估算" : "Fill in details for shipping estimate"}
+              {translate("填写信息获取运费估算", locale)}
             </p>
           </div>
         </div>
@@ -144,7 +143,7 @@ export default function LogisticsQuoteForm({ locale }: { locale: string }) {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 <MapPin className="inline h-4 w-4 mr-1" />
-                {isZh ? "起运省份" : "Origin Province"}
+                {translate("起运省份", locale)}
               </label>
               <select
                 value={form.originProvince}
@@ -152,7 +151,7 @@ export default function LogisticsQuoteForm({ locale }: { locale: string }) {
                 className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:border-blue-400 focus:outline-none"
                 required
               >
-                <option value="">{isZh ? "请选择" : "Select"}</option>
+                <option value="">{translate("请选择", locale)}</option>
                 {PROVINCES.map((p) => (
                   <option key={p} value={p}>{p}</option>
                 ))}
@@ -167,7 +166,7 @@ export default function LogisticsQuoteForm({ locale }: { locale: string }) {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 <Ship className="inline h-4 w-4 mr-1" />
-                {isZh ? "目的地区域" : "Destination Region"}
+                {translate("目的地区域", locale)}
               </label>
               <select
                 value={form.destination}
@@ -175,7 +174,7 @@ export default function LogisticsQuoteForm({ locale }: { locale: string }) {
                 className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:border-blue-400 focus:outline-none"
                 required
               >
-                <option value="">{isZh ? "请选择" : "Select"}</option>
+                <option value="">{translate("请选择", locale)}</option>
                 {DESTINATIONS.map((d) => (
                   <option key={d.value} value={d.value}>
                     {isZh ? d.labelZh : d.labelEn}
@@ -189,7 +188,7 @@ export default function LogisticsQuoteForm({ locale }: { locale: string }) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {isZh ? "设备类型" : "Equipment Type"}
+                {translate("设备类型", locale)}
               </label>
               <select
                 value={form.equipmentType}
@@ -197,7 +196,7 @@ export default function LogisticsQuoteForm({ locale }: { locale: string }) {
                 className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:border-blue-400 focus:outline-none"
                 required
               >
-                <option value="">{isZh ? "请选择" : "Select"}</option>
+                <option value="">{translate("请选择", locale)}</option>
                 {EQUIPMENT_TYPES.map((t) => (
                   <option key={t.value} value={t.value}>
                     {isZh ? t.labelZh : t.labelEn}
@@ -207,21 +206,21 @@ export default function LogisticsQuoteForm({ locale }: { locale: string }) {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {isZh ? "设备尺寸" : "Equipment Size"}
+                {translate("设备尺寸", locale)}
               </label>
               <select
                 value={form.equipmentSize}
                 onChange={(e) => setForm({ ...form, equipmentSize: e.target.value })}
                 className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:border-blue-400 focus:outline-none"
               >
-                <option value="small">{isZh ? "小型（<50HP）" : "Small (<50HP)"}</option>
-                <option value="medium">{isZh ? "中型（50-150HP）" : "Medium (50-150HP)"}</option>
-                <option value="large">{isZh ? "大型（>150HP）" : "Large (>150HP)"}</option>
+                <option value="small">{translate("小型（<50HP）", locale)}</option>
+                <option value="medium">{translate("中型（50-150HP）", locale)}</option>
+                <option value="large">{translate("大型（>150HP）", locale)}</option>
               </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {isZh ? "数量" : "Quantity"}
+                {translate("数量", locale)}
               </label>
               <input
                 type="number"
@@ -237,7 +236,7 @@ export default function LogisticsQuoteForm({ locale }: { locale: string }) {
           {estimate && (
             <div className="rounded-lg bg-blue-50 p-4 flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">{isZh ? "预估运费区间" : "Estimated Shipping Cost"}</p>
+                <p className="text-sm text-gray-500">{translate("预估运费区间", locale)}</p>
                 <p className="text-2xl font-bold text-blue-600">
                   ¥{estimate.low.toLocaleString()} - ¥{estimate.high.toLocaleString()}
                 </p>
@@ -250,7 +249,7 @@ export default function LogisticsQuoteForm({ locale }: { locale: string }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {isZh ? "联系人" : "Contact Name"}
+                {translate("联系人", locale)}
               </label>
               <input
                 type="text"
@@ -262,7 +261,7 @@ export default function LogisticsQuoteForm({ locale }: { locale: string }) {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {isZh ? "联系电话" : "Phone"}
+                {translate("联系电话", locale)}
               </label>
               <input
                 type="tel"
@@ -276,13 +275,13 @@ export default function LogisticsQuoteForm({ locale }: { locale: string }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {isZh ? "备注" : "Notes"}
+              {translate("备注", locale)}
             </label>
             <textarea
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
               rows={3}
-              placeholder={isZh ? "补充设备尺寸、特殊要求等..." : "Equipment dimensions, special requirements..."}
+              placeholder={translate("补充设备尺寸、特殊要求等...", locale)}
               className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:border-blue-400 focus:outline-none resize-none"
             />
           </div>
@@ -292,7 +291,7 @@ export default function LogisticsQuoteForm({ locale }: { locale: string }) {
             className="w-full flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-white font-medium hover:bg-blue-700 transition-colors"
           >
             <Send className="h-5 w-5" />
-            {isZh ? "提交询价" : "Submit Request"}
+            {translate("提交询价", locale)}
           </button>
         </form>
       </CardContent>

@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import Link from "next/link";
-import { 
-  Search, Loader2, ChevronDown, ChevronUp, 
-  MapPin, TrendingDown, Video, CheckCircle2, Lightbulb 
+import {
+  Search, Loader2, ChevronDown, ChevronUp,
+  MapPin, TrendingDown, Video, CheckCircle2, Lightbulb
 } from "lucide-react";
 
 interface MatchedProduct {
@@ -40,30 +40,26 @@ interface MatchResult {
   dataDate: string;
 }
 
-const CROP_OPTIONS = [
-  "小麦", "玉米", "水稻", "牧草", "甘蔗", "大豆", 
-  "马铃薯", "甜菜", "棉花", "油菜", "燕麦", "苜蓿", 
-  "高粱", "青贮玉米",
-];
-
-const FARM_SIZE_OPTIONS = [
-  "小户(<100亩)",
-  "中型(100-500亩)",
-  "大户(500-2000亩)",
-  "大型(>2000亩)",
-];
-
-const MACHINE_TYPES = [
-  "青储机", "收割机", "打捆机", "拖拉机", "割草机", 
-  "搂草机", "裹包机", "播种机", "收获机", "捡拾台",
-];
-
 export function BuyerMatchCard({ locale }: { locale: string }) {
-  const t = useTranslations("products");
+  const t = useTranslations("buyerMatch");
+  const tc = useTranslations("crops");
+  const tf = useTranslations("farmSizes");
+  const tm = useTranslations("machineTypes");
   const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<MatchResult | null>(null);
   const [error, setError] = useState("");
+
+  const cropOptions = [
+    tc("wheat"), tc("corn"), tc("rice"), tc("forageGrass"), tc("sugarcane"),
+    tc("soybean"), tc("potato"), tc("sugarbeet"), tc("cotton"), tc("rape"),
+    tc("oat"), tc("alfalfa"), tc("sorghum"), tc("silageCorn"),
+  ];
+  const farmSizeOptions = [tf("small"), tf("medium"), tf("large"), tf("xlarge")];
+  const machineTypeOptions = [
+    tm("forage"), tm("harvester"), tm("baler"), tm("tractor"), tm("mower"),
+    tm("rake"), tm("wrapper"), tm("seeder"), tm("reaper"), tm("picker"),
+  ];
 
   const [cropType, setCropType] = useState("");
   const [farmSize, setFarmSize] = useState("");
@@ -73,11 +69,11 @@ export function BuyerMatchCard({ locale }: { locale: string }) {
 
   async function handleMatch() {
     if (!cropType) {
-      setError(locale === "zh" ? "请选择作物类型" : "Please select crop type");
+      setError(t("errCrop"));
       return;
     }
     if (!farmSize) {
-      setError(locale === "zh" ? "请选择农场规模" : "Please select farm size");
+      setError(t("errFarmSize"));
       return;
     }
 
@@ -101,10 +97,10 @@ export function BuyerMatchCard({ locale }: { locale: string }) {
       if (json.success) {
         setResult(json.data);
       } else {
-        setError(json.error || "匹配失败");
+        setError(json.error || t("errMatchFailed"));
       }
     } catch {
-      setError(locale === "zh" ? "网络错误，请重试" : "Network error");
+      setError(t("errNetwork"));
     } finally {
       setLoading(false);
     }
@@ -120,8 +116,6 @@ export function BuyerMatchCard({ locale }: { locale: string }) {
     setError("");
   }
 
-  const isZh = locale === "zh";
-
   return (
     <div className="mb-6 rounded-xl border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-white overflow-hidden">
       {/* Header */}
@@ -135,12 +129,10 @@ export function BuyerMatchCard({ locale }: { locale: string }) {
           </div>
           <div className="text-left">
             <h3 className="font-bold text-gray-900">
-              {isZh ? "买家需求匹配" : "Buyer Match"}
+              {t("title")}
             </h3>
             <p className="text-xs text-gray-500">
-              {isZh 
-                ? "输入作物+规模+预算，智能推荐最合适的农机" 
-                : "Enter crop + size + budget, get smart recommendations"}
+              {t("subtitle")}
             </p>
           </div>
         </div>
@@ -154,57 +146,57 @@ export function BuyerMatchCard({ locale }: { locale: string }) {
             {/* Crop Type */}
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">
-                {isZh ? "作物类型 *" : "Crop Type *"}
+                {t("cropType")}
               </label>
               <select
                 value={cropType}
                 onChange={(e) => setCropType(e.target.value)}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               >
-                <option value="">{isZh ? "请选择" : "Select"}</option>
-                {CROP_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+                <option value="">{t("select")}</option>
+                {cropOptions.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
 
             {/* Farm Size */}
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">
-                {isZh ? "农场规模 *" : "Farm Size *"}
+                {t("farmSize")}
               </label>
               <select
                 value={farmSize}
                 onChange={(e) => setFarmSize(e.target.value)}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               >
-                <option value="">{isZh ? "请选择" : "Select"}</option>
-                {FARM_SIZE_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                <option value="">{t("select")}</option>
+                {farmSizeOptions.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
 
             {/* Machine Type */}
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">
-                {isZh ? "期望机型" : "Machine Type"}
+                {t("machineType")}
               </label>
               <select
                 value={machineType}
                 onChange={(e) => setMachineType(e.target.value)}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               >
-                <option value="">{isZh ? "不限" : "Any"}</option>
-                {MACHINE_TYPES.map(m => <option key={m} value={m}>{m}</option>)}
+                <option value="">{t("any")}</option>
+                {machineTypeOptions.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
             </div>
 
             {/* Budget */}
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">
-                {isZh ? "预算（万元）" : "Budget (10k CNY)"}
+                {t("budget")}
               </label>
               <div className="flex items-center gap-1">
                 <input
                   type="number"
-                  placeholder={isZh ? "最低" : "Min"}
+                  placeholder={t("min")}
                   value={budgetMin}
                   onChange={(e) => setBudgetMin(e.target.value)}
                   className="w-1/2 rounded-lg border border-gray-300 px-2 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
@@ -212,7 +204,7 @@ export function BuyerMatchCard({ locale }: { locale: string }) {
                 <span className="text-gray-400">-</span>
                 <input
                   type="number"
-                  placeholder={isZh ? "最高" : "Max"}
+                  placeholder={t("max")}
                   value={budgetMax}
                   onChange={(e) => setBudgetMax(e.target.value)}
                   className="w-1/2 rounded-lg border border-gray-300 px-2 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
@@ -229,13 +221,13 @@ export function BuyerMatchCard({ locale }: { locale: string }) {
               className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-              {isZh ? "开始匹配" : "Match"}
+              {t("match")}
             </button>
             <button
               onClick={handleReset}
               className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
             >
-              {isZh ? "重置" : "Reset"}
+              {t("reset")}
             </button>
           </div>
 
@@ -253,7 +245,7 @@ export function BuyerMatchCard({ locale }: { locale: string }) {
                   <Lightbulb className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="text-sm font-medium text-amber-900 mb-1">
-                      {isZh ? "采购建议" : "Purchase Advice"}
+                      {t("purchaseAdvice")}
                     </p>
                     <p className="text-sm text-amber-800">{result.purchaseAdvice}</p>
                   </div>
@@ -263,20 +255,20 @@ export function BuyerMatchCard({ locale }: { locale: string }) {
               {/* Market Insight */}
               <div className="grid grid-cols-4 gap-3">
                 <div className="rounded-lg bg-gray-50 p-3 text-center">
-                  <p className="text-xs text-gray-500">{isZh ? "均价" : "Avg Price"}</p>
-                  <p className="text-lg font-bold text-gray-900">{result.marketInsight.avgPriceWan}<span className="text-xs ml-1">{isZh ? "万" : "0k"}</span></p>
+                  <p className="text-xs text-gray-500">{t("avgPrice")}</p>
+                  <p className="text-lg font-bold text-gray-900">{result.marketInsight.avgPriceWan}<span className="text-xs ml-1">{t("unitWan")}</span></p>
                 </div>
                 <div className="rounded-lg bg-gray-50 p-3 text-center">
-                  <p className="text-xs text-gray-500">{isZh ? "最低价" : "Min"}</p>
-                  <p className="text-lg font-bold text-green-600">{result.marketInsight.minPriceWan}<span className="text-xs ml-1">{isZh ? "万" : "0k"}</span></p>
+                  <p className="text-xs text-gray-500">{t("minPrice")}</p>
+                  <p className="text-lg font-bold text-green-600">{result.marketInsight.minPriceWan}<span className="text-xs ml-1">{t("unitWan")}</span></p>
                 </div>
                 <div className="rounded-lg bg-gray-50 p-3 text-center">
-                  <p className="text-xs text-gray-500">{isZh ? "最高价" : "Max"}</p>
-                  <p className="text-lg font-bold text-red-500">{result.marketInsight.maxPriceWan}<span className="text-xs ml-1">{isZh ? "万" : "0k"}</span></p>
+                  <p className="text-xs text-gray-500">{t("maxPrice")}</p>
+                  <p className="text-lg font-bold text-red-500">{result.marketInsight.maxPriceWan}<span className="text-xs ml-1">{t("unitWan")}</span></p>
                 </div>
                 <div className="rounded-lg bg-gray-50 p-3 text-center">
-                  <p className="text-xs text-gray-500">{isZh ? "在售" : "Available"}</p>
-                  <p className="text-lg font-bold text-blue-600">{result.marketInsight.totalAvailable}<span className="text-xs ml-1">{isZh ? "台" : "u"}</span></p>
+                  <p className="text-xs text-gray-500">{t("available")}</p>
+                  <p className="text-lg font-bold text-blue-600">{result.marketInsight.totalAvailable}<span className="text-xs ml-1">{t("unitTai")}</span></p>
                 </div>
               </div>
 
@@ -284,7 +276,7 @@ export function BuyerMatchCard({ locale }: { locale: string }) {
               {result.recommendations.length > 0 ? (
                 <div className="space-y-3">
                   <h4 className="font-semibold text-gray-900 text-sm">
-                    {isZh ? `为您推荐 ${result.recommendations.length} 条匹配农机` : `${result.recommendations.length} Matches Found`}
+                    {t("matchesFound", { count: result.recommendations.length })}
                   </h4>
                   {result.recommendations.map((p, idx) => (
                     <Link
@@ -312,7 +304,7 @@ export function BuyerMatchCard({ locale }: { locale: string }) {
                                 {p.brandName} {p.modelName}
                               </p>
                               <p className="text-xs text-gray-500">
-                                {p.year}{isZh ? "年" : ""} | {p.categoryName} | {p.location}
+                                {p.year}{t("yearSuffix")} | {p.categoryName} | {p.location}
                               </p>
                             </div>
                             <div className="flex-shrink-0">
@@ -321,18 +313,18 @@ export function BuyerMatchCard({ locale }: { locale: string }) {
                                 p.matchScore >= 60 ? "bg-blue-100 text-blue-700" :
                                 "bg-gray-100 text-gray-600"
                               }`}>
-                                {isZh ? "匹配" : "Match"} {p.matchScore}%
+                                {t("matchLabel")} {p.matchScore}%
                               </span>
                             </div>
                           </div>
 
                           <div className="flex items-center gap-2 mt-1">
                             <span className="text-lg font-bold text-blue-600">
-                              {p.priceWan}<span className="text-xs ml-0.5">{isZh ? "万" : "0k CNY"}</span>
+                              {p.priceWan}<span className="text-xs ml-0.5">{t("priceUnit")}</span>
                             </span>
                             {p.hasVideo && (
                               <span className="flex items-center gap-0.5 text-xs text-purple-600">
-                                <Video className="h-3 w-3" /> {isZh ? "有视频" : "Video"}
+                                <Video className="h-3 w-3" /> {t("hasVideo")}
                               </span>
                             )}
                           </div>
@@ -353,7 +345,7 @@ export function BuyerMatchCard({ locale }: { locale: string }) {
               ) : (
                 <div className="rounded-lg border border-dashed border-gray-300 p-6 text-center">
                   <p className="text-gray-400">
-                    {isZh ? "暂无匹配农机，建议调整筛选条件" : "No matches found, try adjusting filters"}
+                    {t("noMatch")}
                   </p>
                 </div>
               )}

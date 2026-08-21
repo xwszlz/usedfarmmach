@@ -1,3 +1,4 @@
+import { translate } from "@/lib/i18n-runtime";
 import type { Metadata } from "next";
 import { generatePageMetadata } from "@/lib/seo-metadata";
 import { BreadcrumbStructuredData } from "@/components/seo/structured-data";
@@ -196,8 +197,8 @@ export default async function SolutionsPage({
       <BreadcrumbStructuredData
         locale={locale}
         items={[
-          { name: isZh ? "首页" : "Home", url: `${BASE_URL}/${locale}` },
-          { name: isZh ? "行业方案" : "Solutions", url: `${BASE_URL}/${locale}/solutions` },
+          { name: translate("首页", locale), url: `${BASE_URL}/${locale}` },
+          { name: translate("行业方案", locale), url: `${BASE_URL}/${locale}/solutions` },
         ]}
       />
       <div className="min-h-screen bg-gray-50">
@@ -205,12 +206,10 @@ export default async function SolutionsPage({
         <div className="bg-gradient-to-br from-slate-800 to-slate-900 text-white">
           <div className="container mx-auto px-4 py-16">
             <h1 className="text-4xl font-bold mb-4">
-              {isZh ? "行业解决方案" : "Industry Solutions"}
+              {translate("行业解决方案", locale)}
             </h1>
             <p className="text-white/80 text-lg max-w-3xl">
-              {isZh
-                ? "针对不同农业场景，提供从设备选型到运维管理的全套农机解决方案"
-                : "Tailored machinery solutions for different agricultural scenarios, from equipment selection to maintenance"}
+              {translate("针对不同农业场景，提供从设备选型到运维管理的全套农机解决方案", locale)}
             </p>
           </div>
         </div>
@@ -248,13 +247,13 @@ export default async function SolutionsPage({
                     {(solution as any).climate && (
                       <div className="mb-4 rounded-lg bg-white/70 p-4 space-y-2">
                         <div className="flex gap-2 text-sm">
-                          <span className="font-medium text-gray-700 shrink-0">{isZh ? "气候特点" : "Climate"}:</span>
-                          <span className="text-gray-600">{isZh ? (solution as any).climate.zh : (solution as any).climate.en}</span>
+                          <span className="font-medium text-gray-700 shrink-0">{translate("气候特点", locale)}:</span>
+                          <span className="text-gray-600">{translate((solution as any).climate.zh, locale)}</span>
                         </div>
                         {(solution as any).mainCrops && (
                           <div className="flex gap-2 text-sm">
-                            <span className="font-medium text-gray-700 shrink-0">{isZh ? "主要作物" : "Main Crops"}:</span>
-                            <span className="text-gray-600">{isZh ? (solution as any).mainCrops.zh : (solution as any).mainCrops.en}</span>
+                            <span className="font-medium text-gray-700 shrink-0">{translate("主要作物", locale)}:</span>
+                            <span className="text-gray-600">{translate((solution as any).mainCrops.zh, locale)}</span>
                           </div>
                         )}
                       </div>
@@ -266,7 +265,7 @@ export default async function SolutionsPage({
                           <div className="flex items-center gap-2 mb-3">
                             <CheckCircle2 className="h-5 w-5 text-green-500" />
                             <h3 className="font-semibold text-gray-900">
-                              {isZh ? scenario.zh : scenario.en}
+                              {translate(scenario.zh, locale)}
                             </h3>
                           </div>
                           <div className="flex flex-wrap gap-2">
@@ -288,7 +287,7 @@ export default async function SolutionsPage({
                       <div className="mb-6 rounded-lg bg-amber-50 border border-amber-200 p-4">
                         <h3 className="font-semibold text-amber-800 mb-2 flex items-center gap-2">
                           <Ship className="h-4 w-4" />
-                          {isZh ? "出口注意事项" : "Export Notes"}
+                          {translate("出口注意事项", locale)}
                         </h3>
                         <ul className="space-y-1">
                           {(solution as any).exportNotes.map((note: string, idx: number) => (
@@ -304,7 +303,7 @@ export default async function SolutionsPage({
                     {/* Brands */}
                     <div className="flex items-center gap-2 mb-4">
                       <span className="text-sm text-gray-500">
-                        {isZh ? "推荐品牌" : "Recommended Brands"}:
+                        {translate("推荐品牌", locale)}:
                       </span>
                       <div className="flex flex-wrap gap-2">
                         {solution.brands.map((brand) => (
@@ -324,7 +323,7 @@ export default async function SolutionsPage({
                       href={`/products?solution=${solution.id}`}
                       className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900"
                     >
-                      {isZh ? "查看相关设备" : "Browse Related Equipment"}
+                      {translate("查看相关设备", locale)}
                       <ArrowRight className="h-4 w-4" />
                     </Link>
                   </div>

@@ -1,3 +1,4 @@
+import { translate } from "@/lib/i18n-runtime";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { isCnSite } from "@/config/site";
@@ -31,12 +32,10 @@ export default async function PrivacyPage({
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
       <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-        {isZh ? "隐私政策" : "Privacy Policy"}
+        {translate("隐私政策", locale)}
       </h1>
       <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-        {isZh
-          ? "最近更新日期：2026年7月17日 | 生效日期：2026年7月17日"
-          : "Last updated: July 17, 2026 | Effective date: July 17, 2026"}
+        {translate("最近更新日期：2026年7月17日 | 生效日期：2026年7月17日", locale)}
       </p>
 
       <div className="prose prose-sm dark:prose-invert mt-8 max-w-none text-gray-700 dark:text-gray-300 leading-relaxed space-y-6">

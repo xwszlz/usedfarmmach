@@ -1,5 +1,6 @@
 "use client";
 
+import { translate } from "@/lib/i18n-runtime";
 import { useEffect, useState, useCallback } from "react";
 import { Wrench, Package, Loader2, ArrowRight, AlertCircle, ChevronUp } from "lucide-react";
 import Link from "next/link";
@@ -94,15 +95,15 @@ export default function CompatiblePartsSection({
       <CardHeader className="flex flex-row items-center gap-3 space-y-0">
         <CardTitle className="flex items-center gap-2">
           <Package className="h-5 w-5 text-primary-600" />
-          {isZh ? "适配零部件" : "Compatible Parts"}
+          {translate("适配零部件", locale)}
           {matchedBy === "brand" && !loading && (
             <span className="text-xs font-normal text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
-              {isZh ? "按品牌匹配" : "Brand matched"}
+              {translate("按品牌匹配", locale)}
             </span>
           )}
           {matchedBy === "generic" && !loading && (
             <span className="text-xs font-normal text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-              {isZh ? "通用配件" : "Generic parts"}
+              {translate("通用配件", locale)}
             </span>
           )}
         </CardTitle>
@@ -111,7 +112,7 @@ export default function CompatiblePartsSection({
         {loading && (
           <div className="flex items-center justify-center py-10 text-gray-400">
             <Loader2 className="h-6 w-6 animate-spin mr-2" />
-            <span className="text-sm">{isZh ? "加载中..." : "Loading..."}</span>
+            <span className="text-sm">{translate("加载中...", locale)}</span>
           </div>
         )}
 
@@ -119,7 +120,7 @@ export default function CompatiblePartsSection({
           <div className="flex items-center justify-center py-10 text-gray-400">
             <AlertCircle className="h-6 w-6 mr-2" />
             <span className="text-sm">
-              {isZh ? "配件加载失败，请稍后重试" : "Failed to load parts. Please retry."}
+              {translate("配件加载失败，请稍后重试", locale)}
             </span>
           </div>
         )}
@@ -128,15 +129,13 @@ export default function CompatiblePartsSection({
           <div className="flex flex-col items-center justify-center py-10 text-center">
             <Wrench className="h-10 w-10 text-gray-300 mb-3" />
             <p className="text-sm text-gray-500 mb-1">
-              {isZh
-                ? "该机型暂无已登记的适配零部件"
-                : "No compatible parts registered for this model yet"}
+              {translate("该机型暂无已登记的适配零部件", locale)}
             </p>
             <Link
               href={`/${locale}/parts`}
               className="text-sm font-medium text-primary-600 hover:text-primary-700 inline-flex items-center gap-1 mt-2"
             >
-              {isZh ? "前往零配件专区逛逛 →" : "Browse parts catalog →"}
+              {translate("前往零配件专区逛逛 →", locale)}
             </Link>
           </div>
         )}
@@ -189,7 +188,7 @@ export default function CompatiblePartsSection({
             {loadingAll ? (
               <div className="flex items-center justify-center py-10 text-gray-400">
                 <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                <span className="text-sm">{isZh ? "加载全部配件..." : "Loading all parts..."}</span>
+                <span className="text-sm">{translate("加载全部配件...", locale)}</span>
               </div>
             ) : (
               <>
@@ -205,7 +204,7 @@ export default function CompatiblePartsSection({
                     className="inline-flex items-center gap-1 text-sm font-medium text-primary-600 hover:text-primary-700"
                   >
                     <ChevronUp className="h-4 w-4" />
-                    {isZh ? "收起" : "Collapse"}
+                    {translate("收起", locale)}
                   </button>
                 </div>
               </>

@@ -3,6 +3,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Wrench } from "lucide-react";
+import { translate } from "@/lib/i18n-runtime";
 
 interface PartSpecsTableProps {
   specs: Record<string, string> | null;
@@ -153,8 +154,6 @@ const SPEC_LABELS: Record<string, { zh: string; en: string }> = {
 };
 
 export default function PartSpecsTable({ specs, locale }: PartSpecsTableProps) {
-  const isZh = locale === "zh";
-
   if (!specs || Object.keys(specs).length === 0) {
     return null;
   }
@@ -167,11 +166,7 @@ export default function PartSpecsTable({ specs, locale }: PartSpecsTableProps) {
         <table className="w-full text-sm">
           <tbody>
             {entries.map(([key, value], index) => {
-              const label = SPEC_LABELS[key]
-                ? isZh
-                  ? SPEC_LABELS[key].zh
-                  : SPEC_LABELS[key].en
-                : key;
+              const label = translate(SPEC_LABELS[key]?.zh ?? key, locale);
               return (
                 <tr
                   key={key}

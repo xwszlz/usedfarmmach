@@ -1,5 +1,6 @@
 "use client";
 
+import { translate } from "@/lib/i18n-runtime";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AiBadge } from "@/components/ui/ai-badge";
@@ -93,7 +94,7 @@ export default function PartCard({ part, locale }: PartCardProps) {
               </span>
             </div>
             <span className="inline-flex items-center gap-1 text-xs text-white bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg font-medium transition-colors">
-              {isZh ? "询价" : "Inquiry"}
+              {translate("询价", locale)}
               <ArrowRight className="h-3 w-3" />
             </span>
           </div>

@@ -1,3 +1,4 @@
+import { translate } from "@/lib/i18n-runtime";
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
@@ -23,12 +24,8 @@ export async function generateMetadata({
   const { locale } = await params;
   const isZh = locale === "zh";
   return {
-    title: isZh
-      ? "增值服务_AI估值_跨境物流_金融保险_一站式农机解决方案_神雕农机"
-      : "Value-Added Services | AI Valuation · Logistics · Finance · One-Stop Agri Solutions",
-    description: isZh
-      ? "神雕农机增值服务中心：AI智能估价、智能跨境套利、第三方专业检测、跨境物流运输、金融保险、线下服务网点、行业解决方案。一站式农机跨境贸易全链路服务。"
-      : "AgriTrade Value-Added Services: AI valuation, smart arbitrage, third-party inspection, cross-border logistics, finance & insurance, service centers, industry solutions. One-stop machinery trade services.",
+    title: translate("增值服务_AI估值_跨境物流_金融保险_一站式农机解决方案_神雕农机", locale),
+    description: translate("神雕农机增值服务中心：AI智能估价、智能跨境套利、第三方专业检测、跨境物流运输、金融保险、线下服务网点、行业解决方案。一站式农机跨境贸易全链路服务。", locale),
     alternates: {
       canonical: `${BASE_URL}/${locale}/services`,
       languages: {
@@ -37,12 +34,10 @@ export async function generateMetadata({
       },
     },
     openGraph: {
-      title: isZh ? "增值服务 — 神雕农机一站式跨境解决方案" : "Value-Added Services — AgriTrade One-Stop Solutions",
-      description: isZh
-        ? "7大增值服务矩阵：AI估价·跨境套利·专业检测·跨境物流·金融保险·服务网点·行业方案。让二手农机跨境贸易更简单、更安全、更高效。"
-        : "7 value-added services: AI Valuation, Smart Arbitrage, Inspection, Logistics, Finance, Service Centers, Solutions. Making cross-border machinery trade simpler, safer, more efficient.",
+      title: translate("增值服务 — 神雕农机一站式跨境解决方案", locale),
+      description: translate("7大增值服务矩阵：AI估价·跨境套利·专业检测·跨境物流·金融保险·服务网点·行业方案。让二手农机跨境贸易更简单、更安全、更高效。", locale),
       url: `${BASE_URL}/${locale}/services`,
-      siteName: isZh ? "神雕农机" : "AgriTrade",
+      siteName: translate("神雕农机", locale),
       locale: locale,
       type: "website",
     },
@@ -178,8 +173,8 @@ export default async function ServicesPage({
       <BreadcrumbStructuredData
         locale={locale}
         items={[
-          { name: isZh ? "首页" : "Home", url: `${BASE_URL}/${locale}` },
-          { name: isZh ? "增值服务" : "Value-Added Services", url: `${BASE_URL}/${locale}/services` },
+          { name: translate("首页", locale), url: `${BASE_URL}/${locale}` },
+          { name: translate("增值服务", locale), url: `${BASE_URL}/${locale}/services` },
         ]}
       />
 
@@ -196,15 +191,13 @@ export default async function ServicesPage({
           <div className="mx-auto max-w-3xl text-center">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-4 py-1.5 text-sm text-violet-300">
               <Sparkles className="h-4 w-4" />
-              {isZh ? "8大增值服务矩阵" : "8 Value-Added Services"}
+              {translate("8大增值服务矩阵", locale)}
             </div>
             <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl">
-              {isZh ? "增值服务" : "Value-Added Services"}
+              {translate("增值服务", locale)}
             </h1>
             <p className="mt-4 text-lg text-slate-300">
-              {isZh
-                ? "从AI估值到跨境物流，从金融保险到线下服务 —— 一站式农机跨境贸易全链路解决方案"
-                : "From AI valuation to cross-border logistics, from finance to offline service — one-stop full-chain solutions for global machinery trade."}
+              {translate("从AI估值到跨境物流，从金融保险到线下服务 —— 一站式农机跨境贸易全链路解决方案", locale)}
             </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-sm text-slate-400">
               <span className="rounded-full bg-slate-800 px-3 py-1">🧠 AI估价</span>
@@ -224,12 +217,10 @@ export default async function ServicesPage({
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-10 text-center">
             <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl dark:text-white">
-              {isZh ? "选择您需要的服务" : "Choose Your Service"}
+              {translate("选择您需要的服务", locale)}
             </h2>
             <p className="mt-2 text-gray-600 dark:text-gray-400">
-              {isZh
-                ? "点击进入各项服务的专属页面，了解更多详情"
-                : "Click into each service's dedicated page for more details."}
+              {translate("点击进入各项服务的专属页面，了解更多详情", locale)}
             </p>
           </div>
 
@@ -277,7 +268,7 @@ export default async function ServicesPage({
 
                     {/* CTA */}
                     <div className="flex items-center gap-1 text-sm font-medium text-gray-700 transition-colors group-hover:text-gray-900 dark:text-gray-300 dark:group-hover:text-white">
-                      {isZh ? "了解详情" : "Learn More"}
+                      {translate("了解详情", locale)}
                       <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                     </div>
                   </div>
@@ -293,25 +284,23 @@ export default async function ServicesPage({
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 p-8 text-center text-white sm:p-12">
             <h2 className="text-2xl font-bold sm:text-3xl">
-              {isZh ? "还没找到您需要的服务？" : "Can't find what you need?"}
+              {translate("还没找到您需要的服务？", locale)}
             </h2>
             <p className="mt-3 text-lg text-violet-100">
-              {isZh
-                ? "联系我们的专家团队，为您定制专属的跨境农机贸易解决方案"
-                : "Contact our expert team for customized cross-border machinery trade solutions."}
+              {translate("联系我们的专家团队，为您定制专属的跨境农机贸易解决方案", locale)}
             </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
               <a
                 href="mailto:jiusei0319@gmail.com"
                 className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 font-semibold text-violet-700 transition-colors hover:bg-violet-50"
               >
-                {isZh ? "📧 邮件咨询" : "📧 Email Us"}
+                {translate("📧 邮件咨询", locale)}
               </a>
               <Link
                 href={`/${locale}/about`}
                 className="inline-flex items-center gap-2 rounded-lg border border-white/30 px-6 py-3 font-semibold text-white transition-colors hover:bg-white/10"
               >
-                {isZh ? "了解更多关于我们" : "More About Us"}
+                {translate("了解更多关于我们", locale)}
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>

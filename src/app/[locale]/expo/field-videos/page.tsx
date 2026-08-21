@@ -1,5 +1,6 @@
 "use client";
 
+import { translate } from "@/lib/i18n-runtime";
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { ArrowUpFromLine, Play, X, Loader2, Camera, Smartphone } from "lucide-react";
@@ -70,7 +71,7 @@ export default function FieldVideosPage() {
     const f = e.target.files?.[0];
     if (!f) return;
     if (f.size > 100 * 1024 * 1024) {
-      setMessage({ type: "error", text: isZh ? "视频超过100MB限制" : "Video exceeds 100MB limit" });
+      setMessage({ type: "error", text: translate("视频超过100MB限制", locale) });
       return;
     }
     setFile(f);
@@ -80,7 +81,7 @@ export default function FieldVideosPage() {
 
   const handleUpload = async () => {
     if (!file || !brandName.trim()) {
-      setMessage({ type: "error", text: isZh ? "请填写品牌名并选择视频" : "Fill brand name and select video" });
+      setMessage({ type: "error", text: translate("请填写品牌名并选择视频", locale) });
       return;
     }
     setUploading(true);
@@ -116,22 +117,22 @@ export default function FieldVideosPage() {
         body: JSON.stringify({
           finalUrl: sign.data.finalUrl,
           brandName: brandName.trim(),
-          machineType: machineType.trim() || (isZh ? "现场作业" : "Field Demo"),
+          machineType: machineType.trim() || (translate("现场作业", locale)),
         }),
       });
       const result = await confRes.json();
       if (result.success) {
-        setMessage({ type: "success", text: isZh ? "上传成功！视频已发布到大屏" : "Uploaded! Video is now live" });
+        setMessage({ type: "success", text: translate("上传成功！视频已发布到大屏", locale) });
         setBrandName("");
         setMachineType("");
         setFile(null);
         setPreview(null);
         fetchVideos();
       } else {
-        setMessage({ type: "error", text: result.error || (isZh ? "上传失败" : "Upload failed") });
+        setMessage({ type: "error", text: result.error || (translate("上传失败", locale)) });
       }
     } catch (e: any) {
-      setMessage({ type: "error", text: e.message || (isZh ? "上传出错" : "Upload error") });
+      setMessage({ type: "error", text: e.message || (translate("上传出错", locale)) });
     }
     setUploading(false);
   };
@@ -145,13 +146,13 @@ export default function FieldVideosPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-green-900/80 to-gray-950" />
         <div className="relative mx-auto max-w-6xl px-4 py-16 text-center">
           <h1 className="text-4xl font-bold text-white sm:text-5xl">
-            {t("地头展·作业视频大赏", "Field Expo · Demo Video Showcase")}
+            {translate("地头展·作业视频大赏", locale)}
           </h1>
           <p className="mt-3 text-lg text-green-200">
-            {t("7月29日 河北元氏·第28届河北农机地头展", "July 29 · Yuanshi, Hebei · 28th Field Expo")}
+            {translate("7月29日 河北元氏·第28届河北农机地头展", locale)}
           </p>
           <p className="mt-1 text-sm text-gray-400">
-            {t("扫码上传您的现场作业视频，即刻在大屏和线上同步展示", "Scan to upload your demo video and feature it live!")}
+            {translate("扫码上传您的现场作业视频，即刻在大屏和线上同步展示", locale)}
           </p>
         </div>
       </div>
@@ -161,39 +162,39 @@ export default function FieldVideosPage() {
         <div className="rounded-2xl border border-green-800/40 bg-gray-900/80 p-6 backdrop-blur">
           <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-white">
             <Camera className="h-5 w-5 text-green-400" />
-            {t("上传您的作业视频", "Upload Your Demo Video")}
+            {translate("上传您的作业视频", locale)}
           </h2>
 
           <div className="grid gap-4 md:grid-cols-2">
             {/* Left: form */}
             <div className="space-y-3">
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-300">{t("品牌名称 *", "Brand Name *")}</label>
+                <label className="mb-1 block text-sm font-medium text-gray-300">{translate("品牌名称 *", locale)}</label>
                 <input
                   type="text"
                   value={brandName}
                   onChange={(e) => setBrandName(e.target.value)}
-                  placeholder={t("如：河北英虎机械", "e.g. Hebei Yinghu")}
+                  placeholder={translate("如：河北英虎机械", locale)}
                   className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-green-500 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-300">{t("机器类型", "Machine Type")}</label>
+                <label className="mb-1 block text-sm font-medium text-gray-300">{translate("机器类型", locale)}</label>
                 <input
                   type="text"
                   value={machineType}
                   onChange={(e) => setMachineType(e.target.value)}
-                  placeholder={t("如：玉米收获机", "e.g. Corn Harvester")}
+                  placeholder={translate("如：玉米收获机", locale)}
                   className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-green-500 focus:outline-none"
                 />
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-300">
-                  {t("视频文件（≤100MB）", "Video File (≤100MB)")}
+                  {translate("视频文件（≤100MB）", locale)}
                 </label>
                 <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-600 bg-gray-800/50 p-4 transition hover:border-green-500">
                   <Smartphone className="mb-1 h-6 w-6 text-gray-400" />
-                  <span className="text-sm text-gray-400">{t("点击选择视频", "Tap to select video")}</span>
+                  <span className="text-sm text-gray-400">{translate("点击选择视频", locale)}</span>
                   <input type="file" accept="video/*" className="hidden" onChange={handleFileSelect} />
                 </label>
               </div>
@@ -203,7 +204,7 @@ export default function FieldVideosPage() {
                 className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-green-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUpFromLine className="h-4 w-4" />}
-                {uploading ? t("上传中...", "Uploading...") : t("上传到集锦", "Upload to Gallery")}
+                {uploading ? translate("上传中...", locale) : translate("上传到集锦", locale)}
               </button>
               {message && (
                 <div
@@ -225,7 +226,7 @@ export default function FieldVideosPage() {
               ) : (
                 <div className="flex flex-col items-center gap-2 p-8 text-center text-gray-500">
                   <Play className="h-10 w-10" />
-                  <span className="text-sm">{t("选择视频后预览", "Preview will appear here")}</span>
+                  <span className="text-sm">{translate("选择视频后预览", locale)}</span>
                 </div>
               )}
             </div>
@@ -235,20 +236,20 @@ export default function FieldVideosPage() {
         {/* Gallery */}
         <div className="mt-8">
           <h2 className="mb-4 text-xl font-bold text-white">
-            {t("作业视频大赏", "Demo Video Gallery")}
+            {translate("作业视频大赏", locale)}
             <span className="ml-2 text-sm font-normal text-gray-400">
-              {t("（共", "(")}
+              {translate("（共", locale)}
               {videos.length}
-              {t("个视频）", " video(s)")}
+              {translate("个视频）", locale)}
             </span>
           </h2>
 
           {videos.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-gray-700 p-12 text-center">
               <Play className="mx-auto mb-3 h-12 w-12 text-gray-600" />
-              <p className="text-lg text-gray-500">{t("还没有视频上传", "No videos yet")}</p>
+              <p className="text-lg text-gray-500">{translate("还没有视频上传", locale)}</p>
               <p className="mt-1 text-sm text-gray-600">
-                {t("现场扫码上传，您的视频将出现在这里和大屏上", "Scan and upload — your video will show here and on the big screen")}
+                {translate("现场扫码上传，您的视频将出现在这里和大屏上", locale)}
               </p>
             </div>
           ) : (
@@ -278,7 +279,7 @@ export default function FieldVideosPage() {
                     <VideoPlayBadge
                       playCount={playCounts[v.id] ?? v.playCount ?? 0}
                       locale={locale}
-                      badgeLabel={isZh ? "地头展现场" : "Field Demo"}
+                      badgeLabel={translate("地头展现场", locale)}
                     />
                   </div>
                 </div>
@@ -290,10 +291,10 @@ export default function FieldVideosPage() {
         {/* QR code hint */}
         <div className="mt-8 rounded-xl border border-green-900/30 bg-green-950/30 p-6 text-center">
           <p className="text-lg font-semibold text-green-300">
-            📱 {t("现场扫码上传 · 即刻上大屏", "Scan QR · Instant Big Screen")}
+            📱 {translate("现场扫码上传 · 即刻上大屏", locale)}
           </p>
           <p className="mt-1 text-sm text-green-400/70">
-            {t("打开手机 → 扫码 → 选视频 → 上传完成", "Open camera → Scan QR → Pick video → Done!")}
+            {translate("打开手机 → 扫码 → 选视频 → 上传完成", locale)}
           </p>
         </div>
       </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { translate } from "@/lib/i18n-runtime";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Wrench, Search, Package, Truck, ShieldCheck, Tag, Boxes, Zap, CheckCircle2, ArrowRight, Star, X, Filter } from "lucide-react";
 import PartsCatalogNav, { type CatalogTreeNode } from "@/components/parts/PartsCatalogNav";
@@ -186,20 +187,18 @@ export default function PartsClient({ locale, initialCatalogTree }: PartsClientP
                 <Wrench className="h-7 w-7" />
               </div>
               <h1 className="text-3xl md:text-4xl font-bold">
-                {isZh ? "零配件专区" : "Parts & Components"}
+                {translate("零配件专区", locale)}
               </h1>
             </div>
             <p className="text-white/90 text-lg max-w-2xl mb-6">
-              {isZh
-                ? "四级分类导航 · 原厂配件 · 品牌兼容件 · 全国配送 — 为您的农机提供全生命周期配件保障"
-                : "Four-Level Catalog · OEM Parts · Compatible Components · Nationwide Delivery — Full lifecycle parts support"}
+              {translate("四级分类导航 · 原厂配件 · 品牌兼容件 · 全国配送 — 为您的农机提供全生命周期配件保障", locale)}
             </p>
 
             {/* Stats */}
             <div className="flex flex-wrap gap-6 mb-6">
               <div className="flex items-center gap-2">
                 <Boxes className="h-5 w-5 text-white/80" />
-                <span className="text-sm font-medium">{isZh ? "14大品类" : "14 Categories"}</span>
+                <span className="text-sm font-medium">{translate("14大品类", locale)}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Tag className="h-5 w-5 text-white/80" />
@@ -207,11 +206,11 @@ export default function PartsClient({ locale, initialCatalogTree }: PartsClientP
               </div>
               <div className="flex items-center gap-2">
                 <Truck className="h-5 w-5 text-white/80" />
-                <span className="text-sm font-medium">{isZh ? "全国配送" : "Nationwide Shipping"}</span>
+                <span className="text-sm font-medium">{translate("全国配送", locale)}</span>
               </div>
               <div className="flex items-center gap-2">
                 <ShieldCheck className="h-5 w-5 text-white/80" />
-                <span className="text-sm font-medium">{isZh ? "质量保证" : "Quality Guarantee"}</span>
+                <span className="text-sm font-medium">{translate("质量保证", locale)}</span>
               </div>
             </div>
 
@@ -220,7 +219,7 @@ export default function PartsClient({ locale, initialCatalogTree }: PartsClientP
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
                 type="text"
-                placeholder={isZh ? "搜索配件名称、品牌、OEM编号..." : "Search parts, brands, OEM numbers..."}
+                placeholder={translate("搜索配件名称、品牌、OEM编号...", locale)}
                 value={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 className="w-full pl-12 pr-4 py-4 rounded-xl text-gray-900 bg-white shadow-lg focus:outline-none focus:ring-4 focus:ring-white/30"
@@ -269,7 +268,7 @@ export default function PartsClient({ locale, initialCatalogTree }: PartsClientP
         >
           <span className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-orange-600" />
-            {isZh ? "配件分类导航" : "Parts Catalog"}
+            {translate("配件分类导航", locale)}
           </span>
           {showMobileNav ? <X className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}
         </button>
@@ -303,13 +302,13 @@ export default function PartsClient({ locale, initialCatalogTree }: PartsClientP
             <div className="mb-4 flex flex-wrap items-center gap-3 bg-white rounded-xl border border-gray-200 p-3">
               {/* Brand filter */}
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500 font-medium">{isZh ? "品牌:" : "Brand:"}</span>
+                <span className="text-xs text-gray-500 font-medium">{translate("品牌:", locale)}</span>
                 <select
                   value={selectedBrand}
                   onChange={(e) => handleBrandChange(e.target.value)}
                   className="text-sm border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
                 >
-                  <option value="">{isZh ? "全部" : "All"}</option>
+                  <option value="">{translate("全部", locale)}</option>
                   {availableBrands.map((brand) => (
                     <option key={brand} value={brand}>
                       {brand}
@@ -320,16 +319,16 @@ export default function PartsClient({ locale, initialCatalogTree }: PartsClientP
 
               {/* Stock status filter */}
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500 font-medium">{isZh ? "库存:" : "Stock:"}</span>
+                <span className="text-xs text-gray-500 font-medium">{translate("库存:", locale)}</span>
                 <select
                   value={selectedStockStatus}
                   onChange={(e) => handleStockStatusChange(e.target.value)}
                   className="text-sm border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
                 >
-                  <option value="all">{isZh ? "全部" : "All"}</option>
-                  <option value="in_stock">{isZh ? "有货" : "In Stock"}</option>
-                  <option value="low_stock">{isZh ? "库存紧张" : "Low Stock"}</option>
-                  <option value="out_of_stock">{isZh ? "缺货" : "Out of Stock"}</option>
+                  <option value="all">{translate("全部", locale)}</option>
+                  <option value="in_stock">{translate("有货", locale)}</option>
+                  <option value="low_stock">{translate("库存紧张", locale)}</option>
+                  <option value="out_of_stock">{translate("缺货", locale)}</option>
                 </select>
               </div>
 
@@ -344,7 +343,7 @@ export default function PartsClient({ locale, initialCatalogTree }: PartsClientP
                   }}
                   className="text-xs text-orange-600 hover:text-orange-700 font-medium ml-auto"
                 >
-                  {isZh ? "清除筛选" : "Clear Filters"}
+                  {translate("清除筛选", locale)}
                 </button>
               )}
             </div>
@@ -369,26 +368,24 @@ export default function PartsClient({ locale, initialCatalogTree }: PartsClientP
           <div className="relative z-10">
             <Star className="h-10 w-10 mx-auto mb-3 text-yellow-300" />
             <h2 className="text-2xl font-bold mb-3">
-              {isZh ? "找不到需要的配件？" : "Can't find the part you need?"}
+              {translate("找不到需要的配件？", locale)}
             </h2>
             <p className="text-white/90 mb-6 max-w-xl mx-auto">
-              {isZh
-                ? "告诉我们您的设备型号和需求，我们专业团队帮您全球 sourcing，48小时内报价"
-                : "Tell us your equipment model and requirements. Our team will source globally and quote within 48 hours"}
+              {translate("告诉我们您的设备型号和需求，我们专业团队帮您全球 sourcing，48小时内报价", locale)}
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               <a
                 href="/about#contact"
                 className="inline-flex items-center gap-2 rounded-xl bg-white text-orange-600 px-7 py-3.5 font-bold hover:bg-orange-50 transition-colors shadow-lg"
               >
-                {isZh ? "提交需求" : "Submit Request"}
+                {translate("提交需求", locale)}
                 <ArrowRight className="h-4 w-4" />
               </a>
               <a
                 href="/products"
                 className="inline-flex items-center gap-2 rounded-xl bg-white/20 backdrop-blur text-white px-7 py-3.5 font-medium hover:bg-white/30 transition-colors border border-white/30"
               >
-                {isZh ? "浏览农机" : "Browse Machinery"}
+                {translate("浏览农机", locale)}
               </a>
             </div>
           </div>

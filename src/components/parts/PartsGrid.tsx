@@ -1,5 +1,6 @@
 "use client";
 
+import { translate } from "@/lib/i18n-runtime";
 import { Wrench } from "lucide-react";
 import PartCard, { type PartCardData } from "./PartCard";
 import { Pagination } from "@/components/ui/pagination";
@@ -39,7 +40,7 @@ export default function PartsGrid({
     return (
       <div className="text-center py-20 text-gray-400">
         <Wrench className="h-12 w-12 mx-auto mb-4 opacity-50" />
-        <p>{isZh ? "配件数据暂时无法加载，请稍后重试" : "Parts data is temporarily unavailable"}</p>
+        <p>{translate("配件数据暂时无法加载，请稍后重试", locale)}</p>
       </div>
     );
   }
@@ -48,7 +49,7 @@ export default function PartsGrid({
     return (
       <div className="text-center py-20 text-gray-400">
         <Wrench className="h-12 w-12 mx-auto mb-4 opacity-50" />
-        <p>{isZh ? "暂无匹配的配件" : "No matching parts found"}</p>
+        <p>{translate("暂无匹配的配件", locale)}</p>
       </div>
     );
   }

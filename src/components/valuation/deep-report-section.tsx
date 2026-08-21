@@ -1,5 +1,6 @@
 "use client";
 
+import { translate } from "@/lib/i18n-runtime";
 import { useState, useEffect, useRef } from "react";
 import {
   Shield, Check, FileDown,
@@ -201,11 +202,11 @@ export function DeepReportSection({
         setReportHtml(data.data.reportHtml);
         setStep("done");
       } else {
-        setError(data.error || (isZh ? "报告生成失败，请重试" : "Failed to generate report"));
+        setError(data.error || (translate("报告生成失败，请重试", locale)));
         setStep("select");
       }
     } catch {
-      setError(isZh ? "网络错误，请重试" : "Network error, please retry");
+      setError(translate("网络错误，请重试", locale));
       setStep("select");
     }
   };
@@ -230,16 +231,14 @@ export function DeepReportSection({
         <div className="flex items-center gap-1.5 text-xs text-purple-700">
           <Shield className="h-3.5 w-3.5" />
           <span>
-            {isZh
-              ? "深度估值报告 — 市场对比·趋势分析·购买建议（¥9-29）"
-              : "Deep valuation report — Market analysis·Trends·Buying advice (¥9-29)"}
+            {translate("深度估值报告 — 市场对比·趋势分析·购买建议（¥9-29）", locale)}
           </span>
         </div>
         <button
           onClick={() => setExpanded(true)}
           className="flex items-center gap-1 rounded bg-purple-600 px-3 py-1 text-xs font-medium text-white hover:bg-purple-700 transition-colors"
         >
-          {isZh ? "深度报告" : "Deep report"}
+          {translate("深度报告", locale)}
           <TrendingUp className="h-3 w-3" />
         </button>
       </div>
@@ -252,16 +251,16 @@ export function DeepReportSection({
       <div className="flex items-center justify-between bg-purple-700 px-4 py-2.5">
         <div className="flex items-center gap-1.5 text-sm font-medium text-white">
           <Sparkles className="h-4 w-4" />
-          {isZh ? "深度估值报告" : "Deep valuation report"}
+          {translate("深度估值报告", locale)}
           <span className="ml-1 rounded-full bg-purple-500 px-2 py-0.5 text-[10px]">
-            {isZh ? "付费" : "Paid"}
+            {translate("付费", locale)}
           </span>
         </div>
         <button
           onClick={() => { setExpanded(false); handleReset(); }}
           className="text-xs text-purple-200 hover:text-white"
         >
-          {isZh ? "收起 ▲" : "Close ▲"}
+          {translate("收起 ▲", locale)}
         </button>
       </div>
 
@@ -276,7 +275,7 @@ export function DeepReportSection({
               onClick={() => setError(null)}
               className="rounded bg-red-100 px-2 py-1 font-medium hover:bg-red-200"
             >
-              {isZh ? "重试" : "Retry"}
+              {translate("重试", locale)}
             </button>
           </div>
         )}
@@ -301,7 +300,7 @@ export function DeepReportSection({
                   >
                     {tier.recommended && (
                       <span className="absolute -top-2 right-3 rounded-full bg-purple-600 px-2 py-0.5 text-[10px] font-medium text-white">
-                        {isZh ? "推荐" : "Recommended"}
+                        {translate("推荐", locale)}
                       </span>
                     )}
                     <div className="mb-1 text-sm font-medium text-gray-800">
@@ -326,7 +325,7 @@ export function DeepReportSection({
             {/* Payment method */}
             <div className="mt-4">
               <div className="mb-2 text-xs font-medium text-gray-700">
-                {isZh ? "支付方式" : "Payment method"}
+                {translate("支付方式", locale)}
               </div>
               <div className="flex gap-2">
                 <button
@@ -338,7 +337,7 @@ export function DeepReportSection({
                   }`}
                 >
                   <span className="text-base">💚</span>
-                  {isZh ? "微信支付" : "WeChat Pay"}
+                  {translate("微信支付", locale)}
                 </button>
                 <button
                   onClick={() => setPaymentMethod("alipay")}
@@ -349,7 +348,7 @@ export function DeepReportSection({
                   }`}
                 >
                   <span className="text-base">💙</span>
-                  {isZh ? "支付宝" : "Alipay"}
+                  {translate("支付宝", locale)}
                 </button>
               </div>
             </div>
@@ -364,9 +363,7 @@ export function DeepReportSection({
                 : `Confirm · Pay ¥${TIERS[selectedTier].price} via QR`}
             </button>
             <div className="mt-2 text-center text-[10px] text-gray-400">
-              {isZh
-                ? "付款后在页面查看报告，支持在线查看 / 下载 / 打印"
-                : "View report on page after payment. Supports online view / download / print"}
+              {translate("付款后在页面查看报告，支持在线查看 / 下载 / 打印", locale)}
             </div>
           </>
         )}
@@ -394,9 +391,7 @@ export function DeepReportSection({
             </div>
             <div className="mt-3 flex items-center gap-1.5 text-[11px] text-amber-600">
               <AlertCircle className="h-3 w-3" />
-              {isZh
-                ? "请使用微信/支付宝扫一扫，付款后点击下方按钮"
-                : "Please scan to pay, then click the button below"}
+              {translate("请使用微信/支付宝扫一扫，付款后点击下方按钮", locale)}
             </div>
 
             {/* Confirm payment button (信任模式) */}
@@ -404,13 +399,13 @@ export function DeepReportSection({
               onClick={handleConfirmPaid}
               className="mt-4 w-full max-w-xs rounded-lg bg-green-600 py-3 text-sm font-medium text-white hover:bg-green-700 transition-colors shadow-sm"
             >
-              {isZh ? "✓ 我已付款，立即生成报告" : "✓ I've paid, generate report now"}
+              {translate("✓ 我已付款，立即生成报告", locale)}
             </button>
             <button
               onClick={handleReset}
               className="mt-2 text-xs text-gray-400 hover:text-gray-600"
             >
-              {isZh ? "← 返回重新选择" : "← Back"}
+              {translate("← 返回重新选择", locale)}
             </button>
           </div>
         )}
@@ -434,12 +429,10 @@ export function DeepReportSection({
               </div>
             </div>
             <div className="text-sm text-gray-600">
-              {isZh ? "正在生成深度估值报告..." : "Generating deep valuation report..."}
+              {translate("正在生成深度估值报告...", locale)}
             </div>
             <div className="mt-2 text-xs text-gray-400">
-              {isZh
-                ? "AI正在分析市场数据，请稍候..."
-                : "AI is analyzing market data, please wait..."}
+              {translate("AI正在分析市场数据，请稍候...", locale)}
             </div>
           </div>
         )}
@@ -450,7 +443,7 @@ export function DeepReportSection({
             <div className="mb-3 flex items-center justify-between">
               <div className="flex items-center gap-1.5 text-sm font-medium text-gray-800">
                 <Check className="h-4 w-4 text-green-600" />
-                {isZh ? "报告已生成" : "Report ready"}
+                {translate("报告已生成", locale)}
               </div>
               <div className="flex gap-2">
                 <button
@@ -458,7 +451,7 @@ export function DeepReportSection({
                   className="flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50"
                 >
                   <Printer className="h-3 w-3" />
-                  {isZh ? "打印" : "Print"}
+                  {translate("打印", locale)}
                 </button>
                 <button
                   onClick={() => {
@@ -472,14 +465,14 @@ export function DeepReportSection({
                   className="flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50"
                 >
                   <FileDown className="h-3 w-3" />
-                  {isZh ? "下载" : "Download"}
+                  {translate("下载", locale)}
                 </button>
                 <button
                   onClick={handleReset}
                   className="flex items-center gap-1 rounded-lg border border-purple-200 px-2.5 py-1 text-xs text-purple-600 hover:bg-purple-50"
                 >
                   <ArrowLeft className="h-3 w-3" />
-                  {isZh ? "重新选择" : "Reset"}
+                  {translate("重新选择", locale)}
                 </button>
               </div>
             </div>
@@ -498,14 +491,12 @@ export function DeepReportSection({
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 py-2.5 text-sm font-medium text-white hover:bg-green-700 transition-colors"
             >
               <TrendingUp className="h-4 w-4" />
-              {isZh ? "估价后一键发布出售" : "Publish for sale after valuation"}
+              {translate("估价后一键发布出售", locale)}
             </button>
             {showPublishForm && (
               <div className="mt-3 rounded-lg bg-green-50 p-3">
                 <p className="mb-2 text-xs text-green-700">
-                  {isZh
-                    ? "将您的农机设备信息发布到交易平台，让全球买家看到"
-                    : "Publish your machinery to the platform for global buyers"}
+                  {translate("将您的农机设备信息发布到交易平台，让全球买家看到", locale)}
                 </p>
                 <button
                   onClick={() => {
@@ -513,7 +504,7 @@ export function DeepReportSection({
                   }}
                   className="w-full rounded-lg bg-green-600 py-2 text-xs font-medium text-white hover:bg-green-700"
                 >
-                  {isZh ? "前往发布 →" : "Go to publish →"}
+                  {translate("前往发布 →", locale)}
                 </button>
               </div>
             )}

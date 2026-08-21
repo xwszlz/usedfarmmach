@@ -2421,5 +2421,1319 @@ export const I18N_DICT: Record<string, I18nEntry> = {
   },
   "卖方应在详情页如实告知已知瑕疵（如零部件缺失、外观损伤、功能异常等），标的物按现状交付。卖方对经合理查验可发现的瑕疵不承担担保责任，但对明知或应知而未披露的重大瑕疵，以及因故意隐瞒或虚假陈述导致的损失，仍依法承担责任。买方在交付后发现隐蔽瑕疵的，应在约定期限内书面通知卖方。": {
     "en": "Sellers must disclose known flaws on the listing page (such as missing parts, cosmetic damage, functional defects, etc.). Equipment is sold as-is. The seller is not liable for defects discoverable by reasonable inspection, but remains liable for major defects known or should-have-been-known and not disclosed, as well as losses caused by intentional concealment or misrepresentation. If hidden defects are found after delivery, the buyer must notify the seller in writing within the agreed period."
-  }
+  },
+  "想知道顶尖品牌与行业腰部品牌的差距？进入新锐专业馆，横向参数对比，理性决策。": {
+    "en": "Want to see the gap between top brands and mid-tier brands? Enter the Emerging Brands Hall to compare specs side-by-side and decide with confidence."
+  },
+  "正式开拍后，拍品将在此列出；当前仅作合规公示与内部预览": {
+    "en": "Once the auction goes live, lots will be listed here. For now this is shown for compliance disclosure and internal preview only."
+  },
+  "真实拍卖需持《拍卖经营批准证书》依法开展，通道筹备中": {
+    "en": "Live auctions must be conducted lawfully with an Auction Operation Permit. This channel is in preparation."
+  },
+  "以下差异化能力将在取得资质后陆续开放（内部预览）": {
+    "en": "The differentiated capabilities below will be rolled out progressively after licensing is obtained (internal preview)."
+  },
+  "扫码上传您的现场作业视频，即刻展示在大屏上": {
+    "en": "Scan to upload your field-operation video and showcase it on the big screen instantly."
+  },
+  "依法公开拍卖，持牌拍卖师主持，价高者得": {
+    "en": "Public auction by law, hosted by a licensed auctioneer — highest bid wins."
+  },
+  "暂无现场视频，期待您的上传": {
+    "en": "No field videos yet — we look forward to your uploads."
+  },
+  "现场作业视频集锦": {
+    "en": "Field Operation Video Highlights"
+  },
+  "真实拍卖通道": {
+    "en": "Live Auction Channel"
+  },
+  "上传作业视频": {
+    "en": "Upload Operation Video"
+  },
+  "中国品牌解决": {
+    "en": "China Brand Solutions"
+  },
+  "上线后将有": {
+    "en": "Coming after launch"
+  },
+  "真实拍卖": {
+    "en": "Live Auction"
+  },
+  "补全资料": {
+    "en": "Complete Your Profile"
+  },
+  "为获得更好的服务（如找回密码、接收通知），建议您补全以下资料。除“数据出境单独同意”外，其余均为选填。补全邮箱即视为已验证。": {
+    "en": "To get a better experience (e.g. password recovery, notifications), we recommend completing the following. Except for the cross-border data transfer consent, all fields are optional. Submitting a valid email is treated as verified in this phase."
+  },
+  "真实作业验证": {
+    "en": "Real Operation Verification"
+  },
+  "神雕展翼™ — 神雕农机展旗下的真实作业视频验证模块": {
+    "en": "Shendiao WingShow™ — Field Operation Video Show by Shendiao Agri-Machinery Expo™"
+  },
+  "认领申请已提交！": {
+    "en": "Claim Submitted!"
+  },
+  "我们将在2个工作日内审核并与您联系。审核通过后，您将获得品牌页面管理权限，可上传官方素材、更新产品信息。": {
+    "en": "We will review your application within 2 business days. Once approved, you will gain brand page management access to upload official materials and update product information."
+  },
+  "💚 请扫码完成付款": {
+    "en": "💚 Please scan to pay"
+  },
+  "📌 付款后请将截图发至 932133255@qq.com 或致电 +86 18633878701，24小时内开通自助展台。": {
+    "en": "📌 After payment, send screenshot to 932133255@qq.com or call +86 18633878701. Activated within 24 hours."
+  },
+  "您选择的是免费版，审核通过后自动开通，无需付款。": {
+    "en": "You selected the Free tier. You'll be activated automatically after review—no payment needed."
+  },
+  "返回展会": {
+    "en": "Back to Expo"
+  },
+  "查看套餐": {
+    "en": "View Plans"
+  },
+  "品牌方认领": {
+    "en": "Brand Claim"
+  },
+  "认领您的品牌页面，获得官方管理权限": {
+    "en": "Claim your brand page and gain official management access"
+  },
+  "更新信息": {
+    "en": "Update Info"
+  },
+  "修改品牌故事、产品参数": {
+    "en": "Edit brand story & specs"
+  },
+  "上传素材": {
+    "en": "Upload Media"
+  },
+  "替换AI图为官方高清图": {
+    "en": "Replace AI images with official photos"
+  },
+  "官方认证": {
+    "en": "Verified Badge"
+  },
+  "品牌名称 *": {
+    "en": "Brand Name *"
+  },
+  "请输入品牌名称": {
+    "en": "Enter brand name"
+  },
+  "联系人姓名 *": {
+    "en": "Contact Name *"
+  },
+  "请输入您的姓名": {
+    "en": "Enter your name"
+  },
+  "职位": {
+    "en": "Position"
+  },
+  "如：市场总监、出口部经理": {
+    "en": "e.g. Marketing Director, Export Manager"
+  },
+  "联系电话/WhatsApp *": {
+    "en": "Phone/WhatsApp *"
+  },
+  "请输入手机号或WhatsApp": {
+    "en": "Enter phone or WhatsApp number"
+  },
+  "电子邮箱": {
+    "en": "Email"
+  },
+  "公司全称": {
+    "en": "Company Name"
+  },
+  "请输入公司全称": {
+    "en": "Enter full company name"
+  },
+  "国家/地区": {
+    "en": "Country/Region"
+  },
+  "如：中国、美国、德国": {
+    "en": "e.g. China, USA, Germany"
+  },
+  "营业执照编号/统一社会信用代码": {
+    "en": "Business License No."
+  },
+  "用于资质审核": {
+    "en": "For verification purposes"
+  },
+  "补充说明": {
+    "en": "Additional Notes"
+  },
+  "可补充品牌授权情况、代理区域、合作意向等": {
+    "en": "Brand authorization details, agency regions, cooperation intentions, etc."
+  },
+  "提交认领申请": {
+    "en": "Submit Claim"
+  },
+  "提交后我们将在2个工作日内审核。如需加急，请联系 932133255@qq.com 或致电 +86 18633878701": {
+    "en": "We will review within 2 business days. For urgent requests, contact 932133255@qq.com or call +86 18633878701."
+  },
+  "视频超过100MB限制": {
+    "en": "Video exceeds 100MB limit"
+  },
+  "请填写品牌名并选择视频": {
+    "en": "Fill brand name and select video"
+  },
+  "现场作业": {
+    "en": "Field Demo"
+  },
+  "上传成功！视频已发布到大屏": {
+    "en": "Uploaded! Video is now live"
+  },
+  "上传失败": {
+    "en": "Upload failed"
+  },
+  "上传出错": {
+    "en": "Upload error"
+  },
+  "地头展现场": {
+    "en": "Field Demo"
+  },
+  "地头展·作业视频大赏": {
+    "en": "Field Expo · Demo Video Showcase"
+  },
+  "7月29日 河北元氏·第28届河北农机地头展": {
+    "en": "July 29 · Yuanshi, Hebei · 28th Field Expo"
+  },
+  "扫码上传您的现场作业视频，即刻在大屏和线上同步展示": {
+    "en": "Scan to upload your demo video and feature it live!"
+  },
+  "上传您的作业视频": {
+    "en": "Upload Your Demo Video"
+  },
+  "如：河北英虎机械": {
+    "en": "e.g. Hebei Yinghu"
+  },
+  "机器类型": {
+    "en": "Machine Type"
+  },
+  "如：玉米收获机": {
+    "en": "e.g. Corn Harvester"
+  },
+  "视频文件（≤100MB）": {
+    "en": "Video File (≤100MB)"
+  },
+  "点击选择视频": {
+    "en": "Tap to select video"
+  },
+  "上传中...": {
+    "en": "Uploading..."
+  },
+  "上传到集锦": {
+    "en": "Upload to Gallery"
+  },
+  "选择视频后预览": {
+    "en": "Preview will appear here"
+  },
+  "作业视频大赏": {
+    "en": "Demo Video Gallery"
+  },
+  "（共": {
+    "en": "("
+  },
+  "个视频）": {
+    "en": " video(s)"
+  },
+  "还没有视频上传": {
+    "en": "No videos yet"
+  },
+  "现场扫码上传，您的视频将出现在这里和大屏上": {
+    "en": "Scan and upload — your video will show here and on the big screen"
+  },
+  "现场扫码上传 · 即刻上大屏": {
+    "en": "Scan QR · Instant Big Screen"
+  },
+  "打开手机 → 扫码 → 选视频 → 上传完成": {
+    "en": "Open camera → Scan QR → Pick video → Done!"
+  },
+  "如：发动机运行检测": {
+    "en": "e.g. Engine inspection"
+  },
+  "验机员姓名": {
+    "en": "Inspector name"
+  },
+  "如：石家庄元氏县马村镇": {
+    "en": "e.g. Yuanshi, Shijiazhuang"
+  },
+  "描述检测项目、结果、发现的问题等": {
+    "en": "Describe what was inspected and results"
+  },
+  "农机档案数据异常": {
+    "en": "Profile data error"
+  },
+  "神雕农机 · 一机一码溯源": {
+    "en": "Shendiao · Machinery Traceability"
+  },
+  "已验证": {
+    "en": "Verified"
+  },
+  "待验证": {
+    "en": "Pending"
+  },
+  "成色": {
+    "en": "Condition"
+  },
+  "哈希": {
+    "en": "Hash"
+  },
+  "验机实拍": {
+    "en": "Inspection Photos"
+  },
+  "全生命周期档案": {
+    "en": "Lifecycle History"
+  },
+  "暂无记录": {
+    "en": "No records yet"
+  },
+  "检测照片": {
+    "en": "Photos"
+  },
+  "检测视频": {
+    "en": "Videos"
+  },
+  "查看视频": {
+    "en": "Watch Video"
+  },
+  "添加验机记录": {
+    "en": "Add Inspection"
+  },
+  "验机记录": {
+    "en": "Inspection Record"
+  },
+  "提交成功，页面刷新中...": {
+    "en": "Submitted! Refreshing..."
+  },
+  "检测标题": {
+    "en": "Title"
+  },
+  "检测人员": {
+    "en": "Inspector"
+  },
+  "检测地点": {
+    "en": "Location"
+  },
+  "检测说明": {
+    "en": "Description"
+  },
+  "照片/视频": {
+    "en": "Photos/Videos"
+  },
+  "点击上传照片或视频（可多选）": {
+    "en": "Upload photos/videos (multi-select)"
+  },
+  "提交验机记录": {
+    "en": "Submit Inspection"
+  },
+  "零配件专区": {
+    "en": "Parts & Components"
+  },
+  "四级分类导航 · 原厂配件 · 品牌兼容件 · 全国配送 — 为您的农机提供全生命周期配件保障": {
+    "en": "Four-Level Catalog · OEM Parts · Compatible Components · Nationwide Delivery — Full lifecycle parts support"
+  },
+  "14大品类": {
+    "en": "14 Categories"
+  },
+  "全国配送": {
+    "en": "Nationwide Shipping"
+  },
+  "质量保证": {
+    "en": "Quality Guarantee"
+  },
+  "搜索配件名称、品牌、OEM编号...": {
+    "en": "Search parts, brands, OEM numbers..."
+  },
+  "配件分类导航": {
+    "en": "Parts Catalog"
+  },
+  "品牌:": {
+    "en": "Brand:"
+  },
+  "库存:": {
+    "en": "Stock:"
+  },
+  "有货": {
+    "en": "In Stock"
+  },
+  "库存紧张": {
+    "en": "Low Stock"
+  },
+  "缺货": {
+    "en": "Out of Stock"
+  },
+  "找不到需要的配件？": {
+    "en": "Can't find the part you need?"
+  },
+  "告诉我们您的设备型号和需求，我们专业团队帮您全球 sourcing，48小时内报价": {
+    "en": "Tell us your equipment model and requirements. Our team will source globally and quote within 48 hours"
+  },
+  "提交需求": {
+    "en": "Submit Request"
+  },
+  "浏览农机": {
+    "en": "Browse Machinery"
+  },
+  "隐私政策": {
+    "en": "Privacy Policy"
+  },
+  "最近更新日期：2026年7月17日 | 生效日期：2026年7月17日": {
+    "en": "Last updated: July 17, 2026 | Effective date: July 17, 2026"
+  },
+  "增值服务_AI估值_跨境物流_金融保险_一站式农机解决方案_神雕农机": {
+    "en": "Value-Added Services | AI Valuation · Logistics · Finance · One-Stop Agri Solutions"
+  },
+  "神雕农机增值服务中心：AI智能估价、智能跨境套利、第三方专业检测、跨境物流运输、金融保险、线下服务网点、行业解决方案。一站式农机跨境贸易全链路服务。": {
+    "en": "AgriTrade Value-Added Services: AI valuation, smart arbitrage, third-party inspection, cross-border logistics, finance & insurance, service centers, industry solutions. One-stop machinery trade services."
+  },
+  "增值服务 — 神雕农机一站式跨境解决方案": {
+    "en": "Value-Added Services — AgriTrade One-Stop Solutions"
+  },
+  "7大增值服务矩阵：AI估价·跨境套利·专业检测·跨境物流·金融保险·服务网点·行业方案。让二手农机跨境贸易更简单、更安全、更高效。": {
+    "en": "7 value-added services: AI Valuation, Smart Arbitrage, Inspection, Logistics, Finance, Service Centers, Solutions. Making cross-border machinery trade simpler, safer, more efficient."
+  },
+  "神雕农机": {
+    "en": "AgriTrade"
+  },
+  "增值服务": {
+    "en": "Value-Added Services"
+  },
+  "8大增值服务矩阵": {
+    "en": "8 Value-Added Services"
+  },
+  "从AI估值到跨境物流，从金融保险到线下服务 —— 一站式农机跨境贸易全链路解决方案": {
+    "en": "From AI valuation to cross-border logistics, from finance to offline service — one-stop full-chain solutions for global machinery trade."
+  },
+  "选择您需要的服务": {
+    "en": "Choose Your Service"
+  },
+  "点击进入各项服务的专属页面，了解更多详情": {
+    "en": "Click into each service's dedicated page for more details."
+  },
+  "了解详情": {
+    "en": "Learn More"
+  },
+  "还没找到您需要的服务？": {
+    "en": "Can't find what you need?"
+  },
+  "联系我们的专家团队，为您定制专属的跨境农机贸易解决方案": {
+    "en": "Contact our expert team for customized cross-border machinery trade solutions."
+  },
+  "📧 邮件咨询": {
+    "en": "📧 Email Us"
+  },
+  "了解更多关于我们": {
+    "en": "More About Us"
+  },
+  "行业方案": {
+    "en": "Solutions"
+  },
+  "行业解决方案": {
+    "en": "Industry Solutions"
+  },
+  "针对不同农业场景，提供从设备选型到运维管理的全套农机解决方案": {
+    "en": "Tailored machinery solutions for different agricultural scenarios, from equipment selection to maintenance"
+  },
+  "气候特点": {
+    "en": "Climate"
+  },
+  "主要作物": {
+    "en": "Main Crops"
+  },
+  "出口注意事项": {
+    "en": "Export Notes"
+  },
+  "推荐品牌": {
+    "en": "Recommended Brands"
+  },
+  "查看相关设备": {
+    "en": "Browse Related Equipment"
+  },
+  "用户协议": {
+    "en": "Terms of Service"
+  },
+  "我的合同": {
+    "en": "My Contracts"
+  },
+  "作为卖方": {
+    "en": "As Seller"
+  },
+  "作为买方": {
+    "en": "As Buyer"
+  },
+  "暂无合同记录": {
+    "en": "No contracts yet"
+  },
+  "卖方": {
+    "en": "Seller"
+  },
+  "未签": {
+    "en": "Unsigned"
+  },
+  "买方": {
+    "en": "Buyer"
+  },
+  "合同详情": {
+    "en": "Contract Detail"
+  },
+  "贸易条款": {
+    "en": "Trade Term"
+  },
+  "合同条款": {
+    "en": "Contract Terms"
+  },
+  "卖方已签": {
+    "en": "Seller Signed ✓"
+  },
+  "卖方签署": {
+    "en": "Sign as Seller"
+  },
+  "买方已签": {
+    "en": "Buyer Signed ✓"
+  },
+  "买方签署": {
+    "en": "Sign as Buyer"
+  },
+  "合同已双方签署生效": {
+    "en": "Contract is fully signed and effective"
+  },
+  "有效期": {
+    "en": "Valid"
+  },
+  "加载中...": {
+    "en": "Loading..."
+  },
+  "收藏设备": {
+    "en": "Favorites"
+  },
+  "关注卖家": {
+    "en": "Following"
+  },
+  "保存搜索": {
+    "en": "Saved Searches"
+  },
+  "我的收藏": {
+    "en": "My Favorites"
+  },
+  "暂无收藏设备": {
+    "en": "No favorites yet"
+  },
+  "暂无关注卖家": {
+    "en": "Not following anyone"
+  },
+  "未命名卖家": {
+    "en": "Unnamed Seller"
+  },
+  "查看主页": {
+    "en": "View Profile"
+  },
+  "暂无保存搜索": {
+    "en": "No saved searches"
+  },
+  "通知": {
+    "en": "Notify"
+  },
+  "创建于": {
+    "en": "Created"
+  },
+  "去浏览农机 →": {
+    "en": "Browse equipment →"
+  },
+  "售后维保记录": {
+    "en": "Maintenance Records"
+  },
+  "暂无维保记录": {
+    "en": "No maintenance records"
+  },
+  "在产品详情页可以预约维修服务": {
+    "en": "Schedule maintenance from product detail page"
+  },
+  "质保内": {
+    "en": "Under Warranty"
+  },
+  "预约时间": {
+    "en": "Scheduled"
+  },
+  "完成时间": {
+    "en": "Completed"
+  },
+  "维修技师": {
+    "en": "Technician"
+  },
+  "评分": {
+    "en": "Rating"
+  },
+  "备注": {
+    "en": "Notes"
+  },
+  "AI生成内容": {
+    "en": "AI Generated"
+  },
+  "本页图片及信息均为AI生成/基于公开资料整理，不代表品牌官方立场。": {
+    "en": "Images and information on this page are AI-generated/based on public sources and do not represent official brand positions."
+  },
+  "免责声明": {
+    "en": "Disclaimer"
+  },
+  "品牌方认领入口 →": {
+    "en": "Brand Claim Portal →"
+  },
+  "已收藏": {
+    "en": "Saved"
+  },
+  "收藏": {
+    "en": "Save"
+  },
+  "已关注": {
+    "en": "Following"
+  },
+  "地头展": {
+    "en": "Field Expo"
+  },
+  "第28届河北农机推广演示会": {
+    "en": "28th Hebei Agri Machinery Expo"
+  },
+  "神雕展翼 · 真实作业视频": {
+    "en": "Shendiao WingShow™ · Field Operation Videos"
+  },
+  "7/29 · 元氏 · 神雕农机": {
+    "en": "Jul 29 · Yuanshi"
+  },
+  "真机下地 · 实效验证": {
+    "en": "Real machines. Real fields."
+  },
+  "展会详情": {
+    "en": "Expo Details"
+  },
+  "观看作业视频": {
+    "en": "Watch Videos"
+  },
+  "加载检验报告...": {
+    "en": "Loading inspection reports..."
+  },
+  "设备检验报告": {
+    "en": "Inspection Report"
+  },
+  "综合评分": {
+    "en": "Overall Score"
+  },
+  "检验员": {
+    "en": "Inspector"
+  },
+  "检验机构": {
+    "en": "Organization"
+  },
+  "检验日期": {
+    "en": "Date"
+  },
+  "有效期至": {
+    "en": "Valid Until"
+  },
+  "收起检测详情 ▲": {
+    "en": "Hide details ▲"
+  },
+  "查看检测详情 ▼": {
+    "en": "View details ▼"
+  },
+  "维修建议：": {
+    "en": "Recommendations: "
+  },
+  "询价已提交！": {
+    "en": "Quote Request Submitted!"
+  },
+  "我们的物流顾问将在24小时内联系您，提供详细报价方案。": {
+    "en": "Our logistics advisor will contact you within 24 hours with a detailed quote."
+  },
+  "提交新的询价": {
+    "en": "Submit another request"
+  },
+  "填写信息获取运费估算": {
+    "en": "Fill in details for shipping estimate"
+  },
+  "起运省份": {
+    "en": "Origin Province"
+  },
+  "请选择": {
+    "en": "Select"
+  },
+  "目的地区域": {
+    "en": "Destination Region"
+  },
+  "设备类型": {
+    "en": "Equipment Type"
+  },
+  "设备尺寸": {
+    "en": "Equipment Size"
+  },
+  "小型（<50HP）": {
+    "en": "Small (<50HP)"
+  },
+  "中型（50-150HP）": {
+    "en": "Medium (50-150HP)"
+  },
+  "大型（>150HP）": {
+    "en": "Large (>150HP)"
+  },
+  "预估运费区间": {
+    "en": "Estimated Shipping Cost"
+  },
+  "联系人": {
+    "en": "Contact Name"
+  },
+  "联系电话": {
+    "en": "Phone"
+  },
+  "补充设备尺寸、特殊要求等...": {
+    "en": "Equipment dimensions, special requirements..."
+  },
+  "提交询价": {
+    "en": "Submit Request"
+  },
+  "加载农机档案中...": {
+    "en": "Loading machinery profile..."
+  },
+  "一机一码身份溯源": {
+    "en": "Machinery Identity & Traceability"
+  },
+  "该设备尚未生成一机一码": {
+    "en": "No identity code generated yet"
+  },
+  "生成后可获得唯一QR码，买家扫码可查看设备全生命周期档案": {
+    "en": "Generate a unique QR code for buyers to trace full lifecycle history"
+  },
+  "生成中...": {
+    "en": "Generating..."
+  },
+  "生成一机一码": {
+    "en": "Generate Identity Code"
+  },
+  "微信扫码验机": {
+    "en": "Scan to verify"
+  },
+  "出厂编号": {
+    "en": "Serial No."
+  },
+  "已复制": {
+    "en": "Copied"
+  },
+  "复制链接": {
+    "en": "Copy"
+  },
+  "生命周期档案": {
+    "en": "Lifecycle History"
+  },
+  "个视频": {
+    "en": "videos"
+  },
+  "适配零部件": {
+    "en": "Compatible Parts"
+  },
+  "按品牌匹配": {
+    "en": "Brand matched"
+  },
+  "通用配件": {
+    "en": "Generic parts"
+  },
+  "配件加载失败，请稍后重试": {
+    "en": "Failed to load parts. Please retry."
+  },
+  "该机型暂无已登记的适配零部件": {
+    "en": "No compatible parts registered for this model yet"
+  },
+  "前往零配件专区逛逛 →": {
+    "en": "Browse parts catalog →"
+  },
+  "加载全部配件...": {
+    "en": "Loading all parts..."
+  },
+  "数据质量: ": {
+    "en": "Data Quality: "
+  },
+  "整机品类": {
+    "en": "Machine Type"
+  },
+  "子系统": {
+    "en": "Sub-System"
+  },
+  "部件组": {
+    "en": "Component Group"
+  },
+  "配件类型": {
+    "en": "Part Type"
+  },
+  "原厂件": {
+    "en": "OEM"
+  },
+  "品牌件": {
+    "en": "Aftermarket"
+  },
+  "立即询价": {
+    "en": "Inquire Now"
+  },
+  "返回列表": {
+    "en": "Back to List"
+  },
+  "产品描述": {
+    "en": "Description"
+  },
+  "技术参数": {
+    "en": "Technical Specifications"
+  },
+  "兼容机型": {
+    "en": "Compatible Machines"
+  },
+  "年份: ": {
+    "en": "Year: "
+  },
+  "询价表单": {
+    "en": "Inquiry Form"
+  },
+  "填写以下信息，我们将在24小时内联系您": {
+    "en": "Fill in the form below, we will contact you within 24 hours"
+  },
+  "询价提交成功！": {
+    "en": "Inquiry Submitted Successfully!"
+  },
+  "我们将在24小时内联系您，请保持电话畅通": {
+    "en": "We will contact you within 24 hours. Please keep your phone available."
+  },
+  "继续询价": {
+    "en": "Submit Another Inquiry"
+  },
+  "姓名 *": {
+    "en": "Name *"
+  },
+  "电话 *": {
+    "en": "Phone *"
+  },
+  "请输入联系电话": {
+    "en": "Enter your phone number"
+  },
+  "请输入邮箱（选填）": {
+    "en": "Enter your email (optional)"
+  },
+  "需求数量": {
+    "en": "Quantity"
+  },
+  "请输入您的需求描述（选填）": {
+    "en": "Enter your requirements (optional)"
+  },
+  "提交失败，请稍后重试或直接联系我们": {
+    "en": "Submission failed, please try again later or contact us directly"
+  },
+  "相关配件": {
+    "en": "Related Parts"
+  },
+  "配件专区": {
+    "en": "Parts"
+  },
+  "配件分类": {
+    "en": "Parts Catalog"
+  },
+  "全部配件": {
+    "en": "All Parts"
+  },
+  "配件数据暂时无法加载，请稍后重试": {
+    "en": "Parts data is temporarily unavailable"
+  },
+  "暂无匹配的配件": {
+    "en": "No matching parts found"
+  },
+  "报告生成失败，请重试": {
+    "en": "Failed to generate report"
+  },
+  "深度估值报告 — 市场对比·趋势分析·购买建议（¥9-29）": {
+    "en": "Deep valuation report — Market analysis·Trends·Buying advice (¥9-29)"
+  },
+  "深度报告": {
+    "en": "Deep report"
+  },
+  "深度估值报告": {
+    "en": "Deep valuation report"
+  },
+  "付费": {
+    "en": "Paid"
+  },
+  "收起 ▲": {
+    "en": "Close ▲"
+  },
+  "重试": {
+    "en": "Retry"
+  },
+  "支付方式": {
+    "en": "Payment method"
+  },
+  "微信支付": {
+    "en": "WeChat Pay"
+  },
+  "支付宝": {
+    "en": "Alipay"
+  },
+  "付款后在页面查看报告，支持在线查看 / 下载 / 打印": {
+    "en": "View report on page after payment. Supports online view / download / print"
+  },
+  "请使用微信/支付宝扫一扫，付款后点击下方按钮": {
+    "en": "Please scan to pay, then click the button below"
+  },
+  "✓ 我已付款，立即生成报告": {
+    "en": "✓ I've paid, generate report now"
+  },
+  "← 返回重新选择": {
+    "en": "← Back"
+  },
+  "正在生成深度估值报告...": {
+    "en": "Generating deep valuation report..."
+  },
+  "AI正在分析市场数据，请稍候...": {
+    "en": "AI is analyzing market data, please wait..."
+  },
+  "报告已生成": {
+    "en": "Report ready"
+  },
+  "打印": {
+    "en": "Print"
+  },
+  "下载": {
+    "en": "Download"
+  },
+  "重新选择": {
+    "en": "Reset"
+  },
+  "估价后一键发布出售": {
+    "en": "Publish for sale after valuation"
+  },
+  "将您的农机设备信息发布到交易平台，让全球买家看到": {
+    "en": "Publish your machinery to the platform for global buyers"
+  },
+  "前往发布 →": {
+    "en": "Go to publish →"
+  },
+  "优秀": {
+    "en": "Excellent"
+  },
+  "良好": {
+    "en": "Good"
+  },
+  "一般": {
+    "en": "Fair"
+  },
+  "较差": {
+    "en": "Poor"
+  },
+  "全新": {
+    "en": "New"
+  },
+  "准新": {
+    "en": "Like New"
+  },
+  "小麦、棉花、玉米、水稻": {
+    "en": "Wheat, Cotton, Corn, Rice"
+  },
+  "小麦、大麦、马铃薯、甜菜、向日葵": {
+    "en": "Wheat, Barley, Potato, Sugar Beet, Sunflower"
+  },
+  "水稻、甘蔗、橡胶、棕榈油": {
+    "en": "Rice, Sugarcane, Rubber, Palm Oil"
+  },
+  "材质": {
+    "en": "Material"
+  },
+  "重量": {
+    "en": "Weight"
+  },
+  "尺寸": {
+    "en": "Dimensions"
+  },
+  "保修期": {
+    "en": "Warranty"
+  },
+  "压力": {
+    "en": "Pressure"
+  },
+  "流量": {
+    "en": "Flow Rate"
+  },
+  "电压": {
+    "en": "Voltage"
+  },
+  "功率": {
+    "en": "Power"
+  },
+  "排量": {
+    "en": "Displacement"
+  },
+  "缸径": {
+    "en": "Bore"
+  },
+  "行程": {
+    "en": "Stroke"
+  },
+  "直径": {
+    "en": "Diameter"
+  },
+  "长度": {
+    "en": "Length"
+  },
+  "宽度": {
+    "en": "Width"
+  },
+  "高度": {
+    "en": "Height"
+  },
+  "厚度": {
+    "en": "Thickness"
+  },
+  "工作温度": {
+    "en": "Temperature"
+  },
+  "转速": {
+    "en": "Speed"
+  },
+  "扭矩": {
+    "en": "Torque"
+  },
+  "容量": {
+    "en": "Capacity"
+  },
+  "粘度": {
+    "en": "Viscosity"
+  },
+  "最大压力": {
+    "en": "Max Pressure"
+  },
+  "额定压力": {
+    "en": "Rated Pressure"
+  },
+  "最大转速": {
+    "en": "Max Speed"
+  },
+  "接口尺寸": {
+    "en": "Port Size"
+  },
+  "螺纹尺寸": {
+    "en": "Thread Size"
+  },
+  "内径": {
+    "en": "Inner Diameter"
+  },
+  "外径": {
+    "en": "Outer Diameter"
+  },
+  "轴承": {
+    "en": "Bearing"
+  },
+  "密封类型": {
+    "en": "Seal Type"
+  },
+  "滤材": {
+    "en": "Filter Media"
+  },
+  "过滤精度": {
+    "en": "Micron Rating"
+  },
+  "效率": {
+    "en": "Efficiency"
+  },
+  "冷却方式": {
+    "en": "Cooling"
+  },
+  "燃油系统": {
+    "en": "Fuel System"
+  },
+  "气缸数": {
+    "en": "Cylinders"
+  },
+  "压缩比": {
+    "en": "Compression Ratio"
+  },
+  "热处理": {
+    "en": "Heat Treatment"
+  },
+  "轴颈": {
+    "en": "Journals"
+  },
+  "升程": {
+    "en": "Lift"
+  },
+  "凸轮数": {
+    "en": "Lobes"
+  },
+  "基圆": {
+    "en": "Base Circle"
+  },
+  "环数": {
+    "en": "Ring Count"
+  },
+  "喷射压力": {
+    "en": "Injection Pressure"
+  },
+  "喷嘴类型": {
+    "en": "Nozzle Type"
+  },
+  "叶轮直径": {
+    "en": "Impeller Diameter"
+  },
+  "压轮": {
+    "en": "Compressor Wheel"
+  },
+  "涡轮": {
+    "en": "Turbine Wheel"
+  },
+  "最大增压": {
+    "en": "Max Boost"
+  },
+  "放气阀": {
+    "en": "Wastegate"
+  },
+  "齿数": {
+    "en": "Teeth"
+  },
+  "花键": {
+    "en": "Spline"
+  },
+  "模数": {
+    "en": "Module"
+  },
+  "硬度": {
+    "en": "Hardness"
+  },
+  "比率": {
+    "en": "Ratio"
+  },
+  "差速锁": {
+    "en": "Diff Lock"
+  },
+  "层级": {
+    "en": "Ply Rating"
+  },
+  "最大载荷": {
+    "en": "Max Load"
+  },
+  "花纹": {
+    "en": "Tread Pattern"
+  },
+  "节距": {
+    "en": "Pitch"
+  },
+  "链节数": {
+    "en": "Links"
+  },
+  "芯材": {
+    "en": "Core"
+  },
+  "承载能力": {
+    "en": "Load Capacity"
+  },
+  "轮距": {
+    "en": "Track Width"
+  },
+  "转向": {
+    "en": "Steering"
+  },
+  "间隙": {
+    "en": "Clearance"
+  },
+  "保持架": {
+    "en": "Cage"
+  },
+  "密封": {
+    "en": "Seal"
+  },
+  "含密封": {
+    "en": "Seal Included"
+  },
+  "规格": {
+    "en": "Sizes"
+  },
+  "包装": {
+    "en": "Storage"
+  },
+  "闪点": {
+    "en": "Flash Point"
+  },
+  "倾点": {
+    "en": "Pour Point"
+  },
+  "粘度等级": {
+    "en": "Viscosity Grade"
+  },
+  "冷启动电流": {
+    "en": "Cold Cranking Amps"
+  },
+  "光源": {
+    "en": "Light Source"
+  },
+  "光束": {
+    "en": "Beam Pattern"
+  },
+  "防水等级": {
+    "en": "Waterproof"
+  },
+  "输出": {
+    "en": "Output"
+  },
+  "调节器": {
+    "en": "Regulator"
+  },
+  "皮带轮": {
+    "en": "Pulley Type"
+  },
+  "方向": {
+    "en": "Direction"
+  },
+  "内存": {
+    "en": "Memory"
+  },
+  "接口": {
+    "en": "Connector"
+  },
+  "指示": {
+    "en": "Indicators"
+  },
+  "显示屏": {
+    "en": "Display Type"
+  },
+  "触点": {
+    "en": "Contacts"
+  },
+  "线圈电阻": {
+    "en": "Coil Resistance"
+  },
+  "输出信号": {
+    "en": "Output"
+  },
+  "压力范围": {
+    "en": "Pressure Range"
+  },
+  "线径": {
+    "en": "Wire Gauge"
+  },
+  "接口类型": {
+    "en": "Connector Type"
+  },
+  "防护": {
+    "en": "Protection"
+  },
+  "旁通阀": {
+    "en": "Bypass"
+  },
+  "排水": {
+    "en": "Drain"
+  },
+  "除水率": {
+    "en": "Water Removal"
+  },
+  "水分离": {
+    "en": "Water Separation"
+  },
+  "联数": {
+    "en": "Spools"
+  },
+  "最大流量": {
+    "en": "Max Flow"
+  },
+  "阀门类型": {
+    "en": "Valve Type"
+  },
+  "杆径": {
+    "en": "Rod Diameter"
+  },
+  "系列": {
+    "en": "Series"
+  },
+  "十字轴长": {
+    "en": "Trunnion Length"
+  },
+  "锥度": {
+    "en": "Cone"
+  },
+  "型式": {
+    "en": "Type"
+  },
+  "类别": {
+    "en": "Category"
+  },
+  "销径": {
+    "en": "Pin Diameter"
+  },
+  "摆角": {
+    "en": "Swivel Angle"
+  },
+  "最大牵引": {
+    "en": "Max Draw"
+  },
+  "操作": {
+    "en": "Operation"
+  },
+  "安装": {
+    "en": "Mounting"
+  },
+  "颜色": {
+    "en": "Color"
+  },
+  "表面处理": {
+    "en": "Surface"
+  },
+  "噪音": {
+    "en": "Noise Level"
+  },
+  "空调": {
+    "en": "Air Conditioning"
+  },
+  "座椅": {
+    "en": "Seat"
+  },
+  "铰链": {
+    "en": "Hinges"
+  },
+  "锁扣": {
+    "en": "Latch"
+  },
+  "侧别": {
+    "en": "Side"
+  },
+  "镜面尺寸": {
+    "en": "Mirror Size"
+  },
+  "外壳": {
+    "en": "Housing"
+  },
+  "调节": {
+    "en": "Adjustment"
+  },
+  "色调": {
+    "en": "Tint"
+  },
+  "顶宽": {
+    "en": "Top Width"
+  },
+  "摩擦材料": {
+    "en": "Friction Material"
+  },
+  "齿比": {
+    "en": "Gear Ratios"
+  },
+  "花键齿": {
+    "en": "Spline Teeth"
+  },
+  "管径": {
+    "en": "Tube Diameter"
+  },
+  "接头": {
+    "en": "Joint Type"
+  },
+  "单向阀": {
+    "en": "Check Valve"
+  },
+  "爆破压力": {
+    "en": "Burst Pressure"
+  },
+  "调节范围": {
+    "en": "Adjustment Range"
+  },
+  "最大扭矩": {
+    "en": "Max Torque"
+  },
 };

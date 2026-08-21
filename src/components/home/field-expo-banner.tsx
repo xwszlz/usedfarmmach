@@ -1,5 +1,6 @@
 "use client";
 
+import { translate } from "@/lib/i18n-runtime";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Calendar, MapPin, Play, Clock } from "lucide-react";
@@ -36,18 +37,18 @@ export function FieldExpoBanner({ locale }: FieldExpoBannerProps) {
           {/* Left: text */}
           <div className="flex items-center gap-3">
             <div className="hidden rounded-lg bg-white/20 px-3 py-1 text-sm font-bold text-white sm:block">
-              🔥 {isCn ? (isZh ? "地头展" : "Field Expo") : (isZh ? "真实作业验证" : "Real Operation Videos")}
+              🔥 {isCn ? (translate("地头展", locale)) : (translate("真实作业验证", locale))}
             </div>
             <div className="text-center text-sm text-white sm:text-left">
               <span className="font-semibold">
                 {isCn
-                  ? (isZh ? "第28届河北农机推广演示会" : "28th Hebei Agri Machinery Expo")
-                  : (isZh ? "神雕展翼 · 真实作业视频" : "Shendiao WingShow™ · Field Operation Videos")}
+                  ? (translate("第28届河北农机推广演示会", locale))
+                  : (translate("神雕展翼 · 真实作业视频", locale))}
               </span>
               {isCn ? (
                 <div className="flex items-center gap-2 text-green-100">
                   <Calendar className="h-3 w-3" />
-                  <span>{isZh ? "7/29 · 元氏 · 神雕农机" : "Jul 29 · Yuanshi"}</span>
+                  <span>{translate("7/29 · 元氏 · 神雕农机", locale)}</span>
                   <Clock className="ml-1 h-3 w-3" />
                   <span>
                     {isZh
@@ -58,7 +59,7 @@ export function FieldExpoBanner({ locale }: FieldExpoBannerProps) {
               ) : (
                 <div className="flex items-center gap-2 text-green-100">
                   <Play className="h-3 w-3" />
-                  <span>{isZh ? "真机下地 · 实效验证" : "Real machines. Real fields."}</span>
+                  <span>{translate("真机下地 · 实效验证", locale)}</span>
                 </div>
               )}
             </div>
@@ -71,7 +72,7 @@ export function FieldExpoBanner({ locale }: FieldExpoBannerProps) {
               className="inline-flex items-center gap-1.5 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-green-700 shadow transition hover:bg-green-50"
             >
               <Play className="h-4 w-4" />
-              {isCn ? (isZh ? "展会详情" : "Expo Details") : (isZh ? "观看作业视频" : "Watch Videos")}
+              {isCn ? (translate("展会详情", locale)) : (translate("观看作业视频", locale))}
             </Link>
           </div>
         </div>
