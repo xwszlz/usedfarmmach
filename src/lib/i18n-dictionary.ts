@@ -5,16 +5,40 @@ import type { I18nEntry } from "./i18n-types";
 
 export const I18N_DICT: Record<string, I18nEntry> = {
   "报价已提交！卖家将审阅您的报价并通过平台回复。": {
-    "en": "Offer submitted! Seller will review and respond."
+    "en": "Offer submitted! Seller will review and respond.",
+    "ru": "Предложение отправлено! Продавец рассмотрит ваше предложение и ответит через платформу.",
+    "es": "Se ha enviado su oferta! El vendedor revisará su oferta y responderá a través de la plataforma.",
+    "pt": "A sua cotação foi submetida! O vendedor irá revisar sua cotação e responder através da plataforma.",
+    "ar": "تم تقديم العرض! سيتم مراجعة عرضك من قبل البائع من خلال المنصة وسيتم الرد عليه.",
+    "fr": "L'offre a été soumise avec succès ! Le vendeur examinera votre offre et répondra via la plateforme.",
+    "hi": "आपका ऑफर जमा कर दिया गया है! विक्रेता आपके ऑफर की समीक्षा करेगा और प्लेटफ़ॉर्म के माध्यम से जवाब देगा।",
   },
   "报价失败，请先登录": {
-    "en": "Offer failed, please login first"
+    "en": "Offer failed, please login first",
+    "ru": "Ошибка предложения, пожалуйста, сначала войдите в систему",
+    "es": "La oferta ha fallado, por favor inicie sesión primero",
+    "pt": "Falha na cotação, por favor, faça login primeiro",
+    "ar": "فشل في تقديم العرض ، يرجى تسجيل الدخول أولاً",
+    "fr": "Échec de l'offre, veuillez vous connecter d'abord",
+    "hi": "ऑफर विफल रहा, कृपया पहले लॉगिन करें",
   },
   "提交失败，请先登录": {
-    "en": "Failed, please login first"
+    "en": "Failed, please login first",
+    "ru": "Ошибка отправки, пожалуйста, сначала войдите в систему",
+    "es": "La presentación ha fallado, por favor inicie sesión primero",
+    "pt": "Falha no envio, por favor, faça login primeiro",
+    "ar": "فشل في تقديم العرض ، يرجى تسجيل الدخول أولاً",
+    "fr": "Échec de la soumission, veuillez vous connecter d'abord",
+    "hi": "जमा करने में विफल, कृपया पहले लॉगिन करें",
   },
   "已接受报价，交易达成！": {
-    "en": "Offer accepted! Deal made!"
+    "en": "Offer accepted! Deal made!",
+    "ru": "Предложение принято, сделка заключена!",
+    "es": "Se ha aceptado la oferta, ¡se ha alcanzado un acuerdo!",
+    "pt": "Cotação aceita, transação concluída!",
+    "ar": "تم قبول العرض ، تم إتمام الصفقة!",
+    "fr": "L'offre a été acceptée, l'accord est conclu !",
+    "hi": "ऑफर स्वीकार कर लिया गया है, लेनदेन पूरा हो गया है!",
   },
   "操作失败": {
     "en": "Action failed",
@@ -23,19 +47,43 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Falha na ação",
     "ar": "فشل الإجراء",
     "fr": "Échec de l'action",
-    "hi": "क्रिया विफल"
+    "hi": "क्रिया विफल",
   },
   "已拒绝该报价": {
-    "en": "Offer rejected"
+    "en": "Offer rejected",
+    "ru": "Предложение отклонено",
+    "es": "Se ha rechazado esta oferta",
+    "pt": "Cotação rejeitada",
+    "ar": "تم رفض هذا العرض",
+    "fr": "Cette offre a été rejetée",
+    "hi": "ऑफर अस्वीकार कर दिया गया है",
   },
   "已接受卖家还价，交易达成！": {
-    "en": "Accepted seller's quote! Deal made!"
+    "en": "Accepted seller's quote! Deal made!",
+    "ru": "Продавец принял ваше предложение, сделка заключена!",
+    "es": "Se ha aceptado el contraoferta del vendedor, ¡se ha alcanzado un acuerdo!",
+    "pt": "Contra-oferta do vendedor aceita, transação concluída!",
+    "ar": "تم قبول عرض البائع المضاف ، تم إتمام الصفقة!",
+    "fr": "L'offre de contrepartie du vendeur a été acceptée, l'accord est conclu !",
+    "hi": "विक्रेता की काउंटर ऑफर स्वीकार कर ली गई है, लेनदेन पूरा हो गया है!",
   },
   "还价已发送给买家": {
-    "en": "Quote sent to buyers"
+    "en": "Quote sent to buyers",
+    "ru": "Ваше предложение отправлено покупателю",
+    "es": "Se ha enviado el contraoferta al comprador",
+    "pt": "Contra-oferta enviada ao comprador",
+    "ar": "تم إرسال العرض المضاف إلى المشتري",
+    "fr": "La contrepartie a été envoyée au acheteur",
+    "hi": "काउंटर ऑफर खरीदार को भेज दी गई है",
   },
   "已保存最低接受价（仅您可见）": {
-    "en": "Floor price saved (private)"
+    "en": "Floor price saved (private)",
+    "ru": "Минимальная приемлемая цена сохранена (видна только вам)",
+    "es": "Se ha guardado el precio de aceptación más bajo (solo visible para usted)",
+    "pt": "Preço mínimo de aceitação salvo (somente visível para você)",
+    "ar": "تم حفظ أدنى سعر قبول (مرئي فقط لك) ",
+    "fr": "Le prix minimum d'acceptation a été sauvegardé (uniquement visible par vous)",
+    "hi": "न्यूनतम स्वीकार्य मूल्य सहेजा गया है (केवल आपके लिए दिखाई देगा)",
   },
   "公告": {
     "en": "Notice",
@@ -44,7 +92,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Aviso",
     "ar": "إشعار",
     "fr": "Avis",
-    "hi": "सूचना"
+    "hi": "सूचना",
   },
   "成交价": {
     "en": "Deal Price",
@@ -53,7 +101,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Preço do negócio",
     "ar": "سعر البيع",
     "fr": "Prix de vente",
-    "hi": "सौदा मूल्य"
+    "hi": "सौदा मूल्य",
   },
   "卖家要价": {
     "en": "Asking Price",
@@ -62,7 +110,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Preço pedido do vendedor",
     "ar": "السعر المطلوب من البائع",
     "fr": "Prix demandé par le vendeur",
-    "hi": "विक्रेता का मांग मूल्य"
+    "hi": "विक्रेता का मांग मूल्य",
   },
   "平台自营": {
     "en": "Platform",
@@ -71,7 +119,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Plataforma",
     "ar": "المنصة",
     "fr": "Plateforme",
-    "hi": "प्लेटफ़ॉर्म"
+    "hi": "प्लेटफ़ॉर्म",
   },
   "车辆信息": {
     "en": "Vehicle Info",
@@ -80,7 +128,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Informações do veículo",
     "ar": "معلومات المركبة",
     "fr": "Infos véhicule",
-    "hi": "वाहन जानकारी"
+    "hi": "वाहन जानकारी",
   },
   "品牌型号": {
     "en": "Model",
@@ -89,37 +137,97 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Marca e modelo",
     "ar": "العلامة والموديل",
     "fr": "Marque et modèle",
-    "hi": "ब्रांड और मॉडल"
+    "hi": "ब्रांड और मॉडल",
   },
   "常州爱科 MF3404": {
-    "en": "Changzhou AGCO MF3404"
+    "en": "Changzhou AGCO MF3404",
+    "ru": "Чанчжоу Айко MF3404",
+    "es": "Changzhou Aike MF3404",
+    "pt": "Changzhou Ai Ke MF3404",
+    "ar": "常州爱科 MF3404",
+    "fr": "Changzhou Ai Ke MF3404",
+    "hi": "चांगज़ौ एआईके MF3404",
   },
   "车牌号": {
-    "en": "Plate"
+    "en": "Plate",
+    "ru": "Номерной знак",
+    "es": "Número de matrícula",
+    "pt": "Placa do veículo",
+    "ar": "رقم اللوحة",
+    "fr": "Numéro de plaque d'immatriculation",
+    "hi": "वाहन पंजीकरण संख्या",
   },
   "最大马力": {
-    "en": "Max Power"
+    "en": "Max Power",
+    "ru": "Максимальная мощность",
+    "es": "Potencia máxima",
+    "pt": "Potência máxima",
+    "ar": "أقصى قوة",
+    "fr": "Puissance maximale",
+    "hi": "अधिकतम हॉर्सपावर",
   },
   "匹": {
-    "en": "HP"
+    "en": "HP",
+    "ru": "лошадиных сил",
+    "es": "caballos",
+    "pt": "Cavalo-vapor",
+    "ar": "حصان",
+    "fr": "Chevaux",
+    "hi": "हॉर्सपावर",
   },
   "出厂日期": {
-    "en": "Mfg Date"
+    "en": "Mfg Date",
+    "ru": "Дата выпуска",
+    "es": "Fecha de fabricación",
+    "pt": "Data de fabricação",
+    "ar": "تاريخ الإنتاج",
+    "fr": "Date de sortie d'usine",
+    "hi": "उत्पादन तिथि",
   },
   "驱动形式": {
-    "en": "Drive"
+    "en": "Drive",
+    "ru": "Тип привода",
+    "es": "Tipo de tracción",
+    "pt": "Tipo de tração",
+    "ar": "نوع الدفع",
+    "fr": "Type de transmission",
+    "hi": "ड्राइव प्रकार",
   },
   "排放标准": {
-    "en": "Emission"
+    "en": "Emission",
+    "ru": "Экологический стандарт",
+    "es": "Norma de emisión",
+    "pt": "Padrão de emissão",
+    "ar": "معيار الانبعاثات",
+    "fr": "Norme d'émission",
+    "hi": "उत्सर्जन मानक",
   },
   "国三": {
-    "en": "China III"
+    "en": "China III",
+    "ru": "Национальный стандарт 3",
+    "es": "Nacional III",
+    "pt": "Nacional 3",
+    "ar": "المرحلة الثالثة",
+    "fr": "Nationale III",
+    "hi": "राष्ट्रीय तीसरा",
   },
   "发动机品牌": {
-    "en": "Engine"
+    "en": "Engine",
+    "ru": "Марка двигателя",
+    "es": "Marca del motor",
+    "pt": "Marca do motor",
+    "ar": "ماركة المحرك",
+    "fr": "Marque de moteur",
+    "hi": "इंजन ब्रांड",
   },
   "爱科动力": {
-    "en": "AGCO Power"
+    "en": "AGCO Power",
+    "ru": "Айко Пауэр",
+    "es": "Aike Power",
+    "pt": "Ai Ke Dynamics",
+    "ar": "爱科动力",
+    "fr": "Ai Ke Power",
+    "hi": "एआईके पावर",
   },
   "参考评估价": {
     "en": "Evaluation Price",
@@ -128,10 +236,16 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Preço de avaliação",
     "ar": "سعر التقييم",
     "fr": "Prix d'évaluation",
-    "hi": "मूल्यांकन मूल्य"
+    "hi": "मूल्यांकन मूल्य",
   },
   "评估基准日：2025年8月 · 仅供参考": {
-    "en": "Evaluation date: Aug 2025 · reference only"
+    "en": "Evaluation date: Aug 2025 · reference only",
+    "ru": "Оценочная дата: август 2025 г. · Только для справки",
+    "es": "Fecha de evaluación: agosto de 2025 · Solo para referencia",
+    "pt": "Data de referência para avaliação: agosto de 2025 · Somente para referência",
+    "ar": "معيار التقييم: أغسطس 2025 · لل参考 فقط",
+    "fr": "Date de référence pour l'évaluation : août 2025 · à titre indicatif",
+    "hi": "मूल्यांकन मानक दिन: 2025年8月 · केवल संदर्भ के लिए",
   },
   "权属文件已上传": {
     "en": "Title Documents Uploaded",
@@ -140,10 +254,16 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Documentos de título enviados",
     "ar": "تم رفع وثائق الملكية",
     "fr": "Documents de titre téléversés",
-    "hi": "स्वामित्व दस्तावेज़ अपलोड"
+    "hi": "स्वामित्व दस्तावेज़ अपलोड",
   },
   "来源合同等权属证明可预约现场查验": {
-    "en": "Source contract & title docs available for on-site inspection"
+    "en": "Source contract & title docs available for on-site inspection",
+    "ru": "Источник: договор и другие документы, подтверждающие право собственности, доступны для предварительного осмотра",
+    "es": "Se puede verificar el contrato de origen y otros documentos de propiedad con cita previa",
+    "pt": "Documentos de propriedade e contrato podem ser verificados no local",
+    "ar": "يمكن حجز زيارة لموقع لمراجعة العقود والوثائق الأخرى",
+    "fr": "Les documents de propriété tels que les contrats peuvent être vérifiés sur place après rendez-vous",
+    "hi": "स्रोत अनुबंध आदि अधिकार प्रमाण पत्र की पूर्व निरीक्षण के लिए आरक्षण किया जा सकता है",
   },
   "已知瑕疵": {
     "en": "Known Flaws",
@@ -152,7 +272,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Defeitos conhecidos",
     "ar": "عيوب معروفة",
     "fr": "Défauts connus",
-    "hi": "ज्ञात खामियां"
+    "hi": "ज्ञात खामियां",
   },
   "发动机工作时长": {
     "en": "Engine Hours",
@@ -161,10 +281,16 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Horas do motor",
     "ar": "ساعات المحرك",
     "fr": "Heures moteur",
-    "hi": "इंजन घंटे"
+    "hi": "इंजन घंटे",
   },
   "小时": {
-    "en": "h"
+    "en": "h",
+    "ru": "часов",
+    "es": "horas",
+    "pt": "Horas",
+    "ar": "ساعات",
+    "fr": "Heures",
+    "hi": "घंटे",
   },
   "询价公告全文": {
     "en": "Full Inquiry Announcement",
@@ -173,7 +299,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Anúncio completo de consulta",
     "ar": "نص إشعار الاستفسار الكامل",
     "fr": "Annonce complète de la demande",
-    "hi": "पूर्ण पूछताछ घोषणा"
+    "hi": "पूर्ण पूछताछ घोषणा",
   },
   "买卖合同模板预览": {
     "en": "Sales Contract Preview",
@@ -182,7 +308,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Prévia do contrato",
     "ar": "معاينة عقد البيع",
     "fr": "Aperçu du contrat",
-    "hi": "बिक्री अनुबंध पूर्वावलोकन"
+    "hi": "बिक्री अनुबंध पूर्वावलोकन",
   },
   "权属与过户告知": {
     "en": "Title & Transfer",
@@ -191,13 +317,25 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Título e transferência",
     "ar": "الملكية والنقل",
     "fr": "Titre et transfert",
-    "hi": "स्वामित्व और हस्तांतरण"
+    "hi": "स्वामित्व और हस्तांतरण",
   },
   "卖方如实披露标的物权属状况：本标的暂无农机登记证书，仅有江苏金融租赁购买合同，权属文件不完整。卖方不协助办理过户手续。": {
-    "en": "Seller truthfully discloses title status: this unit has no registration certificate; only a Jiangsu Financial Leasing purchase contract is available. Seller does not assist with transfer."
+    "en": "Seller truthfully discloses title status: this unit has no registration certificate; only a Jiangsu Financial Leasing purchase contract is available. Seller does not assist with transfer.",
+    "ru": "Продавец раскрыл информацию о праве собственности на товар: этот товар暂 не имеет свидетельства о регистрации сельскохозяйственной техники, есть только контракт на покупку у Jiangsu Financial Leasing, документы о праве собственности не полные. Продавец не поможет с оформлением документов на передачу права собственности.",
+    "es": "El vendedor revela el estado de propiedad del objeto de manera veraz: este objeto no tiene certificado de registro de maquinaria agrícola, solo tiene un contrato de compra de leasing financiero de Jiangsu, los documentos de propiedad no son completos. El vendedor no ayudará con el trámite de transferencia.",
+    "pt": "O vendedor divulgou a situação de propriedade do bem: este bem não tem certificado de registro de máquina agrícola, apenas contrato de compra de leasing financeiro de Jiangsu, documentos de propriedade incompletos. O vendedor não ajudará com o processo de transferência.",
+    "ar": "كشفت الجهة البائع عن وضع ملكية الكائن بشكل صحيح: هذا الكائن لا يحتوي على شهادة تسجيل للآلة الزراعية ، فقط عقد إيجار مالي من شركة Jiangsu Financial Leasing ، ووثائق الملكية غير كاملة. البائع لن يساعد في إتمام إجراءات النقل.",
+    "fr": "Le vendeur divulgue avec honnêteté l'état de propriété de l'objet : cet objet n'a pas de certificat d'immatriculation de la machinerie agricole, mais uniquement un contrat d'achat de location financière du Jiangsu, les documents de propriété sont incomplets. Le vendeur ne facilite pas la procédure de transfert de propriété.",
+    "hi": "विक्रेता ने वस्तु के अधिकार की स्थिति का खुलासा किया है: इस वस्तु के पास कोई कृषि मशीन पंजीकरण प्रमाण पत्र नहीं है, केवल जियांगसू वित्तीय लीज़ खरीद अनुबंध है, अधिकार पत्र अधूरे हैं। विक्रेता हस्तांतरण प्रक्रिया में सहायता नहीं करेगा।",
   },
   "买方已充分知悉标的物权属文件不全的现状，自愿承担因此可能导致的过户风险。卖方已如实披露权属状况，不存在隐瞒或虚假陈述。买方不得以权属文件不全为由要求解除合同或要求卖方赔偿。": {
-    "en": "Buyer acknowledges incomplete title documents and voluntarily assumes transfer risks. Seller has truthfully disclosed title status without concealment or misrepresentation. Buyer may not cancel or claim for incomplete title documents."
+    "en": "Buyer acknowledges incomplete title documents and voluntarily assumes transfer risks. Seller has truthfully disclosed title status without concealment or misrepresentation. Buyer may not cancel or claim for incomplete title documents.",
+    "ru": "Покупатель полностью осведомлен о том, что документы о праве собственности на товар не полные, и добровольно принимает на себя риск, связанный с передачей права собственности. Продавец раскрыл информацию о праве собственности, не скрывая и не искажая факты. Покупатель не может требовать расторжения контракта или компенсации со стороны продавца из-за неполных документов о праве собственности.",
+    "es": "El comprador ha sido informado completamente sobre el estado actual de los documentos de propiedad del objeto, y asume voluntariamente el riesgo de transferencia que puede resultar de ello. El vendedor ha revelado el estado de propiedad de manera veraz, sin ocultar ni hacer declaraciones falsas. El comprador no puede exigir la rescisión del contrato o exigir compensación al vendedor por la falta de documentos de propiedad.",
+    "pt": "O comprador tem conhecimento da situação de propriedade do bem e assume o risco de transferência. O vendedor divulgou a situação de propriedade e não há ocultação ou declaração falsa. O comprador não pode exigir a rescisão do contrato ou compensação devido à falta de documentos de propriedade.",
+    "ar": "كان المشتري على دراية تامة بوضع وثائق ملكية الكائن غير الكاملة ، وقرر تحمل مخاطر النقل المحتملة. البائع كشف عن وضع الملكية بشكل صحيح ، ولا يوجد إخفاء أو بيان كاذب. لا يمكن للمشتري أن يطلب إلغاء العقد أو تعويض البائع بسبب عدم اكتمال وثائق الملكية.",
+    "fr": "L'acheteur a pris pleinement connaissance de l'état actuel des documents de propriété incomplets de l'objet et accepte volontairement de prendre le risque de transfert de propriété qui pourrait en découler. Le vendeur a divulgué avec honnêteté l'état de propriété, sans omission ni fausse déclaration. L'acheteur ne peut pas exiger la résiliation du contrat ou des dommages-intérêts pour les documents de propriété incomplets.",
+    "hi": "खरीदार ने वस्तु के अधिकार पत्र की अधूरी स्थिति को पूरी तरह से समझ लिया है, और स्वेच्छा से हस्तांतरण जोखिम को स्वीकार करता है। विक्रेता ने अधिकार की स्थिति का खुलासा किया है, कोई छिपाव या गलत बयानी नहीं है। खरीदार अधिकार पत्र की अधूरी स्थिति के कारण अनुबंध को समाप्त करने या विक्रेता से मुआवजे की मांग नहीं कर सकता है।",
   },
   "提交您的报价": {
     "en": "Submit Your Offer",
@@ -206,10 +344,16 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Envie sua proposta",
     "ar": "أرسل عرضك",
     "fr": "Envoyez votre offre",
-    "hi": "अपना ऑफर जमा करें"
+    "hi": "अपना ऑफर जमा करें",
   },
   "请输入您的心理价位，卖家将审阅后决定是否接受。您的报价对其他买家不可见。": {
-    "en": "Enter your price. The seller will review and respond. Your offer is private."
+    "en": "Enter your price. The seller will review and respond. Your offer is private.",
+    "ru": "Введите свою психологическую цену, продавец рассмотрит и решит, принимать ли ее. Ваша цена не видна другим покупателям.",
+    "es": "Ingrese su precio psicológico, el vendedor lo revisará y decidirá si lo acepta. Su oferta no es visible para otros compradores.",
+    "pt": "Insira seu preço psicológico, o vendedor irá revisar e decidir se aceita. Sua cotação não é visível para outros compradores.",
+    "ar": "أدخل سعرك النفسي ، سيتم مراجعة البائع له بعد ذلك وسيتم تحديد ما إذا كان سيقبل أو لا. عرضك غير مرئي للمشترين الآخرين.",
+    "fr": "Veuillez saisir votre prix psychologique, le vendeur l'examinera et décidera s'il l'accepte. Votre offre n'est pas visible par les autres acheteurs.",
+    "hi": "कृपया अपनी मनोवैज्ञानिक कीमत दर्ज करें, विक्रेता इसे समीक्षा करेगा और स्वीकार करने का निर्णय लेगा। आपका ऑफर अन्य खरीदारों के लिए दिखाई नहीं देगा।",
   },
   "询价须知": {
     "en": "Inquiry Notice",
@@ -218,19 +362,43 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Aviso de consulta",
     "ar": "إشعار الاستفسار",
     "fr": "Avis de demande",
-    "hi": "पूछताछ सूचना"
+    "hi": "पूछताछ सूचना",
   },
   "本功能为在线询价/报价，不是拍卖。": {
-    "en": "This is an online inquiry/quote, not an auction."
+    "en": "This is an online inquiry/quote, not an auction.",
+    "ru": "Эта функция представляет собой онлайн-спрос/предложение цены, а не аукцион.",
+    "es": "Esta función es para cotización/oferta en línea, no es una subasta.",
+    "pt": "Esta função é para cotação online, não é um leilão.",
+    "ar": "هذه الوظيفة هي طلب سعر عبر الإنترنت / تقديم عرض ، وليست مزادًا.",
+    "fr": "Cette fonctionnalité est une demande de prix en ligne, et non une enchère.",
+    "hi": "यह कार्यक्षमता ऑनलाइन पूछताछ/ऑफर के लिए है, नीलामी नहीं है।",
   },
   "卖家可接受或拒绝任何报价，无需说明理由。": {
-    "en": "Seller may accept or reject any offer."
+    "en": "Seller may accept or reject any offer.",
+    "ru": "Продавец может принять или отклонить любое предложение цены без объяснения причин.",
+    "es": "El vendedor puede aceptar o rechazar cualquier oferta sin necesidad de explicación.",
+    "pt": "O vendedor pode aceitar ou rejeitar qualquer cotação, sem necessidade de justificativa.",
+    "ar": "يمكن للبائع قبول أو رفض أي عرض بدون الحاجة إلى توضيح الأسباب.",
+    "fr": "Le vendeur peut accepter ou refuser n'importe quelle offre sans avoir à donner de raison.",
+    "hi": "विक्रेता किसी भी ऑफर को स्वीकार या अस्वीकार कर सकता है, कोई कारण बताने की आवश्यकता नहीं है।",
   },
   "报价相互不可见，不存在竞价。": {
-    "en": "Offers are private — no bidding competition."
+    "en": "Offers are private — no bidding competition.",
+    "ru": "Предложения цены не видны друг другу, нет конкуренции.",
+    "es": "Las ofertas no son visibles entre sí, no existe una puja.",
+    "pt": "As cotações são invisíveis entre si, não há concorrência.",
+    "ar": "العروض غير مرئية للبعض البعض ، ولا توجد منافسة على الأسعار.",
+    "fr": "Les offres sont invisibles les unes aux autres, il n'y a pas d'enchère.",
+    "hi": "ऑफर एक दूसरे के लिए दिखाई नहीं देते हैं, कोई प्रतिस्पर्धी मूल्य नहीं है।",
   },
   "建议先预约看车，实地查验后再报价。": {
-    "en": "We recommend inspecting the equipment before offering."
+    "en": "We recommend inspecting the equipment before offering.",
+    "ru": "Рекомендуем предварительно договориться о просмотре товара и провести осмотр на месте, прежде чем делать предложение цены.",
+    "es": "Se sugiere que reserve una cita para ver el vehículo y verificarlo en persona antes de hacer una oferta.",
+    "pt": "Recomenda-se agendar uma visita para verificar o veículo antes de fazer uma cotação.",
+    "ar": "ننصح بتحديد موعد لمشاهدة السيارة أولاً ، ثم تقديم العرض بعد الفحص الميداني.",
+    "fr": "Il est recommandé de réserver une visite de véhicule avant de faire une offre, et de vérifier sur place après inspection.",
+    "hi": "सुझाव है कि पहले वाहन की निरीक्षण के लिए आरक्षण करें, और फिर ऑफर दें।",
   },
   "卖家还价": {
     "en": "Seller's Counter-Offer",
@@ -239,7 +407,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Contraproposta do vendedor",
     "ar": "عرض البائع المضاد",
     "fr": "Contre-offre du vendeur",
-    "hi": "विक्रेता का काउंटर-ऑफर"
+    "hi": "विक्रेता का काउंटर-ऑफर",
   },
   "接受此还价": {
     "en": "Accept this quote",
@@ -248,7 +416,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Aceitar esta proposta",
     "ar": "اقبل هذا العرض",
     "fr": "Accepter cette offre",
-    "hi": "इस ऑफर को स्वीकार करें"
+    "hi": "इस ऑफर को स्वीकार करें",
   },
   "输入您的报价金额": {
     "en": "Enter your offer amount",
@@ -257,7 +425,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Digite o valor da proposta",
     "ar": "أدخل مبلغ عرضك",
     "fr": "Entrez le montant de votre offre",
-    "hi": "अपनी ऑफर राशि दर्ज करें"
+    "hi": "अपनी ऑफर राशि दर्ज करें",
   },
   "提交报价": {
     "en": "Submit Offer",
@@ -266,7 +434,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Enviar proposta",
     "ar": "إرسال عرض",
     "fr": "Envoyer l'offre",
-    "hi": "ऑफर जमा करें"
+    "hi": "ऑफर जमा करें",
   },
   "预约看车": {
     "en": "Book Inspection",
@@ -275,16 +443,34 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Agendar inspeção",
     "ar": "حجز معاينة",
     "fr": "Réserver une inspection",
-    "hi": "निरीक्षण बुक करें"
+    "hi": "निरीक्षण बुक करें",
   },
   "关于保证金": {
-    "en": "About Deposit"
+    "en": "About Deposit",
+    "ru": "О задатке",
+    "es": "Acerca de la garantía",
+    "pt": "Sobre o depósito de garantia",
+    "ar": "关于保证金",
+    "fr": "À propos de la garantie",
+    "hi": "गारंटी राशि के बारे में",
   },
   "本平台不强制收取保证金。如卖家要求缴纳诚意金，由买卖双方自行约定金额和支付方式，平台不代收、不验证、不托管。": {
-    "en": "The platform does not require deposits. Any earnest money is agreed between buyer and seller directly — the platform does not collect, verify, or hold funds."
+    "en": "The platform does not require deposits. Any earnest money is agreed between buyer and seller directly — the platform does not collect, verify, or hold funds.",
+    "ru": "Эта платформа не требует обязательного задатка. Если продавец требует задаток, стороны договариваются о сумме и способе оплаты самостоятельно, платформа не принимает, не проверяет и не хранит.",
+    "es": "Esta plataforma no requiere un depósito de garantía. Si el vendedor requiere un depósito de buena fe, las partes compradora y vendedora acordarán el monto y el método de pago, la plataforma no lo recibe, no lo verifica ni lo custodia.",
+    "pt": "Esta plataforma não exige depósito de garantia. Se o vendedor exigir depósito de boa-fé, as partes devem acordar o valor e o método de pagamento, a plataforma não coleta, não verifica e não gerencia.",
+    "ar": "لا تلتزم المنصة بتحصيل التأمين. إذا طالب البائع بدفع رسوم النية الحسنة ، يتم الاتفاق بين الطرفين على المبلغ وطريقة الدفع ، ولا تتحمل المنصة مسؤولية التحصيل أو التحقق أو الإيداع.",
+    "fr": "Cette plateforme ne collecte pas de garantie. Si le vendeur exige le paiement d'un acompte, les deux parties doivent convenir du montant et du mode de paiement, la plateforme ne collecte pas, ne vérifie pas et ne gère pas.",
+    "hi": "इस प्लेटफ़ॉर्म पर गारंटी राशि की अनिवार्यता नहीं है। यदि विक्रेता ईमानदारी से जमा करने की मांग करता है, तो खरीदार और विक्रेता दोनों राशि और भुगतान के तरीके पर सहमत होते हैं, प्लेटफ़ॉर्म इसमें शामिल नहीं है।",
   },
   "卖家工作台：给出还价，或设置内部最低接受价": {
-    "en": "Seller tools: send a counter-offer or set your private floor price"
+    "en": "Seller tools: send a counter-offer or set your private floor price",
+    "ru": "Рабочий стол продавца: указать цену или установить минимальную внутреннюю цену принятия",
+    "es": "Panel de trabajo del vendedor: Ofrecer un contraprecio o establecer un precio mínimo de aceptación interno",
+    "pt": "Área de trabalho do vendedor: forneça uma contraproposta ou defina um preço mínimo de aceitação interno",
+    "ar": "لوحة التحكم للمُباع: إعطاء عرض أسعار أو تعيين سعر قبول داخلي أدنى",
+    "fr": "Tableau de bord du vendeur : donner un contre-prix ou définir un prix minimum d'acceptation interne",
+    "hi": "विक्रेता कार्यस्थल: काउंटर ऑफर दें या आंतरिक न्यूनतम स्वीकार्य मूल्य सेट करें",
   },
   "向买家还价": {
     "en": "Counter-offer to buyers",
@@ -293,7 +479,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Contraproposta aos compradores",
     "ar": "عرض مضاد للمشترين",
     "fr": "Contre-offre aux acheteurs",
-    "hi": "खरीदारों को काउंटर-ऑफर"
+    "hi": "खरीदारों को काउंटर-ऑफर",
   },
   "还价金额": {
     "en": "Counter price",
@@ -302,10 +488,16 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Valor da contraproposta",
     "ar": "القيمة المضادة",
     "fr": "Montant de la contre-offre",
-    "hi": "काउंटर मूल्य"
+    "hi": "काउंटर मूल्य",
   },
   "发送还价": {
-    "en": "Send"
+    "en": "Send",
+    "ru": "Отправить цену",
+    "es": "Enviar contraprecio",
+    "pt": "Enviar contraproposta",
+    "ar": "إرسال عرض أسعار",
+    "fr": "Envoyer un contre-prix",
+    "hi": "काउंटर ऑफर भेजें",
   },
   "还价留言（选填）": {
     "en": "Message (optional)",
@@ -314,7 +506,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Mensagem (opcional)",
     "ar": "رسالة (اختياري)",
     "fr": "Message (optionnel)",
-    "hi": "संदेश (वैकल्पिक)"
+    "hi": "संदेश (वैकल्पिक)",
   },
   "内部最低接受价（仅您可见，不向买家展示）": {
     "en": "Internal floor price (private)",
@@ -323,7 +515,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Preço mínimo interno (privado)",
     "ar": "الحد الأدنى الداخلي (خاص)",
     "fr": "Prix plancher interne (privé)",
-    "hi": "आंतरिक न्यूनतम मूल्य (निजी)"
+    "hi": "आंतरिक न्यूनतम मूल्य (निजी)",
   },
   "最低接受价": {
     "en": "Min accept price",
@@ -332,7 +524,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Preço mínimo aceitável",
     "ar": "الحد الأدنى للقبول",
     "fr": "Prix minimum accepté",
-    "hi": "न्यूनतम स्वीकृत मूल्य"
+    "hi": "न्यूनतम स्वीकृत मूल्य",
   },
   "保存": {
     "en": "Save",
@@ -341,64 +533,178 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Salvar",
     "ar": "حفظ",
     "fr": "Enregistrer",
-    "hi": "सहेजें"
+    "hi": "सहेजें",
   },
   "当前最低接受价": {
-    "en": "Current floor"
+    "en": "Current floor",
+    "ru": "Текущая минимальная цена принятия",
+    "es": "Precio mínimo de aceptación actual",
+    "pt": "Preço mínimo de aceitação atual",
+    "ar": "السعر الأدنى المقبول الحالي",
+    "fr": "Prix minimum d'acceptation actuel",
+    "hi": "वर्तमान न्यूनतम स्वीकार्य मूल्य",
   },
   "交易已达成": {
-    "en": "Deal Made"
+    "en": "Deal Made",
+    "ru": "Сделка завершена",
+    "es": "La transacción se ha completado",
+    "pt": "Negociação concluída",
+    "ar": "التعامل تم إنجازه",
+    "fr": "Transaction conclue",
+    "hi": "लेनदेन पूरा हुआ",
   },
   "付款截止倒计时": {
-    "en": "Payment Deadline"
+    "en": "Payment Deadline",
+    "ru": "Отсчет времени до окончания оплаты",
+    "es": "Cuenta regresiva para el pago",
+    "pt": "Contagem regressiva do prazo de pagamento",
+    "ar": "عرض العد التنازلي للانتهاء",
+    "fr": "Compte à rebours du délai de paiement",
+    "hi": "भुगतान समय सीमा समाप्ति की गिनती",
   },
   "截止时间": {
-    "en": "Deadline"
+    "en": "Deadline",
+    "ru": "Время окончания",
+    "es": "Hora límite",
+    "pt": "Prazo de validade",
+    "ar": "موعد الانتهاء",
+    "fr": "Heure limite",
+    "hi": "समय सीमा",
   },
   "买卖合同": {
-    "en": "Sales Contract"
+    "en": "Sales Contract",
+    "ru": "Контракт купли-продажи",
+    "es": "Contrato de compra y venta",
+    "pt": "Contrato de compra e venda",
+    "ar": "عقد البيع والشراء",
+    "fr": "Contrat d'achat et de vente",
+    "hi": "क्रय-विक्रय अनुबंध",
   },
   "合同编号": {
-    "en": "Contract No."
+    "en": "Contract No.",
+    "ru": "Номер контракта",
+    "es": "Número de contrato",
+    "pt": "Número do contrato",
+    "ar": "رقم العقد",
+    "fr": "Numéro de contrat",
+    "hi": "अनुबंध संख्या",
   },
   "查看完整合同条款": {
-    "en": "View full contract terms"
+    "en": "View full contract terms",
+    "ru": "Просмотр полных условий контракта",
+    "es": "Ver los términos y condiciones del contrato completo",
+    "pt": "Verificar os termos e condições do contrato completo",
+    "ar": "مشاهدة شروط العقد الكاملة",
+    "fr": "Voir les termes et conditions du contrat complet",
+    "hi": "पूर्ण अनुबंध शर्तें देखें",
   },
   "交付与过户": {
-    "en": "Delivery & Transfer"
+    "en": "Delivery & Transfer",
+    "ru": "Доставка и передача",
+    "es": "Entrega y transferencia",
+    "pt": "Entrega e transferência",
+    "ar": "التسليم والتحويل",
+    "fr": "Livraison et transfert de propriété",
+    "hi": "वितरण और हस्तांतरण",
   },
   "看货满意后，双方协商交付安排。大额交易建议通过担保支付保障资金安全。": {
-    "en": "After inspection, both parties agree on delivery. For large deals, use escrow payment for fund safety."
+    "en": "After inspection, both parties agree on delivery. For large deals, use escrow payment for fund safety.",
+    "ru": "После осмотра товара, стороны договариваются о доставке. Рекомендуется использовать гарантированный платеж для безопасности крупных транзакций.",
+    "es": "Después de la inspección, ambas partes acuerdan los arreglos de entrega. Se recomienda el pago garantizado para transacciones de gran valor.",
+    "pt": "Após a inspeção do bem, as partes devem negociar os arranjos de entrega. Transações de grande valor são recomendadas para garantir a segurança dos fundos por meio de pagamento garantido.",
+    "ar": "بعد التأكد من الرضا عن الفحص، يتفق الطرفان على ترتيبات التسليم. ينصح بالدفع المضمون للأمان المالي في المعاملات الكبيرة.",
+    "fr": "Après avoir inspecté les marchandises, les deux parties conviennent des arrangements de livraison. Les transactions de grande valeur sont conseillées pour passer par un paiement garanti pour assurer la sécurité des fonds.",
+    "hi": "सामान की जांच के बाद, दोनों पक्ष वितरण व्यवस्था पर बातचीत करते हैं। बड़े लेनदेन के लिए सुरक्षित भुगतान के माध्यम से धन सुरक्षा की सिफारिश की जाती है।",
   },
   "权属保证": {
-    "en": "Title Guarantee"
+    "en": "Title Guarantee",
+    "ru": "Гарантия собственности",
+    "es": "Garantía de propiedad",
+    "pt": "Garantia de propriedade",
+    "ar": "ضمان الملكية",
+    "fr": "Garantie de propriété",
+    "hi": "स्वामित्व गारंटी",
   },
   "卖方应如实披露标的物权属状况。对明知或应知而未披露的重大瑕疵，卖方依法承担责任。": {
-    "en": "Seller must truthfully disclose title status. Seller remains liable for known but undisclosed defects."
+    "en": "Seller must truthfully disclose title status. Seller remains liable for known but undisclosed defects.",
+    "ru": "Продавец должен раскрыть информацию о праве собственности на товар. За умышленное или непреднамеренное сокрытие существенных дефектов продавец несет ответственность по закону.",
+    "es": "El vendedor debe revelar la condición de propiedad del objeto de manera veraz. Por defectos graves no revelados, el vendedor asume la responsabilidad según la ley.",
+    "pt": "O vendedor deve divulgar a situação de propriedade do bem de forma verdadeira. Por defeitos graves conhecidos ou que deveriam ser conhecidos e não divulgados, o vendedor é responsável por lei.",
+    "ar": "يجب على البائع الكشف عن حالة ملكية الكائن.对于 العيوب الرئيسية التي لم يتم الكشف عنها، يتحمل البائع المسؤولية وفقًا للقانون.",
+    "fr": "Le vendeur doit divulguer de manière véridique l'état de propriété de l'objet. Pour les défauts majeurs que le vendeur connaît ou devrait connaître et qui n'ont pas été divulgués, le vendeur est responsable conformément à la loi.",
+    "hi": "विक्रेता को वस्तु की स्थिति के बारे में सच्चाई से बताना चाहिए। जानबूझकर या जानने के बावजूद महत्वपूर्ण दोषों का खुलासा नहीं करने के लिए, विक्रेता कानूनी रूप से जिम्मेदारी लेता है।",
   },
   "该询价已关闭": {
-    "en": "This inquiry is closed"
+    "en": "This inquiry is closed",
+    "ru": "Этот запрос на цену закрыт",
+    "es": "Esta solicitud de cotización ha sido cerrada",
+    "pt": "Esta cotação foi fechada",
+    "ar": "الاستعلام هذا مغلق",
+    "fr": "Cette demande de prix est fermée",
+    "hi": "यह उद्धरण बंद हो गया है",
   },
   "交易风险提示": {
-    "en": "Risk Disclosure"
+    "en": "Risk Disclosure",
+    "ru": "Предупреждение о рисках交易",
+    "es": "Advertencia de riesgo de transacción",
+    "pt": "Aviso de risco de transação",
+    "ar": "تحذير من مخاطر التعامل",
+    "fr": "Avertissement de risque de transaction",
+    "hi": "लेनदेन जोखिम चेतावनी",
   },
   "设备现状说明": {
-    "en": "Equipment Condition"
+    "en": "Equipment Condition",
+    "ru": "Описание текущего состояния оборудования",
+    "es": "Explicación del estado actual del equipo",
+    "pt": "Explicação do estado atual do equipamento",
+    "ar": "شرح حالة الجهاز",
+    "fr": "Explication de l'état actuel de l'équipement",
+    "hi": "उपकरण की वर्तमान स्थिति का वर्णन",
   },
   "标的物按实物现状交付，建议报价前实地查验。": {
-    "en": "Sold as-is. Inspect before offering."
+    "en": "Sold as-is. Inspect before offering.",
+    "ru": "Товар передается в его текущем состоянии, рекомендуется осмотреть его перед подачей заявки на цену.",
+    "es": "El objeto se entrega en su estado actual, se sugiere verificar antes de cotizar.",
+    "pt": "O bem é entregue em seu estado atual, recomenda-se verificar antes de fazer uma oferta.",
+    "ar": "يتم تسليم الكائن حسب حالته الفعلية، وننصح بفحص الموقع قبل تقديم العرض. ",
+    "fr": "L'objet est livré dans son état physique actuel, il est conseillé de procéder à une inspection sur place avant de faire une offre.",
+    "hi": "वस्तु को वास्तविक स्थिति में वितरित किया जाता है, सिफारिश की जाती है कि उद्धरण से पहले स्थल पर जांच की जाए।",
   },
   "对明知或应知而未披露的重大瑕疵，卖方仍依法承担责任。平台仅提供信息展示与增值服务，不收取交易服务费、不碰支付。": {
-    "en": "Seller remains liable for known but undisclosed defects. Platform provides information display and value-added services only — no transaction fees, no payment handling."
+    "en": "Seller remains liable for known but undisclosed defects. Platform provides information display and value-added services only — no transaction fees, no payment handling.",
+    "ru": "За умышленное или непреднамеренное сокрытие существенных дефектов продавец несет ответственность по закону. Платформа предоставляет только информационные услуги и не взимает комиссию за транзакции, не участвует в платежах.",
+    "es": "Por defectos graves no revelados, el vendedor asume la responsabilidad según la ley. La plataforma solo proporciona servicios de exhibición de información y valor agregado, sin cobrar tarifas de servicio de transacción ni tocar pagos.",
+    "pt": "Por defeitos graves conhecidos ou que deveriam ser conhecidos e não divulgados, o vendedor ainda é responsável por lei. A plataforma fornece apenas exibição de informações e serviços de valor agregado, não cobra taxas de serviço de transação e não lida com pagamentos.",
+    "ar": "对于 العيوب الرئيسية التي لم يتم الكشف عنها، يتحمل البائع المسؤولية وفقًا للقانون. المنصة توفر فقط عرض المعلومات والخدمات القيمة المضافة، ولا تتقاضى رسوم خدمة التعامل، ولا تتعامل مع الدفع.",
+    "fr": "Pour les défauts majeurs que le vendeur connaît ou devrait connaître et qui n'ont pas été divulgués, le vendeur est toujours responsable conformément à la loi. La plateforme ne perçoit pas de frais de service de transaction et ne gère pas les paiements.",
+    "hi": "जानबूझकर या जानने के बावजूद महत्वपूर्ण दोषों का खुलासा नहीं करने के लिए, विक्रेता कानूनी रूप से जिम्मेदारी लेता है। प्लेटफ़ॉर्म केवल जानकारी प्रदर्शन और मूल्य वर्धित सेवाएं प्रदान करता है, लेनदेन सेवा शुल्क नहीं लेता है, भुगतान से संपर्क नहीं करता है।",
   },
   "收到的报价": {
-    "en": "Received Offers"
+    "en": "Received Offers",
+    "ru": "Полученные котировки",
+    "es": "Cotizaciones recibidas",
+    "pt": "Ofertas recebidas",
+    "ar": "العروض التي تم استلامها",
+    "fr": "Offres reçues",
+    "hi": "प्राप्त उद्धरण",
   },
   "报价仅您可见，买家之间无法看到彼此报价": {
-    "en": "Offers visible only to you"
+    "en": "Offers visible only to you",
+    "ru": "Котировки видны только вам, покупатели не могут видеть котировки друг друга",
+    "es": "Las cotizaciones solo son visibles para usted, los compradores no pueden ver las cotizaciones de los demás",
+    "pt": "A oferta é visível apenas para você, os compradores não podem ver as ofertas uns dos outros",
+    "ar": "العرض يظهر فقط لك، ولا يمكن للمشترين رؤيته",
+    "fr": "Les offres ne sont visibles que pour vous, les acheteurs ne peuvent pas voir les offres des autres",
+    "hi": "उद्धरण केवल आपके लिए दिखाई देता है, खरीदार एक दूसरे के उद्धरण नहीं देख सकते",
   },
   "匿名用户": {
-    "en": "Anonymous"
+    "en": "Anonymous",
+    "ru": "Анонимный пользователь",
+    "es": "Usuario anónimo",
+    "pt": "Usuário anônimo",
+    "ar": "مستخدم مجهول",
+    "fr": "Utilisateur anonyme",
+    "hi": "गुमनाम उपयोगकर्ता",
   },
   "已成交": {
     "en": "Sold",
@@ -407,7 +713,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Vendido",
     "ar": "تم البيع",
     "fr": "Vendu",
-    "hi": "बिका"
+    "hi": "बिका",
   },
   "已拒绝": {
     "en": "Rejected",
@@ -416,64 +722,178 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Rejeitado",
     "ar": "مرفوض",
     "fr": "Rejeté",
-    "hi": "अस्वीकृत"
+    "hi": "अस्वीकृत",
   },
   "待处理": {
-    "en": "pending"
+    "en": "pending",
+    "ru": "Ожидает обработки",
+    "es": "Pendiente de procesar",
+    "pt": "Aguardando processamento",
+    "ar": "قيد المعالجة",
+    "fr": "En attente de traitement",
+    "hi": "प्रसंस्करण की प्रतीक्षा में",
   },
   "接受": {
-    "en": "Accept"
+    "en": "Accept",
+    "ru": "Принять",
+    "es": "Aceptar",
+    "pt": "Aceitar",
+    "ar": "قبول",
+    "fr": "Accepter",
+    "hi": "स्वीकार",
   },
   "拒绝": {
-    "en": "Reject"
+    "en": "Reject",
+    "ru": "Отклонить",
+    "es": "Rechazar",
+    "pt": "Recusar",
+    "ar": "رفض",
+    "fr": "Refuser",
+    "hi": "अस्वीकार",
   },
   "我的报价记录": {
-    "en": "My Offer History"
+    "en": "My Offer History",
+    "ru": "История моих котировок",
+    "es": "Registro de mis cotizaciones",
+    "pt": "Registro de minhas ofertas",
+    "ar": "سجل عروضي",
+    "fr": "Mon historique d'offres",
+    "hi": "मेरा उद्धरण रिकॉर्ड",
   },
   "待卖家回复": {
-    "en": "Pending"
+    "en": "Pending",
+    "ru": "Ожидает ответа от продавца",
+    "es": "Pendiente de respuesta del vendedor",
+    "pt": "Aguardando resposta do vendedor",
+    "ar": "قيد انتظار رد البائع",
+    "fr": "En attente de réponse du vendeur",
+    "hi": "विक्रेता की प्रतिक्रिया की प्रतीक्षा में",
   },
   "您的报价仅卖家可见，其他买家无法查看。": {
-    "en": "Your offer is visible only to the seller."
+    "en": "Your offer is visible only to the seller.",
+    "ru": "Ваша котировка видна только продавцу, другие покупатели не могут ее просмотреть.",
+    "es": "Su cotización solo es visible para el vendedor, otros compradores no pueden verla.",
+    "pt": "Sua oferta é visível apenas para o vendedor, outros compradores não podem visualizá-la.",
+    "ar": "عرضك يظهر فقط للبائع، ولا يمكن للمشترين الآخرين رؤيته",
+    "fr": "Votre offre n'est visible que pour le vendeur, les autres acheteurs ne peuvent pas la consulter.",
+    "hi": "आपका उद्धरण केवल विक्रेता के लिए दिखाई देता है, अन्य खरीदार देख नहीं सकते",
   },
   "查看询价规则与交易保障": {
-    "en": "View inquiry rules & guarantees"
+    "en": "View inquiry rules & guarantees",
+    "ru": "Просмотр правил запроса на цену и гарантии交易",
+    "es": "Ver las reglas de cotización y la garantía de transacción",
+    "pt": "Verificar as regras de cotação e garantia de transação",
+    "ar": "مشاهدة قواعد الاستعلام والحماية التجارية",
+    "fr": "Voir les règles de demande de prix et les garanties de transaction",
+    "hi": "उद्धरण नियम और लेनदेन सुरक्षा देखें",
   },
   "请填写姓名和手机号": {
-    "en": "Please fill in name and phone"
+    "en": "Please fill in name and phone",
+    "ru": "Пожалуйста, введите имя и номер телефона",
+    "es": "Por favor, complete su nombre y número de teléfono",
+    "pt": "Por favor, preencha o nome e o número de telefone",
+    "ar": "الرجاء إدخال الاسم ورقم الهاتف",
+    "fr": "Veuillez remplir votre nom et votre numéro de téléphone",
+    "hi": "कृपया नाम और फोन नंबर भरें",
   },
   "请确认已知瑕疵和风险自担": {
-    "en": "Please confirm flaws and risks"
+    "en": "Please confirm flaws and risks",
+    "ru": "Пожалуйста, подтвердите, что вы знаете о дефектах и рисках и берете их на себя",
+    "es": "Por favor, confirme que conoce los defectos y riesgos y los asume",
+    "pt": "Por favor, confirme que você está ciente dos defeitos e riscos e os assume",
+    "ar": "الرجاء التأكيد على معرفة العيوب والمخاطر التي يتحملها بنفسه",
+    "fr": "Veuillez confirmer que vous avez connaissance des défauts et des risques que vous assumez",
+    "hi": "कृपया ज्ञात दोषों और जोखिमों की पुष्टि करें जो स्वयं वहन करते हैं",
   },
   "请先阅读并确认询价公告": {
-    "en": "Please read and confirm the announcement"
+    "en": "Please read and confirm the announcement",
+    "ru": "Пожалуйста, сначала прочитайте и подтвердите объявление о запросе на цену",
+    "es": "Lea y confirme el anuncio de consulta de precios",
+    "pt": "Por favor, leia e confirme o anúncio de consulta de preços",
+    "ar": "يرجى قراءة الإعلان قبل المشاركة",
+    "fr": "Veuillez lire et confirmer l'annonce de demande de prix",
+    "hi": "कृपया पहले पूछताछ सूचना पढ़ें और पुष्टि करें",
   },
   "提交失败": {
-    "en": "Failed"
+    "en": "Failed",
+    "ru": "Неудачная отправка",
+    "es": "Error al enviar",
+    "pt": "Falha ao enviar",
+    "ar": "فشل في التقديم",
+    "fr": "Échec de l'envoi",
+    "hi": "प्रस्तुति विफल",
   },
   "网络错误，请重试": {
-    "en": "Network error"
+    "en": "Network error",
+    "ru": "Ошибка сети, попробуйте еще раз",
+    "es": "Error de red, inténtelo de nuevo",
+    "pt": "Erro de rede, por favor tente novamente",
+    "ar": "خطأ في الشبكة ، يرجى المحاولة مرة أخرى",
+    "fr": "Erreur de réseau, veuillez réessayer",
+    "hi": "नेटवर्क त्रुटि, कृपया पुनः प्रयास करें",
   },
   "凭证上传失败": {
-    "en": "Upload failed"
+    "en": "Upload failed",
+    "ru": "Неудачная загрузка подтверждающих документов",
+    "es": "Error al cargar credenciales",
+    "pt": "Falha ao carregar comprovante",
+    "ar": "فشل في تحميل الشهادة",
+    "fr": "Échec de l'upload des pièces justificatives",
+    "hi": "प्रमाण पत्र अपलोड विफल",
   },
   "文件上传失败": {
-    "en": "Upload failed"
+    "en": "Upload failed",
+    "ru": "Неудачная загрузка файла",
+    "es": "Error al cargar archivo",
+    "pt": "Falha ao carregar arquivo",
+    "ar": "فشل في تحميل الملف",
+    "fr": "Échec de l'upload du fichier",
+    "hi": "फ़ाइल अपलोड विफल",
   },
   "上传失败，请重试": {
-    "en": "Upload failed"
+    "en": "Upload failed",
+    "ru": "Неудачная загрузка, попробуйте еще раз",
+    "es": "Error al cargar, inténtelo de nuevo",
+    "pt": "Falha ao carregar, por favor tente novamente",
+    "ar": "فشل في التحميل ، يرجى المحاولة مرة أخرى",
+    "fr": "Échec de l'upload, veuillez réessayer",
+    "hi": "अपलोड विफल, कृपया पुनः प्रयास करें",
   },
   "询价报名 · 验车预约": {
-    "en": "Inquiry Registration"
+    "en": "Inquiry Registration",
+    "ru": "Запрос на цену · бронирование осмотра",
+    "es": "Inscripción para consulta de precios · Reserva de inspección",
+    "pt": "Inscrição para consulta de preços · Agendamento de inspeção",
+    "ar": "التسجيل في المزاد · حجز فحص السيارة",
+    "fr": "Inscription à la demande de prix · Rendez-vous pour vérification du véhicule",
+    "hi": "पूछताछ पंजीकरण · वाहन जांच नियुक्ति",
   },
   "诚意金（如需）": {
-    "en": "Earnest Money (if applicable)"
+    "en": "Earnest Money (if applicable)",
+    "ru": "Депозит (если требуется)",
+    "es": "Depósito de buena fe (si es necesario)",
+    "pt": "Depósito de garantia (se necessário)",
+    "ar": "وديعة حسن النية (إن لزم الأمر)",
+    "fr": "Acompte (si nécessaire)",
+    "hi": "सINCERITY जमा (यदि आवश्यक हो)",
   },
   "报名完成": {
-    "en": "Registration Complete"
+    "en": "Registration Complete",
+    "ru": "Завершение регистрации",
+    "es": "Inscripción completada",
+    "pt": "Inscrição concluída",
+    "ar": "اكتمال التسجيل",
+    "fr": "Inscription terminée",
+    "hi": "पंजीकरण पूरा",
   },
   "公告信息": {
-    "en": "Announcement Info"
+    "en": "Announcement Info",
+    "ru": "Информационное объявление",
+    "es": "Información del anuncio",
+    "pt": "Informações do anúncio",
+    "ar": "معلومات الإعلان",
+    "fr": "Informations sur l'annonce",
+    "hi": "सूचना अधिसूचना",
   },
   "公告编号": {
     "en": "Notice No.",
@@ -482,133 +902,385 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "N.º do aviso",
     "ar": "رقم الإشعار",
     "fr": "N° d'avis",
-    "hi": "सूचना सं."
+    "hi": "सूचना सं.",
   },
   "标的物": {
-    "en": "Item"
+    "en": "Item",
+    "ru": "Лот",
+    "es": "Objeto de la subasta",
+    "pt": "Objeto",
+    "ar": "المنقول",
+    "fr": "Objet",
+    "hi": "वस्तु",
   },
   "参考要价": {
-    "en": "Asking Price"
+    "en": "Asking Price",
+    "ru": "Рекомендуемая цена",
+    "es": "Precio de referencia",
+    "pt": "Preço de referência",
+    "ar": "السعر المرجعي",
+    "fr": "Prix de référence",
+    "hi": "संदर्भ मूल्य",
   },
   "参考加价": {
-    "en": "Reference Increment"
+    "en": "Reference Increment",
+    "ru": "Рекомендуемая надбавка",
+    "es": "Incremento de referencia",
+    "pt": "Aumento de preço de referência",
+    "ar": "الزيادة المرجعية",
+    "fr": "Majoration de référence",
+    "hi": "संदर्भ वृद्धि मूल्य",
   },
   "（仅参考）": {
-    "en": " (ref only)"
+    "en": " (ref only)",
+    "ru": "(только для справки)",
+    "es": "(Solo referencia)",
+    "pt": "(Apenas para referência)",
+    "ar": "(لمجرد المرجع)",
+    "fr": "(uniquement à titre indicatif)",
+    "hi": "(केवल संदर्भ के लिए)",
   },
   "建议诚意金": {
-    "en": "Suggested Earnest"
+    "en": "Suggested Earnest",
+    "ru": "Рекомендуемый задаток",
+    "es": "Depósito de buena fe sugerido",
+    "pt": "Depósito de garantia sugerido",
+    "ar": "وديعة حسن النية المقترحة",
+    "fr": "Acompte recommandé",
+    "hi": "सINCERITY जमा की सिफारिश",
   },
   "询价时间": {
-    "en": "Inquiry Time"
+    "en": "Inquiry Time",
+    "ru": "Время запроса цен",
+    "es": "Hora de la consulta de precios",
+    "pt": "Prazo para consulta de preços",
+    "ar": "موعد المزاد",
+    "fr": "Date de la demande de prix",
+    "hi": "पूछताछ समय",
   },
   "已知瑕疵告知": {
-    "en": "Known Flaws"
+    "en": "Known Flaws",
+    "ru": "Известные дефекты уведомления",
+    "es": "Aviso de defectos conocidos",
+    "pt": "Notificação de defeitos conhecidos",
+    "ar": "إشعار بالعيوب المعروفة",
+    "fr": "Avis de défauts connus",
+    "hi": "ज्ञात दोष सूचना",
   },
   "我已知晓上述瑕疵，愿意按现状参与询价": {
-    "en": "I acknowledge the above flaws"
+    "en": "I acknowledge the above flaws",
+    "ru": "Я знаю о вышеуказанных дефектах и готов участвовать в запросе цен в текущем состоянии",
+    "es": "Me doy cuenta de los defectos mencionados y estoy dispuesto a participar en la consulta de precios en su estado actual",
+    "pt": "Eu estou ciente dos defeitos acima e estou disposto a participar da consulta de preços no estado atual",
+    "ar": "لقد أصبحت على دراية بالعيوب المذكورة أعلاه وأرغب في المشاركة في المزاد بحالته الحالية",
+    "fr": "J'ai pris connaissance des défauts ci-dessus et je suis prêt à participer à la demande de prix dans son état actuel",
+    "hi": "मैंने उपरोक्त दोषों को जान लिया है, और मैं वर्तमान स्थिति के अनुसार पूछताछ में भाग लेने के लिए तैयार हूं",
   },
   "姓名": {
-    "en": "Name"
+    "en": "Name",
+    "ru": "Имя",
+    "es": "Nombre",
+    "pt": "Nome",
+    "ar": "الاسم",
+    "fr": "Nom",
+    "hi": "नाम",
   },
   "请输入姓名": {
-    "en": "Enter your name"
+    "en": "Enter your name",
+    "ru": "Введите имя",
+    "es": "Ingrese su nombre",
+    "pt": "Por favor, insira o nome",
+    "ar": "أدخل الاسم",
+    "fr": "Veuillez entrer votre nom",
+    "hi": "कृपया नाम दर्ज करें",
   },
   "手机号": {
-    "en": "Phone"
+    "en": "Phone",
+    "ru": "Номер телефона",
+    "es": "Número de teléfono",
+    "pt": "Número de telefone",
+    "ar": "رقم الهاتف",
+    "fr": "Numéro de téléphone",
+    "hi": "मोबाइल नंबर",
   },
   "请输入手机号": {
-    "en": "Enter your phone"
+    "en": "Enter your phone",
+    "ru": "Введите номер телефона",
+    "es": "Ingrese su número de teléfono",
+    "pt": "Por favor, insira o número de telefone",
+    "ar": "أدخل رقم الهاتف",
+    "fr": "Veuillez entrer votre numéro de téléphone",
+    "hi": "कृपया मोबाइल नंबर दर्ज करें",
   },
   "期望验车日期": {
-    "en": "Preferred Inspection Date"
+    "en": "Preferred Inspection Date",
+    "ru": "Ожидаемая дата осмотра",
+    "es": "Fecha de inspección deseada",
+    "pt": "Data de inspeção desejada",
+    "ar": "تاريخ الفحص المطلوب",
+    "fr": "Date de vérification du véhicule souhaitée",
+    "hi": "वाहन जांच की तारीख की अपेक्षा",
   },
   "询价公告摘要": {
-    "en": "Announcement Summary"
+    "en": "Announcement Summary",
+    "ru": "Сводка объявления о запросе цен",
+    "es": "Resumen del anuncio de consulta de precios",
+    "pt": "Resumo do anúncio de consulta de preços",
+    "ar": "ملخص إعلان المزاد",
+    "fr": "Résumé de l'annonce de demande de prix",
+    "hi": "पूछताछ सूचना सारांश",
   },
   "收起": {
-    "en": "Collapse"
+    "en": "Collapse",
+    "ru": "Свернуть",
+    "es": "Ocultar",
+    "pt": "Ocultar",
+    "ar": "إغلاق",
+    "fr": "Réduire",
+    "hi": "बंद करें",
   },
   "展开全文": {
-    "en": "Expand"
+    "en": "Expand",
+    "ru": "Развернуть весь текст",
+    "es": "Expandir todo",
+    "pt": "Expandir todo o texto",
+    "ar": "عرض الكل",
+    "fr": "Développer le texte complet",
+    "hi": "पूर्ण पाठ खोलें",
   },
   "标的物：麦赛福格森MF3404农用拖拉机": {
-    "en": "Item: Massey Ferguson MF3404 Tractor"
+    "en": "Item: Massey Ferguson MF3404 Tractor",
+    "ru": "Лот: трактор для сельского хозяйства МакСейФорсон MF3404",
+    "es": "Objeto de la subasta: tractor agrícola MF3404 de 麦赛福格森",
+    "pt": "Objeto: Trator agrícola Massey Ferguson MF3404",
+    "ar": "المنقول: تراكتور زراعي ماسي فوجسون MF3404",
+    "fr": "Objet : tracteur agricole MF3404 de <b>神雕农机</b>",
+    "hi": "वस्तु: मैसी फ़र्ग्यूसन MF3404 कृषि ट्रैक्टर",
   },
   "参考评估价：¥850,000（评估基准日2025年8月，仅供参考）": {
-    "en": "Evaluation: ¥850,000 (Aug 2025, reference only)"
+    "en": "Evaluation: ¥850,000 (Aug 2025, reference only)",
+    "ru": "Рекомендуемая оценочная цена: ¥850 000 (дата оценки - 2025 год, август, только для справки)",
+    "es": "Precio de evaluación de referencia: ¥850,000 (fecha de evaluación 2025-08, solo para referencia)",
+    "pt": "Preço de avaliação de referência: ¥850.000 (data de referência: 2025-08, apenas para referência)",
+    "ar": "السعر المقدر: ¥850,000 (معيار التقييم 2025/8/ ، لمجرد المرجع)",
+    "fr": "Prix d'évaluation de référence : ¥850,000 (date de référence d'évaluation : 2025-08, à titre indicatif uniquement)",
+    "hi": "संदर्भ मूल्यांकन मूल्य: ¥850,000 (मूल्यांकन मानक दिन 2025年8月, केवल संदर्भ के लिए)",
   },
   "询价时间：2026年7月25日10:00": {
-    "en": "Inquiry Date: July 25, 2026 10:00"
+    "en": "Inquiry Date: July 25, 2026 10:00",
+    "ru": "Время запроса цен: 2026 год, 25 июля, 10:00",
+    "es": "Hora de la consulta de precios: 2026-07-25 10:00",
+    "pt": "Prazo para consulta de preços: 25 de julho de 2026, 10:00",
+    "ar": "موعد المزاد: 2026/7/25 10:00",
+    "fr": "Date de la demande de prix : 25 juillet 2026 10h00",
+    "hi": "पूछताछ समय: 2026年7月25日10:00",
   },
   "付款截止：2026年7月27日23:59": {
-    "en": "Payment Deadline: July 27, 2026 23:59"
+    "en": "Payment Deadline: July 27, 2026 23:59",
+    "ru": "Окончание оплаты: 2026 год, 27 июля, 23:59",
+    "es": "Fecha límite de pago: 2026-07-27 23:59",
+    "pt": "Prazo para pagamento: 27 de julho de 2026, 23:59",
+    "ar": "موعد انتهاء الدفع: 2026/7/27 23:59",
+    "fr": "Date limite de paiement : 27 juillet 2026 23h59",
+    "hi": "भुगतान समय सीमा: 2026年7月27日23:59",
   },
   "已知瑕疵：缺少前配重及后悬挂": {
-    "en": "Known Flaws: Missing front weight & rear hitch"
+    "en": "Known Flaws: Missing front weight & rear hitch",
+    "ru": "Известные дефекты: отсутствие переднего противовеса и задней подвески",
+    "es": "Defectos conocidos: falta de contrapeso delantero y suspensión trasera",
+    "pt": "Defeitos conhecidos: falta de contrapeso dianteiro e suspensão traseira",
+    "ar": "العيوب المعروفة: عدم وجود وزن أمامي و تعليق خلفي",
+    "fr": "Défauts connus : manque de lest avant et de suspension arrière",
+    "hi": "ज्ञात दोष: आगे के वजन और पीछे के निलंबन की कमी",
   },
   "出售方通过合法渠道取得标的物，确认为合法所有权人。标的按现状交付，建议实地查验后报价。": {
-    "en": "Seller acquired the item through legal channels and confirms legal title. Sold as-is; inspect before offering."
+    "en": "Seller acquired the item through legal channels and confirms legal title. Sold as-is; inspect before offering.",
+    "ru": "Продавец получил лот через законный канал, подтверждает законное право собственности. Лот передается в текущем состоянии, рекомендуется осмотреть на месте перед подачей цены.",
+    "es": "El vendedor ha obtenido el objeto a través de canales legales y confirma ser el propietario legítimo. El objeto se entrega en su estado actual, se sugiere inspeccionarlo antes de hacer una oferta.",
+    "pt": "O vendedor adquiriu o bem por meio de canais legais e confirma ser o proprietário legítimo. O bem será entregue no estado em que se encontra, recomendamos verificar no local antes de fazer uma oferta.",
+    "ar": "البائع حصل على العرض من خلال قناة قانونية، و يؤكد على ملكيته الشرعية. العرض سوف يتم تسليمه على حاله، و يُنصح بفحص المكان قبل تقديم العرض.",
+    "fr": "Le vendeur a acquis l'objet par des canaux légaux et confirme en être le propriétaire légitime. L'objet est livré en l'état, il est recommandé de procéder à une vérification sur place avant de faire une offre.",
+    "hi": "विक्रेता ने कानूनी माध्यम से संपत्ति प्राप्त की है, कानूनी स्वामित्व की पुष्टि की है। संपत्ति को वर्तमान स्थिति में सौंप दिया जाता है, सुझाव दिया जाता है कि वास्तविक जांच के बाद कीमत बताई जाए।",
   },
   "完整公告请在询价详情页查看": {
-    "en": "Full announcement available on the inquiry detail page"
+    "en": "Full announcement available on the inquiry detail page",
+    "ru": "Полное объявление можно просмотреть на странице деталей запроса цен",
+    "es": "Anuncio completo en la página de detalles de la oferta",
+    "pt": "Anúncio completo disponível na página de detalhes da cotação",
+    "ar": "الاطلاع على الإعلان الكامل من خلال صفحة تفاصيل التسعير",
+    "fr": "Veuillez consulter la page des détails de l'enchère pour voir l'annonce complète",
+    "hi": "पूरी घोषणा के लिए कृपया पूछताछ विवरण पृष्ठ पर जाएं",
   },
   "我已阅读询价公告，了解标的物状况和交易规则": {
-    "en": "I have read the announcement and understand the terms"
+    "en": "I have read the announcement and understand the terms",
+    "ru": "Я прочитал объявление о запросе цен, понял состояние лота и правила сделки",
+    "es": "He leído el anuncio de la oferta, entiendo el estado del objeto y las reglas de la transacción",
+    "pt": "Li o anúncio da cotação e entendi a condição do bem e as regras da transação",
+    "ar": "لقد قرأت إعلان التسعير، و أفهم حالة العرض و قواعد التعامل",
+    "fr": "J'ai lu l'annonce d'enchère, je comprends l'état de l'objet et les règles de transaction",
+    "hi": "मैंने पूछताछ घोषणा पढ़ी है, संपत्ति की स्थिति और लेनदेन नियमों को समझा है।",
   },
   "我已阅读公告，知悉标的物以现状交付，风险自担。": {
-    "en": "I have read the announcement and accept the item as-is."
+    "en": "I have read the announcement and accept the item as-is.",
+    "ru": "Я прочитал объявление, знаю, что лот передается в текущем состоянии, риск беру на себя.",
+    "es": "He leído el anuncio, estoy al tanto de que el objeto se entrega en su estado actual y asumo el riesgo.",
+    "pt": "Li o anúncio e estou ciente de que o bem será entregue no estado em que se encontra, assumindo o risco.",
+    "ar": "لقد قرأت الإعلان، و أعلم أن العرض سوف يتم تسليمه على حاله، و أتحمل المخاطر.",
+    "fr": "J'ai lu l'annonce, je suis informé que l'objet est livré en l'état, les risques sont à ma charge.",
+    "hi": "मैंने घोषणा पढ़ी है, मुझे पता है कि संपत्ति को वर्तमान स्थिति में सौंप दिया जाता है, जोखिम स्वयं लेना होगा।",
   },
   "提交中...": {
-    "en": "Submitting..."
+    "en": "Submitting...",
+    "ru": "Отправка...",
+    "es": "Enviando...",
+    "pt": "Enviando...",
+    "ar": "جاري الإرسال...",
+    "fr": "Envoi en cours...",
+    "hi": "प्रस्तुति के दौरान...",
   },
   "提交报名": {
-    "en": "Submit Registration"
+    "en": "Submit Registration",
+    "ru": "Отправить заявку",
+    "es": "Enviar inscripción",
+    "pt": "Enviar inscrição",
+    "ar": "إرسال التسجيل",
+    "fr": "Soumettre l'inscription",
+    "hi": "प्रस्तुति भेजें",
   },
   "报名提交成功！": {
-    "en": "Registration submitted!"
+    "en": "Registration submitted!",
+    "ru": "Заявка отправлена успешно!",
+    "es": "Inscripción enviada con éxito",
+    "pt": "Inscrição enviada com sucesso!",
+    "ar": "تم إرسال التسجيل بنجاح!",
+    "fr": "Inscription soumise avec succès !",
+    "hi": "प्रस्तुति सफलतापूर्वक भेज दी गई है!",
   },
   "请缴纳保证金后上传转账凭证": {
-    "en": "Please pay deposit and upload proof"
+    "en": "Please pay deposit and upload proof",
+    "ru": "Пожалуйста, оплатите задаток и загрузите подтверждающий документ о переводе",
+    "es": "Por favor, pague la fianza y suba el comprobante de transferencia",
+    "pt": "Por favor, pague a caução e faça upload do comprovante de transferência",
+    "ar": "يرجى دفع التأمين و تحميل إثبات التحويل",
+    "fr": "Veuillez payer la caution et télécharger le reçu de virement",
+    "hi": "कृपया सुरक्षा जमा का भुगतान करें और फिर ट्रांसफर प्रमाण पत्र अपलोड करें",
   },
   "诚意金说明（双方自行约定）": {
-    "en": "Earnest Money (Optional, by Agreement)"
+    "en": "Earnest Money (Optional, by Agreement)",
+    "ru": "Объяснение задатка (договоренности между двумя сторонами)",
+    "es": "Explicación de la fianza de buena fe (acordada por ambas partes)",
+    "pt": "Explicação da caução (acordo entre as partes)",
+    "ar": "شرح عن التزام النية (يتم التفاوض بين الطرفين)",
+    "fr": "Explication de la bonne foi (convenue entre les deux parties)",
+    "hi": "सद्भावना धन की व्याख्या (दोनों पक्षों द्वारा स्वयं निर्धारित)",
   },
   "建议金额": {
-    "en": "Suggested Amount"
+    "en": "Suggested Amount",
+    "ru": "Рекомендуемая сумма",
+    "es": "Cantidad sugerida",
+    "pt": "Valor sugerido",
+    "ar": "مبلغ مقترح",
+    "fr": "Montant suggéré",
+    "hi": "सुझाई गई राशि",
   },
   "（可协商）": {
-    "en": "(negotiable)"
+    "en": "(negotiable)",
+    "ru": "(можно договориться)",
+    "es": "(negociable)",
+    "pt": "(pode ser negociado)",
+    "ar": "(يمكن التفاوض)",
+    "fr": "(négociable)",
+    "hi": "(बातचीत की जा सकती है)",
   },
   "诚意金由买卖双方自行约定，平台不代收、不验证、不托管": {
-    "en": "Earnest money agreed between buyer and seller; platform does not handle funds"
+    "en": "Earnest money agreed between buyer and seller; platform does not handle funds",
+    "ru": "Задаток определяется покупателем и продавцом самостоятельно, платформа не принимает, не проверяет и не хранит",
+    "es": "La fianza de buena fe es acordada por el comprador y el vendedor, la plataforma no la recibe, no la verifica ni la custodia",
+    "pt": "A caução é acordada entre as partes, a plataforma não recebe, não verifica e não administra",
+    "ar": "التزام النية يتم التفاوض عليه بين بائع و مشتري، و لا يقوم الموقع بتحويله أو التحقق منه أو إدارته",
+    "fr": "La bonne foi est convenue entre l'acheteur et le vendeur, la plateforme ne collecte pas, ne vérifie pas et ne gère pas",
+    "hi": "सद्भावना धन को खरीदार और विक्रेता दोनों द्वारा स्वयं निर्धारित किया जाता है, प्लेटफ़ॉर्म न तो संग्रह करता है, न ही सत्यापन करता है, न ही ट्रस्टी के रूप में कार्य करता है",
   },
   "如约定诚意金，请线下银行转账至卖方指定账户": {
-    "en": "If agreed, bank transfer to seller's account"
+    "en": "If agreed, bank transfer to seller's account",
+    "ru": "Если задаток согласован, пожалуйста, переведите деньги через банк на счет продавца",
+    "es": "Si se acuerda la fianza de buena fe, por favor, realice una transferencia bancaria fuera de línea a la cuenta designada por el vendedor",
+    "pt": "Se a caução for acordada, por favor, faça uma transferência bancária para a conta especificada pelo vendedor",
+    "ar": "إذا تم الاتفاق على التزام النية، يرجى إجراء التحويل البنكي إلى حساب البائع المحدد",
+    "fr": "Si une bonne foi est convenue, veuillez effectuer un virement bancaire hors ligne au compte spécifié par le vendeur",
+    "hi": "यदि सद्भावना धन के लिए सहमत हैं, तो विक्रेता द्वारा निर्दिष्ट खाते में बैंक ट्रांसफर के माध्यम से ऑफलाइन भुगतान करें",
   },
   "转账完成后截图保存": {
-    "en": "Take screenshot after transfer"
+    "en": "Take screenshot after transfer",
+    "ru": "После завершения перевода сделайте скриншот и сохраните",
+    "es": "Guarde una captura de pantalla después de completar la transferencia",
+    "pt": "Salve a captura de tela após a transferência",
+    "ar": "احفظ صورة الشاشة بعد إكمال التحويل",
+    "fr": "Sauvegarder la capture d'écran après le virement",
+    "hi": "ट्रांसफर पूरा होने के बाद स्क्रीनशॉट सहेजें",
   },
   "点击下方按钮上传转账凭证（仅通知卖家）": {
-    "en": "Click button below to upload proof (notifies seller)"
+    "en": "Click button below to upload proof (notifies seller)",
+    "ru": "Нажмите кнопку ниже, чтобы загрузить подтверждающий документ о переводе (только для уведомления продавца)",
+    "es": "Haga clic en el botón inferior para subir el comprobante de transferencia (solo para notificar al vendedor)",
+    "pt": "Clique no botão abaixo para fazer upload do comprovante de transferência (apenas para notificar o vendedor)",
+    "ar": "انقر على الزر أدناه لتحميل إثبات التحويل (لإعلام البائع فقط)",
+    "fr": "Cliquez sur le bouton ci-dessous pour télécharger le reçu de virement (uniquement pour informer le vendeur)",
+    "hi": "नीचे दिए गए बटन पर क्लिक करके ट्रांसफर प्रमाण पत्र अपलोड करें (केवल विक्रेता को सूचित करने के लिए)",
   },
   "重要提示：诚意金非保证金。是否需要诚意金由买卖双方自行约定。平台不介入资金往来。": {
-    "en": "Important: This is not a mandatory deposit. Platform does not handle funds."
+    "en": "Important: This is not a mandatory deposit. Platform does not handle funds.",
+    "ru": "Важное примечание: задаток не является гарантийным платежом. Нecessity задатка определяется покупателем и продавцом самостоятельно. Платформа не участвует в денежных операциях.",
+    "es": "Importante: la fianza de buena fe no es una fianza. La necesidad de una fianza de buena fe es acordada por el comprador y el vendedor. La plataforma no se involucra en las transacciones financieras.",
+    "pt": "Aviso importante: a caução não é uma garantia. A necessidade de caução é acordada entre as partes. A plataforma não interfere na transação de fundos.",
+    "ar": "تنبيه هام: التزام النية ليس التأمين. و يعتمد على اتفاق الطرفين. و لا ي介ف الموقع في التحويل المالي.",
+    "fr": "Avertissement important : la bonne foi n'est pas la caution. La nécessité d'une bonne foi est convenue entre l'acheteur et le vendeur. La plateforme ne s'immisce pas dans les transactions financières.",
+    "hi": "महत्वपूर्ण सुझाव: सद्भावना धन गारंटी धन नहीं है। सद्भावना धन की आवश्यकता है या नहीं, यह खरीदार और विक्रेता दोनों द्वारा स्वयं निर्धारित किया जाता है। प्लेटफ़ॉर्म धन के लेन-देन में हस्तक्षेप नहीं करता है।",
   },
   "凭证已上传": {
-    "en": "Proof uploaded"
+    "en": "Proof uploaded",
+    "ru": "Документ загружен",
+    "es": "Comprobante subido",
+    "pt": "Comprovante já enviado",
+    "ar": "تم تحميل الإثبات",
+    "fr": "Le reçu a été téléchargé",
+    "hi": "प्रमाण पत्र अपलोड किया गया है",
   },
   "点击上传诚意金转账截图（如适用）": {
-    "en": "Click to upload transfer screenshot (if applicable)"
+    "en": "Click to upload transfer screenshot (if applicable)",
+    "ru": "Нажмите, чтобы загрузить скриншот перевода задатка (если применимо)",
+    "es": "Haga clic para subir la captura de pantalla de la transferencia de la fianza de buena fe (si corresponde)",
+    "pt": "Clique para fazer upload da captura de tela da transferência da caução (se aplicável)",
+    "ar": "انقر على تحميل صورة الشاشة لتحويل التزام النية (إن لزم الأمر)",
+    "fr": "Cliquez pour télécharger la capture d'écran du virement de bonne foi (si applicable)",
+    "hi": "सद्भावना धन ट्रांसफर स्क्रीनशॉट अपलोड करने के लिए क्लिक करें (यदि लागू हो)",
   },
   "请先登录后再上传诚意金凭证。您也可以联系卖家线下确认。": {
-    "en": "Please login first to upload earnest money proof."
+    "en": "Please login first to upload earnest money proof.",
+    "ru": "Пожалуйста, сначала войдите в систему, а затем загрузите документ о задатке. Вы также можете связаться с продавцом, чтобы подтвердить оффлайн.",
+    "es": "Por favor, inicie sesión antes de subir el comprobante de la fianza de buena fe. También puede contactar al vendedor para confirmar fuera de línea.",
+    "pt": "Por favor, faça login antes de fazer upload do comprovante de caução. Você também pode contatar o vendedor para confirmar offline.",
+    "ar": "يرجى تسجيل الدخول قبل تحميل إثبات التزام النية. و يمكنك أيضا الاتصال بالبائع للتأكيد خارج الخط.",
+    "fr": "Veuillez vous connecter avant de télécharger le reçu de bonne foi. Vous pouvez également contacter le vendeur pour confirmer hors ligne.",
+    "hi": "कृपया पहले लॉगिन करें और फिर सद्भावना धन प्रमाण पत्र अपलोड करें। आप विक्रेता से ऑफलाइन भी संपर्क कर सकते हैं।",
   },
   "稍后上传，先完成报名": {
-    "en": "Upload later, finish registration"
+    "en": "Upload later, finish registration",
+    "ru": "Загрузите позже, сначала завершите регистрацию",
+    "es": "Subir más tarde, completar la inscripción primero",
+    "pt": "Enviar mais tarde, completar a inscrição primeiro",
+    "ar": "سوف أرفع لاحقا، سوف أكمل التسجيل أولا",
+    "fr": "Télécharger plus tard, terminer l'inscription d'abord",
+    "hi": "बाद में अपलोड करें, पहले पंजीकरण पूरा करें",
   },
   "报名完成！": {
-    "en": "Registration Complete!"
+    "en": "Registration Complete!",
+    "ru": "Регистрация завершена!",
+    "es": "Inscripción completada",
+    "pt": "Inscrição concluída!",
+    "ar": "تم إكمال التسجيل!",
+    "fr": "Inscription terminée !",
+    "hi": "पंजीकरण पूरा हो गया है!",
   },
   "关闭": {
     "en": "Close",
@@ -617,10 +1289,16 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Fechar",
     "ar": "إغلاق",
     "fr": "Fermer",
-    "hi": "बंद करें"
+    "hi": "बंद करें",
   },
   "登录后即可发起在线询价与报价": {
-    "en": "Sign in to start an online inquiry"
+    "en": "Sign in to start an online inquiry",
+    "ru": "После входа в систему вы можете отправить онлайн-запрос и цену",
+    "es": "Inicie sesión para iniciar una oferta y precio en línea",
+    "pt": "Faça login para iniciar a cotação e a oferta online",
+    "ar": "يمكنك إرسال طلب التسعير و العرض عبر الإنترنت بعد تسجيل الدخول",
+    "fr": "Vous pouvez lancer une enchère en ligne et faire une offre après vous être connecté",
+    "hi": "लॉगिन करने के बाद आप ऑनलाइन पूछताछ और कीमत बताने की शुरुआत कर सकते हैं",
   },
   "登录": {
     "en": "Login",
@@ -629,10 +1307,16 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Entrar",
     "ar": "تسجيل الدخول",
     "fr": "Connexion",
-    "hi": "लॉग इन"
+    "hi": "लॉग इन",
   },
   "在线询价": {
-    "en": "Price Inquiry"
+    "en": "Price Inquiry",
+    "ru": "Онлайн-запрос",
+    "es": "Oferta en línea",
+    "pt": "Cotação online",
+    "ar": "التسعير عبر الإنترنت",
+    "fr": "Enchère en ligne",
+    "hi": "ऑनलाइन पूछताछ",
   },
   "询价中": {
     "en": "Open",
@@ -641,7 +1325,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Aberta",
     "ar": "مفتوح",
     "fr": "Ouverte",
-    "hi": "खुला"
+    "hi": "खुला",
   },
   "首页": {
     "en": "Home",
@@ -650,322 +1334,952 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Início",
     "ar": "الرئيسية",
     "fr": "Accueil",
-    "hi": "होम"
+    "hi": "होम",
   },
   "AI农机工程师认证": {
-    "en": "AI Engineer Certification"
+    "en": "AI Engineer Certification",
+    "ru": "Сертификация инженера по сельскохозяйственной технике AI",
+    "es": "Certificación de ingeniero de máquinas agrícolas AI",
+    "pt": "Certificação de engenheiro de máquinas agrícolas AI",
+    "ar": "شهادة مهندس 神雕农机 المعتمده",
+    "fr": "Certification d'ingénieur en agriculture de l'IA",
+    "hi": "कृषि मशीनरी इंजीनियर प्रमाणीकरण",
   },
   "AI农机工程师认证体系": {
-    "en": "AI Agricultural Machinery Engineer Certification"
+    "en": "AI Agricultural Machinery Engineer Certification",
+    "ru": "Система сертификации инженера по сельскохозяйственной технике AI",
+    "es": "Sistema de certificación de ingeniero de máquinas agrícolas AI",
+    "pt": "Sistema de certificação de engenheiro de máquinas agrícolas AI",
+    "ar": "نظام شهادة مهندس 神雕农机 المعتمده",
+    "fr": "Système de certification d'ingénieur en agriculture de l'IA",
+    "hi": "कृषि मशीनरी इंजीनियर प्रमाणीकरण प्रणाली",
   },
   "全球首个农机AI操控认证体系，涵盖AI编程、人机协同、多机调度、数据决策等八维技能，五级认证从AI学徒到首席操控师，证书绑定平台派单权限。": {
-    "en": "The world's first agricultural machinery AI control certification system, covering 8-dimensional skills including AI programming, human-machine collaboration, multi-machine scheduling, and data-driven decision making. 5-level certification from AI Apprentice to Chief Controller, with certificates linked to platform dispatch authority."
+    "en": "The world's first agricultural machinery AI control certification system, covering 8-dimensional skills including AI programming, human-machine collaboration, multi-machine scheduling, and data-driven decision making. 5-level certification from AI Apprentice to Chief Controller, with certificates linked to platform dispatch authority.",
+    "ru": "Первая в мире система сертификации AI для сельскохозяйственной техники, включающая программирование AI, совместную работу человека и машины, управление несколькими машинами, принятие решений на основе данных и т. д., пять уровней сертификации от ученика AI до главного оператора, сертификат связан с разрешением на получение заказов на платформе.",
+    "es": "Primer sistema de certificación de control de máquinas agrícolas AI a nivel mundial, que abarca habilidades de programación de AI, cooperación entre humanos y máquinas, programación de múltiples máquinas y toma de decisiones basada en datos, con cinco niveles de certificación desde aprendiz de AI hasta jefe de control, con certificado vinculado a los permisos de la plataforma.",
+    "pt": "Primeiro sistema de certificação de operação de máquinas agrícolas AI do mundo, abrangendo programação AI, cooperação homem-máquina, agendamento de múltiplas máquinas, tomada de decisões baseada em dados e outras oito habilidades, cinco níveis de certificação do aprendiz de AI ao chefe de operações, certificado vinculado à permissão de envio de ordens da plataforma.",
+    "ar": "أول نظام شهادة معتمده في العالم لتشغيل الآلات الزراعية، و يشمل برمجة الآلة، و التعاون بين الإنسان و الآلة، و التحكم في عدة آلات، و اتخاذ القرارات بالبيانات، و八 مهارات أخرى، و خمسة مستويات من الشهادات من مساعد الآلة إلى رئيس تشغيل الآلة، و ربط الشهادة بسلطة إرسال الطلبات على الموقع.",
+    "fr": "Premier système de certification d'ingénieur en agriculture de l'IA au monde, couvrant huit compétences telles que la programmation de l'IA, la collaboration homme-machine, l'ordonnancement de plusieurs machines, la décision basée sur les données, etc. Cinq niveaux de certification, de l'apprenti de l'IA au chef de l'exploitation, le certificat est lié à l'autorisation de commande de la plateforme.",
+    "hi": "विश्व की पहली कृषि मशीनरी एआई नियंत्रण प्रमाणीकरण प्रणाली, जिसमें एआई प्रोग्रामिंग, मानव-मशीन सहयोग, बहु-मशीन निर्देश, डेटा निर्णय आदि आठ आयाम कौशल शामिल हैं, पांच स्तरीय प्रमाणीकरण एआई शिक्षु से लेकर प्रमुख नियंत्रण इंजीनियर तक, प्रमाण पत्र प्लेटफ़ॉर्म ऑर्डर अनुमति से जुड़ा हुआ है।",
   },
   "AI编程": {
-    "en": "AI Programming"
+    "en": "AI Programming",
+    "ru": "Программирование AI",
+    "es": "Programación de AI",
+    "pt": "Programação AI",
+    "ar": "برمجة الآلة",
+    "fr": "Programmation de l'IA",
+    "hi": "एआई प्रोग्रामिंग",
   },
   "农机AI任务编程与参数调优": {
-    "en": "Agricultural machinery AI task programming and parameter tuning"
+    "en": "Agricultural machinery AI task programming and parameter tuning",
+    "ru": "Программирование и настройка параметров задач сельскохозяйственной техники AI",
+    "es": "Programación de tareas de máquinas agrícolas AI y optimización de parámetros",
+    "pt": "Programação de tarefas de máquinas agrícolas AI e ajuste de parâmetros",
+    "ar": "برمجة و ضبط معاملات الآلات الزراعية المعتمده",
+    "fr": "Programmation et optimisation des paramètres des tâches de l'IA en agriculture",
+    "hi": "कृषि मशीनरी एआई कार्य प्रोग्रामिंग और पैरामीटर ट्यूनिंग",
   },
   "人机协同": {
-    "en": "Human-Machine Collaboration"
+    "en": "Human-Machine Collaboration",
+    "ru": "Совместная работа человека и машины",
+    "es": "Cooperación entre humanos y máquinas",
+    "pt": "Cooperação homem-máquina",
+    "ar": "التعاون بين الإنسان و الآلة",
+    "fr": "Collaboration homme-machine",
+    "hi": "मानव-मशीन सहयोग",
   },
   "人机协同作业策略与应急接管": {
-    "en": "Human-machine collaboration strategies and emergency takeover"
+    "en": "Human-machine collaboration strategies and emergency takeover",
+    "ru": "Совместная работа человека и машины и стратегия аварийного управления",
+    "es": "Estrategia de trabajo conjunto entre humanos y máquinas y toma de control de emergencia",
+    "pt": "Estratégia de operação conjunta homem-máquina e controle de emergência",
+    "ar": "استراتيجية عمل الآلة البشرية والاستلام في حالات الطوارئ",
+    "fr": "Stratégie de travail collaboratif homme-machine et prise en charge d'urgence",
+    "hi": "मानव-मशीन सहयोग रणनीति और आपातकालीन नियंत्रण",
   },
   "多机调度": {
-    "en": "Multi-Machine Scheduling"
+    "en": "Multi-Machine Scheduling",
+    "ru": "Управление несколькими машинами",
+    "es": "Programación de múltiples máquinas",
+    "pt": "Agendamento de múltiplas máquinas",
+    "ar": "جدولة متعددة",
+    "fr": "Ordonnancement multiple",
+    "hi": "बहु-मशीन निर्धारण",
   },
   "多台农机协同调度与路径优化": {
-    "en": "Multi-machine coordination and path optimization"
+    "en": "Multi-machine coordination and path optimization",
+    "ru": "Совместное управление несколькими сельскохозяйственными машинами и оптимизация маршрута",
+    "es": "Programación y optimización de rutas para múltiples máquinas agrícolas",
+    "pt": "Agendamento e otimização de trilhas de múltiplas máquinas agrícolas",
+    "ar": "جدولة وتحسين مسار الآلات الزراعية المتعددة",
+    "fr": "Ordonnancement et optimisation de trajectoire de plusieurs machines agricoles",
+    "hi": "बहु कृषि मशीनों का सहयोग और मार्ग अनुकूलन",
   },
   "数据决策": {
-    "en": "Data-Driven Decision Making"
+    "en": "Data-Driven Decision Making",
+    "ru": "Принятие решений на основе данных",
+    "es": "Toma de decisiones basada en datos",
+    "pt": "Tomada de decisões baseada em dados",
+    "ar": "قرار البيانات",
+    "fr": "Décision basée sur les données",
+    "hi": "डेटा निर्णय",
   },
   "作业数据分析与决策优化": {
-    "en": "Operational data analysis and decision optimization"
+    "en": "Operational data analysis and decision optimization",
+    "ru": "Анализ данных и оптимизация принятия решений",
+    "es": "Análisis y optimización de decisiones de datos de operación",
+    "pt": "Análise e otimização de decisões de dados de operação",
+    "ar": "تحليل بيانات العمل وتنظيم القرار الأمثل",
+    "fr": "Analyse et optimisation des décisions de données de travail",
+    "hi": "कार्य डेटा विश्लेषण और निर्णय अनुकूलन",
   },
   "传统操控": {
-    "en": "Traditional Operation"
+    "en": "Traditional Operation",
+    "ru": "Традиционное управление",
+    "es": "Control tradicional",
+    "pt": "Controle tradicional",
+    "ar": "التحكم التقليدية",
+    "fr": "Contrôle traditionnel",
+    "hi": "पारंपरिक नियंत्रण",
   },
   "农机基础操控与田间作业": {
-    "en": "Basic machinery operation and field work"
+    "en": "Basic machinery operation and field work",
+    "ru": "Основное управление сельскохозяйственной техникой и полевая работа",
+    "es": "Control básico de máquinas agrícolas y operación en el campo",
+    "pt": "Controle básico de máquinas agrícolas e operação em campo",
+    "ar": "التحكم الأساسي في الآلات الزراعية وعمليات الحقل",
+    "fr": "Contrôle de base et travail sur le terrain des machines agricoles",
+    "hi": "कृषि मशीन नियंत्रण और क्षेत्र कार्य",
   },
   "安全规范": {
-    "en": "Safety Standards"
+    "en": "Safety Standards",
+    "ru": "Безопасность и нормативы",
+    "es": "Normas de seguridad",
+    "pt": "Normas de segurança",
+    "ar": "لوائح السلامة",
+    "fr": "Règles de sécurité",
+    "hi": "सुरक्षा मानक",
   },
   "农机安全操作规范与风险评估": {
-    "en": "Machinery safety protocols and risk assessment"
+    "en": "Machinery safety protocols and risk assessment",
+    "ru": "Безопасная эксплуатация сельскохозяйственной техники и оценка рисков",
+    "es": "Normas de operación segura de máquinas agrícolas y evaluación de riesgos",
+    "pt": "Normas de operação segura de máquinas agrícolas e avaliação de riscos",
+    "ar": "لوائح تشغيل الآلات الزراعية الآمنة وتقييم المخاطر",
+    "fr": "Règles de sécurité et évaluation des risques pour les machines agricoles",
+    "hi": "कृषि मशीन सुरक्षा संचालन मानक और जोखिम मूल्यांकन",
   },
   "维护保养": {
-    "en": "Maintenance"
+    "en": "Maintenance",
+    "ru": "Техническое обслуживание",
+    "es": "Mantenimiento y conservación",
+    "pt": "Manutenção e conservação",
+    "ar": "صيانة وخدمة",
+    "fr": "Entretien et maintenance",
+    "hi": "रखरखाव",
   },
   "农机日常维护与故障排除": {
-    "en": "Daily maintenance and troubleshooting"
+    "en": "Daily maintenance and troubleshooting",
+    "ru": "Ежедневное техническое обслуживание и устранение неисправностей сельскохозяйственной техники",
+    "es": "Mantenimiento diario y solución de fallos de máquinas agrícolas",
+    "pt": "Manutenção diária e solução de problemas de máquinas agrícolas",
+    "ar": "صيانة يومية للآلات الزراعية وإزالة العيوب",
+    "fr": "Entretien quotidien et dépannage des machines agricoles",
+    "hi": "कृषि मशीन दैनिक रखरखाव और दोष निवारण",
   },
   "应急处理": {
-    "en": "Emergency Response"
+    "en": "Emergency Response",
+    "ru": "Аварийные процедуры",
+    "es": "Tratamiento de emergencia",
+    "pt": "Tratamento de emergência",
+    "ar": "معالجة حالات الطوارئ",
+    "fr": "Traitement d'urgence",
+    "hi": "आपातकालीन प्रबंधन",
   },
   "紧急情况处理与应急预案": {
-    "en": "Emergency handling and contingency planning"
+    "en": "Emergency handling and contingency planning",
+    "ru": "Управление чрезвычайными ситуациями и аварийные планы",
+    "es": "Tratamiento de situaciones de emergencia y plan de emergencia",
+    "pt": "Tratamento de situações de emergência e plano de contingência",
+    "ar": "معالجة الحالات الطارئة وخطة الطوارئ",
+    "fr": "Traitement des situations d'urgence et plan d'urgence",
+    "hi": "आपातकालीन स्थिति प्रबंधन और आपातकालीन योजना",
   },
   "线下服务网络": {
-    "en": "Service Network"
+    "en": "Service Network",
+    "ru": "Сеть офлайн-сервисов",
+    "es": "Red de servicios fuera de línea",
+    "pt": "Rede de serviços offline",
+    "ar": "شبكة الخدمات دون الاتصال",
+    "fr": "Réseau de services hors ligne",
+    "hi": "ऑफलाइन सेवा नेटवर्क",
   },
   "全国省级服务中心+县域服务网点，提供设备检测、维修、评估、交易等线下服务": {
-    "en": "Provincial service centers and county-level service points across China"
+    "en": "Provincial service centers and county-level service points across China",
+    "ru": "Национальная сеть сервисных центров и пунктов обслуживания на уровне провинций и округов, предоставляющая услуги по диагностике, ремонту, оценке и торговле оборудованием",
+    "es": "Centros de servicio a nivel de provincia + puntos de servicio a nivel de condado, que ofrecen servicios de detección de equipos, reparación, evaluación y transacción fuera de línea",
+    "pt": "Centros de serviço provinciais + pontos de serviço de nível de condado, fornecendo serviços de detecção, reparo, avaliação e transação de equipamentos offline",
+    "ar": "مراكز خدمة إقليمية على مستوى المقاطعات + شبكة نقاط خدمة على مستوى المقاطعات ، تقدم خدمات فحص وتصليح وتقييم وتجارة للآلات دون اتصال",
+    "fr": "Centres de service nationaux et provinciaux + réseaux de services de comté, fournissant des services de détection, de réparation, d'évaluation et de transaction hors ligne",
+    "hi": "राष्ट्रीय प्रांतीय सेवा केंद्र + जिला स्तरीय सेवा नेटवर्क, उपकरण परीक्षण, मरम्मत, मूल्यांकन, व्यापार आदि ऑफलाइन सेवाएं प्रदान करता है",
   },
   "服务网点": {
-    "en": "Centers"
+    "en": "Centers",
+    "ru": "Пункты обслуживания",
+    "es": "Puntos de servicio",
+    "pt": "Pontos de serviço",
+    "ar": "نقاط الخدمة",
+    "fr": "Points de service",
+    "hi": "सेवा नेटवर्क",
   },
   "覆盖省份": {
-    "en": "Provinces"
+    "en": "Provinces",
+    "ru": "Покрытие провинций",
+    "es": "Provincias cubiertas",
+    "pt": "Províncias cobertas",
+    "ar": "المحافظات المغطاة",
+    "fr": "Provinces couvertes",
+    "hi": "कवर किए गए प्रांत",
   },
   "省级中心": {
-    "en": "Provincial"
+    "en": "Provincial",
+    "ru": "Провинциальные центры",
+    "es": "Centros a nivel de provincia",
+    "pt": "Centros provinciais",
+    "ar": "مراكز إقليمية",
+    "fr": "Centres provinciaux",
+    "hi": "प्रांतीय केंद्र",
   },
   "县域网点": {
-    "en": "County"
+    "en": "County",
+    "ru": "Окружные пункты обслуживания",
+    "es": "Puntos de servicio a nivel de condado",
+    "pt": "Pontos de rede de nível de condado",
+    "ar": "نقاط على مستوى المقاطعات",
+    "fr": "Points de service de comté",
+    "hi": "जिला स्तरीय नेटवर्क",
   },
   "搜索省份、城市、网点名称...": {
-    "en": "Search province, city, center..."
+    "en": "Search province, city, center...",
+    "ru": "Поиск по провинциям, городам, названиям пунктов обслуживания...",
+    "es": "Buscar por provincia, ciudad, nombre de punto de servicio...",
+    "pt": "Pesquisar província, cidade, nome do ponto de serviço...",
+    "ar": "ابحث عن محافظة أو مدينة أو اسم نقطة الخدمة...",
+    "fr": "Rechercher des provinces, des villes, des noms de points de service...",
+    "hi": "राज्य, शहर, नेटवर्क नाम खोजें...",
   },
   "服务网点数据暂时无法加载，请稍后重试": {
-    "en": "Service center data is temporarily unavailable. Please try again later."
+    "en": "Service center data is temporarily unavailable. Please try again later.",
+    "ru": "Данные о пунктах обслуживания временно недоступны, попробуйте позже",
+    "es": "Los datos de los puntos de servicio no se pueden cargar temporalmente, inténtelo de nuevo más tarde",
+    "pt": "Dados dos pontos de serviço não podem ser carregados temporariamente, por favor tente novamente mais tarde",
+    "ar": "بيانات نقاط الخدمة غير متاحة حاليًا ، يرجى المحاولة مرة أخرى لاحقًا",
+    "fr": "Les données des points de service ne peuvent pas être chargées pour le moment, veuillez réessayer plus tard",
+    "hi": "सेवा नेटवर्क डेटा अस्थायी रूप से लोड नहीं किया जा सकता है, कृपया बाद में पुनः प्रयास करें",
   },
   "服务网点正在建设中，敬请期待": {
-    "en": "Service centers are being set up. Stay tuned."
+    "en": "Service centers are being set up. Stay tuned.",
+    "ru": "Пункты обслуживания находятся в стадии строительства, ожидайте",
+    "es": "La red de puntos de servicio está en construcción, gracias por su espera",
+    "pt": "Pontos de serviço estão em construção, aguarde",
+    "ar": "نقاط الخدمة قيد الإنشاء ، يرجى الانتظار",
+    "fr": "Les points de service sont en cours de construction, veuillez patienter",
+    "hi": "सेवा नेटवर्क निर्माणाधीन है, कृपया प्रतीक्षा करें",
   },
   "如需线下服务，请拨打客服热线：400-888-XXXX": {
-    "en": "For offline service, call: 400-888-XXXX"
+    "en": "For offline service, call: 400-888-XXXX",
+    "ru": "Для получения офлайн-сервиса позвоните на горячую линию службы поддержки: 400-888-XXXX",
+    "es": "Si necesita servicios fuera de línea, llame a la línea de atención al cliente: 400-888-XXXX",
+    "pt": "Se precisar de serviços offline, ligue para a linha direta de atendimento ao cliente: 400-888-XXXX",
+    "ar": "إذا كنت بحاجة إلى خدمة دون اتصال ، يرجى الاتصال بخدمة العملاء على الرقم 400-888-XXXX",
+    "fr": "Si vous avez besoin de services hors ligne, veuillez appeler la ligne d'assistance client : 400-888-XXXX",
+    "hi": "ऑफलाइन सेवा की आवश्यकता है, तो कृपया ग्राहक सेवा हॉटलाइन पर कॉल करें: 400-888-XXXX",
   },
   "浏览设备": {
-    "en": "Browse"
+    "en": "Browse",
+    "ru": "Просмотр оборудования",
+    "es": "Explorar equipos",
+    "pt": "Navegar por equipamentos",
+    "ar": "استعراض الأجهزة",
+    "fr": "Parcourir les équipements",
+    "hi": "उपकरण ब्राउज़ करें",
   },
   "查看设备参数、图片、评估报告、风险告知，全面了解设备现状": {
-    "en": "Review specs, photos, appraisal, and risk disclosures"
+    "en": "Review specs, photos, appraisal, and risk disclosures",
+    "ru": "Просмотр параметров оборудования, фотографий, отчетов об оценке, уведомлений о рисках, полное понимание текущего состояния оборудования",
+    "es": "Ver parámetros de equipo, imágenes, informes de evaluación, informes de riesgo, comprender completamente el estado actual del equipo",
+    "pt": "Ver parâmetros do equipamento, imagens, relatórios de avaliação, notificação de riscos, compreender completamente o status do equipamento",
+    "ar": "عرض معلمات الجهاز وصوره وتقرير التقييم وإشعار المخاطر ، لفهم حالة الجهاز بشكل شامل",
+    "fr": "Voir les paramètres de l'équipement, les images, les rapports d'évaluation, les avertissements de risque, pour comprendre l'état actuel de l'équipement",
+    "hi": "उपकरण पैरामीटर, चित्र, मूल्यांकन रिपोर्ट, जोखिम सूचना देखें, उपकरण की वर्तमान स्थिति को पूरी तरह से समझें",
   },
   "实地查验设备状况，确认设备信息无误后再报价": {
-    "en": "Inspect equipment in person before making an offer"
+    "en": "Inspect equipment in person before making an offer",
+    "ru": "Осмотр состояния оборудования, подтверждение точности информации об оборудовании перед подачей предложения",
+    "es": "Inspeccionar el estado del equipo en el lugar, confirmar que la información del equipo es correcta antes de cotizar",
+    "pt": "Verificar o status do equipamento no local, confirmar que as informações do equipamento estão corretas antes de fazer uma oferta",
+    "ar": "فحص حالة الجهاز على أرض الواقع ، والتأكد من صحة معلومات الجهاز قبل تقديم العرض",
+    "fr": "Vérifier l'état de l'équipement sur place, confirmer que les informations sur l'équipement sont correctes avant de faire une offre",
+    "hi": "उपकरण की स्थिति की जांच करें, उपकरण जानकारी की पुष्टि करें और फिर कीमत बताएं",
   },
   "输入您的心理价位，一对一提交给卖家。报价相互不可见": {
-    "en": "Submit your price privately to the seller. Offers are not visible to others"
+    "en": "Submit your price privately to the seller. Offers are not visible to others",
+    "ru": "Введите свою предполагаемую цену, отправьте ее продавцу один на один. Предложения не видны друг другу",
+    "es": "Ingrese su precio psicológico, envíelo uno a uno al vendedor. Las cotizaciones son mutuamente invisibles",
+    "pt": "Insira seu preço psicológico, envie um a um para o vendedor. Ofertas são mutuamente invisíveis",
+    "ar": "أدخل سعرك المقترح ، وسيتم تقديمه إلى البائع على أساس واحد لواحد. العروض غير مرئية للطرفين",
+    "fr": "Entrez votre prix psychologique, soumettez-le un à un au vendeur. Les offres sont invisibles les unes aux autres",
+    "hi": "अपनी मनोवैज्ञानिक कीमत दर्ज करें, विक्रेता को एक-एक करके जमा करें। कीमतें एक दूसरे को दिखाई नहीं देती हैं",
   },
   "卖家回复": {
-    "en": "Seller Response"
+    "en": "Seller Response",
+    "ru": "Ответ продавца",
+    "es": "Respuesta del vendedor",
+    "pt": "Resposta do vendedor",
+    "ar": "رد البائع",
+    "fr": "Réponse du vendeur",
+    "hi": "विक्रेता की प्रतिक्रिया",
   },
   "卖家审阅后可接受、拒绝。卖方可接受或拒绝任何报价": {
-    "en": "Seller reviews and accepts or rejects. Seller may accept or reject any offer"
+    "en": "Seller reviews and accepts or rejects. Seller may accept or reject any offer",
+    "ru": "Продавец может принять или отклонить предложение после рассмотрения. Продавец может принять или отклонить любое предложение",
+    "es": "El vendedor puede aceptar o rechazar después de revisar. El vendedor puede aceptar o rechazar cualquier cotización",
+    "pt": "O vendedor pode aceitar ou rejeitar após revisar. O vendedor pode aceitar ou rejeitar qualquer oferta",
+    "ar": "يمكن للبائع بعد المراجعة قبول أو رفض العرض. يمكن للبائع قبول أو رفض أي عرض",
+    "fr": "Le vendeur peut accepter ou refuser après examen. Le vendeur peut accepter ou refuser toute offre",
+    "hi": "विक्रेता समीक्षा के बाद स्वीकार या अस्वीकार कर सकता है। विक्रेता किसी भी कीमत को स्वीकार या अस्वीकार कर सकता है",
   },
   "成交交付": {
-    "en": "Deal & Delivery"
+    "en": "Deal & Delivery",
+    "ru": "Заключение сделки",
+    "es": "Entrega y pago",
+    "pt": "Conclusão e entrega",
+    "ar": "التسليم النهائي",
+    "fr": "Livraison et transaction",
+    "hi": "लेनदेन वितरण",
   },
   "确认成交后，签署买卖合同，线下交接设备与全套法律文件": {
-    "en": "Sign contract, arrange delivery with full legal documents"
+    "en": "Sign contract, arrange delivery with full legal documents",
+    "ru": "После подтверждения сделки подписать договор купли-продажи, передать оборудование и полный пакет юридических документов",
+    "es": "Después de confirmar el trato, se firma el contrato de compraventa y se entregan el equipo y la documentación legal completa de forma offline",
+    "pt": "Após a confirmação do negócio, assine o contrato de compra e venda, entregue o equipamento e todos os documentos legais offline",
+    "ar": "بعد التأكيد ، يتم التوقيع على عقد البيع والشراء وتنقل المعدات وجميع الوثائق القانونية",
+    "fr": "Après confirmation de l'achat, un contrat de vente est signé, et l'équipement ainsi que tous les documents légaux sont remis en main propre",
+    "hi": "लेन-देन की पुष्टि के बाद, खरीदने और बेचने के अनुबंध पर हस्ताक्षर करें, उपकरण और पूर्ण कानूनी दस्तावेजों का आदान-प्रदान करें",
   },
   "资金安全": {
-    "en": "Fund Safety"
+    "en": "Fund Safety",
+    "ru": "Безопасность средств",
+    "es": "Seguridad de fondos",
+    "pt": "Segurança financeira",
+    "ar": "أمان الأموال",
+    "fr": "Sécurité des fonds",
+    "hi": "वित्तीय सुरक्षा",
   },
   "平台不代收代付任何资金。买卖双方直接交易，资金直达。保证金由双方自行约定，平台不介入": {
-    "en": "No escrow — direct buyer-seller transactions. Deposits agreed between parties, platform does not handle funds"
+    "en": "No escrow — direct buyer-seller transactions. Deposits agreed between parties, platform does not handle funds",
+    "ru": "Платформа не принимает и не выплачивает какие-либо средства. Покупатель и продавец осуществляют прямые транзакции, средства перечисляются напрямую. Залог определяется сторонами самостоятельно, платформа не вмешивается",
+    "es": "La plataforma no recibe ni paga fondos en nombre de las partes. Las partes compradora y vendedora transan directamente, y los fondos se transfieren directamente. La garantía se acuerda entre las partes, y la plataforma no interviene",
+    "pt": "A plataforma não recebe ou paga qualquer fundo. As partes compradora e vendedora transacionam diretamente, e os fundos são transferidos diretamente. O depósito é acordado pelas duas partes, e a plataforma não interfere",
+    "ar": "المنصة لا تقبل أو تدفع أي أموال. يتعامل الطرفان بشكل مباشر ، والأموال تصل مباشرة. يتم تحديد إيداع الضمان من قبل الطرفين بشكل مستقل ، ولا تتدخل المنصة",
+    "fr": "La plateforme ne collecte ni ne paie aucun fonds. Les deux parties effectuent la transaction directement, et les fonds sont versés directement. La garantie est déterminée par les deux parties elles-mêmes, et la plateforme n'intervient pas",
+    "hi": "प्लेटफ़ॉर्म किसी भी धन को स्वीकार या भुगतान नहीं करता है। खरीदार और विक्रेता सीधे लेनदेन करते हैं, और धन सीधे पहुँचता है। जमा राशि दोनों पक्षों द्वारा स्वयं निर्धारित की जाती है, प्लेटफ़ॉर्म हस्तक्षेप नहीं करता है",
   },
   "信息透明": {
-    "en": "Transparency"
+    "en": "Transparency",
+    "ru": "Прозрачность информации",
+    "es": "Información transparente",
+    "pt": "Informações transparentes",
+    "ar": "معلومات شفافة",
+    "fr": "Transparence de l'information",
+    "hi": "जानकारी पारदर्शी",
   },
   "设备现状、已知瑕疵、评估报告、法律文件全部公开公示。卖方对故意隐瞒的重大瑕疵依法承担责任": {
-    "en": "Full disclosure of condition, defects, appraisal, and legal docs. Seller liable for concealed defects"
+    "en": "Full disclosure of condition, defects, appraisal, and legal docs. Seller liable for concealed defects",
+    "ru": "Текущее состояние оборудования, известные дефекты, отчеты об оценке, юридические документы полностью открыты и доступны. Продавец несет ответственность за умышленное сокрытие существенных дефектов",
+    "es": "El estado del equipo, los defectos conocidos, el informe de evaluación y la documentación legal se publican abiertamente. El vendedor es responsable de los defectos graves que se ocultan intencionalmente",
+    "pt": "O estado atual do equipamento, defeitos conhecidos, relatórios de avaliação e documentos legais são divulgados publicamente. O vendedor é responsável por defeitos ocultos intencionalmente",
+    "ar": "حالة المعدات ، العيوب المعروفة ، تقارير التقييم ، الوثائق القانونية يتم إظهارها جميعًا بشكل علني. يتحمل البائع المسؤولية عن العيوب الرئيسية التي يتم إخفاؤها عمدا",
+    "fr": "L'état actuel de l'équipement, les défauts connus, les rapports d'évaluation et les documents légaux sont tous rendus publics. Le vendeur est responsable de tout défaut majeur caché intentionnellement",
+    "hi": "उपकरण की वर्तमान स्थिति, ज्ञात दोष, मूल्यांकन रिपोर्ट, कानूनी दस्तावेज सभी खुले तौर पर प्रदर्शित किए जाते हैं। विक्रेता जानबूझकर छिपाए गए महत्वपूर्ण दोषों के लिए कानूनी रूप से जिम्मेदार होता है",
   },
   "法律保障": {
-    "en": "Legal Protection"
+    "en": "Legal Protection",
+    "ru": "Юридическая защита",
+    "es": "Protección legal",
+    "pt": "Proteção legal",
+    "ar": "حماية قانونية",
+    "fr": "Protection juridique",
+    "hi": "कानूनी सुरक्षा",
   },
   "附江苏金融租赁购买合同等现有权属文件。因标的物暂无农机登记证书，过户存在障碍，卖方不协助办理过户手续。买方应在交易前自行了解过户可行性并自担风险。": {
-    "en": "Jiangsu Financial Leasing purchase contract and available title documents provided. Transfer assistance not available due to missing registration certificate. Buyer assumes transfer risks."
+    "en": "Jiangsu Financial Leasing purchase contract and available title documents provided. Transfer assistance not available due to missing registration certificate. Buyer assumes transfer risks.",
+    "ru": "Прилагаются контракты на финансовую аренду и покупку в Джансу и другие документы, подтверждающие права собственности. Поскольку объект временно не имеет регистрационного удостоверения сельскохозяйственной техники, существует препятствие для перерегистрации, продавец не помогает в оформлении документов о перерегистрации. Покупатель должен до сделки самостоятельно разобраться в возможности перерегистрации и нести риски",
+    "es": "Se adjunta el contrato de compraventa de Jiangsu Financial Leasing, etc. Debido a que el equipo no tiene certificado de registro de maquinaria agrícola, el traspaso es difícil. El vendedor no ayudará con el trámite de transferencia. El comprador debe investigar la viabilidad de la transferencia antes de la transacción y asumir el riesgo",
+    "pt": "Anexa contrato de compra de leasing financeiro de Jiangsu, etc. Devido à falta de certificado de registro de máquinas agrícolas, há obstáculos para a transferência, e o vendedor não ajudará com a transferência. O comprador deve entender a viabilidade da transferência antes da transação e assumir o risco",
+    "ar": "يتم إرفاق عقد شراء إيجار جيانغسو المالي الحالي للوثائق الحالية. نظرًا لعدم وجود شهادة تسجيل للمعدات الزراعية ، هناك عقبات في نقل ملكية المعدات ، ولا يقوم البائع بمساعدة إجراءات نقل ملكية المعدات. يجب على المشتري أن يفهم بشكل مستقل إمكانية نقل ملكية المعدات قبل التعاقد ويحمل المخاطر",
+    "fr": "Les documents de propriété existants, tels que le contrat de location financière de Jiangsu, sont joints. Puisque l'équipement n'a pas de certificat d'enregistrement pour les machines agricoles, le transfert de propriété est difficile, et le vendeur ne fournira pas d'assistance pour les formalités de transfert. L'acheteur doit comprendre la faisabilité du transfert avant la transaction et assumer les risques",
+    "hi": "ज江苏 वित्तीय लीज़ खरीद अनुबंध सहित वर्तमान अधिकार दस्तावेज़। क्योंकि लक्ष्य के पास कृषि मशीनरी पंजीकरण प्रमाण पत्र नहीं है, हस्तांतरण में बाधा है, विक्रेता हस्तांतरण प्रक्रिया में सहायता नहीं करता है। खरीदार को लेनदेन से पहले स्वयं हस्तांतरण की संभावना को समझना चाहिए और जोखिम उठाना चाहिए।",
   },
   "权责对等": {
-    "en": "Fair Liability"
+    "en": "Fair Liability",
+    "ru": "Соответствие прав и обязанностей",
+    "es": "Responsabilidades equivalentes",
+    "pt": "Responsabilidades equivalentes",
+    "ar": "مساواة الحقوق والواجبات",
+    "fr": "Responsabilités égales",
+    "hi": "अधिकार और जिम्मेदारी",
   },
   "买卖双方违约责任对等。卖方无法交付须赔偿，买方逾期付款同样承担责任": {
-    "en": "Mutual liability. Seller liable for non-delivery, buyer liable for late payment"
+    "en": "Mutual liability. Seller liable for non-delivery, buyer liable for late payment",
+    "ru": "Ответственность за нарушение обязательств равна для обеих сторон. Если продавец не может передать товар, он должен возместить ущерб, а если покупатель задерживает оплату, он также несет ответственность",
+    "es": "Las partes compradora y vendedora tienen responsabilidades equivalentes en caso de incumplimiento. El vendedor debe compensar si no puede entregar, y el comprador también es responsable si paga con retraso",
+    "pt": "As responsabilidades por inadimplência das partes compradora e vendedora são equivalentes. O vendedor deve compensar se não puder entregar, e o comprador também assume responsabilidade se atrasar o pagamento",
+    "ar": "مسؤولية الطرفين المتعاقدين متساوية. إذا لم يتمكن البائع من تسليم المعدات ، يجب عليه تعويض المشتري ، كما يتحمل المشتري المسؤولية إذا تأخر في الدفع",
+    "fr": "Les deux parties ont des responsabilités égales en cas de non-respect du contrat. Le vendeur qui ne peut pas livrer l'équipement doit indemniser, et l'acheteur qui retarde le paiement assume également la responsabilité",
+    "hi": "खरीदार और विक्रेता दोनों के लिए समान जिम्मेदारी होती है। विक्रेता को उपकरण का हस्तांतरण करना होता है, खरीदार को भुगतान करना होता है, और दोनों पक्षों को अपने दायित्वों का पालन करना होता है",
   },
   "本平台提供的是在线询价/报价服务，不是拍卖。卖家有权接受或拒绝任何报价，无需说明理由": {
-    "en": "This is an online inquiry/quote service, not an auction. Seller may accept or reject any offer without explanation"
+    "en": "This is an online inquiry/quote service, not an auction. Seller may accept or reject any offer without explanation",
+    "ru": "Эта платформа предоставляет услугу онлайн-оформления запросов на цену/указания цены, а не аукцион. Продавец имеет право принимать или отклонять любое предложение без объяснения причин",
+    "es": "Esta plataforma ofrece un servicio de cotización en línea, no una subasta. El vendedor tiene derecho a aceptar o rechazar cualquier oferta sin necesidad de explicación",
+    "pt": "Esta plataforma fornece serviço de cotação/precio online, não é leilão. O vendedor tem o direito de aceitar ou recusar qualquer oferta sem precisar dar explicações",
+    "ar": "المنصة توفر خدمة التسعير عبر الإنترنت / خدمة التسعير ، وليست مزادًا. ي имеет الحق البائع في قبول أو رفض أي عرض ، دون الحاجة إلى توضيح الأسباب",
+    "fr": "La plateforme fournit un service de demande de prix en ligne, et non une vente aux enchères. Le vendeur a le droit d'accepter ou de refuser toute offre sans avoir à donner de raisons",
+    "hi": "यह प्लेटफ़ॉर्म ऑनलाइन मूल्य निर्धारण सेवा प्रदान करता है, नीलामी नहीं। विक्रेता किसी भी मूल्य निर्धारण को स्वीकार या अस्वीकार कर सकता है, बिना किसी कारण के",
   },
   "报价相互不可见，不存在公开竞价。买家之间无法看到彼此的报价": {
-    "en": "Offers are private — buyers cannot see each other's offers. No public bidding"
+    "en": "Offers are private — buyers cannot see each other's offers. No public bidding",
+    "ru": "Цены предложений не видны друг другу, нет открытого торга. Покупатели не могут видеть предложения друг друга",
+    "es": "Las ofertas no son visibles entre sí, y no hay subasta abierta. Los compradores no pueden ver las ofertas de los demás",
+    "pt": "As ofertas são invisíveis entre si, não há leilão aberto. Os compradores não podem ver as ofertas uns dos outros",
+    "ar": "العروض لا تظهر بشكل متبادل ، ولا توجد مزاد علني. لا يمكن للمشترين رؤية عروض بعضهم البعض",
+    "fr": "Les offres sont invisibles les unes aux autres, et il n'y a pas d'enchères publiques. Les acheteurs ne peuvent pas voir les offres des autres",
+    "hi": "मूल्य निर्धारण एक दूसरे को दिखाई नहीं देता है, और खुली नीलामी नहीं होती है। खरीदार एक दूसरे के मूल्य निर्धारण को नहीं देख सकते हैं",
   },
   "部分设备通过租赁渠道取得，权属文件可能存在不完整的情形。卖方如实披露权属状况，不协助办理过户手续，买方应自行了解过户可行性并自担风险。": {
-    "en": "Some equipment acquired via leasing. Title documents may be incomplete. Seller discloses title status truthfully and does not assist with transfer. Buyer assumes transfer risks."
+    "en": "Some equipment acquired via leasing. Title documents may be incomplete. Seller discloses title status truthfully and does not assist with transfer. Buyer assumes transfer risks.",
+    "ru": "Часть оборудования получена через каналы аренды, документы о праве собственности могут быть не полными. Продавец раскрывает информацию о праве собственности, но не помогает с оформлением документов, покупатель должен самостоятельно了解 возможность оформления и нести риск",
+    "es": "Algunos equipos se obtienen a través de canales de arrendamiento, y es posible que la documentación de propiedad no esté completa. El vendedor divulga la situación de propiedad y no ayuda con el trámite de transferencia. El comprador debe investigar la viabilidad de la transferencia y asumir el riesgo",
+    "pt": "Parte do equipamento é obtido por meio de canais de leasing, e os documentos de propriedade podem ser incompletos. O vendedor divulga a condição de propriedade e não ajuda com a transferência, e o comprador deve entender a viabilidade da transferência e assumir o risco",
+    "ar": "قد يتم الحصول على بعض المعدات من خلال قنوات التأجير ، ويمكن أن تكون الوثائق المتعلقة بالملكية غير كاملة. يفصح البائع عن حالة الملكية بشكل صحيح ، ولا يقوم بمساعدة إجراءات نقل ملكية المعدات ، ويجب على المشتري أن يفهم بشكل مستقل إمكانية نقل ملكية المعدات ويحمل المخاطر",
+    "fr": "Certains équipements sont obtenus par le biais de canaux de location, et les documents de propriété peuvent être incomplets. Le vendeur divulgue l'état de propriété de manière véridique et ne fournit pas d'assistance pour les formalités de transfert. L'acheteur doit comprendre la faisabilité du transfert et assumer les risques",
+    "hi": "कुछ उपकरण किराये के माध्यम से प्राप्त किए जाते हैं, और अधिकार दस्तावेज़ अधूरे हो सकते हैं। विक्रेता अधिकार स्थिति का खुलासा करता है, हस्तांतरण प्रक्रिया में सहायता नहीं करता है, और खरीदार को स्वयं हस्तांतरण की संभावना को समझना चाहिए और जोखिम उठाना चाहिए।",
   },
   "设备可能存在零部件缺失（如前配重、后悬挂等），详情页已公示。建议实地验机后再报价": {
-    "en": "Equipment may have missing parts (disclosed on listing). In-person inspection recommended"
+    "en": "Equipment may have missing parts (disclosed on listing). In-person inspection recommended",
+    "ru": "Оборудование может иметь отсутствующие запчасти (например, передний противовес, задняя подвеска и т. д.), на странице деталей уже опубликована информация. Рекомендуем осмотреть оборудование перед подачей предложения",
+    "es": "El equipo puede tener piezas faltantes (como pesas frontales, suspensiones traseras, etc.). La página de detalles ya ha publicado esta información. Se recomienda probar el equipo antes de cotizar",
+    "pt": "O equipamento pode ter peças faltando (como peso frontal, suspensão traseira, etc.), e os detalhes estão na página. Recomendamos verificar o equipamento antes de fazer uma oferta",
+    "ar": "يمكن أن تفتقر المعدات إلى قطع غيار معينة (مثل الوزن الأمامي ، التعليق الخلفي ، إلخ) ، وقد تم الإعلان عن التفاصيل في صفحة التفاصيل. يوصى بفحص المعدات بشكل فعلي قبل تقديم العرض",
+    "fr": "L'équipement peut manquer de certaines pièces (comme le poids avant ou la suspension arrière), les détails sont affichés sur la page de détails. Il est recommandé de vérifier l'équipement sur place avant de faire une offre",
+    "hi": "उपकरण में कुछ भागों की कमी हो सकती है (जैसे कि आगे के भार, पीछे के निलंबन आदि), विवरण पृष्ठ पर प्रदर्शित किया गया है। सुझाव है कि खरीदार उपकरण की जांच करें और फिर मूल्य निर्धारण करें",
   },
   "平台不设定保证金、不设定加价幅度、不设定最低启动人数。交易条款由买卖双方在合同中约定": {
-    "en": "Platform sets no deposit, no increment, no minimum participants. Terms agreed in the contract"
+    "en": "Platform sets no deposit, no increment, no minimum participants. Terms agreed in the contract",
+    "ru": "Платформа не устанавливает залог, не устанавливает шаг аукциона, не устанавливает минимальное количество участников. Условия сделки определяются покупателем и продавцом в контракте",
+    "es": "La plataforma no establece una garantía, no establece un margen de aumento de precio, y no establece un número mínimo de participantes. Las condiciones de la transacción se acuerdan entre las partes en el contrato",
+    "pt": "A plataforma não define depósito, não define aumento de preço, não define número mínimo de participantes. As condições de transação são acordadas pelas partes compradora e vendedora no contrato",
+    "ar": "المنصة لا تحدد إيداع الضمان ، ولا تحدد نسبة الزيادة ، ولا تحدد عدد الأشخاص الأدنى لبدء المزاد. يتم تحديد شروط التعاقد من قبل الطرفين المتعاقدين في العقد",
+    "fr": "La plateforme ne définit pas de garantie, ni de montant minimum d'enchère, ni de nombre minimum de participants. Les conditions de transaction sont déterminées par les deux parties dans le contrat",
+    "hi": "प्लेटफ़ॉर्म किसी भी जमा राशि को निर्धारित नहीं करता है, किसी भी मूल्य वृद्धि को निर्धारित नहीं करता है, और किसी न्यूनतम शुरुआती संख्या को निर्धारित नहीं करता है। लेनदेन की शर्तें खरीदार और विक्रेता द्वारा अनुबंध में निर्धारित की जाती हैं",
   },
   "交易为线下交付。请在签署合同前仔细阅读格式条款（特别是瑕疵告知、过户事宜、违约责任）": {
-    "en": "Delivery is offline. Review standard terms carefully (defects, transfer, liability) before signing"
+    "en": "Delivery is offline. Review standard terms carefully (defects, transfer, liability) before signing",
+    "ru": "Сделка осуществляется офлайн. Пожалуйста, внимательно прочитайте формальные условия (особенно информацию о дефектах, оформлении документов, ответственности за нарушение обязательств) перед подписанием контракта",
+    "es": "La transacción se realiza de forma offline. Por favor, lea cuidadosamente las cláusulas del contrato antes de firmar (especialmente las relacionadas con defectos, transferencia y responsabilidades por incumplimiento)",
+    "pt": "A transação é feita offline. Por favor, leia atentamente as condições do contrato (especialmente as informações sobre defeitos, transferência e responsabilidades por inadimplência) antes de assinar",
+    "ar": "التداول هو تداول خارج الخط. يرجى قراءة بنود العقد بعناية قبل التوقيع (خاصة الإشعار بالعيوب ، ونقل ملكية المعدات ، ومسؤولية الانحراف)",
+    "fr": "La transaction est effectuée en main propre. Veuillez lire attentivement les conditions générales du contrat avant de le signer (en particulier les informations sur les défauts, les formalités de transfert et les responsabilités en cas de non-respect du contrat)",
+    "hi": "लेनदेन ऑफ़लाइन हस्तांतरण के माध्यम से किया जाता है। कृपया अनुबंध पर हस्ताक्षर करने से पहले सावधानी से प्रारूप शर्तों को पढ़ें (विशेष रूप से दोष सूचना, हस्तांतरण विवरण, जिम्मेदारी)",
   },
   "在线询价和拍卖有什么区别？": {
-    "en": "What's the difference between inquiry and auction?"
+    "en": "What's the difference between inquiry and auction?",
+    "ru": "В чем разница между онлайн-оформлением запросов на цену и аукционом?",
+    "es": "¿Cuál es la diferencia entre cotización en línea y subasta?",
+    "pt": "Qual é a diferença entre cotação online e leilão?",
+    "ar": "ما هو الفرق بين التسعير عبر الإنترنت والمزاد؟",
+    "fr": "Quelle est la différence entre la demande de prix en ligne et les enchères?",
+    "hi": "ऑनलाइन मूल्य निर्धारण और नीलामी में क्या अंतर है?",
   },
   "在线询价是买家一对一提交报价、卖家决定是否成交的模式。与拍卖有本质区别：①不存在公开竞价，报价相互不可见；②卖方可接受或拒绝任何报价；③不设固定加价幅度；④不设最低启动人数；⑤平台不设定保证金。这是一种价格协商服务，不是拍卖活动。": {
-    "en": "Online inquiry lets buyers submit private offers and sellers decide whether to accept. Key differences from auctions: (1) no public bidding — offers are private; (2) seller may accept or reject any offer; (3) no fixed increment; (4) no minimum participants; (5) platform sets no deposit. This is a price negotiation service, not an auction."
+    "en": "Online inquiry lets buyers submit private offers and sellers decide whether to accept. Key differences from auctions: (1) no public bidding — offers are private; (2) seller may accept or reject any offer; (3) no fixed increment; (4) no minimum participants; (5) platform sets no deposit. This is a price negotiation service, not an auction.",
+    "ru": "Онлайн-оформление запросов на цену - это режим, при котором покупатель подает предложение один на один, а продавец решает, согласиться ли на сделку. Это имеет принципиальное отличие от аукциона: ① нет открытого торга (предложения не видны друг другу); ② продавец может принять или отклонить любое предложение; ③ нет фиксированного шага аукциона; ④ нет минимального количества участников; ⑤ платформа не устанавливает залог. Это услуга по согласованию цены, а не аукцион",
+    "es": "La cotización en línea es un modo en el que el comprador presenta una oferta de forma individual, y el vendedor decide si acepta o no. Tiene diferencias esenciales con la subasta: ① no hay subasta abierta, y las ofertas no son visibles entre sí; ② el vendedor puede aceptar o rechazar cualquier oferta; ③ no hay un margen de aumento de precio fijo; ④ no hay un número mínimo de participantes; ⑤ la plataforma no establece una garantía. Este es un servicio de negociación de precios, no una actividad de subasta",
+    "pt": "A cotação online é um modelo em que o comprador envia uma oferta individual, e o vendedor decide se aceita ou não. É diferente do leilão: ① não há leilão aberto, as ofertas são invisíveis entre si; ② o vendedor pode aceitar ou recusar qualquer oferta; ③ não há aumento de preço fixo; ④ não há número mínimo de participantes; ⑤ a plataforma não define depósito. É um serviço de negociação de preços, não um leilão",
+    "ar": "التسعير عبر الإنترنت هو نمط ي提交 فيه المشتري عرضًا واحدًا ، ويقرر البائع ما إذا كان سيتم إبرام الصفقة. يختلف عن المزاد في النقاط التالية: ① لا توجد مزاد علني ، ولا تظهر العروض بشكل متبادل ؛ ② يمكن للبائع قبول أو رفض أي عرض ؛ ③ لا توجد نسبة زيادة محددة ؛ ④ لا يوجد عدد أدنى من الأشخاص لبدء المزاد ؛ ⑤ لا تحدد المنصة إيداع الضمان. هذه خدمة تفاوض على السعر ، وليست نشاط مزاد",
+    "fr": "La demande de prix en ligne est un mode où l'acheteur soumet une offre une à une, et le vendeur décide si l'achat est confirmé. Il diffère fondamentalement des enchères : ① il n'y a pas d'enchères publiques, les offres sont invisibles les unes aux autres ; ② le vendeur peut accepter ou refuser toute offre ; ③ il n'y a pas de montant minimum d'enchère fixé ; ④ il n'y a pas de nombre minimum de participants requis ; ⑤ la plateforme ne définit pas de garantie. Il s'agit d'un service de négociation de prix, et non d'une vente aux enchères",
+    "hi": "ऑनलाइन मूल्य निर्धारण एक ऐसी प्रक्रिया है जिसमें खरीदार एक-एक करके मूल्य निर्धारण करता है, और विक्रेता तय करता है कि क्या लेनदेन करना है। नीलामी से इसका मुख्य अंतर है: ① खुली नीलामी नहीं होती है, मूल्य निर्धारण एक दूसरे को दिखाई नहीं देता है; ② विक्रेता किसी भी मूल्य निर्धारण को स्वीकार या अस्वीकार कर सकता है; ③ किसी निश्चित मूल्य वृद्धि को निर्धारित नहीं किया जाता है; ④ किसी न्यूनतम शुरुआती संख्या को निर्धारित नहीं किया जाता है; ⑤ प्लेटफ़ॉर्म किसी भी जमा राशि को निर्धारित नहीं करता है। यह एक मूल्य निर्धारण सेवा है, नीलामी नहीं",
   },
   "设备无法过户怎么办？": {
-    "en": "What if the equipment can't be transferred?"
+    "en": "What if the equipment can't be transferred?",
+    "ru": "Что делать, если оборудование нельзя оформить?",
+    "es": "¿Qué pasa si el equipo no se puede transferir?",
+    "pt": "O que acontece se o equipamento não puder ser transferido?",
+    "ar": "ماذا يحدث إذا لم تتمكن المعدات من نقل ملكيتها؟",
+    "fr": "Que se passe-t-il si l'équipement ne peut pas être transféré?",
+    "hi": "उपकरण को हस्तांतरण नहीं किया जा सकता है, तो क्या होगा?",
   },
   "卖方如实披露标的物权属状况。本标的暂无农机登记证书，仅有江苏金融租赁购买合同，权属文件不完整。卖方不协助办理过户手续。买方应在报价前自行了解标的物能否在所在地办理过户登记及上牌使用，因无法过户或上牌导致的全部风险由买方自行承担。卖方不存在隐瞒或虚假陈述的，买方不得以权属文件不全为由要求解除合同或索赔。": {
-    "en": "Seller truthfully discloses title status. This unit has no agricultural machinery registration certificate; only a Jiangsu Financial Leasing purchase contract is available. Seller does not assist with transfer. Buyer assumes all transfer/registration risks. Buyer may not cancel or claim for incomplete title documents if seller has not concealed or misrepresented."
+    "en": "Seller truthfully discloses title status. This unit has no agricultural machinery registration certificate; only a Jiangsu Financial Leasing purchase contract is available. Seller does not assist with transfer. Buyer assumes all transfer/registration risks. Buyer may not cancel or claim for incomplete title documents if seller has not concealed or misrepresented.",
+    "ru": "Продавец раскрывает информацию о праве собственности на оборудование. Это оборудование временно не имеет свидетельства о регистрации сельскохозяйственной техники, есть только контракт на покупку у Jiangsu Financial Leasing, документы о праве собственности не полные. Продавец не помогает с оформлением документов. Покупатель должен самостоятельно了解 возможность оформления оборудования в своем регионе и нести риск. Если покупатель не может оформить оборудование или зарегистрировать его, он несет全部 риск. Продавец не скрывает и не предоставляет ложную информацию, покупатель не может требовать расторжения контракта или компенсации",
+    "es": "El vendedor divulga la situación de propiedad del equipo. Este equipo no tiene certificado de registro de maquinaria agrícola, solo tiene el contrato de compraventa de Jiangsu Financial Leasing, y la documentación de propiedad no está completa. El vendedor no ayudará con el trámite de transferencia. El comprador debe investigar si el equipo se puede registrar y usar en su ubicación antes de cotizar, y asumir el riesgo si no se puede transferir o registrar",
+    "pt": "O vendedor divulga a condição de propriedade do equipamento. Este equipamento não tem certificado de registro de máquinas agrícolas, apenas contrato de compra de leasing financeiro de Jiangsu, e os documentos de propriedade são incompletos. O vendedor não ajuda com a transferência. O comprador deve entender a viabilidade da transferência antes de fazer uma oferta e assumir o risco se não puder transferir ou registrar",
+    "ar": "يتم إفصاح البائع عن حالة ملكية المعدات بشكل صحيح. هذه المعدات لا تملك شهادة تسجيل للمعدات الزراعية ، فقط عقد شراء إيجار جيانغسو المالي ، ووثائق الملكية غير كاملة. لا يقوم البائع بمساعدة إجراءات نقل ملكية المعدات. يجب على المشتري أن يفهم بشكل مستقل قبل تقديم العرض ما إذا كان يمكن تسجيل نقل ملكية المعدات في منطقته ، واستخدامها ، بسبب عدم نقل ملكية المعدات أو تسجيلها ، يتحمل المشتري جميع المخاطر. إذا لم يكن هناك إخفاء أو كذب من قبل البائع ، لا يمكن للمشتري أن يطلب إلغاء العقد أو المطالبة بالتعويض بسبب وثائق الملكية غير الكاملة",
+    "fr": "Le vendeur divulgue de manière véridique l'état de propriété de l'équipement. Cet équipement n'a pas de certificat d'enregistrement pour les machines agricoles, mais seulement un contrat de location financière de Jiangsu, et les documents de propriété sont incomplets. Le vendeur ne fournit pas d'assistance pour les formalités de transfert. L'acheteur doit comprendre la faisabilité du transfert et du registre d'immatriculation avant de faire une offre, et assume les risques en cas de non-transfert ou d'impossibilité d'immatriculation",
+    "hi": "विक्रेता उपकरण की अधिकार स्थिति का खुलासा करता है। इस उपकरण के पास कृषि मशीनरी पंजीकरण प्रमाण पत्र नहीं है, केवल ज江苏 वित्तीय लीज़ खरीद अनुबंध है, अधिकार दस्तावेज़ अधूरे हैं। विक्रेता हस्तांतरण प्रक्रिया में सहायता नहीं करता है। खरीदार को मूल्य निर्धारण से पहले स्वयं उपकरण के हस्तांतरण और पंजीकरण की संभावना को समझना चाहिए और जोखिम उठाना चाहिए। विक्रेता को कोई छिपी हुई जिम्मेदारी नहीं है, खरीदार अधिकार दस्तावेज़ की अधूरेपन के कारण अनुबंध को रद्द करने या मुआवजे की मांग नहीं कर सकता है",
   },
   "如何确保设备质量？": {
-    "en": "How is equipment quality ensured?"
+    "en": "How is equipment quality ensured?",
+    "ru": "Как обеспечить качество оборудования?",
+    "es": "¿Cómo se garantiza la calidad del equipo?",
+    "pt": "Como garantir a qualidade do equipamento?",
+    "ar": "كيف يمكن ضمان جودة المعدات؟",
+    "fr": "Comment assurer la qualité de l'équipement?",
+    "hi": "उपकरण की गुणवत्ता कैसे सुनिश्चित की जाती है?",
   },
   "卖方如实告知已知瑕疵（缺少前配重、后悬挂等），标的物按现状交付。卖方对经合理查验可发现的瑕疵不承担担保责任，但对明知或应知而未披露的重大瑕疵，以及因故意隐瞒或虚假陈述导致的损失，仍依法承担责任。买方在交付后发现隐蔽瑕疵的，应在约定期限内书面通知卖方。": {
-    "en": "Seller discloses known defects. Equipment sold as-is. Seller not liable for discoverable defects but remains liable for known but undisclosed defects or misrepresentation. Buyer should report hidden defects within the agreed period."
+    "en": "Seller discloses known defects. Equipment sold as-is. Seller not liable for discoverable defects but remains liable for known but undisclosed defects or misrepresentation. Buyer should report hidden defects within the agreed period.",
+    "ru": "Продавец информирует о известных дефектах (отсутствие переднего противовеса, задней подвески и т. д.), оборудование передается в том состоянии, в котором оно находится. Продавец не несет ответственности за дефекты, которые можно было обнаружить при разумной проверке, но несет ответственность за ущерб, причиненный умышленным сокрытием или ложной информацией. Покупатель должен уведомить продавца о скрытых дефектах в течение согласованного срока",
+    "es": "El vendedor informa sobre los defectos conocidos (como la falta de pesas frontales, suspensiones traseras, etc.). El equipo se entrega en su estado actual. El vendedor no se hace responsable de los defectos que se pueden detectar mediante una inspección razonable, pero es responsable de los defectos graves que se ocultan intencionalmente o se declaran falsamente",
+    "pt": "O vendedor informa sobre defeitos conhecidos (como falta de peso frontal, suspensão traseira, etc.), e o equipamento é entregue como está. O vendedor não assume responsabilidade por defeitos que poderiam ser descobertos por meio de uma inspeção razoável, mas assume responsabilidade por defeitos ocultos intencionalmente ou por declarações falsas",
+    "ar": "يتم إفصاح البائع عن العيوب المعروفة (نقص الوزن الأمامي ، التعليق الخلفي ، إلخ) ، وتسليم المعدات على حالتها الحالية. لا يتحمل البائع مسؤولية الضمان عن العيوب التي يمكن اكتشافها من خلال الفحص العقلاني ، ولكن يتحمل المسؤولية عن العيوب الرئيسية التي يتم إخفاؤها عمدا ، وأيضًا عن الخسائر الناجمة عن الإخفاء أو الكذب. يجب على المشتري إخطار البائع书ياً في غضون الفترة المحددة إذا تم اكتشاف عيوب خفية بعد التسليم",
+    "fr": "Le vendeur informe de manière véridique des défauts connus (comme le manque de poids avant ou de suspension arrière), et l'équipement est livré dans son état actuel. Le vendeur n'est pas responsable des défauts qui peuvent être découverts après une inspection raisonnable, mais il est responsable des défauts majeurs cachés intentionnellement ou des pertes causées par des déclarations fausses. L'acheteur doit informer le vendeur par écrit des défauts cachés découverts après la livraison dans les délais convenus",
+    "hi": "विक्रेता ज्ञात दोषों की जानकारी देता है (जैसे कि आगे के भार, पीछे के निलंबन आदि), उपकरण को वर्तमान स्थिति में हस्तांतरण किया जाता है। विक्रेता जानबूझकर छिपाए गए महत्वपूर्ण दोषों के लिए जिम्मेदार होता है, और खरीदार को हस्तांतरण के बाद छिपे हुए दोषों की जानकारी देनी चाहिए",
   },
   "需要交保证金吗？": {
-    "en": "Is a deposit required?"
+    "en": "Is a deposit required?",
+    "ru": "Нужно ли вносить залог?",
+    "es": "¿Se necesita una garantía?",
+    "pt": "É necessário pagar um depósito?",
+    "ar": "هل هناك حاجة إلى دفع إيداع الضمان؟",
+    "fr": "Faut-il verser une garantie?",
+    "hi": "क्या जमा राशि की आवश्यकता है?",
   },
   "本平台不强制收取保证金。如卖家要求缴纳诚意金，由买卖双方自行约定金额和支付方式，平台不代收、不验证、不托管。这与拍卖不同——拍卖中保证金是参与竞拍的门槛，而在询价模式中，保证金（如有）仅是双方的商业安排。": {
-    "en": "The platform does not require deposits. Any earnest money is agreed between buyer and seller directly — the platform does not collect, verify, or hold funds. Unlike auctions, deposits here are a commercial arrangement between parties."
+    "en": "The platform does not require deposits. Any earnest money is agreed between buyer and seller directly — the platform does not collect, verify, or hold funds. Unlike auctions, deposits here are a commercial arrangement between parties.",
+    "ru": "Эта платформа не требует обязательного залога. Если продавец требует внести задаток, покупатель и продавец определяют сумму и способ оплаты самостоятельно, платформа не участвует в этом процессе, не проверяет и не хранит средства. Это отличается от аукциона, где залог является порогом для участия, а в режиме согласования цены залог (если он есть) является коммерческим соглашением между сторонами",
+    "es": "Esta plataforma no requiere una garantía. Si el vendedor requiere un depósito de buena fe, las partes lo acuerdan entre sí, y la plataforma no se hace cargo de recoger, verificar o custodiar el depósito. Esto es diferente de una subasta, en la que la garantía es un requisito para participar",
+    "pt": "Esta plataforma não exige depósito. Se o vendedor exigir um depósito de boa-fé, as partes compradora e vendedora acordam o valor e o método de pagamento, e a plataforma não interfere",
+    "ar": "المنصة لا تجبر على دفع إيداع الضمان. إذا طالب البائع بدفع رسوم الصدق ، يتم تحديد المبلغ وطريقة الدفع من قبل الطرفين المتعاقدين بشكل مستقل ، ولا تقبل المنصة الدفع ، ولا تتحقق منه ، ولا توفر خدمات الوساطة. هذا يختلف عن المزاد - في المزاد ، إيداع الضمان هو عتبة للمشاركة في المزاد ، بينما في نمط التسعير ، إيداع الضمان (إن وجد) هو ترتيب تجاري بين الطرفين",
+    "fr": "La plateforme ne collecte pas de garantie. Si le vendeur exige un acompte, les deux parties doivent convenir du montant et du mode de paiement, et la plateforme ne collecte ni ne vérifie ni ne gère cette garantie. Cela diffère des enchères, où la garantie est une condition préalable pour participer",
+    "hi": "प्लेटफ़ॉर्म जमा राशि को मजबूर नहीं करता है। यदि विक्रेता ईमानदारी की जमा राशि की मांग करता है, तो खरीदार और विक्रेता द्वारा राशि और भुगतान का तरीका निर्धारित किया जाता है, प्लेटफ़ॉर्म इसमें हस्तक्षेप नहीं करता है",
   },
   "成交后违约责任如何？": {
-    "en": "What about liability for breach?"
+    "en": "What about liability for breach?",
+    "ru": "Какова ответственность за нарушение обязательств после заключения сделки?",
+    "es": "¿Qué pasa con las responsabilidades por incumplimiento después de un trato?",
+    "pt": "Como são as responsabilidades por inadimplência após a transação?",
+    "ar": "كيف يتم التعامل مع مسؤولية الانحراف بعد إبرام الصفقة؟",
+    "fr": "Comment sont gérées les responsabilités en cas de non-respect du contrat après l'achat?",
+    "hi": "लेनदेन के बाद जिम्मेदारी कैसे तय की जाती है?",
   },
   "买卖双方违约责任对等。买方逾期付款：保证金（如有）不予退还 + 合同解除 + 六个月内不得参与同类询价。卖方无法交付：退还已付款项 + 支付合同总价5%-10%违约金 + 赔偿实际损失。卖方权属虚假或隐瞒重大瑕疵：买方有权解除合同并要求赔偿。": {
-    "en": "Liability is mutual. Buyer late payment: deposit (if any) forfeited + contract cancelled + 6-month restriction. Seller non-delivery: full refund + 5-10% penalty + actual losses. Title fraud or concealed defects: buyer may cancel and claim damages."
+    "en": "Liability is mutual. Buyer late payment: deposit (if any) forfeited + contract cancelled + 6-month restriction. Seller non-delivery: full refund + 5-10% penalty + actual losses. Title fraud or concealed defects: buyer may cancel and claim damages.",
+    "ru": "Ответственность за нарушение обязательств равна для обеих сторон. Если покупатель задерживает оплату: задаток (если он был внесен) не возвращается + контракт расторгается + в течение 6 месяцев покупатель не может участвовать в аналогичных запросах на цену. Если продавец не может передать товар: возвращаются уже оплаченные средства + уплачивается штраф в размере 5-10% от суммы контракта + возмещается фактический ущерб. Если продавец предоставляет ложную информацию о праве собственности или скрывает значительные дефекты: покупатель имеет право расторгнуть контракт и требовать компенсации",
+    "es": "Las partes compradora y vendedora tienen responsabilidades equivalentes en caso de incumplimiento. Si el comprador paga con retraso: no se devuelve el depósito (si lo hay) + se cancela el contrato + no se puede participar en cotizaciones similares durante seis meses. Si el vendedor no puede entregar: se devuelve el pago + se paga una penalización del 5-10% del precio del contrato + se compensa por las pérdidas reales. Si el vendedor oculta la propiedad o defectos graves: el comprador puede cancelar el contrato y exigir compensación",
+    "pt": "As responsabilidades por inadimplência das partes compradora e vendedora são equivalentes. Se o comprador atrasar o pagamento: o depósito (se houver) não é devolvido + o contrato é rescindido + não pode participar de transações semelhantes por 6 meses. Se o vendedor não puder entregar: devolve o pagamento + paga 5%-10% do preço do contrato como multa + compensa danos reais. Se o vendedor ocultar a propriedade ou defeitos significativos: o comprador pode rescindir o contrato e exigir compensação",
+    "ar": "مسؤولية الطرفين المتعاقدين متساوية. إذا تأخر المشتري في الدفع: لا يتم استرداد إيداع الضمان (إن وجد) + إلغاء العقد + لا يسمح للمشتري بالمشاركة في مزاد مماثل لمدة ستة أشهر. إذا لم يتمكن البائع من تسليم المعدات: استرداد المبلغ المدفوع + دفع 5-10% من سعر العقد كتعويض + تعويض الخسائر الفعلية. إذا كانت ملكية البائع كاذبة أو اخفاء عيوب رئيسية: ي имеет الحق المشتري في إلغاء العقد والمطالبة بالتعويض",
+    "fr": "Les deux parties ont des responsabilités égales en cas de non-respect du contrat. Si l'acheteur retarde le paiement : la garantie (si versée) n'est pas remboursée + le contrat est résilié + l'acheteur ne peut pas participer à des demandes de prix similaires pendant six mois. Si le vendeur ne peut pas livrer l'équipement : le paiement est remboursé + une pénalité de 5 % à 10 % du prix du contrat est payée + les pertes réelles sont indemnisées. Si le vendeur fournit de fausses informations sur la propriété ou cache des défauts majeurs : l'acheteur a le droit de résilier le contrat et de demander des dommages-intérêts",
+    "hi": "खरीदार और विक्रेता दोनों के लिए समान जिम्मेदारी होती है। खरीदार को भुगतान करना होता है, विक्रेता को उपकरण का हस्तांतरण करना होता है, और दोनों पक्षों को अपने दायित्वों का पालन करना होता है",
   },
   "成交后服务费怎么收？": {
-    "en": "Are there service fees after closing?"
+    "en": "Are there service fees after closing?",
+    "ru": "Как собирается комиссия за услуги после заключения сделки?",
+    "es": "¿Cómo se cobra la tarifa de servicio después de un trato?",
+    "pt": "Como são cobradas as taxas de serviço após a transação?",
+    "ar": "كيف يتم دفع رسوم الخدمة بعد إبرام الصفقة؟",
+    "fr": "Comment les frais de service sont-ils collectés après l'achat?",
+    "hi": "लेनदेन के बाद सेवा शुल्क कैसे लिया जाता है?",
   },
   "本功能为信息发布与价格协商撮合服务，平台不收取任何交易服务费、佣金或成交手续费。会员费、AI估值费等属于增值信息服务费，与设备交易无关。买卖双方按合同约定自行完成交易及资金收付。": {
-    "en": "This feature is an information and price-inquiry matching service. The platform charges no transaction service fees, commissions, or closing fees. Membership and AI valuation fees are value-added information service fees, unrelated to equipment transactions. Buyers and sellers complete transactions and payments per their contract."
+    "en": "This feature is an information and price-inquiry matching service. The platform charges no transaction service fees, commissions, or closing fees. Membership and AI valuation fees are value-added information service fees, unrelated to equipment transactions. Buyers and sellers complete transactions and payments per their contract.",
+    "ru": "Эта функция является услугой по публикации информации и согласованию цены, платформа не взимает комиссию за сделку, не берет процент или плату за услуги. Плата за членство, плата за оценку с помощью ИИ и т. д. являются платой за дополнительные информационные услуги и не связаны с сделкой по оборудованию. Покупатель и продавец самостоятельно выполняют условия контракта и осуществляют платежи",
+    "es": "Esta función es un servicio de publicación de información y negociación de precios. La plataforma no cobra tarifa de servicio de transacción, comisión o tarifa de transacción. La tarifa de membresía, la tarifa de estimación de AI, etc. son tarifas de servicios de información de valor agregado, y no están relacionadas con la transacción de equipos. Las partes compradora y vendedora completan la transacción y el pago según lo acordado en el contrato",
+    "pt": "Este serviço é uma plataforma de publicação de informações e negociação de preços, e a plataforma não cobra taxas de transação, comissões ou taxas de serviço. As taxas de membros, taxas de avaliação de IA, etc. são taxas de serviços de informações adicionais e não estão relacionadas à transação de equipamentos. As partes compradora e vendedora completam a transação e o pagamento de acordo com o contrato",
+    "ar": "هذه الوظيفة هي خدمة نشر المعلومات وخدمة التفاوض على السعر ، ولا تتقاضى المنصة أي رسوم خدمة تجارية ، أو عمولة ، أو رسوم إبرام عقد. رسوم العضوية ، ورسوم التقييم الإلكتروني ، هي رسوم خدمات معلومات قيمة ، ولا علاقة لها بتعاملات المعدات. يتم إبرام الطرفين المتعاقدين العقد وتنفيذ الدفع بشكل مستقل",
+    "fr": "Cette fonctionnalité est un service de publication d'informations et de négociation de prix, et la plateforme ne collecte aucun frais de transaction, de commission ou de frais de traitement. Les frais de membre, les frais d'évaluation par intelligence artificielle, etc. sont des frais de services d'information de valeur ajoutée, et n'ont aucun rapport avec la transaction d'équipement. Les deux parties doivent conclure la transaction et le paiement selon les conditions convenues dans le contrat",
+    "hi": "प्लेटफ़ॉर्म लेनदेन सेवा शुल्क, कमीशन या हस्तांतरण शुल्क नहीं लेता है। सदस्यता शुल्क, एआई मूल्यांकन शुल्क आदि मूल्य वर्धित सेवा शुल्क हैं, जो उपकरण लेनदेन से संबंधित नहीं हैं। खरीदार और विक्रेता अनुबंध के अनुसार स्वयं लेनदेन और भुगतान करते हैं",
   },
   "询价规则与合规公示": {
-    "en": "Inquiry Rules & Compliance"
+    "en": "Inquiry Rules & Compliance",
+    "ru": "Правила запроса на цену и заявление о соблюдении",
+    "es": "Reglas de cotización y anuncio de cumplimiento",
+    "pt": "Regras de cotação e declaração de conformidade",
+    "ar": "قواعد التسعير والإعلان عن الامتثال",
+    "fr": "Règles de demande de prix et déclaration de conformité",
+    "hi": "मूल्य निर्धारण नियम और अनुपालन घोषणा",
   },
   "透明交易 · 合规先行 · 保障双方权益": {
-    "en": "Transparent · Compliant · Protected"
+    "en": "Transparent · Compliant · Protected",
+    "ru": "Прозрачная сделка · соблюдение правил в первую очередь · защита прав и интересов обеих сторон",
+    "es": "Transacción transparente · Cumplimiento primero · Protección de los derechos e intereses de ambas partes",
+    "pt": "Transparência nas transações · Conformidade primeiro · Proteção dos direitos das duas partes",
+    "ar": "تداول شفاف · امتثال أولا · حماية حقوق الطرفين",
+    "fr": "Transaction transparente · Conformité d'abord · Protection des intérêts des deux parties",
+    "hi": "पारदर्शी लेनदेन · अनुपालन पहले · दोनों पक्षों के अधिकारों की रक्षा",
   },
   "合规声明": {
-    "en": "Compliance Declaration"
+    "en": "Compliance Declaration",
+    "ru": "Заявление о соблюдении",
+    "es": "Declaración de cumplimiento",
+    "pt": "Declaração de conformidade",
+    "ar": "إعلان امتثال",
+    "fr": "Déclaration de conformité",
+    "hi": "अनुपालन घोषणा",
   },
   "一、非拍卖声明：": {
-    "en": "1. Non-Auction Declaration: "
+    "en": "1. Non-Auction Declaration: ",
+    "ru": "I. Недекларированная продажа:",
+    "es": "I. Declaración de no subasta:",
+    "pt": "I. Declaração de não leilão:",
+    "ar": "البيان الأول: عدم الإعلان عن المزاد",
+    "fr": "I. Déclaration de non-enchère :",
+    "hi": "एक, गैर-नीलामी घोषणा:",
   },
   "本平台提供的「在线询价」功能不属于《中华人民共和国拍卖法》规制的拍卖活动。其核心区别在于：①不存在公开竞价（报价相互不可见）；②不存在价高者得（卖方可接受或拒绝任何报价）；③不设固定加价幅度；④不设最低启动人数；⑤平台不设定保证金。本功能为买卖双方就二手农机设备进行价格协商的交易撮合服务。": {
-    "en": "The 'Online Inquiry' feature is not an auction under the PRC Auction Law. Key distinctions: (1) no public bidding (offers are private); (2) no highest-bidder-wins (seller may accept or reject any offer); (3) no fixed increment; (4) no minimum participants; (5) platform sets no deposit. This is a price negotiation service."
+    "en": "The 'Online Inquiry' feature is not an auction under the PRC Auction Law. Key distinctions: (1) no public bidding (offers are private); (2) no highest-bidder-wins (seller may accept or reject any offer); (3) no fixed increment; (4) no minimum participants; (5) platform sets no deposit. This is a price negotiation service.",
+    "ru": "Функция «онлайн-запрос на цену» на этой платформе не подлежит регулированию Закона Китайской Народной Республики о торгах. Основное отличие заключается в следующем: ① нет открытого торга (предложения не видны друг другу); ② нет продажи по высшей цене (продавец может принять или отклонить любое предложение); ③ нет фиксированного шага аукциона; ④ нет минимального количества участников; ⑤ платформа не устанавливает залог. Эта функция является услугой по согласованию цены между покупателем и продавцом для подержанного сельскохозяйственного оборудования",
+    "es": "La función de \"precio en línea\" proporcionada por esta plataforma no está regulada por la Ley de Subastas de la República Popular China. Su diferencia fundamental radica en: ① no existe una subasta pública (las ofertas no son visibles entre sí); ② no existe un precio más alto (el vendedor puede aceptar o rechazar cualquier oferta); ③ no hay un incremento de precio fijo; ④ no hay un número mínimo de participantes; ⑤ la plataforma no establece un depósito de garantía. Esta función es un servicio de intermediación para que las partes compradora y vendedora negocien el precio de los equipos agrícolas de segunda mano.",
+    "pt": "A funcionalidade \"Consulta de Preços Online\" fornecida por esta plataforma não é uma atividade de leilão regulamentada pela Lei de Leilões da República Popular da China. Sua principal diferença reside em: ① não haver lances públicos (os preços oferecidos não são visíveis entre si); ② não haver um vencedor com base no preço mais alto (o vendedor pode aceitar ou recusar qualquer oferta); ③ não há um aumento fixo de preço; ④ não há um número mínimo de participantes; ⑤ a plataforma não estabelece uma garantia. Esta funcionalidade é um serviço de negociação de preços para a compra e venda de equipamentos agrícolas usados.",
+    "ar": "توفير منصة \"التسعير عبر الإنترنت\" لا يخضع لتنظيم قانون المزاد في جمهورية الصين الشعبية. الفرق الرئيسي هو: ① لا يوجد تسعير عام (لا يمكن رؤية الأسعار المعلنة)؛ ② لا يوجد من يفوز بالسعر الأعلى (يمكن للبائع قبول أو رفض أي سعر)؛ ③ لا يوجد حد أدنى لزيادة الأسعار؛ ④ لا يوجد عدد أدنى من المشاركين؛ ⑤ المنصة لا تحدد أي مبلغ تأميني. هذه الوظيفة هي خدمة لتسوية الأسعار بين المشتري والبائع لآلات الزراعة المستعملة.",
+    "fr": "Le fonctionnement « d'enchère en ligne » proposé par cette plateforme ne relève pas des dispositions de la loi sur les enchères de la République populaire de Chine. Les principales différences résident dans les points suivants : ① l'absence de surenchère publique (les offres ne sont pas visibles les unes par rapport aux autres) ; ② l'absence d'attribution au plus offrant (le vendeur peut accepter ou refuser toute offre) ; ③ l'absence de majoration fixe ; ④ l'absence d'un nombre minimum de participants ; ⑤ la plateforme ne prévoit pas de caution. Ce fonctionnement constitue un service de négociation de prix pour les équipements agricoles d'occasion entre l'acheteur et le vendeur.",
+    "hi": "इस प्लेटफ़ॉर्म द्वारा प्रदान की गई \"ऑनलाइन पूछताछ\" सुविधा 《चीनी जनवादी गणराज्य की नीलामी कानून》 द्वारा नियंत्रित नीलामी गतिविधियों से संबंधित नहीं है। इसका मुख्य अंतर इस प्रकार है: ① सार्वजनिक बोली नहीं है (बोली एक दूसरे को दिखाई नहीं देती); ② उच्चतम मूल्य प्राप्त करने वाला नहीं है (विक्रेता किसी भी बोली को स्वीकार या अस्वीकार कर सकता है); ③ निश्चित वृद्धि की दर नहीं है; ④ न्यूनतम प्रारंभिक संख्या नहीं है; ⑤ प्लेटफ़ॉर्म में गारंटी राशि नहीं है। यह सुविधा द्वितीयक कृषि मशीनरी उपकरणों के लिए मूल्य वार्ता के लिए खरीदार और विक्रेता के बीच लेनदेन की मध्यस्थता सेवा है।",
   },
   "二、平台定位：": {
-    "en": "2. Platform Role: "
+    "en": "2. Platform Role: ",
+    "ru": "II. Позиционирование платформы:",
+    "es": "II. Posicionamiento de la plataforma:",
+    "pt": "II. Posicionamento da plataforma:",
+    "ar": "البيان الثاني: موقع المنصة",
+    "fr": "II. Positionnement de la plateforme :",
+    "hi": "दो, प्लेटफ़ॉर्म की स्थिति:",
   },
   "平台作为信息中介和居间人，仅提供信息发布和沟通工具。平台不参与定价、不代收代付资金、不设定竞价规则、不确定成交结果、不承担交易担保责任。买卖双方应自行判断交易风险，遵守相关法律法规。": {
-    "en": "The platform serves as an information intermediary. It does not set prices, handle funds, define bidding rules, determine outcomes, or guarantee transactions. Both parties assess risks independently."
+    "en": "The platform serves as an information intermediary. It does not set prices, handle funds, define bidding rules, determine outcomes, or guarantee transactions. Both parties assess risks independently.",
+    "ru": "Платформа выступает в качестве информационного посредника и интерфейса, предоставляя только инструменты для публикации информации и общения. Платформа не участвует в определении цены, не принимает и не переводит средства, не устанавливает правила аукциона, не определяет результат сделки, не несет ответственности за сделку. Покупатель и продавец должны самостоятельно оценивать риски сделки и соблюдать соответствующие законы и правила",
+    "es": "La plataforma actúa como intermediario y solo proporciona herramientas de publicación y comunicación. La plataforma no participa en la fijación de precios, no recibe ni paga fondos, no establece reglas de subasta, no determina el resultado de la transacción y no asume la responsabilidad de garantía de la transacción. Las partes compradora y vendedora deben juzgar por sí mismas el riesgo de la transacción y cumplir con las leyes y regulaciones relevantes.",
+    "pt": "A plataforma atua como intermediária de informações e apenas fornece ferramentas de publicação e comunicação. A plataforma não participa do processo de precificação, não recebe ou paga fundos, não estabelece regras de lances, não determina o resultado da negociação e não assume responsabilidade pela garantia da transação. As partes compradora e vendedora devem avaliar os riscos da transação por conta própria e cumprir as leis e regulamentos aplicáveis.",
+    "ar": "تعتبر المنصة وسيطًا لل информации ووسيطًا، وتوفر فقط أدوات النشر والتواصل. لا تشارك المنصة في تحديد الأسعار، ولا تتلقى أو تدفع الأموال، ولا تحدد قواعد التسعير، ولا تحدد نتيجة الصفقة، ولا تتحمل مسؤولية ضمان الصفقة. يجب على الطرفين المشتري والبائع الحكم على مخاطر الصفقة بأنفسهم، والامتثال للقوانين واللوائح ذات الصلة.",
+    "fr": "La plateforme agit en tant qu'intermédiaire et tiers, ne fournissant que des outils de publication et de communication d'informations. La plateforme ne participe pas à la fixation des prix, ne perçoit ni ne verse des fonds, ne définit pas les règles d'enchère, ne détermine pas les résultats des transactions et n'assume pas la responsabilité de garantie des transactions. Les parties acheteuse et vendeuse doivent évaluer par elles-mêmes les risques de transaction et respecter les lois et réglementations applicables.",
+    "hi": "प्लेटफ़ॉर्म जानकारी मध्यस्थ और मध्यस्थ के रूप में कार्य करता है, केवल जानकारी प्रकाशन और संचार उपकरण प्रदान करता है। प्लेटफ़ॉर्म मूल्य निर्धारण में भाग नहीं लेता है, धन की प्राप्ति और भुगतान में मध्यस्थता नहीं करता है, नीलामी नियमों को निर्धारित नहीं करता है, लेनदेन के परिणाम को निर्धारित नहीं करता है, और लेनदेन गारंटी की जिम्मेदारी नहीं लेता है। खरीदार और विक्रेता को स्वयं लेनदेन जोखिम का निर्धारण करना चाहिए और संबंधित कानूनों का पालन करना चाहिए।",
   },
   "三、信息披露：": {
-    "en": "3. Information Disclosure: "
+    "en": "3. Information Disclosure: ",
+    "ru": "III. Раскрытие информации:",
+    "es": "III. Divulgación de información:",
+    "pt": "III. Divulgação de informações:",
+    "ar": "البيان الثالث: الإفصاح عن المعلومات",
+    "fr": "III. Divulgation d'informations :",
+    "hi": "तीन, जानकारी का खुलासा:",
   },
   "所有设备信息均真实披露，包括已知瑕疵、租赁取得渠道、无法过户风险等。卖方对明知或应知而未披露的重大瑕疵，以及因故意隐瞒或虚假陈述导致的损失，依法承担责任。": {
-    "en": "All equipment information is truthfully disclosed, including known defects, leasing acquisition sources, and transfer risks. Seller remains liable for known but undisclosed defects."
+    "en": "All equipment information is truthfully disclosed, including known defects, leasing acquisition sources, and transfer risks. Seller remains liable for known but undisclosed defects.",
+    "ru": "Все сведения об оборудовании раскрываются в полном объеме, включая известные дефекты, каналы аренды, риски, связанные с невозможностью оформления. Продавец несет ответственность за ущерб, причиненный умышленным сокрытием или ложной информацией о значительных дефектах",
+    "es": "Toda la información del equipo se divulga de manera veraz, incluyendo defectos conocidos, canales de obtención de alquiler, riesgos de no transferencia, etc. El vendedor es responsable de cualquier defecto importante que no se haya divulgado y de cualquier pérdida causada por ocultación o declaración falsa.",
+    "pt": "Todas as informações sobre os equipamentos são divulgadas de forma verdadeira, incluindo defeitos conhecidos, canais de aquisição de aluguel, riscos de não transferência, etc. O vendedor é responsável por qualquer defeito significativo que não tenha sido divulgado e por quaisquer perdas resultantes de declarações falsas ou omissões.",
+    "ar": "جميع المعلومات عن الأجهزة يتم الكشف عنها بالكامل، بما في ذلك العيوب المعروفة، وقنوات الحصول على الإيجار، ومخاطر عدم نقل ملكية. يتحمل البائع المسؤولية عن العيوب الرئيسية التي لم يتم الكشف عنها، وأي خسائر ناجمة عن الإخفاء أو البيانات الكاذبة.",
+    "fr": "Toutes les informations sur les équipements sont divulguées de manière véridique, y compris les défauts connus, les canaux d'acquisition de location, les risques d'impossibilité de transfert de propriété, etc. Le vendeur est responsable de la non-divulgation de défauts majeurs qu'il connaissait ou aurait dû connaître, ainsi que des pertes résultant d'une dissimulation intentionnelle ou de fausses déclarations.",
+    "hi": "सभी उपकरण जानकारी वास्तविक रूप से खुलासा की जाती है, जिसमें ज्ञात दोष, किराये पर प्राप्ति चैनल, हस्तांतरण जोखिम आदि शामिल हैं। विक्रेता को ज्ञात या अज्ञात दोषों के लिए जिम्मेदारी लेनी चाहिए, साथ ही साथ जानबूझकर छिपाने या झूठे बयान के कारण होने वाले नुकसान के लिए भी जिम्मेदारी लेनी चाहिए।",
   },
   "四、权属保证：": {
-    "en": "4. Title Guarantee: "
+    "en": "4. Title Guarantee: ",
+    "ru": "IV. Гарантия права собственности:",
+    "es": "IV. Garantía de propiedad:",
+    "pt": "IV. Garantia de propriedade:",
+    "ar": "البيان الرابع: ضمان الملكية",
+    "fr": "IV. Garantie de propriété :",
+    "hi": "चार, स्वामित्व गारंटी:",
   },
   "卖方如实披露标的物权属状况。因部分标的暂无农机登记证书等权属文件，过户存在障碍，卖方不协助办理过户手续。买方应在交易前自行了解过户可行性并自担风险。卖方已如实披露不存在隐瞒或虚假陈述的，买方不得以此为由要求解除合同或索赔。": {
-    "en": "Seller truthfully discloses title status. Some units lack registration certificates; transfer is obstructed. Seller does not assist with transfer. Buyer assumes transfer risks. Buyer may not cancel or claim if seller has not concealed or misrepresented."
+    "en": "Seller truthfully discloses title status. Some units lack registration certificates; transfer is obstructed. Seller does not assist with transfer. Buyer assumes transfer risks. Buyer may not cancel or claim if seller has not concealed or misrepresented.",
+    "ru": "Продавец раскрывает информацию о праве собственности на оборудование. Поскольку часть оборудования временно не имеет свидетельства о регистрации сельскохозяйственной техники, продавец не помогает с оформлением документов. Покупатель должен самостоятельно了解 возможность оформления оборудования и нести риск. Если продавец предоставляет полную информацию и не скрывает ничего, покупатель не может требовать расторжения контракта или компенсации",
+    "es": "El vendedor divulga la situación de propiedad del bien de manera veraz. Debido a que algunos bienes no tienen certificado de registro de maquinaria agrícola u otros documentos de propiedad, la transferencia es difícil, y el vendedor no ayudará con el trámite de transferencia. El comprador debe investigar por sí mismo la viabilidad de la transferencia antes de la transacción y asumir el riesgo. Si el vendedor ha divulgado de manera veraz y no ha ocultado ni falseado información, el comprador no puede pedir la rescisión del contrato o una indemnización.",
+    "pt": "O vendedor divulga a situação de propriedade do bem de forma verdadeira. Devido à falta de certificados de registro de máquinas agrícolas para alguns bens, a transferência de propriedade pode ser obstaculizada, e o vendedor não ajudará a realizar a transferência. O comprador deve entender a viabilidade da transferência antes da transação e assumir o risco por conta própria. Se o vendedor tiver divulgado a situação de propriedade de forma verdadeira e não tiver ocultado ou feito declarações falsas, o comprador não pode exigir a rescisão do contrato ou indenização com base nisso.",
+    "ar": "يكشف البائع عن حالة ملكية الكائن. نظرًا لعدم وجود شهادات تسجيل أجهزة زراعية لبعض الكائنات، فإنه يوجد عقبات في نقل ملكية، ولا يساعد البائع في إتمام إجراءات نقل ملكية. يجب على المشتري أن يفهم بنفسه إمكانية نقل ملكية قبل الصفقة، ويحمل المسؤولية. إذا كان البائع قد كشف عن عدم وجود أي إخفاء أو بيانات كاذبة، فلا يمكن للمشتري أن يطلب إلغاء العقد أو المطالبة بالتعويض.",
+    "fr": "Le vendeur divulgue avec exactitude la situation de propriété de l'objet. En raison de l'absence de certificat d'enregistrement des machines agricoles pour certains objets, des obstacles à la transmission de propriété existent, et le vendeur ne fournit pas d'assistance pour les formalités de transmission. L'acheteur doit comprendre par lui-même la faisabilité de la transmission avant la transaction et assumer les risques. Si le vendeur a divulgué avec exactitude qu'il n'y a pas de dissimulation ou de fausse déclaration, l'acheteur ne peut pas demander la résiliation du contrat ou des dommages-intérêts pour ce motif.",
+    "hi": "विक्रेता द्वारा वस्तु की स्थिति का खुलासा किया जाता है। कुछ वस्तुओं के लिए कृषि मशीनरी पंजीकरण प्रमाण पत्र जैसे स्वामित्व दस्तावेज़ नहीं होने के कारण, हस्तांतरण में बाधा हो सकती है, विक्रेता हस्तांतरण प्रक्रिया में सहायता नहीं करता है। खरीदार को लेनदेन से पहले स्वयं हस्तांतरण की संभावना को समझना चाहिए और जोखिम को स्वयं वहन करना चाहिए। विक्रेता द्वारा यदि वास्तविक रूप से खुलासा किया गया है और कोई छिपाने या झूठे बयान नहीं है, तो खरीदार को इस आधार पर अनुबंध को समाप्त करने या मुआवजे की मांग नहीं करनी चाहिए।",
   },
   "询价流程": {
-    "en": "Inquiry Process"
+    "en": "Inquiry Process",
+    "ru": "Запрос цен",
+    "es": "Proceso de cotización",
+    "pt": "Fluxo de consulta de preços",
+    "ar": "عملية التسعير",
+    "fr": "Processus d'enchère",
+    "hi": "मूल्य पूछताछ प्रक्रिया",
   },
   "交易保障": {
-    "en": "Transaction Guarantees"
+    "en": "Transaction Guarantees",
+    "ru": "Транзакционная безопасность",
+    "es": "Garantía de transacción",
+    "pt": "Proteção de transações",
+    "ar": "ضمان الصفقة",
+    "fr": "Sécurité des transactions",
+    "hi": "लेनदेन सुरक्षा",
   },
   "平台服务说明": {
-    "en": "Platform Services"
+    "en": "Platform Services",
+    "ru": "Описание услуг платформы",
+    "es": "Explicación del servicio de la plataforma",
+    "pt": "Explicação dos serviços da plataforma",
+    "ar": "شرح خدمات المنصة",
+    "fr": "Explication des services de la plateforme",
+    "hi": "प्लेटफ़ॉर्म सेवा विवरण",
   },
   "信息撮合平台": {
-    "en": "Information Platform"
+    "en": "Information Platform",
+    "ru": "Платформа информационного обмена",
+    "es": "Plataforma de intermediación de información",
+    "pt": "Plataforma de matching de informações",
+    "ar": "منصة撮合 المعلومات",
+    "fr": "Plateforme de mise en relation d'informations",
+    "hi": "जानकारी मध्यस्थता प्लेटफ़ॉर्म",
   },
   "平台不收取任何交易服务费": {
-    "en": "No transaction fees charged"
+    "en": "No transaction fees charged",
+    "ru": "Платформа не взимает никаких комиссий за транзакции",
+    "es": "La plataforma no cobra ninguna tarifa de servicio de transacción",
+    "pt": "A plataforma não cobra qualquer taxa de serviço de transação",
+    "ar": "لا تتقاضى المنصة أي رسوم خدمة للصفقة",
+    "fr": "La plateforme ne perçoit pas de frais de service de transaction",
+    "hi": "प्लेटफ़ॉर्म किसी भी लेनदेन सेवा शुल्क को नहीं लेता है",
   },
   "本平台定位为农机设备信息发布与交流平台，提供信息展示、AI估值参考等增值服务。平台不参与交易撮合、不代收代付任何交易资金、不收取任何与成交相关的服务费或佣金。买卖双方自行完成交易，资金直接往来。": {
-    "en": "This platform provides equipment information display and AI valuation services. We do not facilitate transactions, handle funds, or charge transaction-based fees. Buyers and sellers transact directly."
+    "en": "This platform provides equipment information display and AI valuation services. We do not facilitate transactions, handle funds, or charge transaction-based fees. Buyers and sellers transact directly.",
+    "ru": "Эта платформа позиционируется как платформа для публикации и обмена информацией о сельскохозяйственном оборудовании, предоставляющая услуги по демонстрации информации, справочную оценку на основе ИИ и другие услуги повышения ценности. Платформа не участвует в транзакциях, не принимает и не переводит какие-либо транзакционные средства, не взимает никаких комиссий или сборов, связанных с заключением сделок. Покупатели и продавцы самостоятельно завершают транзакции, средства перечисляются напрямую.",
+    "es": "Esta plataforma se posiciona como una plataforma de publicación y comunicación de información de equipos agrícolas, y proporciona servicios de valor agregado como exhibición de información, referencia de valoración AI, etc. La plataforma no participa en la intermediación de transacciones, no recibe ni paga fondos de transacción, y no cobra ninguna tarifa de servicio o comisión relacionada con la transacción. Las partes compradora y vendedora completan la transacción por sí mismas, y los fondos se transfieren directamente.",
+    "pt": "Esta plataforma é posicionada como uma plataforma de publicação e intercâmbio de informações de equipamentos agrícolas, fornecendo serviços de valor agregado, como exibição de informações e referências de avaliação de IA. A plataforma não participa da negociação, não recebe ou paga fundos de transação e não cobra taxas de serviço ou comissões relacionadas à negociação. As partes compradora e vendedora concluem a transação por conta própria, e os fundos são transferidos diretamente.",
+    "ar": "تعتبر المنصة منصة لنشر المعلومات وتبادلها عن أجهزة الزراعة، وتوفر خدمات قيمة مضافة مثل عرض المعلومات وتقييم الذكاء الاصطناعي. لا تشارك المنصة في撮合 الصفقة، ولا تتلقى أو تدفع الأموال، ولا تتقاضى أي رسوم أو عمولات متعلقة بالصفقة. ي完成 الطرفان الصفقة بأنفسهم، والأموال تنتقل مباشرة بينهما.",
+    "fr": "Cette plateforme est positionnée comme une plateforme de publication et d'échange d'informations sur les équipements agricoles, offrant des services de présentation d'informations, de référence d'estimation AI, etc. La plateforme ne participe pas à la mise en relation des transactions, ne perçoit ni ne verse des fonds de transaction, et ne perçoit pas de frais de service ou de commission liés à la transaction. Les parties acheteuse et vendeuse concluent la transaction par elles-mêmes, et les fonds sont échangés directement.",
+    "hi": "इस प्लेटफ़ॉर्म की स्थिति कृषि मशीनरी उपकरणों के लिए जानकारी प्रकाशन और आदान-प्रदान प्लेटफ़ॉर्म के रूप में है, जो जानकारी प्रदर्शन, एआई मूल्यांकन संदर्भ आदि मूल्य वर्धित सेवाएं प्रदान करता है। प्लेटफ़ॉर्म लेनदेन मध्यस्थता में भाग नहीं लेता है, किसी भी लेनदेन धन को नहीं लेता है, और किसी भी लेनदेन से संबंधित सेवा शुल्क या आयोग को नहीं लेता है। खरीदार और विक्रेता स्वयं लेनदेन पूरा करते हैं, धन का सीधा आदान-प्रदान होता है।",
   },
   "会员服务": {
-    "en": "Membership"
+    "en": "Membership",
+    "ru": "Услуги членства",
+    "es": "Servicio de miembro",
+    "pt": "Serviços de membros",
+    "ar": "خدمات العضوية",
+    "fr": "Services aux membres",
+    "hi": "सदस्य सेवा",
   },
   "免费 / ¥99 / ¥299 / ¥999": {
-    "en": "Free / ¥99 / ¥299 / ¥999"
+    "en": "Free / ¥99 / ¥299 / ¥999",
+    "ru": "Бесплатно / ¥99 / ¥299 / ¥999",
+    "es": "Gratis / ¥99 / ¥299 / ¥999",
+    "pt": "Gratuito / ¥99 / ¥299 / ¥999",
+    "ar": "مجانية / ¥99 / ¥299 / ¥999",
+    "fr": "Gratuit / 99 ¥ / 299 ¥ / 999 ¥",
+    "hi": "नि:शुल्क / ¥99 / ¥299 / ¥999",
   },
   "不同等级会员可享受不同的信息查看次数、AI估值次数等增值权益": {
-    "en": "Tiered access to listing views, AI valuations, and premium features"
+    "en": "Tiered access to listing views, AI valuations, and premium features",
+    "ru": "Члены разных уровней могут пользоваться разными возможностями просмотра информации, количеством оценок на основе ИИ и другими услугами повышения ценности",
+    "es": "Los miembros de diferentes niveles pueden disfrutar de diferentes derechos de visualización de información, valoración AI, etc.",
+    "pt": "Diferentes níveis de membros podem desfrutar de diferentes quantidades de visualizações de informações, quantidades de avaliações de IA, etc.",
+    "ar": "يمكن للأعضاء المختلفين الحصول على خدمات قيمة مضافة مختلفة مثل عدد مرات مشاهدة المعلومات، وعدد مرات تقييم الذكاء الاصطناعي",
+    "fr": "Les membres de différents niveaux peuvent bénéficier de différents avantages tels que le nombre de consultations d'informations, le nombre d'estimations AI, etc.",
+    "hi": "विभिन्न स्तर के सदस्य विभिन्न जानकारी देखने के समय, एआई मूल्यांकन समय आदि मूल्य वर्धित अधिकारों का आनंद ले सकते हैं",
   },
   "AI智能估值": {
-    "en": "AI Valuation"
+    "en": "AI Valuation",
+    "ru": "Интеллектуальная оценка на основе ИИ",
+    "es": "Valoración AI inteligente",
+    "pt": "Avaliação de IA inteligente",
+    "ar": "تقييم الذكاء الاصطناعي",
+    "fr": "Estimation intelligente AI",
+    "hi": "एआई बुद्धिमान मूल्यांकन",
   },
   "按次付费": {
-    "en": "Pay-per-use"
+    "en": "Pay-per-use",
+    "ru": "Платеж за услугу",
+    "es": "Pago por uso",
+    "pt": "Pagamento por uso",
+    "ar": "دفع لكل مرة",
+    "fr": "Paiement à l'acte",
+    "hi": "प्रति बार भुगतान",
   },
   "基于设备参数、市场行情、使用年限等数据，提供参考估值报告": {
-    "en": "Data-driven valuation reports based on specs, market data, and usage"
+    "en": "Data-driven valuation reports based on specs, market data, and usage",
+    "ru": "На основе параметров оборудования, рыночных тенденций, срока службы и других данных предоставляется справочная оценка",
+    "es": "Basado en parámetros de equipo, tendencias del mercado, años de uso, etc., se proporciona un informe de valoración de referencia",
+    "pt": "Com base nos parâmetros do equipamento, condições de mercado, anos de uso, etc., fornece um relatório de avaliação de referência",
+    "ar": "يقدم تقرير تقييم مرجعي بناءً على بيانات معلمات الجهاز، وسوق السوق، ومدة الاستخدام",
+    "fr": "Fournit un rapport d'estimation de référence basé sur les paramètres de l'équipement, les conditions du marché, l'année de mise en service, etc.",
+    "hi": "उपकरण पैरामीटर, बाजार की स्थिति, उपयोग वर्ष आदि डेटा के आधार पर, संदर्भ मूल्यांकन रिपोर्ट प्रदान करता है",
   },
   "重要说明": {
-    "en": "Important Notice"
+    "en": "Important Notice",
+    "ru": "Важное примечание",
+    "es": "Explicación importante",
+    "pt": "Explicação importante",
+    "ar": "إعلان هام",
+    "fr": "Explication importante",
+    "hi": "महत्वपूर्ण स्पष्टीकरण",
   },
   "平台不收取任何与交易相关的服务费、佣金或手续费。交易完全由买卖双方自行协商完成。": {
-    "en": "The platform charges no transaction-related fees. All transactions are conducted directly between buyers and sellers."
+    "en": "The platform charges no transaction-related fees. All transactions are conducted directly between buyers and sellers.",
+    "ru": "Платформа не взимает никаких комиссий, сборов или платежей, связанных с транзакциями. Транзакции полностью осуществляются покупателями и продавцами путем прямых переговоров.",
+    "es": "La plataforma no cobra ninguna tarifa de servicio, comisión o cargo relacionado con la transacción. La transacción se completa completamente por las partes compradora y vendedora.",
+    "pt": "A plataforma não cobra qualquer taxa de serviço, comissão ou tarifa relacionada à transação. A transação é concluída por conta própria pelas partes compradora e vendedora.",
+    "ar": "لا تتقاضى المنصة أي رسوم أو عمولات متعلقة بالصفقة. تتم الصفقة بالكامل بين الطرفين",
+    "fr": "La plateforme ne perçoit pas de frais de service, de commission ou de frais liés à la transaction. La transaction est entièrement négociée et conclue par les parties acheteuse et vendeuse.",
+    "hi": "प्लेटफ़ॉर्म किसी भी लेनदेन से संबंधित सेवा शुल्क, आयोग या शुल्क को नहीं लेता है। लेनदेन पूरी तरह से खरीदार और विक्रेता द्वारा स्वयं वार्ता के माध्यम से पूरा किया जाता है।",
   },
   "平台不代收代付任何交易资金，不设资金池，不提供资金托管或担保服务。": {
-    "en": "The platform does not handle, hold, or escrow any transaction funds."
+    "en": "The platform does not handle, hold, or escrow any transaction funds.",
+    "ru": "Платформа не принимает и не переводит какие-либо транзакционные средства, не имеет фонда средств, не предоставляет услуги по управлению или гарантии средств.",
+    "es": "La plataforma no recibe ni paga fondos de transacción, no tiene un fondo de garantía, y no proporciona servicios de garantía o custodia de fondos.",
+    "pt": "A plataforma não recebe ou paga fundos de transação, não tem um pool de fundos, não fornece serviços de custódia ou garantia de fundos.",
+    "ar": "لا تتلقى المنصة أو تدفع أي أموال للصفقة، ولا تحدد أي مبلغ تأميني، ولا توفر خدمات إدارة أو ضمان الأموال.",
+    "fr": "La plateforme ne perçoit ni ne verse des fonds de transaction, ne possède pas de pool de fonds, et ne fournit pas de services de garde ou de garantie de fonds.",
+    "hi": "प्लेटफ़ॉर्म किसी भी लेनदेन धन को नहीं लेता है, धन पूल नहीं स्थापित करता है, और धन ट्रस्टी या गारंटी सेवा प्रदान नहीं करता है।",
   },
   "保证金（如有）由买卖双方自行约定和收付，平台不设定金额、不验证凭证、不参与纠纷处理。": {
-    "en": "Any deposits are agreed and handled solely between parties. The platform does not set amounts, verify payments, or mediate disputes."
+    "en": "Any deposits are agreed and handled solely between parties. The platform does not set amounts, verify payments, or mediate disputes.",
+    "ru": "Залог (если имеется) определяется покупателем и продавцом самостоятельно, платформа не устанавливает сумму, не проверяет документы, не участвует в разрешении споров.",
+    "es": "La garantía (si la hay) es acordada y pagada por las partes compradora y vendedora, la plataforma no establece el monto, no verifica el comprobante, y no participa en la resolución de disputas.",
+    "pt": "O depósito (se houver) é acordado e pago pelas partes compradora e vendedora por conta própria, e a plataforma não estabelece o valor, não verifica o comprovante, não participa do processo de resolução de disputas.",
+    "ar": "المبلغ التأميني (إن وجد) يتم تحديده وتسليمه بين الطرفين، ولا تتدخل المنصة في تحديده أو التحقق منه أو حل النزاعات.",
+    "fr": "La caution (le cas échéant) est convenue et payée par les parties acheteuse et vendeuse, la plateforme ne définit pas le montant, ne vérifie pas les preuves, et ne participe pas au règlement des litiges.",
+    "hi": "गारंटी राशि (यदि कोई हो) खरीदार और विक्रेता द्वारा स्वयं निर्धारित और प्राप्त की जाती है, प्लेटफ़ॉर्म राशि निर्धारित नहीं करता है, प्रमाण पत्र की जांच नहीं करता है, और विवाद समाधान में भाग नहीं लेता है।",
   },
   "会员费和AI估值费属于增值信息服务费，与交易无关，开具增值税发票。": {
-    "en": "Membership and AI valuation fees are for value-added information services, unrelated to transactions. VAT invoices provided."
+    "en": "Membership and AI valuation fees are for value-added information services, unrelated to transactions. VAT invoices provided.",
+    "ru": "Плата за членство и интеллектуальную оценку относится к услугам повышения ценности и не связана с транзакциями, выставляется счет с НДС.",
+    "es": "La tarifa de membresía y la tarifa de valoración AI son tarifas de servicios de información de valor agregado, y no están relacionadas con la transacción, se emite una factura de impuesto sobre el valor agregado.",
+    "pt": "As taxas de membros e as taxas de avaliação de IA são taxas de serviços de informações de valor agregado e não estão relacionadas à transação, e a fatura de imposto sobre valor agregado é emitida.",
+    "ar": "رسوم العضوية ورسوم تقييم الذكاء الاصطناعي تعتبر رسوم خدمات معلومات قيمة مضافة، ولا علاقة لها بالصفقة، وتتم إصدار فواتير ضريبة القيمة المضافة لها.",
+    "fr": "Les frais de membre et les frais d'estimation AI sont des frais de services d'information, sans rapport avec la transaction, et une facture de taxe sur la valeur ajoutée est établie.",
+    "hi": "सदस्य शुल्क और एआई मूल्यांकन शुल्क मूल्य वर्धित जानकारी सेवा शुल्क हैं, जो लेनदेन से संबंधित नहीं हैं, और मूल्य वर्धित कर बिल जारी किया जाता है।",
   },
   "风险提示": {
-    "en": "Risk Warnings"
+    "en": "Risk Warnings",
+    "ru": "Предупреждение о рисках",
+    "es": "Advertencia de riesgo",
+    "pt": "Aviso de risco",
+    "ar": "تحذير من المخاطر",
+    "fr": "Avertissement de risque",
+    "hi": "जोखिम चेतावनी",
   },
   "格式条款特别提示": {
-    "en": "Standard Terms Notice"
+    "en": "Standard Terms Notice",
+    "ru": "Особые условия",
+    "es": "Términos y condiciones especiales",
+    "pt": "Aviso especial de cláusulas",
+    "ar": "تنبيه خاص بالشروط",
+    "fr": "Avertissement spécial des clauses",
+    "hi": "प्रारूप條款 विशेष चेतावनी",
   },
   "根据《中华人民共和国民法典》第496条，本平台特别提示您注意以下条款（完整条款详见买卖合同）：": {
-    "en": "Per PRC Civil Code Art. 496, please note the following terms (full terms in the sales contract):"
+    "en": "Per PRC Civil Code Art. 496, please note the following terms (full terms in the sales contract):",
+    "ru": "Согласно статье 496 Гражданского кодекса КНР, эта платформа особенно привлекает ваше внимание к следующим условиям (полный текст условий см. в контракте купли-продажи):",
+    "es": "De acuerdo con el artículo 496 del Código Civil de la República Popular China, esta plataforma le recuerda especialmente que preste atención a los siguientes términos (los términos completos se pueden ver en el contrato de compraventa):",
+    "pt": "De acordo com o artigo 496 do Código Civil da República Popular da China, esta plataforma destaca especialmente para você as seguintes cláusulas (as cláusulas completas podem ser vistas no contrato de compra e venda):",
+    "ar": "وفقًا للمادة 496 من قانون جمهورية الصين الشعبية للمواطنين، تنبه المنصة بشكل خاص إلى الشروط التالية (الشروط الكاملة متاحة في عقد البيع والشراء):",
+    "fr": "Conformément à l'article 496 du Code civil de la République populaire de Chine, cette plateforme attire spécialement votre attention sur les clauses suivantes (les clauses complètes sont consultables dans le contrat d'achat et de vente) :",
+    "hi": "《चीनी जनवादी गणराज्य के नागरिक संहिता》 के 496वें अनुच्छेद के अनुसार, इस प्लेटफ़ॉर्म द्वारा विशेष रूप से आपको निम्नलिखित अनुच्छेदों (पूर्ण अनुच्छेद देखें खरीदार और विक्रेता के अनुबंध में) पर ध्यान देने के लिए चेतावनी दी जाती है:",
   },
   "瑕疵告知及免责：": {
-    "en": "Defects & Disclaimer: "
+    "en": "Defects & Disclaimer: ",
+    "ru": "Уведомление о дефектах и отказ от ответственности:",
+    "es": "Aviso de defectos y exención de responsabilidad:",
+    "pt": "Aviso de defeitos e isenção de responsabilidade:",
+    "ar": "إخطار بالعيوب والمسؤولية:",
+    "fr": "Information sur les défauts et exemption de responsabilité :",
+    "hi": "दोष सूचना और छूट:",
   },
   "标的物按现状交付。卖方对经合理查验可发现的瑕疵不承担担保责任，但对明知或应知而未披露的重大瑕疵，以及因故意隐瞒或虚假陈述导致的损失，仍依法承担责任。": {
-    "en": "Sold as-is. Seller not liable for discoverable defects but remains liable for concealed defects or misrepresentation."
+    "en": "Sold as-is. Seller not liable for discoverable defects but remains liable for concealed defects or misrepresentation.",
+    "ru": "Объект передается в том состоянии, в котором он находится. Продавец не несет гарантийную ответственность за дефекты, которые можно обнаружить при разумной проверке, но несет ответственность за ущерб, вызванный умышленным сокрытием или ложными заявлениями.",
+    "es": "El bien se entrega en su estado actual. El vendedor no asume la responsabilidad de garantía por defectos que puedan ser detectados mediante una inspección razonable, pero sigue siendo responsable de cualquier pérdida causada por ocultación o declaración falsa.",
+    "pt": "O bem é entregue no estado em que se encontra. O vendedor não assume responsabilidade por defeitos que possam ser descobertos após uma inspeção razoável, mas ainda assume responsabilidade por defeitos significativos que não tenham sido divulgados e por perdas resultantes de declarações falsas ou omissões.",
+    "ar": "تتم تسليم الكائن بحالته الحالية. لا يتحمل البائع المسؤولية عن العيوب التي يمكن اكتشافها من خلال الفحص العقلاني، ولكن يتحمل المسؤولية عن العيوب الرئيسية التي لم يتم الكشف عنها، وأي خسائر ناجمة عن الإخفاء أو البيانات الكاذبة.",
+    "fr": "L'objet est livré dans son état actuel. Le vendeur n'assume pas la responsabilité de garantie pour les défauts qui peuvent être découverts après une inspection raisonnable, mais il assume toujours la responsabilité légale pour les défauts majeurs non divulgués ou pour les pertes résultant d'une dissimulation intentionnelle ou de fausses déclarations.",
+    "hi": "वस्तु को वर्तमान स्थिति में सौंप दिया जाता है। विक्रेता द्वारा ज्ञात या अज्ञात दोषों के लिए जिम्मेदारी नहीं ली जाती है, लेकिन जानबूझकर छिपाने या झूठे बयान के कारण होने वाले नुकसान के लिए जिम्मेदारी ली जाती है।",
   },
   "过户事宜：": {
-    "en": "Transfer: "
+    "en": "Transfer: ",
+    "ru": "Передача прав собственности:",
+    "es": "Procedimiento de transferencia de propiedad:",
+    "pt": "Transferência de propriedade:",
+    "ar": "إجراءات النقل:",
+    "fr": "Formalités de transfert de propriété :",
+    "hi": "हस्तांतरण संबंधी विवरण:",
   },
   "因部分标的物暂无农机登记证书，过户存在障碍，卖方不协助办理过户手续。买方应在交易前自行了解过户可行性并自担风险。": {
-    "en": "Some units lack registration certificates; transfer is obstructed. Seller does not assist with transfer. Buyer assumes transfer risks."
+    "en": "Some units lack registration certificates; transfer is obstructed. Seller does not assist with transfer. Buyer assumes transfer risks.",
+    "ru": "Поскольку некоторые объекты暂енно не имеют свидетельства о регистрации сельскохозяйственной техники, передача прав собственности затруднена, продавец не помогает в оформлении документов. Покупатель должен до транзакции самостоятельно разобраться в возможности передачи прав собственности и нести риск.",
+    "es": "Debido a que algunos de los bienes objeto de la transacción no tienen certificado de registro de maquinaria agrícola, la transferencia de propiedad puede ser obstaculizada y el vendedor no asistirá en la tramitación de la transferencia de propiedad. El comprador debe investigar la viabilidad de la transferencia de propiedad antes de la transacción y asumir el riesgo.",
+    "pt": "Devido a que alguns itens não possuem certificado de registro de máquinas agrícolas, a transferência de propriedade pode enfrentar obstáculos, e o vendedor não ajudará com os procedimentos de transferência. O comprador deve entender a viabilidade da transferência antes da transação e assumir o risco.",
+    "ar": "نظراً لعدم وجود شهادات تسجيل الآلات الزراعية لبعض الأصول، فإن نقل ملكيتها يعوق، ولا يتعهد البائع بتقديم مساعدة في إجراءات النقل. يجب على المشتري أن يفهم بنفسه إمكانية نقل ملكية قبل الانخراط في التعامل ويتحمل المخاطر. ",
+    "fr": "En raison de l'absence de certificat d'enregistrement pour certaines machines, le transfert de propriété peut être difficile. Le vendeur ne sera pas en mesure d'assister le processus de transfert. L'acheteur doit vérifier la faisabilité du transfert avant la transaction et assumer les risques.",
+    "hi": "कुछ वस्तुओं के लिए कृषि मशीन पंजीकरण प्रमाण पत्र नहीं होने के कारण हस्तांतरण में बाधा है, विक्रेता हस्तांतरण प्रक्रिया में सहायता नहीं करेगा। खरीदार को लेन-देन से पहले हस्तांतरण की संभावना को स्वयं समझना चाहिए और जोखिम स्वयं उठाना चाहिए।",
   },
   "违约责任：": {
-    "en": "Liability: "
+    "en": "Liability: ",
+    "ru": "Ответственность за нарушение условий:",
+    "es": "Responsabilidad por incumplimiento:",
+    "pt": "Responsabilidade por inadimplência:",
+    "ar": "مسؤولية عدم النفاذ:",
+    "fr": "Responsabilités en cas de défaillance :",
+    "hi": "उल्लंघन की जिम्मेदारी:",
   },
   "买卖双方违约责任对等。卖方无法交付须退还已付款项并支付违约金；买方逾期付款保证金不予退还。": {
-    "en": "Mutual liability. Seller refunds plus penalty for non-delivery; buyer forfeits deposit for late payment."
+    "en": "Mutual liability. Seller refunds plus penalty for non-delivery; buyer forfeits deposit for late payment.",
+    "ru": "Ответственность покупателя и продавца за нарушение условий равна. Продавец, который не может передать объект, должен вернуть уже оплаченные средства и заплатить штраф; покупатель, который задерживает оплату залога, не получит его обратно.",
+    "es": "La responsabilidad por incumplimiento es igual para ambas partes. Si el vendedor no puede entregar el bien, debe devolver el pago y pagar una multa por incumplimiento; si el comprador no paga la garantía dentro del plazo, no se le reembolsará.",
+    "pt": "As responsabilidades por inadimplência são equivalentes para ambas as partes. Se o vendedor não puder entregar, deve devolver o pagamento já feito e pagar uma multa por inadimplência; se o comprador atrasar o pagamento da garantia, ela não será reembolsada.",
+    "ar": "مسؤولية عدم النفاذ متساوية بين الطرفين. إذا لم يتمكن البائع من التسليم، يجب عليه استرجاع المبلغ المدفوع ودفع غرامة عدم النفاذ؛ إذا تأخر المشتري في دفع الكفالة، لن يتم استردادها. ",
+    "fr": "Les responsabilités en cas de défaillance sont égales pour les deux parties. Si le vendeur ne peut pas livrer, il doit rembourser les paiements déjà effectués et payer des dommages-intérêts ; si l'acheteur retarde le paiement, la garantie ne sera pas remboursée.",
+    "hi": "खरीदार और विक्रेता दोनों की उल्लंघन की जिम्मेदारी समान है। विक्रेता यदि वस्तु को सौंपने में असमर्थ है तो भुगतान की गई राशि को वापस करना होगा और जुर्माना देना होगा; खरीदार द्वारा भुगतान में देरी पर जमा की गई राशि वापस नहीं की जाएगी।",
   },
   "非拍卖声明：": {
-    "en": "Non-Auction: "
+    "en": "Non-Auction: ",
+    "ru": "Незапуск аукциона:",
+    "es": "Declaración de no subasta:",
+    "pt": "Declaração de não leilão:",
+    "ar": "إعلان عدم المزاد:",
+    "fr": "Déclaration de non-vente aux enchères :",
+    "hi": "गैर-नीलामी घोषणा:",
   },
   "本功能为在线询价/报价，不是拍卖。卖方可接受或拒绝任何报价。报价相互不可见。": {
-    "en": "This is an inquiry/quote service, not an auction. Seller may accept or reject any offer. Offers are private."
+    "en": "This is an inquiry/quote service, not an auction. Seller may accept or reject any offer. Offers are private.",
+    "ru": "Эта функция представляет собой онлайн-запрос цен/предложение, а не аукцион. Продавец может принять или отклонить любое предложение. Предложения не видны друг другу.",
+    "es": "Esta función es para cotización en línea, no es una subasta. El vendedor puede aceptar o rechazar cualquier oferta. Las ofertas no son visibles entre sí.",
+    "pt": "Esta função é para cotação online, não um leilão. O vendedor pode aceitar ou recusar qualquer cotação. As cotações são invisíveis entre si.",
+    "ar": "هذه الوظيفة عبارة عن تسعير أو عرض أسعار عبر الإنترنت، وليست مزاداً. يمكن للبائع قبول أو رفض أي عرض. العروض لا تظهر بشكل متبادل. ",
+    "fr": "Cette fonctionnalité est une demande de prix en ligne et non une vente aux enchères. Le vendeur peut accepter ou refuser toute offre. Les offres sont invisibles les unes aux autres.",
+    "hi": "यह सुविधा ऑनलाइन मूल्य निर्धारण/मूल्य निर्धारण के लिए है, नीलामी नहीं। विक्रेता किसी भी मूल्य निर्धारण को स्वीकार या अस्वीकार कर सकता है। मूल्य निर्धारण एक दूसरे को दिखाई नहीं देते हैं।",
   },
   "请在签署买卖合同前仔细阅读上述条款。如有疑问，可咨询专业律师。": {
-    "en": "Please review these terms carefully before signing the contract. Consult a lawyer if needed."
+    "en": "Please review these terms carefully before signing the contract. Consult a lawyer if needed.",
+    "ru": "Пожалуйста, внимательно прочитайте вышеуказанные условия до подписания контракта купли-продажи. Если у вас есть вопросы, проконсультируйтесь с профессиональным юристом.",
+    "es": "Por favor, lea cuidadosamente los términos anteriores antes de firmar el contrato de compraventa. Si tiene alguna pregunta, puede consultar a un abogado profesional.",
+    "pt": "Por favor, leia atentamente os termos acima antes de assinar o contrato de compra e venda. Se tiver dúvidas, consulte um advogado profissional.",
+    "ar": "يرجى قراءة الشروط المذكورة أعلاه بعناية قبل التوقيع على عقد البيع. إذا كانت لديك أسئلة، فيمكنك استشارة محامي محترف. ",
+    "fr": "Veuillez lire attentivement les conditions ci-dessus avant de signer le contrat de vente. Si vous avez des questions, vous pouvez consulter un avocat.",
+    "hi": "कृपया खरीदारी समझौते पर हस्ताक्षर करने से पहले उपरोक्त शर्तों को ध्यान से पढ़ें। यदि आपके पास कोई प्रश्न है, तो आप एक पेशेवर वकील से परामर्श ले सकते हैं।",
   },
   "常见问题": {
-    "en": "FAQ"
+    "en": "FAQ",
+    "ru": "Часто задаваемые вопросы",
+    "es": "Preguntas frecuentes",
+    "pt": "Perguntas frequentes",
+    "ar": "الأسئلة الشائعة",
+    "fr": "Questions fréquentes",
+    "hi": "सामान्य प्रश्न",
   },
   "返回询价列表": {
-    "en": "Back to Listings"
+    "en": "Back to Listings",
+    "ru": "Вернуться к списку запросов цен",
+    "es": "Volver a la lista de cotizaciones",
+    "pt": "Voltar à lista de cotações",
+    "ar": "العودة إلى قائمة التسعير",
+    "fr": "Retour à la liste des demandes de prix",
+    "hi": "मूल्य निर्धारण सूची पर वापस जाएं",
   },
   "请先登录": {
     "en": "Please login first",
@@ -974,13 +2288,25 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Faça login primeiro",
     "ar": "يرجى تسجيل الدخول أولاً",
     "fr": "Connectez-vous d'abord",
-    "hi": "पहले लॉग इन करें"
+    "hi": "पहले लॉग इन करें",
   },
   "去登录": {
-    "en": "Login"
+    "en": "Login",
+    "ru": "Перейти к входу",
+    "es": "Ir a iniciar sesión",
+    "pt": "Ir para login",
+    "ar": "الذهاب إلى تسجيل الدخول",
+    "fr": "Aller se connecter",
+    "hi": "लॉगिन करने जाएं",
   },
   "总询价": {
-    "en": "Total"
+    "en": "Total",
+    "ru": "Общее количество запросов цен",
+    "es": "Cotización total",
+    "pt": "Total de cotações",
+    "ar": "التسعير الإجمالي",
+    "fr": "Demandes de prix totales",
+    "hi": "कुल मूल्य निर्धारण",
   },
   "进行中": {
     "en": "Active",
@@ -989,16 +2315,34 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Em andamento",
     "ar": "قيد التنفيذ",
     "fr": "En cours",
-    "hi": "प्रगति पर"
+    "hi": "प्रगति पर",
   },
   "待回复": {
-    "en": "Pending"
+    "en": "Pending",
+    "ru": "Ожидает ответа",
+    "es": "Pendiente de respuesta",
+    "pt": "Aguardando resposta",
+    "ar": "بانتظار الرد",
+    "fr": "En attente de réponse",
+    "hi": "उत्तर की प्रतीक्षा में",
   },
   "我的询价": {
-    "en": "My Offers"
+    "en": "My Offers",
+    "ru": "Мои запросы цен",
+    "es": "Mis cotizaciones",
+    "pt": "Minhas cotações",
+    "ar": "تسعيرتي",
+    "fr": "Mes demandes de prix",
+    "hi": "मेरा मूल्य निर्धारण",
   },
   "浏览询价": {
-    "en": "Browse All"
+    "en": "Browse All",
+    "ru": "Просмотр запросов цен",
+    "es": "Cotizaciones que he visto",
+    "pt": "Visualizar cotações",
+    "ar": "مشاهدة التسعير",
+    "fr": "Parcourir les demandes de prix",
+    "hi": "मूल्य निर्धारण ब्राउज़ करें",
   },
   "全部": {
     "en": "All",
@@ -1007,22 +2351,52 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Todos",
     "ar": "الكل",
     "fr": "Tous",
-    "hi": "सभी"
+    "hi": "सभी",
   },
   "我出价的": {
-    "en": "My Bids"
+    "en": "My Bids",
+    "ru": "Мои предложения цен",
+    "es": "Ofertas que he hecho",
+    "pt": "Eu ofertei",
+    "ar": "Tôi الذي قدمته",
+    "fr": "Ceux pour lesquels j'ai fait une offre",
+    "hi": "मैंने जिन्हें ऑफर किया है",
   },
   "我报名的": {
-    "en": "My Registrations"
+    "en": "My Registrations",
+    "ru": "Мои заявки",
+    "es": "Inscripciones que he realizado",
+    "pt": "Eu me inscrevi",
+    "ar": "Tôi الذي سجلت عليه",
+    "fr": "Ceux pour lesquels je me suis inscrit",
+    "hi": "मैंने जिन्हें पंजीकृत किया है",
   },
   "我发布的": {
-    "en": "My Listings"
+    "en": "My Listings",
+    "ru": "Мои публикации",
+    "es": "Publicaciones que he realizado",
+    "pt": "Eu publiquei",
+    "ar": "Tôi الذي نشرته",
+    "fr": "Ceux que j'ai publiés",
+    "hi": "मैंने जारी किया है",
   },
   "暂无询价记录": {
-    "en": "No offers yet"
+    "en": "No offers yet",
+    "ru": "Нет записей запросов цен",
+    "es": "No hay registros de cotización",
+    "pt": "Nenhum histórico de cotação",
+    "ar": "لا توجد سجلات تسعير حتى الآن",
+    "fr": "Aucun enregistrement de demande de prix",
+    "hi": "कोई मूल्य निर्धारण रिकॉर्ड नहीं",
   },
   "去询价": {
-    "en": "Start negotiating"
+    "en": "Start negotiating",
+    "ru": "Перейти к запросу цен",
+    "es": "Ir a cotizar",
+    "pt": "Ir para cotação",
+    "ar": "الذهاب إلى التسعير",
+    "fr": "Aller demander un prix",
+    "hi": "मूल्य निर्धारण करने जाएं",
   },
   "买家": {
     "en": "Buyer",
@@ -1031,7 +2405,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Comprador",
     "ar": "المشتري",
     "fr": "Acheteur",
-    "hi": "खरीदार"
+    "hi": "खरीदार",
   },
   "卖家": {
     "en": "Seller",
@@ -1040,7 +2414,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Vendedor",
     "ar": "البائع",
     "fr": "Vendeur",
-    "hi": "विक्रेता"
+    "hi": "विक्रेता",
   },
   "已报名": {
     "en": "Registered",
@@ -1049,13 +2423,25 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Inscrito",
     "ar": "مسجل",
     "fr": "Inscrit",
-    "hi": "पंजीकृत"
+    "hi": "पंजीकृत",
   },
   "诚意金已确认": {
-    "en": "Earnest confirmed"
+    "en": "Earnest confirmed",
+    "ru": "Авансовый платеж подтвержден",
+    "es": "Depósito de garantía confirmado",
+    "pt": "Depósito de boa-fé confirmado",
+    "ar": "تم تأكيد الكفالة",
+    "fr": "Acompte de bonne foi confirmé",
+    "hi": "सद्भावना राशि की पुष्टि की गई",
   },
   "待上传诚意金": {
-    "en": "Earnest pending"
+    "en": "Earnest pending",
+    "ru": "Ожидает загрузки авансового платежа",
+    "es": "Pendiente de subir depósito de garantía",
+    "pt": "Aguardando upload do depósito de boa-fé",
+    "ar": "بانتظار تحميل الكفالة",
+    "fr": "En attente de l'upload de l'acompte de bonne foi",
+    "hi": "सद्भावना राशि अपलोड करने की प्रतीक्षा में",
   },
   "我的报价": {
     "en": "My Offer",
@@ -1064,7 +2450,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Minhas propostas",
     "ar": "عروضي",
     "fr": "Mes offres",
-    "hi": "मेरे ऑफर"
+    "hi": "मेरे ऑफर",
   },
   "要价": {
     "en": "Asking",
@@ -1073,88 +2459,250 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Preço pedido",
     "ar": "السعر المطلوب",
     "fr": "Prix demandé",
-    "hi": "मांग मूल्य"
+    "hi": "मांग मूल्य",
   },
   "一对一报价，透明询价，高效成交高价值农机设备": {
-    "en": "Private offers, transparent inquiry, efficient deals"
+    "en": "Private offers, transparent inquiry, efficient deals",
+    "ru": "Индивидуальные цены, прозрачные запросы цен, эффективные сделки с высокоценным сельскохозяйственным оборудованием",
+    "es": "Una oferta a la vez, cotización transparente, alta eficiencia en la transacción de equipos agrícolas de alto valor",
+    "pt": "Cotação um a um, transparência na cotação, eficiência na negociação de equipamentos agrícolas de alto valor",
+    "ar": "تسعير فرد إلى فرد، تسعير شفاف، إتمام كفاءة عالية للأجهزة الزراعية عالية القيمة",
+    "fr": "Un contre un, offre transparente, transaction efficace pour des équipements agricoles de haute valeur",
+    "hi": "एक से एक मूल्य निर्धारण, पारदर्शी मूल्य निर्धारण, उच्च मूल्य वाले कृषि मशीन उपकरणों का कुशल लेन-देन",
   },
   "正在询价": {
-    "en": "Active"
+    "en": "Active",
+    "ru": "Запрос цен в процессе",
+    "es": "En cotización",
+    "pt": "Cotando",
+    "ar": " đang trong quá trình التسعير",
+    "fr": "En cours de demande de prix",
+    "hi": "मूल्य निर्धारण में",
   },
   "万": {
-    "en": "k"
+    "en": "k",
+    "ru": "Тысячи",
+    "es": "miles",
+    "pt": "Mil",
+    "ar": "ألف",
+    "fr": "milliers",
+    "hi": "लाख",
   },
   "起询价": {
-    "en": "Min Price"
+    "en": "Min Price",
+    "ru": "Начать запрос цен",
+    "es": "Inicio de cotización",
+    "pt": "Iniciar cotação",
+    "ar": "بدء التسعير",
+    "fr": "Prix de départ",
+    "hi": "से मूल्य निर्धारण",
   },
   "询价规则": {
-    "en": "Rules"
+    "en": "Rules",
+    "ru": "Правила запроса цен",
+    "es": "Reglas de cotización",
+    "pt": "Regras de cotação",
+    "ar": "قواعد التسعير",
+    "fr": "Règles de demande de prix",
+    "hi": "मूल्य निर्धारण नियम",
   },
   "暂无询价商品": {
-    "en": "No bargains available"
+    "en": "No bargains available",
+    "ru": "Нет товаров для запроса цен",
+    "es": "No hay productos de cotización",
+    "pt": "Nenhum produto de cotação",
+    "ar": "لا توجد سلع للبيع",
+    "fr": "Aucun produit de demande de prix",
+    "hi": "कोई मूल्य निर्धारण वस्तु नहीं",
   },
   "马力": {
-    "en": "HP"
+    "en": "HP",
+    "ru": "Лошадиные силы",
+    "es": "Caballos de fuerza",
+    "pt": "Cavalo-vapor",
+    "ar": "حصان",
+    "fr": "Puissance",
+    "hi": "घोड़े की शक्ति",
   },
   "暂无数据": {
-    "en": "No data available"
+    "en": "No data available",
+    "ru": "Нет данных",
+    "es": "No hay datos",
+    "pt": "Nenhum dado",
+    "ar": "لا توجد بيانات",
+    "fr": "Aucune donnée",
+    "hi": "कोई डेटा नहीं",
   },
   "数据洞察中心": {
-    "en": "Market Insights Center"
+    "en": "Market Insights Center",
+    "ru": "Центр анализа данных",
+    "es": "Centro de análisis de datos",
+    "pt": "Centro de insights de dados",
+    "ar": "مركز رؤى البيانات",
+    "fr": "Centre d'analyse de données",
+    "hi": "डेटा अंतर्दृष्टि केंद्र",
   },
   "实时掌握农机市场动态，数据驱动决策": {
-    "en": "Real-time farm machinery market data for data-driven decisions"
+    "en": "Real-time farm machinery market data for data-driven decisions",
+    "ru": "Оптимизируйте свое решение с помощью данных о рынке сельскохозяйственной техники в режиме реального времени",
+    "es": "Mantén el control del mercado de maquinaria agrícola en tiempo real, toma decisiones basadas en datos",
+    "pt": "Controle em tempo real do mercado de máquinas agrícolas, decisões impulsionadas por dados",
+    "ar": "استمتع بالسيطرة الفعلية على سوق المعدات الزراعية، وخذ قرارات مدفوعة بالبيانات",
+    "fr": "Suivez en temps réel l'évolution du marché des machines agricoles, avec des décisions basées sur les données",
+    "hi": "कृषि मशीनरी बाजार की गतिविधियों पर नज़र रखें, डेटा से संचालित निर्णय लें",
   },
   "在售设备": {
-    "en": "Active Listings"
+    "en": "Active Listings",
+    "ru": "Доступное оборудование",
+    "es": "Equipos en venta",
+    "pt": "Equipamentos à venda",
+    "ar": "الآلات المعروضة للبيع",
+    "fr": "Équipements en vente",
+    "hi": "विक्रय उपकरण",
   },
   "本期新增": {
-    "en": "new this period"
+    "en": "new this period",
+    "ru": "Новые за период",
+    "es": "Nuevos esta período",
+    "pt": "Novos desta período",
+    "ar": "الوحدات الجديدة في هذه الفترة",
+    "fr": "Nouveaux équipements cette période",
+    "hi": "इस अवधि में新增",
   },
   "平均价格": {
-    "en": "Avg Price"
+    "en": "Avg Price",
+    "ru": "Средняя цена",
+    "es": "Precio promedio",
+    "pt": "Preço médio",
+    "ar": "السعر المتوسط",
+    "fr": "Prix moyen",
+    "hi": "औसत मूल्य",
   },
   "已售设备": {
-    "en": "Sold Equipment"
+    "en": "Sold Equipment",
+    "ru": "Проданное оборудование",
+    "es": "Equipos vendidos",
+    "pt": "Equipamentos vendidos",
+    "ar": "الآلات المباعة",
+    "fr": "Équipements vendus",
+    "hi": "बिकी हुई मशीनरी",
   },
   "累计成交": {
-    "en": "Total sold"
+    "en": "Total sold",
+    "ru": "Общий объем сделок",
+    "es": "Ventas totales",
+    "pt": "Total de transações",
+    "ar": "إجمالي الصفقات",
+    "fr": "Total des transactions",
+    "hi": "कुल सौदा",
   },
   "询价总数": {
-    "en": "Total Inquiries"
+    "en": "Total Inquiries",
+    "ru": "Общее количество запросов цен",
+    "es": "Número total de consultas de precios",
+    "pt": "Total de pedidos de orçamento",
+    "ar": "عدد استفسارات الأسعار",
+    "fr": "Nombre total de demandes de prix",
+    "hi": "कुल पूछताछ संख्या",
   },
   "价格指数走势": {
-    "en": "Price Index Trend"
+    "en": "Price Index Trend",
+    "ru": "Динамика цен",
+    "es": "Evolución del índice de precios",
+    "pt": "Tendência do índice de preços",
+    "ar": "اتجاه مؤشر الأسعار",
+    "fr": "Évolution de l'indice des prix",
+    "hi": "मूल्य सूचकांक रुझान",
   },
   "（基准日 2026-01-01 = 100）": {
-    "en": "(Base: Jan 2026 = 100)"
+    "en": "(Base: Jan 2026 = 100)",
+    "ru": "(базовый день 2026-01-01 = 100)",
+    "es": "(día base 2026-01-01 = 100)",
+    "pt": "(Dia de referência 2026-01-01 = 100)",
+    "ar": "(يوم المرجع 2026-01-01 = 100)",
+    "fr": "(Jour de référence 2026-01-01 = 100)",
+    "hi": "(बेंचमार्क दिन 2026-01-01 = 100)",
   },
   "环比": {
-    "en": "MoM"
+    "en": "MoM",
+    "ru": "месяц к месяцу",
+    "es": "Variación interanual",
+    "pt": "Variação mensal",
+    "ar": "النمو على أساس سنوي",
+    "fr": "Variation mensuelle",
+    "hi": "मासिक वृद्धि",
   },
   "同比": {
-    "en": "YoY"
+    "en": "YoY",
+    "ru": "год к году",
+    "es": "Variación anual",
+    "pt": "Variação anual",
+    "ar": "النمو على أساس شهري",
+    "fr": "Variation annuelle",
+    "hi": "वर्ष-दर-वर्ष",
   },
   "上架趋势": {
-    "en": "Listing Trend"
+    "en": "Listing Trend",
+    "ru": "Тенденция выставления на продажу",
+    "es": "Tendencia de publicación",
+    "pt": "Tendência de listagem",
+    "ar": "اتجاه إضافة المنتجات",
+    "fr": "Tendance des mises en ligne",
+    "hi": "लिस्टिंग ट्रेंड",
   },
   "品类分布 TOP 10": {
-    "en": "Category Distribution TOP 10"
+    "en": "Category Distribution TOP 10",
+    "ru": "Топ 10 категорий",
+    "es": "Distribución de categorías TOP 10",
+    "pt": "Distribuição de categorias TOP 10",
+    "ar": "توزيع الفئات العشرة الأولى",
+    "fr": "Répartition des catégories TOP 10",
+    "hi": "शीर्ष 10 श्रेणी वितरण",
   },
   "品牌热度 TOP 10": {
-    "en": "Brand Popularity TOP 10"
+    "en": "Brand Popularity TOP 10",
+    "ru": "Топ 10 брендов по популярности",
+    "es": "Ranking de marcas más populares TOP 10",
+    "pt": "Ranking de popularidade de marcas TOP 10",
+    "ar": "أعلى 10 علامات تجارية شعبية",
+    "fr": "Popularité des marques TOP 10",
+    "hi": "ब्रांड लोकप्रियता टॉप 10",
   },
   "价格区间分布": {
-    "en": "Price Range Distribution"
+    "en": "Price Range Distribution",
+    "ru": "Распределение по ценовым диапазонам",
+    "es": "Distribución por rango de precios",
+    "pt": "Distribuição de faixa de preços",
+    "ar": "توزيع فئات الأسعار",
+    "fr": "Répartition des tranches de prix",
+    "hi": "मूल्य श्रेणी वितरण",
   },
   "区域分布 TOP 10": {
-    "en": "Regional Distribution TOP 10"
+    "en": "Regional Distribution TOP 10",
+    "ru": "Топ 10 регионов",
+    "es": "Distribución geográfica TOP 10",
+    "pt": "Distribuição regional TOP 10",
+    "ar": "توزيع المناطق العشرة الأولى",
+    "fr": "Répartition régionale TOP 10",
+    "hi": "क्षेत्र वितरण टॉप 10",
   },
   "台": {
-    "en": "units"
+    "en": "units",
+    "ru": "ед.",
+    "es": "unidad",
+    "pt": "unidade",
+    "ar": "وحدة",
+    "fr": "unité",
+    "hi": "टन",
   },
   "年份分布": {
-    "en": "Year Distribution"
+    "en": "Year Distribution",
+    "ru": "Распределение по годам выпуска",
+    "es": "Distribución por año",
+    "pt": "Distribuição por ano",
+    "ar": "توزيع السنوات",
+    "fr": "Répartition par année",
+    "hi": "वर्ष वितरण",
   },
   "年份": {
     "en": "Year",
@@ -1163,142 +2711,412 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Ano",
     "ar": "السنة",
     "fr": "Année",
-    "hi": "वर्ष"
+    "hi": "वर्ष",
   },
   "数量": {
-    "en": "Count"
+    "en": "Count",
+    "ru": "Количество",
+    "es": "Cantidad",
+    "pt": "Quantidade",
+    "ar": "الكمية",
+    "fr": "Quantité",
+    "hi": "मात्रा",
   },
   "均价": {
-    "en": "Avg Price"
+    "en": "Avg Price",
+    "ru": "Средняя цена",
+    "es": "Precio promedio",
+    "pt": "Preço médio",
+    "ar": "السعر المتوسط",
+    "fr": "Prix moyen",
+    "hi": "औसत मूल्य",
   },
   "套利榜单 TOP 10": {
-    "en": "Arbitrage Ranking TOP 10"
+    "en": "Arbitrage Ranking TOP 10",
+    "ru": "Топ 10 списка арбитража",
+    "es": "Ranking de beneficios TOP 10",
+    "pt": "Ranking de lucro TOP 10",
+    "ar": "قائمة أفضل 10 فرص للربح",
+    "fr": "Classement des meilleures affaires TOP 10",
+    "hi": "मुनाफा सूची टॉप 10",
   },
   "设备": {
-    "en": "Equipment"
+    "en": "Equipment",
+    "ru": "Оборудование",
+    "es": "Equipo",
+    "pt": "Equipamento",
+    "ar": "الآلة",
+    "fr": "Équipement",
+    "hi": "उपकरण",
   },
   "国内价": {
-    "en": "Domestic"
+    "en": "Domestic",
+    "ru": "Цена внутри страны",
+    "es": "Precio nacional",
+    "pt": "Preço nacional",
+    "ar": "السعر المحلي",
+    "fr": "Prix national",
+    "hi": "आंतरिक मूल्य",
   },
   "国外价": {
-    "en": "Foreign"
+    "en": "Foreign",
+    "ru": "Цена за рубежом",
+    "es": "Precio internacional",
+    "pt": "Preço internacional",
+    "ar": "السعر الدولي",
+    "fr": "Prix international",
+    "hi": "विदेशी मूल्य",
   },
   "价差%": {
-    "en": "Diff%"
+    "en": "Diff%",
+    "ru": "Процент разницы в цене",
+    "es": "Diferencia de precio %",
+    "pt": "Diferença de preço %",
+    "ar": "فرق السعر %",
+    "fr": "Écart de prix %",
+    "hi": "मूल्य अंतर%",
   },
   "金融保险服务": {
-    "en": "Financial & Insurance Services"
+    "en": "Financial & Insurance Services",
+    "ru": "Финансовые и страховые услуги",
+    "es": "Servicios financieros y de seguros",
+    "pt": "Serviços financeiros e seguros",
+    "ar": "خدمات التمويل والتأمين",
+    "fr": "Services financiers et d'assurance",
+    "hi": "वित्तीय बीमा सेवाएं",
   },
   "农机贷款、交易保险、设备租赁 — 一站式金融服务助力交易": {
-    "en": "Equipment loans, trade insurance, leasing — one-stop financial services"
+    "en": "Equipment loans, trade insurance, leasing — one-stop financial services",
+    "ru": "Кредиты на сельскохозяйственную технику, страхование сделок, аренда оборудования — комплексные финансовые услуги для облегчения сделок",
+    "es": "Préstamos para maquinaria agrícola, seguros de transacción, alquiler de equipo — Servicios financieros integrales para facilitar las transacciones",
+    "pt": "Empréstimos agrícolas, seguros de transação, aluguel de equipamentos — serviços financeiros integrados para facilitar transações",
+    "ar": "قروض المعدات الزراعية، وتأمين الصفقات، وتأجير المعدات - خدمات مالية شاملة تدعم الصفقات",
+    "fr": "Prêts pour machines agricoles, assurance de transaction, location d'équipements — services financiers tout-en-un pour faciliter les transactions",
+    "hi": "कृषि मशीनरी ऋण, व्यापार बीमा, उपकरण किराया — एक ही स्थान पर वित्तीय सेवाएं लेनदेन में मदद",
   },
   "贷款": {
-    "en": "Loans"
+    "en": "Loans",
+    "ru": "Кредит",
+    "es": "Préstamos",
+    "pt": "Empréstimo",
+    "ar": "القروض",
+    "fr": "Prêt",
+    "hi": "ऋण",
   },
   "保险": {
-    "en": "Insurance"
+    "en": "Insurance",
+    "ru": "Страхование",
+    "es": "Seguros",
+    "pt": "Seguro",
+    "ar": "التأمين",
+    "fr": "Assurance",
+    "hi": "बीमा",
   },
   "租赁": {
-    "en": "Leasing"
+    "en": "Leasing",
+    "ru": "Аренда",
+    "es": "Alquiler",
+    "pt": "Aluguel",
+    "ar": "التأجير",
+    "fr": "Location",
+    "hi": "किराए पर",
   },
   "暂无金融产品": {
-    "en": "No financial services available"
+    "en": "No financial services available",
+    "ru": "Финансовые продукты временно отсутствуют",
+    "es": "No hay productos financieros disponibles",
+    "pt": "Não há produtos financeiros disponíveis",
+    "ar": "لا توجد منتجات مالية",
+    "fr": "Aucun produit financier disponible",
+    "hi": "वित्तीय उत्पाद उपलब्ध नहीं है",
   },
   "年利率": {
-    "en": "Interest Rate"
+    "en": "Interest Rate",
+    "ru": "Годовая процентная ставка",
+    "es": "Tasa de interés anual",
+    "pt": "Taxa de juros anual",
+    "ar": "معدل الفائدة السنوي",
+    "fr": "Taux d'intérêt annuel",
+    "hi": "वार्षिक ब्याज दर",
   },
   "最高额度": {
-    "en": "Max Amount"
+    "en": "Max Amount",
+    "ru": "Максимальная сумма",
+    "es": "Límite máximo",
+    "pt": "Limite máximo",
+    "ar": "الحد الأقصى",
+    "fr": "Plafond maximum",
+    "hi": "अधिकतम सीमा",
   },
   "最长期限": {
-    "en": "Max Term"
+    "en": "Max Term",
+    "ru": "Максимальный срок",
+    "es": "Plazo más largo",
+    "pt": "Prazo máximo",
+    "ar": "أطول فترة",
+    "fr": "Durée maximale",
+    "hi": "लंबी अवधि",
   },
   "月": {
-    "en": "mo"
+    "en": "mo",
+    "ru": "месяц",
+    "es": "mes",
+    "pt": "Mês",
+    "ar": "شهر",
+    "fr": "Mois",
+    "hi": "महीने",
   },
   "首付比例": {
-    "en": "Down Payment"
+    "en": "Down Payment",
+    "ru": "Первоначальный взнос",
+    "es": "Porcentaje de pago inicial",
+    "pt": "Percentagem de pagamento inicial",
+    "ar": "نسبة الدفعة الأولى",
+    "fr": "Taux de versement initial",
+    "hi": "प्रारंभिक भुगतान अनुपात",
   },
   "保费率": {
-    "en": "Premium Rate"
+    "en": "Premium Rate",
+    "ru": "Ставка страхового взноса",
+    "es": "Tasa de prima",
+    "pt": "Taxa de prêmio",
+    "ar": "معدل التأمين",
+    "fr": "Taux de prime",
+    "hi": "बीमा दर",
   },
   "立即申请": {
-    "en": "Apply Now"
+    "en": "Apply Now",
+    "ru": "Подать заявку немедленно",
+    "es": "Solicitar inmediatamente",
+    "pt": "Solicitar imediatamente",
+    "ar": "تقدم الآن",
+    "fr": "Demander immédiatement",
+    "hi": "तुरंत आवेदन करें",
   },
   "申请提交成功！我们会尽快联系您。": {
-    "en": "Application submitted! We'll contact you soon."
+    "en": "Application submitted! We'll contact you soon.",
+    "ru": "Заявка отправлена успешно! Мы свяжемся с вами как можно скорее.",
+    "es": "¡La solicitud se ha enviado correctamente! Nos pondremos en contacto con usted lo antes posible.",
+    "pt": "Solicitação de aplicação enviada com sucesso! Entraremos em contato em breve.",
+    "ar": "تم تقديم الطلب بنجاح! سوف نتواصل معك قريباً.",
+    "fr": "Demande soumise avec succès! Nous vous contacterons dès que possible.",
+    "hi": "आवेदन जमा करने में सफलता! हम जल्द ही आपकसे संपर्क करेंगे।",
   },
   "申请失败": {
-    "en": "Application failed"
+    "en": "Application failed",
+    "ru": "Заявка не удалась",
+    "es": "Solicitud fallida",
+    "pt": "Falha na solicitação",
+    "ar": "فشل الطلب",
+    "fr": "Demande échouée",
+    "hi": "आवेदन विफल",
   },
   "申请": {
-    "en": "Apply"
+    "en": "Apply",
+    "ru": "Заявка",
+    "es": "Solicitar",
+    "pt": "Solicitar",
+    "ar": "التقدم",
+    "fr": "Demander",
+    "hi": "आवेदन",
   },
   "申请人姓名 *": {
-    "en": "Applicant Name *"
+    "en": "Applicant Name *",
+    "ru": "Имя заявителя *",
+    "es": "Nombre del solicitante *",
+    "pt": "Nome do solicitante *",
+    "ar": "اسم المتقدم *",
+    "fr": "Nom de l'auteur de la demande *",
+    "hi": "आवेदक का नाम *",
   },
   "联系电话 *": {
-    "en": "Phone *"
+    "en": "Phone *",
+    "ru": "Контактный телефон *",
+    "es": "Teléfono de contacto *",
+    "pt": "Telefone de contato *",
+    "ar": "رقم الهاتف *",
+    "fr": "Téléphone de contact *",
+    "hi": "संपर्क फोन *",
   },
   "邮箱": {
-    "en": "Email"
+    "en": "Email",
+    "ru": "Электронная почта",
+    "es": "Correo electrónico",
+    "pt": "E-mail",
+    "ar": "البريد الإلكتروني",
+    "fr": "Courriel",
+    "hi": "ईमेल",
   },
   "公司名称": {
-    "en": "Company Name"
+    "en": "Company Name",
+    "ru": "Название компании",
+    "es": "Nombre de la empresa",
+    "pt": "Nome da empresa",
+    "ar": "اسم الشركة",
+    "fr": "Nom de l'entreprise",
+    "hi": "कंपनी का नाम",
   },
   "申请金额 (元) *": {
-    "en": "Amount (CNY) *"
+    "en": "Amount (CNY) *",
+    "ru": "Сумма заявки (юань) *",
+    "es": "Monto de la solicitud (yuan) *",
+    "pt": "Valor da solicitação (yuans) *",
+    "ar": "مبلغ الطلب (يوان) *",
+    "fr": "Montant de la demande (yuans) *",
+    "hi": "आवेदन राशि (युआन) *",
   },
   "期限 (月)": {
-    "en": "Term (months)"
+    "en": "Term (months)",
+    "ru": "Срок (месяцев)",
+    "es": "Plazo (meses)",
+    "pt": "Prazo (meses)",
+    "ar": "المدة (شهر)",
+    "fr": "Durée (mois)",
+    "hi": "अवधि (महीने)",
   },
   "用途说明": {
-    "en": "Purpose"
+    "en": "Purpose",
+    "ru": "Описание цели",
+    "es": "Descripción del propósito",
+    "pt": "Descrição do propósito",
+    "ar": "شرح الغرض",
+    "fr": "Explication de l'objectif",
+    "hi": "उद्देश्य विवरण",
   },
   "申请条件": {
-    "en": "Requirements"
+    "en": "Requirements",
+    "ru": "Условия заявки",
+    "es": "Condiciones de solicitud",
+    "pt": "Condições de solicitação",
+    "ar": "شروط الطلب",
+    "fr": "Conditions de demande",
+    "hi": "आवेदन शर्तें",
   },
   "提交申请": {
-    "en": "Submit Application"
+    "en": "Submit Application",
+    "ru": "Отправить заявку",
+    "es": "Enviar solicitud",
+    "pt": "Enviar solicitação",
+    "ar": "تقديم الطلب",
+    "fr": "Soumettre la demande",
+    "hi": "आवेदन जमा करें",
   },
   "卖家工作台": {
-    "en": "Seller Workbench"
+    "en": "Seller Workbench",
+    "ru": "Рабочий стол продавца",
+    "es": "Panel de trabajo del vendedor",
+    "pt": "Painel de trabalho do vendedor",
+    "ar": "وحدة تحكم البائع",
+    "fr": "Tableau de bord du vendeur",
+    "hi": "विक्रेता कार्यस्थल",
   },
   "管理买家对您设备的报价谈判与售前咨询": {
-    "en": "Manage buyer negotiations and pre-sales inquiries"
+    "en": "Manage buyer negotiations and pre-sales inquiries",
+    "ru": "Управление переговорами о цене и предварительной консультацией для покупателей, заинтересованных в вашем оборудовании",
+    "es": "Gestionar las ofertas y consultas de los compradores sobre su equipo",
+    "pt": "Gerenciar negociações de orçamento e consultas pré-vendas de compradores para os seus equipamentos",
+    "ar": "إدارة عروض و استفسارات المشترين لجهازك",
+    "fr": "Gérer les négociations de prix et les consultations préalables des acheteurs pour vos équipements",
+    "hi": "आपके उपकरण के लिए खरीदारों की बोली वार्ता और बिक्री से पहले परामर्श का प्रबंधन",
   },
   "报价谈判": {
-    "en": "Negotiations"
+    "en": "Negotiations",
+    "ru": "Переговоры о цене",
+    "es": "Negociación de ofertas",
+    "pt": "Negociação de orçamento",
+    "ar": "مفاوضات العرض",
+    "fr": "Négociation de prix",
+    "hi": "बोली वार्ता",
   },
   "售前咨询": {
-    "en": "Inquiries"
+    "en": "Inquiries",
+    "ru": "Предварительная консультация",
+    "es": "Consulta previa a la venta",
+    "pt": "Consulta pré-venda",
+    "ar": "استفسارات ما قبل البيع",
+    "fr": "Consultation préalable",
+    "hi": "बिक्री से पहले परामर्श",
   },
   "暂无进行中的询价谈判": {
-    "en": "No active negotiations yet"
+    "en": "No active negotiations yet",
+    "ru": "В настоящее время нет активных запросов на цену",
+    "es": "No hay negociaciones de precios en curso",
+    "pt": "Não há negociações de orçamento em andamento",
+    "ar": "لا توجد مفاوضات جارية",
+    "fr": "Aucune négociation d'enchère en cours",
+    "hi": "वर्तमान में चल रही कीमत वार्ता नहीं है",
   },
   "买家在产品页点击「立即询价」后将自动生成谈判会话": {
-    "en": "Buyers start a negotiation from the product page"
+    "en": "Buyers start a negotiation from the product page",
+    "ru": "Переговоры будут автоматически созданы после того, как покупатель нажмёт «Запросить цену» на странице продукта",
+    "es": "Se generará automáticamente una sesión de negociación cuando el comprador haga clic en «Solicitar precio» en la página del producto",
+    "pt": "Um diálogo de negociação será gerado automaticamente após o comprador clicar em 'Solicitar orçamento' na página do produto",
+    "ar": "سيتم إنشاء جلسة مفاوضات تلقائياً عند الضغط على \"استفسار الآن\" في صفحة المنتج",
+    "fr": "Un dialogue de négociation sera généré automatiquement lorsque l'acheteur cliquera sur « Demander un prix » sur la page du produit",
+    "hi": "उत्पाद पृष्ठ पर «तुरंत पूछताछ» पर क्लिक करने के बाद खरीदार से वार्ता सत्र स्वचालित रूप से बनाया जाएगा",
   },
   "已回复": {
-    "en": "Replied"
+    "en": "Replied",
+    "ru": "Отвечено",
+    "es": "Respondido",
+    "pt": "Respondido",
+    "ar": "تم الرد",
+    "fr": "Répondu",
+    "hi": "उत्तर दिया गया",
   },
   "已关闭": {
-    "en": "Closed"
+    "en": "Closed",
+    "ru": "Закрыто",
+    "es": "Cerrado",
+    "pt": "Fechado",
+    "ar": "مغلق",
+    "fr": "Fermé",
+    "hi": "बंद किया गया",
   },
   "暂无咨询记录": {
-    "en": "No inquiries yet"
+    "en": "No inquiries yet",
+    "ru": "Нет записей консультаций",
+    "es": "No hay registros de consultas",
+    "pt": "Não há registros de consultas",
+    "ar": "لا توجد سجلات استفسار",
+    "fr": "Aucun enregistrement de consultation",
+    "hi": "परामर्श रिकॉर्ड उपलब्ध नहीं है",
   },
   "创立": {
-    "en": "Est."
+    "en": "Est.",
+    "ru": "Создание",
+    "es": "Fundación",
+    "pt": "Fundado",
+    "ar": "التأسيس",
+    "fr": "Fondation",
+    "hi": "स्थापना",
   },
   "进入展位": {
-    "en": "Enter Booth"
+    "en": "Enter Booth",
+    "ru": "Вход в стенд",
+    "es": "Entrar en el stand",
+    "pt": "Entrar na exposição",
+    "ar": "الدخول إلى المعرض",
+    "fr": "Accéder au stand",
+    "hi": "प्रदर्शनी में प्रवेश",
   },
   "官网": {
-    "en": "Website"
+    "en": "Website",
+    "ru": "Официальный сайт",
+    "es": "Sitio web oficial",
+    "pt": "Site oficial",
+    "ar": "الموقع الرسمي",
+    "fr": "Site officiel",
+    "hi": "आधिकारिक वेबसाइट",
   },
   "热销": {
-    "en": "HOT"
+    "en": "HOT",
+    "ru": "Бестселлеры",
+    "es": "Más vendido",
+    "pt": "Mais vendidos",
+    "ar": "الأكثر مبيعا",
+    "fr": "Meilleures ventes",
+    "hi": "बेस्ट सेलर",
   },
   "品牌": {
     "en": "Brand",
@@ -1307,562 +3125,1672 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Marca",
     "ar": "العلامة التجارية",
     "fr": "Marque",
-    "hi": "ब्रांड"
+    "hi": "ब्रांड",
   },
   "农机品牌殿堂": {
-    "en": "Machinery Hall"
+    "en": "Machinery Hall",
+    "ru": "Зал славы брендов сельскохозяйственной техники",
+    "es": "Salón de marcas de maquinaria agrícola",
+    "pt": "Salão de marcas de máquinas agrícolas",
+    "ar": "قاعة العلامات التجارية للآلات الزراعية",
+    "fr": "Temple des marques d'équipement agricole",
+    "hi": "कृषि मशीनरी ब्रांड हॉल",
   },
   "约翰迪尔、克拉斯、凯斯、纽荷兰、芬特、麦赛弗格森——全球农机行业的技术标杆与品质参照。汇聚全球顶尖品牌，建立国际最高标准。": {
-    "en": "John Deere, CLAAS, Case IH, New Holland, Fendt, Massey Ferguson — the world's leading agricultural machinery benchmarks. Discover international standards and cutting-edge technology."
+    "en": "John Deere, CLAAS, Case IH, New Holland, Fendt, Massey Ferguson — the world's leading agricultural machinery benchmarks. Discover international standards and cutting-edge technology.",
+    "ru": "Джон Дир, Клаас, Кейс, Нью Холланд, Фендт, Масей Фергюсон — технологические и качественные эталоны глобальной сельскохозяйственной промышленности. Объединение лучших мировых брендов и установление международных стандартов.",
+    "es": "John Deere, CLAAS, New Holland, Fendt, Agriaffaires, usedfarmmach: los líderes tecnológicos y de calidad de la industria agrícola global. Reuniendo las mejores marcas del mundo, estableciendo estándares internacionales.",
+    "pt": "John Deere, CLAAS, New Holland, Fendt, Agriaffaires, usedfarmmach - referências de tecnologia e qualidade na indústria global de máquinas agrícolas. Reunindo as principais marcas globais, estabelecendo padrões internacionais mais altos.",
+    "ar": "جون ديير، كلاس، كيس، نيوهولاند، فيندت، ماسي فيرجوسون - معايير تقنية ومرجع جودة صناعة الآلات الزراعية العالمية. تجميع العلامات التجارية العالمية الرائدة، إنشاء معايير دولية أعلى.",
+    "fr": "John Deere, CLAAS, New Holland, Fendt, Agriaffaires, usedfarmmach - les références technologiques et qualitatives de l'industrie agricole mondiale. Rassembler les meilleures marques mondiales, établir des normes internationales élevées.",
+    "hi": "जॉन डियर, क्लास, केस, न्यू हॉलैंड, फेंड्ट, मैसी फέργ्यूसन - वैश्विक कृषि मशीनरी उद्योग के तकनीकी मानक और गुणवत्ता संदर्भ। वैश्विक शीर्ष ब्रांडों का संग्रह, अंतर्राष्ट्रीय उच्चतम मानक स्थापित करना।",
   },
   "国际品牌": {
-    "en": "Global Brands"
+    "en": "Global Brands",
+    "ru": "Международные бренды",
+    "es": "Marcas internacionales",
+    "pt": "Marcas internacionais",
+    "ar": "العلامات التجارية الدولية",
+    "fr": "Marques internationales",
+    "hi": "अंतर्राष्ट्रीय ब्रांड",
   },
   "旗舰·核心·精选": {
-    "en": "Flagship · Premium · Selected"
+    "en": "Flagship · Premium · Selected",
+    "ru": "Флагманы, основа, лучшее",
+    "es": "Buque insignia, núcleo, selección",
+    "pt": "Flagship - Core - Seleção",
+    "ar": "العلامة التجارية الرئيسية · الأساسية · المختارة",
+    "fr": "Drapeau, cœur, sélection",
+    "hi": "फ्लैगशिप - कोर - चयनित",
   },
   "标杆机型": {
-    "en": "Benchmark Models"
+    "en": "Benchmark Models",
+    "ru": "Эталонные модели",
+    "es": "Modelos de referencia",
+    "pt": "Modelos de referência",
+    "ar": "نموذج المرجع",
+    "fr": "Modèles phares",
+    "hi": "बेंचमार्क मॉडल",
   },
   "最新技术前沿": {
-    "en": "Latest Technology"
+    "en": "Latest Technology",
+    "ru": "Последние технологические достижения",
+    "es": "Última tecnología de vanguardia",
+    "pt": "Tecnologia de ponta mais recente",
+    "ar": "أحدث التقنيات المتقدمة",
+    "fr": "Dernières technologies de pointe",
+    "hi": "नवीनतम तकनीकी अग्रिम",
   },
   "覆盖国家": {
-    "en": "Countries"
+    "en": "Countries",
+    "ru": "Страны, которые мы покрываем",
+    "es": "Países cubiertos",
+    "pt": "Países cobertos",
+    "ar": "دول تغطي",
+    "fr": "Pays couverts",
+    "hi": "देशों को कवर करना",
   },
   "欧美日主要产区": {
-    "en": "Major markets"
+    "en": "Major markets",
+    "ru": "Основные регионы производства в Европе, Америке и Японии",
+    "es": "Principales zonas de producción de Europa, América y Japón",
+    "pt": "Principais regiões produtoras da Europa, América e Japão",
+    "ar": "مناطق الإنتاج الرئيسية في أوروبا وأمريكا واليابان",
+    "fr": "Régions principales d'Europe, d'Amérique et du Japon",
+    "hi": "यूरोप, अमेरिका, जापान मुख्य उत्पादन क्षेत्र",
   },
   "行业年限": {
-    "en": "Years of Legacy"
+    "en": "Years of Legacy",
+    "ru": "Годы работы в отрасли",
+    "es": "Años de experiencia en la industria",
+    "pt": "Anos de experiência na indústria",
+    "ar": "سنوات الصناعة",
+    "fr": "Années d'expérience dans l'industrie",
+    "hi": "उद्योग वर्ष",
   },
   "百年品牌传承": {
-    "en": "Heritage brands"
+    "en": "Heritage brands",
+    "ru": "Столетняя традиция бренда",
+    "es": "Herencia de marcas centenarias",
+    "pt": "Legado de marcas centenárias",
+    "ar": "مائة سنة من تراث العلامة التجارية",
+    "fr": "Héritage de marques centenaires",
+    "hi": "शताब्दी ब्रांड विरासत",
   },
   "品牌等级": {
-    "en": "Tier"
+    "en": "Tier",
+    "ru": "Уровень бренда",
+    "es": "Nivel de marca",
+    "pt": "Nível de marca",
+    "ar": "مستوى العلامة التجارية",
+    "fr": "Niveau de marque",
+    "hi": "ब्रांड स्तर",
   },
   "产品品类": {
-    "en": "Category"
+    "en": "Category",
+    "ru": "Категории продукции",
+    "es": "Categorías de productos",
+    "pt": "Categorias de produtos",
+    "ar": "فئات المنتجات",
+    "fr": "Catégories de produits",
+    "hi": "उत्पाद श्रेणी",
   },
   "品牌阵容": {
-    "en": "Brand Lineup"
+    "en": "Brand Lineup",
+    "ru": "Список брендов",
+    "es": "Ejército de marcas",
+    "pt": "Linha de marcas",
+    "ar": "تشكيلة العلامات التجارية",
+    "fr": "Équipe de marques",
+    "hi": "ब्रांड लाइनअप",
   },
   "共": {
-    "en": ""
+    "en": "Total",
+    "ru": "Общая",
+    "es": "Compartir",
+    "pt": "Comum",
+    "ar": "مُشترك",
+    "fr": "En commun",
+    "hi": "साझा",
   },
   "个品牌": {
-    "en": "brands"
+    "en": "brands",
+    "ru": "брендов",
+    "es": "{count} marcas",
+    "pt": "{count} marcas",
+    "ar": "علامة تجارية",
+    "fr": "marques",
+    "hi": "ब्रांड",
   },
   "清除筛选": {
-    "en": "Clear"
+    "en": "Clear",
+    "ru": "Очистить фильтр",
+    "es": "Eliminar filtro",
+    "pt": "Limpar filtro",
+    "ar": "إلغاء التصفية",
+    "fr": "Effacer les filtres",
+    "hi": "फिल्टर साफ़ करें",
   },
   "暂无符合条件的品牌": {
-    "en": "No brands match your filters"
+    "en": "No brands match your filters",
+    "ru": "Нет брендов, соответствующих условиям",
+    "es": "No hay marcas que cumplan con los criterios de búsqueda",
+    "pt": "Nenhuma marca atende aos critérios",
+    "ar": "لا توجد علامات تجارية تتوافق مع الشروط",
+    "fr": "Aucune marque ne correspond aux critères",
+    "hi": "कोई अनुकूल ब्रांड नहीं मिला",
   },
   "尝试调整筛选条件": {
-    "en": "Try adjusting your filters"
+    "en": "Try adjusting your filters",
+    "ru": "Попробуйте изменить условия фильтрации",
+    "es": "Intenta ajustar los criterios de filtro",
+    "pt": "Tente ajustar as condições de filtro",
+    "ar": "حاول تعديل شروط التصفية",
+    "fr": "Essayez d'ajuster les conditions de filtrage",
+    "hi": "फिल्टर शर्तों को समायोजित करने का प्रयास करें",
   },
   "标杆机型展示": {
-    "en": "Benchmark Models"
+    "en": "Benchmark Models",
+    "ru": "Показ лучших моделей",
+    "es": "Exposición de modelos de referencia",
+    "pt": "Exposição de modelos de referência",
+    "ar": "عرض نموذج المرجع",
+    "fr": "Présentation des modèles phares",
+    "hi": "बेंचमार्क मॉडल प्रदर्शनी",
   },
   "精选": {
-    "en": "Showing"
+    "en": "Showing",
+    "ru": "Лучшие",
+    "es": "Selección",
+    "pt": "Seleção",
+    "ar": "المختارات",
+    "fr": "Sélection",
+    "hi": "चयनित",
   },
   "台热门机型": {
-    "en": "featured models"
+    "en": "featured models",
+    "ru": "модели в топе",
+    "es": "{count} modelos populares",
+    "pt": "{count} modelos mais populares",
+    "ar": "أشهر {count} نموذج",
+    "fr": "{count} modèles populaires",
+    "hi": "लोकप्रिय मॉडल",
   },
   "全部展厅": {
-    "en": "All Showroom"
+    "en": "All Showroom",
+    "ru": "Все залы",
+    "es": "Todos los salones",
+    "pt": "Todos os salões de exposição",
+    "ar": "جميع القاعات",
+    "fr": "Tous les halls d'exposition",
+    "hi": "सभी प्रदर्शनी हॉल",
   },
   "中国制造 vs 国际标杆": {
-    "en": "Chinese vs Global Benchmark"
+    "en": "Chinese vs Global Benchmark",
+    "ru": "Китайское производство vs международные бренды",
+    "es": "China fabricado vs referencia internacional",
+    "pt": "China vs. Referência internacional",
+    "ar": "الصين تصنع vs المرجع الدولي",
+    "fr": "Chine vs références internationales",
+    "hi": "चीनी निर्मित बनाम अंतर्राष्ट्रीय बेंचमार्क",
   },
   "想知道中国品牌与国际标杆的差距有多大？进入新锐专业馆，横向参数对比，理性决策。": {
-    "en": "Want to see how Chinese brands compare to global benchmarks? Visit the Comparison Hall for side-by-side specs."
+    "en": "Want to see how Chinese brands compare to global benchmarks? Visit the Comparison Hall for side-by-side specs.",
+    "ru": "Хотите знать, насколько велика разница между китайскими брендами и международными брендами? Зайдите в профессиональный зал, сравните параметры и принимайте обоснованные решения.",
+    "es": "¿Quieres saber cuál es la brecha entre las marcas chinas y las referencias internacionales? Ingresa al salón profesional de nuevos productos, compara parámetros horizontalmente y toma decisiones racionales.",
+    "pt": "Quer saber qual é a diferença entre as marcas chinesas e as referências internacionais? Entre no salão profissional, compare parâmetros horizontalmente e tome decisões racionais.",
+    "ar": "هل تريد معرفة الفرق بين العلامات التجارية الصينية والمرجع الدولي؟ ادخل إلى قاعة المحترفين الجدد، مقارنة المعلمات الأفقية، اتخاذ قرارات عقلانية.",
+    "fr": "Voulez-vous savoir à quel point les marques chinoises diffèrent des références internationales ? Entrez dans le hall des professionnels, comparez les paramètres, prenez des décisions éclairées.",
+    "hi": "क्या आप जानते हैं कि चीनी ब्रांड और अंतर्राष्ट्रीय बेंचमार्क के बीच का अंतर कितना बड़ा है? नए पेशेवर गैलरी में प्रवेश करें, क्षैतिज पैरामीटर तुलना करें, तर्कसंगत निर्णय लें।",
   },
   "进入新锐专业馆": {
-    "en": "Comparison Hall"
+    "en": "Comparison Hall",
+    "ru": "Зайдите в профессиональный зал",
+    "es": "Ingresa al salón profesional de nuevos productos",
+    "pt": "Entrar no salão profissional",
+    "ar": "ادخل إلى قاعة المحترفين الجدد",
+    "fr": "Accéder au hall des professionnels",
+    "hi": "नए पेशेवर गैलरी में प्रवेश करें",
   },
   "查看中国品牌": {
-    "en": "Chinese Brands"
+    "en": "Chinese Brands",
+    "ru": "Посмотреть китайские бренды",
+    "es": "Ver marcas chinas",
+    "pt": "Ver marcas chinesas",
+    "ar": "مشاهدة العلامات التجارية الصينية",
+    "fr": "Voir les marques chinoises",
+    "hi": "चीनी ब्रांड देखें",
   },
   "新锐专业馆 · 功能厅": {
-    "en": "Comparison Hall · Function Hall"
+    "en": "Comparison Hall · Function Hall",
+    "ru": "Профессиональный зал · Зал функций",
+    "es": "Salón profesional de nuevos productos · Sala de funciones",
+    "pt": "Salão profissional - Salão de funções",
+    "ar": "قاعة المحترفين الجدد · قاعة الوظائف",
+    "fr": "Hall des professionnels · Salle des fonctions",
+    "hi": "नए पेशेवर गैलरी - कार्य हॉल",
   },
   "同品类中外品牌横向参数对比——价格、马力、性能、技术差距一目了然。理性决策，选择最适合的农机。": {
-    "en": "Side-by-side comparison of Chinese and international brands by category — price, power, performance, and technology gaps at a glance."
+    "en": "Side-by-side comparison of Chinese and international brands by category — price, power, performance, and technology gaps at a glance.",
+    "ru": "Сравнение параметров китайских и иностранных брендов в одной категории — цена, мощность, производительность, технологические различия на виду. Принимайте обоснованные решения и выбирайте наиболее подходящую технику.",
+    "es": "Comparación horizontal de parámetros de marcas nacionales y extranjeras en la misma categoría — precio, potencia, rendimiento, brecha tecnológica a simple vista. Toma decisiones racionales y elige la mejor maquinaria agrícola.",
+    "pt": "Comparação horizontal de parâmetros de marcas nacionais e estrangeiras da mesma categoria - preço, potência, desempenho, diferenças tecnológicas claras. Decisões racionais, escolha a máquina agrícola mais adequada.",
+    "ar": "مقارنة معلمات العلامات التجارية الأجنبية والصينية في نفس الفئة - الفرق في السعر والقوة وال性能 والتكنولوجيا واضح. اتخاذ قرارات عقلانية، اختيار أفضل آلة زراعية.",
+    "fr": "Comparaison des paramètres des marques nationales et étrangères de même catégorie — prix, puissance, performances, écarts technologiques évidents. Prenez des décisions éclairées, choisissez les meilleurs équipements agricoles.",
+    "hi": "समान श्रेणी के घरेलू और विदेशी ब्रांडों की क्षैतिज पैरामीटर तुलना - मूल्य, शक्ति, प्रदर्शन, तकनीकी अंतर एक ही नज़र में स्पष्ट है। तर्कसंगत निर्णय लें, सबसे उपयुक्त कृषि मशीनरी चुनें।",
   },
   " 对比": {
-    "en": " Comparison"
+    "en": " Comparison",
+    "ru": "Сравнить",
+    "es": "Comparar",
+    "pt": "Comparar",
+    "ar": "المقارنة",
+    "fr": "Comparer",
+    "hi": "तुलना",
   },
   "中国品牌": {
-    "en": "Brands"
+    "en": "Brands",
+    "ru": "Китайские бренды",
+    "es": "Marcas chinas",
+    "pt": "Marcas chinesas",
+    "ar": "العلامات التجارية الصينية",
+    "fr": "Marques chinoises",
+    "hi": "चीनी ब्रांड",
   },
   "款": {
-    "en": "models"
+    "en": "models",
+    "ru": "моделей",
+    "es": "Modelo",
+    "pt": "Modelo",
+    "ar": "الطراز",
+    "fr": "Modèles",
+    "hi": "मॉडल",
   },
   "暂无中国品牌展品": {
-    "en": "No Chinese models"
+    "en": "No Chinese models",
+    "ru": "Нет китайских брендов на выставке",
+    "es": "No hay productos de marcas chinas disponibles",
+    "pt": "Nenhum produto de marca chinesa disponível",
+    "ar": "لا توجد عروض للعلامات التجارية الصينية",
+    "fr": "Aucun produit de marque chinoise disponible",
+    "hi": "चीनी ब्रांड के उत्पाद नहीं मिले",
   },
   "国际标杆": {
-    "en": "International"
+    "en": "International",
+    "ru": "Международные бренды",
+    "es": "Referencia internacional",
+    "pt": "Referência internacional",
+    "ar": "المعايير الدولية",
+    "fr": "Références internationales",
+    "hi": "अंतरराष्ट्रीय बेंचमार्क",
   },
   "暂无国际品牌展品": {
-    "en": "No international models"
+    "en": "No international models",
+    "ru": "Нет международных брендов на выставке",
+    "es": "No hay productos de marcas internacionales disponibles",
+    "pt": "Nenhum produto de marca internacional disponível",
+    "ar": "لا توجد عروض للعلامات التجارية الدولية",
+    "fr": "Aucun produit de marque internationale disponible",
+    "hi": "अंतरराष्ट्रीय ब्रांड के उत्पाद नहीं मिले",
   },
   "价格对比摘要": {
-    "en": "Price Comparison Summary"
+    "en": "Price Comparison Summary",
+    "ru": "Сводка сравнения цен",
+    "es": "Resumen de comparación de precios",
+    "pt": "Resumo do comparativo de preços",
+    "ar": "ملخص مقارنة الأسعار",
+    "fr": "Résumé de la comparaison des prix",
+    "hi": "मूल्य तुलना सारांश",
   },
   "中国品牌均价": {
-    "en": "Chinese Avg Price"
+    "en": "Chinese Avg Price",
+    "ru": "Средняя цена китайских брендов",
+    "es": "Precio promedio de marcas chinas",
+    "pt": "Preço médio das marcas chinesas",
+    "ar": "متوسط سعر العلامة التجارية الصينية",
+    "fr": "Prix moyen des marques chinoises",
+    "hi": "चीनी ब्रांड का औसत मूल्य",
   },
   "国际品牌均价": {
-    "en": "International Avg Price"
+    "en": "International Avg Price",
+    "ru": "Международные бренды по средним ценам",
+    "es": "Precio promedio de marcas internacionales",
+    "pt": "Preço médio das marcas internacionais",
+    "ar": "متوسط سعر العلامة التجارية الدولية",
+    "fr": "Prix moyen des marques internationales",
+    "hi": "अंतरराष्ट्रीय ब्रांड का औसत मूल्य",
   },
   "价格比": {
-    "en": "Price Ratio"
+    "en": "Price Ratio",
+    "ru": "Ценовой коэффициент",
+    "es": "Relación de precios",
+    "pt": "Comparação de preços",
+    "ar": "نسبة السعر",
+    "fr": "Rapport de prix",
+    "hi": "मूल्य अनुपात",
   },
   "找到最适合的农机": {
-    "en": "Find the Right Machinery"
+    "en": "Find the Right Machinery",
+    "ru": "Найти наиболее подходящую сельхозтехнику",
+    "es": "Encontrar la mejor máquina agrícola",
+    "pt": "Encontrar a melhor opção de máquina agrícola",
+    "ar": "العثور على المعدات الزراعية الأكثر ملاءمة",
+    "fr": "Trouver la meilleure machine agricole",
+    "hi": "सबसे उपयुक्त कृषि मशीनरी खोजें",
   },
   "中国品牌解决'买得到、买得起、修得好'，国际品牌解决'极致性能、超大马力'——按需选择。": {
-    "en": "Chinese brands solve affordability and availability; international brands deliver peak performance — choose what fits your needs."
+    "en": "Chinese brands solve affordability and availability; international brands deliver peak performance — choose what fits your needs.",
+    "ru": "Китайские бренды решают проблемы 'доступности, покупки и ремонта', международные бренды решают проблемы 'ультра-производительности и сверхбольшой мощности' — выбирайте по потребностям.",
+    "es": "Las marcas chinas resuelven 'comprar asequible, reparar fácilmente', las marcas internacionales resuelven 'rendimiento extremo, gran potencia' — elige según tus necesidades.",
+    "pt": "As marcas chinesas resolvem 'comprar, pagar e reparar', as marcas internacionais resolvem 'desempenho extremo, grande potência' — escolha de acordo com as necessidades.",
+    "ar": "ت解决 العلامات التجارية الصينية 'الشراء المتاح والمتاح والصيانة الجيدة' ، وت解决 العلامات التجارية الدولية 'الأداء القصوى والقوة العالية' - اختر حسب الاحتياجات.",
+    "fr": "Les marques chinoises résolvent 'acheter, acheter à prix raisonnable, réparer facilement', les marques internationales résolvent 'performance extrême, puissance maximale' — choisissez en fonction de vos besoins.",
+    "hi": "चीनी ब्रांड 'खरीदने योग्य, खरीदने में सक्षम, मरम्मत में अच्छा' का समाधान प्रदान करता है, अंतरराष्ट्रीय ब्रांड 'अत्यधिक प्रदर्शन, अत्यधिक शक्ति' का समाधान प्रदान करता है — आवश्यकतानुसार चुनें।",
   },
   "全球领袖馆": {
-    "en": "Global Leaders Hall"
+    "en": "Global Leaders Hall",
+    "ru": "Глобальный лидерский павильон",
+    "es": "Pabellón de líderes globales",
+    "pt": "Pavilhão dos Líderes Mundiais",
+    "ar": "قاعة القيادة العالمية",
+    "fr": "Pavillon des leaders mondiaux",
+    "hi": "वैश्विक नेता प्रदर्शनी",
   },
   "中国中坚馆": {
-    "en": "China Backbone Hall"
+    "en": "China Backbone Hall",
+    "ru": "Китайский основной павильон",
+    "es": "Pabellón de marcas chinas consolidadas",
+    "pt": "Pavilhão das Marcas Chinesas",
+    "ar": "قاعة الصين الصلبة",
+    "fr": "Pavillon des marques chinoises de milieu de gamme",
+    "hi": "चीनी कृषि मशीनरी ब्रांड वैश्विक",
   },
   "旗舰": {
-    "en": "Flagship"
+    "en": "Flagship",
+    "ru": "Флагман",
+    "es": "Buque insignia",
+    "pt": "Navio-almirante",
+    "ar": "الرائد",
+    "fr": "Navire amiral",
+    "hi": "फ्लैगशिप",
   },
   "高端": {
-    "en": "High"
+    "en": "High",
+    "ru": "Высокий уровень",
+    "es": "Alto nivel",
+    "pt": "Alto padrão",
+    "ar": "النهاية العليا",
+    "fr": "Haut de gamme",
+    "hi": "उच्च अंत",
   },
   "中端": {
-    "en": "Mid"
+    "en": "Mid",
+    "ru": "Средний уровень",
+    "es": "Nivel medio",
+    "pt": "Padrão médio",
+    "ar": "المنتصف",
+    "fr": "Milieu de gamme",
+    "hi": "मध्य स्तर",
   },
   "标准": {
-    "en": "Standard"
+    "en": "Standard",
+    "ru": "Стандартный",
+    "es": "Estándar",
+    "pt": "Padrão básico",
+    "ar": "المعيار",
+    "fr": "Standard",
+    "hi": "मानक",
   },
   "全球领袖馆 · 主馆": {
-    "en": "Global Leaders Hall · Main Hall"
+    "en": "Global Leaders Hall · Main Hall",
+    "ru": "Глобальный лидерский павильон · Основной павильон",
+    "es": "Pabellón de líderes globales · Pabellón principal",
+    "pt": "Pavilhão dos Líderes Mundiais · Pavilhão Principal",
+    "ar": "قاعة القيادة العالمية · القاعة الرئيسية",
+    "fr": "Pavillon des leaders mondiaux · Pavillon principal",
+    "hi": "वैश्विक नेता प्रदर्शनी · मुख्य प्रदर्शनी",
   },
   "中国农机品牌走向世界": {
-    "en": "Chinese Farm Machinery Goes Global"
+    "en": "Chinese Farm Machinery Goes Global",
+    "ru": "Китайские бренды сельхозтехники выходят в мир",
+    "es": "Las marcas de maquinaria agrícola china se expanden por el mundo",
+    "pt": "As marcas chinesas de máquinas agrícolas conquistam o mundo",
+    "ar": "العلامات التجارية الصينية للآلات الزراعية تتجه نحو العالم",
+    "fr": "Les marques chinoises de machines agricoles vont vers le monde",
+    "hi": "चीनी कृषि मशीनरी ब्रांड वैश्विक",
   },
   "42个中国农机品牌，覆盖拖拉机、收割机、播种机、植保无人机全品类。2025年中国农机出口674亿元，同比增长32.3%——中国制造正在改变全球农业装备格局。": {
-    "en": "42 Chinese agricultural machinery brands, covering tractors, harvesters, planters, and drones. China's farm machinery exports reached ¥67.4 billion in 2025, up 32.3% YoY."
+    "en": "42 Chinese agricultural machinery brands, covering tractors, harvesters, planters, and drones. China's farm machinery exports reached ¥67.4 billion in 2025, up 32.3% YoY.",
+    "ru": "42 китайских бренда сельхозтехники, покрывающих все категории тракторов, комбайнов, сеялок и беспилотников для защиты растений. В 2025 году экспорт китайской сельхозтехники составил 67,4 млрд юаней, что на 32,3% больше, чем в предыдущем году — китайское производство меняет глобальный ландшафт сельскохозяйственного оборудования.",
+    "es": "42 marcas de maquinaria agrícola china, cubriendo tractores, cosechadoras, sembradoras, drones de protección de cultivos y toda la gama de productos. En 2025, las exportaciones de maquinaria agrícola china alcanzaron 67.4 mil millones de yuanes, con un crecimiento interanual del 32.3% — la fabricación china está cambiando el panorama de los equipos agrícolas globales.",
+    "pt": "42 marcas chinesas de máquinas agrícolas, cobrindo todos os tipos de tratores, ceifadeiras, semeadoras e drones de proteção vegetal. Em 2025, as exportações chinesas de máquinas agrícolas alcançaram 67,4 bilhões de yuan, com um crescimento de 32,3% em relação ao ano anterior — a fabricação chinesa está mudando a configuração global dos equipamentos agrícolas.",
+    "ar": "42 علامة تجارية صينية للآلات الزراعية ، تغطي جميع الفئات من الجرارات وآلات الحصاد وآلات البذر وطائرات بدون طيار للزراعة. في عام 2025 ، بلغ إجمالي صادرات الآلات الزراعية الصينية 67.4 مليار يوان صيني ، بزيادة بنسبة 32.3٪ عن السنة السابقة - الإنتاج الصيني يغير بنية المعدات الزراعية العالمية.",
+    "fr": "42 marques chinoises de machines agricoles, couvrant les tracteurs, les moissonneuses, les semoirs, les drones de protection des plantes — 674 milliards de yuans d'exportations en 2025, soit une augmentation de 32,3% par rapport à l'année précédente — la fabrication chinoise change la configuration de l'équipement agricole mondial.",
+    "hi": "42 चीनी कृषि मशीनरी ब्रांड, ट्रैक्टर, कombine हार्वेस्टर, सीडर, प्लांट प्रोटेक्शन ड्रोन सहित सभी श्रेणियों को कवर करते हैं। 2025 में चीनी कृषि मशीनरी निर्यात 674 अरब युआन तक पहुंच गया, जो 32.3% की वार्षिक वृद्धि है — चीनी निर्मित वैश्विक कृषि उपकरण बाजार को बदल रहा है।",
   },
   "旗舰机型": {
-    "en": "Models"
+    "en": "Models",
+    "ru": "Флагманские модели",
+    "es": "Modelo insignia",
+    "pt": "Modelos de navio-almirante",
+    "ar": "الطراز الرائد",
+    "fr": "Modèles phares",
+    "hi": "फ्लैगशिप मॉडल",
   },
   "品类全覆盖": {
-    "en": "Categories"
+    "en": "Categories",
+    "ru": "Полное покрытие категорий",
+    "es": "Cobertura de toda la gama de productos",
+    "pt": "Cobertura completa de categorias",
+    "ar": "التغطية الكاملة للفئات",
+    "fr": "Couverture de tous les produits",
+    "hi": "श्रेणी कवरेज",
   },
   "全部品牌": {
-    "en": "All"
+    "en": "All",
+    "ru": "Все бренды",
+    "es": "Todas las marcas",
+    "pt": "Todas as marcas",
+    "ar": "جميع العلامات التجارية",
+    "fr": "Toutes les marques",
+    "hi": "सभी ब्रांड",
   },
   "品类：": {
-    "en": "Category:"
+    "en": "Category:",
+    "ru": "Категория:",
+    "es": "Categoría:",
+    "pt": "Categoria:",
+    "ar": "الفئة：",
+    "fr": "Catégorie :",
+    "hi": "श्रेणी:",
   },
   "出口": {
-    "en": "Export"
+    "en": "Export",
+    "ru": "Экспорт",
+    "es": "Exportación",
+    "pt": "Exportação",
+    "ar": "التصدير",
+    "fr": "Exportation",
+    "hi": "निर्यात",
   },
   "旗舰机型展示": {
-    "en": "Flagship Models"
+    "en": "Flagship Models",
+    "ru": "Выставка флагманских моделей",
+    "es": "Exhibición de modelos insignia",
+    "pt": "Exposição de modelos de navio-almirante",
+    "ar": "عرض الطراز الرائد",
+    "fr": "Présentation des modèles phares",
+    "hi": "फ्लैगशिप मॉडल प्रदर्शनी",
   },
   "中国农机，全球机遇": {
-    "en": "Chinese Machinery, Global Opportunities"
+    "en": "Chinese Machinery, Global Opportunities",
+    "ru": "Китайская сельхозтехника, глобальные возможности",
+    "es": "Maquinaria agrícola china, oportunidades globales",
+    "pt": "Máquinas agrícolas chinesas, oportunidades globais",
+    "ar": "الآلات الزراعية الصينية ، الفرص العالمية",
+    "fr": "Machines agricoles chinoises, opportunités mondiales",
+    "hi": "चीनी कृषि मशीनरी, वैश्विक अवसर",
   },
   "从展示到成交，365天不间断。让您的中国农机品牌走向世界每一个田间。": {
-    "en": "From display to deal, 365 days a year. Take your Chinese machinery brand to every field worldwide."
+    "en": "From display to deal, 365 days a year. Take your Chinese machinery brand to every field worldwide.",
+    "ru": "От демонстрации до продажи, 365 дней без перерыва. Пусть ваш бренд китайской сельхозтехники выйдет в каждый уголок мира.",
+    "es": "Desde la exhibición hasta la venta, 365 días sin interrupción. Lleva tu marca de maquinaria agrícola china a cada campo del mundo.",
+    "pt": "Desde a exposição até a venda, 365 dias sem interrupção. Deixe que sua marca chinesa de máquinas agrícolas conquiste o mundo, em cada campo.",
+    "ar": "من العرض إلى التسوية ، 365 يومًا دون انقطاع. دع العلامة التجارية الصينية للآلات الزراعية تتجه نحو كل حقل في العالم.",
+    "fr": "De l'exposition à la vente, 365 jours sans interruption. Faites connaître vos marques chinoises de machines agricoles dans chaque champ du monde.",
+    "hi": "प्रदर्शनी से लेन-देन तक, 365 दिनों तक बिना रुकावट। आपके चीनी कृषि मशीनरी ब्रांड को वैश्विक प्रत्येक खेत में ले जाने दें।",
   },
   "进入线上展厅": {
-    "en": "Enter Showroom"
+    "en": "Enter Showroom",
+    "ru": "Войти в онлайн-зал",
+    "es": "Ingresar al salón de exhibición en línea",
+    "pt": "Entrar no salão de exposições online",
+    "ar": "ادخل القاعة العرضية عبر الإنترنت",
+    "fr": "Entrer dans le hall d'exposition en ligne",
+    "hi": "ऑनलाइन प्रदर्शनी में प्रवेश करें",
   },
   "提交失败，请稍后重试": {
-    "en": "Submission failed, please try again"
+    "en": "Submission failed, please try again",
+    "ru": "Ошибка отправки, попробуйте позже",
+    "es": "Error al enviar, inténtelo de nuevo más tarde",
+    "pt": "Falha ao submeter, tente novamente mais tarde",
+    "ar": "فشل الإرسال ، يرجى المحاولة مرة أخرى",
+    "fr": "Échec de la soumission, veuillez réessayer plus tard",
+    "hi": "प्रस्तुति विफल, कृपया बाद में पुनः प्रयास करें",
   },
   "网络错误": {
-    "en": "Network error"
+    "en": "Network error",
+    "ru": "Ошибка сети",
+    "es": "Error de red",
+    "pt": "Erro de rede",
+    "ar": "خطأ في الشبكة",
+    "fr": "Erreur de réseau",
+    "hi": "नेटवर्क त्रुटि",
   },
   "第28届 · 真机下地 · 实效演示": {
-    "en": "28th Edition · Live Demos"
+    "en": "28th Edition · Live Demos",
+    "ru": "28-я · Реальная машина на земле · Демонстрация эффективности",
+    "es": "28ª edición · Demostración en vivo · Demostración efectiva",
+    "pt": "28ª edição · Demonstração ao vivo · Demonstração de efeitos reais",
+    "ar": "المنتدى الـ 28 · العرض الحقيقي على الأرض · العرض الفعلي",
+    "fr": "28e édition · Véritable machine sous terre · Démo efficace",
+    "hi": "28वां · वास्तविक मशीन · प्रभावी प्रदर्शन",
   },
   "河北农机新机具新技术推广演示会": {
-    "en": "Hebei Agricultural Machinery Expo"
+    "en": "Hebei Agricultural Machinery Expo",
+    "ru": "Конференция по продвижению новых машин и технологий сельхозтехники в провинции Хэбэй",
+    "es": "Exposición de promoción de nuevas máquinas y tecnologías agrícolas de Hebei",
+    "pt": "Feira de promoção de novas máquinas e tecnologias agrícolas em Hebei",
+    "ar": "مؤتمر推广 المعدات والتقنيات الجديدة لشركة 河北农机",
+    "fr": "Conférence de promotion de nouvelles machines et technologies agricoles du Hebei",
+    "hi": "हेबEI कृषि मशीनरी नई मशीनरी नई प्रौद्योगिकी प्रदर्शनी",
   },
   "石家庄·元氏县·神雕农机": {
-    "en": "Yuanshi County, Shijiazhuang"
+    "en": "Yuanshi County, Shijiazhuang",
+    "ru": "Шицзячжуан · Юаньси · 神雕农机",
+    "es": "Shijiazhuang · Condado de Yuanshi · 神雕农机",
+    "pt": "Shijiazhuang · Condado de Yuanshi · 神雕农机",
+    "ar": "石家庄·元氏县·神雕农机",
+    "fr": "Stone家庄·元氏县·神雕农机",
+    "hi": "शिजियाज़ुआंग · युआनशी काउंटी · शेनडाओ कृषि मशीनरी",
   },
   "~20家国内头部农机品牌": {
-    "en": "~20 Top Domestic Brands"
+    "en": "~20 Top Domestic Brands",
+    "ru": "~20 ведущих китайских брендов сельхозтехники",
+    "es": "~20 marcas de maquinaria agrícola líderes nacionales",
+    "pt": "~20 principais marcas de máquinas agrícolas nacionais",
+    "ar": "~20 علامة تجارية رائدة في صناعة المعدات الزراعية في الصين",
+    "fr": "~20 principales marques de machines agricoles nationales",
+    "hi": "~20 घरेलू शीर्ष कृषि मशीनरी ब्रांड",
   },
   "查看演示时间": {
-    "en": "Demo Schedule"
+    "en": "Demo Schedule",
+    "ru": "Посмотреть время демонстрации",
+    "es": "Ver horario de demostración",
+    "pt": "Verificar horário de demonstração",
+    "ar": "مشاهدة جدول العرض",
+    "fr": "Voir les heures de démonstration",
+    "hi": "प्रदर्शनी समय देखें",
   },
   "浏览品牌库": {
-    "en": "Browse Brands"
+    "en": "Browse Brands",
+    "ru": "Просмотреть библиотеку брендов",
+    "es": "Explorar biblioteca de marcas",
+    "pt": "Navegar pelo repositório de marcas",
+    "ar": "استعراض قاعدة العلامات التجارية",
+    "fr": "Parcourir la bibliothèque de marques",
+    "hi": "ब्रांड लाइब्रेरी ब्राउज़ करें",
   },
   "线下实地演示 · 5场作业": {
-    "en": "5 Live Field Demos"
+    "en": "5 Live Field Demos",
+    "ru": "Офлайн-демонстрация · 5 площадок",
+    "es": "Demostración en vivo en el lugar · 5 sesiones de trabajo",
+    "pt": "Demonstração ao vivo em campo · 5 cenas de trabalho",
+    "ar": "عرض حقيقي على الأرض · 5 عروض عمل",
+    "fr": "Démo en ligne · 5 opérations sur le terrain",
+    "hi": "ऑफ़लाइन फ़ील्ड प्रदर्शन · 5 कार्य",
   },
   "参展品牌": {
-    "en": "Exhibitors"
+    "en": "Exhibitors",
+    "ru": "Участники выставки",
+    "es": "Marcas expositoras",
+    "pt": "Marcas expositoras",
+    "ar": "العلامات التجارية المشاركة",
+    "fr": "Marques exposantes",
+    "hi": "प्रदर्शनी ब्रांड",
   },
   "品类覆盖": {
-    "en": "Categories"
+    "en": "Categories",
+    "ru": "Категории",
+    "es": "Cobertura de categorías",
+    "pt": "Cobertura de categorias",
+    "ar": "التغطية الفئوية",
+    "fr": "Couverture de catégories",
+    "hi": "श्रेणी कवरेज",
   },
   "实地作业演示": {
-    "en": "Live Demos"
+    "en": "Live Demos",
+    "ru": "Демонстрация работ на месте",
+    "es": "Demostración de trabajo en vivo",
+    "pt": "Demonstração de trabalho ao vivo em campo",
+    "ar": "عرض حقيقي على الأرض",
+    "fr": "Démo de travail sur le terrain",
+    "hi": "फ़ील्ड प्रदर्शन",
   },
   "线上直播": {
-    "en": "Live Streaming"
+    "en": "Live Streaming",
+    "ru": "Онлайн-трансляция",
+    "es": "Transmisión en vivo",
+    "pt": "Transmissão ao vivo online",
+    "ar": "بث مباشر عبر الإنترنت",
+    "fr": "Diffusion en ligne",
+    "hi": "ऑनलाइन लाइव",
   },
   "参展企业 & 展品预告": {
-    "en": "Exhibitors & Products"
+    "en": "Exhibitors & Products",
+    "ru": "Анонс участников выставки и экспонатов",
+    "es": "Anuncio de empresas y productos expuestos",
+    "pt": "Pré-visualização de empresas e produtos expositores",
+    "ar": "المشاركة في المؤتمر والمنتجات المعروضة",
+    "fr": "Aperçu des entreprises et produits exposés",
+    "hi": "प्रदर्शनी कंपनी और प्रदर्शनी पूर्वावलोकन",
   },
   "企业": {
-    "en": "Company"
+    "en": "Company",
+    "ru": "Компании",
+    "es": "Empresas",
+    "pt": "Empresas",
+    "ar": "الشركات",
+    "fr": "Entreprises",
+    "hi": "कंपनी",
   },
   "核心展品": {
-    "en": "Products"
+    "en": "Products",
+    "ru": "Основные экспонаты",
+    "es": "Productos clave",
+    "pt": "Produtos principais",
+    "ar": "المنتجات الرئيسية",
+    "fr": "Produits principaux",
+    "hi": "मुख्य प्रदर्शनी",
   },
   "品类": {
-    "en": "Category"
+    "en": "Category",
+    "ru": "Категории",
+    "es": "Categorías",
+    "pt": "Categorias",
+    "ar": "الفئات",
+    "fr": "Catégories",
+    "hi": "श्रेणी",
   },
   "品牌库已收录": {
-    "en": "In Brand Lib"
+    "en": "In Brand Lib",
+    "ru": "Бренды в базе данных",
+    "es": "Biblioteca de marcas registradas",
+    "pt": "Repositório de marcas já incluído",
+    "ar": "قاعدة العلامات التجارية المحفوظة",
+    "fr": "Bibliothèque de marques enregistrées",
+    "hi": "ब्रांड लाइब्रेरी में शामिल किया गया",
   },
   "以上为已公布参展企业（仅限来源·北方农业机械公众号），更多企业请以现场为准。": {
-    "en": "List based on published information. More exhibitors at the event."
+    "en": "List based on published information. More exhibitors at the event.",
+    "ru": "Вышеуказанный список участников выставки (только из источника · Северный сельскохозяйственный механизм публичного номера), больше компаний, пожалуйста, смотрите на месте.",
+    "es": "Lo anterior es la lista de empresas expuestas publicadas (solo limitada a la fuente: número de público de maquinaria agrícola del norte), para más empresas, consulte el sitio web.",
+    "pt": "Acima estão as empresas expositoras já divulgadas (limitadas às fontes · Canal de Máquinas Agrícolas do Norte), mais empresas, por favor, verifique no local.",
+    "ar": "ما سبق هو الشركات المشاركة المعلنة (محدودة للمصدر · حساب 北方农业机械 على الويكسين)، للمزيد من الشركات يرجى الرجوع إلى الموقع",
+    "fr": "Ci-dessus sont les entreprises exposantes annoncées (uniquement limitées à la source · compte public du nord de l'agriculture mécanisée), plus d'entreprises s'il vous plaît avec le site pour référence.",
+    "hi": "उपरोक्त प्रदर्शनी में भाग लेने वाली कंपनियों की सूची (केवल उत्तरी कृषि मशीनरी पब्लिक नंबर से), अधिक कंपनियों के लिए साइट के अनुसार",
   },
   "实地作业演示时间表": {
-    "en": "Live Demo Schedule"
+    "en": "Live Demo Schedule",
+    "ru": "График демонстрации работ на месте",
+    "es": "Calendario de demostración de trabajo en vivo",
+    "pt": "Tabela de horários de demonstração de trabalho ao vivo em campo",
+    "ar": "جدول زمني للعرض الحقيقي على الأرض",
+    "fr": "Tableau des heures de démonstration de travail sur le terrain",
+    "hi": "फ़ील्ड प्रदर्शन समय सारिणी",
   },
   "神雕农机 · 平台实力": {
-    "en": "Platform Strength"
+    "en": "Platform Strength",
+    "ru": "神雕农机 · Платформенные возможности",
+    "es": "神雕农机 · Fuerza de la plataforma",
+    "pt": "神雕农机 · Força da plataforma",
+    "ar": "神雕农机 · قوة المنصة",
+    "fr": "神雕农机 · Force de la plateforme",
+    "hi": "शेनडाओ कृषि मशीनरी · प्लेटफ़ॉर्म शक्ति",
   },
   "品牌收录": {
-    "en": "Brands"
+    "en": "Brands",
+    "ru": "Сбор брендов",
+    "es": "Registro de marcas",
+    "pt": "Inclusão de marcas",
+    "ar": "تسجيل العلامات التجارية",
+    "fr": "Enregistrement de marques",
+    "hi": "ब्रांड संग्रह",
   },
   "配件入库": {
-    "en": "Parts in Stock"
+    "en": "Parts in Stock",
+    "ru": "Запасные части в базе данных",
+    "es": "Almacenamiento de accesorios",
+    "pt": "Entrada de peças",
+    "ar": "تسجيل الأجزاء",
+    "fr": "Entrée de pièces",
+    "hi": "अनubhagat भंडार",
   },
   "品类手册": {
-    "en": "Manuals"
+    "en": "Manuals",
+    "ru": "Руководство по категориям",
+    "es": "Manual de categorías",
+    "pt": "Manual de categorias",
+    "ar": "دليل الفئات",
+    "fr": "Manuel de catégories",
+    "hi": "श्रेणी मैनुअल",
   },
   "语种覆盖": {
-    "en": "Languages"
+    "en": "Languages",
+    "ru": "Языковая поддержка",
+    "es": "Cobertura de idiomas",
+    "pt": "Cobertura de idiomas",
+    "ar": "التغطية اللغوية",
+    "fr": "Couverture linguistique",
+    "hi": "भाषा कवरेज",
   },
   "品牌入库，全球可见": {
-    "en": "Brands In, World Sees"
+    "en": "Brands In, World Sees",
+    "ru": "Бренды в базе данных, глобальная видимость",
+    "es": "Registro de marcas, visibilidad global",
+    "pt": "Inclusão de marcas, visível globalmente",
+    "ar": "تسجيل العلامات التجارية ، يمكن رؤيتها حول العالم",
+    "fr": "Enregistrement de marques, visible dans le monde entier",
+    "hi": "ब्रांड भंडार, वैश्विक रूप से दिखाई दे रहा है",
   },
   "入驻神雕农机，参与永不落幕的农机世界展会": {
-    "en": "Join Shendiao for the Always-On Expo"
+    "en": "Join Shendiao for the Always-On Expo",
+    "ru": "Присоединяйтесь к 神雕农机, участвуйте в бесконечной выставке сельскохозяйственных машин",
+    "es": "Ingresar a 神雕农机, participar en la exposición mundial de maquinaria agrícola que nunca termina",
+    "pt": "Participe da 神雕农机, participe da feira de máquinas agrícolas que nunca termina",
+    "ar": "الدخول إلى منصة 神雕农机 ، للمشاركة في معرض عالم المعدات الزراعية الذي لا ينتهي",
+    "fr": "Intégrer 神雕农机, participer à l'exposition mondiale de machines agricoles qui ne prend jamais fin",
+    "hi": "शेनडाओ कृषि मशीनरी में प्रवेश करें, कृषि मशीनरी विश्व प्रदर्शनी में भाग लें",
   },
   "进入世界农机博览会": {
-    "en": "Enter World Expo"
+    "en": "Enter World Expo",
+    "ru": "Вход на мировую выставку сельскохозяйственных машин",
+    "es": "Ingresar a la Exposición Mundial de Maquinaria Agrícola",
+    "pt": "Acesse a Feira Mundial de Máquinas Agrícolas",
+    "ar": "الدخول إلى معرض المعدات الزراعية العالمي",
+    "fr": "Entrer dans l'exposition mondiale de machines agricoles",
+    "hi": "विश्व कृषि मशीनरी प्रदर्शनी में प्रवेश करें",
   },
   "开通自助展台": {
-    "en": "Open Self-Expo Booth"
+    "en": "Open Self-Expo Booth",
+    "ru": "Открытие自助展台",
+    "es": "Abrir stand de autoayuda",
+    "pt": "Abra o stand de autoatendimento",
+    "ar": "فتح منصة العرض الذاتي",
+    "fr": "Ouvrir le stand autonome",
+    "hi": "स्व-सेवा प्रदर्शनी मंच खोलें",
   },
   "免费版": {
-    "en": "Free"
+    "en": "Free",
+    "ru": "Бесплатная версия",
+    "es": "Versión gratuita",
+    "pt": "Versão gratuita",
+    "ar": "النسخة المجانية",
+    "fr": "Version gratuite",
+    "hi": "मुफ़्त संस्करण",
   },
   "¥0/年": {
-    "en": "¥0/yr"
+    "en": "¥0/yr",
+    "ru": "¥0/год",
+    "es": "¥0/año",
+    "pt": "R$ 0/ano",
+    "ar": "0 يوان/سنة",
+    "fr": "0 ¥/an",
+    "hi": "₹0/वर्ष",
   },
   "永久免费": {
-    "en": "Always Free"
+    "en": "Always Free",
+    "ru": "Бесплатно навсегда",
+    "es": "Gratuito de por vida",
+    "pt": "Gratuito para sempre",
+    "ar": "مجانًا إلى الأبد",
+    "fr": "Gratuit à vie",
+    "hi": "आजीवन नि:शुल्क",
   },
   "品牌收录于品牌库": {
-    "en": "Brand listed in directory"
+    "en": "Brand listed in directory",
+    "ru": "Бренд в базе данных брендов",
+    "es": "Marca incluida en la base de datos de marcas",
+    "pt": "Marca incluída na biblioteca de marcas",
+    "ar": "تسجيل العلامة التجارية في قاعدة بيانات العلامات التجارية",
+    "fr": "Marque incluse dans la bibliothèque de marques",
+    "hi": "ब्रांड ब्रांड लाइब्रेरी में शामिल",
   },
   "5台展品上线": {
-    "en": "5 exhibits online"
+    "en": "5 exhibits online",
+    "ru": "5 экспонатов онлайн",
+    "es": "5 unidades de exhibición en línea",
+    "pt": "5 produtos em destaque",
+    "ar": "5 عينات معروضة",
+    "fr": "5 produits exposés en ligne",
+    "hi": "5 उत्पाद ऑनलाइन",
   },
   "中文展示": {
-    "en": "Chinese language"
+    "en": "Chinese language",
+    "ru": "Китайская демонстрация",
+    "es": "Exhibición en chino",
+    "pt": "Exibição em chinês",
+    "ar": "عرض باللغة الصينية",
+    "fr": "Présentation en chinois",
+    "hi": "चीनी प्रदर्शनी",
   },
   "基础浏览量统计": {
-    "en": "Basic page views"
+    "en": "Basic page views",
+    "ru": "Базовая статистика просмотров",
+    "es": "Estadísticas básicas de visualización",
+    "pt": "Estatísticas básicas de visualização",
+    "ar": "إحصائيات المشاهدة الأساسية",
+    "fr": "Statistiques de base de navigation",
+    "hi": "मूल ब्राउज़िंग आंकड़े",
   },
   "邮箱询盘通知": {
-    "en": "Email inquiry alerts"
+    "en": "Email inquiry alerts",
+    "ru": "Уведомление о запросе по электронной почте",
+    "es": "Notificación de consulta de correo electrónico",
+    "pt": "Notificação de consulta por e-mail",
+    "ar": "إشعار استفسار البريد الإلكتروني",
+    "fr": "Notification d'interrogation par e-mail",
+    "hi": "ईमेल पूछताछ सूचना",
   },
   "免费开通": {
-    "en": "Start Free"
+    "en": "Start Free",
+    "ru": "Бесплатное открытие",
+    "es": "Apertura gratuita",
+    "pt": "Abra gratuitamente",
+    "ar": "فتح مجانًا",
+    "fr": "Ouverture gratuite",
+    "hi": "नि:शुल्क खोलें",
   },
   "¥380/年": {
-    "en": "¥380/yr"
+    "en": "¥380/yr",
+    "ru": "¥380/год",
+    "es": "¥380/año",
+    "pt": "R$ 380/ano",
+    "ar": "380 يوان/سنة",
+    "fr": "380 ¥/an",
+    "hi": "₹380/वर्ष",
   },
   "日均¥1.04": {
-    "en": "¥1.04/day"
+    "en": "¥1.04/day",
+    "ru": "Среднесуточная цена ¥1.04",
+    "es": "¥1.04 por día",
+    "pt": "Média diária de R$ 1,04",
+    "ar": "متوسط اليومي 1.04 يوان",
+    "fr": "1,04 ¥ par jour",
+    "hi": "दैनिक ₹1.04",
   },
   "品牌库优先收录": {
-    "en": "Priority brand listing"
+    "en": "Priority brand listing",
+    "ru": "Приоритетная запись в бренд-каталоге",
+    "es": "Inclusión prioritaria en la base de datos de marcas",
+    "pt": "Biblioteca de marcas com inclusão prioritária",
+    "ar": "تسجيل أولويات العلامة التجارية في قاعدة بيانات العلامات التجارية",
+    "fr": "Bibliothèque de marques avec inscription prioritaire",
+    "hi": "ब्रांड लाइब्रेरी प्राथमिकता शामिल",
   },
   "20台展品": {
-    "en": "20 exhibits"
+    "en": "20 exhibits",
+    "ru": "20 экспонатов",
+    "es": "20 unidades de exhibición",
+    "pt": "20 produtos em destaque",
+    "ar": "20 عينة معروضة",
+    "fr": "20 produits exposés",
+    "hi": "20 उत्पाद",
   },
   "中文+英文双语": {
-    "en": "Chinese + English"
+    "en": "Chinese + English",
+    "ru": "Китайский + английский, два языка",
+    "es": "Exhibición en chino e inglés",
+    "pt": "Exibição em chinês e inglês",
+    "ar": "عرض باللغة الصينية والإنجليزية",
+    "fr": "Présentation en chinois et en anglais",
+    "hi": "चीनी + अंग्रेजी द्विभाषी",
   },
   "3条产品视频": {
-    "en": "3 product videos"
+    "en": "3 product videos",
+    "ru": "3 видео продукта",
+    "es": "3 videos de productos",
+    "pt": "3 vídeos de produtos",
+    "ar": "3 فيديوهات للمنتجات",
+    "fr": "3 vidéos de produits",
+    "hi": "3 उत्पाद वीडियो",
   },
   "月度浏览/询盘报告": {
-    "en": "Monthly analytics report"
+    "en": "Monthly analytics report",
+    "ru": "Ежемесячный отчет о просмотрах/запросах",
+    "es": "Informe mensual de visualización/consulta",
+    "pt": "Relatório mensal de visualização/consulta",
+    "ar": "تقرير شهرية للمشاهدة والاستفسار",
+    "fr": "Rapport mensuel de navigation/interrogation",
+    "hi": "मासिक ब्राउज़िंग/पूछताछ रिपोर्ट",
   },
   "邮件+短信询盘通知": {
-    "en": "Email + SMS alerts"
+    "en": "Email + SMS alerts",
+    "ru": "Уведомление о запросе по электронной почте + SMS",
+    "es": "Notificación de consulta por correo electrónico y mensaje de texto",
+    "pt": "Notificação de consulta por e-mail e SMS",
+    "ar": "إشعار استفسار البريد الإلكتروني والرسائل القصيرة",
+    "fr": "Notification d'interrogation par e-mail et SMS",
+    "hi": "ईमेल + एसएमएस पूछताछ सूचना",
   },
   "开通Pro": {
-    "en": "Get Pro"
+    "en": "Get Pro",
+    "ru": "Активировать Pro",
+    "es": "Abrir Pro",
+    "pt": "Abra Pro",
+    "ar": "فتح برو",
+    "fr": "Ouverture de Pro",
+    "hi": "प्रो खोलें",
   },
   "旗舰版": {
-    "en": "Flagship"
+    "en": "Flagship",
+    "ru": "Флагманская версия",
+    "es": "Edición de bandera",
+    "pt": "Edição de bandeira",
+    "ar": "الإصدار القياسي",
+    "fr": "Édition phare",
+    "hi": "फ्लैगशिप संस्करण",
   },
   "¥980/年": {
-    "en": "¥980/yr"
+    "en": "¥980/yr",
+    "ru": "¥980/год",
+    "es": "¥980/año",
+    "pt": "R$ 980/ano",
+    "ar": "980 يوان/سنة",
+    "fr": "980 ¥/an",
+    "hi": "₹980/वर्ष",
   },
   "日均¥2.68": {
-    "en": "¥2.68/day"
+    "en": "¥2.68/day",
+    "ru": "Среднесуточная цена ¥2.68",
+    "es": "¥2.68 por día",
+    "pt": "Média diária de R$ 2,68",
+    "ar": "متوسط اليومي 2.68 يوان",
+    "fr": "2,68 ¥ par jour",
+    "hi": "दैनिक ₹2.68",
   },
   "品牌库置顶展示": {
-    "en": "Top brand placement"
+    "en": "Top brand placement",
+    "ru": "Верхняя демонстрация бренд-каталога",
+    "es": "Exhibición destacada en la base de datos de marcas",
+    "pt": "Exibição de destaque na biblioteca de marcas",
+    "ar": "عرض العلامة التجارية في قاعدة بيانات العلامات التجارية",
+    "fr": "Présentation en tête de la bibliothèque de marques",
+    "hi": "ब्रांड लाइब्रेरी शीर्ष प्रदर्शनी",
   },
   "50台展品": {
-    "en": "50 exhibits"
+    "en": "50 exhibits",
+    "ru": "50 экспонатов",
+    "es": "50 unidades de exhibición",
+    "pt": "50 produtos em destaque",
+    "ar": "50 عينة معروضة",
+    "fr": "50 produits exposés",
+    "hi": "50 उत्पाद",
   },
   "中/英/俄三语": {
-    "en": "Chinese/English/Russian"
+    "en": "Chinese/English/Russian",
+    "ru": "Китайский/английский/русский, три языка",
+    "es": "Tres idiomas: chino, inglés y ruso",
+    "pt": "Exibição em chinês, inglês e russo",
+    "ar": "عرض باللغة الصينية والإنجليزية والروسية",
+    "fr": "Présentation en chinois, anglais et russe",
+    "hi": "चीनी/अंग्रेजी/रूसी त्रिभाषी",
   },
   "10条产品视频": {
-    "en": "10 product videos"
+    "en": "10 product videos",
+    "ru": "10 видео продукта",
+    "es": "10 videos de productos",
+    "pt": "10 vídeos de produtos",
+    "ar": "10 فيديوهات للمنتجات",
+    "fr": "10 vidéos de produits",
+    "hi": "10 उत्पाद वीडियो",
   },
   "周度报告+竞品对比": {
-    "en": "Weekly report + competitor"
+    "en": "Weekly report + competitor",
+    "ru": "Еженедельный отчет + сравнение конкурентов",
+    "es": "Informe semanal + comparación de competidores",
+    "pt": "Relatório semanal + comparação de concorrentes",
+    "ar": "تقرير أسبوعي ومقارنة بالمنافسين",
+    "fr": "Rapport hebdomadaire + comparaison des produits concurrents",
+    "hi": "साप्ताहिक रिपोर्ट + प्रतिस्पर्धी तुलना",
   },
   "优先SEO排名": {
-    "en": "Priority SEO ranking"
+    "en": "Priority SEO ranking",
+    "ru": "Приоритетное SEO-ранжирование",
+    "es": "Clasificación SEO prioritaria",
+    "pt": "Classificação SEO prioritária",
+    "ar": "ترتيب SEO الأولوي",
+    "fr": "Classement SEO prioritaire",
+    "hi": "प्राथमिकता एसईओ रैंकिंग",
   },
   "月轮播推荐位": {
-    "en": "Monthly featured slot"
+    "en": "Monthly featured slot",
+    "ru": "Ежемесячная позиция для рекомендаций",
+    "es": "Posición de recomendación de carrusel mensual",
+    "pt": "Posição de carrossel de recomendação mensal",
+    "ar": "مكان عرض شهرية",
+    "fr": "Emplacement de recommandation de rotation mensuelle",
+    "hi": "मासिक रूप से स्लाइडर अनुशंसा स्थान",
   },
   "开通旗舰": {
-    "en": "Get Flagship"
+    "en": "Get Flagship",
+    "ru": "Активировать флагманскую версию",
+    "es": "Abrir bandera",
+    "pt": "Abra a edição de bandeira",
+    "ar": "فتح الإصدار القياسي",
+    "fr": "Ouverture de l'édition phare",
+    "hi": "फ्लैगशिप खोलें",
   },
   "战略版": {
-    "en": "Strategic"
+    "en": "Strategic",
+    "ru": "Стратегическая версия",
+    "es": "Edición estratégica",
+    "pt": "Edição estratégica",
+    "ar": "الإصدار الاستراتيجي",
+    "fr": "Édition stratégique",
+    "hi": "रणनीतिक संस्करण",
   },
   "¥2,880/年": {
-    "en": "¥2,880/yr"
+    "en": "¥2,880/yr",
+    "ru": "¥2,880/год",
+    "es": "¥2,880/año",
+    "pt": "R$ 2.880/ano",
+    "ar": "2880 يوان/سنة",
+    "fr": "2 880 ¥/an",
+    "hi": "₹2,880/वर्ष",
   },
   "日均¥7.89": {
-    "en": "¥7.89/day"
+    "en": "¥7.89/day",
+    "ru": "Среднесуточная цена ¥7.89",
+    "es": "Diario ¥7.89",
+    "pt": "Média diária de ¥7.89",
+    "ar": "يورو7.89 في اليوم",
+    "fr": "Moyenne journalière ¥7.89",
+    "hi": "दैनिक ¥7.89",
   },
   "品牌库首页推荐": {
-    "en": "Homepage featured"
+    "en": "Homepage featured",
+    "ru": "Рекомендация на главной странице бренд-каталога",
+    "es": "Inicio de la biblioteca de marcas recomendadas",
+    "pt": "Página inicial do banco de marcas recomendada",
+    "ar": "الصفحة الرئيسية لمكتبة العلامة التجارية",
+    "fr": "Page d'accueil de la bibliothèque de marques recommandée",
+    "hi": "ब्रांड लाइब्रेरी होमपेज अनुशंसा",
   },
   "无限展品": {
-    "en": "Unlimited exhibits"
+    "en": "Unlimited exhibits",
+    "ru": "Неограни!!!!!ено количество экспонатов",
+    "es": "Exposición ilimitada",
+    "pt": "Exposição ilimitada",
+    "ar": "عرض غير محدود",
+    "fr": "Exposition de produits illimités",
+    "hi": "असीमित प्रदर्शनी",
   },
   "全8语种覆盖": {
-    "en": "All 8 languages"
+    "en": "All 8 languages",
+    "ru": "Полное покрытие 8 языков",
+    "es": "Cobertura en 8 idiomas",
+    "pt": "Cobertura em 8 idiomas",
+    "ar": "تغطية بالكامل 8 لغات",
+    "fr": "Couverture de 8 langues",
+    "hi": "पूरी 8 भाषाओं में कवरेज",
   },
   "无限视频+VR展示": {
-    "en": "Unlimited video + VR"
+    "en": "Unlimited video + VR",
+    "ru": "Неограниченное видео + VR-демонстрация",
+    "es": "Exposición de video + VR ilimitada",
+    "pt": "Vídeo ilimitado + VR em exposição",
+    "ar": "فيديو غير محدود + عرض VR",
+    "fr": "Vidéo et VR illimités",
+    "hi": "असीमित वीडियो + वीआर प्रदर्शनी",
   },
   "实时数据+行业对比": {
-    "en": "Real-time + industry data"
+    "en": "Real-time + industry data",
+    "ru": "Реальные данные + сравнение отрасли",
+    "es": "Datos en tiempo real + comparación de la industria",
+    "pt": "Dados em tempo real + comparação de setor",
+    "ar": "بيانات في الوقت الحقيقي + مقارنة بالصناعة",
+    "fr": "Données en temps réel + comparaison sectorielle",
+    "hi": "वास्तविक समय डेटा + उद्योग तुलना",
   },
   "SEO置顶+品牌词保护": {
-    "en": "Top SEO + brand term"
+    "en": "Top SEO + brand term",
+    "ru": "SEO-верхняя позиция + защита бренда",
+    "es": "SEO en la parte superior + protección de palabras clave de la marca",
+    "pt": "SEO no topo + proteção de palavra-chave de marca",
+    "ar": "SEO في أعلى القائمة + حماية كلمة العلامة التجارية",
+    "fr": "SEO en tête de liste + protection des mots-clés de marque",
+    "hi": "एसईओ शीर्ष + ब्रांड शब्द सुरक्षा",
   },
   "季度专题置顶位": {
-    "en": "Quarterly featured"
+    "en": "Quarterly featured",
+    "ru": "Квартальная верхняя позиция для специальных тем",
+    "es": "Lugar destacado en la parte superior del tema trimestral",
+    "pt": "Posição de tópico trimestral no topo",
+    "ar": "مكان مخصص في الموضوعات الفصلية",
+    "fr": "Place de tête de liste pour les sujets trimestriels",
+    "hi": "तिमाही विशेष शीर्ष स्थान",
   },
   "1对1客户经理": {
-    "en": "Dedicated account mgr"
+    "en": "Dedicated account mgr",
+    "ru": "1 на 1 менеджер по работе с клиентами",
+    "es": "1 contra 1 administrador de clientes",
+    "pt": "Gerente de cliente 1 a 1",
+    "ar": "مدير عميل 1 إلى 1",
+    "fr": "1 gestionnaire de compte client",
+    "hi": "1 से 1 ग्राहक प्रबंधक",
   },
   "联系开通": {
-    "en": "Contact Us"
+    "en": "Contact Us",
+    "ru": "Связаться для открытия",
+    "es": "Contactar para abrir",
+    "pt": "Contate para abrir",
+    "ar": "اتصل لفتح",
+    "fr": "Contacter pour ouvrir",
+    "hi": "संपर्क खोलें",
   },
   "品牌已收录": {
-    "en": "Brands Listed"
+    "en": "Brands Listed",
+    "ru": "Бренд уже добавлен",
+    "es": "La marca ya ha sido recogida",
+    "pt": "Marca já incluída",
+    "ar": "تم تسجيل العلامة التجارية",
+    "fr": "Marque déjà enregistrée",
+    "hi": "ब्रांड पहले से ही संग्रहीत किया गया है",
   },
   "月均询盘": {
-    "en": "Avg Monthly Inquiries"
+    "en": "Avg Monthly Inquiries",
+    "ru": "Среднее количество запросов в месяц",
+    "es": "Inquiriendo el plato promedio por mes",
+    "pt": "Inquéritos médios mensais",
+    "ar": "متوسط الاستفسارات الشهرية",
+    "fr": "Moyenne mensuelle des demandes",
+    "hi": "मासिक पूछताछ",
   },
   "地头展背书": {
-    "en": "Field Expo Heritage"
+    "en": "Field Expo Heritage",
+    "ru": "Рекомендация от компании",
+    "es": "Apoyo de la espalda de la tierra",
+    "pt": "Livro de exposição de terra",
+    "ar": "دعم المعرض المحلي",
+    "fr": "Référence de l'exposition",
+    "hi": "जमीनी स्तर की प्रदर्शनी पीठ पुस्तक",
   },
   "✨ 品牌入库 · 全球可见": {
-    "en": "✨ Brands In · World Sees"
+    "en": "✨ Brands In · World Sees",
+    "ru": "✨ Добавление бренда · Глобальная видимость",
+    "es": "✨ Marca de entrada · Visible a nivel mundial",
+    "pt": "✨ Marca no banco de dados · Visível globalmente",
+    "ar": "✨ تسجيل العلامة التجارية · مرئية عالمية",
+    "fr": "✨ Enregistrement de la marque · Visible dans le monde entier",
+    "hi": "✨ ब्रांड इनलाइब्रेरी · वैश्विक दृश्यमान",
   },
   "开通您的自助展台": {
-    "en": "Open Your Self-Expo Booth"
+    "en": "Open Your Self-Expo Booth",
+    "ru": "Открыть вашу автоматическую выставку",
+    "es": "Abrir su stand de autoayuda",
+    "pt": "Abra seu stand de autoatendimento",
+    "ar": "افتح معرضك الذاتي",
+    "fr": "Ouvrez votre stand autonome",
+    "hi": "अपना स्वयं सहायता प्रदर्शनी मंच खोलें",
   },
   "5分钟完成注册，自动生成品牌专属页面，纳入「永不落幕的农机世界展会」体系": {
-    "en": "5-minute registration, auto-generated brand page, join the Always-On Expo system."
+    "en": "5-minute registration, auto-generated brand page, join the Always-On Expo system.",
+    "ru": "5 минут для завершения регистрации, автоматическое создание страницы бренда, включение в систему «Всегда открытой выставки сельскохозяйственной техники»",
+    "es": "5 minutos para completar el registro, página de marca generada automáticamente, incorporada al sistema de la exposición mundial de maquinaria agrícola que nunca termina",
+    "pt": "5 minutos para concluir o registro, página de marca exclusiva gerada automaticamente, integrada ao sistema da \"Feira Mundial de Máquinas Agrícolas que nunca termina\"",
+    "ar": "استكمال التسجيل في 5 دقائق ، وتوليد صفحة مخصصة للعلامة التجارية تلقائيًا ، والانضمام إلى نظام \"معرض عالم农ي دائم\"",
+    "fr": "5 minutes pour terminer l'inscription, page de marque dédiée générée automatiquement, intégrée au système de l'« Exposition mondiale de machines agricoles sans fin »",
+    "hi": "5 मिनट में पंजीकरण पूरा करें, स्वचालित रूप से ब्रांड विशेष पृष्ठ उत्पन्न करें, «निरंतर कृषि मशीनरी विश्व प्रदर्शनी» प्रणाली में शामिल करें",
   },
   "为什么选择自助展台？": {
-    "en": "Why Choose Self-Expo Booth?"
+    "en": "Why Choose Self-Expo Booth?",
+    "ru": "Почему выбрать автоматическую выставку？",
+    "es": "¿Por qué elegir el stand de autoayuda?",
+    "pt": "Por que escolher o stand de autoatendimento？",
+    "ar": "لماذا تختار معرضًا ذاتيًا؟",
+    "fr": "Pourquoi choisir un stand autonome?",
+    "hi": "स्वयं सहायता प्रदर्शनी का चयन क्यों करें?",
   },
   "永久在线": {
-    "en": "Always Online"
+    "en": "Always Online",
+    "ru": "Постоянно в сети",
+    "es": "En línea permanente",
+    "pt": "Online permanente",
+    "ar": "متاح دائمًا",
+    "fr": "En ligne en permanence",
+    "hi": "स्थायी रूप से ऑनलाइन",
   },
   "不受线下展会时间限制，24小时×365天持续曝光，买家随时访问": {
-    "en": "24/7/365 global exposure, buyers visit anytime"
+    "en": "24/7/365 global exposure, buyers visit anytime",
+    "ru": "Не ограничена временем офлайн-выставки, 24 часа × 365 дней непрерывного показа, покупатели могут посетить в любое время",
+    "es": "No sujeto a las limitaciones de tiempo de la feria en línea, exposición continua de 24 horas × 365 días, los compradores pueden acceder en cualquier momento",
+    "pt": "Não é limitado pelo tempo da feira offline, exposição contínua 24 horas x 365 dias, compradores podem acessar a qualquer momento",
+    "ar": "لا يتم تقييده بزمن المعرض المحلي ، 24 ساعة × 365 يومًا من التعرّض المستمر ، يمكن للمشتري الوصول في أي وقت",
+    "fr": "Pas de limitation de temps pour les expositions en ligne, exposition continue 24h/24 × 365 jours, les acheteurs peuvent accéder à tout moment",
+    "hi": "ऑफलाइन प्रदर्शनी के समय सीमा से मुक्त, 24 घंटे × 365 दिनों के लिए निरंतर एक्सपोजर, खरीदार किसी भी समय पहुंच सकते हैं",
   },
   "自主发布": {
-    "en": "Self-Publish"
+    "en": "Self-Publish",
+    "ru": "Самостоятельная публикация",
+    "es": "Publicación autónoma",
+    "pt": "Publicação autônoma",
+    "ar": "نشر ذاتي",
+    "fr": "Publication autonome",
+    "hi": "स्व-जारी",
   },
   "品牌信息、展品、视频、联系方式全部自助管理，实时更新": {
-    "en": "Manage brand info, products, videos, and contacts — all self-service"
+    "en": "Manage brand info, products, videos, and contacts — all self-service",
+    "ru": "Информация бренда, экспонаты, видео, контактная информация полностью управляются автоматически, обновляются в режиме реального времени",
+    "es": "Información de la marca, productos, videos, formas de contacto, todos gestionados de forma autónoma, actualizados en tiempo real",
+    "pt": "Informações da marca, exposições, vídeos, formas de contato todas gerenciadas de forma autônoma, atualizadas em tempo real",
+    "ar": "إدارة المعلومات الخاصة بالعلامة التجارية والمنتجات والفيديو ووسائل الاتصال بالكامل ، وتحديث في الوقت الحقيقي",
+    "fr": "Informations de marque, produits, vidéos, coordonnées toutes gérées de manière autonome, mises à jour en temps réel",
+    "hi": "ब्रांड जानकारी, प्रदर्शनी, वीडियो, संपर्क विवरण सभी स्व-प्रबंधन, वास्तविक समय अद्यतन",
   },
   "多语种展示": {
-    "en": "Multi-Language"
+    "en": "Multi-Language",
+    "ru": "Многоязычная демонстрация",
+    "es": "Exposición multilingüe",
+    "pt": "Exposição multilíngue",
+    "ar": "عرض متعدد اللغات",
+    "fr": "Présentation multilingue",
+    "hi": "बहुस्तरीय प्रदर्शनी",
   },
   "从中文到8语种，覆盖200+国家买家，Pro版起即含英/俄": {
-    "en": "From Chinese to 8 languages, covering 200+ country buyers"
+    "en": "From Chinese to 8 languages, covering 200+ country buyers",
+    "ru": "От китайского до 8 языков, охватывает более 200 стран и покупателей, версия Pro включает английский и русский",
+    "es": "Desde chino hasta 8 idiomas, cubriendo a compradores de más de 200 países, la versión Pro incluye inglés / ruso",
+    "pt": "Do chinês para 8 idiomas, cobrindo mais de 200 países compradores, edição Pro inclui inglês e russo",
+    "ar": "من اللغة الصينية إلى 8 لغات ، تغطية 200+ بلد للمشترين ، الإصدار Pro يتضمن الإنجليزية / الروسية",
+    "fr": "Du chinois à 8 langues, couverture de plus de 200 pays acheteurs, édition Pro incluse pour l'anglais et le russe",
+    "hi": "चीनी से 8 भाषाओं तक, 200+ देशों के खरीदारों को कवर करना, प्रो संस्करण से शुरू",
   },
   "数据驱动": {
-    "en": "Data-Driven"
+    "en": "Data-Driven",
+    "ru": "Данные для принятия решений",
+    "es": "Impulsado por datos",
+    "pt": "Direcionado por dados",
+    "ar": "قيادة البيانات",
+    "fr": "Pilotage par les données",
+    "hi": "डेटा संचालित",
   },
   "浏览量、询盘量、来源分析一目了然，优化参展策略": {
-    "en": "Page views, inquiries, source analysis — optimize your strategy"
+    "en": "Page views, inquiries, source analysis — optimize your strategy",
+    "ru": "Количество просмотров, количество запросов, анализ источников - все rõ и понятно, оптимизация стратегии участия в выставке",
+    "es": "Cantidad de visitas, cantidad de consultas, análisis de fuentes a simple vista, optimización de la estrategia de exposición",
+    "pt": "Visualizações, quantidades de inquéritos, análise de origem claras, otimizando a estratégia de exposição",
+    "ar": "مشاهدة الحجم ، وحجم الاستفسار ، وتحليل المصدر واضح ، وتحسين استراتيجية المشاركة في المعرض",
+    "fr": "Analyse des volumes de visites, des demandes, des sources en un coup d'œil, optimisation de la stratégie d'exposition",
+    "hi": "दृश्य मात्रा, पूछताछ मात्रा, स्रोत विश्लेषण एक नज़र में स्पष्ट, प्रदर्शनी रणनीति को अनुकूलित करें",
   },
   "选择适合您的版本": {
-    "en": "Choose Your Tier"
+    "en": "Choose Your Tier",
+    "ru": "Выберите подходящую версию",
+    "es": "Elegir la versión adecuada",
+    "pt": "Escolha a versão certa para você",
+    "ar": "اختر الإصدار المناسب لك",
+    "fr": "Choisissez la version qui vous convient",
+    "hi": "अपने लिए उपयुक्त संस्करण चुनें",
   },
   "推荐": {
-    "en": "Popular"
+    "en": "Popular",
+    "ru": "Рекомендуется",
+    "es": "Recomendado",
+    "pt": "Recomendado",
+    "ar": "موصى به",
+    "fr": "Recommandé",
+    "hi": "अनुशंसा",
   },
   "扫码付款": {
-    "en": "Scan to Pay"
+    "en": "Scan to Pay",
+    "ru": "Оплата по QR-коду",
+    "es": "Pagar con código de barras",
+    "pt": "Pague com código de barras",
+    "ar": "دفع بواسطة المسح",
+    "fr": "Paiement par scan",
+    "hi": "स्कैन और भुगतान करें",
   },
   "选择版本后，使用微信或支付宝扫码付款，付款确认后24小时内开通": {
-    "en": "Scan to pay after tier selection. Activated within 24 hours after payment confirmed."
+    "en": "Scan to pay after tier selection. Activated within 24 hours after payment confirmed.",
+    "ru": "После выбора версии используйте WeChat или Alipay для оплаты по QR-коду, после подтверждения оплаты откроется в течение 24 часов",
+    "es": "Después de elegir la versión, use WeChat o Alipay para pagar con código de barras, después de confirmar el pago, abrir dentro de las 24 horas",
+    "pt": "Escolha a versão e use o WeChat ou o Alipay para pagar com código de barras, após a confirmação do pagamento, abra dentro de 24 horas",
+    "ar": "اختر الإصدار ، ثم استخدم WeChat أو Alipay للمسح والدفع ، بعد تأكيد الدفع ، افتح في غضون 24 ساعة",
+    "fr": "Choisissez la version, puis utilisez WeChat ou Alipay pour scanner et payer, la confirmation de paiement sera activée dans les 24 heures",
+    "hi": "संस्करण का चयन करने के बाद, वीचैट या अलीपे का उपयोग करके स्कैन और भुगतान करें, भुगतान की पुष्टि के 24 घंटे के भीतर खोलें",
   },
   "付款后请将截图发送至 932133255@qq.com 或致电 +86 18633878701 确认": {
-    "en": "After payment, send screenshot to 932133255@qq.com or call +86 18633878701."
+    "en": "After payment, send screenshot to 932133255@qq.com or call +86 18633878701.",
+    "ru": "После оплаты, пожалуйста, отправьте скриншот на 932133255@qq.com или позвоните по номеру +86 18633878701 для подтверждения",
+    "es": "Después del pago, envíe una captura de pantalla a 932133255@qq.com o llame al +86 18633878701 para confirmar",
+    "pt": "Após o pagamento, por favor envie uma captura de tela para 932133255@qq.com ou ligue para +86 18633878701 para confirmar",
+    "ar": "بعد الدفع ، يرجى إرسال لقطة الشاشة إلى 932133255@qq.com أو الاتصال الهاتفي +86 18633878701 للتأكيد",
+    "fr": "Après paiement, veuillez envoyer une capture d'écran à 932133255@qq.com ou appelez le +86 18633878701 pour confirmer",
+    "hi": "भुगतान के बाद कृपया स्क्रीनशॉट 932133255@qq.com या +86 18633878701 पर भेजें और पुष्टि करें",
   },
   "5步开通自助展台": {
-    "en": "5 Steps to Open Your Booth"
+    "en": "5 Steps to Open Your Booth",
+    "ru": "5 шагов для открытия автоматической выставки",
+    "es": "5 pasos para abrir el stand de auto-servicio",
+    "pt": "5 passos para abrir o stand de autoatendimento",
+    "ar": "5 خطوات لفتح منصة العرض الذاتية",
+    "fr": "5 étapes pour ouvrir un stand autonome",
+    "hi": "5 कदमों में स्व-सेवा प्रदर्शनी क्षेत्र खोलें",
   },
   "注册账号": {
-    "en": "Register"
+    "en": "Register",
+    "ru": "Регистрация аккаунта",
+    "es": "Registrar cuenta",
+    "pt": "Registrar conta",
+    "ar": "تسجيل حساب",
+    "fr": "Inscrivez-vous",
+    "hi": "पंजीकरण खाता",
   },
   "填写企业信息，选择版本": {
-    "en": "Company info & tier selection"
+    "en": "Company info & tier selection",
+    "ru": "Заполнение информации о компании, выбор версии",
+    "es": "Rellenar información de la empresa, seleccionar versión",
+    "pt": "Preencher informações da empresa, escolher versão",
+    "ar": "إدخال معلومات الشركة واختيار الإصدار",
+    "fr": "Remplissez les informations d'entreprise, choisissez la version",
+    "hi": "कंपनी जानकारी भरें, संस्करण चुनें",
   },
   "品牌档案": {
-    "en": "Brand Profile"
+    "en": "Brand Profile",
+    "ru": "Архив бренда",
+    "es": "Archivo de marca",
+    "pt": "Arquivo de marca",
+    "ar": "أرشيف العلامة التجارية",
+    "fr": "Dossier de marque",
+    "hi": "ब्रांड आर्काइव",
   },
   "上传Logo、简介、定位、品类": {
-    "en": "Logo, intro, positioning"
+    "en": "Logo, intro, positioning",
+    "ru": "Загрузка логотипа, описания, местоположения, категории",
+    "es": "Subir logotipo, descripción, ubicación, categoría",
+    "pt": "Upload de logotipo, descrição, localização, categoria",
+    "ar": "تحميل الشعار والوصف والموقع والفئة",
+    "fr": "Téléchargez le logo, la description, la localisation, la catégorie",
+    "hi": "लोगो, परिचय, स्थान, श्रेणी अपलोड करें",
   },
   "发布展品": {
-    "en": "List Products"
+    "en": "List Products",
+    "ru": "Публикация экспонатов",
+    "es": "Publicar productos",
+    "pt": "Publicar produtos",
+    "ar": "نشر المنتجات",
+    "fr": "Publiez les produits",
+    "hi": "प्रदर्शनी उत्पाद जारी करें",
   },
   "上传机型照片、视频、参数": {
-    "en": "Upload products, photos, videos"
+    "en": "Upload products, photos, videos",
+    "ru": "Загрузка фотографий машин, видео, параметров",
+    "es": "Subir fotos, videos y parámetros del modelo",
+    "pt": "Upload de fotos, vídeos e parâmetros do modelo",
+    "ar": "تحميل صور وвидео ومواصفات النماذج",
+    "fr": "Téléchargez les photos, les vidéos et les paramètres du modèle",
+    "hi": "मॉडल फोटो, वीडियो, पैरामीटर अपलोड करें",
   },
   "提交审核": {
-    "en": "Submit for Review"
+    "en": "Submit for Review",
+    "ru": "Отправка на модерацию",
+    "es": "Enviar para revisión",
+    "pt": "Enviar para revisão",
+    "ar": "إرسال للمراجعة",
+    "fr": "Soumettre à l'examen",
+    "hi": "समीक्षा के लिए जमा करें",
   },
   "AI自动审+人工抽检": {
-    "en": "AI review + human spot-check"
+    "en": "AI review + human spot-check",
+    "ru": "Автоматический просмотр + ручная проверка",
+    "es": "Revisión automática de IA + inspección manual",
+    "pt": "Revisão automática por IA + verificação manual",
+    "ar": "مراجعة آلية ومراجعة يدوية",
+    "fr": "Examen automatique par IA + vérification aléatoire",
+    "hi": "एआई स्वचालित समीक्षा + मैनुअल नमूना जांच",
   },
   "开通上线": {
-    "en": "Go Live!"
+    "en": "Go Live!",
+    "ru": "Активация онлайн",
+    "es": "Abrir en línea",
+    "pt": "Abrir e publicar",
+    "ar": "التفعيل والاستخدام",
+    "fr": "Ouvrez et mettez en ligne",
+    "hi": "खोलें और ऑनलाइन हों",
   },
   "获得专属品牌页和二维码": {
-    "en": "Get your brand page & QR code"
+    "en": "Get your brand page & QR code",
+    "ru": "Получить эксклюзивную страницу бренда и QR-код",
+    "es": "Obtener página y código QR exclusivos de la marca",
+    "pt": "Obter página de marca exclusiva e código QR",
+    "ar": "الحصول على صفحة علامة تجارية حصرية ورمزQR",
+    "fr": "Obtenez une page de marque exclusive et un code QR",
+    "hi": "विशेष ब्रांड पेज और क्यूआर कोड प्राप्त करें",
   },
   "已有309个品牌入驻，下一个就是您": {
-    "en": "309 Brands Already In — You're Next"
+    "en": "309 Brands Already In — You're Next",
+    "ru": "Уже 309 брендов присоединились, следующим будете Вы",
+    "es": "309 marcas ya se han unido, la próxima es usted",
+    "pt": "Já tem 309 marcas que entraram, a próxima é você",
+    "ar": "لقد انضم 309 علامة تجارية بالفعل ، والذي يأتي بعد ذلك هو أنت",
+    "fr": "309 marques ont déjà rejoint, vous êtes le suivant",
+    "hi": "309 ब्रांड पहले से ही शामिल हुए हैं, अगला आप हैं",
   },
   "品牌入库即获全球曝光。从免费版开始，无风险试水。": {
-    "en": "Brand Listing = Global Exposure. Start free, no risk."
+    "en": "Brand Listing = Global Exposure. Start free, no risk.",
+    "ru": "Добавление бренда в базу данных дает глобальное освещение. Начните с бесплатной версии!!!!!",
+    "es": "Almacenar la marca para obtener exposición global. Comience con la versión gratuita, sin riesgos.",
+    "pt": "Armazenar marca para obter exposição global. Comece com a versão gratuita, sem riscos.",
+    "ar": "تسجيل العلامة التجارية للحصول على التعرّف العالمي. ابدأ من الإصدار المجاني ، بدون مخاطر.",
+    "fr": "L'entrée de la marque vous donne une exposition mondiale. Commencez par la version gratuite, sans risque.",
+    "hi": "ब्रांड डेटाबेस में जोड़ने पर वैश्विक एक्सपोजर प्राप्त करें। मुफ्त संस्करण से शुरू करें, जोखिम मुक्त।",
   },
   "免费开通→": {
-    "en": "Start Free →"
+    "en": "Start Free →",
+    "ru": "Бесплатная активация →",
+    "es": "Abrir de forma gratuita →",
+    "pt": "Abrir gratuitamente →",
+    "ar": "فتح مجاني →",
+    "fr": "Ouvrez gratuitement →",
+    "hi": "मुफ्त में खोलें →",
   },
   "浏览展会": {
-    "en": "Browse Expo"
+    "en": "Browse Expo",
+    "ru": "Просмотр выставки",
+    "es": "Ver feria",
+    "pt": "Navegar pela feira",
+    "ar": "تصفح المعرض",
+    "fr": "Parcourez l'exposition",
+    "hi": "प्रदर्शनी ब्राउज़ करें",
   },
   "确定删除该展品？": {
-    "en": "Delete this item?"
+    "en": "Delete this item?",
+    "ru": "Подтвердите удаление этого экспоната?",
+    "es": "¿Confirmar eliminación de este producto?",
+    "pt": "Confirmar exclusão deste produto?",
+    "ar": "تأكيد حذف هذا المنتج؟",
+    "fr": "Confirmer la suppression de ce produit?",
+    "hi": "क्या आप इस प्रदर्शनी उत्पाद को हटाना चाहते हैं?",
   },
   "自助展台管理": {
-    "en": "Booth Management"
+    "en": "Booth Management",
+    "ru": "Самостоятельное управление выставочным стендом",
+    "es": "Administración del stand de auto-servicio",
+    "pt": "Gerenciamento do stand de autoatendimento",
+    "ar": "إدارة منصة العرض الذاتية",
+    "fr": "Gestion du stand autonome",
+    "hi": "स्व-सेवा प्रदर्शनी क्षेत्र प्रबंधन",
   },
   "登录后管理您的展品和询盘": {
-    "en": "Login to manage your booth"
+    "en": "Login to manage your booth",
+    "ru": "После входа в систему управляйте своими экспонатами и запросами",
+    "es": "Iniciar sesión para administrar sus productos y consultas",
+    "pt": "Logar para gerenciar seus produtos e consultas",
+    "ar": "ادارة منتجاتك وطلباتك بعد تسجيل الدخول",
+    "fr": "Gérez vos produits et vos demandes de renseignements après connexion",
+    "hi": "लॉगिन करें और अपने प्रदर्शनी उत्पाद और पूछताछ का प्रबंधन करें",
   },
   "账号": {
-    "en": "Username"
+    "en": "Username",
+    "ru": "Аккаунт",
+    "es": "Cuenta",
+    "pt": "Conta",
+    "ar": "حساب",
+    "fr": "Compte",
+    "hi": "खाता",
   },
   "密码": {
-    "en": "Password"
+    "en": "Password",
+    "ru": "Пароль",
+    "es": "Contraseña",
+    "pt": "Senha",
+    "ar": "كلمة المرور",
+    "fr": "Mot de passe",
+    "hi": "पासवर्ड",
   },
   "新入驻品牌请联系管理员获取账号": {
-    "en": "Contact admin for account"
+    "en": "Contact admin for account",
+    "ru": "Новые бренды, пожалуйста, свяжитесь с администратором, чтобы получить аккаунт",
+    "es": "Las nuevas marcas que se unen, por favor contacten al administrador para obtener la cuenta",
+    "pt": "Novas marcas que entram em contato, por favor, contate o administrador para obter conta",
+    "ar": "التواصل مع المسؤول للحصول على حساب العلامات التجارية الجديدة",
+    "fr": "Les nouvelles marques doivent contacter l'administrateur pour obtenir un compte",
+    "hi": "नए ब्रांड कृपया प्रबंधक से संपर्क करें खाता प्राप्त करने के लिए",
   },
   "我的自助展台": {
-    "en": "My Self-Expo Booth"
+    "en": "My Self-Expo Booth",
+    "ru": "Мой самостоятельный выставочный стенд",
+    "es": "Mi stand de auto-servicio",
+    "pt": "Meu stand de autoatendimento",
+    "ar": "منصتي",
+    "fr": "Mon stand autonome",
+    "hi": "मेरा स्व-सेवा प्रदर्शनी क्षेत्र",
   },
   "查看展台": {
-    "en": "View Booth"
+    "en": "View Booth",
+    "ru": "Просмотреть стенд",
+    "es": "Ver stand",
+    "pt": "Ver stand",
+    "ar": "عرض المنصة",
+    "fr": "Voir le stand",
+    "hi": "प्रदर्शनी क्षेत्र देखें",
   },
   "退出": {
-    "en": "Logout"
+    "en": "Logout",
+    "ru": "Выйти",
+    "es": "Salir",
+    "pt": "Sair",
+    "ar": "خروج",
+    "fr": "Quitter",
+    "hi": "लॉगआउट",
   },
   "展品数": {
-    "en": "Items"
+    "en": "Items",
+    "ru": "Количество экспонатов",
+    "es": "Número de productos",
+    "pt": "Número de produtos",
+    "ar": "عدد المنتجات",
+    "fr": "Nombre de produits",
+    "hi": "प्रदर्शनी उत्पाद संख्या",
   },
   "总浏览": {
-    "en": "Views"
+    "en": "Views",
+    "ru": "Общее количество просмотров",
+    "es": "Visitas totales",
+    "pt": "Visualizações totais",
+    "ar": "مجموع المشاهدات",
+    "fr": "Total des vues",
+    "hi": "कुल ब्राउज़",
   },
   "询盘": {
-    "en": "Inquiries"
+    "en": "Inquiries",
+    "ru": "Запросы",
+    "es": "Consultas",
+    "pt": "Consultas",
+    "ar": "طلبات الشراء",
+    "fr": "Demandes de renseignements",
+    "hi": "पूछताछ",
   },
   "展品管理": {
-    "en": "Item Management"
+    "en": "Item Management",
+    "ru": "Управление экспонатами",
+    "es": "Administración de productos",
+    "pt": "Gerenciamento de produtos",
+    "ar": "إدارة المنتجات",
+    "fr": "Gestion des produits",
+    "hi": "प्रदर्शनी उत्पाद प्रबंधन",
   },
   "添加展品": {
-    "en": "Add Item"
+    "en": "Add Item",
+    "ru": "Добавить экспонат",
+    "es": "Agregar producto",
+    "pt": "Adicionar produto",
+    "ar": "إضافة منتج",
+    "fr": "Ajouter un produit",
+    "hi": "प्रदर्शनी उत्पाद जोड़ें",
   },
   "还没有展品，点击上方添加": {
-    "en": "No items yet. Click Add Item."
+    "en": "No items yet. Click Add Item.",
+    "ru": "Экспонаты еще не добавлены, нажмите на добавление выше",
+    "es": "No hay productos, haga clic en agregar arriba",
+    "pt": "Ainda não tem produtos, clique em adicionar acima",
+    "ar": "لا توجد منتجات ، انقر فوق لإضافة",
+    "fr": "Pas de produit encore, cliquez sur le bouton d'ajout ci-dessus",
+    "hi": "अभी तक कोई प्रदर्शनी उत्पाद नहीं है, ऊपर जोड़ने के लिए क्लिक करें",
   },
   "已发布": {
-    "en": "Published"
+    "en": "Published",
+    "ru": "Опубликовано",
+    "es": "Publicado",
+    "pt": "Publicado",
+    "ar": "تم النشر",
+    "fr": "Publié",
+    "hi": "प्रकाशित",
   },
   "草稿": {
-    "en": "Draft"
+    "en": "Draft",
+    "ru": "Черновик",
+    "es": "Borrador",
+    "pt": "Rascunho",
+    "ar": "مسودة",
+    "fr": "Brouillon",
+    "hi": "ड्राफ्ट",
   },
   "编辑": {
-    "en": "Edit"
+    "en": "Edit",
+    "ru": "Редактировать",
+    "es": "Editar",
+    "pt": "Editar",
+    "ar": "تحرير",
+    "fr": "Éditer",
+    "hi": "संपादित करें",
   },
   "编辑展品": {
-    "en": "Edit Item"
+    "en": "Edit Item",
+    "ru": "Редактировать экспонат",
+    "es": "Editar exposición",
+    "pt": "Editar exposição",
+    "ar": "تحرير المعرض",
+    "fr": "Éditer l'exposition",
+    "hi": "प्रदर्शनी संपादित करें",
   },
   "设备类型 *": {
-    "en": "Device Type *"
+    "en": "Device Type *",
+    "ru": "Тип оборудования *",
+    "es": "Tipo de equipo *",
+    "pt": "Tipo de equipamento *",
+    "ar": "نوع الجهاز *",
+    "fr": "Type d'équipement *",
+    "hi": "उपकरण प्रकार *",
   },
   "例如：拖拉机": {
-    "en": "e.g. Tractor"
+    "en": "e.g. Tractor",
+    "ru": "Например: трактор",
+    "es": "Por ejemplo: tractor",
+    "pt": "Exemplo: trator",
+    "ar": "على سبيل المثال: الجرار",
+    "fr": "Par exemple : tracteur",
+    "hi": "उदाहरण: ट्रैक्टर",
   },
   "例如：东方红": {
-    "en": "e.g. YTO"
+    "en": "e.g. YTO",
+    "ru": "Например: 东方红",
+    "es": "Por ejemplo: Dongfang Hong",
+    "pt": "Exemplo: Dongfang Hong",
+    "ar": "على سبيل المثال: 东方红",
+    "fr": "Par exemple : Dongfang Hong",
+    "hi": "उदाहरण: डोंगफेंग होंग",
   },
   "型号": {
     "en": "Model",
@@ -1871,22 +4799,52 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Modelo",
     "ar": "الموديل",
     "fr": "Modèle",
-    "hi": "मॉडल"
+    "hi": "मॉडल",
   },
   "例如：LX2004": {
-    "en": "e.g. LX2004"
+    "en": "e.g. LX2004",
+    "ru": "Например: LX2004",
+    "es": "Por ejemplo: LX2004",
+    "pt": "Exemplo: LX2004",
+    "ar": "على سبيل المثال: LX2004",
+    "fr": "Par exemple : LX2004",
+    "hi": "उदाहरण: एलएक्स2004",
   },
   "工作小时": {
-    "en": "Hours"
+    "en": "Hours",
+    "ru": "Часы работы",
+    "es": "Horas de trabajo",
+    "pt": "Horas de trabalho",
+    "ar": "ساعات العمل",
+    "fr": "Heures de travail",
+    "hi": "कार्य घंटे",
   },
   "价格 (¥)": {
-    "en": "Price (CNY)"
+    "en": "Price (CNY)",
+    "ru": "Цена (¥)",
+    "es": "Precio (¥)",
+    "pt": "Preço (¥)",
+    "ar": "السعر (¥)",
+    "fr": "Prix (¥)",
+    "hi": "मूल्य (¥)",
   },
   "描述": {
-    "en": "Description"
+    "en": "Description",
+    "ru": "Описание",
+    "es": "Descripción",
+    "pt": "Descrição",
+    "ar": "وصف",
+    "fr": "Description",
+    "hi": "विवरण",
   },
   "机器状况、备注信息...": {
-    "en": "Machine condition, notes..."
+    "en": "Machine condition, notes...",
+    "ru": "Состояние машины, примечания...",
+    "es": "Información de estado de la máquina, notas...",
+    "pt": "Condição da máquina, notas...",
+    "ar": "حالة الجهاز، ملاحظات...",
+    "fr": "État de la machine, notes...",
+    "hi": "मशीन की स्थिति, टिप्पणी जानकारी...",
   },
   "取消": {
     "en": "Cancel",
@@ -1895,367 +4853,385 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Cancelar",
     "ar": "إلغاء",
     "fr": "Annuler",
-    "hi": "रद्द करें"
+    "hi": "रद्द करें",
   },
   "您还没有自助展台": {
-    "en": "No Booth Yet"
+    "en": "No Booth Yet",
+    "ru": "У вас еще нет выставочного стенда",
+    "es": "No tiene plataforma de exhibición",
+    "pt": "Você ainda não tem um estande de autoatendimento",
+    "ar": "ليس لديك منصة عرض ذاتية",
+    "fr": "Vous n'avez pas encore de stand autonome",
+    "hi": "आपके पास अभी तक स्व-प्रदर्शनी नहीं है",
   },
   "请先通过品牌入驻提交申请，审核通过后即可管理展台": {
-    "en": "Submit a brand claim to get started."
+    "en": "Submit a brand claim to get started.",
+    "ru": "Пожалуйста, сначала подайте заявку на участие через бренд, после одобрения вы сможете управлять стендом",
+    "es": "Por favor, primero ingrese a la marca y envíe una solicitud, después de la aprobación podrá administrar la plataforma",
+    "pt": "Por favor, primeiro entre em contato com a marca para enviar um pedido, após a aprovação, você poderá gerenciar o estande",
+    "ar": "يرجى تقديم الطلب من خلال التسجيل بالعلامة التجارية، بعد الموافقة يمكنك إدارة المنصة",
+    "fr": "Veuillez d'abord soumettre une demande d'inscription via la marque, après avoir passé l'audit, vous pourrez gérer le stand",
+    "hi": "कृपया पहले ब्रांड प्रवेश के माध्यम से आवेदन जमा करें, ऑडिट पास होने के बाद प्रदर्शनी का प्रबंधन कर सकते हैं",
   },
   "去入驻": {
-    "en": "Claim Booth"
+    "en": "Claim Booth",
+    "ru": "Перейти к участию",
+    "es": "Ir a ingresar",
+    "pt": "Ir para a entrada",
+    "ar": "ذهب إلى التسجيل",
+    "fr": "Aller à l'inscription",
+    "hi": "प्रवेश करने जाओ",
   },
   "提交": {
+    "en": "Submit",
     "ru": "Отправить",
     "es": "Enviar",
     "pt": "Enviar",
     "ar": "إرسال",
     "fr": "Envoyer",
     "hi": "जमा करें",
-    "en": ""
   },
   "确认": {
+    "en": "Confirm",
     "ru": "Подтвердить",
     "es": "Confirmar",
     "pt": "Confirmar",
     "ar": "تأكيد",
     "fr": "Confirmer",
     "hi": "पुष्टि करें",
-    "en": ""
   },
   "发送": {
+    "en": "Send",
     "ru": "Отправить",
     "es": "Enviar",
     "pt": "Enviar",
     "ar": "إرسال",
     "fr": "Envoyer",
     "hi": "भेजें",
-    "en": ""
   },
   "返回": {
+    "en": "Back",
     "ru": "Назад",
     "es": "Volver",
     "pt": "Voltar",
     "ar": "رجوع",
     "fr": "Retour",
     "hi": "वापस",
-    "en": ""
   },
   "搜索": {
+    "en": "Search",
     "ru": "Поиск",
     "es": "Buscar",
     "pt": "Buscar",
     "ar": "بحث",
     "fr": "Rechercher",
     "hi": "खोजें",
-    "en": ""
   },
   "筛选": {
+    "en": "Filter",
     "ru": "Фильтр",
     "es": "Filtrar",
     "pt": "Filtrar",
     "ar": "تصفية",
     "fr": "Filtrer",
     "hi": "फ़िल्टर",
-    "en": ""
   },
   "查看": {
+    "en": "View",
     "ru": "Просмотр",
     "es": "Ver",
     "pt": "Ver",
     "ar": "عرض",
     "fr": "Voir",
     "hi": "देखें",
-    "en": ""
   },
   "详情": {
+    "en": "Details",
     "ru": "Подробности",
     "es": "Detalles",
     "pt": "Detalhes",
     "ar": "التفاصيل",
     "fr": "Détails",
     "hi": "विवरण",
-    "en": ""
   },
   "更多": {
+    "en": "More",
     "ru": "Ещё",
     "es": "Más",
     "pt": "Mais",
     "ar": "المزيد",
     "fr": "Plus",
     "hi": "अधिक",
-    "en": ""
   },
   "联系": {
+    "en": "Contact",
     "ru": "Связаться",
     "es": "Contactar",
     "pt": "Contatar",
     "ar": "اتصال",
     "fr": "Contacter",
     "hi": "संपर्क करें",
-    "en": ""
   },
   "注册": {
+    "en": "Register",
     "ru": "Регистрация",
     "es": "Registrarse",
     "pt": "Cadastrar",
     "ar": "تسجيل",
     "fr": "S'inscrire",
     "hi": "रजिस्टर",
-    "en": ""
   },
   "加载中": {
+    "en": "Loading",
     "ru": "Загрузка",
     "es": "Cargando",
     "pt": "Carregando",
     "ar": "جارٍ التحميل",
     "fr": "Chargement",
     "hi": "लोड हो रहा है",
-    "en": ""
   },
   "待审核": {
+    "en": "Pending Review",
     "ru": "На проверке",
     "es": "Pendiente de revisión",
     "pt": "Aguardando revisão",
     "ar": "بانتظار المراجعة",
     "fr": "En attente",
     "hi": "समीक्षा लंबित",
-    "en": ""
   },
   "已通过": {
+    "en": "Passed",
     "ru": "Одобрено",
     "es": "Aprobado",
     "pt": "Aprovado",
     "ar": "تمت الموافقة",
     "fr": "Approuvé",
     "hi": "स्वीकृत",
-    "en": ""
   },
   "已完成": {
+    "en": "Completed",
     "ru": "Завершено",
     "es": "Completado",
     "pt": "Concluído",
     "ar": "مكتمل",
     "fr": "Terminé",
     "hi": "पूर्ण",
-    "en": ""
   },
   "已取消": {
+    "en": "Cancelled",
     "ru": "Отменено",
     "es": "Cancelado",
     "pt": "Cancelado",
     "ar": "ملغى",
     "fr": "Annulé",
     "hi": "रद्द",
-    "en": ""
   },
   "已接受": {
+    "en": "Accepted",
     "ru": "Принято",
     "es": "Aceptado",
     "pt": "Aceito",
     "ar": "مقبول",
     "fr": "Accepté",
     "hi": "स्वीकृत",
-    "en": ""
   },
   "已过期": {
+    "en": "Expired",
     "ru": "Истекло",
     "es": "Expirado",
     "pt": "Expirado",
     "ar": "منتهي الصلاحية",
     "fr": "Expiré",
     "hi": "समाप्त",
-    "en": ""
   },
   "待付款": {
+    "en": "Pending Payment",
     "ru": "Ожидает оплаты",
     "es": "Pendiente de pago",
     "pt": "Aguardando pagamento",
     "ar": "بانتظار الدفع",
     "fr": "En attente de paiement",
     "hi": "भुगतान लंबित",
-    "en": ""
   },
   "已付款": {
+    "en": "Paid",
     "ru": "Оплачено",
     "es": "Pagado",
     "pt": "Pago",
     "ar": "مدفوع",
     "fr": "Payé",
     "hi": "भुगतान किया गया",
-    "en": ""
   },
   "运输中": {
+    "en": "Shipping",
     "ru": "В пути",
     "es": "En tránsito",
     "pt": "Em trânsito",
     "ar": "قيد الشحن",
     "fr": "En transit",
     "hi": "परिवहन में",
-    "en": ""
   },
   "报价": {
+    "en": "Quotation",
     "ru": "Предложение",
     "es": "Oferta",
     "pt": "Proposta",
     "ar": "عرض",
     "fr": "Offre",
     "hi": "ऑफर",
-    "en": ""
   },
   "还价": {
+    "en": "Counter Offer",
     "ru": "Встречное предложение",
     "es": "Contraoferta",
     "pt": "Contraproposta",
     "ar": "عرض مضاد",
     "fr": "Contre-offre",
     "hi": "काउंटर-ऑफर",
-    "en": ""
   },
   "议价": {
+    "en": "Negotiation",
     "ru": "Торг",
     "es": "Negociación",
     "pt": "Negociação",
     "ar": "تفاوض",
     "fr": "Négociation",
     "hi": "मोल-भाव",
-    "en": ""
   },
   "拍卖": {
+    "en": "Auction",
     "ru": "Аукцион",
     "es": "Subasta",
     "pt": "Leilão",
     "ar": "مزاد",
     "fr": "Enchère",
     "hi": "नीलामी",
-    "en": ""
   },
   "询价": {
+    "en": "Inquiry",
     "ru": "Запрос",
     "es": "Consulta",
     "pt": "Consulta",
     "ar": "استفسار",
     "fr": "Demande",
     "hi": "पूछताछ",
-    "en": ""
   },
   "保证金": {
+    "en": "Deposit",
     "ru": "Залог",
     "es": "Depósito",
     "pt": "Depósito",
     "ar": "وديعة",
     "fr": "Dépôt",
     "hi": "जमा राशि",
-    "en": ""
   },
   "价格": {
+    "en": "Price",
     "ru": "Цена",
     "es": "Precio",
     "pt": "Preço",
     "ar": "السعر",
     "fr": "Prix",
     "hi": "मूल्य",
-    "en": ""
   },
   "地区": {
+    "en": "Region",
     "ru": "Регион",
     "es": "Región",
     "pt": "Região",
     "ar": "المنطقة",
     "fr": "Région",
     "hi": "क्षेत्र",
-    "en": ""
   },
   "状态": {
+    "en": "Status",
     "ru": "Статус",
     "es": "Estado",
     "pt": "Status",
     "ar": "الحالة",
     "fr": "Statut",
     "hi": "स्थिति",
-    "en": ""
   },
   "类型": {
+    "en": "Type",
     "ru": "Тип",
     "es": "Tipo",
     "pt": "Tipo",
     "ar": "النوع",
     "fr": "Type",
     "hi": "प्रकार",
-    "en": ""
   },
   "产品": {
+    "en": "Product",
     "ru": "Товар",
     "es": "Producto",
     "pt": "Produto",
     "ar": "المنتج",
     "fr": "Produit",
     "hi": "उत्पाद",
-    "en": ""
   },
   "订单": {
+    "en": "Order",
     "ru": "Заказ",
     "es": "Pedido",
     "pt": "Pedido",
     "ar": "الطلب",
     "fr": "Commande",
     "hi": "ऑर्डर",
-    "en": ""
   },
   "时间": {
+    "en": "Time",
     "ru": "Время",
     "es": "Hora",
     "pt": "Hora",
     "ar": "الوقت",
     "fr": "Heure",
     "hi": "समय",
-    "en": ""
   },
   "卖出": {
+    "en": "Sold",
     "ru": "Продать",
     "es": "Vender",
     "pt": "Vender",
     "ar": "بيع",
     "fr": "Vendre",
     "hi": "बेचें",
-    "en": ""
   },
   "买入": {
+    "en": "Buy",
     "ru": "Купить",
     "es": "Comprar",
     "pt": "Comprar",
     "ar": "شراء",
     "fr": "Acheter",
     "hi": "खरीदें",
-    "en": ""
   },
   "已结束": {
+    "en": "Ended",
     "ru": "Завершён",
     "es": "Finalizado",
     "pt": "Encerrado",
     "ar": "انتهى",
     "fr": "Terminé",
     "hi": "समाप्त",
-    "en": ""
   },
   "即将开始": {
+    "en": "Upcoming",
     "ru": "Скоро",
     "es": "Próximamente",
     "pt": "Em breve",
     "ar": "قريباً",
     "fr": "À venir",
     "hi": "जल्द आ रहा",
-    "en": ""
   },
   "报名": {
+    "en": "Registration",
     "ru": "Зарегистрироваться",
     "es": "Inscribirse",
     "pt": "Inscrever-se",
     "ar": "التسجيل",
     "fr": "S'inscrire",
     "hi": "पंजीकरण",
-    "en": ""
   },
   "已成交 · {n} 人参与询价": {
     "en": "{n} offerers · Deal closed",
@@ -2264,7 +5240,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Vendido · {n} participantes",
     "ar": "تم البيع · {n} مشاركين",
     "fr": "Vendu · {n} participants",
-    "hi": "{n} प्रतिभागियों ने पूछताछ की"
+    "hi": "{n} प्रतिभागियों ने पूछताछ की",
   },
   "已有 {n} 人询价": {
     "en": "{n} offerers",
@@ -2273,7 +5249,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "{n} consultas",
     "ar": "{n} استفسارات",
     "fr": "{n} demandes",
-    "hi": "{n} पूछताछ"
+    "hi": "{n} पूछताछ",
   },
   "报价 {n} 人": {
     "en": "{n} offers",
@@ -2282,7 +5258,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "{n} propostas",
     "ar": "{n} عروض",
     "fr": "{n} offres",
-    "hi": "{n} ऑफर"
+    "hi": "{n} ऑफर",
   },
   "{n} 人报价": {
     "en": "{n} offers",
@@ -2291,7 +5267,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "{n} propostas",
     "ar": "{n} عروض",
     "fr": "{n} offres",
-    "hi": "{n} ऑफर"
+    "hi": "{n} ऑफर",
   },
   "发动机：{v}": {
     "en": "Engine: {v}",
@@ -2300,7 +5276,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Motor: {v}",
     "ar": "المحرك: {v}",
     "fr": "Moteur : {v}",
-    "hi": "इंजन: {v}"
+    "hi": "इंजन: {v}",
   },
   "工时": {
     "en": "h",
@@ -2309,7 +5285,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "h",
     "ar": "ساعة",
     "fr": "h",
-    "hi": "घंटे"
+    "hi": "घंटे",
   },
   "运转状况以看货为准": {
     "en": "condition per inspection",
@@ -2318,7 +5294,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "conforme inspeção",
     "ar": "حسب المعاينة",
     "fr": "selon inspection",
-    "hi": "निरीक्षण के अनुसार"
+    "hi": "निरीक्षण के अनुसार",
   },
   "诚意金凭证已上传，卖家将查看。您现在可以提交报价了。": {
     "en": "Earnest deposit receipt uploaded, seller will review. You can now submit your offer.",
@@ -2327,7 +5303,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Comprovante de depósito enviado, o vendedor verificará. Agora você pode enviar sua proposta.",
     "ar": "تم رفع إيصال الوديعة، سيراجعه البائع. يمكنك الآن إرسال عرضك.",
     "fr": "Reçu de dépôt téléversé, le vendeur le vérifiera. Vous pouvez maintenant envoyer votre offre.",
-    "hi": "जमा रसीद अपलोड की गई, विक्रेता देखेगा। अब आप अपना ऑफर भेज सकते हैं।"
+    "hi": "जमा रसीद अपलोड की गई, विक्रेता देखेगा। अब आप अपना ऑफर भेज सकते हैं।",
   },
   "报名信息已提交。您现在可以提交报价了。": {
     "en": "Registration submitted. You can now submit your offer.",
@@ -2336,7 +5312,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Inscrição enviada. Agora você pode enviar sua proposta.",
     "ar": "تم إرساله. يمكنك الآن إرسال عرضك.",
     "fr": "Inscription envoyée. Vous pouvez maintenant envoyer votre offre.",
-    "hi": "पंजीकरण भेजा गया। अब आप अपना ऑफर भेज सकते हैं।"
+    "hi": "पंजीकरण भेजा गया। अब आप अपना ऑफर भेज सकते हैं।",
   },
   "买家 {name} 以 ¥{amount} 成交": {
     "en": "Buyer {name} dealt at ¥{amount}",
@@ -2345,7 +5321,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Comprador {name} fechou negócio em ¥{amount}",
     "ar": "المشتري {name} أبرم الصفقة بـ ¥{amount}",
     "fr": "Acheteur {name} a conclu l'affaire à ¥{amount}",
-    "hi": "खरीदार {name} ने ¥{amount} पर सौदा किया"
+    "hi": "खरीदार {name} ने ¥{amount} पर सौदा किया",
   },
   "用户": {
     "en": "User",
@@ -2354,7 +5330,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Usuário",
     "ar": "مستخدم",
     "fr": "Utilisateur",
-    "hi": "उपयोगकर्ता"
+    "hi": "उपयोगकर्ता",
   },
   "标的物：": {
     "en": "Item:",
@@ -2363,7 +5339,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Item:",
     "ar": "البند:",
     "fr": "Article :",
-    "hi": "वस्तु:"
+    "hi": "वस्तु:",
   },
   "参考评估价：": {
     "en": "Evaluation:",
@@ -2372,7 +5348,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Avaliação:",
     "ar": "التقييم:",
     "fr": "Évaluation :",
-    "hi": "मूल्यांकन:"
+    "hi": "मूल्यांकन:",
   },
   "询价时间：": {
     "en": "Inquiry Time:",
@@ -2381,7 +5357,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Hora da consulta:",
     "ar": "وقت الاستفسار:",
     "fr": "Heure de demande :",
-    "hi": "पूछताछ समय:"
+    "hi": "पूछताछ समय:",
   },
   "付款截止：": {
     "en": "Payment Deadline:",
@@ -2390,7 +5366,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Prazo de pagamento:",
     "ar": "موعد الدفع:",
     "fr": "Échéance de paiement :",
-    "hi": "भुगतान समय सीमा:"
+    "hi": "भुगतान समय सीमा:",
   },
   "已知瑕疵：": {
     "en": "Known Flaws:",
@@ -2399,7 +5375,7 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "Defeitos conhecidos:",
     "ar": "عيوب معروفة:",
     "fr": "Défauts connus :",
-    "hi": "ज्ञात खामियां:"
+    "hi": "ज्ञात खामियां:",
   },
   "（评估基准日2025年8月，仅供参考）": {
     "en": "(Aug 2025, reference only)",
@@ -2408,1332 +5384,3984 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "pt": "(ago. 2025, apenas referência)",
     "ar": "(أغسطس 2025، للمرجعية فقط)",
     "fr": "(août 2025, à titre indicatif)",
-    "hi": "(अगस्त 2025, केवल संदर्भ)"
+    "hi": "(अगस्त 2025, केवल संदर्भ)",
   },
   "交易受《中华人民共和国民法典》等法律法规保护。买卖双方在线达成的意向与线下签署的买卖合同具有法律效力。平台提供格式条款提示与合同模板参考，协助双方明确权责。": {
-    "en": "Transactions are protected by the Civil Code of the PRC and other applicable laws. The intent reached online and the offline sales contract are legally binding. The platform provides standard-term notices and contract templates to help both parties clarify rights and obligations."
+    "en": "Transactions are protected by the Civil Code of the PRC and other applicable laws. The intent reached online and the offline sales contract are legally binding. The platform provides standard-term notices and contract templates to help both parties clarify rights and obligations.",
+    "ru": "Торговля регулируется законами КНР, включая «Гражданский кодекс». Договоренности, достигнутые онлайн, и подписанные офлайн контракты имеют юридическую силу. Платформа предоставляет образцы условий и контрактов для помощи в определении прав и обязанностей.",
+    "es": "La transacción está protegida por las leyes y regulaciones como el Código Civil de la República Popular China. Las intenciones alcanzadas en línea por ambas partes y el contrato de compraventa firmado en línea tienen fuerza legal. La plataforma proporciona un formato de términos y condiciones y un modelo de contrato de referencia para ayudar a ambas partes a clarificar sus derechos y obligaciones.",
+    "pt": "A transação é protegida pelas leis e regulamentos do Código Civil da República Popular da China. As intenções alcançadas online e os contratos de compra e venda assinados offline têm força de lei. A plataforma fornece termos e condições de formato e modelos de contrato para referência, para ajudar as partes a esclarecer os direitos e responsabilidades.",
+    "ar": "تخضع المعاملات لحماية القانون المدني للجمهورية الشعبية الصينية. يتمتع الاتفاق المبرم بين الطرفين عبر الإنترنت والاتفاق المبرم بين الطرفين خارج الإنترنت بقوة قانونية. توفر المنصة إرشادات نموذجية وقوالب اتفاقية مرجعية، وتساعد الطرفين على توضيح حقوقهم وواجباتهم.",
+    "fr": "La transaction est protégée par les lois et réglementations telles que le « Code civil de la République populaire de Chine ». Les intentions conclues en ligne par les deux parties et le contrat de vente signé hors ligne ont force de loi. La plateforme fournit des modèles de clauses et de contrats pour aider les deux parties à clarifier leurs droits et obligations.",
+    "hi": "लेनदेन को चीनी जनवादी गणराज्य के नागरिक संहिता आदि कानूनों द्वारा संरक्षित किया जाता है। खरीदार और विक्रेता ऑनलाइन समझौते और ऑफलाइन हस्ताक्षरित खरीद समझौते कानूनी प्रभाव रखते हैं। प्लेटफ़ॉर्म प्रारूप शर्तों के सुझाव और अनुबंध टेम्पलेट संदर्भ प्रदान करता है, दोनों पक्षों को अधिकार और दायित्वों को स्पष्ट करने में मदद करता है।",
   },
   "设备按现状交付，具体配置与零部件完整性以详情页公示与实地验机为准。建议报价前实地查验。": {
-    "en": "Equipment is sold as-is. Specific configuration and parts completeness are subject to the listing page and on-site inspection. We recommend an on-site inspection before placing an offer."
+    "en": "Equipment is sold as-is. Specific configuration and parts completeness are subject to the listing page and on-site inspection. We recommend an on-site inspection before placing an offer.",
+    "ru": "Оборудование передается в текущем состоянии, конкретная комплектация и целостность деталей определяются на странице деталей и при осмотре. Рекомендуем проверить перед подачей заявки.",
+    "es": "El equipo se entrega en su estado actual, la configuración específica y la integridad de los componentes se basan en la página de detalles y la verificación en el lugar. Se sugiere verificar antes de hacer una oferta.",
+    "pt": "O equipamento é entregue no estado atual, a configuração específica e a integridade dos componentes são verificados na página de detalhes e no local. Recomenda-se verificar antes de fazer uma oferta.",
+    "ar": "يتم تسليم الجهاز بحالته الحالية، وتعتمد التكوين المحدد واكتمال الأجزاء على الصفحة العامة والفحص الميداني. يوصى بفحص العرض قبل تقديم العرض.",
+    "fr": "L'équipement est livré dans son état actuel, la configuration et l'intégrité des pièces détachées sont basées sur les informations publiées sur la page de détails et sur les vérifications sur place. Il est recommandé de vérifier avant de faire une offre.",
+    "hi": "उपकरण को वर्तमान स्थिति में वितरित किया जाता है, विशिष्ट कॉन्फ़िगरेशन और शून्य भागों की पूर्णता विवरण पृष्ठ और स्थल पर जाँच के लिए सार्वजनिक की जाती है। सुझाव दिया जाता है कि उद्धरण से पहले स्थल पर जाँच की जाए।",
   },
   "不同设备权属来源不同，部分设备可能存在登记证书缺失、租赁取得或过户限制。卖方应在详情页如实披露权属来源与已知限制，买方应在报价前自行向当地农机管理部门了解过户、上牌可行性。因无法过户或上牌导致的全部风险由买方自行承担；卖方不存在隐瞒或虚假陈述的，买方不得以此为由要求解除合同或索赔。": {
-    "en": "Equipment ownership sources vary. Some equipment may lack registration certificates, be lease-acquired, or have transfer restrictions. Sellers must disclose ownership source and known restrictions on the listing page. Buyers should verify transfer and registration feasibility with local agricultural authorities before placing an offer. All risks arising from inability to transfer or register are borne by the buyer. Unless the seller has concealed or misrepresented facts, the buyer may not use incomplete title documents as grounds to rescind the contract or claim damages."
+    "en": "Equipment ownership sources vary. Some equipment may lack registration certificates, be lease-acquired, or have transfer restrictions. Sellers must disclose ownership source and known restrictions on the listing page. Buyers should verify transfer and registration feasibility with local agricultural authorities before placing an offer. All risks arising from inability to transfer or register are borne by the buyer. Unless the seller has concealed or misrepresented facts, the buyer may not use incomplete title documents as grounds to rescind the contract or claim damages.",
+    "ru": "Разное оборудование имеет разные источники собственности, некоторые могут иметь отсутствующие регистрационные документы, быть получены в аренду или иметь ограничения на передачу. Продавец должен раскрыть информацию о праве собственности и известных ограничениях на странице деталей, покупатель должен самостоятельно узнать о возможности передачи и регистрации у местных властей. Все риски, связанные с невозможностью передачи или регистрации, лежат на покупателе; если продавец не скрывал и не предоставлял ложной информации, покупатель не может требовать расторжения контракта или компенсации.",
+    "es": "Los equipos tienen diferentes orígenes de propiedad, algunos pueden tener certificados de registro perdidos, obtenidos por alquiler o restricciones de transferencia. El vendedor debe informar en la página de detalles sobre el origen de la propiedad y las restricciones conocidas, y el comprador debe investigar por su cuenta con el departamento local de gestión de maquinaria agrícola sobre la viabilidad de la transferencia y el registro antes de hacer una oferta. El comprador asume todos los riesgos por no poder transferir o registrar; si el vendedor no oculta ni hace declaraciones falsas, el comprador no puede exigir la rescisión del contrato o una indemnización.",
+    "pt": "Os equipamentos têm diferentes fontes de propriedade, alguns podem ter certificados de registro ausentes, obtenção de aluguel ou restrições de transferência. O vendedor deve divulgar a fonte de propriedade e as restrições conhecidas na página de detalhes, e o comprador deve verificar a possibilidade de transferência e registro antes de fazer uma oferta. O comprador assume todos os riscos decorrentes da impossibilidade de transferência ou registro; se o vendedor não ocultou ou fez declarações falsas, o comprador não pode exigir a rescisão do contrato ou indenização.",
+    "ar": "تختلف مصادر ملكية الجهاز، وقد توجد بعض الأجهزة بدون شهادات تسجيل أو حصول على تأجير أو قيود نقل ملكية. يجب على البائع الكشف عن مصدر الملكية والقيود المعروفة على صفحة التفاصيل، ويجب على المشتري أن يفهم قبل تقديم العرض إمكانية نقل ملكية التسجيل والترخيص من إدارة الآلات الزراعية المحلية؛ يتحمل المشتري جميع المخاطر الناجمة عن عدم القدرة على نقل ملكية الجهاز أو ترخيصه؛ إذا لم يكن هناك أي كذب أو تشويه من قبل البائع، لا يمكن للمشتري أن يطلب إلغاء العقد أو المطالبة بالتعويض.",
+    "fr": "Les équipements proviennent de sources de propriété différentes, certains équipements peuvent ne pas avoir de certificat d'enregistrement, être loués ou avoir des restrictions de transfert. Le vendeur doit divulguer de manière truthfull l'origine de la propriété et les restrictions connues sur la page de détails, et l'acheteur doit vérifier auprès du département local de gestion des machines agricoles la faisabilité du transfert et de l'immatriculation avant de faire une offre. Tous les risques liés à l'impossibilité de transférer ou d'immatriculer sont à la charge de l'acheteur ; si le vendeur n'a pas caché ou fait de fausses déclarations, l'acheteur ne peut pas exiger la résiliation du contrat ou des dommages-intérêts.",
+    "hi": "विभिन्न उपकरणों के अधिकार स्रोत अलग-अलग होते हैं, कुछ उपकरणों में पंजीकरण प्रमाण पत्र की कमी हो सकती है, किराए पर लिया जा सकता है या हस्तांतरण प्रतिबंध हो सकता है। विक्रेता को विवरण पृष्ठ पर अधिकार स्रोत और ज्ञात प्रतिबंधों को सच्चाई से प्रकट करना चाहिए, खरीदार को उद्धरण से पहले स्थानीय कृषि मशीनरी प्रबंधन विभाग से हस्तांतरण, पंजीकरण और लाइसेंस की संभावना के बारे में जानना चाहिए। हस्तांतरण या पंजीकरण की असमर्थता के कारण होने वाले सभी जोखिम खरीदार द्वारा स्वयं वहन किए जाते हैं; यदि विक्रेता को छिपाने या गलत बयानी के बारे में कोई जानकारी नहीं है, तो खरीदार को अनुबंध को समाप्त करने या मुआवजे की मांग करने का अधिकार नहीं है।",
   },
   "卖方应在详情页如实告知已知瑕疵（如零部件缺失、外观损伤、功能异常等），标的物按现状交付。卖方对经合理查验可发现的瑕疵不承担担保责任，但对明知或应知而未披露的重大瑕疵，以及因故意隐瞒或虚假陈述导致的损失，仍依法承担责任。买方在交付后发现隐蔽瑕疵的，应在约定期限内书面通知卖方。": {
-    "en": "Sellers must disclose known flaws on the listing page (such as missing parts, cosmetic damage, functional defects, etc.). Equipment is sold as-is. The seller is not liable for defects discoverable by reasonable inspection, but remains liable for major defects known or should-have-been-known and not disclosed, as well as losses caused by intentional concealment or misrepresentation. If hidden defects are found after delivery, the buyer must notify the seller in writing within the agreed period."
+    "en": "Sellers must disclose known flaws on the listing page (such as missing parts, cosmetic damage, functional defects, etc.). Equipment is sold as-is. The seller is not liable for defects discoverable by reasonable inspection, but remains liable for major defects known or should-have-been-known and not disclosed, as well as losses caused by intentional concealment or misrepresentation. If hidden defects are found after delivery, the buyer must notify the seller in writing within the agreed period.",
+    "ru": "Продавец должен сообщить о известных недостатках (таких как отсутствие деталей, повреждения или неисправности) на странице деталей, оборудование передается в текущем состоянии. Продавец не несет ответственности за недостатки, которые можно обнаружить при разумном осмотре, но несет ответственность за ущерб, причиненный умышленным сокрытием или ложной информацией. Если покупатель обнаруживает скрытые недостатки после передачи, он должен уведомить продавца в течение согласованного срока.",
+    "es": "El vendedor debe informar en la página de detalles sobre los defectos conocidos (como componentes faltantes, daños en la apariencia, funcionamiento anormal, etc.), el objeto se entrega en su estado actual. El vendedor no se hace responsable de los defectos que se pueden descubrir mediante una inspección razonable, pero sigue siendo responsable de los defectos importantes que se saben o deberían saberse y no se han divulgado, así como de las pérdidas causadas por ocultación o declaraciones falsas. El comprador debe notificar por escrito al vendedor dentro del plazo acordado si descubre defectos ocultos después de la entrega.",
+    "pt": "O vendedor deve informar sobre os defeitos conhecidos (como componentes ausentes, danos à aparência, funcionamento anormal, etc.) na página de detalhes, e o objeto é entregue no estado atual. O vendedor não se responsabiliza por defeitos que possam ser descobertos por meio de uma verificação razoável, mas ainda é responsável por defeitos significativos que não foram divulgados ou por perdas causadas por declarações falsas ou ocultação intencional. Se o comprador descobrir defeitos ocultos após a entrega, deve notificar o vendedor por escrito dentro do prazo acordado.",
+    "ar": "يجب على البائع إبلاغ المشتري بصراحة عن العيوب المعروفة (مثل فقدان الأجزاء، أو تلف المظهر، أو تشغيل غير طبيعي) على صفحة التفاصيل، ويتم تسليم الجهاز بحالته الحالية. لا يتحمل البائع مسؤولية الضمان عن العيوب التي يمكن اكتشافها من خلال الفحص العقلاني، ولكن لا يزال يتحمل المسؤولية عن العيوب الرئيسية التي لم يتم الكشف عنها، وأيضا عن الخسائر الناجمة عن الإخفاء المتعمد أو البيانات الكاذبة. يجب على المشتري إبلاغ البائع كتابيا عن العيوب الخفية التي تم اكتشافها بعد التسليم في الوقت المحدد.",
+    "fr": "Le vendeur doit informer de manière truthfull des défauts connus (tels que des pièces manquantes, des dommages à l'apparence, des anomalies de fonctionnement, etc.) sur la page de détails, et l'équipement est livré dans son état actuel. Le vendeur n'est pas responsable des défauts qui peuvent être découverts après une inspection raisonnable, mais il est toujours responsable des défauts majeurs non divulgués et des pertes causées par des déclarations fausses ou trompeuses. Si l'acheteur découvre des défauts cachés après la livraison, il doit en informer le vendeur par écrit dans les délais convenus.",
+    "hi": "विक्रेता को विवरण पृष्ठ पर ज्ञात दोषों (जैसे शून्य भागों की कमी, बाहरी क्षति, कार्यात्मक असामान्यताएं आदि) के बारे में सच्चाई से सूचित करना चाहिए, नीलामी की वस्तु को वर्तमान स्थिति में वितरित किया जाता है। विक्रेता उन दोषों के लिए गारंटी की जिम्मेदारी नहीं लेता है जो उचित जाँच के माध्यम से पता लगाए जा सकते हैं, लेकिन जानबूझकर छिपाने या गलत बयानी के कारण होने वाले नुकसान के लिए अभी भी जिम्मेदार है। खरीदार को वितरण के बाद छिपे हुए दोषों का पता चलता है, तो उन्हें निर्धारित अवधि के भीतर लिखित रूप में विक्रेता को सूचित करना चाहिए।",
   },
   "想知道顶尖品牌与行业腰部品牌的差距？进入新锐专业馆，横向参数对比，理性决策。": {
-    "en": "Want to see the gap between top brands and mid-tier brands? Enter the Emerging Brands Hall to compare specs side-by-side and decide with confidence."
+    "en": "Want to see the gap between top brands and mid-tier brands? Enter the Emerging Brands Hall to compare specs side-by-side and decide with confidence.",
+    "ru": "Хотите узнать, чем отличаются лучшие бренды от средних? Зайдите в профессиональный зал, сравните параметры и принимайте обоснованные решения.",
+    "es": "¿Quiere saber cuál es la diferencia entre las marcas de primer nivel y las marcas de nivel medio? Entre en la sala profesional de nuevos productos, compare parámetros horizontalmente y tome decisiones racionales.",
+    "pt": "Quer saber qual é a diferença entre as marcas de ponta e as marcas de nível médio da indústria? Entre no salão profissional, compare os parâmetros horizontalmente e tome decisões racionais.",
+    "ar": "هل تريد معرفة الفرق بين العلامات التجارية الرائدة والمتوسطة في الصناعة؟ ادخل إلى قاعة المحترفين الجدد، وقارن المعلمات أفقيا، وخذ قرارات منطقية.",
+    "fr": "Voulez-vous savoir quelle est la différence entre les marques de premier plan et les marques du milieu de l'industrie? Entrez dans le hall professionnel, comparez les paramètres, prenez des décisions rationnelles.",
+    "hi": "क्या आप शीर्ष ब्रांडों और उद्योग के मध्य ब्रांडों के बीच के अंतर को जानना चाहते हैं? नए पेशेवर गैलरी में प्रवेश करें, क्षैतिज मापदंडों की तुलना करें, तर्कसंगत निर्णय लें।",
   },
   "正式开拍后，拍品将在此列出；当前仅作合规公示与内部预览": {
-    "en": "Once the auction goes live, lots will be listed here. For now this is shown for compliance disclosure and internal preview only."
+    "en": "Once the auction goes live, lots will be listed here. For now this is shown for compliance disclosure and internal preview only.",
+    "ru": "После начала аукциона, лоты будут перечислены здесь; сейчас это только для соблюдения правил и внутреннего просмотра",
+    "es": "Después de la apertura oficial, los artículos se enumerarán aquí; actualmente solo se utiliza para la exhibición de cumplimiento y la vista previa interna",
+    "pt": "Após o início oficial do leilão, os itens serão listados aqui; atualmente, apenas para cumprimento e pré-visualização interna",
+    "ar": "بعد بدء المزاد الرسمي، سيتم سرد العناصر هنا؛ حاليا يتم فقط الإعلان عنها للامتثال والاستعراض الداخلي",
+    "fr": "Après le lancement officiel, les articles seront répertoriés ici ; actuellement, ils ne sont utilisés que pour la conformité et l'aperçu interne",
+    "hi": "आधिकारिक नीलामी के बाद, नीलामी की वस्तुएँ यहाँ सूचीबद्ध की जाएंगी; वर्तमान में केवल अनुपालन सार्वजनिक और आंतरिक पूर्वावलोकन के लिए",
   },
   "真实拍卖需持《拍卖经营批准证书》依法开展，通道筹备中": {
-    "en": "Live auctions must be conducted lawfully with an Auction Operation Permit. This channel is in preparation."
+    "en": "Live auctions must be conducted lawfully with an Auction Operation Permit. This channel is in preparation.",
+    "ru": "Настоящий аукцион требует наличия лицензии на аукционную деятельность, подготовка в процессе",
+    "es": "La subasta real requiere una licencia de subasta y se lleva a cabo de acuerdo con la ley, el canal está en preparación",
+    "pt": "O leilão real deve ser realizado de acordo com a lei, com um certificado de aprovação de leilão, o canal está em preparação",
+    "ar": "يجب أن يتم المزاد الحقيقي بموجب شهادة مزاد العمل، ويتم إعداده حاليا",
+    "fr": "Les ventes aux enchères réelles nécessitent un « certificat d'approbation d'exploitation des ventes aux enchères » pour être menées conformément à la loi, les canaux sont en préparation",
+    "hi": "वास्तविक नीलामी के लिए 《नीलामी व्यवसाय अनुमति प्रमाण पत्र》 की आवश्यकता होती है, कानूनी रूप से आयोजित किया जाना चाहिए, चैनल तैयारी में",
   },
   "以下差异化能力将在取得资质后陆续开放（内部预览）": {
-    "en": "The differentiated capabilities below will be rolled out progressively after licensing is obtained (internal preview)."
+    "en": "The differentiated capabilities below will be rolled out progressively after licensing is obtained (internal preview).",
+    "ru": "Ниже перечисленные функции будут открыты после получения квалификации (внутренний просмотр)",
+    "es": "Las siguientes capacidades de diferenciación se abrirán después de obtener la calificación (vista previa interna)",
+    "pt": "As seguintes capacidades de diferenciação serão abertas após a obtenção da qualificação (pré-visualização interna)",
+    "ar": "ستتم إتاحة القدرات التمييزية التالية بعد الحصول على المؤهلات (معاينة داخلية)",
+    "fr": "Les capacités de différenciation suivantes seront ouvertes progressivement après l'obtention des qualifications (aperçu interne)",
+    "hi": "निम्नलिखित विभेदक क्षमताएँ योग्यता प्राप्त करने के बाद आंतरिक पूर्वावलोकन (आंतरिक पूर्वावलोकन) में खोली जाएंगी",
   },
   "扫码上传您的现场作业视频，即刻展示在大屏上": {
-    "en": "Scan to upload your field-operation video and showcase it on the big screen instantly."
+    "en": "Scan to upload your field-operation video and showcase it on the big screen instantly.",
+    "ru": "Отсканируйте код, чтобы загрузить видео вашей работы, и оно сразу же появится на большом экране",
+    "es": "Escanea el código para subir tu video de trabajo en el sitio y mostrarlo en la pantalla grande de inmediato",
+    "pt": "Escaneie o código para enviar seu vídeo de operação no local e exibi-lo na tela grande",
+    "ar": "امسح رمز الوسائط لتحميل فيديو عملياتك الميدانية، وستظهر على الشاشة الكبيرة على الفور",
+    "fr": "Scannez le code pour télécharger votre vidéo de travail sur le terrain, affiché immédiatement sur le grand écran",
+    "hi": "अपने साइट ऑपरेशन वीडियो को स्कैन करके अपलोड करें, तुरंत बड़ी स्क्रीन पर प्रदर्शित किया जाएगा",
   },
   "依法公开拍卖，持牌拍卖师主持，价高者得": {
-    "en": "Public auction by law, hosted by a licensed auctioneer — highest bid wins."
+    "en": "Public auction by law, hosted by a licensed auctioneer — highest bid wins.",
+    "ru": "Аукцион проводится в соответствии с законом, аукционист ведет торгов, высшая цена выигрывает",
+    "es": "Subasta pública de acuerdo con la ley, con un subastador titular, el precio más alto gana",
+    "pt": "Leilão público, leiloado por um leiloeiro licenciado, o maior lance vence",
+    "ar": "المزاد المفتوح بموجب القانون، برئاسة مزاد محترف، والمنافس الأعلى هو الفائز",
+    "fr": "Vente aux enchères ouverte conformément à la loi, animée par un commissaire-priseur titulaire, le plus offrant l'emporte",
+    "hi": "कानूनी रूप से खुली नीलामी, लाइसेंस प्राप्त नीलामी मास्टर की अध्यक्षता में, उच्चतम मूल्य प्राप्त करने वाला",
   },
   "暂无现场视频，期待您的上传": {
-    "en": "No field videos yet — we look forward to your uploads."
+    "en": "No field videos yet — we look forward to your uploads.",
+    "ru": "Нет видео с места, ожидаем вашей загрузки",
+    "es": "No hay video en el sitio, espera tu carga",
+    "pt": "Não há vídeos no local, aguardamos sua upload",
+    "ar": "لا توجد فيديوهات ميدانية حاليا، ننتظر تحميلك",
+    "fr": "Aucune vidéo sur le terrain pour le moment, en attente de votre téléchargement",
+    "hi": "वर्तमान में कोई साइट वीडियो नहीं है, आपके अपलोड की प्रतीक्षा में",
   },
   "现场作业视频集锦": {
-    "en": "Field Operation Video Highlights"
+    "en": "Field Operation Video Highlights",
+    "ru": "Сборник видео с места работы",
+    "es": "Colección de videos de trabajo en el sitio",
+    "pt": "Coleção de vídeos de operação no local",
+    "ar": "مجموعة فيديوهات عمليات الميدان",
+    "fr": "Sélection de vidéos de travail sur le terrain",
+    "hi": "साइट ऑपरेशन वीडियो संग्रह",
   },
   "真实拍卖通道": {
-    "en": "Live Auction Channel"
+    "en": "Live Auction Channel",
+    "ru": "Настоящий аукционный канал",
+    "es": "Canal de subasta real",
+    "pt": "Canal de leilão real",
+    "ar": "قناة المزاد الحقيقي",
+    "fr": "Canal de vente aux enchères réelle",
+    "hi": "वास्तविक नीलामी चैनल",
   },
   "上传作业视频": {
-    "en": "Upload Operation Video"
+    "en": "Upload Operation Video",
+    "ru": "Загрузить видео работы",
+    "es": "Subir video de trabajo",
+    "pt": "Upload de vídeo de operação",
+    "ar": "تحميل فيديو العمليات",
+    "fr": "Télécharger la vidéo de travail",
+    "hi": "ऑपरेशन वीडियो अपलोड करें",
   },
   "中国品牌解决": {
-    "en": "China Brand Solutions"
+    "en": "China Brand Solutions",
+    "ru": "Решение для китайских брендов",
+    "es": "Solución de marca china",
+    "pt": "Solução de marca chinesa",
+    "ar": "حلول العلامة التجارية الصينية",
+    "fr": "Solution de marque chinoise",
+    "hi": "चीनी ब्रांड समाधान",
   },
   "上线后将有": {
-    "en": "Coming after launch"
+    "en": "Coming after launch",
+    "ru": "После запуска будет",
+    "es": "Después de publicar se tendrá",
+    "pt": "Após a publicação, haverá",
+    "ar": "بعد النشر سيكون هناك",
+    "fr": "En ligne après",
+    "hi": "ऑनलाइन होने के बाद होगा",
   },
   "真实拍卖": {
-    "en": "Live Auction"
+    "en": "Live Auction",
+    "ru": "Настоящий аукцион",
+    "es": "Subasta real",
+    "pt": "Leilão real",
+    "ar": "المزاد الحقيقي",
+    "fr": "Vente aux enchères réelle",
+    "hi": "वास्तविक नीलामी",
   },
   "补全资料": {
-    "en": "Complete Your Profile"
+    "en": "Complete Your Profile",
+    "ru": "Заполнить данные",
+    "es": "Completar información",
+    "pt": "Completar informações",
+    "ar": "إكمال البيانات",
+    "fr": "Compléter les informations",
+    "hi": "डेटा पूरा करें",
   },
   "为获得更好的服务（如找回密码、接收通知），建议您补全以下资料。除“数据出境单独同意”外，其余均为选填。补全邮箱即视为已验证。": {
-    "en": "To get a better experience (e.g. password recovery, notifications), we recommend completing the following. Except for the cross-border data transfer consent, all fields are optional. Submitting a valid email is treated as verified in this phase."
+    "en": "To get a better experience (e.g. password recovery, notifications), we recommend completing the following. Except for the cross-border data transfer consent, all fields are optional. Submitting a valid email is treated as verified in this phase.",
+    "ru": "Чтобы получить лучший сервис (например, восстановить пароль, получать уведомления), рекомендуем заполнить следующие данные. Кроме «Согласия на передачу данных», все остальное является необязательным. Заполнение электронной почты считается подтверждением.",
+    "es": "Para obtener un mejor servicio (como recuperar la contraseña, recibir notificaciones), se sugiere que complete la siguiente información. Excepto \"Acuerdo de salida de datos\", el resto es opcional. Completar el correo electrónico se considerará como ya verificado.",
+    "pt": "Para obter um melhor serviço (como recuperar senha, receber notificações), é recomendado completar as seguintes informações. Exceto \"Acordo de exportação de dados\", todas as demais são opcionais. Completar o e-mail é considerado como verificado.",
+    "ar": "للحصول على خدمة أفضل (مثل استعادة كلمة المرور واستلام الإشعارات) ، يُوصى بملء المعلومات التالية.除了 \"الموافقة الفردية على خروج البيانات\" ، فإن الباقي اختياري. عند ملء البريد الإلكتروني ، يُعتبر ذلك موافقة على التحقق.",
+    "fr": "Pour obtenir un meilleur service (comme récupérer le mot de passe, recevoir des notifications), nous vous recommandons de compléter les informations suivantes. À l'exception de « l'accord de sortie des données », le reste est facultatif. La complétion de l'e-mail est considérée comme vérifiée.",
+    "hi": "बेहतर सेवा प्राप्त करने के लिए (जैसे पासवर्ड रिकवर करना, सूचनाएं प्राप्त करना), हम आपको निम्नलिखित डेटा पूरा करने की सलाह देते हैं। \"डेटा निर्यात एकल सहमति\" के अलावा, बाकी सभी वैकल्पिक हैं। ईमेल पूरा करने पर यह माना जाएगा कि यह सत्यापित हो गया है।",
   },
   "真实作业验证": {
-    "en": "Real Operation Verification"
+    "en": "Real Operation Verification",
+    "ru": "Проверка реальной работы",
+    "es": "Verificación de operación real",
+    "pt": "Verificação de operação real",
+    "ar": "التحقق من التشغيل الفعلي",
+    "fr": "Vérification de l'exploitation réelle",
+    "hi": "वास्तविक ऑपरेशन सत्यापन",
   },
   "神雕展翼™ — 神雕农机展旗下的真实作业视频验证模块": {
-    "en": "Shendiao WingShow™ — Field Operation Video Show by Shendiao Agri-Machinery Expo™"
+    "en": "Shendiao WingShow™ — Field Operation Video Show by Shendiao Agri-Machinery Expo™",
+    "ru": "神雕农机展翼™ — модуль проверки реальной работы видео, принадлежащий 神雕农机",
+    "es": "神雕展翼 ™ — Módulo de verificación de operación real de videos de 神雕农机展",
+    "pt": "神雕展翼™ — Módulo de verificação de operação real do vídeo da bandeira da 神雕农机",
+    "ar": "神雕展翼™ — 神雕农机展旗下的真实作业视频验证模块",
+    "fr": "神雕展翼™ — Module de vérification de l'exploitation réelle de la vidéo de 神雕农机",
+    "hi": "शेनडाओ एक्सपो विंग ™ — शेनडाओ नोंगजी एक्सपो के तहत वास्तविक ऑपरेशन वीडियो सत्यापन मॉड्यूल",
   },
   "认领申请已提交！": {
-    "en": "Claim Submitted!"
+    "en": "Claim Submitted!",
+    "ru": "Заявка на получение прав подана!",
+    "es": "La solicitud de reclamo ha sido enviada",
+    "pt": "Solicitação de reivindicação enviada!",
+    "ar": "تم تقديم طلب الادعاء！",
+    "fr": "La demande de revendication a été soumise !",
+    "hi": "दावा आवेदन जमा किया गया है!",
   },
   "我们将在2个工作日内审核并与您联系。审核通过后，您将获得品牌页面管理权限，可上传官方素材、更新产品信息。": {
-    "en": "We will review your application within 2 business days. Once approved, you will gain brand page management access to upload official materials and update product information."
+    "en": "We will review your application within 2 business days. Once approved, you will gain brand page management access to upload official materials and update product information.",
+    "ru": "Мы рассмотрим и свяжемся с вами в течение 2 рабочих дней. После одобрения вы получите права на управление страницей бренда, сможете загружать официальные материалы и обновлять информацию о продуктах.",
+    "es": "Nosotros lo revisaremos y nos pondremos en contacto con usted dentro de 2 días hábiles. Después de la aprobación, usted obtendrá permisos de administración de la página de la marca, podrá cargar material oficial, actualizar información de productos.",
+    "pt": "Nós vamos revisar e entrar em contato com você dentro de 2 dias úteis. Após a aprovação, você receberá permissão para gerenciar a página da marca, podendo upload de materiais oficiais e atualizar informações de produtos.",
+    "ar": "سوف نراجع طلبك في غضون يومين عمل وسنقوم بالتواصل معك. بعد الموافقة، ستحصل على صلاحيات إدارة صفحة العلامة التجارية، وستتمكن من تحميل المواد الرسمية وتحديث معلومات المنتج.",
+    "fr": "Nous allons examiner et vous contacter dans les 2 prochains jours ouvrables. Une fois l'examen approuvé, vous obtiendrez les autorisations de gestion de la page de marque, vous pourrez télécharger des ressources officielles et mettre à jour les informations de produit.",
+    "hi": "हम 2 कार्य दिवसों के भीतर इसकी समीक्षा करेंगे और आपके साथ संपर्क में रहेंगे। समीक्षा पास होने के बाद, आपको ब्रांड पेज प्रबंधन अनुमति मिलेगी, आप आधिकारिक सामग्री अपलोड कर सकते हैं, उत्पाद जानकारी अपडेट कर सकते हैं।",
   },
   "💚 请扫码完成付款": {
-    "en": "💚 Please scan to pay"
+    "en": "💚 Please scan to pay",
+    "ru": "💚 Пожалуйста, просканируйте код для завершения оплаты",
+    "es": "💚 Por favor, escanee el código para completar el pago",
+    "pt": "💚 Por favor, escaneie o código para concluir o pagamento",
+    "ar": "💚 يرجى مسح الرمز لإتمام الدفع",
+    "fr": "💚 Veuillez scanner le code pour effectuer le paiement",
+    "hi": "💚 कृपया भुगतान पूरा करने के लिए कोड स्कैन करें",
   },
   "📌 付款后请将截图发至 932133255@qq.com 或致电 +86 18633878701，24小时内开通自助展台。": {
-    "en": "📌 After payment, send screenshot to 932133255@qq.com or call +86 18633878701. Activated within 24 hours."
+    "en": "📌 After payment, send screenshot to 932133255@qq.com or call +86 18633878701. Activated within 24 hours.",
+    "ru": "📌 После оплаты, пожалуйста, отправьте скриншот на 932133255@qq.com или позвоните по номеру +86 18633878701, в течение 24 часов будет открыт自ослуживаемый стенд.",
+    "es": "📌 Después del pago, por favor envíe una captura de pantalla a 932133255@qq.com o llame al +86 18633878701, se abrirá el stand de auto-servicio dentro de 24 horas.",
+    "pt": "📌 Após o pagamento, por favor envie uma captura de tela para 932133255@qq.com ou ligue para +86 18633878701, dentro de 24 horas para ativar o stand de autoatendimento.",
+    "ar": "📌 بعد الدفع، يرجى إرسال صورة الشاشة إلى 932133255@qq.com أو الاتصال بالهاتف +86 18633878701، سيتم تفعيل منصة العرض الذاتي في غضون 24 ساعة.",
+    "fr": "📌 Après le paiement, veuillez envoyer une capture d'écran à 932133255@qq.com ou appelez le +86 18633878701, le stand auto sera ouvert dans les 24 heures.",
+    "hi": "📌 भुगतान करने के बाद कृपया स्क्रीनशॉट 932133255@qq.com पर भेजें या +86 18633878701 पर कॉल करें, 24 घंटों के भीतर स्व-प्रदर्शनी खोली जाएगी।",
   },
   "您选择的是免费版，审核通过后自动开通，无需付款。": {
-    "en": "You selected the Free tier. You'll be activated automatically after review—no payment needed."
+    "en": "You selected the Free tier. You'll be activated automatically after review—no payment needed.",
+    "ru": "Вы выбрали бесплатную версию, после одобрения будет автоматически открыт, без необходимости оплаты.",
+    "es": "Usted ha elegido la versión gratuita, después de la aprobación se abrirá automáticamente, no es necesario pagar.",
+    "pt": "Você escolheu a versão gratuita, após a aprovação, será ativada automaticamente, sem necessidade de pagamento.",
+    "ar": "لقد اخترت الإصدار المجاني ، سيتم تفعيله تلقائيًا بعد الموافقة ، ولا يلزم الدفع.",
+    "fr": "Vous avez choisi la version gratuite, une fois l'examen approuvé, il sera ouvert automatiquement, sans frais.",
+    "hi": "आप मुफ्त संस्करण चुन रहे हैं, समीक्षा पास होने के बाद स्वचालित रूप से खोला जाएगा, भुगतान की आवश्यकता नहीं है।",
   },
   "返回展会": {
-    "en": "Back to Expo"
+    "en": "Back to Expo",
+    "ru": "Вернуться на выставку",
+    "es": "Volver a la feria",
+    "pt": "Voltar para a feira",
+    "ar": "العودة إلى المعرض",
+    "fr": "Retour à l'exposition",
+    "hi": "प्रदर्शनी में वापस जाएं",
   },
   "查看套餐": {
-    "en": "View Plans"
+    "en": "View Plans",
+    "ru": "Просмотреть пакеты",
+    "es": "Ver paquetes",
+    "pt": "Ver pacotes",
+    "ar": "عرض الحزمة",
+    "fr": "Voir les forfaits",
+    "hi": "पैकेज देखें",
   },
   "品牌方认领": {
-    "en": "Brand Claim"
+    "en": "Brand Claim",
+    "ru": "Бренд-сайд подтверждение",
+    "es": "Reclamo de la marca",
+    "pt": "Reivindicação da marca",
+    "ar": "التأكيد من قبل الشركة المصنعة",
+    "fr": "Revendication de la marque",
+    "hi": "ब्रांड दावा",
   },
   "认领您的品牌页面，获得官方管理权限": {
-    "en": "Claim your brand page and gain official management access"
+    "en": "Claim your brand page and gain official management access",
+    "ru": "Заявить на свою страницу бренда, получить официальное управление",
+    "es": "Reclame su página de marca, obtenga permisos de administración oficial",
+    "pt": "Reivindique sua página de marca e obtenha permissão de gerenciamento oficial",
+    "ar": "ادعِ صفحة العلامة التجارية الخاصة بك، واحصل على صلاحيات الإدارة الرسمية",
+    "fr": "Revendiquez votre page de marque, obtenez les autorisations de gestion officielles",
+    "hi": "अपने ब्रांड पेज का दावा करें, आधिकारिक प्रबंधन अनुमति प्राप्त करें",
   },
   "更新信息": {
-    "en": "Update Info"
+    "en": "Update Info",
+    "ru": "Обновить информацию",
+    "es": "Actualizar información",
+    "pt": "Atualizar informações",
+    "ar": "تحديث المعلومات",
+    "fr": "Mettre à jour les informations",
+    "hi": "जानकारी अपडेट करें",
   },
   "修改品牌故事、产品参数": {
-    "en": "Edit brand story & specs"
+    "en": "Edit brand story & specs",
+    "ru": "Изменить историю бренда, параметры продукта",
+    "es": "Modificar la historia de la marca, parámetros de productos",
+    "pt": "Modificar história da marca, parâmetros de produtos",
+    "ar": "تعديل قصة العلامة التجارية، المعلمات المنتج",
+    "fr": "Modifier l'histoire de la marque, les paramètres de produit",
+    "hi": "ब्रांड कहानी, उत्पाद पैरामीटर संशोधित करें",
   },
   "上传素材": {
-    "en": "Upload Media"
+    "en": "Upload Media",
+    "ru": "Загрузить материалы",
+    "es": "Cargar material",
+    "pt": "Upload de materiais",
+    "ar": "تحميل المادة",
+    "fr": "Télécharger des ressources",
+    "hi": "सामग्री अपलोड करें",
   },
   "替换AI图为官方高清图": {
-    "en": "Replace AI images with official photos"
+    "en": "Replace AI images with official photos",
+    "ru": "Заменить AI-графику на официальную высококачественную графику",
+    "es": "Reemplazar la imagen de IA con la imagen de alta definición oficial",
+    "pt": "Substituir imagem AI por imagem oficial de alta definição",
+    "ar": "استبدل صورة الذكاء الاصطناعي bằng صورة عالية الدقة الرسمية",
+    "fr": "Remplacer les images AI par des images haute définition officielles",
+    "hi": "एआई चित्र को आधिकारिक उच्च गुणवत्ता वाली छवि से बदलें",
   },
   "官方认证": {
-    "en": "Verified Badge"
+    "en": "Verified Badge",
+    "ru": "Официальная сертификация",
+    "es": "Certificación oficial",
+    "pt": "Certificação oficial",
+    "ar": "المعتمد رسميًا",
+    "fr": "Certification officielle",
+    "hi": "आधिकारिक प्रमाणीकरण",
   },
   "品牌名称 *": {
-    "en": "Brand Name *"
+    "en": "Brand Name *",
+    "ru": "Название бренда *",
+    "es": "Nombre de la marca *",
+    "pt": "Nome da marca *",
+    "ar": "اسم العلامة التجارية *",
+    "fr": "Nom de la marque *",
+    "hi": "ब्रांड नाम *",
   },
   "请输入品牌名称": {
-    "en": "Enter brand name"
+    "en": "Enter brand name",
+    "ru": "Пожалуйста, введите название бренда",
+    "es": "Ingrese el nombre de la marca",
+    "pt": "Por favor, insira o nome da marca",
+    "ar": "أدخل اسم العلامة التجارية",
+    "fr": "Veuillez entrer le nom de la marque",
+    "hi": "कृपया ब्रांड नाम दर्ज करें",
   },
   "联系人姓名 *": {
-    "en": "Contact Name *"
+    "en": "Contact Name *",
+    "ru": "Имя контактного лица *",
+    "es": "Nombre del contacto *",
+    "pt": "Nome do contato *",
+    "ar": "اسم الشخص الاتصال *",
+    "fr": "Nom du contact *",
+    "hi": "संपर्क व्यक्ति का नाम *",
   },
   "请输入您的姓名": {
-    "en": "Enter your name"
+    "en": "Enter your name",
+    "ru": "Пожалуйста, введите свое имя",
+    "es": "Ingrese su nombre",
+    "pt": "Por favor, insira seu nome",
+    "ar": "أدخل اسمك",
+    "fr": "Veuillez entrer votre nom",
+    "hi": "कृपया अपना नाम दर्ज करें",
   },
   "职位": {
-    "en": "Position"
+    "en": "Position",
+    "ru": "Должность",
+    "es": "Cargo",
+    "pt": "Cargo",
+    "ar": "المنصب",
+    "fr": "Poste",
+    "hi": "स्थिति",
   },
   "如：市场总监、出口部经理": {
-    "en": "e.g. Marketing Director, Export Manager"
+    "en": "e.g. Marketing Director, Export Manager",
+    "ru": "Например: маркетинговый директор, менеджер по экспорту",
+    "es": "Por ejemplo: director de marketing, gerente de exportaciones",
+    "pt": "Ex: Diretor de Marketing, Gerente de Exportação",
+    "ar": "مثل：مدير السوق، مدير قسم التصدير",
+    "fr": "Par exemple : directeur du marketing, manager des exportations",
+    "hi": "जैसे: बाजार निदेशक, निर्यात विभाग प्रबंधक",
   },
   "联系电话/WhatsApp *": {
-    "en": "Phone/WhatsApp *"
+    "en": "Phone/WhatsApp *",
+    "ru": "Контактный телефон/WhatsApp *",
+    "es": "Teléfono de contacto / WhatsApp *",
+    "pt": "Telefone de contato/WhatsApp *",
+    "ar": "رقم الهاتف / WhatsApp *",
+    "fr": "Téléphone/WhatsApp *",
+    "hi": "संपर्क फोन/व्हाट्सएप *",
   },
   "请输入手机号或WhatsApp": {
-    "en": "Enter phone or WhatsApp number"
+    "en": "Enter phone or WhatsApp number",
+    "ru": "Пожалуйста, введите номер телефона или WhatsApp",
+    "es": "Ingrese el número de teléfono o WhatsApp",
+    "pt": "Por favor, insira o número de telefone ou WhatsApp",
+    "ar": "أدخل رقم هاتفك أو واتساب",
+    "fr": "Veuillez entrer le numéro de téléphone ou WhatsApp",
+    "hi": "कृपया फोन नंबर या व्हाट्सएप दर्ज करें",
   },
   "电子邮箱": {
-    "en": "Email"
+    "en": "Email",
+    "ru": "Электронная почта",
+    "es": "Correo electrónico",
+    "pt": "E-mail",
+    "ar": "البريد الإلكتروني",
+    "fr": "Courriel",
+    "hi": "इलेक्ट्रॉनिक मेल",
   },
   "公司全称": {
-    "en": "Company Name"
+    "en": "Company Name",
+    "ru": "Полное название компании",
+    "es": "Nombre completo de la empresa",
+    "pt": "Nome completo da empresa",
+    "ar": "الاسم الكامل للشركة",
+    "fr": "Nom complet de l'entreprise",
+    "hi": "कंपनी का पूरा नाम",
   },
   "请输入公司全称": {
-    "en": "Enter full company name"
+    "en": "Enter full company name",
+    "ru": "Пожалуйста, введите полное название компании",
+    "es": "Introduzca el nombre completo de la empresa",
+    "pt": "Insira o nome completo da empresa",
+    "ar": "أدخل اسم الشركة بالكامل",
+    "fr": "Veuillez saisir le nom complet de l'entreprise",
+    "hi": "कंपनी का पूरा नाम दर्ज करें",
   },
   "国家/地区": {
-    "en": "Country/Region"
+    "en": "Country/Region",
+    "ru": "Страна/регион",
+    "es": "País/Región",
+    "pt": "País/Região",
+    "ar": "الدولة / المنطقة",
+    "fr": "Pays/Région",
+    "hi": "देश/क्षेत्र",
   },
   "如：中国、美国、德国": {
-    "en": "e.g. China, USA, Germany"
+    "en": "e.g. China, USA, Germany",
+    "ru": "Например: Китай, США, Германия",
+    "es": "Por ejemplo: China, Estados Unidos, Alemania",
+    "pt": "Ex: China, EUA, Alemanha",
+    "ar": "على سبيل المثال: الصين، الولايات المتحدة، ألمانيا",
+    "fr": "Par exemple : Chine, États-Unis, Allemagne",
+    "hi": "जैसे: चीन, अमेरिका, जर्मनी",
   },
   "营业执照编号/统一社会信用代码": {
-    "en": "Business License No."
+    "en": "Business License No.",
+    "ru": "Номер лицензии/универсальный код социального страхования",
+    "es": "Número de licencia comercial/código de crédito social unificado",
+    "pt": "Número do registro da licença de negócios/código de crédito social unificado",
+    "ar": "رقم ترخيص العمل / رمز الائتمان الاجتماعي الموحد",
+    "fr": "Numéro de licence d'exploitation/code de crédit social unifié",
+    "hi": "व्यवसाय लाइसेंस नंबर/एकीकृत सामाजिक信用 कोड",
   },
   "用于资质审核": {
-    "en": "For verification purposes"
+    "en": "For verification purposes",
+    "ru": "Используется для проверки квалификации",
+    "es": "Para la verificación de calificaciones",
+    "pt": "Usado para verificar a qualificação",
+    "ar": "للتحقق من المؤهلات",
+    "fr": "Utilisé pour la vérification des qualifications",
+    "hi": "योग्यता सत्यापन के लिए",
   },
   "补充说明": {
-    "en": "Additional Notes"
+    "en": "Additional Notes",
+    "ru": "Дополнительное объяснение",
+    "es": "Explicación adicional",
+    "pt": "Explicação adicional",
+    "ar": "شرح إضافي",
+    "fr": "Explication supplémentaire",
+    "hi": "अतिरिक्त विवरण",
   },
   "可补充品牌授权情况、代理区域、合作意向等": {
-    "en": "Brand authorization details, agency regions, cooperation intentions, etc."
+    "en": "Brand authorization details, agency regions, cooperation intentions, etc.",
+    "ru": "Можно добавить информацию о разрешении бренда, регионе агентства, намерениях сотрудничества и т. д.",
+    "es": "Puede complementar la situación de autorización de la marca, el área de代理 y la intención de cooperación, etc.",
+    "pt": "Pode incluir a situação de autorização da marca, área de representação, intenções de cooperação, etc.",
+    "ar": "يمكن إضافة حالة ترخيص العلامة التجارية، منطقة الوكالة، نوايا التعاون، إلخ",
+    "fr": "Vous pouvez compléter les informations sur l'autorisation de marque, la région d'agence, les intentions de coopération, etc.",
+    "hi": "ब्रांड प्राधिकरण स्थिति, एजेंसी क्षेत्र, सहयोग की मंशा आदि के बारे में अतिरिक्त जानकारी दें",
   },
   "提交认领申请": {
-    "en": "Submit Claim"
+    "en": "Submit Claim",
+    "ru": "Отправить заявку на подтверждение",
+    "es": "Enviar solicitud de reclamo",
+    "pt": "Enviar solicitação de reivindicação",
+    "ar": "تقديم طلب الحصول على حقوق الملكية",
+    "fr": "Soumettre la demande de revendication",
+    "hi": "दावा आवेदन जमा करें",
   },
   "提交后我们将在2个工作日内审核。如需加急，请联系 932133255@qq.com 或致电 +86 18633878701": {
-    "en": "We will review within 2 business days. For urgent requests, contact 932133255@qq.com or call +86 18633878701."
+    "en": "We will review within 2 business days. For urgent requests, contact 932133255@qq.com or call +86 18633878701.",
+    "ru": "После отправки ваша заявка будет рассмотрена в течение 2 рабочих дней. Для срочного рассмотрения свяжитесь с 932133255@qq.com или позвоните по телефону +86 18633878701",
+    "es": "Después de enviar, nosotros lo verificaremos dentro de 2 días hábiles. Si necesita urgencia, por favor contacte con 932133255@qq.com o llame al +86 18633878701",
+    "pt": "Após o envio, faremos a auditoria dentro de 2 dias úteis. Se precisar de urgência, por favor contate 932133255@qq.com ou ligue para +86 18633878701",
+    "ar": "بعد التقديم، سنقوم بالتحقق في غضون 2 يوم عمل. إذا كنت تحتاج إلى إجراء سريع، يرجى الاتصال 932133255@qq.com أو الاتصال الهاتفي +86 18633878701",
+    "fr": "Après soumission, nous allons procéder à la vérification dans les 2 jours ouvrables. Si vous avez besoin d'urgence, veuillez contacter 932133255@qq.com ou appeler +86 18633878701",
+    "hi": "जमा करने के बाद हम 2 कार्य दिवसों के भीतर सत्यापन करेंगे। यदि त्वरित आवश्यकता है, तो 932133255@qq.com से संपर्क करें या +86 18633878701 पर कॉल करें",
   },
   "视频超过100MB限制": {
-    "en": "Video exceeds 100MB limit"
+    "en": "Video exceeds 100MB limit",
+    "ru": "Видео превышает ограничение 100MB",
+    "es": "El video supera el límite de 100MB",
+    "pt": "Vídeo excede o limite de 100MB",
+    "ar": "الفيديو يتجاوز حد 100MB",
+    "fr": "La vidéo dépasse la limite de 100MB",
+    "hi": "वीडियो 100MB सीमा से अधिक है",
   },
   "请填写品牌名并选择视频": {
-    "en": "Fill brand name and select video"
+    "en": "Fill brand name and select video",
+    "ru": "Пожалуйста, введите название бренда и выберите видео",
+    "es": "Por favor, escriba el nombre de la marca y seleccione el video",
+    "pt": "Por favor, preencha o nome da marca e selecione o vídeo",
+    "ar": "يرجى إدخال اسم العلامة التجارية واختيار الفيديو",
+    "fr": "Veuillez saisir le nom de la marque et sélectionner la vidéo",
+    "hi": "ब्रांड नाम भरें और वीडियो चुनें",
   },
   "现场作业": {
-    "en": "Field Demo"
+    "en": "Field Demo",
+    "ru": "Работа на месте",
+    "es": "Operación en el sitio",
+    "pt": "Operação no local",
+    "ar": "العمل الميداني",
+    "fr": "Travaux sur site",
+    "hi": "साइट पर काम",
   },
   "上传成功！视频已发布到大屏": {
-    "en": "Uploaded! Video is now live"
+    "en": "Uploaded! Video is now live",
+    "ru": "Загрузка успешна! Видео опубликовано на большом экране",
+    "es": "¡Subida exitosa! El video se ha publicado en la pantalla grande",
+    "pt": "Upload bem-sucedido! O vídeo foi publicado na tela grande",
+    "ar": "تم النشر بنجاح! تم نشر الفيديو على الشاشة الكبيرة",
+    "fr": "Téléchargement réussi! La vidéo a été publiée sur le grand écran",
+    "hi": "अपलोड सफल! वीडियो बड़े पर्दे पर प्रकाशित किया गया है",
   },
   "上传失败": {
-    "en": "Upload failed"
+    "en": "Upload failed",
+    "ru": "Загрузка не удалась",
+    "es": "Subida fallida",
+    "pt": "Falha no upload",
+    "ar": "فشل النشر",
+    "fr": "Échec du téléchargement",
+    "hi": "अपलोड विफल",
   },
   "上传出错": {
-    "en": "Upload error"
+    "en": "Upload error",
+    "ru": "Ошибка загрузки",
+    "es": "Error al subir",
+    "pt": "Erro no upload",
+    "ar": "خطأ في النشر",
+    "fr": "Erreur de téléchargement",
+    "hi": "अपलोड में त्रुटि",
   },
   "地头展现场": {
-    "en": "Field Demo"
+    "en": "Field Demo",
+    "ru": "Выставка на месте",
+    "es": "Exposición en el sitio",
+    "pt": "Exposição no local",
+    "ar": "معرض địa头展 الميداني",
+    "fr": "Exposition de terrain",
+    "hi": "साइट पर प्रदर्शनी",
   },
   "地头展·作业视频大赏": {
-    "en": "Field Expo · Demo Video Showcase"
+    "en": "Field Expo · Demo Video Showcase",
+    "ru": "Выставка на месте · конкурс видеороликов",
+    "es": "Exposición en el sitio · Gran premio de videos de operación",
+    "pt": "Exposição · Prêmio de vídeo de operação no local",
+    "ar": "معرض 地头展 · جائزة فيديو العمل الميداني",
+    "fr": "Exposition de terrain · Concours de vidéos de travaux",
+    "hi": "साइट प्रदर्शनी·काम वीडियो पुरस्कार",
   },
   "7月29日 河北元氏·第28届河北农机地头展": {
-    "en": "July 29 · Yuanshi, Hebei · 28th Field Expo"
+    "en": "July 29 · Yuanshi, Hebei · 28th Field Expo",
+    "ru": "29 июля 河北元氏·第28-я выставка сельскохозяйственной техники в Хэбэе",
+    "es": "29 de julio, Hebei Yuanshi · 28ª Exposición de maquinaria agrícola de Hebei",
+    "pt": "29 de julho, Hebei Yuanshi · 28ª Exposição de Máquinas Agrícolas de Hebei",
+    "ar": "29 يوليو 河北元氏 · الدورة 28 لمعرض 河北农机地头展",
+    "fr": "29 juillet, Hebei Yuanshi · 28e exposition de machines agricoles de Hebei",
+    "hi": "29 जुलाई हेबEI युआनशी·28वीं हेबEI कृषि मशीनरी साइट प्रदर्शनी",
   },
   "扫码上传您的现场作业视频，即刻在大屏和线上同步展示": {
-    "en": "Scan to upload your demo video and feature it live!"
+    "en": "Scan to upload your demo video and feature it live!",
+    "ru": "Отсканируйте код, чтобы загрузить видео своей работы, и оно сразу же будет показано на большом экране и в Интернете",
+    "es": "Escanea para subir tu video de operación en el sitio y mostrarlo en la pantalla grande y en línea al mismo tiempo",
+    "pt": "Escaneie o código para upload do seu vídeo de operação no local, exibindo-o imediatamente na tela grande e online",
+    "ar": "ماسح رمز الQR لتحميل فيديو العمل الميداني، وستتم مزامنته على الشاشة الكبيرة وعلى الإنترنت على الفور",
+    "fr": "Scannez le code pour télécharger votre vidéo de travaux sur site, affichée instantanément sur le grand écran et en ligne",
+    "hi": "क्यूआर कोड स्कैन करके अपना साइट पर काम वीडियो अपलोड करें, तुरंत बड़े पर्दे और ऑनलाइन प्रदर्शनी में प्रदर्शित करें",
   },
   "上传您的作业视频": {
-    "en": "Upload Your Demo Video"
+    "en": "Upload Your Demo Video",
+    "ru": "Загрузите свое видео работы",
+    "es": "Sube tu video de operación",
+    "pt": "Faça o upload do seu vídeo de operação",
+    "ar": "تحميل فيديو العمل",
+    "fr": "Téléchargez votre vidéo de travaux",
+    "hi": "अपना काम वीडियो अपलोड करें",
   },
   "如：河北英虎机械": {
-    "en": "e.g. Hebei Yinghu"
+    "en": "e.g. Hebei Yinghu",
+    "ru": "Например: 河北英虎机械",
+    "es": "Por ejemplo: Hebei Yinghu Machinery",
+    "pt": "Ex: Hebei Yinghu Machinery",
+    "ar": "على سبيل المثال: 河北英虎机械",
+    "fr": "Par exemple : Hebei Yinghu Machinery",
+    "hi": "जैसे: हेबEI इंग हू मशीनरी",
   },
   "机器类型": {
-    "en": "Machine Type"
+    "en": "Machine Type",
+    "ru": "Тип машины",
+    "es": "Tipo de máquina",
+    "pt": "Tipo de máquina",
+    "ar": "نوع الآلة",
+    "fr": "Type de machine",
+    "hi": "मशीन का प्रकार",
   },
   "如：玉米收获机": {
-    "en": "e.g. Corn Harvester"
+    "en": "e.g. Corn Harvester",
+    "ru": "Например: комбайн для уборки кукурузы",
+    "es": "Por ejemplo: cosechadora de maíz",
+    "pt": "Ex: Colhedora de milho",
+    "ar": "على سبيل المثال: جهاز حصاد الذرة",
+    "fr": "Par exemple : moissonneuse de maïs",
+    "hi": "जैसे: मक्का काटने की मशीन",
   },
   "视频文件（≤100MB）": {
-    "en": "Video File (≤100MB)"
+    "en": "Video File (≤100MB)",
+    "ru": "Видео файл（≤100MB）",
+    "es": "Archivo de video (≤100MB)",
+    "pt": "Arquivo de vídeo (≤100MB)",
+    "ar": "ملف الفيديو (≤100MB)",
+    "fr": "Fichier vidéo (≤100MB)",
+    "hi": "वीडियो फ़ाइल（≤100MB）",
   },
   "点击选择视频": {
-    "en": "Tap to select video"
+    "en": "Tap to select video",
+    "ru": "Нажмите, чтобы выбрать видео",
+    "es": "Haga clic para seleccionar el video",
+    "pt": "Clique para selecionar o vídeo",
+    "ar": "انقر لتحديد الفيديو",
+    "fr": "Cliquez pour sélectionner la vidéo",
+    "hi": "वीडियो चुनने के लिए क्लिक करें",
   },
   "上传中...": {
-    "en": "Uploading..."
+    "en": "Uploading...",
+    "ru": "Загрузка...",
+    "es": "Subiendo...",
+    "pt": "Enviando...",
+    "ar": "جاري التحميل...",
+    "fr": "Téléchargement en cours...",
+    "hi": "अपलोड हो रहा है...",
   },
   "上传到集锦": {
-    "en": "Upload to Gallery"
+    "en": "Upload to Gallery",
+    "ru": "Загрузка в сборник",
+    "es": "Subir a la recopilación",
+    "pt": "Enviando para a compilação",
+    "ar": "تحميل إلى المجموعة",
+    "fr": "Téléchargement dans la compilation",
+    "hi": "संग्रह में अपलोड करें",
   },
   "选择视频后预览": {
-    "en": "Preview will appear here"
+    "en": "Preview will appear here",
+    "ru": "Просмотр видео после выбора",
+    "es": "Vista previa después de seleccionar el video",
+    "pt": "Selecione o vídeo e pré-visualize",
+    "ar": "معاينة الفيديو بعد تحديده",
+    "fr": "Prévisualisation après sélection de la vidéo",
+    "hi": "वीडियो चुनने के बाद पूर्वावलोकन",
   },
   "作业视频大赏": {
-    "en": "Demo Video Gallery"
+    "en": "Demo Video Gallery",
+    "ru": "Конкурс видеороликов",
+    "es": "Gran premio de videos de operación",
+    "pt": "Prêmio de vídeo de operação",
+    "ar": "جائزة فيديو العمل الميداني",
+    "fr": "Concours de vidéos de travaux",
+    "hi": "काम वीडियो पुरस्कार",
   },
   "（共": {
-    "en": "("
+    "en": "(",
+    "ru": "（Всего",
+    "es": "(Total de",
+    "pt": "(Total de",
+    "ar": "（مجموع",
+    "fr": "(Total de {count}",
+    "hi": "（कुल",
   },
   "个视频）": {
-    "en": " video(s)"
+    "en": " video(s)",
+    "ru": " видео）",
+    "es": "Un vídeo",
+    "pt": "vídeo(s)",
+    "ar": "فيديو واحد)",
+    "fr": "une vidéo)",
+    "hi": "वीडियो",
   },
   "还没有视频上传": {
-    "en": "No videos yet"
+    "en": "No videos yet",
+    "ru": "Видео еще не загружено",
+    "es": "Todavía no se han subido vídeos",
+    "pt": "Nenhum vídeo foi enviado",
+    "ar": "لم يتم تحميل أي فيديو بعد",
+    "fr": "Aucune vidéo n'a été téléchargée",
+    "hi": "अभी तक कोई वीडियो अपलोड नहीं हुआ है",
   },
   "现场扫码上传，您的视频将出现在这里和大屏上": {
-    "en": "Scan and upload — your video will show here and on the big screen"
+    "en": "Scan and upload — your video will show here and on the big screen",
+    "ru": "Отсканируйте код на месте, и ваше видео появится здесь и на большом экране",
+    "es": "Subir escaneando el código QR en el lugar, su vídeo aparecerá aquí y en la pantalla grande",
+    "pt": "Envie o vídeo no local e ele aparecerá aqui e na tela grande",
+    "ar": "امسح الرمز في الموقع لتحميل فيديوهاتك، سيظهر هنا وعلى الشاشة الكبيرة",
+    "fr": "Scannez le code sur place pour télécharger, votre vidéo apparaîtra ici et sur le grand écran",
+    "hi": "साइट पर स्कैन करें और अपना वीडियो यहाँ और बड़ी स्क्रीन पर अपलोड करें",
   },
   "现场扫码上传 · 即刻上大屏": {
-    "en": "Scan QR · Instant Big Screen"
+    "en": "Scan QR · Instant Big Screen",
+    "ru": "Отсканируйте код на месте · сразу на большой экран",
+    "es": "Subir escaneando el código QR en el lugar · En la pantalla grande al instante",
+    "pt": "Envie o vídeo no local · Apareça na tela grande agora",
+    "ar": "امسح الرمز في الموقع لتحميل فيديوهاتك · على الشاشة الكبيرة الآن",
+    "fr": "Téléchargez en scannant le code sur place · Affiché immédiatement sur le grand écran",
+    "hi": "साइट पर स्कैन करें और तुरंत बड़ी स्क्रीन पर अपलोड करें",
   },
   "打开手机 → 扫码 → 选视频 → 上传完成": {
-    "en": "Open camera → Scan QR → Pick video → Done!"
+    "en": "Open camera → Scan QR → Pick video → Done!",
+    "ru": "Откройте телефон → отсканируйте код → выберите видео → загрузка завершена",
+    "es": "Abrir teléfono → Escanear código QR → Seleccionar vídeo → Subir completado",
+    "pt": "Abra o celular → Escaneie o código → Selecione o vídeo → Envio concluído",
+    "ar": "افتح هاتفك → امسح الرمز → اختر فيديو → انتهى التحميل",
+    "fr": "Ouvrez votre téléphone → Scansez le code → Sélectionnez la vidéo → Téléchargement terminé",
+    "hi": "मोबाइल फोन खोलें → स्कैन करें → वीडियो चुनें → अपलोड पूरा करें",
   },
   "如：发动机运行检测": {
-    "en": "e.g. Engine inspection"
+    "en": "e.g. Engine inspection",
+    "ru": "Например: проверка работы двигателя",
+    "es": "Por ejemplo: inspección de funcionamiento del motor",
+    "pt": "Ex: Verificação do motor em funcionamento",
+    "ar": "على سبيل المثال: فحص تشغيل المحرك",
+    "fr": "Par exemple : test de fonctionnement du moteur",
+    "hi": "जैसे: इंजन चलने की जाँच",
   },
   "验机员姓名": {
-    "en": "Inspector name"
+    "en": "Inspector name",
+    "ru": "Имя инспектора",
+    "es": "Nombre del inspector",
+    "pt": "Nome do verificador",
+    "ar": "اسم فاحص الآلة",
+    "fr": "Nom de l'inspecteur",
+    "hi": "परीक्षणकर्ता का नाम",
   },
   "如：石家庄元氏县马村镇": {
-    "en": "e.g. Yuanshi, Shijiazhuang"
+    "en": "e.g. Yuanshi, Shijiazhuang",
+    "ru": "Например: 石家庄元氏县马村镇",
+    "es": "Por ejemplo: condado de Yuanshi, ciudad de Shijiazhuang, pueblo de Ma",
+    "pt": "Ex: Condado de Yuanshi, cidade de Shijiazhuang",
+    "ar": "على سبيل المثال: مقاطعة يوانشي، مدينة شيجiazhuang",
+    "fr": "Par exemple : village de Ma, comté de Yuanshi, Shijiazhuang",
+    "hi": "जैसे: शिजियाज़ुआंग युआनशी काउंटी मा गाँव",
   },
   "描述检测项目、结果、发现的问题等": {
-    "en": "Describe what was inspected and results"
+    "en": "Describe what was inspected and results",
+    "ru": "Описание проекта проверки, результатов, выявленных проблем и т. д.",
+    "es": "Describir el proyecto de inspección, resultados, problemas encontrados, etc.",
+    "pt": "Descreva o projeto de verificação, resultados, problemas encontrados, etc.",
+    "ar": "وصف مشروع الفحص، النتائج، المشاكل المكتشفة",
+    "fr": "Description du projet de détection, des résultats, des problèmes rencontrés, etc.",
+    "hi": "परीक्षण परियोजना, परिणाम, समस्याओं का वर्णन करें",
   },
   "农机档案数据异常": {
-    "en": "Profile data error"
+    "en": "Profile data error",
+    "ru": "Несоответствие данных архива сельскохозяйственной техники",
+    "es": "Datos de archivo de máquina agrícola anormales",
+    "pt": "Dados do arquivo de máquinas agrícolas anormais",
+    "ar": "بيانات سجلات الآلة الزراعية غير عادية",
+    "fr": "Données d'archives de machines agricoles anormales",
+    "hi": "कृषि मशीनरी डेटा असामान्य",
   },
   "神雕农机 · 一机一码溯源": {
-    "en": "Shendiao · Machinery Traceability"
+    "en": "Shendiao · Machinery Traceability",
+    "ru": "神雕农机 · один код для каждой машины",
+    "es": "神雕农机 · Origen de una máquina y un código",
+    "pt": "神雕农机 · Origem de uma máquina e um código",
+    "ar": "神雕农机 · ترميز واحد لآلة واحدة",
+    "fr": "神雕农机 · Traçabilité d'une machine à une plaque",
+    "hi": "神雕农机 · एक मशीन एक कोड ट्रेस",
   },
   "已验证": {
-    "en": "Verified"
+    "en": "Verified",
+    "ru": "Проверено",
+    "es": "Verificado",
+    "pt": "Verificado",
+    "ar": "تم التحقق",
+    "fr": "Vérifié",
+    "hi": "सत्यापित किया गया",
   },
   "待验证": {
-    "en": "Pending"
+    "en": "Pending",
+    "ru": "Ожидает проверки",
+    "es": "Pendiente de verificación",
+    "pt": "Aguardando verificação",
+    "ar": "بانتظار التحقق",
+    "fr": "En attente de vérification",
+    "hi": "सत्यापन पENDING",
   },
   "成色": {
-    "en": "Condition"
+    "en": "Condition",
+    "ru": "Состояние",
+    "es": "Estado",
+    "pt": "Condição",
+    "ar": "الحالة",
+    "fr": "État",
+    "hi": "स्थिति",
   },
   "哈希": {
-    "en": "Hash"
+    "en": "Hash",
+    "ru": "Хэш",
+    "es": "Hash",
+    "pt": "Hash",
+    "ar": "الهاش",
+    "fr": "Hash",
+    "hi": "हैश",
   },
   "验机实拍": {
-    "en": "Inspection Photos"
+    "en": "Inspection Photos",
+    "ru": "Фотографии и видео проверки",
+    "es": "Fotografía real de inspección",
+    "pt": "Foto da verificação",
+    "ar": "صورة فحص الآلة",
+    "fr": "Photo de détection sur place",
+    "hi": "परीक्षण फोटो",
   },
   "全生命周期档案": {
-    "en": "Lifecycle History"
+    "en": "Lifecycle History",
+    "ru": "Архив за весь жизненный цикл",
+    "es": "Archivo de ciclo de vida completo",
+    "pt": "Arquivo de ciclo de vida completo",
+    "ar": "سجل العمر الكامل",
+    "fr": "Archives du cycle de vie complet",
+    "hi": "पूरे जीवन चक्र का रिकॉर्ड",
   },
   "暂无记录": {
-    "en": "No records yet"
+    "en": "No records yet",
+    "ru": "Нет записей",
+    "es": "No hay registros temporales",
+    "pt": "Nenhum registro encontrado",
+    "ar": "لا توجد سجلات",
+    "fr": "Aucun enregistrement pour le moment",
+    "hi": "अभी तक कोई रिकॉर्ड नहीं",
   },
   "检测照片": {
-    "en": "Photos"
+    "en": "Photos",
+    "ru": "Фотографии проверки",
+    "es": "Fotografías de inspección",
+    "pt": "Foto da verificação",
+    "ar": "صورة الفحص",
+    "fr": "Photo de détection",
+    "hi": "परीक्षण फोटो",
   },
   "检测视频": {
-    "en": "Videos"
+    "en": "Videos",
+    "ru": "Видео проверки",
+    "es": "Vídeos de inspección",
+    "pt": "Vídeo da verificação",
+    "ar": "فيديو الفحص",
+    "fr": "Vidéo de détection",
+    "hi": "परीक्षण वीडियो",
   },
   "查看视频": {
-    "en": "Watch Video"
+    "en": "Watch Video",
+    "ru": "Просмотр видео",
+    "es": "Ver vídeo",
+    "pt": "Ver vídeo",
+    "ar": "مشاهدة الفيديو",
+    "fr": "Voir la vidéo",
+    "hi": "वीडियो देखें",
   },
   "添加验机记录": {
-    "en": "Add Inspection"
+    "en": "Add Inspection",
+    "ru": "Добавление записи проверки",
+    "es": "Agregar registro de inspección",
+    "pt": "Adicionar registro de verificação",
+    "ar": "إضافة سجل فحص",
+    "fr": "Ajouter un enregistrement de détection",
+    "hi": "परीक्षण रिकॉर्ड जोड़ें",
   },
   "验机记录": {
-    "en": "Inspection Record"
+    "en": "Inspection Record",
+    "ru": "Записи проверки",
+    "es": "Registro de inspección",
+    "pt": "Registro de verificação",
+    "ar": "سجل الفحص",
+    "fr": "Enregistrement de détection",
+    "hi": "परीक्षण रिकॉर्ड",
   },
   "提交成功，页面刷新中...": {
-    "en": "Submitted! Refreshing..."
+    "en": "Submitted! Refreshing...",
+    "ru": "Отправлено успешно, страница обновляется...",
+    "es": "Enviado con éxito, refrescando la página...",
+    "pt": "Envio concluído, página recarregando...",
+    "ar": "تم ارسال الطلب بنجاح، يتم تحديث الصفحة...",
+    "fr": "Soumission réussie, page en cours de rafraîchissement...",
+    "hi": "सबमिट सफल, पेज रिफ्रेश हो रहा है...",
   },
   "检测标题": {
-    "en": "Title"
+    "en": "Title",
+    "ru": "Название проверки",
+    "es": "Título de inspección",
+    "pt": "Título da verificação",
+    "ar": "عنوان الفحص",
+    "fr": "Titre de la détection",
+    "hi": "परीक्षण शीर्षक",
   },
   "检测人员": {
-    "en": "Inspector"
+    "en": "Inspector",
+    "ru": "Проверяющий",
+    "es": "Personal de inspección",
+    "pt": "Pessoal de verificação",
+    "ar": "شخص الفحص",
+    "fr": "Personnel de détection",
+    "hi": "परीक्षण कर्मी",
   },
   "检测地点": {
-    "en": "Location"
+    "en": "Location",
+    "ru": "Место проверки",
+    "es": "Lugar de inspección",
+    "pt": "Local da verificação",
+    "ar": "مكان الفحص",
+    "fr": "Lieu de détection",
+    "hi": "परीक्षण स्थान",
   },
   "检测说明": {
-    "en": "Description"
+    "en": "Description",
+    "ru": "Описание проверки",
+    "es": "Explicación de la inspección",
+    "pt": "Explicação da verificação",
+    "ar": "شرح الفحص",
+    "fr": "Explication de la détection",
+    "hi": "परीक्षण विवरण",
   },
   "照片/视频": {
-    "en": "Photos/Videos"
+    "en": "Photos/Videos",
+    "ru": "Фотографии/видео",
+    "es": "Fotografías/vídeos",
+    "pt": "Foto/vídeo",
+    "ar": "صورة/فيديو",
+    "fr": "Photo/vidéo",
+    "hi": "फोटो/वीडियो",
   },
   "点击上传照片或视频（可多选）": {
-    "en": "Upload photos/videos (multi-select)"
+    "en": "Upload photos/videos (multi-select)",
+    "ru": "Нажмите, чтобы загрузить фотографии или видео (можно выбрать несколько)",
+    "es": "Haga clic para subir fotografías o vídeos (se pueden seleccionar varios)",
+    "pt": "Clique para enviar foto ou vídeo (vários podem ser selecionados)",
+    "ar": "انقر لتحميل الصور أو الفيديوهات (يمكن اختيار متعدد)",
+    "fr": "Cliquez pour télécharger des photos ou des vidéos (plusieurs choix possibles)",
+    "hi": "फोटो या वीडियो अपलोड करने के लिए क्लिक करें (बहुविकल्पी चुनें)",
   },
   "提交验机记录": {
-    "en": "Submit Inspection"
+    "en": "Submit Inspection",
+    "ru": "Отправить запись проверки",
+    "es": "Enviar registros de inspección",
+    "pt": "Enviar registro de verificação",
+    "ar": "تسليم سجل الفحص",
+    "fr": "Soumettre les dossiers d'inspection",
+    "hi": "प्रमाणीकरण रिकॉर्ड जमा करें",
   },
   "零配件专区": {
-    "en": "Parts & Components"
+    "en": "Parts & Components",
+    "ru": "Специальный раздел для запчастей",
+    "es": "Zona especial de repuestos",
+    "pt": "Zona de peças sobressalentes",
+    "ar": "منطقة قطع الغيار الخاصة",
+    "fr": "Zone spécialisée dans les pièces détachées",
+    "hi": "शून्य पुर्जे क्षेत्र",
   },
   "四级分类导航 · 原厂配件 · 品牌兼容件 · 全国配送 — 为您的农机提供全生命周期配件保障": {
-    "en": "Four-Level Catalog · OEM Parts · Compatible Components · Nationwide Delivery — Full lifecycle parts support"
+    "en": "Four-Level Catalog · OEM Parts · Compatible Components · Nationwide Delivery — Full lifecycle parts support",
+    "ru": "Четырехуровневая навигация по категориям · оригинальные запчасти · брендовые аналоги · доставка по всей стране — для обеспечения сельскохозяйственной техники запчастями на протяжении всего жизненного цикла",
+    "es": "Navegación de categorías de 4 niveles · Repuestos de fábrica · Repuestos compatibles con marcas · Entrega en todo el país — brindando garantía de repuestos para todo el ciclo de vida de su máquina agrícola",
+    "pt": "Navegação de classificação de quatro níveis · Peças originais · Peças compatíveis · Entrega em todo o país — Garantia de peças para todo o ciclo de vida da sua máquina agrícola",
+    "ar": "تنقل تصنيفي من الدرجة الرابعة · قطع الغيار الأصلية · قطع الغيار المتوافقة مع العلامة التجارية · التوصيل في جميع أنحاء البلاد — لتوفير ضمانات قطع الغيار لآلة الزراعة طوال دورة حياتها",
+    "fr": "Navigation de classification de niveau 4 · Pièces d'usine · Pièces compatibles avec les marques · Livraison à l'échelle nationale — Garantie de pièces détachées pour l'ensemble du cycle de vie de votre machine agricole",
+    "hi": "चार स्तरीय वर्गीकरण नेविगेशन · मूल उपकरण पुर्जे · ब्रांड संगत पुर्जे · राष्ट्रीय वितरण — आपके कृषि उपकरण के लिए पूरे जीवन चक्र पुर्जे सुरक्षा",
   },
   "14大品类": {
-    "en": "14 Categories"
+    "en": "14 Categories",
+    "ru": "14 крупных категорий",
+    "es": "14 categorías principales",
+    "pt": "14 categorias principais",
+    "ar": "14 فئة كبيرة",
+    "fr": "14 grandes catégories",
+    "hi": "14 बड़े वर्ग",
   },
   "全国配送": {
-    "en": "Nationwide Shipping"
+    "en": "Nationwide Shipping",
+    "ru": "Доставка по всей стране",
+    "es": "Entrega en todo el país",
+    "pt": "Entrega em todo o país",
+    "ar": "التوصيل في جميع أنحاء البلاد",
+    "fr": "Livraison à l'échelle nationale",
+    "hi": "राष्ट्रीय वितरण",
   },
   "质量保证": {
-    "en": "Quality Guarantee"
+    "en": "Quality Guarantee",
+    "ru": "Гарантия качества",
+    "es": "Garantía de calidad",
+    "pt": "Garantia de qualidade",
+    "ar": "ضمان الجودة",
+    "fr": "Garantie de qualité",
+    "hi": "गुणवत्ता गारंटी",
   },
   "搜索配件名称、品牌、OEM编号...": {
-    "en": "Search parts, brands, OEM numbers..."
+    "en": "Search parts, brands, OEM numbers...",
+    "ru": "Поиск названия запчасти, бренда, OEM-номера...",
+    "es": "Buscar nombre de repuesto, marca, número de OEM...",
+    "pt": "Pesquisar nome da peça, marca, número OEM...",
+    "ar": "ابحث عن اسم قطع الغيار، العلامة التجارية، رقم OEM...",
+    "fr": "Rechercher le nom de la pièce détachée, la marque, le numéro OEM...",
+    "hi": "पुर्जे का नाम, ब्रांड, ओईएम संख्या खोजें...",
   },
   "配件分类导航": {
-    "en": "Parts Catalog"
+    "en": "Parts Catalog",
+    "ru": "Навигация по категориям запчастей",
+    "es": "Navegación de categorías de repuestos",
+    "pt": "Navegação de classificação de peças",
+    "ar": "تنقل تصنيفي لقطع الغيار",
+    "fr": "Navigation de classification des pièces détachées",
+    "hi": "पुर्जे वर्गीकरण नेविगेशन",
   },
   "品牌:": {
-    "en": "Brand:"
+    "en": "Brand:",
+    "ru": "Бренд:",
+    "es": "Marca:",
+    "pt": "Marca:",
+    "ar": "العلامة التجارية:",
+    "fr": "Marque :",
+    "hi": "ब्रांड:",
   },
   "库存:": {
-    "en": "Stock:"
+    "en": "Stock:",
+    "ru": "Запасы:",
+    "es": "Stock:",
+    "pt": "Estoque:",
+    "ar": "المخزون:",
+    "fr": "Stock :",
+    "hi": "स्टॉक:",
   },
   "有货": {
-    "en": "In Stock"
+    "en": "In Stock",
+    "ru": "В наличии",
+    "es": "En stock",
+    "pt": "Em estoque",
+    "ar": "متوفر",
+    "fr": "En stock",
+    "hi": "स्टॉक उपलब्ध",
   },
   "库存紧张": {
-    "en": "Low Stock"
+    "en": "Low Stock",
+    "ru": "Малый запас",
+    "es": "Stock bajo",
+    "pt": "Estoque baixo",
+    "ar": "نقص في المخزون",
+    "fr": "Stock faible",
+    "hi": "स्टॉक कम",
   },
   "缺货": {
-    "en": "Out of Stock"
+    "en": "Out of Stock",
+    "ru": "Нет в наличии",
+    "es": "Agotado",
+    "pt": "Sem estoque",
+    "ar": "نفاد المخزون",
+    "fr": "Rupture de stock",
+    "hi": "स्टॉक नहीं",
   },
   "找不到需要的配件？": {
-    "en": "Can't find the part you need?"
+    "en": "Can't find the part you need?",
+    "ru": "Не можете найти нужную запчасть?",
+    "es": "¿No encuentra el repuesto que necesita?",
+    "pt": "Não consegue encontrar a peça necessária？",
+    "ar": "لم تجد قطع الغيار التي تحتاجها؟",
+    "fr": "Ne trouvez-vous pas la pièce détachée dont vous avez besoin ?",
+    "hi": "क्या आपको आवश्यक पुर्जा नहीं मिल रहा है?",
   },
   "告诉我们您的设备型号和需求，我们专业团队帮您全球 sourcing，48小时内报价": {
-    "en": "Tell us your equipment model and requirements. Our team will source globally and quote within 48 hours"
+    "en": "Tell us your equipment model and requirements. Our team will source globally and quote within 48 hours",
+    "ru": "Расскажите нам о модели вашего оборудования и ваших потребностях, и наша профессиональная команда поможет вам найти ее по всему миру, а также предоставит вам цену в течение 48 часов",
+    "es": "Infórmenos sobre el modelo de su equipo y sus necesidades, nuestro equipo profesional lo ayudará a buscar en todo el mundo, con cotización en 48 horas",
+    "pt": "Inform-nos o modelo do seu equipamento e as suas necessidades, nossa equipe profissional ajudará a encontrar globalmente, com orçamento em 48 horas",
+    "ar": "告诉نا نموذج جهازك واحتياجاتك، وسيقوم فريقنا المحترف بمساعدتك في البحث العالمي، وسوف نقدم لك عرض أسعار في غضون 48 ساعة",
+    "fr": "Dites-nous le modèle de votre équipement et vos besoins, notre équipe professionnelle vous aidera à trouver des fournisseurs dans le monde entier, avec un devis dans les 48 heures",
+    "hi": "हमें अपने उपकरण मॉडल और आवश्यकता के बारे में बताएं, हमारी पेशेवर टीम आपके लिए वैश्विक सोर्सिंग करेगी, 48 घंटों के भीतर उद्धरण देगी",
   },
   "提交需求": {
-    "en": "Submit Request"
+    "en": "Submit Request",
+    "ru": "Отправить запрос",
+    "es": "Enviar solicitud",
+    "pt": "Enviar necessidade",
+    "ar": "تسليم الطلب",
+    "fr": "Soumettre les besoins",
+    "hi": "आवश्यकता जमा करें",
   },
   "浏览农机": {
-    "en": "Browse Machinery"
+    "en": "Browse Machinery",
+    "ru": "Просмотреть сельхозтехнику",
+    "es": "Explorar máquinas agrícolas",
+    "pt": "Navegar máquinas agrícolas",
+    "ar": "استعراض آلة الزراعة",
+    "fr": "Parcourir les machines agricoles",
+    "hi": "कृषि उपकरण ब्राउज़ करें",
   },
   "隐私政策": {
-    "en": "Privacy Policy"
+    "en": "Privacy Policy",
+    "ru": "Политика конфиденциальности",
+    "es": "Política de privacidad",
+    "pt": "Política de privacidade",
+    "ar": "سياسة الخصوصية",
+    "fr": "Politique de confidentialité",
+    "hi": "गोपनीयता नीति",
   },
   "最近更新日期：2026年7月17日 | 生效日期：2026年7月17日": {
-    "en": "Last updated: July 17, 2026 | Effective date: July 17, 2026"
+    "en": "Last updated: July 17, 2026 | Effective date: July 17, 2026",
+    "ru": "Дата последнего обновления: 17 июля 2026 г. | Дата вступления в силу: 17 июля 2026 г.",
+    "es": "Fecha de última actualización: 17 de julio de 2026 | Fecha de entrada en vigor: 17 de julio de 2026",
+    "pt": "Data de atualização mais recente: 17 de julho de 2026 | Data de entrada em vigor: 17 de julho de 2026",
+    "ar": "تاريخ آخر تحديث: 2026年7月17日 | تاريخ النفاذ: 2026年7月17日",
+    "fr": "Date de mise à jour récente : 17 juillet 2026 | Date d'entrée en vigueur : 17 juillet 2026",
+    "hi": "अंतिम अद्यतन तिथि: 2026年7月17日 | प्रभावी तिथि: 2026年7月17日",
   },
   "增值服务_AI估值_跨境物流_金融保险_一站式农机解决方案_神雕农机": {
-    "en": "Value-Added Services | AI Valuation · Logistics · Finance · One-Stop Agri Solutions"
+    "en": "Value-Added Services | AI Valuation · Logistics · Finance · One-Stop Agri Solutions",
+    "ru": "Дополнительные услуги _AI-оценка_международная логистика_страхование_комплексное решение для сельхозтехники_神雕农机",
+    "es": "Servicios de valor agregado_AI de valoración_logística transfronteriza_seguro financiero_solución integral de máquinas agrícolas_神雕农机",
+    "pt": "Serviços adicionais _ Avaliação AI _ Logística transfronteiriça _ Seguro financeiro _ Solução integral de máquinas agrícolas _ 神雕农机",
+    "ar": "خدمات قيمة مضافة _ تقييم ذكاء اصطناعي _物流 عبر الحدود _ تأمين مالي _ حلول شاملة لآلة الزراعة _ 神雕农机",
+    "fr": "Services à valeur ajoutée _ Évaluation IA _ Logistique transfrontalière _ Assurance financière _ Solution complète pour les machines agricoles _ 神雕农机",
+    "hi": "मूल्य वर्धित सेवाएं_एआई मूल्यांकन_क्रॉस-बॉर्डर लॉजिस्टिक्स_वित्तीय बीमा_एक स्टॉप कृषि उपकरण समाधान_神雕农机",
   },
   "神雕农机增值服务中心：AI智能估价、智能跨境套利、第三方专业检测、跨境物流运输、金融保险、线下服务网点、行业解决方案。一站式农机跨境贸易全链路服务。": {
-    "en": "AgriTrade Value-Added Services: AI valuation, smart arbitrage, third-party inspection, cross-border logistics, finance & insurance, service centers, industry solutions. One-stop machinery trade services."
+    "en": "AgriTrade Value-Added Services: AI valuation, smart arbitrage, third-party inspection, cross-border logistics, finance & insurance, service centers, industry solutions. One-stop machinery trade services.",
+    "ru": "Центр дополнительных услуг 神雕农机: AI-интеллектуальная оценка, умная международная логистика, профессиональная проверка, международная логистика, страхование, офлайн-сервис, отраслевые решения. Комплексное решение для международной торговли сельхозтехникой.",
+    "es": "Centro de servicios de valor agregado de 神雕农机: valoración inteligente de AI, beneficio transfronterizo inteligente, detección profesional de terceros, transporte de logística transfronteriza, seguro financiero, puntos de servicio fuera de línea, soluciones de industria. Servicio de cadena completa de comercio transfronterizo de máquinas agrícolas en un solo lugar.",
+    "pt": "Centro de serviços adicionais da 神雕农机: avaliação inteligente AI, lucro transfronteiriço inteligente, detecção profissional de terceiros, transporte de logística transfronteiriça, seguro financeiro, pontos de serviço offline, soluções de setor. Serviço de comércio transfronteiriço de máquinas agrícolas de ponta a ponta.",
+    "ar": "مركز خدمات قيمة مضافة لآلة الزراعة 神雕农机: تقييم ذكاء اصطناعي، تحليل عبر الحدود، فحص احترافي من طرف ثالث، نقل عبر الحدود، تأمين مالي، نقاط خدمة بدون اتصال، حلول صناعية. خدمة شاملة لآلة الزراعة عبر الحدود.",
+    "fr": "Centre de services à valeur ajoutée de 神雕农机 : évaluation intelligente IA, bénéfice transfrontalier intelligent, détection professionnelle tierce, transport logistique transfrontalier, assurance financière, points de service hors ligne, solutions industrielles. Service complet de commerce transfrontalier de machines agricoles.",
+    "hi": "神雕农机 मूल्य वर्धित सेवा केंद्र: एआई स्मार्ट मूल्यांकन, स्मार्ट क्रॉस-बॉर्डर ट्रेडिंग, तीसरे पक्ष की पेशेवर जांच, क्रॉस-बॉर्डर लॉजिस्टिक्स परिवहन, वित्तीय बीमा, ऑफलाइन सेवा नेटवर्क, उद्योग समाधान। एक स्टॉप कृषि उपकरण क्रॉस-बॉर्डर व्यापार पूरे चेन सेवा।",
   },
   "增值服务 — 神雕农机一站式跨境解决方案": {
-    "en": "Value-Added Services — AgriTrade One-Stop Solutions"
+    "en": "Value-Added Services — AgriTrade One-Stop Solutions",
+    "ru": "Дополнительные услуги — комплексное решение для международной торговли сельхозтехникой神雕农机",
+    "es": "Servicios de valor agregado — solución integral transfronteriza de 神雕农机",
+    "pt": "Serviços adicionais — Solução integral transfronteiriça da 神雕农机",
+    "ar": "خدمات قيمة مضافة — حلول شاملة لآلة الزراعة 神雕农机 عبر الحدود",
+    "fr": "Services à valeur ajoutée — Solution complète de commerce transfrontalier de machines agricoles de 神雕农机",
+    "hi": "मूल्य वर्धित सेवाएं — 神雕农机 एक स्टॉप क्रॉस-बॉर्डर समाधान",
   },
   "7大增值服务矩阵：AI估价·跨境套利·专业检测·跨境物流·金融保险·服务网点·行业方案。让二手农机跨境贸易更简单、更安全、更高效。": {
-    "en": "7 value-added services: AI Valuation, Smart Arbitrage, Inspection, Logistics, Finance, Service Centers, Solutions. Making cross-border machinery trade simpler, safer, more efficient."
+    "en": "7 value-added services: AI Valuation, Smart Arbitrage, Inspection, Logistics, Finance, Service Centers, Solutions. Making cross-border machinery trade simpler, safer, more efficient.",
+    "ru": "7 основных дополнительных услуг: AI-оценка, международная логистика, профессиональная проверка, страхование, сервисная сеть, отраслевые решения. Делаем международную торговлю б/у сельхозтехникой проще, безопаснее и более эффективной.",
+    "es": "Matriz de 7 servicios de valor agregado: valoración de AI, beneficio transfronterizo, detección profesional, logística transfronteriza, seguro financiero, puntos de servicio, esquema de industria. Hacer que el comercio transfronterizo de máquinas agrícolas de segunda mano sea más simple, más seguro y más eficiente.",
+    "pt": "7 matrizes de serviços adicionais: avaliação AI, lucro transfronteiriço, detecção profissional, logística transfronteiriça, seguro financeiro, pontos de serviço, esquemas de setor. Tornar o comércio transfronteiriço de máquinas agrícolas usadas mais simples, mais seguro e mais eficiente.",
+    "ar": "7 خدمات قيمة مضافة: تقييم ذكاء اصطناعي، تحليل عبر الحدود، فحص احترافي، نقل عبر الحدود، تأمين مالي، نقاط خدمة، حلول صناعية. لتجعل تجارة آلة الزراعة المستعملة عبر الحدود أكثر بساطة وأمان وكفاءة.",
+    "fr": "7 services à valeur ajoutée : évaluation IA, bénéfice transfrontalier, détection professionnelle, logistique transfrontalière, assurance financière, points de service, solutions industrielles. Pour rendre le commerce transfrontalier de machines agricoles d'occasion plus simple, plus sécurisé et plus efficace.",
+    "hi": "7 बड़ी मूल्य वर्धित सेवा मैट्रिक्स: एआई मूल्यांकन·क्रॉस-बॉर्डर ट्रेडिंग·पेशेवर जांच·क्रॉस-बॉर्डर लॉजिस्टिक्स·वित्तीय बीमा·सेवा नेटवर्क·उद्योग योजना। दूसरे हाथ कृषि उपकरण क्रॉस-बॉर्डर व्यापार को और अधिक सरल, और अधिक सुरक्षित, और अधिक कुशल बनाने के लिए।",
   },
   "神雕农机": {
-    "en": "AgriTrade"
+    "en": "AgriTrade",
+    "ru": "神雕农机",
+    "es": "神雕农机",
+    "pt": "神雕农机",
+    "ar": "神雕农机",
+    "fr": "神雕农机",
+    "hi": "神雕农机",
   },
   "增值服务": {
-    "en": "Value-Added Services"
+    "en": "Value-Added Services",
+    "ru": "Дополнительные услуги",
+    "es": "Servicios de valor agregado",
+    "pt": "Serviços adicionais",
+    "ar": "خدمات قيمة مضافة",
+    "fr": "Services à valeur ajoutée",
+    "hi": "मूल्य वर्धित सेवाएं",
   },
   "8大增值服务矩阵": {
-    "en": "8 Value-Added Services"
+    "en": "8 Value-Added Services",
+    "ru": "8 основных дополнительных услуг",
+    "es": "Matriz de 8 servicios de valor agregado",
+    "pt": "8 matrizes de serviços adicionais",
+    "ar": "8 خدمات قيمة مضافة",
+    "fr": "8 services à valeur ajoutée",
+    "hi": "8 बड़ी मूल्य वर्धित सेवा मैट्रिक्स",
   },
   "从AI估值到跨境物流，从金融保险到线下服务 —— 一站式农机跨境贸易全链路解决方案": {
-    "en": "From AI valuation to cross-border logistics, from finance to offline service — one-stop full-chain solutions for global machinery trade."
+    "en": "From AI valuation to cross-border logistics, from finance to offline service — one-stop full-chain solutions for global machinery trade.",
+    "ru": "От AI-оценки до международной логистики, от страхования до офлайн-сервиса — комплексное решение для международной торговли сельхозтехникой",
+    "es": "Desde la valoración de AI hasta la logística transfronteriza, desde el seguro financiero hasta el servicio fuera de línea — solución integral de cadena completa de comercio transfronterizo de máquinas agrícolas",
+    "pt": "Desde a avaliação AI até a logística transfronteiriça, desde o seguro financeiro até o serviço offline — Solução integral de comércio transfronteiriço de máquinas agrícolas",
+    "ar": "من تقييم ذكاء اصطناعي إلى نقل عبر الحدود، من تأمين مالي إلى خدمة بدون اتصال —— حلول شاملة لآلة الزراعة عبر الحدود",
+    "fr": "De l'évaluation IA à la logistique transfrontalière, de l'assurance financière au service hors ligne — Solution complète de commerce transfrontalier de machines agricoles.",
+    "hi": "एआई मूल्यांकन से क्रॉस-बॉर्डर लॉजिस्टिक्स तक, वित्तीय बीमा से ऑफलाइन सेवा तक —— एक स्टॉप कृषि उपकरण क्रॉस-बॉर्डर व्यापार पूरे चेन समाधान",
   },
   "选择您需要的服务": {
-    "en": "Choose Your Service"
+    "en": "Choose Your Service",
+    "ru": "Выберите необходимую услугу",
+    "es": "Seleccione el servicio que necesita",
+    "pt": "Escolha o serviço de que precisa",
+    "ar": "اختر الخدمة التي تحتاجها",
+    "fr": "Choisissez le service dont vous avez besoin",
+    "hi": "आवश्यक सेवा चुनें",
   },
   "点击进入各项服务的专属页面，了解更多详情": {
-    "en": "Click into each service's dedicated page for more details."
+    "en": "Click into each service's dedicated page for more details.",
+    "ru": "Перейдите на страницу каждой услуги, чтобы узнать больше",
+    "es": "Haga clic para entrar en la página exclusiva de cada servicio y obtener más detalles",
+    "pt": "Clique para entrar na página exclusiva de cada serviço e saber mais detalhes",
+    "ar": "انقر للدخول إلى صفحة الخدمة الخاصة، لمعرفة المزيد من التفاصيل",
+    "fr": "Cliquez pour accéder à la page dédiée à chaque service et en savoir plus",
+    "hi": "प्रत्येक सेवा के विशेष पृष्ठ पर क्लिक करें, अधिक विवरण जानें",
   },
   "了解详情": {
-    "en": "Learn More"
+    "en": "Learn More",
+    "ru": "Узнать больше",
+    "es": "Obtener más información",
+    "pt": "Sabere mais detalhes",
+    "ar": "لمعرفة المزيد",
+    "fr": "En savoir plus",
+    "hi": "अधिक जानकारी",
   },
   "还没找到您需要的服务？": {
-    "en": "Can't find what you need?"
+    "en": "Can't find what you need?",
+    "ru": "Вы еще не нашли нужную услугу?",
+    "es": "¿No ha encontrado el servicio que necesita?",
+    "pt": "Ainda não encontrou o serviço de que precisa?",
+    "ar": "هل لم تجد بعد الخدمة التي تحتاجها؟",
+    "fr": "Vous n'avez pas encore trouvé le service dont vous avez besoin ?",
+    "hi": "आपको जिस सेवा की आवश्यकता है वह अभी तक नहीं मिली?",
   },
   "联系我们的专家团队，为您定制专属的跨境农机贸易解决方案": {
-    "en": "Contact our expert team for customized cross-border machinery trade solutions."
+    "en": "Contact our expert team for customized cross-border machinery trade solutions.",
+    "ru": "Свяжитесь с нашей командой экспертов, чтобы получить индивидуальное решение для международной торговли сельхозтехникой",
+    "es": "Contáctenos para obtener una solución de comercio de maquinaria agrícola personalizada",
+    "pt": "Contate nossa equipe de especialistas para criar uma solução de comércio de máquinas agrícolas personalizada",
+    "ar": "اتصل بفريقنا المتخصص لتقديم حلول تجارة 농械 عبر الحدود المخصصة لك",
+    "fr": "Contactez notre équipe d'experts pour obtenir une solution de commerce de machines agricoles transfrontalières sur mesure",
+    "hi": "हमारी विशेषज्ञ टीम से संपर्क करें, जो आपके लिए विशेष कृषि मशीनरी व्यापार समाधान तैयार करेगी",
   },
   "📧 邮件咨询": {
-    "en": "📧 Email Us"
+    "en": "📧 Email Us",
+    "ru": "📧 Почтовая консультация",
+    "es": "📧 Consulta por correo electrónico",
+    "pt": "📧 Consulta por e-mail",
+    "ar": "📧 استشارة بالبريد الإلكتروني",
+    "fr": "📧 Consultation par e-mail",
+    "hi": "📧 ईमेल परामर्श",
   },
   "了解更多关于我们": {
-    "en": "More About Us"
+    "en": "More About Us",
+    "ru": "Узнать больше о нас",
+    "es": "Conozca más sobre nosotros",
+    "pt": "Saiba mais sobre nós",
+    "ar": "لمعرفة المزيد عنا",
+    "fr": "En savoir plus sur nous",
+    "hi": "हमारे बारे में अधिक जानें",
   },
   "行业方案": {
-    "en": "Solutions"
+    "en": "Solutions",
+    "ru": "Отраслевые решения",
+    "es": "Soluciones para la industria",
+    "pt": "Soluções para a indústria",
+    "ar": "حلول الصناعة",
+    "fr": "Solutions pour l'industrie",
+    "hi": "उद्योग समाधान",
   },
   "行业解决方案": {
-    "en": "Industry Solutions"
+    "en": "Industry Solutions",
+    "ru": "Отраслевые решения",
+    "es": "Soluciones para la industria",
+    "pt": "Soluções para a indústria",
+    "ar": "حلول الصناعة",
+    "fr": "Solutions pour l'industrie",
+    "hi": "उद्योग समाधान",
   },
   "针对不同农业场景，提供从设备选型到运维管理的全套农机解决方案": {
-    "en": "Tailored machinery solutions for different agricultural scenarios, from equipment selection to maintenance"
+    "en": "Tailored machinery solutions for different agricultural scenarios, from equipment selection to maintenance",
+    "ru": "Для различных сельскохозяйственных сценариев предлагаем комплексное решение для сельхозтехники, от выбора оборудования до управления эксплуатацией",
+    "es": "Ofrecemos soluciones de maquinaria agrícola completas, desde la selección de equipos hasta la gestión de mantenimiento, para diferentes escenarios agrícolas",
+    "pt": "Para diferentes cenários agrícolas, oferecemos soluções de máquinas agrícolas completas, desde a seleção de equipamentos até a gestão de operações",
+    "ar": "تقديم حلول شاملة للآلات الزراعية من اختيار المعدات إلى إدارة التشغيل لمختلف السيناريوهات الزراعية",
+    "fr": "Des solutions de machines agricoles complètes, de la sélection d'équipement à la gestion de maintenance, adaptées à différents scénarios agricoles",
+    "hi": "विभिन्न कृषि परिदृश्यों के लिए, उपकरण चयन से लेकर रखरखाव प्रबंधन तक के पूरे कृषि मशीनरी समाधान प्रदान करता है",
   },
   "气候特点": {
-    "en": "Climate"
+    "en": "Climate",
+    "ru": "Климатические особенности",
+    "es": "Características climáticas",
+    "pt": "Características climáticas",
+    "ar": "الخصائص المناخية",
+    "fr": "Caractéristiques climatiques",
+    "hi": "जलवायु विशेषता",
   },
   "主要作物": {
-    "en": "Main Crops"
+    "en": "Main Crops",
+    "ru": "Основные культуры",
+    "es": "Cultivos principales",
+    "pt": "Principais culturas",
+    "ar": "المحاصيل الرئيسية",
+    "fr": "Principales cultures",
+    "hi": "मुख्य फसलें",
   },
   "出口注意事项": {
-    "en": "Export Notes"
+    "en": "Export Notes",
+    "ru": "Меры предосторожности при экспорте",
+    "es": "Precauciones de exportación",
+    "pt": "Atenção à exportação",
+    "ar": "ملاحظات التصدير",
+    "fr": "Précautions à l'exportation",
+    "hi": "निर्यात सावधानियां",
   },
   "推荐品牌": {
-    "en": "Recommended Brands"
+    "en": "Recommended Brands",
+    "ru": "Рекомендуемые бренды",
+    "es": "Marcas recomendadas",
+    "pt": "Marcas recomendadas",
+    "ar": "العلامات التجارية الموصى بها",
+    "fr": "Marques recommandées",
+    "hi": "अनुशंसित ब्रांड",
   },
   "查看相关设备": {
-    "en": "Browse Related Equipment"
+    "en": "Browse Related Equipment",
+    "ru": "Просмотр связанного оборудования",
+    "es": "Ver equipos relacionados",
+    "pt": "Ver equipamentos relacionados",
+    "ar": "مشاهدة المعدات ذات الصلة",
+    "fr": "Voir les équipements associés",
+    "hi": "संबंधित उपकरण देखें",
   },
   "用户协议": {
-    "en": "Terms of Service"
+    "en": "Terms of Service",
+    "ru": "Пользовательское соглашение",
+    "es": "Acuerdo de usuario",
+    "pt": "Acordo de usuário",
+    "ar": "اتفاقية المستخدم",
+    "fr": "Accord utilisateur",
+    "hi": "उपयोगकर्ता समझौता",
   },
   "我的合同": {
-    "en": "My Contracts"
+    "en": "My Contracts",
+    "ru": "Мои контракты",
+    "es": "Mis contratos",
+    "pt": "Meus contratos",
+    "ar": "عقودتي",
+    "fr": "Mes contrats",
+    "hi": "मेरे अनुबंध",
   },
   "作为卖方": {
-    "en": "As Seller"
+    "en": "As Seller",
+    "ru": "В качестве продавца",
+    "es": "Como vendedor",
+    "pt": "Como vendedor",
+    "ar": "بصفتك بائع",
+    "fr": "En tant que vendeur",
+    "hi": "विक्रेता के रूप में",
   },
   "作为买方": {
-    "en": "As Buyer"
+    "en": "As Buyer",
+    "ru": "В качестве покупателя",
+    "es": "Como comprador",
+    "pt": "Como comprador",
+    "ar": "بصفتك مشتر",
+    "fr": "En tant qu'acheteur",
+    "hi": "क्रेता के रूप में",
   },
   "暂无合同记录": {
-    "en": "No contracts yet"
+    "en": "No contracts yet",
+    "ru": "Нет записей контрактов",
+    "es": "No hay registros de contratos",
+    "pt": "Nenhum registro de contrato encontrado",
+    "ar": "لا توجد سجلات عقود بعد",
+    "fr": "Aucun enregistrement de contrat pour le moment",
+    "hi": "कोई अनुबंध रिकॉर्ड नहीं",
   },
   "卖方": {
-    "en": "Seller"
+    "en": "Seller",
+    "ru": "Продавец",
+    "es": "Vendedor",
+    "pt": "Vendedor",
+    "ar": "البائع",
+    "fr": "Vendeur",
+    "hi": "विक्रेता",
   },
   "未签": {
-    "en": "Unsigned"
+    "en": "Unsigned",
+    "ru": "Не подписан",
+    "es": "No firmado",
+    "pt": "Não assinado",
+    "ar": "غير موقع",
+    "fr": "Non signé",
+    "hi": "हस्ताक्षर नहीं किया",
   },
   "买方": {
-    "en": "Buyer"
+    "en": "Buyer",
+    "ru": "Покупатель",
+    "es": "Comprador",
+    "pt": "Comprador",
+    "ar": "المشتري",
+    "fr": "Acheteur",
+    "hi": "क्रेता",
   },
   "合同详情": {
-    "en": "Contract Detail"
+    "en": "Contract Detail",
+    "ru": "Детали контракта",
+    "es": "Detalles del contrato",
+    "pt": "Detalhes do contrato",
+    "ar": "تفاصيل العقد",
+    "fr": "Détails du contrat",
+    "hi": "अनुबंध विवरण",
   },
   "贸易条款": {
-    "en": "Trade Term"
+    "en": "Trade Term",
+    "ru": "Торговые условия",
+    "es": "Términos de comercio",
+    "pt": "Termos de comércio",
+    "ar": "شروط التجارة",
+    "fr": "Conditions commerciales",
+    "hi": "व्यापार की शर्तें",
   },
   "合同条款": {
-    "en": "Contract Terms"
+    "en": "Contract Terms",
+    "ru": "Условия контракта",
+    "es": "Términos del contrato",
+    "pt": "Termos do contrato",
+    "ar": "بنود العقد",
+    "fr": "Clauses du contrat",
+    "hi": "अनुबंध की शर्तें",
   },
   "卖方已签": {
-    "en": "Seller Signed ✓"
+    "en": "Seller Signed ✓",
+    "ru": "Продавец подписал",
+    "es": "Vendedor firmado",
+    "pt": "Vendedor assinou",
+    "ar": "البائع موقع",
+    "fr": "Vendeur signé",
+    "hi": "विक्रेता द्वारा हस्ताक्षर किया गया",
   },
   "卖方签署": {
-    "en": "Sign as Seller"
+    "en": "Sign as Seller",
+    "ru": "Подписание продавцом",
+    "es": "Firma del vendedor",
+    "pt": "Assinatura do vendedor",
+    "ar": "توقيع البائع",
+    "fr": "Signature du vendeur",
+    "hi": "विक्रेता हस्ताक्षर",
   },
   "买方已签": {
-    "en": "Buyer Signed ✓"
+    "en": "Buyer Signed ✓",
+    "ru": "Покупатель подписал",
+    "es": "Comprador firmado",
+    "pt": "Comprador assinou",
+    "ar": "المشتري موقع",
+    "fr": "Acheteur signé",
+    "hi": "क्रेता द्वारा हस्ताक्षर किया गया",
   },
   "买方签署": {
-    "en": "Sign as Buyer"
+    "en": "Sign as Buyer",
+    "ru": "Подписание покупателем",
+    "es": "Firma del comprador",
+    "pt": "Assinatura do comprador",
+    "ar": "توقيع المشتري",
+    "fr": "Signature de l'acheteur",
+    "hi": "क्रेता हस्ताक्षर",
   },
   "合同已双方签署生效": {
-    "en": "Contract is fully signed and effective"
+    "en": "Contract is fully signed and effective",
+    "ru": "Контракт подписан обеими сторонами и вступил в силу",
+    "es": "El contrato ha sido firmado y entra en vigor por ambas partes",
+    "pt": "Contrato assinado e em vigor por ambas as partes",
+    "ar": "العقد موقع من قبل الطرفين وساري المفعول",
+    "fr": "Contrat signé et en vigueur par les deux parties",
+    "hi": "दोनों पक्षों द्वारा हस्ताक्षरित अनुबंध प्रभावी",
   },
   "有效期": {
-    "en": "Valid"
+    "en": "Valid",
+    "ru": "Срок действия",
+    "es": "Válido hasta",
+    "pt": "Válido até",
+    "ar": "صالح لمدة",
+    "fr": "Durée de validité",
+    "hi": "वैधता",
   },
   "加载中...": {
-    "en": "Loading..."
+    "en": "Loading...",
+    "ru": "Загрузка...",
+    "es": "Cargando...",
+    "pt": "Carregando...",
+    "ar": "جاري التحميل...",
+    "fr": "Chargement en cours...",
+    "hi": "लोड हो रहा है...",
   },
   "收藏设备": {
-    "en": "Favorites"
+    "en": "Favorites",
+    "ru": "Добавить оборудование в избранное",
+    "es": "Guardar equipo",
+    "pt": "Coleção de equipamentos",
+    "ar": "التحكم في المعدات",
+    "fr": "Équipement collecté",
+    "hi": "उपकरण संग्रह",
   },
   "关注卖家": {
-    "en": "Following"
+    "en": "Following",
+    "ru": "Следить за продавцом",
+    "es": "Seguir al vendedor",
+    "pt": "Seguir vendedor",
+    "ar": "متابعة البائع",
+    "fr": "Suivre le vendeur",
+    "hi": "विक्रेता का अनुसरण करें",
   },
   "保存搜索": {
-    "en": "Saved Searches"
+    "en": "Saved Searches",
+    "ru": "Сохранить поиск",
+    "es": "Guardar búsqueda",
+    "pt": "Salvar pesquisa",
+    "ar": "حفظ البحث",
+    "fr": "Enregistrer la recherche",
+    "hi": "खोज बचाएं",
   },
   "我的收藏": {
-    "en": "My Favorites"
+    "en": "My Favorites",
+    "ru": "Мои избранные",
+    "es": "Mis favoritos",
+    "pt": "Minhas coleções",
+    "ar": "مجموعتي",
+    "fr": "Mes collections",
+    "hi": "मेरे संग्रह",
   },
   "暂无收藏设备": {
-    "en": "No favorites yet"
+    "en": "No favorites yet",
+    "ru": "Нет избранного оборудования",
+    "es": "No hay equipos guardados",
+    "pt": "Nenhum equipamento coletado",
+    "ar": "لا توجد معدات محفوظة",
+    "fr": "Aucun équipement collecté",
+    "hi": "कोई उपकरण संग्रह नहीं",
   },
   "暂无关注卖家": {
-    "en": "Not following anyone"
+    "en": "Not following anyone",
+    "ru": "Нет следимых продавцов",
+    "es": "No hay vendedores seguidos",
+    "pt": "Nenhum vendedor seguido",
+    "ar": "لا توجد بائعون لمتابعتهم",
+    "fr": "Aucun vendeur suivi",
+    "hi": "कोई विक्रेता का अनुसरण नहीं",
   },
   "未命名卖家": {
-    "en": "Unnamed Seller"
+    "en": "Unnamed Seller",
+    "ru": "Продавец без имени",
+    "es": "Vendedor sin nombre",
+    "pt": "Vendedor sem nome",
+    "ar": "بائع بدون اسم",
+    "fr": "Vendeur non nommé",
+    "hi": "नामहीन विक्रेता",
   },
   "查看主页": {
-    "en": "View Profile"
+    "en": "View Profile",
+    "ru": "Перейти на главную страницу",
+    "es": "Ver perfil",
+    "pt": "Ver página inicial",
+    "ar": "عرض الصفحة الرئيسية",
+    "fr": "Voir la page d'accueil",
+    "hi": "मुखपृष्ठ देखें",
   },
   "暂无保存搜索": {
-    "en": "No saved searches"
+    "en": "No saved searches",
+    "ru": "Нет сохраненных поисков",
+    "es": "No hay búsquedas guardadas",
+    "pt": "Nenhuma pesquisa salva",
+    "ar": "لا توجد عمليات بحث محفوظة",
+    "fr": "Aucune recherche enregistrée",
+    "hi": "कोई खोज बचाएं नहीं",
   },
   "通知": {
-    "en": "Notify"
+    "en": "Notify",
+    "ru": "Уведомления",
+    "es": "Notificaciones",
+    "pt": "Notificações",
+    "ar": "الإشعارات",
+    "fr": "Notifications",
+    "hi": "सूचनाएं",
   },
   "创建于": {
-    "en": "Created"
+    "en": "Created",
+    "ru": "Создано",
+    "es": "Creado en",
+    "pt": "Criado em",
+    "ar": "تم إنشاؤه في",
+    "fr": "Créé le",
+    "hi": "बनाया गया",
   },
   "去浏览农机 →": {
-    "en": "Browse equipment →"
+    "en": "Browse equipment →",
+    "ru": "Перейти к просмотру сельхозтехники →",
+    "es": "Ir a explorar maquinaria agrícola →",
+    "pt": "Ir para a página de equipamentos agrícolas →",
+    "ar": "انتقل إلى تصفح المعدات الزراعية →",
+    "fr": "Aller voir les machines agricoles →",
+    "hi": "कृषि मशीनरी ब्राउज़ करने जाएं →",
   },
   "售后维保记录": {
-    "en": "Maintenance Records"
+    "en": "Maintenance Records",
+    "ru": "Записи об обслуживании после продажи",
+    "es": "Registro de mantenimiento postventa",
+    "pt": "Registro de manutenção pós-venda",
+    "ar": "سجل صيانة ما بعد البيع",
+    "fr": "Enregistrement de maintenance après-vente",
+    "hi": "बिक्री के बाद की देखभाल रिकॉर्ड",
   },
   "暂无维保记录": {
-    "en": "No maintenance records"
+    "en": "No maintenance records",
+    "ru": "Нет записей об обслуживании",
+    "es": "No hay registros de mantenimiento",
+    "pt": "Nenhum registro de manutenção",
+    "ar": "لا توجد سجلات صيانة",
+    "fr": "Aucun enregistrement de maintenance",
+    "hi": "कोई देखभाल रिकॉर्ड नहीं",
   },
   "在产品详情页可以预约维修服务": {
-    "en": "Schedule maintenance from product detail page"
+    "en": "Schedule maintenance from product detail page",
+    "ru": "На странице деталей продукта можно заказать услугу ремонта",
+    "es": "Puede reservar el servicio de reparación en la página de detalles del producto",
+    "pt": "Você pode agendar um serviço de reparo na página de detalhes do produto",
+    "ar": "يمكن حجز خدمة الصيانة في صفحة تفاصيل المنتج",
+    "fr": "Vous pouvez réserver un service de réparation sur la page de détails du produit",
+    "hi": "उत्पाद विवरण पृष्ठ पर मरम्मत सेवा बुक की जा सकती है",
   },
   "质保内": {
-    "en": "Under Warranty"
+    "en": "Under Warranty",
+    "ru": "Гарантийный период",
+    "es": "Garantía",
+    "pt": "Garantia",
+    "ar": "ضمن الضمان",
+    "fr": "Garantie",
+    "hi": "गुणवत्ता आश्वासन के अंदर",
   },
   "预约时间": {
-    "en": "Scheduled"
+    "en": "Scheduled",
+    "ru": "Время заказа",
+    "es": "Hora de reserva",
+    "pt": "Horário de agendamento",
+    "ar": "مواعيد الحجز",
+    "fr": "Heure de réservation",
+    "hi": "नियुक्ति समय",
   },
   "完成时间": {
-    "en": "Completed"
+    "en": "Completed",
+    "ru": "Время завершения",
+    "es": "Hora de finalización",
+    "pt": "Horário de conclusão",
+    "ar": "وقت الانتهاء",
+    "fr": "Heure de fin",
+    "hi": "पूर्ण समय",
   },
   "维修技师": {
-    "en": "Technician"
+    "en": "Technician",
+    "ru": "Ремонтный техник",
+    "es": "Técnico de reparación",
+    "pt": "Técnico de reparo",
+    "ar": "فني الصيانة",
+    "fr": "Technicien de réparation",
+    "hi": "मरम्मत तकनीशियन",
   },
   "评分": {
-    "en": "Rating"
+    "en": "Rating",
+    "ru": "Оценка",
+    "es": "Calificación",
+    "pt": "Avaliação",
+    "ar": "التقييم",
+    "fr": "Évaluation",
+    "hi": "मूल्यांकन",
   },
   "备注": {
-    "en": "Notes"
+    "en": "Notes",
+    "ru": "Примечания",
+    "es": "Comentarios",
+    "pt": "Observações",
+    "ar": "ملاحظات",
+    "fr": "Remarques",
+    "hi": "टिप्पणियां",
   },
   "AI生成内容": {
-    "en": "AI Generated"
+    "en": "AI Generated",
+    "ru": "Контент, сгенерированный ИИ",
+    "es": "Contenido generado por IA",
+    "pt": "Conteúdo gerado por IA",
+    "ar": "محتوى تم إنشاؤه بواسطة الذكاء الاصطناعي",
+    "fr": "Contenu généré par IA",
+    "hi": "एआई द्वारा उत्पन्न सामग्री",
   },
   "本页图片及信息均为AI生成/基于公开资料整理，不代表品牌官方立场。": {
-    "en": "Images and information on this page are AI-generated/based on public sources and do not represent official brand positions."
+    "en": "Images and information on this page are AI-generated/based on public sources and do not represent official brand positions.",
+    "ru": "Все изображения и информация на этой странице сгенерированы ИИ/составлены на основе открытых данных и не отражают официальную позицию бренда.",
+    "es": "Las imágenes y la información de esta página son generadas por IA / basadas en datos públicos, y no representan la posición oficial de la marca.",
+    "pt": "As imagens e informações desta página são geradas por IA/organizadas com base em dados públicos e não representam a posição oficial da marca.",
+    "ar": "جميع الصور والمعلومات في هذه الصفحة تم إنشاؤها بواسطة الذكاء الاصطناعي / تم تجميعها من المصادر العامة ، ولا تمثل موقف شركة العلامة التجارية الرسمية.",
+    "fr": "Les images et les informations de cette page sont générées par IA / basées sur des données publiques, et ne représentent pas la position officielle de la marque.",
+    "hi": "इस पृष्ठ की तस्वीरें और जानकारी एआई द्वारा उत्पन्न/सार्वजनिक डेटा के आधार पर संकलित की गई हैं, यह ब्रांड के आधिकारिक रुख का प्रतिनिधित्व नहीं करती हैं।",
   },
   "免责声明": {
-    "en": "Disclaimer"
+    "en": "Disclaimer",
+    "ru": "Отказ от ответственности",
+    "es": "Exención de responsabilidad",
+    "pt": "Declaração de isenção de responsabilidade",
+    "ar": "إخلاء المسؤولية",
+    "fr": "Décharge de responsabilité",
+    "hi": "दायित्व से मुक्ति",
   },
   "品牌方认领入口 →": {
-    "en": "Brand Claim Portal →"
+    "en": "Brand Claim Portal →",
+    "ru": "Вход для представителей бренда →",
+    "es": "Enlace de reclamo de la marca →",
+    "pt": "Entrada para a reivindicação da marca →",
+    "ar": "مدخل مطالبة العلامة التجارية →",
+    "fr": "Entrée de revendication de la marque →",
+    "hi": "ब्रांड पक्ष दावा प्रवेश →",
   },
   "已收藏": {
-    "en": "Saved"
+    "en": "Saved",
+    "ru": "Добавлено в избранное",
+    "es": "Guardado",
+    "pt": "Já coletado",
+    "ar": "تم الحفظ",
+    "fr": "Déjà collecté",
+    "hi": "संग्रहीत किया गया",
   },
   "收藏": {
-    "en": "Save"
+    "en": "Save",
+    "ru": "Добавить в избранное",
+    "es": "Guardar",
+    "pt": "Coletar",
+    "ar": "الحفظ",
+    "fr": "Collecter",
+    "hi": "संग्रह",
   },
   "已关注": {
-    "en": "Following"
+    "en": "Following",
+    "ru": "Добавлено в список наблюдения",
+    "es": "Seguido",
+    "pt": "Já seguiu",
+    "ar": "تم المتابعة",
+    "fr": "Déjà suivi",
+    "hi": "अनुसरण किया गया",
   },
   "地头展": {
-    "en": "Field Expo"
+    "en": "Field Expo",
+    "ru": "Выставка в поле",
+    "es": "Feria de campo",
+    "pt": "Exposição de campo",
+    "ar": "معرض الأرض",
+    "fr": "Exposition de démonstration",
+    "hi": "क्षेत्र प्रदर्शनी",
   },
   "第28届河北农机推广演示会": {
-    "en": "28th Hebei Agri Machinery Expo"
+    "en": "28th Hebei Agri Machinery Expo",
+    "ru": "28-я выставка-презентация сельхозтехники в Хэбэе",
+    "es": "28ª Feria de promoción y demostración de maquinaria agrícola de Hebei",
+    "pt": "28ª Feira de Promoção e Demonstração de Equipamentos Agrícolas de Hebei",
+    "ar": "الدورة 28 من معرض ترويج وتجربة المعدات الزراعية في خبي",
+    "fr": "28e exposition de promotion et de démonstration de machines agricoles de Hebei",
+    "hi": "28वीं उत्तरी चीन कृषि मशीनरी प्रमोशन डेमो मेला",
   },
   "神雕展翼 · 真实作业视频": {
-    "en": "Shendiao WingShow™ · Field Operation Videos"
+    "en": "Shendiao WingShow™ · Field Operation Videos",
+    "ru": "Крылья 神雕农机 · Реальные видео работ",
+    "es": "Alas de ShenDao · Video de operación real",
+    "pt": "Asa Delta em Exposição · Vídeo de Trabalho Real",
+    "ar": "神雕展翼 · 真实作业视频",
+    "fr": "Ailes de ShenDao · Vidéo de travail réel",
+    "hi": "शेनडाओ प्रदर्शनी · वास्तविक ऑपरेशन वीडियो",
   },
   "7/29 · 元氏 · 神雕农机": {
-    "en": "Jul 29 · Yuanshi"
+    "en": "Jul 29 · Yuanshi",
+    "ru": "29.07 · Юаньши · 神雕农机",
+    "es": "7/29 · Yuanshi · 神雕农机",
+    "pt": "29/07 · Yuanshi · 神雕农机",
+    "ar": "7/29 · 元氏 · 神雕农机",
+    "fr": "29/07 · Yuanshi · 神雕农机",
+    "hi": "7/29 · युआनशी · शेनडाओ कृषि मशीनरी",
   },
   "真机下地 · 实效验证": {
-    "en": "Real machines. Real fields."
+    "en": "Real machines. Real fields.",
+    "ru": "Реальная работа техники · Проверка эффективности",
+    "es": "Máquina real en el campo · Verificación de efectividad",
+    "pt": "Máquina Real em Ação · Verificação de Eficácia",
+    "ar": "真机下地 · 实效验证",
+    "fr": "Machines réelles en action · Vérification des performances",
+    "hi": "वास्तविक मशीन ऑपरेशन · प्रभावी सत्यापन",
   },
   "展会详情": {
-    "en": "Expo Details"
+    "en": "Expo Details",
+    "ru": "Детали выставки",
+    "es": "Detalles de la feria",
+    "pt": "Detalhes do Evento",
+    "ar": "展会详情",
+    "fr": "Détails de l'exposition",
+    "hi": "प्रदर्शनी विवरण",
   },
   "观看作业视频": {
-    "en": "Watch Videos"
+    "en": "Watch Videos",
+    "ru": "Просмотр видео работ",
+    "es": "Ver video de operación",
+    "pt": "Assistir Vídeo de Trabalho",
+    "ar": "观看作业视频",
+    "fr": "Regarder la vidéo de travail",
+    "hi": "ऑपरेशन वीडियो देखें",
   },
   "加载检验报告...": {
-    "en": "Loading inspection reports..."
+    "en": "Loading inspection reports...",
+    "ru": "Загрузка отчета об осмотре...",
+    "es": "Cargando informe de inspección...",
+    "pt": "Carregando Relatório de Inspeção...",
+    "ar": "加载检验报告...",
+    "fr": "Chargement du rapport d'inspection...",
+    "hi": "लोडिंग इंस्पेक्शन रिपोर्ट...",
   },
   "设备检验报告": {
-    "en": "Inspection Report"
+    "en": "Inspection Report",
+    "ru": "Отчет об осмотре оборудования",
+    "es": "Informe de inspección de equipo",
+    "pt": "Relatório de Inspeção de Equipamento",
+    "ar": "设备检验报告",
+    "fr": "Rapport d'inspection de l'équipement",
+    "hi": "उपकरण इंस्पेक्शन रिपोर्ट",
   },
   "综合评分": {
-    "en": "Overall Score"
+    "en": "Overall Score",
+    "ru": "Общий рейтинг",
+    "es": "Puntuación general",
+    "pt": "Pontuação Geral",
+    "ar": "综合评分",
+    "fr": "Note globale",
+    "hi": "कम्पोजिट स्कोर",
   },
   "检验员": {
-    "en": "Inspector"
+    "en": "Inspector",
+    "ru": "Инспектор",
+    "es": "Inspector",
+    "pt": "Inspetor",
+    "ar": "检验员",
+    "fr": "Inspecteur",
+    "hi": "इंस्पेक्टर",
   },
   "检验机构": {
-    "en": "Organization"
+    "en": "Organization",
+    "ru": "Инспекционная организация",
+    "es": "Institución de inspección",
+    "pt": "Instituição de Inspeção",
+    "ar": "检验机构",
+    "fr": "Institution d'inspection",
+    "hi": "इंस्पेक्शन एजेंसी",
   },
   "检验日期": {
-    "en": "Date"
+    "en": "Date",
+    "ru": "Дата инспекции",
+    "es": "Fecha de inspección",
+    "pt": "Data de Inspeção",
+    "ar": "检验日期",
+    "fr": "Date d'inspection",
+    "hi": "इंस्पेक्शन तिथि",
   },
   "有效期至": {
-    "en": "Valid Until"
+    "en": "Valid Until",
+    "ru": "Срок действия до",
+    "es": "Válido hasta",
+    "pt": "Válido até",
+    "ar": "有效期至",
+    "fr": "Date d'expiration",
+    "hi": "वैधता तिथि",
   },
   "收起检测详情 ▲": {
-    "en": "Hide details ▲"
+    "en": "Hide details ▲",
+    "ru": "Свернуть детали осмотра ▲",
+    "es": "Ocultar detalles de detección ▲",
+    "pt": "Ocultar Detalhes de Inspeção ▲",
+    "ar": "收起检测详情 ▲",
+    "fr": "Fermer les détails de détection ▲",
+    "hi": "खोज इंस्पेक्शन विवरण ▲",
   },
   "查看检测详情 ▼": {
-    "en": "View details ▼"
+    "en": "View details ▼",
+    "ru": "Просмотреть детали осмотра ▼",
+    "es": "Ver detalles de detección ▼",
+    "pt": "Ver Detalhes de Inspeção ▼",
+    "ar": "查看检测详情 ▼",
+    "fr": "Voir les détails de détection ▼",
+    "hi": "देखें इंस्पेक्शन विवरण ▼",
   },
   "维修建议：": {
-    "en": "Recommendations: "
+    "en": "Recommendations: ",
+    "ru": "Рекомендации по ремонту:",
+    "es": "Sugerencia de reparación：",
+    "pt": "Sugestão de Manutenção：",
+    "ar": "维修建议：",
+    "fr": "Suggestions de réparation :",
+    "hi": "मरम्मत सुझाव：",
   },
   "询价已提交！": {
-    "en": "Quote Request Submitted!"
+    "en": "Quote Request Submitted!",
+    "ru": "Запрос цены отправлен!",
+    "es": "¡Solicitud de precio enviada！",
+    "pt": "Solicitação de Cotação Enviada！",
+    "ar": "询价已提交！",
+    "fr": "La demande de prix a été soumise!",
+    "hi": "मूल्य निर्धारण अनुरोध जमा किया गया है！",
   },
   "我们的物流顾问将在24小时内联系您，提供详细报价方案。": {
-    "en": "Our logistics advisor will contact you within 24 hours with a detailed quote."
+    "en": "Our logistics advisor will contact you within 24 hours with a detailed quote.",
+    "ru": "Наш логистический консультант свяжется с вами в течение 24 часов, чтобы предоставить подробный сметный план.",
+    "es": "Nuestro asesor logístico se pondrá en contacto con usted en 24 horas, para proporcionar un plan de cotización detallado.",
+    "pt": "Nosso consultor de logística entrará em contato com você dentro de 24 horas, fornecendo um plano de cotação detalhado.",
+    "ar": "我们的物流顾问将在24小时内联系您，提供详细报价方案。",
+    "fr": "Notre conseiller logistique vous contactera dans les 24 heures avec un plan de devis détaillé.",
+    "hi": "हमारे लॉजिस्टिक्स सलाहकार 24 घंटे के भीतर संपर्क करेंगे, विस्तृत मूल्य निर्धारण योजना प्रदान करेंगे।",
   },
   "提交新的询价": {
-    "en": "Submit another request"
+    "en": "Submit another request",
+    "ru": "Отправить новый запрос цены",
+    "es": "Enviar nueva solicitud de precio",
+    "pt": "Enviar Nova Solicitação de Cotação",
+    "ar": "提交新的询价",
+    "fr": "Soumettre une nouvelle demande de prix",
+    "hi": "नया मूल्य निर्धारण अनुरोध जमा करें",
   },
   "填写信息获取运费估算": {
-    "en": "Fill in details for shipping estimate"
+    "en": "Fill in details for shipping estimate",
+    "ru": "Заполните информацию, чтобы получить оценку стоимости доставки",
+    "es": "Rellene la información para obtener una estimación del costo de envío",
+    "pt": "Preencha as Informações para Obter Estimativa de Frete",
+    "ar": "填写信息获取运费估算",
+    "fr": "Remplir les informations pour obtenir une estimation des frais de transport",
+    "hi": "विवरण भरें और परिवहन लागत का अनुमान प्राप्त करें",
   },
   "起运省份": {
-    "en": "Origin Province"
+    "en": "Origin Province",
+    "ru": "Префектура отправления",
+    "es": "Provincia de origen",
+    "pt": "Província de Origem",
+    "ar": "起运省份",
+    "fr": "Province d'expédition",
+    "hi": "प्रारंभिक प्रांत",
   },
   "请选择": {
-    "en": "Select"
+    "en": "Select",
+    "ru": "Выберите",
+    "es": "Seleccione",
+    "pt": "Selecione",
+    "ar": "请选择",
+    "fr": "Sélectionner",
+    "hi": "कृपया चुनें",
   },
   "目的地区域": {
-    "en": "Destination Region"
+    "en": "Destination Region",
+    "ru": "Регион назначения",
+    "es": "Área de destino",
+    "pt": "Área de Destino",
+    "ar": "目的地区域",
+    "fr": "Région de destination",
+    "hi": "गंतव्य क्षेत्र",
   },
   "设备类型": {
-    "en": "Equipment Type"
+    "en": "Equipment Type",
+    "ru": "Тип оборудования",
+    "es": "Tipo de equipo",
+    "pt": "Tipo de Equipamento",
+    "ar": "设备类型",
+    "fr": "Type d'équipement",
+    "hi": "उपकरण प्रकार",
   },
   "设备尺寸": {
-    "en": "Equipment Size"
+    "en": "Equipment Size",
+    "ru": "Размер оборудования",
+    "es": "Tamaño del equipo",
+    "pt": "Tamanho do Equipamento",
+    "ar": "设备尺寸",
+    "fr": "Taille de l'équipement",
+    "hi": "उपकरण आकार",
   },
   "小型（<50HP）": {
-    "en": "Small (<50HP)"
+    "en": "Small (<50HP)",
+    "ru": "Маленький (<50 л.с.)",
+    "es": "Pequeño (<50HP)",
+    "pt": "Pequeno (<50HP)",
+    "ar": "小型（<50HP）",
+    "fr": "Petit (<50HP)",
+    "hi": "छोटा (<50 एचपी)",
   },
   "中型（50-150HP）": {
-    "en": "Medium (50-150HP)"
+    "en": "Medium (50-150HP)",
+    "ru": "Средний (50-150 л.с.)",
+    "es": "Mediano (50-150HP)",
+    "pt": "Médio (50-150HP)",
+    "ar": "中型（50-150HP）",
+    "fr": "Moyen (50-150HP)",
+    "hi": "मध्यम (50-150 एचपी)",
   },
   "大型（>150HP）": {
-    "en": "Large (>150HP)"
+    "en": "Large (>150HP)",
+    "ru": "Большой (>150 л.с.)",
+    "es": "Grande (>150HP)",
+    "pt": "Grande (>150HP)",
+    "ar": "大型（>150HP）",
+    "fr": "Grand (>150HP)",
+    "hi": "बड़ा (>150 एचपी)",
   },
   "预估运费区间": {
-    "en": "Estimated Shipping Cost"
+    "en": "Estimated Shipping Cost",
+    "ru": "Оценочный диапазон стоимости доставки",
+    "es": "Intervalo de costo de envío estimado",
+    "pt": "Intervalo de Frete Estimado",
+    "ar": "预估运费区间",
+    "fr": "Fourchette de frais de transport estimés",
+    "hi": "अनुमानित परिवहन लागत सीमा",
   },
   "联系人": {
-    "en": "Contact Name"
+    "en": "Contact Name",
+    "ru": "Контактное лицо",
+    "es": "Persona de contacto",
+    "pt": "Pessoa de Contato",
+    "ar": "联系人",
+    "fr": "Personne de contact",
+    "hi": "संपर्क व्यक्ति",
   },
   "联系电话": {
-    "en": "Phone"
+    "en": "Phone",
+    "ru": "Контактный телефон",
+    "es": "Teléfono de contacto",
+    "pt": "Telefone de Contato",
+    "ar": "联系电话",
+    "fr": "Téléphone de contact",
+    "hi": "संपर्क फोन",
   },
   "补充设备尺寸、特殊要求等...": {
-    "en": "Equipment dimensions, special requirements..."
+    "en": "Equipment dimensions, special requirements...",
+    "ru": "Дополнительные размеры оборудования, специальные требования и т. д...",
+    "es": "Completar dimensiones del equipo, requisitos especiales, etc.",
+    "pt": "Complementar dimensões do equipamento, requisitos especiais, etc...",
+    "ar": "إضافة أبعاد المعدات والمتطلبات الخاصة...",
+    "fr": "Compléter les dimensions de l'équipement, les exigences spéciales, etc...",
+    "hi": "उपकरण आयाम, विशेष आवश्यकताओं आदि जोड़ें...",
   },
   "提交询价": {
-    "en": "Submit Request"
+    "en": "Submit Request",
+    "ru": "Отправить запрос цены",
+    "es": "Enviar solicitud de cotización",
+    "pt": "Enviar cotação",
+    "ar": "إرسال استفسار",
+    "fr": "Soumettre une demande de devis",
+    "hi": "मूल्य निर्धारण प्रस्तुत करें",
   },
   "加载农机档案中...": {
-    "en": "Loading machinery profile..."
+    "en": "Loading machinery profile...",
+    "ru": "Загрузка архива сельскохозяйственных машин...",
+    "es": "Cargando archivo de maquinaria agrícola...",
+    "pt": "Carregando arquivo de máquinas agrícolas...",
+    "ar": "تحميل سجل المعدات...",
+    "fr": "Chargement de l'archive de la machine agricole en cours...",
+    "hi": "कृषि मशीनरी फ़ाइल लोड हो रही है...",
   },
   "一机一码身份溯源": {
-    "en": "Machinery Identity & Traceability"
+    "en": "Machinery Identity & Traceability",
+    "ru": "Уникальный код идентификации для каждой машины",
+    "es": "Origen de un código único por máquina",
+    "pt": "Código de identificação único para cada máquina",
+    "ar": "تتبع الهوية الفريدة للماكينة",
+    "fr": "Traçabilité de l'identité d'une machine à une code",
+    "hi": "एक मशीन एक कोड पहचान",
   },
   "该设备尚未生成一机一码": {
-    "en": "No identity code generated yet"
+    "en": "No identity code generated yet",
+    "ru": "Это оборудование еще не имеет уникального кода",
+    "es": "Este equipo aún no tiene un código único generado",
+    "pt": "Este equipamento ainda não gerou um código único",
+    "ar": "لم يتم إنشاء رمز فريد لهذه الماكينة بعد",
+    "fr": "Cet équipement n'a pas encore généré de code à une machine",
+    "hi": "इस उपकरण के लिए एक कोड अभी तक नहीं बनाया गया है",
   },
   "生成后可获得唯一QR码，买家扫码可查看设备全生命周期档案": {
-    "en": "Generate a unique QR code for buyers to trace full lifecycle history"
+    "en": "Generate a unique QR code for buyers to trace full lifecycle history",
+    "ru": "После создания можно получить уникальный QR-код, покупатель может сканировать код, чтобы просмотреть архив всего жизненного цикла оборудования",
+    "es": "Una vez generado, se puede obtener un código QR único, los compradores pueden escanear el código para ver el archivo de ciclo de vida del equipo",
+    "pt": "Após geração, é possível obter um código QR único, que os compradores podem escanear para visualizar o histórico completo da máquina",
+    "ar": "بعد إنشائه ، يمكن الحصول على رمز QR فريد ، ويمكن للمشتري مسح الرمز لمشاهدة سجل الماكينة الكامل",
+    "fr": "Après la génération, vous pouvez obtenir un code QR unique, les acheteurs peuvent scanner le code pour afficher l'archive de l'ensemble du cycle de vie de l'équipement",
+    "hi": "बनाने के बाद एक अद्वितीय क्यूआर कोड प्राप्त करें, खरीदार कोड स्कैन करके उपकरण के पूरे जीवन चक्र फ़ाइल देख सकते हैं",
   },
   "生成中...": {
-    "en": "Generating..."
+    "en": "Generating...",
+    "ru": "Создание...",
+    "es": "Generando...",
+    "pt": "Gerando...",
+    "ar": "جاري إنشاء...",
+    "fr": "Génération en cours...",
+    "hi": "बनाया जा रहा है...",
   },
   "生成一机一码": {
-    "en": "Generate Identity Code"
+    "en": "Generate Identity Code",
+    "ru": "Создать уникальный код идентификации",
+    "es": "Generar un código único por máquina",
+    "pt": "Gerar código único",
+    "ar": "إنشاء رمز فريد",
+    "fr": "Générer un code à une machine",
+    "hi": "एक कोड बनाएं",
   },
   "微信扫码验机": {
-    "en": "Scan to verify"
+    "en": "Scan to verify",
+    "ru": "Сканируйте QR-код для проверки машины",
+    "es": "Verificar máquina mediante código QR de WeChat",
+    "pt": "Verificar máquina via código QR no WeChat",
+    "ar": "فحص الماكينة بواسطة 微信",
+    "fr": "Vérification de la machine par scan de code WeChat",
+    "hi": "वीचैट कोड स्कैन करके मशीन की जांच करें",
   },
   "出厂编号": {
-    "en": "Serial No."
+    "en": "Serial No.",
+    "ru": "Заводской номер",
+    "es": "Número de serie de fábrica",
+    "pt": "Número de série de fábrica",
+    "ar": "رقم التسلسلي للخروج من المصنع",
+    "fr": "Numéro de série de fabrication",
+    "hi": "कारखाने से निकलने वाला नंबर",
   },
   "已复制": {
-    "en": "Copied"
+    "en": "Copied",
+    "ru": "Скопировано",
+    "es": "Copiado",
+    "pt": "Copiado",
+    "ar": "تم النسخ",
+    "fr": "Déjà copié",
+    "hi": "कॉपी किया गया",
   },
   "复制链接": {
-    "en": "Copy"
+    "en": "Copy",
+    "ru": "Скопировать ссылку",
+    "es": "Copiar enlace",
+    "pt": "Copiar link",
+    "ar": "نسخ الرابط",
+    "fr": "Copier le lien",
+    "hi": "लिंक कॉपी करें",
   },
   "生命周期档案": {
-    "en": "Lifecycle History"
+    "en": "Lifecycle History",
+    "ru": "Архив жизненного цикла",
+    "es": "Archivo de ciclo de vida",
+    "pt": "Histórico da máquina",
+    "ar": "سجل دورة الحياة",
+    "fr": "Archive du cycle de vie",
+    "hi": "जीवन चक्र फ़ाइल",
   },
   "个视频": {
-    "en": "videos"
+    "en": "videos",
+    "ru": "видео",
+    "es": "{count} videos",
+    "pt": "vídeos",
+    "ar": "فيديو",
+    "fr": "vidéo",
+    "hi": "वीडियो",
   },
   "适配零部件": {
-    "en": "Compatible Parts"
+    "en": "Compatible Parts",
+    "ru": "Сопутствующие запчасти",
+    "es": "Piezas compatibles",
+    "pt": "Peças adaptáveis",
+    "ar": "أجزاء مخصصة",
+    "fr": "Pièces détachées adaptées",
+    "hi": "मिलान वाले पुर्जे",
   },
   "按品牌匹配": {
-    "en": "Brand matched"
+    "en": "Brand matched",
+    "ru": "Совпадение по бренду",
+    "es": "Coincidir por marca",
+    "pt": "Corresponder por marca",
+    "ar": "مطابقة حسب العلامة التجارية",
+    "fr": "Correspondance par marque",
+    "hi": "ब्रांड से मिलान",
   },
   "通用配件": {
-    "en": "Generic parts"
+    "en": "Generic parts",
+    "ru": "Универсальные запчасти",
+    "es": "Accesorios genéricos",
+    "pt": "Peças genéricas",
+    "ar": "أجزاء عامة",
+    "fr": "Pièces détachées universelles",
+    "hi": "सामान्य पुर्जे",
   },
   "配件加载失败，请稍后重试": {
-    "en": "Failed to load parts. Please retry."
+    "en": "Failed to load parts. Please retry.",
+    "ru": "Не удалось загрузить запчасти, попробуйте позже",
+    "es": "Falló la carga de accesorios, inténtelo de nuevo más tarde",
+    "pt": "Falha ao carregar peças, tente novamente mais tarde",
+    "ar": "فشل تحميل الأجزاء ، يرجى المحاولة مرة أخرى بعد قليل",
+    "fr": "Échec du chargement des pièces détachées, veuillez réessayer plus tard",
+    "hi": "पुर्जों को लोड करने में विफल, कृपया बाद में पुनः प्रयास करें",
   },
   "该机型暂无已登记的适配零部件": {
-    "en": "No compatible parts registered for this model yet"
+    "en": "No compatible parts registered for this model yet",
+    "ru": "Для этой модели пока нет зарегистрированных сопутствующих запчастей",
+    "es": "Este modelo de máquina no tiene piezas compatibles registradas",
+    "pt": "Este modelo de máquina não tem peças adaptáveis registradas",
+    "ar": "لا توجد أجزاء مخصصة مسجلة لهذا النوع من الماكينات",
+    "fr": "Ce modèle de machine n'a pas encore d'inscription de pièces détachées adaptées",
+    "hi": "इस मॉडल के लिए अभी तक पंजीकृत मिलान वाले पुर्जे नहीं हैं",
   },
   "前往零配件专区逛逛 →": {
-    "en": "Browse parts catalog →"
+    "en": "Browse parts catalog →",
+    "ru": "Перейти в раздел запчастей →",
+    "es": "Ir a la zona de accesorios →",
+    "pt": "Visite a área de peças →",
+    "ar": "انتقل إلى منطقة الأجزاء المخصصة →",
+    "fr": "Aller dans la zone spécialisée des pièces détachées →",
+    "hi": "पुर्जों के विशेष क्षेत्र में जाने के लिए →",
   },
   "加载全部配件...": {
-    "en": "Loading all parts..."
+    "en": "Loading all parts...",
+    "ru": "Загрузить все запчасти...",
+    "es": "Cargando todos los accesorios...",
+    "pt": "Carregando todas as peças...",
+    "ar": "تحميل جميع الأجزاء...",
+    "fr": "Chargement de toutes les pièces détachées...",
+    "hi": "सभी पुर्जों को लोड करें...",
   },
   "数据质量: ": {
-    "en": "Data Quality: "
+    "en": "Data Quality: ",
+    "ru": "Качество данных: ",
+    "es": "Calidad de los datos: ",
+    "pt": "Qualidade dos dados: ",
+    "ar": "جودة البيانات: ",
+    "fr": "Qualité des données : ",
+    "hi": "डेटा गुणवत्ता: ",
   },
   "整机品类": {
-    "en": "Machine Type"
+    "en": "Machine Type",
+    "ru": "Категория машины",
+    "es": "Categoría de máquina completa",
+    "pt": "Categoria de máquinas",
+    "ar": "فئة الماكينة الكاملة",
+    "fr": "Catégorie de machine complète",
+    "hi": "पूरी मशीन श्रेणी",
   },
   "子系统": {
-    "en": "Sub-System"
+    "en": "Sub-System",
+    "ru": "Подсистема",
+    "es": "Subsistema",
+    "pt": "Subsistema",
+    "ar": "نظام فرعي",
+    "fr": "Sous-système",
+    "hi": "उप-प्रणाली",
   },
   "部件组": {
-    "en": "Component Group"
+    "en": "Component Group",
+    "ru": "Группа компонентов",
+    "es": "Grupo de componentes",
+    "pt": "Grupo de componentes",
+    "ar": "مجموعة الأجزاء",
+    "fr": "Groupe de composants",
+    "hi": "भाग समूह",
   },
   "配件类型": {
-    "en": "Part Type"
+    "en": "Part Type",
+    "ru": "Тип запчасти",
+    "es": "Tipo de accesorio",
+    "pt": "Tipo de peça",
+    "ar": "نوع الأجزاء",
+    "fr": "Type de pièces détachées",
+    "hi": "पुर्जों का प्रकार",
   },
   "原厂件": {
-    "en": "OEM"
+    "en": "OEM",
+    "ru": "Оригинальная запчасть",
+    "es": "Pieza original",
+    "pt": "Peça original",
+    "ar": "أجزاء الأصل",
+    "fr": "Pièces d'usine",
+    "hi": "मूल फ़ैक्टरी पुर्जे",
   },
   "品牌件": {
-    "en": "Aftermarket"
+    "en": "Aftermarket",
+    "ru": "Запчасть бренда",
+    "es": "Pieza de marca",
+    "pt": "Peça de marca",
+    "ar": "أجزاء العلامة التجارية",
+    "fr": "Pièces de marque",
+    "hi": "ब्रांड पुर्जे",
   },
   "立即询价": {
-    "en": "Inquire Now"
+    "en": "Inquire Now",
+    "ru": "Запросить цену немедленно",
+    "es": "Solicitar cotización de inmediato",
+    "pt": "Solicitar cotação imediatamente",
+    "ar": "إرسال استفسار على الفور",
+    "fr": "Demander un devis immédiatement",
+    "hi": "तुरंत मूल्य निर्धारण पूछें",
   },
   "返回列表": {
-    "en": "Back to List"
+    "en": "Back to List",
+    "ru": "Вернуться к списку",
+    "es": "Volver a la lista",
+    "pt": "Voltar à lista",
+    "ar": "العودة إلى القائمة",
+    "fr": "Retour à la liste",
+    "hi": "सूची में वापस जाएं",
   },
   "产品描述": {
-    "en": "Description"
+    "en": "Description",
+    "ru": "Описание продукта",
+    "es": "Descripción del producto",
+    "pt": "Descrição do produto",
+    "ar": "وصف المنتج",
+    "fr": "Description du produit",
+    "hi": "उत्पाद विवरण",
   },
   "技术参数": {
-    "en": "Technical Specifications"
+    "en": "Technical Specifications",
+    "ru": "Технические характеристики",
+    "es": "Parámetros técnicos",
+    "pt": "Parâmetros técnicos",
+    "ar": "المواصفات الفنية",
+    "fr": "Paramètres techniques",
+    "hi": "तकनीकी मापदंड",
   },
   "兼容机型": {
-    "en": "Compatible Machines"
+    "en": "Compatible Machines",
+    "ru": "Совместимые модели",
+    "es": "Modelos compatibles",
+    "pt": "Modelos compatíveis",
+    "ar": "نماذج متوافقة",
+    "fr": "Modèles compatibles",
+    "hi": "संगत मशीन मॉडल",
   },
   "年份: ": {
-    "en": "Year: "
+    "en": "Year: ",
+    "ru": "Год: ",
+    "es": "Año: ",
+    "pt": "Ano: ",
+    "ar": "السنة: ",
+    "fr": "Année : ",
+    "hi": "वर्ष: ",
   },
   "询价表单": {
-    "en": "Inquiry Form"
+    "en": "Inquiry Form",
+    "ru": "Форма запроса цены",
+    "es": "Formulario de solicitud de precios",
+    "pt": "Formulário de solicitação de orçamento",
+    "ar": "نموذج طلب التسعير",
+    "fr": "Formulaire de demande de devis",
+    "hi": "मूल्य पूछने का फॉर्म",
   },
   "填写以下信息，我们将在24小时内联系您": {
-    "en": "Fill in the form below, we will contact you within 24 hours"
+    "en": "Fill in the form below, we will contact you within 24 hours",
+    "ru": "Заполните следующие данные, и мы свяжемся с вами в течение 24 часов",
+    "es": "Rellene la siguiente información y nos pondremos en contacto con usted en 24 horas",
+    "pt": "Preencha as informações abaixo e entraremos em contato em 24 horas",
+    "ar": "املأ المعلومات التالية وسنقوم بالاتصال بك في غضون 24 ساعة",
+    "fr": "Veuillez remplir les informations suivantes, nous vous contacterons dans les 24 heures",
+    "hi": "निम्नलिखित जानकारी भरें, हम 24 घंटे के भीतर आपको संपर्क करेंगे",
   },
   "询价提交成功！": {
-    "en": "Inquiry Submitted Successfully!"
+    "en": "Inquiry Submitted Successfully!",
+    "ru": "Форма запроса цены отправлена успешно!",
+    "es": "¡Solicitud de precios enviada con éxito!",
+    "pt": "Solicitação de orçamento enviada com sucesso!",
+    "ar": "تم ارسال طلب التسعير بنجاح!",
+    "fr": "Soumission de demande de devis réussie!",
+    "hi": "मूल्य पूछने का फॉर्म सफलतापूर्वक जमा किया गया!",
   },
   "我们将在24小时内联系您，请保持电话畅通": {
-    "en": "We will contact you within 24 hours. Please keep your phone available."
+    "en": "We will contact you within 24 hours. Please keep your phone available.",
+    "ru": "Мы свяжемся с вами в течение 24 часов, пожалуйста, держите телефон доступным",
+    "es": "Nos pondremos en contacto con usted en 24 horas, por favor mantenga su teléfono disponible",
+    "pt": "Entraremos em contato em 24 horas, por favor mantenha o telefone disponível",
+    "ar": "سوف نتواصل معك في غضون 24 ساعة ، يرجى الحفاظ على هاتفك مفتوح",
+    "fr": "Nous vous contacterons dans les 24 heures, veuillez garder votre téléphone accessible",
+    "hi": "हम 24 घंटे के भीतर आपको संपर्क करेंगे, कृपया अपना फोन खुला रखें",
   },
   "继续询价": {
-    "en": "Submit Another Inquiry"
+    "en": "Submit Another Inquiry",
+    "ru": "Продолжить запрос",
+    "es": "Continuar con la solicitud de precios",
+    "pt": "Continuar solicitando orçamento",
+    "ar": "استمرار في طلب التسعير",
+    "fr": "Continuer à demander un devis",
+    "hi": "मूल्य पूछना जारी रखें",
   },
   "姓名 *": {
-    "en": "Name *"
+    "en": "Name *",
+    "ru": "Имя *",
+    "es": "Nombre *",
+    "pt": "Nome *",
+    "ar": "الاسم *",
+    "fr": "Nom *",
+    "hi": "नाम *",
   },
   "电话 *": {
-    "en": "Phone *"
+    "en": "Phone *",
+    "ru": "Телефон *",
+    "es": "Teléfono *",
+    "pt": "Telefone *",
+    "ar": "الهاتف *",
+    "fr": "Téléphone *",
+    "hi": "फोन *",
   },
   "请输入联系电话": {
-    "en": "Enter your phone number"
+    "en": "Enter your phone number",
+    "ru": "Введите контактный телефон",
+    "es": "Ingrese su número de teléfono",
+    "pt": "Por favor, insira o número de telefone",
+    "ar": "ادخل رقم هاتفك",
+    "fr": "Veuillez saisir votre numéro de téléphone",
+    "hi": "संपर्क फोन नंबर दर्ज करें",
   },
   "请输入邮箱（选填）": {
-    "en": "Enter your email (optional)"
+    "en": "Enter your email (optional)",
+    "ru": "Введите электронную почту (необязательно)",
+    "es": "Ingrese su correo electrónico (opcional)",
+    "pt": "Por favor, insira o e-mail (opcional)",
+    "ar": "ادخل البريد الالكتروني (اختياري)",
+    "fr": "Veuillez saisir votre adresse e-mail (facultatif)",
+    "hi": "ईमेल दर्ज करें (वैकल्पिक)",
   },
   "需求数量": {
-    "en": "Quantity"
+    "en": "Quantity",
+    "ru": "Количество",
+    "es": "Cantidad necesaria",
+    "pt": "Quantidade necessária",
+    "ar": "عدد المتطلبات",
+    "fr": "Quantité requise",
+    "hi": "आवश्यकता की मात्रा",
   },
   "请输入您的需求描述（选填）": {
-    "en": "Enter your requirements (optional)"
+    "en": "Enter your requirements (optional)",
+    "ru": "Введите описание вашего запроса (необязательно)",
+    "es": "Ingrese una descripción de su necesidad (opcional)",
+    "pt": "Por favor, insira a descrição da sua necessidade (opcional)",
+    "ar": "ادخل وصف احتياجاتك (اختياري)",
+    "fr": "Veuillez saisir votre description de demande (facultatif)",
+    "hi": "अपनी आवश्यकता का विवरण दर्ज करें (वैकल्पिक)",
   },
   "提交失败，请稍后重试或直接联系我们": {
-    "en": "Submission failed, please try again later or contact us directly"
+    "en": "Submission failed, please try again later or contact us directly",
+    "ru": "Ошибка отправки, попробуйте позже или свяжитесь с нами напрямую",
+    "es": "Error al enviar, inténtelo de nuevo más tarde o contáctenos directamente",
+    "pt": "Falha ao enviar, por favor tente novamente mais tarde ou entre em contato conosco diretamente",
+    "ar": "فشل في ارسال الطلب ، يرجى المحاولة مرة أخرى أو الاتصال بنا مباشرة",
+    "fr": "Échec de la soumission, veuillez réessayer plus tard ou nous contacter directement",
+    "hi": "जमा करने में विफलता, कृपया बाद में पुनः प्रयास करें या सीधे हमसे संपर्क करें",
   },
   "相关配件": {
-    "en": "Related Parts"
+    "en": "Related Parts",
+    "ru": "Связанные аксессуары",
+    "es": "Accesorios relacionados",
+    "pt": "Peças relacionadas",
+    "ar": "أجزاء متعلقة",
+    "fr": "Pièces associées",
+    "hi": "संबंधित एक्सेसरीज",
   },
   "配件专区": {
-    "en": "Parts"
+    "en": "Parts",
+    "ru": "Зона аксессуаров",
+    "es": "Zona de accesorios",
+    "pt": "Área de peças",
+    "ar": "منطقة الأجزاء",
+    "fr": "Zone de pièces",
+    "hi": "एक्सेसरीज क्षेत्र",
   },
   "配件分类": {
-    "en": "Parts Catalog"
+    "en": "Parts Catalog",
+    "ru": "Категория аксессуаров",
+    "es": "Categoría de accesorios",
+    "pt": "Classificação de peças",
+    "ar": "تصنيف الأجزاء",
+    "fr": "Classification des pièces",
+    "hi": "एक्सेसरीज वर्गीकरण",
   },
   "全部配件": {
-    "en": "All Parts"
+    "en": "All Parts",
+    "ru": "Все аксессуары",
+    "es": "Todos los accesorios",
+    "pt": "Todas as peças",
+    "ar": "جميع الأجزاء",
+    "fr": "Toutes les pièces",
+    "hi": "सभी एक्सेसरीज",
   },
   "配件数据暂时无法加载，请稍后重试": {
-    "en": "Parts data is temporarily unavailable"
+    "en": "Parts data is temporarily unavailable",
+    "ru": "Данные аксессуаров временно недоступны, попробуйте позже",
+    "es": "No se pueden cargar los datos de accesorios en este momento, inténtelo de nuevo más tarde",
+    "pt": "Dados de peças não podem ser carregados no momento, por favor tente novamente mais tarde",
+    "ar": "بيانات الأجزاء غير متاحة حاليا ، يرجى المحاولة مرة أخرى لاحقا",
+    "fr": "Les données des pièces ne peuvent pas être chargées pour le moment, veuillez réessayer plus tard",
+    "hi": "एक्सेसरीज डेटा अस्थायी रूप से लोड नहीं किया जा सकता, कृपया बाद में पुनः प्रयास करें",
   },
   "暂无匹配的配件": {
-    "en": "No matching parts found"
+    "en": "No matching parts found",
+    "ru": "Нет совпадающих аксессуаров",
+    "es": "No hay accesorios coincidentes",
+    "pt": "Nenhuma peça correspondente encontrada",
+    "ar": "لا توجد أجزاء متوافقة",
+    "fr": "Aucune pièce correspondante",
+    "hi": "कोई मेल खाने वाली एक्सेसरीज नहीं",
   },
   "报告生成失败，请重试": {
-    "en": "Failed to generate report"
+    "en": "Failed to generate report",
+    "ru": "Ошибка создания отчета, попробуйте еще раз",
+    "es": "Error al generar el informe, inténtelo de nuevo",
+    "pt": "Falha ao gerar relatório, por favor tente novamente",
+    "ar": "فشل في إنشاء التقرير ، يرجى المحاولة مرة أخرى",
+    "fr": "Échec de la génération du rapport, veuillez réessayer",
+    "hi": "रिपोर्ट जनरेशन विफल, कृपया पुनः प्रयास करें",
   },
   "深度估值报告 — 市场对比·趋势分析·购买建议（¥9-29）": {
-    "en": "Deep valuation report — Market analysis·Trends·Buying advice (¥9-29)"
+    "en": "Deep valuation report — Market analysis·Trends·Buying advice (¥9-29)",
+    "ru": "Глубинный отчет оценки — сравнение рынка, анализ тенденций, рекомендации по покупке (¥9-29)",
+    "es": "Informe de valoración en profundidad — Comparación de mercado · Análisis de tendencias · Sugerencias de compra (¥9-29)",
+    "pt": "Relatório de avaliação aprofundada — Comparação de mercado · Análise de tendências · Sugestão de compra (¥9-29)",
+    "ar": "تقرير التقييم العميق — مقارنة السوق · تحليل الاتجاهات · نصائح الشراء (9-29 يوان)",
+    "fr": "Rapport d'évaluation approfondie — Comparaison du marché, analyse des tendances, conseils d'achat (9-29 ¥)",
+    "hi": "गहराई मूल्यांकन रिपोर्ट — बाजार तुलना · रुझान विश्लेषण · खरीद सुझाव (₹9-29)",
   },
   "深度报告": {
-    "en": "Deep report"
+    "en": "Deep report",
+    "ru": "Глубинный отчет",
+    "es": "Informe en profundidad",
+    "pt": "Relatório aprofundado",
+    "ar": "تقرير عميق",
+    "fr": "Rapport approfondi",
+    "hi": "गहराई रिपोर्ट",
   },
   "深度估值报告": {
-    "en": "Deep valuation report"
+    "en": "Deep valuation report",
+    "ru": "Глубинный отчет оценки",
+    "es": "Informe de valoración en profundidad",
+    "pt": "Relatório de avaliação aprofundada",
+    "ar": "تقرير التقييم العميق",
+    "fr": "Rapport d'évaluation approfondie",
+    "hi": "गहराई मूल्यांकन रिपोर्ट",
   },
   "付费": {
-    "en": "Paid"
+    "en": "Paid",
+    "ru": "Платно",
+    "es": "De pago",
+    "pt": "Pagar",
+    "ar": "مدفوع",
+    "fr": "Payant",
+    "hi": "भुगतान किया गया",
   },
   "收起 ▲": {
-    "en": "Close ▲"
+    "en": "Close ▲",
+    "ru": "Свернуть ▲",
+    "es": "Ocultar ▲",
+    "pt": "Fechar ▲",
+    "ar": "إغلاق ▲",
+    "fr": "Fermer ▲",
+    "hi": "बंद करें ▲",
   },
   "重试": {
-    "en": "Retry"
+    "en": "Retry",
+    "ru": "Повторить",
+    "es": "Reintentar",
+    "pt": "Tentar novamente",
+    "ar": "إعادة المحاولة",
+    "fr": "Réessayer",
+    "hi": "पुनः प्रयास करें",
   },
   "支付方式": {
-    "en": "Payment method"
+    "en": "Payment method",
+    "ru": "Способ оплаты",
+    "es": "Métodos de pago",
+    "pt": "Método de pagamento",
+    "ar": "طرق الدفع",
+    "fr": "Méthode de paiement",
+    "hi": "भुगतान विधि",
   },
   "微信支付": {
-    "en": "WeChat Pay"
+    "en": "WeChat Pay",
+    "ru": "Оплата через WeChat",
+    "es": "Pago con WeChat",
+    "pt": "Pagamento WeChat",
+    "ar": "دفع بواسطة وي تشات",
+    "fr": "Paiement WeChat",
+    "hi": "वीचैट भुगतान",
   },
   "支付宝": {
-    "en": "Alipay"
+    "en": "Alipay",
+    "ru": "Оплата через Alipay",
+    "es": "Pago con Alipay",
+    "pt": "Pagamento Alipay",
+    "ar": "دفع بواسطة 支付宝",
+    "fr": "Paiement Alipay",
+    "hi": "अलीपे",
   },
   "付款后在页面查看报告，支持在线查看 / 下载 / 打印": {
-    "en": "View report on page after payment. Supports online view / download / print"
+    "en": "View report on page after payment. Supports online view / download / print",
+    "ru": "После оплаты просмотрите отчет на этой странице, поддерживается онлайн-просмотр / скачивание / печать",
+    "es": "Después del pago, verifique el informe en la página, admite la visualización en línea / descarga / impresión",
+    "pt": "Após o pagamento, verifique o relatório na página, suporta visualização online / download / impressão",
+    "ar": "بعد الدفع ، قم بمراجعة التقرير على الصفحة ، يدعم العرض عبر الإنترنت / التنزيل / الطباعة",
+    "fr": "Après le paiement, consultez le rapport sur cette page, prise en charge de la visualisation en ligne / téléchargement / impression",
+    "hi": "भुगतान करने के बाद पृष्ठ पर रिपोर्ट देखें, ऑनलाइन देखने / डाउनलोड / प्रिंट करने का समर्थन करता है",
   },
   "请使用微信/支付宝扫一扫，付款后点击下方按钮": {
-    "en": "Please scan to pay, then click the button below"
+    "en": "Please scan to pay, then click the button below",
+    "ru": "Пожалуйста, используйте WeChat/Alipay для оплаты, после оплаты нажмите кнопку ниже",
+    "es": "Utilice WeChat / Alipay para escanear, después del pago haga clic en el botón inferior",
+    "pt": "Use WeChat / Alipay para digitalizar, após o pagamento, clique no botão abaixo",
+    "ar": "يرجى استخدام 微信 / 支付宝 لمسح الرمز ، بعد الدفع انقر على الزر أدناه",
+    "fr": "Veuillez utiliser WeChat / Alipay pour scanner, puis cliquez sur le bouton ci-dessous après le paiement",
+    "hi": "कृपया वीचैट / अलीपे का उपयोग करके स्कैन करें, भुगतान करने के बाद नीचे दिए गए बटन पर क्लिक करें",
   },
   "✓ 我已付款，立即生成报告": {
-    "en": "✓ I've paid, generate report now"
+    "en": "✓ I've paid, generate report now",
+    "ru": "✓ Я уже оплатил, сгенерируйте отчет немедленно",
+    "es": "✓ Ya he pagado, generar informe inmediatamente",
+    "pt": "✓ Eu já paguei, gere relatório imediatamente",
+    "ar": "✓ لقد قمت بالدفع ، قم بإنشاء التقرير على الفور",
+    "fr": "✓ J'ai payé, générer le rapport immédiatement",
+    "hi": "✓ मैंने भुगतान किया है, तुरंत रिपोर्ट बनाएं",
   },
   "← 返回重新选择": {
-    "en": "← Back"
+    "en": "← Back",
+    "ru": "← Вернуться к重新 выбору",
+    "es": "← Volver a seleccionar",
+    "pt": "← Retornar para reselecionar",
+    "ar": "← العودة إلى اختيار آخر",
+    "fr": "← Retour pour re-sélectionner",
+    "hi": "← वापस जाएं और फिर से चुनें",
   },
   "正在生成深度估值报告...": {
-    "en": "Generating deep valuation report..."
+    "en": "Generating deep valuation report...",
+    "ru": "Глубинный отчет оценки генерируется...",
+    "es": "Generando informe de valoración en profundidad...",
+    "pt": "Gerando relatório de avaliação profunda...",
+    "ar": "正在生成 تقرير القيمة العميقة...",
+    "fr": "Rapport de valorisation approfondie en cours de génération...",
+    "hi": "गहरी मूल्यांकन रिपोर्ट बनाने की प्रक्रिया...",
   },
   "AI正在分析市场数据，请稍候...": {
-    "en": "AI is analyzing market data, please wait..."
+    "en": "AI is analyzing market data, please wait...",
+    "ru": "AI анализирует рыночные данные, пожалуйста, подождите...",
+    "es": "El IA está analizando los datos del mercado, por favor espere...",
+    "pt": "IA está analisando dados de mercado, por favor aguarde...",
+    "ar": "الذكاء الاصطناعي يقوم بتحليل بيانات السوق ، يرجى الانتظار...",
+    "fr": "L'IA analyse les données de marché, veuillez patienter...",
+    "hi": "एआई बाजार डेटा का विश्लेषण कर रहा है, कृपया थोड़ा इंतजार करें...",
   },
   "报告已生成": {
-    "en": "Report ready"
+    "en": "Report ready",
+    "ru": "Отчет сгенерирован",
+    "es": "Informe generado",
+    "pt": "Relatório gerado",
+    "ar": "تم إنشاء التقرير",
+    "fr": "Rapport généré",
+    "hi": "रिपोर्ट बनाई गई",
   },
   "打印": {
-    "en": "Print"
+    "en": "Print",
+    "ru": "Печать",
+    "es": "Imprimir",
+    "pt": "Imprimir",
+    "ar": "طباعة",
+    "fr": "Imprimer",
+    "hi": "प्रिंट",
   },
   "下载": {
-    "en": "Download"
+    "en": "Download",
+    "ru": "Скачать",
+    "es": "Descargar",
+    "pt": "Baixar",
+    "ar": "تنزيل",
+    "fr": "Télécharger",
+    "hi": "डाउनलोड",
   },
   "重新选择": {
-    "en": "Reset"
+    "en": "Reset",
+    "ru": "Выбрать заново",
+    "es": "Seleccionar nuevamente",
+    "pt": "Reescolher",
+    "ar": "اختيار آخر",
+    "fr": "Re-sélectionner",
+    "hi": "फिर से चुनें",
   },
   "估价后一键发布出售": {
-    "en": "Publish for sale after valuation"
+    "en": "Publish for sale after valuation",
+    "ru": "Оценить и опубликовать на продажу",
+    "es": "Después de la valoración, publicar en venta con un solo clic",
+    "pt": "Após a avaliação, publique à venda com um clique",
+    "ar": "التقدير بعد النشر بلمسة واحدة للبيع",
+    "fr": "Évaluation puis publication de la vente en un clic",
+    "hi": "मूल्यांकन के बाद एक क्लिक में बिक्री के लिए प्रकाशित करें",
   },
   "将您的农机设备信息发布到交易平台，让全球买家看到": {
-    "en": "Publish your machinery to the platform for global buyers"
+    "en": "Publish your machinery to the platform for global buyers",
+    "ru": "Опубликуйте информацию о вашем сельскохозяйственном оборудовании на торговой платформе, чтобы глобальные покупатели могли ее увидеть",
+    "es": "Publique su información de equipo agrícola en la plataforma de comercio, para que los compradores globales lo vean",
+    "pt": "Publique as informações do seu equipamento agrícola na plataforma de comércio, para que compradores globais possam vê-lo",
+    "ar": "نشر معلومات معداتك الزراعية على منصة التداول ، ليتمكن المشتريون من جميع أنحاء العالم من رؤيته",
+    "fr": "Publiez les informations de vos équipements agricoles sur la plateforme de trading, pour que les acheteurs du monde entier puissent les voir",
+    "hi": "अपने कृषि उपकरण की जानकारी को व्यापार मंच पर प्रकाशित करें, दुनिया भर के खरीदारों को दिखाएं",
   },
   "前往发布 →": {
-    "en": "Go to publish →"
+    "en": "Go to publish →",
+    "ru": "Перейти к публикации →",
+    "es": "Ir a publicar →",
+    "pt": "Ir para publicar →",
+    "ar": "انتقل إلى النشر →",
+    "fr": "Aller publier →",
+    "hi": "प्रकाशन के लिए जाएं →",
   },
   "优秀": {
-    "en": "Excellent"
+    "en": "Excellent",
+    "ru": "Отлично",
+    "es": "Excelente",
+    "pt": "Excelente",
+    "ar": "ممتاز",
+    "fr": "Excellent",
+    "hi": "उत्कृष्ट",
   },
   "良好": {
-    "en": "Good"
+    "en": "Good",
+    "ru": "Хорошо",
+    "es": "Bueno",
+    "pt": "Bom",
+    "ar": "جيد",
+    "fr": "Bon",
+    "hi": "अच्छा",
   },
   "一般": {
-    "en": "Fair"
+    "en": "Fair",
+    "ru": "Удовлетворительно",
+    "es": "Regular",
+    "pt": "Regular",
+    "ar": "عادي",
+    "fr": "Moyen",
+    "hi": "सामान्य",
   },
   "较差": {
-    "en": "Poor"
+    "en": "Poor",
+    "ru": "Неудовлетворительно",
+    "es": "Malo",
+    "pt": "Ruim",
+    "ar": "سيئ",
+    "fr": "Médiocre",
+    "hi": "खराब",
   },
   "全新": {
-    "en": "New"
+    "en": "New",
+    "ru": "Новое",
+    "es": "Nuevo",
+    "pt": "Novo",
+    "ar": "جديد تمامًا",
+    "fr": "Neuf",
+    "hi": "पूरी तरह से नया",
   },
   "准新": {
-    "en": "Like New"
+    "en": "Like New",
+    "ru": "Почти новое",
+    "es": "Casi nuevo",
+    "pt": "Quase novo",
+    "ar": "جديد تقريبًا",
+    "fr": "Comme neuf",
+    "hi": "लगभग नया",
   },
   "小麦、棉花、玉米、水稻": {
-    "en": "Wheat, Cotton, Corn, Rice"
+    "en": "Wheat, Cotton, Corn, Rice",
+    "ru": "Пшеница, хлопок, кукуруза, рис",
+    "es": "Trigo, algodón, maíz, arroz",
+    "pt": "Trigo, algodão, milho, arroz",
+    "ar": "القمح ، القطن ، الذرة ، الأرز",
+    "fr": "Blé, coton, maïs, riz",
+    "hi": "गेहूं, कपास, मक्का, चावल",
   },
   "小麦、大麦、马铃薯、甜菜、向日葵": {
-    "en": "Wheat, Barley, Potato, Sugar Beet, Sunflower"
+    "en": "Wheat, Barley, Potato, Sugar Beet, Sunflower",
+    "ru": "Пшеница, ячмень, картофель, сахарная свекла, подсолнечник",
+    "es": "Trigo, cebada, patatas, remolacha, girasol",
+    "pt": "Trigo, cevada, batata, beterraba, girassol",
+    "ar": "القمح ، الشعير ، البطاطس ، السكر ، زهرة الشمس",
+    "fr": "Blé, orge, pommes de terre, betterave, tournesol",
+    "hi": "गेहूं, जौ, आलू, चुकंदर, सूरजमुखी",
   },
   "水稻、甘蔗、橡胶、棕榈油": {
-    "en": "Rice, Sugarcane, Rubber, Palm Oil"
+    "en": "Rice, Sugarcane, Rubber, Palm Oil",
+    "ru": "Рис, сахарный тростник, каучук, пальмовое масло",
+    "es": "Arroz, caña de azúcar, caucho, aceite de palma",
+    "pt": "Arroz, cana-de-açúcar, borracha, óleo de palma",
+    "ar": "الأرز ، القصب ، المطاط ، زيت النخيل",
+    "fr": "Riz, canne à sucre, caoutchouc, huile de palme",
+    "hi": "चावल, गन्ना, रबड़, ताड़ का तेल",
   },
   "材质": {
-    "en": "Material"
+    "en": "Material",
+    "ru": "Материал",
+    "es": "Material",
+    "pt": "Material",
+    "ar": "المادة",
+    "fr": "Matériau",
+    "hi": "सामग्री",
   },
   "重量": {
-    "en": "Weight"
+    "en": "Weight",
+    "ru": "Вес",
+    "es": "Peso",
+    "pt": "Peso",
+    "ar": "الوزن",
+    "fr": "Poids",
+    "hi": "वजन",
   },
   "尺寸": {
-    "en": "Dimensions"
+    "en": "Dimensions",
+    "ru": "Размер",
+    "es": "Tamaño",
+    "pt": "Dimensão",
+    "ar": "الأبعاد",
+    "fr": "Dimensions",
+    "hi": "आकार",
   },
   "保修期": {
-    "en": "Warranty"
+    "en": "Warranty",
+    "ru": "Срок гарантии",
+    "es": "Período de garantía",
+    "pt": "Período de garantia",
+    "ar": "فترة الضمان",
+    "fr": "Période de garantie",
+    "hi": "वारंटी अवधि",
   },
   "压力": {
-    "en": "Pressure"
+    "en": "Pressure",
+    "ru": "Давление",
+    "es": "Presión",
+    "pt": "Pressão",
+    "ar": "الضغط",
+    "fr": "Pression",
+    "hi": "दबाव",
   },
   "流量": {
-    "en": "Flow Rate"
+    "en": "Flow Rate",
+    "ru": "Поток",
+    "es": "Flujo",
+    "pt": "Fluxo",
+    "ar": "الجريان",
+    "fr": "Débit",
+    "hi": "प्रवाह",
   },
   "电压": {
-    "en": "Voltage"
+    "en": "Voltage",
+    "ru": "Напряжение",
+    "es": "Voltaje",
+    "pt": "Voltagem",
+    "ar": "فولتية",
+    "fr": "Tension",
+    "hi": "वोल्टेज",
   },
   "功率": {
-    "en": "Power"
+    "en": "Power",
+    "ru": "Мощность",
+    "es": "Potencia",
+    "pt": "Potência",
+    "ar": "قوة",
+    "fr": "Puissance",
+    "hi": "शक!!!!!",
   },
   "排量": {
-    "en": "Displacement"
+    "en": "Displacement",
+    "ru": "Объем",
+    "es": "Cilindrada",
+    "pt": "Cilindrada",
+    "ar": "سعة",
+    "fr": "Cylindrée",
+    "hi": "डिस्प्लेसमेंट",
   },
   "缸径": {
-    "en": "Bore"
+    "en": "Bore",
+    "ru": "Диаметр цилиндра",
+    "es": "Diámetro del cilindro",
+    "pt": "Diâmetro do cilindro",
+    "ar": "قطر الأسطوانة",
+    "fr": "Diamètre du cylindre",
+    "hi": "सिलेंडर व्यास",
   },
   "行程": {
-    "en": "Stroke"
+    "en": "Stroke",
+    "ru": "Ход",
+    "es": "Carrera",
+    "pt": "Curso",
+    "ar": "الحركة",
+    "fr": "Course",
+    "hi": "स्ट्रोक",
   },
   "直径": {
-    "en": "Diameter"
+    "en": "Diameter",
+    "ru": "Диаметр",
+    "es": "Diámetro",
+    "pt": "Diâmetro",
+    "ar": "قطر",
+    "fr": "Diamètre",
+    "hi": "व्यास",
   },
   "长度": {
-    "en": "Length"
+    "en": "Length",
+    "ru": "Длина",
+    "es": "Longitud",
+    "pt": "Comprimento",
+    "ar": "طول",
+    "fr": "Longueur",
+    "hi": "लंबाई",
   },
   "宽度": {
-    "en": "Width"
+    "en": "Width",
+    "ru": "Ширина",
+    "es": "Anchura",
+    "pt": "Largura",
+    "ar": "عرض",
+    "fr": "Largeur",
+    "hi": "चौड़ाई",
   },
   "高度": {
-    "en": "Height"
+    "en": "Height",
+    "ru": "Высота",
+    "es": "Altura",
+    "pt": "Altura",
+    "ar": "ارتفاع",
+    "fr": "Hauteur",
+    "hi": "ऊंचाई",
   },
   "厚度": {
-    "en": "Thickness"
+    "en": "Thickness",
+    "ru": "Толщина",
+    "es": "Espesor",
+    "pt": "Espessura",
+    "ar": "سمك",
+    "fr": "Épaisseur",
+    "hi": "मोटाई",
   },
   "工作温度": {
-    "en": "Temperature"
+    "en": "Temperature",
+    "ru": "Рабочая температура",
+    "es": "Temperatura de trabajo",
+    "pt": "Temperatura de trabalho",
+    "ar": "درجة حرارة العمل",
+    "fr": "Température de travail",
+    "hi": "कार्य तापमान",
   },
   "转速": {
-    "en": "Speed"
+    "en": "Speed",
+    "ru": "Скорость вращения",
+    "es": "Velocidad de giro",
+    "pt": "Velocidade de rotação",
+    "ar": "سرعة الدوران",
+    "fr": "Vitesse de rotation",
+    "hi": "घूर्णन गति",
   },
   "扭矩": {
-    "en": "Torque"
+    "en": "Torque",
+    "ru": "Крутящий момент",
+    "es": "Par",
+    "pt": "Torque",
+    "ar": "عزم الدوران",
+    "fr": "Couple",
+    "hi": "टॉर्क",
   },
   "容量": {
-    "en": "Capacity"
+    "en": "Capacity",
+    "ru": "Объем",
+    "es": "Capacidad",
+    "pt": "Capacidade",
+    "ar": "سعة",
+    "fr": "Capacité",
+    "hi": "क्षमता",
   },
   "粘度": {
-    "en": "Viscosity"
+    "en": "Viscosity",
+    "ru": "Вязкость",
+    "es": "Viscosidad",
+    "pt": "Viscosidade",
+    "ar": "لزوجة",
+    "fr": "Viscosité",
+    "hi": "चिपचिपापन",
   },
   "最大压力": {
-    "en": "Max Pressure"
+    "en": "Max Pressure",
+    "ru": "Максимальное давление",
+    "es": "Presión máxima",
+    "pt": "Pressão máxima",
+    "ar": "ضغط أقصى",
+    "fr": "Pression maximale",
+    "hi": "अधिकतम दबाव",
   },
   "额定压力": {
-    "en": "Rated Pressure"
+    "en": "Rated Pressure",
+    "ru": "Номинальное давление",
+    "es": "Presión nominal",
+    "pt": "Pressão nominal",
+    "ar": "ضغط مركب",
+    "fr": "Pression nominale",
+    "hi": "नाममात्र दबाव",
   },
   "最大转速": {
-    "en": "Max Speed"
+    "en": "Max Speed",
+    "ru": "Максимальная скорость вращения",
+    "es": "Velocidad máxima de giro",
+    "pt": "Velocidade de rotação máxima",
+    "ar": "سرعة دوران أقصى",
+    "fr": "Vitesse de rotation maximale",
+    "hi": "अधिकतम घूर्णन गति",
   },
   "接口尺寸": {
-    "en": "Port Size"
+    "en": "Port Size",
+    "ru": "Размеры подключения",
+    "es": "Dimensiones de la interfaz",
+    "pt": "Dimensões da interface",
+    "ar": "أبعاد الواجهة",
+    "fr": "Dimensions de l'interface",
+    "hi": "इंटरफ़ेस आकार",
   },
   "螺纹尺寸": {
-    "en": "Thread Size"
+    "en": "Thread Size",
+    "ru": "Размер резьбы",
+    "es": "Dimensiones del roscado",
+    "pt": "Dimensões da rosca",
+    "ar": "أبعاد الخيط",
+    "fr": "Dimensions du filetage",
+    "hi": "थ्रेड आकार",
   },
   "内径": {
-    "en": "Inner Diameter"
+    "en": "Inner Diameter",
+    "ru": "Внутренний диаметр",
+    "es": "Diámetro interior",
+    "pt": "Diâmetro interno",
+    "ar": "القطر الداخلي",
+    "fr": "Diamètre intérieur",
+    "hi": "आंतरिक व्यास",
   },
   "外径": {
-    "en": "Outer Diameter"
+    "en": "Outer Diameter",
+    "ru": "Наружный диаметр",
+    "es": "Diámetro exterior",
+    "pt": "Diâmetro externo",
+    "ar": "القطر الخارجي",
+    "fr": "Diamètre extérieur",
+    "hi": "बाहरी व्यास",
   },
   "轴承": {
-    "en": "Bearing"
+    "en": "Bearing",
+    "ru": "Подшипник",
+    "es": "Cojinete",
+    "pt": "Rolamento",
+    "ar": "مكابح",
+    "fr": "Palier",
+    "hi": "बेयरिंग",
   },
   "密封类型": {
-    "en": "Seal Type"
+    "en": "Seal Type",
+    "ru": "Тип уплотнения",
+    "es": "Tipo de sellado",
+    "pt": "Tipo de vedação",
+    "ar": "نوع الختم",
+    "fr": "Type d'étanchéité",
+    "hi": "सील प्रकार",
   },
   "滤材": {
-    "en": "Filter Media"
+    "en": "Filter Media",
+    "ru": "Фильтрующий материал",
+    "es": "Material del filtro",
+    "pt": "Material do filtro",
+    "ar": "مادة المرشح",
+    "fr": "Matériau filtrant",
+    "hi": "फिल्टर माध्यम",
   },
   "过滤精度": {
-    "en": "Micron Rating"
+    "en": "Micron Rating",
+    "ru": "Точность фильтрации",
+    "es": "Precisión de filtración",
+    "pt": "Precisão de filtração",
+    "ar": "دقة الترشيح",
+    "fr": "Précision de filtration",
+    "hi": "फिल्टर सटीकता",
   },
   "效率": {
-    "en": "Efficiency"
+    "en": "Efficiency",
+    "ru": "Эффективность",
+    "es": "Eficiencia",
+    "pt": "Eficiência",
+    "ar": "كفاءة",
+    "fr": "Efficacité",
+    "hi": "कार्यक्षमता",
   },
   "冷却方式": {
-    "en": "Cooling"
+    "en": "Cooling",
+    "ru": "Система охлаждения",
+    "es": "Método de enfriamiento",
+    "pt": "Sistema de refrigeração",
+    "ar": "طريقة التبريد",
+    "fr": "Mode de refroidissement",
+    "hi": "शीतलन प्रणाली",
   },
   "燃油系统": {
-    "en": "Fuel System"
+    "en": "Fuel System",
+    "ru": "Топливная система",
+    "es": "Sistema de combustible",
+    "pt": "Sistema de combustível",
+    "ar": "نظام الوقود",
+    "fr": "Système de carburant",
+    "hi": "ईंधन प्रणाली",
   },
   "气缸数": {
-    "en": "Cylinders"
+    "en": "Cylinders",
+    "ru": "Количество цилиндров",
+    "es": "Número de cilindros",
+    "pt": "Número de cilindros",
+    "ar": "عدد الأسطوانات",
+    "fr": "Nombre de cylindres",
+    "hi": "सिलेंडर संख्या",
   },
   "压缩比": {
-    "en": "Compression Ratio"
+    "en": "Compression Ratio",
+    "ru": "Степень сжатия",
+    "es": "Relación de compresión",
+    "pt": "Relação de compressão",
+    "ar": "نسبة الضغط",
+    "fr": "Rapport de compression",
+    "hi": "संपीड़न अनुपात",
   },
   "热处理": {
-    "en": "Heat Treatment"
+    "en": "Heat Treatment",
+    "ru": "Термообработка",
+    "es": "Tratamiento térmico",
+    "pt": "Tratamento térmico",
+    "ar": "المعالجة الحرارية",
+    "fr": "Traitement thermique",
+    "hi": "ताप उपचार",
   },
   "轴颈": {
-    "en": "Journals"
+    "en": "Journals",
+    "ru": "Шейка оси",
+    "es": "Cuello del eje",
+    "pt": "Pescoço do eixo",
+    "ar": "عنق المحور",
+    "fr": "Col de l'arbre",
+    "hi": "अक्ष नैक",
   },
   "升程": {
-    "en": "Lift"
+    "en": "Lift",
+    "ru": "Ход",
+    "es": "Recorrido",
+    "pt": "Curso",
+    "ar": "الارتفاع",
+    "fr": "Course",
+    "hi": "उठान",
   },
   "凸轮数": {
-    "en": "Lobes"
+    "en": "Lobes",
+    "ru": "Количество кулачков",
+    "es": "Número de cámaras",
+    "pt": "Número de câmaras",
+    "ar": "عدد الكامات",
+    "fr": "Nombre de cammes",
+    "hi": "कैम की संख्या",
   },
   "基圆": {
-    "en": "Base Circle"
+    "en": "Base Circle",
+    "ru": "Базовый круг",
+    "es": "Círculo base",
+    "pt": "Circunferência",
+    "ar": "الدائرة الأساسية",
+    "fr": "Cercle de base",
+    "hi": "आधार वृत्त",
   },
   "环数": {
-    "en": "Ring Count"
+    "en": "Ring Count",
+    "ru": "Количество колец",
+    "es": "Número de anillos",
+    "pt": "Número de anéis",
+    "ar": "عدد الحلقات",
+    "fr": "Nombre de rangs",
+    "hi": "वलय संख्या",
   },
   "喷射压力": {
-    "en": "Injection Pressure"
+    "en": "Injection Pressure",
+    "ru": "Давление впрыска",
+    "es": "Presión de inyección",
+    "pt": "Pressão de injeção",
+    "ar": "ضغط الحقن",
+    "fr": "Pression d'injection",
+    "hi": "इंजेक्शन दबाव",
   },
   "喷嘴类型": {
-    "en": "Nozzle Type"
+    "en": "Nozzle Type",
+    "ru": "Тип форсунки",
+    "es": "Tipo de boquilla",
+    "pt": "Tipo de bico",
+    "ar": "نوع المنفث",
+    "fr": "Type de buse",
+    "hi": "नोजल प्रकार",
   },
   "叶轮直径": {
-    "en": "Impeller Diameter"
+    "en": "Impeller Diameter",
+    "ru": "Диаметр лопастей",
+    "es": "Diámetro de la rueda",
+    "pt": "Diâmetro da roda do ventilador",
+    "ar": "قطر التوربين",
+    "fr": "Diamètre de la roue à aubes",
+    "hi": "पंखा पहिया व्यास",
   },
   "压轮": {
-    "en": "Compressor Wheel"
+    "en": "Compressor Wheel",
+    "ru": "Пресс-ролик",
+    "es": "Rodillo de compresión",
+    "pt": "Rodete",
+    "ar": "عجلة الضغط",
+    "fr": "Roue de compression",
+    "hi": "संपीड़न पहिया",
   },
   "涡轮": {
-    "en": "Turbine Wheel"
+    "en": "Turbine Wheel",
+    "ru": "Турбина",
+    "es": "Turbina",
+    "pt": "Turbina",
+    "ar": "التوربين",
+    "fr": "Turbine",
+    "hi": "टरबाइन",
   },
   "最大增压": {
-    "en": "Max Boost"
+    "en": "Max Boost",
+    "ru": "Максимальный наддув",
+    "es": "Sobrealimentación máxima",
+    "pt": "Alimentação máxima",
+    "ar": "أقصى زيادة الضغط",
+    "fr": "Surpression maximale",
+    "hi": "अधिकतम बूस्ट",
   },
   "放气阀": {
-    "en": "Wastegate"
+    "en": "Wastegate",
+    "ru": "Клапан выпуска",
+    "es": "Válvula de descarga",
+    "pt": "Válvula de descarga",
+    "ar": "صمام التفريغ",
+    "fr": "Soupape de décharge",
+    "hi": "रिलीज वाल्व",
   },
   "齿数": {
-    "en": "Teeth"
+    "en": "Teeth",
+    "ru": "Количество зубов",
+    "es": "Número de dientes",
+    "pt": "Número de dentes",
+    "ar": "عدد الأسنان",
+    "fr": "Nombre de dents",
+    "hi": "दांतों की संख्या",
   },
   "花键": {
-    "en": "Spline"
+    "en": "Spline",
+    "ru": "Шлица",
+    "es": "Cadena de engranaje",
+    "pt": "Chave de fenda",
+    "ar": "المنطقة المزخرفة",
+    "fr": "Cannelure",
+    "hi": "कुंजी",
   },
   "模数": {
-    "en": "Module"
+    "en": "Module",
+    "ru": "Модуль",
+    "es": "Módulo",
+    "pt": "Módulo",
+    "ar": "النسبة المحددة",
+    "fr": "Module",
+    "hi": "मॉड्यूल",
   },
   "硬度": {
-    "en": "Hardness"
+    "en": "Hardness",
+    "ru": "Твердость",
+    "es": "Dureza",
+    "pt": "Dureza",
+    "ar": "الصلابة",
+    "fr": "Dureté",
+    "hi": "कठोरता",
   },
   "比率": {
-    "en": "Ratio"
+    "en": "Ratio",
+    "ru": "Коэффициент",
+    "es": "Relación",
+    "pt": "Relação",
+    "ar": "النسبة",
+    "fr": "Rapport",
+    "hi": "अनुपात",
   },
   "差速锁": {
-    "en": "Diff Lock"
+    "en": "Diff Lock",
+    "ru": "Блокировка дифференциала",
+    "es": "Bloqueo de diferencial",
+    "pt": "Travamento de diferencial",
+    "ar": "قفل الفرق",
+    "fr": "Verrou de différentiel",
+    "hi": "डिफरेंशियल लॉक",
   },
   "层级": {
-    "en": "Ply Rating"
+    "en": "Ply Rating",
+    "ru": "Уровень",
+    "es": "Nivel",
+    "pt": "Nível",
+    "ar": "المرتبة",
+    "fr": "Niveau",
+    "hi": "स्तर",
   },
   "最大载荷": {
-    "en": "Max Load"
+    "en": "Max Load",
+    "ru": "Максимальная нагрузка",
+    "es": "Carga máxima",
+    "pt": "Carga máxima",
+    "ar": "أقصى حمل",
+    "fr": "Charge maximale",
+    "hi": "अधिकतम भार",
   },
   "花纹": {
-    "en": "Tread Pattern"
+    "en": "Tread Pattern",
+    "ru": "Резьба",
+    "es": "Diseño de flores",
+    "pt": "Padrão",
+    "ar": "النقش",
+    "fr": "Motif",
+    "hi": "पैटर्न",
   },
   "节距": {
-    "en": "Pitch"
+    "en": "Pitch",
+    "ru": "Шаг",
+    "es": "Espacio entre ejes",
+    "pt": "Distância entre eixos",
+    "ar": "المسافة بين الفواصل",
+    "fr": "Pas",
+    "hi": "पिच",
   },
   "链节数": {
-    "en": "Links"
+    "en": "Links",
+    "ru": "Количество звеньев",
+    "es": "Número de eslabones",
+    "pt": "Número de elos",
+    "ar": "عدد روابط السلسلة",
+    "fr": "Nombre de maillons",
+    "hi": "लिंक संख्या",
   },
   "芯材": {
-    "en": "Core"
+    "en": "Core",
+    "ru": "Ядро",
+    "es": "Material del núcleo",
+    "pt": "Núcleo",
+    "ar": "المادة الأساسية",
+    "fr": "Matériau de base",
+    "hi": "कोर सामग्री",
   },
   "承载能力": {
-    "en": "Load Capacity"
+    "en": "Load Capacity",
+    "ru": "Грузоподъемность",
+    "es": "Capacidad de carga",
+    "pt": "Capacidade de carga",
+    "ar": "القدرة على التحمل",
+    "fr": "Capacité de charge",
+    "hi": "भार क्षमता",
   },
   "轮距": {
-    "en": "Track Width"
+    "en": "Track Width",
+    "ru": "Колесная база",
+    "es": "Ancho de la rueda",
+    "pt": "Largura da roda",
+    "ar": "المسافة بين العجلات",
+    "fr": "Empattement",
+    "hi": "ट्रैक",
   },
   "转向": {
-    "en": "Steering"
+    "en": "Steering",
+    "ru": "Рулевое управление",
+    "es": "Dirección",
+    "pt": "Direção",
+    "ar": "التوجيه",
+    "fr": "Direction",
+    "hi": "स्टीयरिंग",
   },
   "间隙": {
-    "en": "Clearance"
+    "en": "Clearance",
+    "ru": "Зазор",
+    "es": "Espacio",
+    "pt": "Intervalo",
+    "ar": "الفجوة",
+    "fr": "Écart",
+    "hi": "गैप",
   },
   "保持架": {
-    "en": "Cage"
+    "en": "Cage",
+    "ru": "Поддерживающая скоба",
+    "es": "Estructura de soporte",
+    "pt": "Estrutura de suporte",
+    "ar": "الهيكل",
+    "fr": "Support de montage",
+    "hi": "रखरखाव ढांचा",
   },
   "密封": {
-    "en": "Seal"
+    "en": "Seal",
+    "ru": "Уплотнение",
+    "es": "Sellado",
+    "pt": "Vedação",
+    "ar": "الختم",
+    "fr": "Étanchéité",
+    "hi": "सील",
   },
   "含密封": {
-    "en": "Seal Included"
+    "en": "Seal Included",
+    "ru": "С уплотнением",
+    "es": "Incluye sellado",
+    "pt": "Com vedação",
+    "ar": "بما في ذلك الختم",
+    "fr": "Avec étanchéité",
+    "hi": "सील शामिल",
   },
   "规格": {
-    "en": "Sizes"
+    "en": "Sizes",
+    "ru": "Технические характеристики",
+    "es": "Especificación",
+    "pt": "Especificações",
+    "ar": "المواصفات",
+    "fr": "Spécifications",
+    "hi": "विशिष्टता",
   },
   "包装": {
-    "en": "Storage"
+    "en": "Storage",
+    "ru": "Упаковка",
+    "es": "Embalaje",
+    "pt": "Embalo",
+    "ar": "التغليف",
+    "fr": "Emballage",
+    "hi": "पैकेजिंग",
   },
   "闪点": {
-    "en": "Flash Point"
+    "en": "Flash Point",
+    "ru": "Температура вспышки",
+    "es": "Punto de inflamación",
+    "pt": "Ponto de inflamação",
+    "ar": "نقطة الوميض",
+    "fr": "Point d'éclair",
+    "hi": "चमक बिंदु",
   },
   "倾点": {
-    "en": "Pour Point"
+    "en": "Pour Point",
+    "ru": "Температура наклона",
+    "es": "Punto de inclinación",
+    "pt": "Ponto de inclinação",
+    "ar": "نقطة الانحناء",
+    "fr": "Point d'inclinaison",
+    "hi": "झुकाव बिंदु",
   },
   "粘度等级": {
-    "en": "Viscosity Grade"
+    "en": "Viscosity Grade",
+    "ru": "Класс вязкости",
+    "es": "Grado de viscosidad",
+    "pt": "Grau de viscosidade",
+    "ar": "درجة اللزوجة",
+    "fr": "Niveau de viscosité",
+    "hi": "चिपचिपाहट स्तर",
   },
   "冷启动电流": {
-    "en": "Cold Cranking Amps"
+    "en": "Cold Cranking Amps",
+    "ru": "Холодный пуск тока",
+    "es": "Corriente de arranque en frío",
+    "pt": "Corrente de partida a frio",
+    "ar": "تيار التشغيل البارد",
+    "fr": "Courant de démarrage à froid",
+    "hi": "ठंड शुरुआती धारा",
   },
   "光源": {
-    "en": "Light Source"
+    "en": "Light Source",
+    "ru": "Источник света",
+    "es": "Fuente de luz",
+    "pt": "Fonte de luz",
+    "ar": "مصدر الضوء",
+    "fr": "Source lumineuse",
+    "hi": "प्रकाश स्रोत",
   },
   "光束": {
-    "en": "Beam Pattern"
+    "en": "Beam Pattern",
+    "ru": "Световой пучок",
+    "es": "Haz de luz",
+    "pt": "Feixe de luz",
+    "ar": "المنبع الضوئي",
+    "fr": "Faisceau lumineux",
+    "hi": "प्रकाश किरण",
   },
   "防水等级": {
-    "en": "Waterproof"
+    "en": "Waterproof",
+    "ru": "Степень защиты от воды",
+    "es": "Nivel de protección contra el agua",
+    "pt": "Grau de proteção contra água",
+    "ar": "مستوى الحماية من الماء",
+    "fr": "Niveau d'étanchéité",
+    "hi": "जलरोधी स्तर",
   },
   "输出": {
-    "en": "Output"
+    "en": "Output",
+    "ru": "Выход",
+    "es": "Salida",
+    "pt": "Saída",
+    "ar": "الإخراج",
+    "fr": "Sortie",
+    "hi": "आउटपुट",
   },
   "调节器": {
-    "en": "Regulator"
+    "en": "Regulator",
+    "ru": "Регулятор",
+    "es": "Regulador",
+    "pt": "Regulador",
+    "ar": "المتحكم",
+    "fr": "Régulateur",
+    "hi": "नियामक",
   },
   "皮带轮": {
-    "en": "Pulley Type"
+    "en": "Pulley Type",
+    "ru": "Шкив",
+    "es": "Rueda de correa",
+    "pt": "Polia",
+    "ar": "عجلة الحزام",
+    "fr": "Poulie de courroie",
+    "hi": "बेल्ट पुली",
   },
   "方向": {
-    "en": "Direction"
+    "en": "Direction",
+    "ru": "Направление",
+    "es": "Dirección",
+    "pt": "Direção",
+    "ar": "الاتجاه",
+    "fr": "Direction",
+    "hi": "दिशा",
   },
   "内存": {
-    "en": "Memory"
+    "en": "Memory",
+    "ru": "Память",
+    "es": "Memoria",
+    "pt": "Memória",
+    "ar": "الذاكرة",
+    "fr": "Mémoire",
+    "hi": "मेमोरी",
   },
   "接口": {
-    "en": "Connector"
+    "en": "Connector",
+    "ru": "Интерфейс",
+    "es": "Interfaz",
+    "pt": "Interface",
+    "ar": "الواجهة",
+    "fr": "Interface",
+    "hi": "इंटरफेस",
   },
   "指示": {
-    "en": "Indicators"
+    "en": "Indicators",
+    "ru": "Индикация",
+    "es": "Indicación",
+    "pt": "Indicação",
+    "ar": "الإشارة",
+    "fr": "Indication",
+    "hi": "संकेत",
   },
   "显示屏": {
-    "en": "Display Type"
+    "en": "Display Type",
+    "ru": "Дисплей",
+    "es": "Pantalla",
+    "pt": "Tela de exibição",
+    "ar": "شاشة العرض",
+    "fr": "Écran d'affichage",
+    "hi": "प्रदर्शन स्क्रीन",
   },
   "触点": {
-    "en": "Contacts"
+    "en": "Contacts",
+    "ru": "Контакты",
+    "es": "Punto de contacto",
+    "pt": "Contato",
+    "ar": "نقطة التلامس",
+    "fr": "Point de contact",
+    "hi": "स्पर्श बिंदु",
   },
   "线圈电阻": {
-    "en": "Coil Resistance"
+    "en": "Coil Resistance",
+    "ru": "Сопротивление катушки",
+    "es": "Resistencia de bobina",
+    "pt": "Resistência do solenóide",
+    "ar": "مقاومة اللف",
+    "fr": "Résistance de bobine",
+    "hi": "कॉइल प्रतिरोध",
   },
   "输出信号": {
-    "en": "Output"
+    "en": "Output",
+    "ru": "Выходной сигнал",
+    "es": "Señal de salida",
+    "pt": "Sinal de saída",
+    "ar": "إشارة الإخراج",
+    "fr": "Signal de sortie",
+    "hi": "आउटपुट सिग्नल",
   },
   "压力范围": {
-    "en": "Pressure Range"
+    "en": "Pressure Range",
+    "ru": "Диапазон давления",
+    "es": "Rango de presión",
+    "pt": "Faixa de pressão",
+    "ar": "مدى الضغط",
+    "fr": "Plage de pression",
+    "hi": "दबाव सीमा",
   },
   "线径": {
-    "en": "Wire Gauge"
+    "en": "Wire Gauge",
+    "ru": "Толщина провода",
+    "es": "Diámetro del cable",
+    "pt": "Diâmetro do fio",
+    "ar": "قطر السلك",
+    "fr": "Diamètre de fil",
+    "hi": "तार व्यास",
   },
   "接口类型": {
-    "en": "Connector Type"
+    "en": "Connector Type",
+    "ru": "Тип интерфейса",
+    "es": "Tipo de interfaz",
+    "pt": "Tipo de interface",
+    "ar": "نوع الواجهة",
+    "fr": "Type d'interface",
+    "hi": "इंटरफेस प्रकार",
   },
   "防护": {
-    "en": "Protection"
+    "en": "Protection",
+    "ru": "Защита",
+    "es": "Protección",
+    "pt": "Proteção",
+    "ar": "الحماية",
+    "fr": "Protection",
+    "hi": "सुरक्षा",
   },
   "旁通阀": {
-    "en": "Bypass"
+    "en": "Bypass",
+    "ru": "Байпасный клапан",
+    "es": "Válvula de derivación",
+    "pt": "Válvula de bypass",
+    "ar": "صمام旁",
+    "fr": "Vanне de dérivation",
+    "hi": "बायपास वाल्व",
   },
   "排水": {
-    "en": "Drain"
+    "en": "Drain",
+    "ru": "Слив",
+    "es": "Drenaje",
+    "pt": "Drenagem",
+    "ar": "صرف",
+    "fr": "Drainage",
+    "hi": "निकास",
   },
   "除水率": {
-    "en": "Water Removal"
+    "en": "Water Removal",
+    "ru": "Коэффициент осушки",
+    "es": "Tasa de eliminación de agua",
+    "pt": "Taxa de remoção de água",
+    "ar": "معدل إزالة الماء",
+    "fr": "Taux d'élimination d'eau",
+    "hi": "जल निकासी दर",
   },
   "水分离": {
-    "en": "Water Separation"
+    "en": "Water Separation",
+    "ru": "Отделение воды",
+    "es": "Separación de agua",
+    "pt": "Separação de água",
+    "ar": "انفصال الماء",
+    "fr": "Séparation d'eau",
+    "hi": "जल पृथक्करण",
   },
   "联数": {
-    "en": "Spools"
+    "en": "Spools",
+    "ru": "Количество секций",
+    "es": "Número de conexión",
+    "pt": "Número de conexões",
+    "ar": "العدد المرتبط",
+    "fr": "Nombre de liaisons",
+    "hi": "संयुक्त संख्या",
   },
   "最大流量": {
-    "en": "Max Flow"
+    "en": "Max Flow",
+    "ru": "Максимальный поток",
+    "es": "Flujo máximo",
+    "pt": "Vazão máxima",
+    "ar": "الحد الأقصى للتدفق",
+    "fr": "Débit maximal",
+    "hi": "अधिकतम प्रवाह",
   },
   "阀门类型": {
-    "en": "Valve Type"
+    "en": "Valve Type",
+    "ru": "Тип клапана",
+    "es": "Tipo de válvula",
+    "pt": "Tipo de válvula",
+    "ar": "نوع الصمام",
+    "fr": "Type de vanne",
+    "hi": "वाल्व प्रकार",
   },
   "杆径": {
-    "en": "Rod Diameter"
+    "en": "Rod Diameter",
+    "ru": "Диаметр штока",
+    "es": "Diámetro del eje",
+    "pt": "Diâmetro do eixo",
+    "ar": "قطر العصا",
+    "fr": "Diamètre du tuyau",
+    "hi": "बार का व्यास",
   },
   "系列": {
-    "en": "Series"
+    "en": "Series",
+    "ru": "Серия",
+    "es": "Serie",
+    "pt": "Série",
+    "ar": "السلسلة",
+    "fr": "Série",
+    "hi": "श्रृंखला",
   },
   "十字轴长": {
-    "en": "Trunnion Length"
+    "en": "Trunnion Length",
+    "ru": "Длина крестовины",
+    "es": "Longitud del eje transversal",
+    "pt": "Comprimento do eixo transversal",
+    "ar": "طول المحور العرضي",
+    "fr": "Longueur de l'arbre transversal",
+    "hi": "क्रॉस अक्ष लंबाई",
   },
   "锥度": {
-    "en": "Cone"
+    "en": "Cone",
+    "ru": "Коэффициент конуса",
+    "es": "Conicidad",
+    "pt": "Conicidade",
+    "ar": "الزاوية المخروطية",
+    "fr": "Angle de cône",
+    "hi": "कोन",
   },
   "型式": {
-    "en": "Type"
+    "en": "Type",
+    "ru": "Тип",
+    "es": "Tipo",
+    "pt": "Tipo",
+    "ar": "النوع",
+    "fr": "Type",
+    "hi": "प्रकार",
   },
   "类别": {
-    "en": "Category"
+    "en": "Category",
+    "ru": "Категория",
+    "es": "Categoría",
+    "pt": "Categoria",
+    "ar": "الفئة",
+    "fr": "Catégorie",
+    "hi": "वर्ग",
   },
   "销径": {
-    "en": "Pin Diameter"
+    "en": "Pin Diameter",
+    "ru": "Диаметр продаж",
+    "es": "Diámetro del vástago",
+    "pt": "Diâmetro do pino",
+    "ar": "قطر المخروط",
+    "fr": "Diamètre de l'arbre",
+    "hi": "पिन व्यास",
   },
   "摆角": {
-    "en": "Swivel Angle"
+    "en": "Swivel Angle",
+    "ru": "Угол поворота",
+    "es": "Ángulo de oscilación",
+    "pt": "Ângulo de balanço",
+    "ar": "زاوية السباق",
+    "fr": "Angle de balancier",
+    "hi": "स्विंग कोण",
   },
   "最大牵引": {
-    "en": "Max Draw"
+    "en": "Max Draw",
+    "ru": "Максимальная тяга",
+    "es": "Máxima tracción",
+    "pt": "Tração máxima",
+    "ar": "الجذب الأقصى",
+    "fr": "Traction maximale",
+    "hi": "अधिकतम ट्रैक्ट",
   },
   "操作": {
-    "en": "Operation"
+    "en": "Operation",
+    "ru": "Операция",
+    "es": "Operación",
+    "pt": "Operação",
+    "ar": "التشغيل",
+    "fr": "Opération",
+    "hi": "संचालन",
   },
   "安装": {
-    "en": "Mounting"
+    "en": "Mounting",
+    "ru": "Установка",
+    "es": "Instalación",
+    "pt": "Instalação",
+    "ar": "التثبيت",
+    "fr": "Installation",
+    "hi": "स्थापना",
   },
   "颜色": {
-    "en": "Color"
+    "en": "Color",
+    "ru": "Цвет",
+    "es": "Color",
+    "pt": "Cor",
+    "ar": "اللون",
+    "fr": "Couleur",
+    "hi": "रंग",
   },
   "表面处理": {
-    "en": "Surface"
+    "en": "Surface",
+    "ru": "Поверхностная обработка",
+    "es": "Tratamiento de superficie",
+    "pt": "Tratamento de superfície",
+    "ar": "معالجة السطح",
+    "fr": "Traitement de surface",
+    "hi": "सतह उपचार",
   },
   "噪音": {
-    "en": "Noise Level"
+    "en": "Noise Level",
+    "ru": "Шум",
+    "es": "Ruido",
+    "pt": "Nível de ruído",
+    "ar": "الضوضاء",
+    "fr": "Niveau de bruit",
+    "hi": "शोर",
   },
   "空调": {
-    "en": "Air Conditioning"
+    "en": "Air Conditioning",
+    "ru": "Кондиционер",
+    "es": "Aire acondicionado",
+    "pt": "Ar condicionado",
+    "ar": "التكييف",
+    "fr": "Climatisation",
+    "hi": "वातानुकूलन",
   },
   "座椅": {
-    "en": "Seat"
+    "en": "Seat",
+    "ru": "Сиденье",
+    "es": "Asiento",
+    "pt": "Assento",
+    "ar": "المقعد",
+    "fr": "Siège",
+    "hi": "सीट",
   },
   "铰链": {
-    "en": "Hinges"
+    "en": "Hinges",
+    "ru": "Шарнир",
+    "es": "Bisagra",
+    "pt": "Pino de articulação",
+    "ar": "المنطق",
+    "fr": "Charnière",
+    "hi": "हिंज",
   },
   "锁扣": {
-    "en": "Latch"
+    "en": "Latch",
+    "ru": "Замок",
+    "es": "Cierre",
+    "pt": "Fecho",
+    "ar": "قفل",
+    "fr": "Fermeture",
+    "hi": "लॉकिंग",
   },
   "侧别": {
-    "en": "Side"
+    "en": "Side",
+    "ru": "Сторона",
+    "es": "Lado",
+    "pt": "Lado",
+    "ar": "الجانب",
+    "fr": "Côté",
+    "hi": "दिशा",
   },
   "镜面尺寸": {
-    "en": "Mirror Size"
+    "en": "Mirror Size",
+    "ru": "Размер зеркала",
+    "es": "Tamaño del espejo",
+    "pt": "Tamanho do espelho",
+    "ar": "حجم المرآة",
+    "fr": "Taille du miroir",
+    "hi": "दर्पण आकार",
   },
   "外壳": {
-    "en": "Housing"
+    "en": "Housing",
+    "ru": "Корпус",
+    "es": "Carcasa",
+    "pt": "Invólucro",
+    "ar": "الغلاف الخارجي",
+    "fr": "Boîtier",
+    "hi": "आवरण",
   },
   "调节": {
-    "en": "Adjustment"
+    "en": "Adjustment",
+    "ru": "Регулировка",
+    "es": "Ajuste",
+    "pt": "Ajuste",
+    "ar": "التعديل",
+    "fr": "Réglage",
+    "hi": "समायोजन",
   },
   "色调": {
-    "en": "Tint"
+    "en": "Tint",
+    "ru": "Оттенок",
+    "es": "Tono",
+    "pt": "Tom de cor",
+    "ar": "درجة اللون",
+    "fr": "Nuance de couleur",
+    "hi": "रंग टोन",
   },
   "顶宽": {
-    "en": "Top Width"
+    "en": "Top Width",
+    "ru": "Ширина сверху",
+    "es": "Anchura superior",
+    "pt": "Largura superior",
+    "ar": "العرض الأقصى",
+    "fr": "Largeur du haut",
+    "hi": "शीर्ष चौड़ाई",
   },
   "摩擦材料": {
-    "en": "Friction Material"
+    "en": "Friction Material",
+    "ru": "Материал трения",
+    "es": "Material de fricción",
+    "pt": "Material de fricção",
+    "ar": "مواد الاحتكاك",
+    "fr": "Matériau de friction",
+    "hi": "घर्षण सामग्री",
   },
   "齿比": {
-    "en": "Gear Ratios"
+    "en": "Gear Ratios",
+    "ru": "Зубчатое соотношение",
+    "es": "Relación de engranaje",
+    "pt": "Taxa de dentes",
+    "ar": "نسبة الأسنان",
+    "fr": "Rapport d'engrenage",
+    "hi": "दांत अनुपात",
   },
   "花键齿": {
-    "en": "Spline Teeth"
+    "en": "Spline Teeth",
+    "ru": "Шлицевый зуб",
+    "es": "Dientes de corona",
+    "pt": "Dente de fenda",
+    "ar": "الترس المزخرف",
+    "fr": "Crémaillère",
+    "hi": "स्प्लाइन टीथ",
   },
   "管径": {
-    "en": "Tube Diameter"
+    "en": "Tube Diameter",
+    "ru": "Диаметр трубы",
+    "es": "Diámetro del tubo",
+    "pt": "Diâmetro do tubo",
+    "ar": "القطر الانبوبي",
+    "fr": "Diamètre du tube",
+    "hi": "पाइप व्यास",
   },
   "接头": {
-    "en": "Joint Type"
+    "en": "Joint Type",
+    "ru": "Соединение",
+    "es": "Conexión",
+    "pt": "Conector",
+    "ar": "المنفذ",
+    "fr": "Raccord",
+    "hi": "कनेक्टर",
   },
   "单向阀": {
-    "en": "Check Valve"
+    "en": "Check Valve",
+    "ru": "Односторонний клапан",
+    "es": "Válvula de una vía",
+    "pt": "Válvula unidirecional",
+    "ar": "صمام أحادي الاتجاه",
+    "fr": "Vanne à sens unique",
+    "hi": "एकमार्ग वाल्व",
   },
   "爆破压力": {
-    "en": "Burst Pressure"
+    "en": "Burst Pressure",
+    "ru": "Давление разрыва",
+    "es": "Presión de ruptura",
+    "pt": "Pressão de ruptura",
+    "ar": "ضغط الانفجار",
+    "fr": "Pression de rupture",
+    "hi": "विस्फोट दबाव",
   },
   "调节范围": {
-    "en": "Adjustment Range"
+    "en": "Adjustment Range",
+    "ru": "Диапазон регулировки",
+    "es": "Rango de ajuste",
+    "pt": "Faixa de regulação",
+    "ar": "نطاق الضبط",
+    "fr": "Plage de réglage",
+    "hi": "नियंत्रण सीमा",
   },
   "最大扭矩": {
-    "en": "Max Torque"
+    "en": "Max Torque",
+    "ru": "Максимальный крутящий момент",
+    "es": "Par máximo",
+    "pt": "Torque máximo",
+    "ar": "عزم الدوران الأقصى",
+    "fr": "Couple maximal",
+    "hi": "अधिकतम टॉर्क",
   },
 };

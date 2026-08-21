@@ -514,7 +514,9 @@
       "registerLink": "立即注册",
       "forgotPassword": "忘记密码？",
       "error": "用户名/邮箱或密码错误",
-      "success": "登录成功"
+      "success": "登录成功",
+      "email": "电子邮件",
+      "emailPlaceholder": "请输入您的电子邮件"
     },
     "register": {
       "title": "注册",
@@ -737,7 +739,7 @@
     "quickLinks": "行业权威平台",
     "quickLinkRb": "Ritchie Bros 拍卖行",
     "quickLinkCamda": "中国农机流通协会",
-    "quickLinkTractorHouse": "TractorHouse",
+    "quickLinkTractorHouse": "拖拉机之家",
     "quickLinkAgriaffaires": "Agriaffaires",
     "contactUs": "联系我们",
     "legal": "法律信息",
