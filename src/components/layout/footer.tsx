@@ -1,6 +1,7 @@
 import { useTranslations } from "next-intl";
 import { DisclaimerBanner } from "@/components/expo/DisclaimerBanner";
 import { CnFooter } from "@/components/cn/CnFooter";
+import { isCnSite } from "@/config/site";
 
 interface FooterProps {
   locale: string;
@@ -102,14 +103,14 @@ export function Footer({ locale }: FooterProps) {
         {/* Legal Links */}
         <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
           <a
-            href={locale === "zh" ? "/privacy" : `/${locale}/privacy`}
+            href={`/${locale}/privacy`}
             className="text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400"
           >
             {t("privacy")}
           </a>
           <span className="text-gray-300 dark:text-gray-600">|</span>
           <a
-            href={locale === "zh" ? "/terms" : `/${locale}/terms`}
+            href={`/${locale}/terms`}
             className="text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400"
           >
             {t("terms")}
@@ -123,9 +124,11 @@ export function Footer({ locale }: FooterProps) {
             : "Shendiao Agricultural Machinery is a Vice-President Unit of the Used Farm Machinery Circulation Branch under the China Agricultural Machinery Circulation Association. Shendiao Agri-Machinery Expo™, Shendiao Cloud Expo™, and Shendiao WingShow™ are proprietary brands of Shendiao, operated independently and not representing the Association."}
         </div>
 
-        <div className="mt-4 border-t border-gray-200 pt-6 text-center text-sm text-gray-400 dark:border-gray-700">
-          {t("copyright")}
-        </div>
+        {!isCnSite() && (
+          <div className="mt-4 border-t border-gray-200 pt-6 text-center text-sm text-gray-400 dark:border-gray-700">
+            {t("copyright")}
+          </div>
+        )}
       </div>
       </footer>
       <CnFooter />

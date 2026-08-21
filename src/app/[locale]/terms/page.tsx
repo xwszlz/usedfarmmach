@@ -239,7 +239,7 @@ function TermsContentZh() {
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">第九条　隐私政策</h2>
         <p>
           我们重视您的个人信息保护。关于我们如何收集、使用、存储、保护和处理您的个人信息，
-          请参阅我们的&ldquo;<a href="/privacy" className="text-blue-600 dark:text-blue-400 underline">隐私政策</a>&rdquo;。
+          请参阅我们的&ldquo;<a href="/zh/privacy" className="text-blue-600 dark:text-blue-400 underline">隐私政策</a>&rdquo;。
           隐私政策构成本协议不可分割的一部分。
         </p>
       </section>
@@ -559,7 +559,7 @@ function TermsContentCn() {
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">第九条　隐私政策</h2>
         <p>
           我们重视您的个人信息保护。关于我们如何收集、使用、存储、保护和处理您的个人信息，
-          请参阅我们的&ldquo;<a href="/privacy" className="text-blue-600 dark:text-blue-400 underline">隐私政策</a>&rdquo;。
+          请参阅我们的&ldquo;<a href="/zh/privacy" className="text-blue-600 dark:text-blue-400 underline">隐私政策</a>&rdquo;。
           隐私政策构成本协议不可分割的一部分。
         </p>
       </section>
