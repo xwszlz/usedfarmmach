@@ -1,5 +1,6 @@
 "use client";
 
+import { translate } from "@/lib/i18n-runtime";
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -111,7 +112,7 @@ export function MachineryIdentityCard({ productId, locale }: { productId: string
     return (
       <Card>
         <CardContent className="py-8 text-center text-gray-400">
-          {isZh ? "加载农机档案中..." : "Loading machinery profile..."}
+          {translate("加载农机档案中...", locale)}
         </CardContent>
       </Card>
     );
@@ -124,7 +125,7 @@ export function MachineryIdentityCard({ productId, locale }: { productId: string
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <QrCode className="h-5 w-5" />
-            {isZh ? "一机一码身份溯源" : "Machinery Identity & Traceability"}
+            {translate("一机一码身份溯源", locale)}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -132,20 +133,18 @@ export function MachineryIdentityCard({ productId, locale }: { productId: string
             <ShieldCheck className="h-8 w-8 text-amber-500" />
             <div>
               <p className="text-sm font-medium text-amber-800">
-                {isZh ? "该设备尚未生成一机一码" : "No identity code generated yet"}
+                {translate("该设备尚未生成一机一码", locale)}
               </p>
               <p className="text-xs text-amber-600 mt-1">
-                {isZh
-                  ? "生成后可获得唯一QR码，买家扫码可查看设备全生命周期档案"
-                  : "Generate a unique QR code for buyers to trace full lifecycle history"}
+                {translate("生成后可获得唯一QR码，买家扫码可查看设备全生命周期档案", locale)}
               </p>
             </div>
           </div>
           <Button onClick={generateIdentity} disabled={generating} className="w-full">
             <QrCode className="mr-2 h-4 w-4" />
             {generating
-              ? isZh ? "生成中..." : "Generating..."
-              : isZh ? "生成一机一码" : "Generate Identity Code"}
+              ? translate("生成中...", locale)
+              : translate("生成一机一码", locale)}
           </Button>
         </CardContent>
       </Card>
@@ -158,7 +157,7 @@ export function MachineryIdentityCard({ productId, locale }: { productId: string
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <QrCode className="h-5 w-5" />
-          {isZh ? "一机一码身份溯源" : "Machinery Identity & Traceability"}
+          {translate("一机一码身份溯源", locale)}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -175,7 +174,7 @@ export function MachineryIdentityCard({ productId, locale }: { productId: string
                 </div>
               )}
             </div>
-            <p className="text-xs text-gray-400">{isZh ? "微信扫码验机" : "Scan to verify"}</p>
+            <p className="text-xs text-gray-400">{translate("微信扫码验机", locale)}</p>
             <p className="text-[10px] font-mono text-gray-300">{identity.qrCode}</p>
           </div>
           <div className="flex-1 space-y-2">
@@ -183,18 +182,18 @@ export function MachineryIdentityCard({ productId, locale }: { productId: string
               {identity.isVerified ? (
                 <Badge className="bg-green-100 text-green-700">
                   <CheckCircle2 className="mr-1 h-3 w-3" />
-                  {isZh ? "已验证" : "Verified"}
+                  {translate("已验证", locale)}
                 </Badge>
               ) : (
                 <Badge className="bg-amber-100 text-amber-700">
                   <Clock className="mr-1 h-3 w-3" />
-                  {isZh ? "待验证" : "Pending"}
+                  {translate("待验证", locale)}
                 </Badge>
               )}
             </div>
             {identity.serialNo && (
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-gray-500">{isZh ? "出厂编号" : "Serial No."}:</span>
+                <span className="text-gray-500">{translate("出厂编号", locale)}:</span>
                 <span className="font-medium text-gray-800">{identity.serialNo}</span>
               </div>
             )}
@@ -211,7 +210,7 @@ export function MachineryIdentityCard({ productId, locale }: { productId: string
               <div className="flex items-center gap-2 text-sm">
                 <Calendar className="h-4 w-4 text-gray-400" />
                 <span className="text-gray-800">
-                  {isZh ? "出厂日期" : "Mfg Date"}: {identity.manufactureDate}
+                  {translate("出厂日期", locale)}: {identity.manufactureDate}
                 </span>
               </div>
             )}
@@ -229,9 +228,9 @@ export function MachineryIdentityCard({ productId, locale }: { productId: string
           <span className="flex-1 truncate text-xs font-mono text-gray-500">{qrScanUrl}</span>
           <Button variant="ghost" size="sm" onClick={copyScanUrl} className="h-7 shrink-0 px-2 text-xs">
             {copied ? (
-              <><CheckCircle2 className="mr-1 h-3 w-3 text-green-500" />{isZh ? "已复制" : "Copied"}</>
+              <><CheckCircle2 className="mr-1 h-3 w-3 text-green-500" />{translate("已复制", locale)}</>
             ) : (
-              <><Copy className="mr-1 h-3 w-3" />{isZh ? "复制链接" : "Copy"}</>
+              <><Copy className="mr-1 h-3 w-3" />{translate("复制链接", locale)}</>
             )}
           </Button>
           <a href={qrScanUrl} target="_blank" rel="noopener noreferrer">
@@ -246,7 +245,7 @@ export function MachineryIdentityCard({ productId, locale }: { productId: string
           <div>
             <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
               <History className="h-4 w-4" />
-              {isZh ? "生命周期档案" : "Lifecycle History"}
+              {translate("生命周期档案", locale)}
               <Badge variant="secondary">{identity.events.length}</Badge>
             </h4>
             <div className="space-y-3">
@@ -303,7 +302,7 @@ export function MachineryIdentityCard({ productId, locale }: { productId: string
                           {evidence.videos && evidence.videos.length > 0 && (
                             <div className="flex items-center gap-2 text-xs text-blue-600">
                               <Video className="h-3 w-3" />
-                              <span>{evidence.videos.length} {isZh ? "个视频" : "videos"}</span>
+                              <span>{evidence.videos.length} {translate("个视频", locale)}</span>
                             </div>
                           )}
                         </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { translate } from "@/lib/i18n-runtime";
 import { useState, useEffect } from "react";
 import { Heart, Star } from "lucide-react";
 
@@ -18,8 +19,6 @@ export function FavoriteButton({
 }) {
   const [isFavorited, setIsFavorited] = useState(false);
   const [loading, setLoading] = useState(true);
-  const isZh = locale === "zh";
-
   useEffect(() => {
     const token = getToken();
     if (!token) {
@@ -92,7 +91,7 @@ export function FavoriteButton({
       }`}
     >
       <Heart className={`h-4 w-4 ${isFavorited ? "fill-red-500" : ""}`} />
-      <span>{isFavorited ? (isZh ? "已收藏" : "Saved") : isZh ? "收藏" : "Save"}</span>
+      <span>{isFavorited ? (translate("已收藏", locale)) : translate("收藏", locale)}</span>
     </button>
   );
 }
@@ -106,8 +105,6 @@ export function FollowButton({
 }) {
   const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
-  const isZh = locale === "zh";
-
   useEffect(() => {
     const token = getToken();
     if (!token) {
@@ -180,7 +177,7 @@ export function FollowButton({
       }`}
     >
       <Star className={`h-4 w-4 ${isFollowing ? "fill-blue-500" : ""}`} />
-      <span>{isFollowing ? (isZh ? "已关注" : "Following") : isZh ? "关注卖家" : "Follow"}</span>
+      <span>{isFollowing ? (translate("已关注", locale)) : translate("关注卖家", locale)}</span>
     </button>
   );
 }

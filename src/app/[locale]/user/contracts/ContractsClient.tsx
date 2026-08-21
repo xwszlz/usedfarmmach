@@ -1,5 +1,6 @@
 "use client";
 
+import { translate } from "@/lib/i18n-runtime";
 import { useState, useEffect, useCallback } from "react";
 import { useTranslations, useLocale } from "next-intl";
 
@@ -89,7 +90,7 @@ export default function ContractsClient() {
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">
-          {isZh ? "我的合同" : "My Contracts"}
+          {translate("我的合同", locale)}
         </h1>
         <div className="flex gap-2">
           {(["all", "seller", "buyer"] as const).map((r) => (
@@ -102,7 +103,7 @@ export default function ContractsClient() {
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
             >
-              {r === "all" ? (isZh ? "全部" : "All") : r === "seller" ? (isZh ? "作为卖方" : "As Seller") : (isZh ? "作为买方" : "As Buyer")}
+              {r === "all" ? (translate("全部", locale)) : r === "seller" ? (translate("作为卖方", locale)) : (translate("作为买方", locale))}
             </button>
           ))}
         </div>
@@ -111,7 +112,7 @@ export default function ContractsClient() {
       {contracts.length === 0 ? (
         <div className="text-center py-16 bg-gray-50 rounded-xl">
           <p className="text-gray-400 text-lg">
-            {isZh ? "暂无合同记录" : "No contracts yet"}
+            {translate("暂无合同记录", locale)}
           </p>
         </div>
       ) : (
@@ -145,7 +146,7 @@ export default function ContractsClient() {
                         {contract.contractNo} | {contract.product.year}
                       </p>
                       <p className="text-sm text-gray-600 mt-1">
-                        ¥{(contract.priceCny / 10000).toFixed(2)}{isZh ? "万" : "k"}
+                        ¥{(contract.priceCny / 10000).toFixed(2)}{translate("万", locale)}
                         {contract.priceUsd && ` (~$${(contract.priceUsd).toFixed(0)})`}
                         <span className="ml-2 text-gray-400">{contract.tradeTerm}</span>
                       </p>
@@ -163,10 +164,10 @@ export default function ContractsClient() {
                 {/* Signature status */}
                 <div className="flex gap-4 mt-3 pt-3 border-t border-gray-100 text-xs">
                   <span className={contract.sellerSignedAt ? "text-green-600" : "text-gray-400"}>
-                    {isZh ? "卖方" : "Seller"}: {contract.sellerSignedAt ? `✓ ${new Date(contract.sellerSignedAt).toLocaleDateString(isZh ? "zh-CN" : "en-US")}` : (isZh ? "未签" : "Unsigned")}
+                    {translate("卖方", locale)}: {contract.sellerSignedAt ? `✓ ${new Date(contract.sellerSignedAt).toLocaleDateString(isZh ? "zh-CN" : "en-US")}` : (translate("未签", locale))}
                   </span>
                   <span className={contract.buyerSignedAt ? "text-green-600" : "text-gray-400"}>
-                    {isZh ? "买方" : "Buyer"}: {contract.buyerSignedAt ? `✓ ${new Date(contract.buyerSignedAt).toLocaleDateString(isZh ? "zh-CN" : "en-US")}` : (isZh ? "未签" : "Unsigned")}
+                    {translate("买方", locale)}: {contract.buyerSignedAt ? `✓ ${new Date(contract.buyerSignedAt).toLocaleDateString(isZh ? "zh-CN" : "en-US")}` : (translate("未签", locale))}
                   </span>
                 </div>
               </div>
@@ -263,7 +264,7 @@ function ContractDetailModal({
       >
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-gray-900">
-            {isZh ? "合同详情" : "Contract Detail"}
+            {translate("合同详情", locale)}
           </h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
             ✕
@@ -273,34 +274,34 @@ function ContractDetailModal({
         {/* Contract info */}
         <div className="space-y-3 mb-6">
           <div className="flex justify-between text-sm">
-            <span className="text-gray-500">{isZh ? "合同编号" : "Contract No"}</span>
+            <span className="text-gray-500">{translate("合同编号", locale)}</span>
             <span className="font-mono text-gray-900">{detail.contractNo}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-500">{isZh ? "状态" : "Status"}</span>
+            <span className="text-gray-500">{translate("状态", locale)}</span>
             <span className={`px-2 py-0.5 rounded text-xs font-medium ${statusInfo.color}`}>
               {isZh ? statusInfo.zh : statusInfo.en}
             </span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-500">{isZh ? "设备" : "Equipment"}</span>
+            <span className="text-gray-500">{translate("设备", locale)}</span>
             <span className="text-gray-900">
               {detail.product.brand.nameZh} {detail.product.modelName} ({detail.product.year})
             </span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-500">{isZh ? "成交价" : "Price"}</span>
+            <span className="text-gray-500">{translate("成交价", locale)}</span>
             <span className="text-gray-900 font-semibold">
-              ¥{(detail.priceCny / 10000).toFixed(2)}{isZh ? "万" : "k"}
+              ¥{(detail.priceCny / 10000).toFixed(2)}{translate("万", locale)}
               {detail.priceUsd && ` (~$${detail.priceUsd.toFixed(0)})`}
             </span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-500">{isZh ? "贸易条款" : "Trade Term"}</span>
+            <span className="text-gray-500">{translate("贸易条款", locale)}</span>
             <span className="text-gray-900">{detail.tradeTerm}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-500">{isZh ? "卖方" : "Seller"}</span>
+            <span className="text-gray-500">{translate("卖方", locale)}</span>
             <span className="text-gray-900">
               {detail.seller.companyName || detail.seller.username || "—"}
               {detail.sellerSignedAt && (
@@ -311,7 +312,7 @@ function ContractDetailModal({
             </span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-500">{isZh ? "买方" : "Buyer"}</span>
+            <span className="text-gray-500">{translate("买方", locale)}</span>
             <span className="text-gray-900">
               {detail.buyer.companyName || detail.buyer.username || "—"}
               {detail.buyerSignedAt && (
@@ -327,7 +328,7 @@ function ContractDetailModal({
         {terms && (
           <div className="mb-6">
             <h3 className="text-sm font-semibold text-gray-700 mb-2">
-              {isZh ? "合同条款" : "Contract Terms"}
+              {translate("合同条款", locale)}
             </h3>
             <div className="bg-gray-50 rounded-lg p-4 max-h-60 overflow-y-auto text-sm text-gray-700 whitespace-pre-wrap">
               {terms}
@@ -344,8 +345,8 @@ function ContractDetailModal({
               className="flex-1 py-2.5 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
             >
               {detail.sellerSignedAt
-                ? (isZh ? "卖方已签" : "Seller Signed ✓")
-                : (isZh ? "卖方签署" : "Sign as Seller")}
+                ? (translate("卖方已签", locale))
+                : (translate("卖方签署", locale))}
             </button>
             <button
               onClick={() => handleSign("buyer")}
@@ -353,8 +354,8 @@ function ContractDetailModal({
               className="flex-1 py-2.5 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
             >
               {detail.buyerSignedAt
-                ? (isZh ? "买方已签" : "Buyer Signed ✓")
-                : (isZh ? "买方签署" : "Sign as Buyer")}
+                ? (translate("买方已签", locale))
+                : (translate("买方签署", locale))}
             </button>
           </div>
         )}
@@ -363,11 +364,11 @@ function ContractDetailModal({
           <div className="pt-4 border-t border-gray-100">
             <div className="bg-green-50 rounded-lg p-4 text-center">
               <p className="text-green-600 font-medium">
-                {isZh ? "合同已双方签署生效" : "Contract is fully signed and effective"}
+                {translate("合同已双方签署生效", locale)}
               </p>
               {detail.validFrom && detail.validUntil && (
                 <p className="text-sm text-gray-500 mt-1">
-                  {isZh ? "有效期" : "Valid"}:{" "}
+                  {translate("有效期", locale)}:{" "}
                   {new Date(detail.validFrom).toLocaleDateString(isZh ? "zh-CN" : "en-US")} —{" "}
                   {new Date(detail.validUntil).toLocaleDateString(isZh ? "zh-CN" : "en-US")}
                 </p>

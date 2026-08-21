@@ -1,5 +1,6 @@
 "use client";
 
+import { translate } from "@/lib/i18n-runtime";
 import { useState, useEffect } from "react";
 import { useLocale } from "next-intl";
 
@@ -75,16 +76,16 @@ export default function MaintenanceClient() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">
-        {isZh ? "售后维保记录" : "Maintenance Records"}
+        {translate("售后维保记录", locale)}
       </h1>
 
       {records.length === 0 ? (
         <div className="text-center py-16 bg-gray-50 rounded-xl">
           <p className="text-gray-400 text-lg">
-            {isZh ? "暂无维保记录" : "No maintenance records"}
+            {translate("暂无维保记录", locale)}
           </p>
           <p className="text-gray-400 text-sm mt-2">
-            {isZh ? "在产品详情页可以预约维修服务" : "Schedule maintenance from product detail page"}
+            {translate("在产品详情页可以预约维修服务", locale)}
           </p>
         </div>
       ) : (
@@ -111,7 +112,7 @@ export default function MaintenanceClient() {
                         </span>
                         {record.warranty && (
                           <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs">
-                            {isZh ? "质保内" : "Under Warranty"}
+                            {translate("质保内", locale)}
                           </span>
                         )}
                       </div>
@@ -131,7 +132,7 @@ export default function MaintenanceClient() {
                 <div className="mt-3 pt-3 border-t border-gray-100 grid grid-cols-2 gap-2 text-sm">
                   {record.scheduledDate && (
                     <div>
-                      <span className="text-gray-400">{isZh ? "预约时间" : "Scheduled"}: </span>
+                      <span className="text-gray-400">{translate("预约时间", locale)}: </span>
                       <span className="text-gray-700">
                         {new Date(record.scheduledDate).toLocaleDateString(isZh ? "zh-CN" : "en-US")}
                       </span>
@@ -139,7 +140,7 @@ export default function MaintenanceClient() {
                   )}
                   {record.completedDate && (
                     <div>
-                      <span className="text-gray-400">{isZh ? "完成时间" : "Completed"}: </span>
+                      <span className="text-gray-400">{translate("完成时间", locale)}: </span>
                       <span className="text-gray-700">
                         {new Date(record.completedDate).toLocaleDateString(isZh ? "zh-CN" : "en-US")}
                       </span>
@@ -147,19 +148,19 @@ export default function MaintenanceClient() {
                   )}
                   {record.technician && (
                     <div>
-                      <span className="text-gray-400">{isZh ? "维修技师" : "Technician"}: </span>
+                      <span className="text-gray-400">{translate("维修技师", locale)}: </span>
                       <span className="text-gray-700">{record.technician}</span>
                     </div>
                   )}
                   {record.serviceCenter && (
                     <div>
-                      <span className="text-gray-400">{isZh ? "服务网点" : "Service Center"}: </span>
+                      <span className="text-gray-400">{translate("服务网点", locale)}: </span>
                       <span className="text-gray-700">{record.serviceCenter.name}</span>
                     </div>
                   )}
                   {record.rating && (
                     <div>
-                      <span className="text-gray-400">{isZh ? "评分" : "Rating"}: </span>
+                      <span className="text-gray-400">{translate("评分", locale)}: </span>
                       <span className="text-yellow-500">{"⭐".repeat(record.rating)}</span>
                     </div>
                   )}
@@ -170,7 +171,7 @@ export default function MaintenanceClient() {
                 )}
                 {record.notes && (
                   <div className="mt-2 bg-gray-50 rounded p-2 text-sm text-gray-600">
-                    <span className="font-medium">{isZh ? "备注" : "Notes"}: </span>
+                    <span className="font-medium">{translate("备注", locale)}: </span>
                     {record.notes}
                   </div>
                 )}

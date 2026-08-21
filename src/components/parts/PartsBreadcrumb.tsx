@@ -1,5 +1,6 @@
 "use client";
 
+import { translate } from "@/lib/i18n-runtime";
 import Link from "next/link";
 import { ChevronRight, Home } from "lucide-react";
 
@@ -16,11 +17,9 @@ export default function PartsBreadcrumb({
   subSystemName,
   componentGroupName,
 }: PartsBreadcrumbProps) {
-  const isZh = locale === "zh";
-
   const items: { label: string; href: string | null }[] = [
-    { label: isZh ? "首页" : "Home", href: `/${locale}` },
-    { label: isZh ? "配件专区" : "Parts", href: `/${locale}/parts` },
+    { label: translate("首页", locale), href: `/${locale}` },
+    { label: translate("配件专区", locale), href: `/${locale}/parts` },
   ];
 
   if (machineTypeName) {

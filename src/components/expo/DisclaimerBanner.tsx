@@ -1,5 +1,6 @@
 "use client";
 
+import { translate } from "@/lib/i18n-runtime";
 import { useState } from "react";
 import { ShieldAlert, ChevronDown, ChevronUp } from "lucide-react";
 
@@ -23,7 +24,7 @@ export function DisclaimerBanner({ locale = "zh", variant = "full" }: Disclaimer
     return (
       <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
         <ShieldAlert className="h-3 w-3" />
-        {isZh ? "AI生成内容" : "AI Generated"}
+        {translate("AI生成内容", locale)}
       </span>
     );
   }
@@ -33,9 +34,7 @@ export function DisclaimerBanner({ locale = "zh", variant = "full" }: Disclaimer
       <div className="flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
         <ShieldAlert className="h-4 w-4 shrink-0" />
         <span>
-          {isZh
-            ? "本页图片及信息均为AI生成/基于公开资料整理，不代表品牌官方立场。"
-            : "Images and information on this page are AI-generated/based on public sources and do not represent official brand positions."}
+          {translate("本页图片及信息均为AI生成/基于公开资料整理，不代表品牌官方立场。", locale)}
         </span>
       </div>
     );
@@ -51,7 +50,7 @@ export function DisclaimerBanner({ locale = "zh", variant = "full" }: Disclaimer
         <div className="flex items-center gap-2">
           <ShieldAlert className="h-5 w-5 text-amber-600" />
           <span className="text-sm font-semibold text-gray-700">
-            {isZh ? "免责声明" : "Disclaimer"}
+            {translate("免责声明", locale)}
           </span>
         </div>
         {expanded ? (
@@ -71,7 +70,7 @@ export function DisclaimerBanner({ locale = "zh", variant = "full" }: Disclaimer
             href={`/${locale}/expo/brand-claim`}
             className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:underline"
           >
-            {isZh ? "品牌方认领入口 →" : "Brand Claim Portal →"}
+            {translate("品牌方认领入口 →", locale)}
           </a>
         </div>
       )}

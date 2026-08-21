@@ -1,5 +1,6 @@
 "use client";
 
+import { translate } from "@/lib/i18n-runtime";
 import { useState, useRef } from "react";
 import Image from "next/image";
 import {
@@ -99,7 +100,6 @@ export default function QRCodePageClient({
   allInspectionPhotos: string[];
 }) {
   const isZh = locale === "zh";
-  const t = (zh: string, en: string) => (isZh ? zh : en);
 
   /* Local state */
   const [showInspectForm, setShowInspectForm] = useState(false);
@@ -164,10 +164,10 @@ export default function QRCodePageClient({
           window.location.reload();
         }, 1200);
       } else {
-        setSubmitError(data.error || t("提交失败", "Submission failed"));
+        setSubmitError(data.error || translate("提交失败", locale));
       }
     } catch {
-      setSubmitError(t("网络错误", "Network error"));
+      setSubmitError(translate("网络错误", locale));
     } finally {
       setSubmitting(false);
     }
@@ -180,7 +180,7 @@ export default function QRCodePageClient({
       <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
         <div className="text-center">
           <AlertCircle className="mx-auto h-12 w-12 text-gray-300" />
-          <p className="mt-3 text-gray-500">{t("农机档案数据异常", "Profile data error")}</p>
+          <p className="mt-3 text-gray-500">{translate("农机档案数据异常", locale)}</p>
         </div>
       </div>
     );
@@ -193,7 +193,7 @@ export default function QRCodePageClient({
         <div className="flex items-center gap-2 px-4 py-3">
           <ScanLine className="h-5 w-5 text-green-600" />
           <span className="text-sm font-medium text-gray-600">
-            {t("神雕农机 · 一机一码溯源", "Shendiao · Machinery Traceability")}
+            {translate("神雕农机 · 一机一码溯源", locale)}
           </span>
         </div>
       </div>
@@ -215,12 +215,12 @@ export default function QRCodePageClient({
               {profile.isVerified ? (
                 <span className="inline-flex items-center gap-1 rounded-full bg-green-600 px-3 py-1 text-xs font-medium text-white">
                   <CheckCircle2 className="h-3 w-3" />
-                  {t("已验证", "Verified")}
+                  {translate("已验证", locale)}
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1 rounded-full bg-amber-500 px-3 py-1 text-xs font-medium text-white">
                   <Clock className="h-3 w-3" />
-                  {t("待验证", "Pending")}
+                  {translate("待验证", locale)}
                 </span>
               )}
             </div>
@@ -233,10 +233,10 @@ export default function QRCodePageClient({
             {product.brandName} {product.modelName}
           </h1>
           <div className="mt-2 flex flex-wrap gap-3 text-sm text-gray-600">
-            {product.year && <span>{t("年份", "Year")}: {product.year}</span>}
-            {product.workingHours != null && <span>{t("工时", "Hours")}: {product.workingHours}h</span>}
+            {product.year && <span>{translate("年份", locale)}: {product.year}</span>}
+            {product.workingHours != null && <span>{translate("工时", locale)}: {product.workingHours}h</span>}
             {product.condition && (
-              <span>{t("成色", "Condition")}: {isZh ? CONDITION_LABELS[product.condition]?.zh || product.condition : CONDITION_LABELS[product.condition]?.en || product.condition}</span>
+              <span>{translate("成色", locale)}: {translate(CONDITION_LABELS[product.condition]?.zh ?? product.condition, locale)}</span>
             )}
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-gray-500">
@@ -257,7 +257,7 @@ export default function QRCodePageClient({
             <span className="font-mono text-xs font-bold text-gray-500">{profile.qrCode}</span>
             {profile.verifyHash && (
               <span className="font-mono text-[10px] text-gray-400">
-                {t("哈希", "Hash")}: {profile.verifyHash}
+                {translate("哈希", locale)}: {profile.verifyHash}
               </span>
             )}
           </div>
@@ -269,7 +269,7 @@ export default function QRCodePageClient({
         <div className="mx-3 mt-3 rounded-xl bg-white p-4 shadow-sm">
           <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
             <Camera className="h-4 w-4 text-amber-500" />
-            {t("验机实拍", "Inspection Photos")}
+            {translate("验机实拍", locale)}
             <span className="text-xs text-gray-400">({allInspectionPhotos.length})</span>
           </h3>
           <div className="grid grid-cols-3 gap-2">
@@ -296,13 +296,13 @@ export default function QRCodePageClient({
       <div className="mx-3 mt-3 rounded-xl bg-white p-4 shadow-sm">
         <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-700">
           <History className="h-4 w-4 text-blue-500" />
-          {t("全生命周期档案", "Lifecycle History")}
+          {translate("全生命周期档案", locale)}
           <span className="text-xs text-gray-400">({events.length})</span>
         </h3>
 
         {events.length === 0 ? (
           <p className="py-4 text-center text-sm text-gray-400">
-            {t("暂无记录", "No records yet")}
+            {translate("暂无记录", locale)}
           </p>
         ) : (
           <div className="space-y-0">
@@ -367,7 +367,7 @@ export default function QRCodePageClient({
                           {event.evidence!.photos && event.evidence!.photos.length > 0 && (
                             <div>
                               <p className="mb-2 text-xs font-medium text-gray-500">
-                                {t("检测照片", "Photos")} ({event.evidence!.photos.length})
+                                {translate("检测照片", locale)} ({event.evidence!.photos.length})
                               </p>
                               <div className="grid grid-cols-3 gap-2">
                                 {event.evidence!.photos.map((url: string, pi: number) => (
@@ -385,7 +385,7 @@ export default function QRCodePageClient({
                           {event.evidence!.videos && event.evidence!.videos.length > 0 && (
                             <div>
                               <p className="mb-2 text-xs font-medium text-gray-500">
-                                {t("检测视频", "Videos")} ({event.evidence!.videos.length})
+                                {translate("检测视频", locale)} ({event.evidence!.videos.length})
                               </p>
                               {event.evidence!.videos.map((url: string, vi: number) => (
                                 <a
@@ -396,7 +396,7 @@ export default function QRCodePageClient({
                                   className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 text-xs text-blue-600"
                                 >
                                   <Video className="h-4 w-4" />
-                                  {t("查看视频", "Watch Video")} {vi + 1}
+                                  {translate("查看视频", locale)} {vi + 1}
                                 </a>
                               ))}
                             </div>
@@ -419,7 +419,7 @@ export default function QRCodePageClient({
           className="flex items-center gap-2 rounded-full bg-green-600 px-6 py-3 text-sm font-bold text-white shadow-lg transition-all hover:bg-green-700 active:scale-95"
         >
           <Camera className="h-5 w-5" />
-          {t("添加验机记录", "Add Inspection")}
+          {translate("添加验机记录", locale)}
         </button>
       </div>
 
@@ -434,25 +434,25 @@ export default function QRCodePageClient({
             <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-gray-300" />
 
             <h2 className="mb-4 text-center text-base font-bold text-gray-800">
-              {t("验机记录", "Inspection Record")}
+              {translate("验机记录", locale)}
             </h2>
 
             {submitOk ? (
               <div className="flex flex-col items-center py-8">
                 <CheckCircle2 className="h-12 w-12 text-green-500" />
-                <p className="mt-2 text-sm text-gray-600">{t("提交成功，页面刷新中...", "Submitted! Refreshing...")}</p>
+                <p className="mt-2 text-sm text-gray-600">{translate("提交成功，页面刷新中...", locale)}</p>
               </div>
             ) : (
               <form onSubmit={submitInspection} className="space-y-4">
                 {/* Title */}
                 <div>
                   <label className="mb-1 block text-xs font-medium text-gray-600">
-                    {t("检测标题", "Title")} *
+                    {translate("检测标题", locale)} *
                   </label>
                   <input
                     name="title"
                     required
-                    placeholder={isZh ? "如：发动机运行检测" : "e.g. Engine inspection"}
+                    placeholder={translate("如：发动机运行检测", locale)}
                     className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-green-500 focus:outline-none"
                   />
                 </div>
@@ -460,11 +460,11 @@ export default function QRCodePageClient({
                 {/* Operator */}
                 <div>
                   <label className="mb-1 block text-xs font-medium text-gray-600">
-                    {t("检测人员", "Inspector")}
+                    {translate("检测人员", locale)}
                   </label>
                   <input
                     name="operator"
-                    placeholder={isZh ? "验机员姓名" : "Inspector name"}
+                    placeholder={translate("验机员姓名", locale)}
                     className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-green-500 focus:outline-none"
                   />
                 </div>
@@ -472,11 +472,11 @@ export default function QRCodePageClient({
                 {/* Location */}
                 <div>
                   <label className="mb-1 block text-xs font-medium text-gray-600">
-                    {t("检测地点", "Location")}
+                    {translate("检测地点", locale)}
                   </label>
                   <input
                     name="location"
-                    placeholder={isZh ? "如：石家庄元氏县马村镇" : "e.g. Yuanshi, Shijiazhuang"}
+                    placeholder={translate("如：石家庄元氏县马村镇", locale)}
                     className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-green-500 focus:outline-none"
                   />
                 </div>
@@ -484,12 +484,12 @@ export default function QRCodePageClient({
                 {/* Description */}
                 <div>
                   <label className="mb-1 block text-xs font-medium text-gray-600">
-                    {t("检测说明", "Description")}
+                    {translate("检测说明", locale)}
                   </label>
                   <textarea
                     name="description"
                     rows={3}
-                    placeholder={isZh ? "描述检测项目、结果、发现的问题等" : "Describe what was inspected and results"}
+                    placeholder={translate("描述检测项目、结果、发现的问题等", locale)}
                     className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-green-500 focus:outline-none"
                   />
                 </div>
@@ -497,7 +497,7 @@ export default function QRCodePageClient({
                 {/* File Upload */}
                 <div>
                   <label className="mb-2 block text-xs font-medium text-gray-600">
-                    {t("照片/视频", "Photos/Videos")}
+                    {translate("照片/视频", locale)}
                   </label>
 
                   {/* Preview */}
@@ -532,7 +532,7 @@ export default function QRCodePageClient({
                     className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 py-4 text-sm text-gray-500 hover:border-green-400 hover:text-green-600"
                   >
                     <Upload className="h-4 w-4" />
-                    {t("点击上传照片或视频（可多选）", "Upload photos/videos (multi-select)")}
+                    {translate("点击上传照片或视频（可多选）", locale)}
                   </button>
                 </div>
 
@@ -553,12 +553,12 @@ export default function QRCodePageClient({
                   {submitting ? (
                     <>
                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      {t("提交中...", "Submitting...")}
+                      {translate("提交中...", locale)}
                     </>
                   ) : (
                     <>
                       <Camera className="h-4 w-4" />
-                      {t("提交验机记录", "Submit Inspection")}
+                      {translate("提交验机记录", locale)}
                     </>
                   )}
                 </button>
@@ -574,7 +574,7 @@ export default function QRCodePageClient({
                   }}
                   className="w-full py-2 text-center text-sm text-gray-400"
                 >
-                  {t("取消", "Cancel")}
+                  {translate("取消", locale)}
                 </button>
               </form>
             )}

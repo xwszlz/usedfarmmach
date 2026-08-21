@@ -96,7 +96,6 @@ export default function BargainsClient({
   isAdmin: boolean;
 }) {
   const locale = useLocale();
-  const isZh = locale === "zh";
   const tr = useTr();
   const isCn = site === "cn";
   const [bargains, setBargains] = useState<Bargain[]>([]);
@@ -294,7 +293,7 @@ export default function BargainsClient({
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-gray-100">
-                            <span className="text-gray-300 text-4xl">{isZh ? "🚜" : "🚜"}</span>
+                            <span className="text-gray-300 text-4xl">🚜</span>
                           </div>
                         )}
                         <span className={`absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-medium ${status.bg} ${status.text}`}>
@@ -321,7 +320,7 @@ export default function BargainsClient({
                         <div className="flex gap-2 flex-wrap">
                           {p.condition && (
                             <span className="px-2 py-0.5 bg-gray-100 rounded text-xs text-gray-600">
-                              {CONDITION_MAP[p.condition]?.[isZh ? "zh" : "en"] || p.condition}
+                              {translate(CONDITION_MAP[p.condition]?.zh ?? p.condition, locale)}
                             </span>
                           )}
                           {p.location && (

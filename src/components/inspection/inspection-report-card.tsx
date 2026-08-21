@@ -1,5 +1,6 @@
 "use client";
 
+import { translate } from "@/lib/i18n-runtime";
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -60,7 +61,7 @@ export function InspectionReportCard({ productId, locale }: { productId: string;
     return (
       <Card>
         <CardContent className="py-6 text-center text-sm text-gray-400">
-          {isZh ? "加载检验报告..." : "Loading inspection reports..."}
+          {translate("加载检验报告...", locale)}
         </CardContent>
       </Card>
     );
@@ -78,7 +79,7 @@ export function InspectionReportCard({ productId, locale }: { productId: string;
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <ClipboardCheck className="h-5 w-5 text-primary-600" />
-          {isZh ? "设备检验报告" : "Inspection Report"}
+          {translate("设备检验报告", locale)}
           <Badge className={`${gradeConfig.bg} ${gradeConfig.color} ml-2`}>
             {latestReport.overallGrade} - {isZh ? gradeConfig.label : gradeConfig.labelEn}
           </Badge>
@@ -89,28 +90,28 @@ export function InspectionReportCard({ productId, locale }: { productId: string;
         <div className="flex items-center gap-6">
           <div className="text-center">
             <div className={`text-3xl font-bold ${gradeConfig.color}`}>{latestReport.overallScore}</div>
-            <div className="text-xs text-gray-500">{isZh ? "综合评分" : "Overall Score"}</div>
+            <div className="text-xs text-gray-500">{translate("综合评分", locale)}</div>
           </div>
           <div className="flex-1 space-y-1 text-sm">
             <div className="flex justify-between text-gray-600">
-              <span>{isZh ? "检验员" : "Inspector"}</span>
+              <span>{translate("检验员", locale)}</span>
               <span className="font-medium">{latestReport.inspectorName}</span>
             </div>
             {latestReport.inspectionOrg && (
               <div className="flex justify-between text-gray-600">
-                <span>{isZh ? "检验机构" : "Organization"}</span>
+                <span>{translate("检验机构", locale)}</span>
                 <span className="font-medium">{latestReport.inspectionOrg}</span>
               </div>
             )}
             <div className="flex justify-between text-gray-600">
-              <span>{isZh ? "检验日期" : "Date"}</span>
+              <span>{translate("检验日期", locale)}</span>
               <span className="font-medium">
                 {new Date(latestReport.inspectionDate).toLocaleDateString(isZh ? "zh-CN" : "en-US")}
               </span>
             </div>
             {latestReport.validUntil && (
               <div className="flex justify-between text-gray-600">
-                <span>{isZh ? "有效期至" : "Valid Until"}</span>
+                <span>{translate("有效期至", locale)}</span>
                 <span className="font-medium">
                   {new Date(latestReport.validUntil).toLocaleDateString(isZh ? "zh-CN" : "en-US")}
                 </span>
@@ -132,8 +133,8 @@ export function InspectionReportCard({ productId, locale }: { productId: string;
           className="text-sm font-medium text-primary-600 hover:text-primary-700"
         >
           {expanded
-            ? isZh ? "收起检测详情 ▲" : "Hide details ▲"
-            : isZh ? "查看检测详情 ▼" : "View details ▼"}
+            ? translate("收起检测详情 ▲", locale)
+            : translate("查看检测详情 ▼", locale)}
         </button>
 
         {/* Detailed inspection items */}
@@ -165,7 +166,7 @@ export function InspectionReportCard({ productId, locale }: { productId: string;
               <div className="flex items-start gap-2 rounded-lg bg-amber-50 p-3">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
                 <div className="text-sm text-amber-800">
-                  <span className="font-medium">{isZh ? "维修建议：" : "Recommendations: "}</span>
+                  <span className="font-medium">{translate("维修建议：", locale)}</span>
                   {latestReport.recommendations}
                 </div>
               </div>

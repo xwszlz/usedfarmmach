@@ -1,5 +1,6 @@
 "use client";
 
+import { translate } from "@/lib/i18n-runtime";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
@@ -76,20 +77,17 @@ export default function BrandClaimClient({ locale }: { locale: string }) {
         <div className="max-w-2xl rounded-2xl bg-white p-8 text-center shadow-xl">
           <CheckCircle2 className="mx-auto mb-4 h-20 w-20 text-green-500" />
           <h1 className="mb-2 text-2xl font-bold text-gray-900">
-            {t("认领申请已提交！", "Claim Submitted!")}
+            {translate("认领申请已提交！", locale)}
           </h1>
           <p className="mb-6 text-gray-500">
-            {t(
-              "我们将在2个工作日内审核并与您联系。审核通过后，您将获得品牌页面管理权限，可上传官方素材、更新产品信息。",
-              "We will review your application within 2 business days. Once approved, you will gain brand page management access to upload official materials and update product information."
-            )}
+            {translate("我们将在2个工作日内审核并与您联系。审核通过后，您将获得品牌页面管理权限，可上传官方素材、更新产品信息。", locale)}
           </p>
 
           {/* Payment section for paid tiers */}
           {isPaid && (
             <div className="my-6 rounded-xl border-2 border-green-200 bg-green-50 p-6 text-left">
               <h2 className="mb-2 text-center text-xl font-bold text-green-800">
-                {t("💚 请扫码完成付款", "💚 Please scan to pay")}
+                {translate("💚 请扫码完成付款", locale)}
               </h2>
               <p className="mb-4 text-center text-sm text-gray-700">
                 {t(
@@ -118,10 +116,7 @@ export default function BrandClaimClient({ locale }: { locale: string }) {
                 </div>
               </div>
               <div className="mt-4 rounded-lg bg-yellow-50 border border-yellow-200 p-3 text-xs text-gray-700">
-                {t(
-                  "📌 付款后请将截图发至 932133255@qq.com 或致电 +86 18633878701，24小时内开通自助展台。",
-                  "📌 After payment, send screenshot to 932133255@qq.com or call +86 18633878701. Activated within 24 hours."
-                )}
+                {translate("📌 付款后请将截图发至 932133255@qq.com 或致电 +86 18633878701，24小时内开通自助展台。", locale)}
               </div>
             </div>
           )}
@@ -129,10 +124,7 @@ export default function BrandClaimClient({ locale }: { locale: string }) {
           {/* Free tier note */}
           {!isPaid && (
             <div className="my-6 rounded-lg bg-blue-50 border border-blue-200 p-4 text-sm text-blue-800">
-              {t(
-                "您选择的是免费版，审核通过后自动开通，无需付款。",
-                "You selected the Free tier. You'll be activated automatically after review—no payment needed."
-              )}
+              {translate("您选择的是免费版，审核通过后自动开通，无需付款。", locale)}
             </div>
           )}
 
@@ -141,13 +133,13 @@ export default function BrandClaimClient({ locale }: { locale: string }) {
               href={`/${locale}/expo`}
               className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700"
             >
-              {t("返回展会", "Back to Expo")}
+              {translate("返回展会", locale)}
             </Link>
             <Link
               href={`/${locale}/expo/booth`}
               className="rounded-lg border border-gray-300 px-6 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
             >
-              {t("查看套餐", "View Plans")}
+              {translate("查看套餐", locale)}
             </Link>
           </div>
         </div>
@@ -165,7 +157,7 @@ export default function BrandClaimClient({ locale }: { locale: string }) {
             className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-blue-600"
           >
             <ArrowLeft className="h-4 w-4" />
-            {t("返回展会", "Back to Expo")}
+            {translate("返回展会", locale)}
           </Link>
         </div>
       </div>
@@ -177,13 +169,10 @@ export default function BrandClaimClient({ locale }: { locale: string }) {
             <ShieldCheck className="h-8 w-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900">
-            {t("品牌方认领", "Brand Claim")}
+            {translate("品牌方认领", locale)}
           </h1>
           <p className="mt-2 text-gray-500">
-            {t(
-              "认领您的品牌页面，获得官方管理权限",
-              "Claim your brand page and gain official management access"
-            )}
+            {translate("认领您的品牌页面，获得官方管理权限", locale)}
           </p>
         </div>
 
@@ -192,17 +181,17 @@ export default function BrandClaimClient({ locale }: { locale: string }) {
           {[
             {
               icon: FileText,
-              title: t("更新信息", "Update Info"),
-              desc: t("修改品牌故事、产品参数", "Edit brand story & specs"),
+              title: translate("更新信息", locale),
+              desc: translate("修改品牌故事、产品参数", locale),
             },
             {
               icon: Building2,
-              title: t("上传素材", "Upload Media"),
-              desc: t("替换AI图为官方高清图", "Replace AI images with official photos"),
+              title: translate("上传素材", locale),
+              desc: translate("替换AI图为官方高清图", locale),
             },
             {
               icon: ShieldCheck,
-              title: t("官方认证", "Verified Badge"),
+              title: translate("官方认证", locale),
               desc: t('获得"已认领"认证标识', 'Get "Verified" badge'),
             },
           ].map((item, idx) => (
@@ -226,14 +215,14 @@ export default function BrandClaimClient({ locale }: { locale: string }) {
           <div>
             <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700">
               <Building2 className="h-4 w-4 text-gray-400" />
-              {t("品牌名称 *", "Brand Name *")}
+              {translate("品牌名称 *", locale)}
             </label>
             <input
               required
               type="text"
               value={form.brandName}
               onChange={(e) => setForm({ ...form, brandName: e.target.value })}
-              placeholder={t("请输入品牌名称", "Enter brand name")}
+              placeholder={translate("请输入品牌名称", locale)}
               className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
           </div>
@@ -242,14 +231,14 @@ export default function BrandClaimClient({ locale }: { locale: string }) {
           <div>
             <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700">
               <User className="h-4 w-4 text-gray-400" />
-              {t("联系人姓名 *", "Contact Name *")}
+              {translate("联系人姓名 *", locale)}
             </label>
             <input
               required
               type="text"
               value={form.contactName}
               onChange={(e) => setForm({ ...form, contactName: e.target.value })}
-              placeholder={t("请输入您的姓名", "Enter your name")}
+              placeholder={translate("请输入您的姓名", locale)}
               className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
           </div>
@@ -258,13 +247,13 @@ export default function BrandClaimClient({ locale }: { locale: string }) {
           <div>
             <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700">
               <User className="h-4 w-4 text-gray-400" />
-              {t("职位", "Position")}
+              {translate("职位", locale)}
             </label>
             <input
               type="text"
               value={form.position}
               onChange={(e) => setForm({ ...form, position: e.target.value })}
-              placeholder={t("如：市场总监、出口部经理", "e.g. Marketing Director, Export Manager")}
+              placeholder={translate("如：市场总监、出口部经理", locale)}
               className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
           </div>
@@ -273,14 +262,14 @@ export default function BrandClaimClient({ locale }: { locale: string }) {
           <div>
             <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700">
               <Phone className="h-4 w-4 text-gray-400" />
-              {t("联系电话/WhatsApp *", "Phone/WhatsApp *")}
+              {translate("联系电话/WhatsApp *", locale)}
             </label>
             <input
               required
               type="tel"
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              placeholder={t("请输入手机号或WhatsApp", "Enter phone or WhatsApp number")}
+              placeholder={translate("请输入手机号或WhatsApp", locale)}
               className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
           </div>
@@ -289,7 +278,7 @@ export default function BrandClaimClient({ locale }: { locale: string }) {
           <div>
             <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700">
               <Mail className="h-4 w-4 text-gray-400" />
-              {t("电子邮箱", "Email")}
+              {translate("电子邮箱", locale)}
             </label>
             <input
               type="email"
@@ -304,13 +293,13 @@ export default function BrandClaimClient({ locale }: { locale: string }) {
           <div>
             <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700">
               <Building2 className="h-4 w-4 text-gray-400" />
-              {t("公司全称", "Company Name")}
+              {translate("公司全称", locale)}
             </label>
             <input
               type="text"
               value={form.company}
               onChange={(e) => setForm({ ...form, company: e.target.value })}
-              placeholder={t("请输入公司全称", "Enter full company name")}
+              placeholder={translate("请输入公司全称", locale)}
               className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
           </div>
@@ -319,13 +308,13 @@ export default function BrandClaimClient({ locale }: { locale: string }) {
           <div>
             <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700">
               <Globe className="h-4 w-4 text-gray-400" />
-              {t("国家/地区", "Country/Region")}
+              {translate("国家/地区", locale)}
             </label>
             <input
               type="text"
               value={form.country}
               onChange={(e) => setForm({ ...form, country: e.target.value })}
-              placeholder={t("如：中国、美国、德国", "e.g. China, USA, Germany")}
+              placeholder={translate("如：中国、美国、德国", locale)}
               className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
           </div>
@@ -334,13 +323,13 @@ export default function BrandClaimClient({ locale }: { locale: string }) {
           <div>
             <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700">
               <FileText className="h-4 w-4 text-gray-400" />
-              {t("营业执照编号/统一社会信用代码", "Business License No.")}
+              {translate("营业执照编号/统一社会信用代码", locale)}
             </label>
             <input
               type="text"
               value={form.businessLicense}
               onChange={(e) => setForm({ ...form, businessLicense: e.target.value })}
-              placeholder={t("用于资质审核", "For verification purposes")}
+              placeholder={translate("用于资质审核", locale)}
               className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
           </div>
@@ -349,16 +338,13 @@ export default function BrandClaimClient({ locale }: { locale: string }) {
           <div>
             <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700">
               <MessageSquare className="h-4 w-4 text-gray-400" />
-              {t("补充说明", "Additional Notes")}
+              {translate("补充说明", locale)}
             </label>
             <textarea
               value={form.message}
               onChange={(e) => setForm({ ...form, message: e.target.value })}
               rows={4}
-              placeholder={t(
-                "可补充品牌授权情况、代理区域、合作意向等",
-                "Brand authorization details, agency regions, cooperation intentions, etc."
-              )}
+              placeholder={translate("可补充品牌授权情况、代理区域、合作意向等", locale)}
               className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
           </div>
@@ -372,21 +358,18 @@ export default function BrandClaimClient({ locale }: { locale: string }) {
             {submitting ? (
               <>
                 <Loader2 className="h-5 w-5 animate-spin" />
-                {t("提交中...", "Submitting...")}
+                {translate("提交中...", locale)}
               </>
             ) : (
               <>
                 <ShieldCheck className="h-5 w-5" />
-                {t("提交认领申请", "Submit Claim")}
+                {translate("提交认领申请", locale)}
               </>
             )}
           </button>
 
           <p className="text-center text-xs text-gray-400">
-            {t(
-              "提交后我们将在2个工作日内审核。如需加急，请联系 932133255@qq.com 或致电 +86 18633878701",
-              "We will review within 2 business days. For urgent requests, contact 932133255@qq.com or call +86 18633878701."
-            )}
+            {translate("提交后我们将在2个工作日内审核。如需加急，请联系 932133255@qq.com 或致电 +86 18633878701", locale)}
           </p>
         </form>
       </div>

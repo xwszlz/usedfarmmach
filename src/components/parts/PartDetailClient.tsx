@@ -1,5 +1,6 @@
 "use client";
 
+import { translate } from "@/lib/i18n-runtime";
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -176,9 +177,9 @@ export default function PartDetailClient({ part, relatedParts, locale }: PartDet
                 </Badge>
                 <div className="flex items-center gap-2 text-xs text-gray-400">
                   <Package className="h-3.5 w-3.5" />
-                  <span>{isZh ? "数据质量: " : "Data Quality: "}</span>
+                  <span>{translate("数据质量: ", locale)}</span>
                   <span className="font-medium text-green-600">
-                    {part.dataQuality === "verified" ? (isZh ? "已验证" : "Verified") : part.dataQuality}
+                    {part.dataQuality === "verified" ? (translate("已验证", locale)) : part.dataQuality}
                   </span>
                 </div>
               </div>
@@ -193,27 +194,27 @@ export default function PartDetailClient({ part, relatedParts, locale }: PartDet
             {/* Quick info */}
             <div className="grid grid-cols-2 gap-3 mb-6">
               <div className="bg-white rounded-lg border border-gray-200 p-3">
-                <p className="text-xs text-gray-400 mb-1">{isZh ? "整机品类" : "Machine Type"}</p>
+                <p className="text-xs text-gray-400 mb-1">{translate("整机品类", locale)}</p>
                 <p className="text-sm font-medium text-gray-700">
                   {isZh ? part.machineType.nameZh : part.machineType.nameEn}
                 </p>
               </div>
               <div className="bg-white rounded-lg border border-gray-200 p-3">
-                <p className="text-xs text-gray-400 mb-1">{isZh ? "子系统" : "Sub-System"}</p>
+                <p className="text-xs text-gray-400 mb-1">{translate("子系统", locale)}</p>
                 <p className="text-sm font-medium text-gray-700">
                   {isZh ? part.subSystem.nameZh : part.subSystem.nameEn}
                 </p>
               </div>
               <div className="bg-white rounded-lg border border-gray-200 p-3">
-                <p className="text-xs text-gray-400 mb-1">{isZh ? "部件组" : "Component Group"}</p>
+                <p className="text-xs text-gray-400 mb-1">{translate("部件组", locale)}</p>
                 <p className="text-sm font-medium text-gray-700">
                   {isZh ? part.componentGroup.nameZh : part.componentGroup.nameEn}
                 </p>
               </div>
               <div className="bg-white rounded-lg border border-gray-200 p-3">
-                <p className="text-xs text-gray-400 mb-1">{isZh ? "配件类型" : "Part Type"}</p>
+                <p className="text-xs text-gray-400 mb-1">{translate("配件类型", locale)}</p>
                 <p className="text-sm font-medium text-gray-700">
-                  {part.isOEM ? (isZh ? "原厂件" : "OEM") : (isZh ? "品牌件" : "Aftermarket")}
+                  {part.isOEM ? (translate("原厂件", locale)) : (translate("品牌件", locale))}
                 </p>
               </div>
             </div>
@@ -225,13 +226,13 @@ export default function PartDetailClient({ part, relatedParts, locale }: PartDet
                 className="flex-1 inline-flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg"
               >
                 <ShoppingCart className="h-5 w-5" />
-                {isZh ? "立即询价" : "Inquire Now"}
+                {translate("立即询价", locale)}
               </a>
               <Link
                 href={`/${locale}/parts`}
                 className="inline-flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-700 font-medium py-3.5 px-6 rounded-xl border border-gray-200 transition-colors"
               >
-                {isZh ? "返回列表" : "Back to List"}
+                {translate("返回列表", locale)}
               </Link>
             </div>
 
@@ -239,7 +240,7 @@ export default function PartDetailClient({ part, relatedParts, locale }: PartDet
             {partDesc && (
               <div className="bg-white rounded-xl border border-gray-200 p-4">
                 <h3 className="text-sm font-semibold text-gray-800 mb-2">
-                  {isZh ? "产品描述" : "Description"}
+                  {translate("产品描述", locale)}
                 </h3>
                 <p className="text-sm text-gray-600 leading-relaxed">{partDesc}</p>
               </div>
@@ -252,7 +253,7 @@ export default function PartDetailClient({ part, relatedParts, locale }: PartDet
           <div className="mb-8">
             <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
               <Wrench className="h-5 w-5 text-orange-600" />
-              {isZh ? "技术参数" : "Technical Specifications"}
+              {translate("技术参数", locale)}
             </h2>
             <PartSpecsTable specs={part.specs} locale={locale} />
           </div>
@@ -263,7 +264,7 @@ export default function PartDetailClient({ part, relatedParts, locale }: PartDet
           <div className="mb-8">
             <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
               <Package className="h-5 w-5 text-orange-600" />
-              {isZh ? "兼容机型" : "Compatible Machines"}
+              {translate("兼容机型", locale)}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {part.compatibleMachines.map((cm) => (
@@ -280,7 +281,7 @@ export default function PartDetailClient({ part, relatedParts, locale }: PartDet
                     </p>
                     {cm.yearRange && (
                       <p className="text-xs text-gray-400">
-                        {isZh ? "年份: " : "Year: "}
+                        {translate("年份: ", locale)}
                         {cm.yearRange}
                       </p>
                     )}
@@ -296,12 +297,10 @@ export default function PartDetailClient({ part, relatedParts, locale }: PartDet
           <Card className="overflow-hidden">
             <div className="bg-gradient-to-r from-orange-600 to-red-500 p-6 text-white">
               <h2 className="text-xl font-bold mb-1">
-                {isZh ? "询价表单" : "Inquiry Form"}
+                {translate("询价表单", locale)}
               </h2>
               <p className="text-white/80 text-sm">
-                {isZh
-                  ? "填写以下信息，我们将在24小时内联系您"
-                  : "Fill in the form below, we will contact you within 24 hours"}
+                {translate("填写以下信息，我们将在24小时内联系您", locale)}
               </p>
             </div>
             <CardContent className="p-6">
@@ -309,60 +308,58 @@ export default function PartDetailClient({ part, relatedParts, locale }: PartDet
                 <div className="text-center py-8">
                   <CheckCircle2 className="h-16 w-16 mx-auto mb-4 text-green-500" />
                   <h3 className="text-lg font-bold text-gray-900 mb-2">
-                    {isZh ? "询价提交成功！" : "Inquiry Submitted Successfully!"}
+                    {translate("询价提交成功！", locale)}
                   </h3>
                   <p className="text-gray-500">
-                    {isZh
-                      ? "我们将在24小时内联系您，请保持电话畅通"
-                      : "We will contact you within 24 hours. Please keep your phone available."}
+                    {translate("我们将在24小时内联系您，请保持电话畅通", locale)}
                   </p>
                   <button
                     onClick={() => setSubmitSuccess(false)}
                     className="mt-4 text-sm text-orange-600 hover:text-orange-700 font-medium"
                   >
-                    {isZh ? "继续询价" : "Submit Another Inquiry"}
+                    {translate("继续询价", locale)}
                   </button>
                 </div>
               ) : (
                 <form onSubmit={handleInquirySubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      {isZh ? "姓名 *" : "Name *"}
+                      {translate("姓名 *", locale)}
                     </label>
                     <Input
                       type="text"
                       required
                       value={inquiryForm.name}
                       onChange={(e) => setInquiryForm({ ...inquiryForm, name: e.target.value })}
-                      placeholder={isZh ? "请输入您的姓名" : "Enter your name"}
+                      placeholder={translate("请输入您的姓名", locale)}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      {isZh ? "电话 *" : "Phone *"}
+                      {translate("电话 *", locale)}
                     </label>
                     <Input
                       type="tel"
                       required
                       value={inquiryForm.phone}
                       onChange={(e) => setInquiryForm({ ...inquiryForm, phone: e.target.value })}
-                      placeholder={isZh ? "请输入联系电话" : "Enter your phone number"}
+                      placeholder={translate("请输入联系电话", locale)}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      {isZh ? "邮箱" : "Email"}
+                      {translate("邮箱", locale)}
                     </label>
                     <Input
                       type="email"
                       value={inquiryForm.email}
                       onChange={(e) => setInquiryForm({ ...inquiryForm, email: e.target.value })}
-                      placeholder={isZh ? "请输入邮箱（选填）" : "Enter your email (optional)"}
+                      placeholder={translate("请输入邮箱（选填）", locale)}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      {isZh ? "需求数量" : "Quantity"}
+                      {translate("需求数量", locale)}
                     </label>
                     <Input
                       type="number"
@@ -374,19 +371,19 @@ export default function PartDetailClient({ part, relatedParts, locale }: PartDet
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      {isZh ? "备注" : "Message"}
+                      {translate("备注", locale)}
                     </label>
                     <textarea
                       value={inquiryForm.message}
                       onChange={(e) => setInquiryForm({ ...inquiryForm, message: e.target.value })}
-                      placeholder={isZh ? "请输入您的需求描述（选填）" : "Enter your requirements (optional)"}
+                      placeholder={translate("请输入您的需求描述（选填）", locale)}
                       rows={3}
                       className="flex w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
                     />
                   </div>
                   {submitError && (
                     <div className="md:col-span-2 text-sm text-red-500">
-                      {isZh ? "提交失败，请稍后重试或直接联系我们" : "Submission failed, please try again later or contact us directly"}
+                      {translate("提交失败，请稍后重试或直接联系我们", locale)}
                     </div>
                   )}
                   <div className="md:col-span-2 flex flex-wrap items-center gap-4">
@@ -396,8 +393,8 @@ export default function PartDetailClient({ part, relatedParts, locale }: PartDet
                       className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-bold px-8 py-3 rounded-xl transition-colors shadow-lg"
                     >
                       {submitting
-                        ? (isZh ? "提交中..." : "Submitting...")
-                        : (isZh ? "提交询价" : "Submit Inquiry")}
+                        ? (translate("提交中...", locale))
+                        : (translate("提交询价", locale))}
                       <ArrowRight className="h-4 w-4" />
                     </button>
                     <div className="flex items-center gap-4 text-sm text-gray-500">
@@ -418,7 +415,7 @@ export default function PartDetailClient({ part, relatedParts, locale }: PartDet
           <div>
             <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
               <Package className="h-5 w-5 text-orange-600" />
-              {isZh ? "相关配件" : "Related Parts"}
+              {translate("相关配件", locale)}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {relatedParts.map((rp) => (
