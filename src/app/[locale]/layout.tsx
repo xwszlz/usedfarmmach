@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { notFound } from "next/navigation";
-import { headers } from "next/headers";
 import Script from "next/script";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
@@ -12,8 +11,6 @@ import { OrganizationStructuredData } from "@/components/seo/structured-data";
 import { ThemeProvider } from "@/lib/theme/theme-provider";
 import { SmoothScrollProvider } from "@/lib/lenis/smooth-scroll-provider";
 import { FloatingBargainAd } from "@/components/bargain/floating-bargain-ad";
-import DomesticRedirectBanner from "@/components/com/DomesticRedirectBanner";
-import { getSiteVariant } from "@/config/site";
 
 const locales = ["zh", "en", "ru", "es", "pt", "ar", "fr", "hi"] as const;
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
@@ -46,19 +43,13 @@ export default async function LocaleLayout({
 
   const messages = await getMessages();
 
-  // 仅 .com 站：读取 middleware 注入的境内标记，供前端横幅感知
-  const domesticHint =
-    getSiteVariant() === "com" &&
-    (headers().get("x-domestic-redirect") === "1");
-
   return (
     <html lang={locale} suppressHydrationWarning>
       <body
         className={`${GeistSans.variable} ${GeistMono.variable} min-h-screen`}
         style={{ backgroundColor: "var(--color-bg-primary)" }}
       >
-        {domesticHint ? <DomesticRedirectBanner domesticHint={true} /> : null}
-        <OrganizationStructuredData locale={locale} />
+            <OrganizationStructuredData locale={locale} />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

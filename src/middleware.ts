@@ -84,42 +84,6 @@ export async function middleware(request: NextRequest) {
   }
 
   // ============================================================
-  // 双站路由逻辑（反转旧 .cn→.com 301 跳转）
-  // ============================================================
-  if (site === "cn") {
-    // .cn 站：正常放行。可在此处加「境外用户欢迎语」而非拦截。
-    // 注意：.cn 站按 (cn) 路由分组处理，路径不变。
-  } else {
-    // .com 站：检测境内 IP → 301 跳 .cn
-    const ipCountry =
-      request.headers.get("x-vercel-ip-country") ||
-      request.headers.get("cf-ipcountry") ||
-      "";
-
-    if (ipCountry === "CN") {
-      // 所有 /api/* 路径不重定向，避免 API 客户端（微信小程序 / 第三方调用 / curl）
-      // 被白名单或 redirect 限制拦截。所有 API 一律走 .com，确保数据源一致。
-      // 注：此规则覆盖了 2026-07-26 之前的"仅注册类 API 豁免"，因为注册豁免粒度太细，
-      // 小程序其他接口（/products、/inquiries、/subscribe 等）仍被 301 拦截，导致 errno:600002。
-      // 注：同时豁免精确的 "/api"（无尾斜杠），startsWith("/api/") 不覆盖它。
-      const isApiPath = pathname === "/api" || pathname.startsWith("/api/");
-
-      if (isApiPath) {
-        const res = NextResponse.next();
-        res.headers.set("x-domestic-redirect", "1");
-        return res;
-      }
-
-      // 其余 .com 境内访问：301 跳国内站（保留完整路径）
-      const url = new URL(request.url);
-      url.hostname = "usedfarmmach.cn";
-      const redirect = NextResponse.redirect(url, 301);
-      redirect.headers.set("x-domestic-redirect", "1");
-      return redirect;
-    }
-  }
-
-  // ============================================================
   // API 路由处理（先于 next-intl，避免国际化干扰 API 路径）
   // ============================================================
   if (pathname.startsWith("/api/")) {
