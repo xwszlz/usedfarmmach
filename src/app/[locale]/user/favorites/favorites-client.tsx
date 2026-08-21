@@ -170,7 +170,7 @@ export function FavoritesClient({ locale }: { locale: string }) {
       {tab === "favorites" && (
         <div className="space-y-3">
           {favorites.length === 0 ? (
-            <EmptyState icon={Heart} text={translate("暂无收藏设备", locale)} isZh={isZh} />
+            <EmptyState icon={Heart} text={translate("暂无收藏设备", locale)} isZh={isZh} locale={locale} />
           ) : (
             favorites.map((fav) => (
               <Card key={fav.id}>
@@ -208,7 +208,7 @@ export function FavoritesClient({ locale }: { locale: string }) {
       {tab === "following" && (
         <div className="space-y-3">
           {follows.length === 0 ? (
-            <EmptyState icon={Star} text={translate("暂无关注卖家", locale)} isZh={isZh} />
+            <EmptyState icon={Star} text={translate("暂无关注卖家", locale)} isZh={isZh} locale={locale} />
           ) : (
             follows.map((follow) => (
               <Card key={follow.id}>
@@ -246,7 +246,7 @@ export function FavoritesClient({ locale }: { locale: string }) {
       {tab === "saved" && (
         <div className="space-y-3">
           {savedSearches.length === 0 ? (
-            <EmptyState icon={Search} text={translate("暂无保存搜索", locale)} isZh={isZh} />
+            <EmptyState icon={Search} text={translate("暂无保存搜索", locale)} isZh={isZh} locale={locale} />
           ) : (
             savedSearches.map((search) => (
               <Card key={search.id}>
@@ -289,7 +289,7 @@ export function FavoritesClient({ locale }: { locale: string }) {
   );
 }
 
-function EmptyState({ icon: Icon, text, isZh }: { icon: typeof Heart; text: string; isZh: boolean }) {
+function EmptyState({ icon: Icon, text, isZh, locale }: { icon: typeof Heart; text: string; isZh: boolean; locale: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-gray-400">
       <Icon className="mb-3 h-12 w-12 opacity-30" />

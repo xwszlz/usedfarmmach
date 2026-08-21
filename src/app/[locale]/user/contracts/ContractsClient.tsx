@@ -181,6 +181,7 @@ export default function ContractsClient() {
         <ContractDetailModal
           contract={selectedContract}
           isZh={isZh}
+          locale={locale}
           onClose={() => setSelectedContract(null)}
           onUpdate={fetchContracts}
         />
@@ -192,11 +193,13 @@ export default function ContractsClient() {
 function ContractDetailModal({
   contract,
   isZh,
+  locale,
   onClose,
   onUpdate,
 }: {
   contract: Contract;
   isZh: boolean;
+  locale: string;
   onClose: () => void;
   onUpdate: () => void;
 }) {

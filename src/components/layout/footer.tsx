@@ -125,7 +125,7 @@ export function Footer({ locale }: FooterProps) {
         </div>
 
         {!isCnSite() && (
-          <div className="mt-2 text-center text-sm text-gray-400">
+          <div className="mt-4 border-t border-gray-200 pt-6 text-center text-sm text-gray-400 dark:border-gray-700">
             {t("copyright")}
           </div>
         )}

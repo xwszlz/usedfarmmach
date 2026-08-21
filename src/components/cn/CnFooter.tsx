@@ -35,7 +35,7 @@ export function CnFooter() {
   }
 
   return (
-    <footer className="mt-2 bg-slate-50">
+    <footer className="mt-12 border-t border-slate-200 bg-slate-50">
       <div className="mx-auto flex max-w-5xl flex-col items-center gap-2 px-4 py-5 text-center sm:flex-row sm:justify-center sm:gap-5">
         {icpNo && (
           <a
