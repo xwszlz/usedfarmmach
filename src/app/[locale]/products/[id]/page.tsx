@@ -33,195 +33,154 @@ import { Wrench } from "lucide-react";
 import { ProductViewBadge } from "@/components/stats/ProductViewBadge";
 import { ProductVideoGallery } from "@/components/stats/ProductVideoGallery";
 import CompatiblePartsSection from "@/components/parts/CompatiblePartsSection";
-
+import { translate } from "@/lib/i18n-runtime";
 export const dynamic = "force-dynamic";
-
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
-
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ locale: string; id: string }>;
+export async function generateMetadata({ params, }: {
+    params: Promise<{
+        locale: string;
+        id: string;
+    }>;
 }): Promise<Metadata> {
-  const { locale, id } = await params;
-
-  const product = await prisma.product.findUnique({
-    where: { id },
-    select: {
-      modelName: true,
-      year: true,
-      brand: { select: { nameZh: true, nameEn: true, nameRu: true, nameEs: true, namePt: true, nameAr: true, nameFr: true, nameHi: true } },
-      category: { select: { nameZh: true, nameEn: true, nameRu: true, nameEs: true, namePt: true, nameAr: true, nameFr: true, nameHi: true } },
-      images: { select: { url: true }, orderBy: { sortOrder: "asc" }, take: 1 },
-      descriptionZh: true,
-      descriptionEn: true,
-    },
-  });
-
-  if (!product) {
-    return { title: "产品未找到" };
-  }
-
-  const langKey = `name${locale.charAt(0).toUpperCase()}${locale.slice(1)}` as keyof typeof product.brand;
-  const brandName = (product.brand as any)[langKey] || product.brand.nameEn || product.brand.nameZh;
-  const categoryName = (product.category as any)[langKey] || product.category.nameEn || product.category.nameZh;
-  const imgUrl = product.images[0] ? getImageUrl(product.images[0].url) : null;
-
-  const titleMap: Record<string, string> = {
-    zh: `${brandName} ${product.modelName} ${product.year}款二手${categoryName}_价格_神雕农机`,
-    en: `${brandName} ${product.modelName} ${product.year} Used ${categoryName} | Price & Specs | AgriTrade`,
-    ru: `${brandName} ${product.modelName} ${product.year} Подержанный ${categoryName} | Цена | AgriTrade`,
-    es: `${brandName} ${product.modelName} ${product.year} ${categoryName} Usado | Precio | AgriTrade`,
-    pt: `${brandName} ${product.modelName} ${product.year} ${categoryName} Usado | Preço | AgriTrade`,
-    ar: `${brandName} ${product.modelName} ${product.year} ${categoryName} مستعمل | السعر | AgriTrade`,
-    fr: `${brandName} ${product.modelName} ${product.year} ${categoryName} d'Occasion | Prix | AgriTrade`,
-    hi: `${brandName} ${product.modelName} ${product.year} प्रयुक्त ${categoryName} | मूल्य | AgriTrade`,
-  };
-
-  const descMap: Record<string, string> = {
-    zh: `${brandName} ${product.modelName} ${product.year}款二手${categoryName}。神雕农机全球平台，AI智能估价，真实跨境价格对比，中美汇率价差分析。`,
-    en: `${brandName} ${product.modelName} ${product.year} used ${categoryName}. Browse on AgriTrade — AI valuation, cross-border price comparison, real arbitrage analysis.`,
-    ru: `${brandName} ${product.modelName} ${product.year} подержанный ${categoryName}. AgriTrade — AI оценка, сравнение цен, арбитражный анализ.`,
-    es: `${brandName} ${product.modelName} ${product.year} ${categoryName} usado. Explore en AgriTrade — valoración IA, comparación de precios, análisis de arbitraje.`,
-    pt: `${brandName} ${product.modelName} ${product.year} ${categoryName} usado. AgriTrade — avaliação IA, comparação de preços, análise de arbitragem.`,
-    ar: `${brandName} ${product.modelName} ${product.year} ${categoryName} مستعمل. AgriTrade — تقييم بالذكاء الاصطناعي، مقارنة أسعار، تحليل المراجحة.`,
-    fr: `${brandName} ${product.modelName} ${product.year} ${categoryName} d'occasion. AgriTrade — évaluation IA, comparaison de prix, analyse d'arbitrage.`,
-    hi: `${brandName} ${product.modelName} ${product.year} प्रयुक्त ${categoryName}। AgriTrade — AI मूल्यांकन, मूल्य तुलना, आर्बिट्राज विश्लेषण।`,
-  };
-
-  return {
-    title: titleMap[locale] || titleMap["en"],
-    description: descMap[locale] || descMap["en"],
-    alternates: {
-      canonical: `${BASE_URL}/${locale}/products/${id}`,
-      languages: getHreflangLanguages(`/products/${id}`),
-    },
-    openGraph: {
-      title: titleMap[locale] || titleMap["en"],
-      description: descMap[locale] || descMap["en"],
-      type: "website",
-      ...(imgUrl ? { images: [{ url: imgUrl, width: 800, height: 600 }] } : {}),
-    },
-    robots: {
-      index: true,
-      follow: true,
-    },
-  };
+    const { locale, id } = await params;
+    const product = await prisma.product.findUnique({
+        where: { id },
+        select: {
+            modelName: true,
+            year: true,
+            brand: { select: { nameZh: true, nameEn: true, nameRu: true, nameEs: true, namePt: true, nameAr: true, nameFr: true, nameHi: true } },
+            category: { select: { nameZh: true, nameEn: true, nameRu: true, nameEs: true, namePt: true, nameAr: true, nameFr: true, nameHi: true } },
+            images: { select: { url: true }, orderBy: { sortOrder: "asc" }, take: 1 },
+            descriptionZh: true,
+            descriptionEn: true,
+        },
+    });
+    if (!product) {
+        return { title: translate("产品未找到", locale) };
+    }
+    const langKey = `name${locale.charAt(0).toUpperCase()}${locale.slice(1)}` as keyof typeof product.brand;
+    const brandName = (product.brand as any)[langKey] || product.brand.nameEn || product.brand.nameZh;
+    const categoryName = (product.category as any)[langKey] || product.category.nameEn || product.category.nameZh;
+    const imgUrl = product.images[0] ? getImageUrl(product.images[0].url) : null;
+    const titleMap: Record<string, string> = {
+        zh: `${brandName} ${product.modelName} ${product.year}款二手${categoryName}_价格_神雕农机`,
+        en: `${brandName} ${product.modelName} ${product.year} Used ${categoryName} | Price & Specs | AgriTrade`,
+        ru: `${brandName} ${product.modelName} ${product.year} Подержанный ${categoryName} | Цена | AgriTrade`,
+        es: `${brandName} ${product.modelName} ${product.year} ${categoryName} Usado | Precio | AgriTrade`,
+        pt: `${brandName} ${product.modelName} ${product.year} ${categoryName} Usado | Preço | AgriTrade`,
+        ar: `${brandName} ${product.modelName} ${product.year} ${categoryName} مستعمل | السعر | AgriTrade`,
+        fr: `${brandName} ${product.modelName} ${product.year} ${categoryName} d'Occasion | Prix | AgriTrade`,
+        hi: `${brandName} ${product.modelName} ${product.year} प्रयुक्त ${categoryName} | मूल्य | AgriTrade`,
+    };
+    const descMap: Record<string, string> = {
+        zh: `${brandName} ${product.modelName} ${product.year}款二手${categoryName}。神雕农机全球平台，AI智能估价，真实跨境价格对比，中美汇率价差分析。`,
+        en: `${brandName} ${product.modelName} ${product.year} used ${categoryName}. Browse on AgriTrade — AI valuation, cross-border price comparison, real arbitrage analysis.`,
+        ru: `${brandName} ${product.modelName} ${product.year} подержанный ${categoryName}. AgriTrade — AI оценка, сравнение цен, арбитражный анализ.`,
+        es: `${brandName} ${product.modelName} ${product.year} ${categoryName} usado. Explore en AgriTrade — valoración IA, comparación de precios, análisis de arbitraje.`,
+        pt: `${brandName} ${product.modelName} ${product.year} ${categoryName} usado. AgriTrade — avaliação IA, comparação de preços, análise de arbitragem.`,
+        ar: `${brandName} ${product.modelName} ${product.year} ${categoryName} مستعمل. AgriTrade — تقييم بالذكاء الاصطناعي، مقارنة أسعار، تحليل المراجحة.`,
+        fr: `${brandName} ${product.modelName} ${product.year} ${categoryName} d'occasion. AgriTrade — évaluation IA, comparaison de prix, analyse d'arbitrage.`,
+        hi: `${brandName} ${product.modelName} ${product.year} प्रयुक्त ${categoryName}। AgriTrade — AI मूल्यांकन, मूल्य तुलना, आर्बिट्राज विश्लेषण।`,
+    };
+    return {
+        title: titleMap[locale] || titleMap["en"],
+        description: descMap[locale] || descMap["en"],
+        alternates: {
+            canonical: `${BASE_URL}/${locale}/products/${id}`,
+            languages: getHreflangLanguages(`/products/${id}`),
+        },
+        openGraph: {
+            title: titleMap[locale] || titleMap["en"],
+            description: descMap[locale] || descMap["en"],
+            type: "website",
+            ...(imgUrl ? { images: [{ url: imgUrl, width: 800, height: 600 }] } : {}),
+        },
+        robots: {
+            index: true,
+            follow: true,
+        },
+    };
 }
-
 export async function generateStaticParams() {
-  // Disabled — next-intl static prerendering is not compatible with
-  // product detail pages that use dynamic data (getTranslations, prisma).
-  // Products are served via ISR (revalidate=300) at runtime instead.
-  return [];
+    // Disabled — next-intl static prerendering is not compatible with
+    // product detail pages that use dynamic data (getTranslations, prisma).
+    // Products are served via ISR (revalidate=300) at runtime instead.
+    return [];
 }
-
 /** Build the main title (Section 1) per spec */
-function buildMainTitle(
-  brandName: string,
-  modelName: string,
-  year: number,
-  categoryName: string,
-  enginePower: number | null,
-  locale: string
-): string {
-  if (locale === "zh") {
-    const hpPart = enginePower ? ` | ${enginePower}马力` : "";
-    return `二手 ${brandName} ${modelName} ${categoryName} - ${year}年${hpPart}`;
-  }
-  // English (and fallback): "Used [Brand] [Model] Silage Harvester - [Year] | [HP] HP"
-  // Note: We use categoryName instead of hardcoding "Silage Harvester"
-  const hpPart = enginePower ? ` | ${enginePower} HP` : "";
-  return `Used ${brandName} ${modelName} ${categoryName} - ${year}${hpPart}`;
+function buildMainTitle(brandName: string, modelName: string, year: number, categoryName: string, enginePower: number | null, locale: string): string {
+    if (locale === "zh") {
+        const hpPart = enginePower ? ` | ${enginePower}马力` : "";
+        return `二手 ${brandName} ${modelName} ${categoryName} - ${year}年${hpPart}`;
+    }
+    // English (and fallback): "Used [Brand] [Model] Silage Harvester - [Year] | [HP] HP"
+    // Note: We use categoryName instead of hardcoding "Silage Harvester"
+    const hpPart = enginePower ? ` | ${enginePower} HP` : "";
+    return `Used ${brandName} ${modelName} ${categoryName} - ${year}${hpPart}`;
 }
-
-export default async function ProductDetailPage({
-  params,
-}: {
-  params: Promise<{ locale: string; id: string }>;
+export default async function ProductDetailPage({ params, }: {
+    params: Promise<{
+        locale: string;
+        id: string;
+    }>;
 }) {
-  const { locale, id } = await params;
-  setRequestLocale(locale);
-  const t = await getTranslations("products.detail");
-
-  const product = await prisma.product.findUnique({
-    where: { id },
-    include: {
-      brand: true,
-      category: true,
-      images: { orderBy: { sortOrder: "asc" } },
-      videos: { orderBy: { sortOrder: "asc" } },
-      internationalPrices: { orderBy: { sourceDate: "desc" } },
-      seller: { select: { id: true, companyName: true, country: true } },
-      // 查询是否有关联的活跃询价
-      auctions: {
-        where: { status: "active" },
-        select: { id: true, bargainNo: true, askingPrice: true, totalBids: true },
-        take: 1,
-      },
-    },
-  });
-
-  if (!product || product.status !== "active") {
-    notFound();
-  }
-
-  const langKey2 = `name${locale.charAt(0).toUpperCase()}${locale.slice(1)}` as keyof typeof product.brand;
-  const brandName = (product.brand as any)[langKey2] || product.brand.nameEn || product.brand.nameZh;
-  const categoryName = (product.category as any)[langKey2] || product.category.nameEn || product.category.nameZh;
-  const description = (product as any)[`description${locale.charAt(0).toUpperCase()}${locale.slice(1)}`] || product.descriptionEn;
-  const conditionSuffix = normalizeCondition(product.condition);
-  const conditionLabel = conditionSuffix
-    ? t.has(`condition${conditionSuffix}`)
-      ? t(`condition${conditionSuffix}`)
-      : conditionSuffix
-    : "";
-
-  // Use real international price from 神雕日报 if available, fallback to simple USD conversion
-  const latestIntlPrice = product.internationalPrices[0] || null;
-  const intlPriceCny = latestIntlPrice?.priceForeignCny || null;
-  const intlPriceRaw = latestIntlPrice?.priceForeignRaw || null;
-  const intlCurrency = latestIntlPrice?.currency || "USD";
-  const intlSource = latestIntlPrice?.source || null;
-  const intlSourceDate = latestIntlPrice?.sourceDate || null;
-  const intlCountry = latestIntlPrice?.country || null;
-
-  // Calculate arbitrage based on real international price
-  const arbitragePercent = intlPriceCny && intlPriceCny > 0
-    ? Math.round(((product.priceCny - intlPriceCny) / intlPriceCny) * 100)
-    : null;
-
-  // Format source date for display
-  const formattedSourceDate = intlSourceDate
-    ? `${intlSourceDate.slice(0, 4)}-${intlSourceDate.slice(4, 6)}-${intlSourceDate.slice(6, 8)}`
-    : null;
-
-  const mainTitle = buildMainTitle(brandName, product.modelName, product.year, categoryName, product.enginePower ?? null, locale);
-
-  return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <ProductStructuredData
-        id={product.id}
-        name={`${brandName} ${product.modelName}`}
-        brand={brandName}
-        category={categoryName}
-        year={product.year}
-        description={description || ""}
-        priceCny={product.priceCny}
-        condition={product.condition}
-        location={product.location || ""}
-        workingHours={product.workingHours ?? undefined}
-        imageUrl={product.images[0] ? getImageUrl(product.images[0].url) : `${BASE_URL}/images/og.png`}
-        locale={locale}
-      />
-      <BreadcrumbStructuredData
-        locale={locale}
-        items={[
-          { name: locale === "zh" ? "首页" : "Home", url: `${BASE_URL}/${locale}` },
-          { name: locale === "zh" ? "设备市场" : "Products", url: `${BASE_URL}/${locale}/products` },
-          { name: `${brandName} ${product.modelName}`, url: `${BASE_URL}/${locale}/products/${product.id}` },
-        ]}
-      />
+    const { locale, id } = await params;
+    setRequestLocale(locale);
+    const t = await getTranslations("products.detail");
+    const product = await prisma.product.findUnique({
+        where: { id },
+        include: {
+            brand: true,
+            category: true,
+            images: { orderBy: { sortOrder: "asc" } },
+            videos: { orderBy: { sortOrder: "asc" } },
+            internationalPrices: { orderBy: { sourceDate: "desc" } },
+            seller: { select: { id: true, companyName: true, country: true } },
+            // 查询是否有关联的活跃询价
+            auctions: {
+                where: { status: "active" },
+                select: { id: true, bargainNo: true, askingPrice: true, totalBids: true },
+                take: 1,
+            },
+        },
+    });
+    if (!product || product.status !== "active") {
+        notFound();
+    }
+    const langKey2 = `name${locale.charAt(0).toUpperCase()}${locale.slice(1)}` as keyof typeof product.brand;
+    const brandName = (product.brand as any)[langKey2] || product.brand.nameEn || product.brand.nameZh;
+    const categoryName = (product.category as any)[langKey2] || product.category.nameEn || product.category.nameZh;
+    const description = (product as any)[`description${locale.charAt(0).toUpperCase()}${locale.slice(1)}`] || product.descriptionEn;
+    const conditionSuffix = normalizeCondition(product.condition);
+    const conditionLabel = conditionSuffix
+        ? t.has(`condition${conditionSuffix}`)
+            ? t(`condition${conditionSuffix}`)
+            : conditionSuffix
+        : "";
+    // Use real international price from 神雕日报 if available, fallback to simple USD conversion
+    const latestIntlPrice = product.internationalPrices[0] || null;
+    const intlPriceCny = latestIntlPrice?.priceForeignCny || null;
+    const intlPriceRaw = latestIntlPrice?.priceForeignRaw || null;
+    const intlCurrency = latestIntlPrice?.currency || "USD";
+    const intlSource = latestIntlPrice?.source || null;
+    const intlSourceDate = latestIntlPrice?.sourceDate || null;
+    const intlCountry = latestIntlPrice?.country || null;
+    // Calculate arbitrage based on real international price
+    const arbitragePercent = intlPriceCny && intlPriceCny > 0
+        ? Math.round(((product.priceCny - intlPriceCny) / intlPriceCny) * 100)
+        : null;
+    // Format source date for display
+    const formattedSourceDate = intlSourceDate
+        ? `${intlSourceDate.slice(0, 4)}-${intlSourceDate.slice(4, 6)}-${intlSourceDate.slice(6, 8)}`
+        : null;
+    const mainTitle = buildMainTitle(brandName, product.modelName, product.year, categoryName, product.enginePower ?? null, locale);
+    return (<div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <ProductStructuredData id={product.id} name={`${brandName} ${product.modelName}`} brand={brandName} category={categoryName} year={product.year} description={description || ""} priceCny={product.priceCny} condition={product.condition} location={product.location || ""} workingHours={product.workingHours ?? undefined} imageUrl={product.images[0] ? getImageUrl(product.images[0].url) : `${BASE_URL}/images/og.png`} locale={locale}/>
+      <BreadcrumbStructuredData locale={locale} items={[
+            { name: locale === "zh" ? "\u9996\u9875" : "Home", url: `${BASE_URL}/${locale}` },
+            { name: locale === "zh" ? "\u8BBE\u5907\u5E02\u573A" : "Products", url: `${BASE_URL}/${locale}/products` },
+            { name: `${brandName} ${product.modelName}`, url: `${BASE_URL}/${locale}/products/${product.id}` },
+        ]}/>
 
       {/* ================================================================ */}
       {/*  SECTION 1 — Main Title                                          */}
@@ -230,18 +189,16 @@ export default async function ProductDetailPage({
         <div className="flex items-center gap-2 mb-2">
           <Badge variant="default">{brandName}</Badge>
           <Badge variant="secondary">{categoryName}</Badge>
-          {product.brand.isImported && (
-            <Badge variant="accent">
-              {locale === "zh" ? "进口品牌" : locale === "ru" ? "Импортный бренд" : "Imported"}
-            </Badge>
-          )}
+          {product.brand.isImported && (<Badge variant="accent">
+              {locale === "zh" ? "\u8FDB\u53E3\u54C1\u724C" : locale === "ru" ? "\u0418\u043C\u043F\u043E\u0440\u0442\u043D\u044B\u0439 \u0431\u0440\u0435\u043D\u0434" : "Imported"}
+            </Badge>)}
         </div>
         <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
           {mainTitle}
         </h1>
         {/* 浏览量标注：挂载即 track('product') 并展示最新累计值 */}
         <div className="mt-3">
-          <ProductViewBadge productId={product.id} initialViewCount={product.viewCount} locale={locale} />
+          <ProductViewBadge productId={product.id} initialViewCount={product.viewCount} locale={locale}/>
         </div>
       </div>
 
@@ -249,14 +206,10 @@ export default async function ProductDetailPage({
       {/*  SECTION 2 — 8-Angle Image Gallery                               */}
       {/* ================================================================ */}
       <div className="mb-8">
-        <ImageGallery
-          images={product.images}
-          alt={generateImageAlt(brandName, product.modelName, product.year, categoryName, locale, {
+        <ImageGallery images={product.images} alt={generateImageAlt(brandName, product.modelName, product.year, categoryName, locale, {
             location: product.location || undefined,
             condition: product.condition,
-          })}
-          locale={locale}
-        />
+        })} locale={locale}/>
       </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
@@ -265,42 +218,18 @@ export default async function ProductDetailPage({
           {/* ================================================================ */}
           {/*  SECTION 3 — Specification Table (11 rows)                      */}
           {/* ================================================================ */}
-          <SpecificationTable
-            brandName={brandName}
-            brandOfficialWebsite={product.brand?.officialWebsite ?? null}
-            modelName={product.modelName}
-            year={product.year}
-            workingHours={product.workingHours ?? null}
-            engineType={product.engineType ?? null}
-            enginePower={product.enginePower ?? null}
-            driveSystem={product.driveSystem ?? null}
-            mainConfig={product.mainConfig ?? null}
-            overallLength={product.overallLength ?? null}
-            overallWidth={product.overallWidth ?? null}
-            overallHeight={product.overallHeight ?? null}
-            netWeight={product.netWeight ?? null}
-            conditionLabel={conditionLabel}
-            categoryName={categoryName}
-            location={product.location || ""}
-            locale={locale}
-          />
+          <SpecificationTable brandName={brandName} brandOfficialWebsite={product.brand?.officialWebsite ?? null} modelName={product.modelName} year={product.year} workingHours={product.workingHours ?? null} engineType={product.engineType ?? null} enginePower={product.enginePower ?? null} driveSystem={product.driveSystem ?? null} mainConfig={product.mainConfig ?? null} overallLength={product.overallLength ?? null} overallWidth={product.overallWidth ?? null} overallHeight={product.overallHeight ?? null} netWeight={product.netWeight ?? null} conditionLabel={conditionLabel} categoryName={categoryName} location={product.location || ""} locale={locale}/>
 
           {/* ================================================================ */}
           {/*  SECTION 5 — Product Description (moved up below specs)           */}
           {/* ================================================================ */}
-          <StandardDescription
-            standardDescriptionEn={product.standardDescriptionEn ?? null}
-            descriptionZh={product.descriptionZh ?? null}
-            descriptionEn={product.descriptionEn ?? null}
-            locale={locale}
-          />
+          <StandardDescription standardDescriptionEn={product.standardDescriptionEn ?? null} descriptionZh={product.descriptionZh ?? null} descriptionEn={product.descriptionEn ?? null} locale={locale}/>
 
           {/* Cross-Border Price Comparison (kept from existing design) */}
-          {intlPriceCny && (
-            <Card>
+          {intlPriceCny && (<Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <ArrowLeftRight className="h-5 w-5" />
+                  <ArrowLeftRight className="h-5 w-5"/>
                   {t("priceComparison")}
                 </CardTitle>
               </CardHeader>
@@ -317,46 +246,35 @@ export default async function ProductDetailPage({
                     <p className="text-xl font-bold text-blue-700">
                       {formatPrice(intlPriceCny, "cny")}
                     </p>
-                    {intlPriceRaw && (
-                      <p className="mt-0.5 text-xs text-blue-500">
-                        {intlCurrency === "EUR" ? "€" : "$"}{intlPriceRaw.toLocaleString()}
-                      </p>
-                    )}
+                    {intlPriceRaw && (<p className="mt-0.5 text-xs text-blue-500">
+                        {intlCurrency === "EUR" ? "\u20AC" : "$"}{intlPriceRaw.toLocaleString()}
+                      </p>)}
                   </div>
                 </div>
 
-                {latestIntlPrice && (
-                  <div className="mt-2 flex items-center justify-center gap-1 text-xs text-gray-400">
-                    <Info className="h-3 w-3" />
+                {latestIntlPrice && (<div className="mt-2 flex items-center justify-center gap-1 text-xs text-gray-400">
+                    <Info className="h-3 w-3"/>
                     <span>
-                      {locale === "zh" ? "数据来源" : locale === "ru" ? "Источник" : "Source"}: {intlSource}
+                      {locale === "zh" ? "\u6570\u636E\u6765\u6E90" : locale === "ru" ? "\u0418\u0441\u0442\u043E\u0447\u043D\u0438\u043A" : "Source"}: {intlSource}
                       {intlCountry && ` · ${intlCountry}`}
                       {formattedSourceDate && ` · ${formattedSourceDate}`}
                     </span>
-                  </div>
-                )}
+                  </div>)}
 
-                {arbitragePercent !== null && (
-                  <div className="mt-3 rounded-lg bg-accent-50 p-3 text-center">
+                {arbitragePercent !== null && (<div className="mt-3 rounded-lg bg-accent-50 p-3 text-center">
                     <p className="text-sm font-medium text-accent-700">
                       {t("priceDifference")}: {arbitragePercent > 0 ? "+" : ""}
                       {arbitragePercent}%
-                      {Math.abs(arbitragePercent) > 15 && (
-                        <span className="ml-2">
+                      {Math.abs(arbitragePercent) > 15 && (<span className="ml-2">
                           ({t("arbitrageOpportunity")}!)
-                        </span>
-                      )}
+                        </span>)}
                     </p>
-                    {latestIntlPrice && latestIntlPrice.notes && (
-                      <p className="mt-1 text-xs text-accent-600/70">
+                    {latestIntlPrice && latestIntlPrice.notes && (<p className="mt-1 text-xs text-accent-600/70">
                         {latestIntlPrice.notes}
-                      </p>
-                    )}
-                  </div>
-                )}
+                      </p>)}
+                  </div>)}
               </CardContent>
-            </Card>
-          )}
+            </Card>)}
         </div>
 
         {/* Right Column: Video + AI Deep Analysis */}
@@ -364,34 +282,17 @@ export default async function ProductDetailPage({
           {/* ================================================================ */}
           {/*  SECTION 4 — Video Area（onPlay 调 track('video') 并展示播放量）  */}
           {/* ================================================================ */}
-          {product.videos.length > 0 && (
-            <ProductVideoGallery
-              videos={product.videos.map((v) => ({
+          {product.videos.length > 0 && (<ProductVideoGallery videos={product.videos.map((v) => ({
                 id: v.id,
                 url: getVideoUrl(v.url),
                 title: v.title ?? null,
                 playCount: v.playCount ?? 0,
-              }))}
-              posterUrl={product.images[0] ? getImageUrl(product.images[0].url) : undefined}
-              locale={locale}
-            />
-          )}
+            }))} posterUrl={product.images[0] ? getImageUrl(product.images[0].url) : undefined} locale={locale}/>)}
 
           {/* ================================================================ */}
           {/*  AI 深度分析（豆包大模型）— 原在下方，与联系卖家对调后移到这里        */}
           {/* ================================================================ */}
-          <DeepAnalysisCard
-            productId={product.id}
-            productName={`${brandName} ${product.modelName}`}
-            category={categoryName}
-            imageUrls={product.images.map((img) => getImageUrl(img.url))}
-            videoUrls={product.videos.length > 0 ? product.videos.map((v) => getVideoUrl(v.url)) : []}
-            locale={locale}
-            isChineseBrand={(product.brand as any).isChineseBrand}
-            brandName={brandName}
-            year={product.year || undefined}
-            enginePower={product.enginePower ? String(product.enginePower) : undefined}
-          />
+          <DeepAnalysisCard productId={product.id} productName={`${brandName} ${product.modelName}`} category={categoryName} imageUrls={product.images.map((img) => getImageUrl(img.url))} videoUrls={product.videos.length > 0 ? product.videos.map((v) => getVideoUrl(v.url)) : []} locale={locale} isChineseBrand={(product.brand as any).isChineseBrand} brandName={brandName} year={product.year || undefined} enginePower={product.enginePower ? String(product.enginePower) : undefined}/>
         </div>
       </div>
 
@@ -399,18 +300,14 @@ export default async function ProductDetailPage({
       {/*  Machinery Identity & Traceability (一机一码) — 紧贴产品描述       */}
       {/* ================================================================ */}
       <div className="mt-8">
-        <MachineryIdentityCard productId={product.id} locale={locale} />
+        <MachineryIdentityCard productId={product.id} locale={locale}/>
       </div>
 
       {/* ================================================================ */}
       {/*  AI 智能估值                                                      */}
       {/* ================================================================ */}
       <div className="mt-6">
-        <ValuationCard
-          productId={product.id}
-          productName={`${brandName} ${product.modelName}`}
-          locale={locale}
-        />
+        <ValuationCard productId={product.id} productName={`${brandName} ${product.modelName}`} locale={locale}/>
       </div>
 
       {/* ================================================================ */}
@@ -418,24 +315,16 @@ export default async function ProductDetailPage({
       {/* ================================================================ */}
 
       {/* Arbitrage Calculator */}
-      {arbitragePercent !== null && latestIntlPrice && (
-        <div className="mt-6">
+      {arbitragePercent !== null && latestIntlPrice && (<div className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>跨境套利计算器</CardTitle>
+              <CardTitle>{translate("跨境套利计算器", locale)}</CardTitle>
             </CardHeader>
             <CardContent>
-              <ArbitrageCalculatorSection
-                productId={product.id}
-                domesticPrice={product.priceCny}
-                foreignPrice={latestIntlPrice.priceForeignRaw || undefined}
-                foreignCurrency={latestIntlPrice.currency as any}
-                showForeignPrice={true}
-              />
+              <ArbitrageCalculatorSection productId={product.id} domesticPrice={product.priceCny} foreignPrice={latestIntlPrice.priceForeignRaw || undefined} foreignCurrency={latestIntlPrice.currency as any} showForeignPrice={true}/>
             </CardContent>
           </Card>
-        </div>
-      )}
+        </div>)}
 
       {/* ================================================================ */}
       {/*  联系卖家 / 快速联系卖家 — 统一询价入口                           */}
@@ -444,59 +333,44 @@ export default async function ProductDetailPage({
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <MessageCircle className="h-5 w-5 text-primary-600" />
+              <MessageCircle className="h-5 w-5 text-primary-600"/>
               {t("contactSeller")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
             {/* 单一询价入口（阶段0-A）：主按钮滚动到统一询价区；售前咨询为次要独立通道 */}
             <div className="space-y-1">
-              <InquiryActions
-                productId={product.id}
-                productName={`${brandName} ${product.modelName}`}
-                locale={locale}
-              />
-              <FavoriteButton productId={product.id} locale={locale} />
+              <InquiryActions productId={product.id} productName={`${brandName} ${product.modelName}`} locale={locale}/>
+              <FavoriteButton productId={product.id} locale={locale}/>
             </div>
 
             {/* Contact Methods — WhatsApp / Phone / Email in one row */}
             <div className="flex flex-wrap gap-6 text-sm text-gray-600">
               <div className="flex items-center gap-2">
-                <MessageCircle className="h-4 w-4 text-gray-400" />
+                <MessageCircle className="h-4 w-4 text-gray-400"/>
                 <span>WhatsApp: </span>
-                <a
-                  href="https://wa.me/8615511395016"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary-600 hover:text-primary-700 font-medium"
-                >
+                <a href="https://wa.me/8615511395016" target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:text-primary-700 font-medium">
                   +86 15511395016
                 </a>
               </div>
               <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-gray-400" />
-                <span>{locale === "zh" ? "电话" : "Phone"}: </span>
-                <a
-                  href="tel:+8618633878701"
-                  className="text-primary-600 hover:text-primary-700 font-medium"
-                >
+                <Phone className="h-4 w-4 text-gray-400"/>
+                <span>{locale === "zh" ? "\u7535\u8BDD" : "Phone"}: </span>
+                <a href="tel:+8618633878701" className="text-primary-600 hover:text-primary-700 font-medium">
                   +86 18633878701
                 </a>
               </div>
               <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-gray-400" />
+                <Mail className="h-4 w-4 text-gray-400"/>
                 <span>Email: </span>
-                <a
-                  href="mailto:932133255@qq.com"
-                  className="text-primary-600 hover:text-primary-700 font-medium"
-                >
+                <a href="mailto:932133255@qq.com" className="text-primary-600 hover:text-primary-700 font-medium">
                   932133255@qq.com
                 </a>
               </div>
             </div>
 
             {/* Quick Contact: QR Codes */}
-            <QuickContact locale={locale} />
+            <QuickContact locale={locale}/>
           </CardContent>
         </Card>
       </div>
@@ -504,83 +378,56 @@ export default async function ProductDetailPage({
       {/* ================================================================ */}
       {/*  担保交易（.cn 专属 · 微信收付通 · 资金托管）                    */}
       {/* ================================================================ */}
-      {siteConfig.payments.wechatPay && (
-        <div className="mt-6">
+      {siteConfig.payments.wechatPay && (<div className="mt-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-emerald-600" />
-                担保交易 · 资金托管
-              </CardTitle>
+                <Shield className="h-5 w-5 text-emerald-600"/>{translate("担保交易 · 资金托管", locale)}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <p className="text-sm text-gray-500">
-                通过微信收付通完成担保支付：资金由微信托管，您确认收货后自动分账给卖家，平台不碰资金。
-              </p>
-              <GuaranteeTradeButton
-                productId={product.id}
-                productName={`${brandName} ${product.modelName}`}
-                priceCny={product.priceCny}
-              />
+              <p className="text-sm text-gray-500">{translate("通过微信收付通完成担保支付：资金由微信托管，您确认收货后自动分账给卖家，平台不碰资金。", locale)}</p>
+              <GuaranteeTradeButton productId={product.id} productName={`${brandName} ${product.modelName}`} priceCny={product.priceCny}/>
             </CardContent>
           </Card>
-        </div>
-      )}
+        </div>)}
 
       {/* ================================================================ */}
       {/*  统一在线询价栏目（阶段0-A：所有产品自动开通，单一入口）        */}
       {/* ================================================================ */}
-      <InquirySection
-        productId={product.id}
-        sellerId={product.seller.id}
-        locale={locale}
-        productName={`${brandName} ${product.modelName}`}
-        askingPrice={product.priceCny}
-      />
+      <InquirySection productId={product.id} sellerId={product.seller.id} locale={locale} productName={`${brandName} ${product.modelName}`} askingPrice={product.priceCny}/>
 
       {/* Compatible Parts (适配零部件) — 按品牌运行时匹配 */}
       <div className="mt-6">
-        <CompatiblePartsSection
-          productId={product.id}
-          locale={locale}
-        />
+        <CompatiblePartsSection productId={product.id} locale={locale}/>
       </div>
 
       {/* Inspection Report (设备检验报告) */}
       <div className="mt-6">
-        <InspectionReportCard productId={product.id} locale={locale} />
+        <InspectionReportCard productId={product.id} locale={locale}/>
       </div>
 
       {/* Seller Trust Card (卖家信任体系) */}
       <div className="mt-6">
-        <SellerTrustCard
-          sellerId={product.seller.id}
-          sellerName={product.seller.companyName ?? undefined}
-          locale={locale}
-        />
+        <SellerTrustCard sellerId={product.seller.id} sellerName={product.seller.companyName ?? undefined} locale={locale}/>
       </div>
 
       {/* Blockchain Traceability (区块链溯源) */}
       <div className="mt-6">
-        <BlockchainTrace productId={product.id} locale={locale} />
+        <BlockchainTrace productId={product.id} locale={locale}/>
       </div>
 
       {/* Offline Service Appointment */}
       <div className="mt-4 flex items-center justify-center gap-3 rounded-lg bg-gray-50 p-4">
-        <Wrench className="h-5 w-5 text-primary-500" />
+        <Wrench className="h-5 w-5 text-primary-500"/>
         <span className="text-sm text-gray-600">
-          {locale === "zh" ? "需要线下检测？" : "Need offline inspection?"}
+          {locale === "zh" ? "\u9700\u8981\u7EBF\u4E0B\u68C0\u6D4B\uFF1F" : "Need offline inspection?"}
         </span>
-        <Link
-          href={`/${locale}/service-network`}
-          className="text-sm font-medium text-primary-600 hover:text-primary-700"
-        >
-          {locale === "zh" ? "查看附近服务网点 →" : "Find nearby service centers →"}
+        <Link href={`/${locale}/service-network`} className="text-sm font-medium text-primary-600 hover:text-primary-700">
+          {locale === "zh" ? "\u67E5\u770B\u9644\u8FD1\u670D\u52A1\u7F51\u70B9 \u2192" : "Find nearby service centers \u2192"}
         </Link>
       </div>
 
       {/* AI Multi-language Chat Floating Window */}
-      <FloatingChat locale={locale as any} productId={id} />
-    </div>
-  );
+      <FloatingChat locale={locale as any} productId={id}/>
+    </div>);
 }

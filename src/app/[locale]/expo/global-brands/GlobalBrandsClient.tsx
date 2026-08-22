@@ -1,86 +1,58 @@
 "use client";
-
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useTr } from "@/lib/i18n-tr";
-import {
-  Globe,
-  Tractor,
-  Wheat,
-  Sprout,
-  Plane,
-  Layers,
-  ExternalLink,
-  ChevronRight,
-  Star,
-  Award,
-  Crown,
-  Calendar,
-  ArrowUpRight,
-  Filter,
-  Tag,
-  MapPin,
-  Sparkles,
-  TrendingUp,
-  Factory,
-} from "lucide-react";
-
+import { Globe, Tractor, Wheat, Sprout, Plane, Layers, ExternalLink, ChevronRight, Star, Award, Crown, Calendar, ArrowUpRight, Filter, Tag, MapPin, Sparkles, TrendingUp, Factory, } from "lucide-react";
 interface Brand {
-  id: string;
-  nameZh: string;
-  nameEn: string;
-  brandTier: string;
-  expoSlug: string;
-  expoLogoUrl: string | null;
-  coreCategory?: string;
-  categories?: string[];
-  establishedYear: number | null;
-  exportVolume: string;
-  expoStory: string;
-  officialWebsite: string | null;
-  originCountry: string;
-}
-
-interface ShowcaseItem {
-  id: string;
-  model: string;
-  deviceType: string;
-  brand: string;
-  brandId: string | null;
-  msrpCny: number | null;
-  msrpUsd: number | null;
-  machineTier: string | null;
-  launchYear: number | null;
-  isNewLaunch: boolean;
-  isFeatured: boolean;
-  hotScore: number;
-  description: string;
-  coverImage: string | null;
-  brandRel: {
     id: string;
     nameZh: string;
     nameEn: string;
-    brandTier: string | null;
+    brandTier: string;
+    expoSlug: string;
+    expoLogoUrl: string | null;
+    coreCategory?: string;
+    categories?: string[];
     establishedYear: number | null;
-    exportVolume: string | null;
-  } | null;
+    exportVolume: string;
+    expoStory: string;
+    officialWebsite: string | null;
+    originCountry: string;
 }
-
+interface ShowcaseItem {
+    id: string;
+    model: string;
+    deviceType: string;
+    brand: string;
+    brandId: string | null;
+    msrpCny: number | null;
+    msrpUsd: number | null;
+    machineTier: string | null;
+    launchYear: number | null;
+    isNewLaunch: boolean;
+    isFeatured: boolean;
+    hotScore: number;
+    description: string;
+    coverImage: string | null;
+    brandRel: {
+        id: string;
+        nameZh: string;
+        nameEn: string;
+        brandTier: string | null;
+        establishedYear: number | null;
+        exportVolume: string | null;
+    } | null;
+}
 interface CategoryCount {
-  category: string;
-  count: number;
+    category: string;
+    count: number;
 }
-
 interface TierCounts {
-  flagship: number;
-  premium: number;
-  standard: number;
-  showcase?: number;
+    flagship: number;
+    premium: number;
+    standard: number;
+    showcase?: number;
 }
-
-const tierConfig: Record<
-  string,
-  {
+function getTierConfig(tr: (s: string) => string): Record<string, {
     label: string;
     labelEn: string;
     color: string;
@@ -89,129 +61,118 @@ const tierConfig: Record<
     bgColor: string;
     icon: typeof Award;
     badgeBg: string;
-  }
-> = {
-  flagship: {
-    label: "国际旗舰",
-    labelEn: "Flagship",
-    color: "text-amber-600",
-    gradient: "from-amber-500 to-orange-500",
-    borderColor: "border-amber-200",
-    bgColor: "bg-amber-50",
-    icon: Crown,
-    badgeBg: "bg-amber-600",
-  },
-  premium: {
-    label: "国际核心",
-    labelEn: "Premium",
-    color: "text-purple-600",
-    gradient: "from-purple-500 to-indigo-500",
-    borderColor: "border-purple-200",
-    bgColor: "bg-purple-50",
-    icon: Star,
-    badgeBg: "bg-purple-600",
-  },
-  standard: {
-    label: "国际精选",
-    labelEn: "Selected",
-    color: "text-teal-600",
-    gradient: "from-teal-500 to-cyan-500",
-    borderColor: "border-teal-200",
-    bgColor: "bg-teal-50",
-    icon: Award,
-    badgeBg: "bg-teal-600",
-  },
-  showcase: {
-    label: "特色展示",
-    labelEn: "Showcase",
-    color: "text-violet-600",
-    gradient: "from-violet-500 to-purple-500",
-    borderColor: "border-violet-200",
-    bgColor: "bg-violet-50",
-    icon: Sparkles,
-    badgeBg: "bg-violet-600",
-  },
+}> {
+  return {
+    flagship: {
+        label: tr("国际旗舰"),
+        labelEn: "Flagship",
+        color: "text-amber-600",
+        gradient: "from-amber-500 to-orange-500",
+        borderColor: "border-amber-200",
+        bgColor: "bg-amber-50",
+        icon: Crown,
+        badgeBg: "bg-amber-600",
+    },
+    premium: {
+        label: tr("国际核心"),
+        labelEn: "Premium",
+        color: "text-purple-600",
+        gradient: "from-purple-500 to-indigo-500",
+        borderColor: "border-purple-200",
+        bgColor: "bg-purple-50",
+        icon: Star,
+        badgeBg: "bg-purple-600",
+    },
+    standard: {
+        label: tr("国际精选"),
+        labelEn: "Selected",
+        color: "text-teal-600",
+        gradient: "from-teal-500 to-cyan-500",
+        borderColor: "border-teal-200",
+        bgColor: "bg-teal-50",
+        icon: Award,
+        badgeBg: "bg-teal-600",
+    },
+    showcase: {
+        label: tr("特色展示"),
+        labelEn: "Showcase",
+        color: "text-violet-600",
+        gradient: "from-violet-500 to-purple-500",
+        borderColor: "border-violet-200",
+        bgColor: "bg-violet-50",
+        icon: Sparkles,
+        badgeBg: "bg-violet-600",
+    },
 };
-
+}
 const countryFlags: Record<string, string> = {
-  USA: "🇺🇸",
-  Germany: "🇩🇪",
-  "Italy/USA": "🇮🇹",
-  "Canada/USA": "🇨🇦",
-  Japan: "🇯🇵",
-  France: "🇫🇷",
-  Norway: "🇳🇴",
-  Denmark: "🇩🇰",
-  Finland: "🇫🇮",
-  Italy: "🇮🇹",
-  Netherlands: "🇳🇱",
-  Austria: "🇦🇹",
-  Sweden: "🇸🇪",
-  Brazil: "🇧🇷",
-  Czech: "🇨🇿",
-  "Czech Republic": "🇨🇿",
-  Canada: "🇨🇦",
-  Poland: "🇵🇱",
-  Belarus: "🇧🇾",
-  "South Korea": "🇰🇷",
-  India: "🇮🇳",
-  UK: "🇬🇧",
+    USA: "\uD83C\uDDFA\uD83C\uDDF8",
+    Germany: "\uD83C\uDDE9\uD83C\uDDEA",
+    "Italy/USA": "\uD83C\uDDEE\uD83C\uDDF9",
+    "Canada/USA": "\uD83C\uDDE8\uD83C\uDDE6",
+    Japan: "\uD83C\uDDEF\uD83C\uDDF5",
+    France: "\uD83C\uDDEB\uD83C\uDDF7",
+    Norway: "\uD83C\uDDF3\uD83C\uDDF4",
+    Denmark: "\uD83C\uDDE9\uD83C\uDDF0",
+    Finland: "\uD83C\uDDEB\uD83C\uDDEE",
+    Italy: "\uD83C\uDDEE\uD83C\uDDF9",
+    Netherlands: "\uD83C\uDDF3\uD83C\uDDF1",
+    Austria: "\uD83C\uDDE6\uD83C\uDDF9",
+    Sweden: "\uD83C\uDDF8\uD83C\uDDEA",
+    Brazil: "\uD83C\uDDE7\uD83C\uDDF7",
+    Czech: "\uD83C\uDDE8\uD83C\uDDFF",
+    "Czech Republic": "\uD83C\uDDE8\uD83C\uDDFF",
+    Canada: "\uD83C\uDDE8\uD83C\uDDE6",
+    Poland: "\uD83C\uDDF5\uD83C\uDDF1",
+    Belarus: "\uD83C\uDDE7\uD83C\uDDFE",
+    "South Korea": "\uD83C\uDDF0\uD83C\uDDF7",
+    India: "\uD83C\uDDEE\uD83C\uDDF3",
+    UK: "\uD83C\uDDEC\uD83C\uDDE7",
 };
-
 const categoryIcons: Record<string, typeof Tractor> = {
-  拖拉机: Tractor,
-  紧凑型拖拉机: Tractor,
-  专用拖拉机: Tractor,
-  收割机: Wheat,
-  收获机械: Wheat,
-  收获机: Wheat,
-  玉米收获机: Wheat,
-  玉米割台: Wheat,
-  割台: Wheat,
-  "割台/割晒机": Wheat,
-  特种收获机: Wheat,
-  蔬菜收获机: Wheat,
-  牧草机械: Sprout,
-  牧草设备: Sprout,
-  播种: Sprout,
-  精量播种机: Sprout,
-  免耕播种机: Sprout,
-  "播种机/耕作机": Sprout,
-  植保无人机: Plane,
-  喷雾机: Plane,
-  自走式喷雾机: Plane,
-  精准农业: Sparkles,
-  "动力耙/旋耕机": Layers,
-  旋耕机: Layers,
-  "深松机/耕作机": Layers,
-  弹齿除草机: Sprout,
-  综合农机: Layers,
-  马铃薯: Wheat,
-  "马铃薯/甜菜设备": Wheat,
-  打捆机: Sprout,
+    拖拉机: Tractor,
+    紧凑型拖拉机: Tractor,
+    专用拖拉机: Tractor,
+    收割机: Wheat,
+    收获机械: Wheat,
+    收获机: Wheat,
+    玉米收获机: Wheat,
+    玉米割台: Wheat,
+    割台: Wheat,
+    "\u5272\u53F0/\u5272\u6652\u673A": Wheat,
+    特种收获机: Wheat,
+    蔬菜收获机: Wheat,
+    牧草机械: Sprout,
+    牧草设备: Sprout,
+    播种: Sprout,
+    精量播种机: Sprout,
+    免耕播种机: Sprout,
+    "\u64AD\u79CD\u673A/\u8015\u4F5C\u673A": Sprout,
+    植保无人机: Plane,
+    喷雾机: Plane,
+    自走式喷雾机: Plane,
+    精准农业: Sparkles,
+    "\u52A8\u529B\u8019/\u65CB\u8015\u673A": Layers,
+    旋耕机: Layers,
+    "\u6DF1\u677E\u673A/\u8015\u4F5C\u673A": Layers,
+    弹齿除草机: Sprout,
+    综合农机: Layers,
+    马铃薯: Wheat,
+    "\u9A6C\u94C3\u85AF/\u751C\u83DC\u8BBE\u5907": Wheat,
+    打捆机: Sprout,
 };
-
-function StatCard({
-  number,
-  label,
-  sub,
-  icon: Icon,
-  gradient,
-}: {
-  number: string;
-  label: string;
-  sub: string;
-  icon: typeof Tractor;
-  gradient: string;
+function StatCard({ number, label, sub, icon: Icon, gradient, }: {
+    number: string;
+    label: string;
+    sub: string;
+    icon: typeof Tractor;
+    gradient: string;
 }) {
-  return (
-    <div className="relative overflow-hidden rounded-2xl bg-white/95 p-6 shadow-lg backdrop-blur-sm transition-all hover:scale-105 hover:shadow-xl">
-      <div
-        className={`absolute -right-4 -top-4 h-24 w-24 rounded-full bg-gradient-to-br ${gradient} opacity-20 blur-2xl`}
-      />
+    return (<div className="relative overflow-hidden rounded-2xl bg-white/95 p-6 shadow-lg backdrop-blur-sm transition-all hover:scale-105 hover:shadow-xl">
+      <div className={`absolute -right-4 -top-4 h-24 w-24 rounded-full bg-gradient-to-br ${gradient} opacity-20 blur-2xl`}/>
       <div className="relative">
         <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-gray-100 to-gray-200">
-          <Icon className="h-5 w-5 text-gray-600" />
+          <Icon className="h-5 w-5 text-gray-600"/>
         </div>
         <div className="text-3xl font-extrabold tracking-tight text-gray-900">
           {number}
@@ -219,51 +180,35 @@ function StatCard({
         <div className="mt-1 text-sm font-semibold text-gray-700">{label}</div>
         <div className="mt-1 text-xs text-gray-500">{sub}</div>
       </div>
-    </div>
-  );
+    </div>);
 }
-
-function BrandCard({ brand, locale }: { brand: Brand; locale: string }) {
-  const config = tierConfig[brand.brandTier] || tierConfig.standard;
-  const Icon = config.icon;
-  const flag = countryFlags[brand.originCountry] || "🌍";
-  const isZh = locale === "zh";
+function BrandCard({ brand, locale }: {
+    brand: Brand;
+    locale: string;
+}) {
   const tr = useTr();
-
-  return (
-    <Link
-      href={`/${locale}/expo/booth/${brand.expoSlug}`}
-      className="group relative flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-    >
+    const config = getTierConfig(tr)[brand.brandTier] || getTierConfig(tr).standard;
+    const Icon = config.icon;
+    const flag = countryFlags[brand.originCountry] || "\uD83C\uDF0D";
+    const isZh = locale === "zh";
+        return (<Link href={`/${locale}/expo/booth/${brand.expoSlug}`} className="group relative flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
       {/* Top gradient bar */}
-      <div className={`h-1.5 bg-gradient-to-r ${config.gradient} w-full`} />
+      <div className={`h-1.5 bg-gradient-to-r ${config.gradient} w-full`}/>
 
       <div className="relative p-5">
         {/* Tier badge - floating */}
-        <div
-          className={`absolute right-4 top-4 flex items-center gap-1 rounded-full ${config.badgeBg} px-2.5 py-1 text-xs font-bold text-white shadow-sm`}
-        >
-          <Icon className="h-3 w-3" />
+        <div className={`absolute right-4 top-4 flex items-center gap-1 rounded-full ${config.badgeBg} px-2.5 py-1 text-xs font-bold text-white shadow-sm`}>
+          <Icon className="h-3 w-3"/>
           {isZh ? config.label : config.labelEn}
         </div>
 
         {/* Brand Logo & Name */}
         <div className="mb-4 flex items-start gap-4">
-          {brand.expoLogoUrl ? (
-            <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gray-50 p-2 ring-1 ring-gray-100">
-              <img
-                src={brand.expoLogoUrl}
-                alt={brand.nameZh}
-                className="h-full w-full object-contain"
-              />
-            </div>
-          ) : (
-            <div
-              className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${config.gradient} text-3xl shadow-md`}
-            >
+          {brand.expoLogoUrl ? (<div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gray-50 p-2 ring-1 ring-gray-100">
+              <img src={brand.expoLogoUrl} alt={brand.nameZh} className="h-full w-full object-contain"/>
+            </div>) : (<div className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${config.gradient} text-3xl shadow-md`}>
               {flag}
-            </div>
-          )}
+            </div>)}
           <div className="min-w-0 flex-1 pt-1">
             <h3 className="truncate text-lg font-bold text-gray-900">
               {brand.nameZh}
@@ -272,7 +217,7 @@ function BrandCard({ brand, locale }: { brand: Brand; locale: string }) {
               {brand.nameEn}
             </p>
             <div className="mt-0.5 flex items-center gap-1 text-xs text-gray-500">
-              <MapPin className="h-3 w-3" />
+              <MapPin className="h-3 w-3"/>
               {flag} {brand.originCountry}
             </div>
           </div>
@@ -280,18 +225,14 @@ function BrandCard({ brand, locale }: { brand: Brand; locale: string }) {
 
         {/* Info tags */}
         <div className="mb-3 flex flex-wrap items-center gap-2">
-          {brand.establishedYear && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600">
-              <Calendar className="h-3 w-3" />
+          {brand.establishedYear && (<span className="inline-flex items-center gap-1 rounded-full bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600">
+              <Calendar className="h-3 w-3"/>
               {tr("创立")} {brand.establishedYear}
-            </span>
-          )}
-          {brand.exportVolume && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
-              <Globe className="h-3 w-3" />
+            </span>)}
+          {brand.exportVolume && (<span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
+              <Globe className="h-3 w-3"/>
               {brand.exportVolume}
-            </span>
-          )}
+            </span>)}
         </div>
 
         {/* Story */}
@@ -303,166 +244,114 @@ function BrandCard({ brand, locale }: { brand: Brand; locale: string }) {
         <div className="flex items-center justify-between border-t border-gray-50 pt-3">
           <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-600 transition-colors group-hover:text-amber-700">
             {tr("进入展位")}
-            <ArrowUpRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            <ArrowUpRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"/>
           </span>
-          {brand.officialWebsite && (
-            <a
-              href={brand.officialWebsite}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="inline-flex items-center gap-1 text-xs text-gray-400 transition-colors hover:text-gray-600"
-            >
-              <ExternalLink className="h-3 w-3" />
+          {brand.officialWebsite && (<a href={brand.officialWebsite} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1 text-xs text-gray-400 transition-colors hover:text-gray-600">
+              <ExternalLink className="h-3 w-3"/>
               {tr("官网")}
-            </a>
-          )}
+            </a>)}
         </div>
       </div>
-    </Link>
-  );
+    </Link>);
 }
-
-function MachineCard({
-  item,
-  locale,
-}: {
-  item: ShowcaseItem;
-  locale: string;
+function MachineCard({ item, locale, }: {
+    item: ShowcaseItem;
+    locale: string;
 }) {
-  const CatIcon = categoryIcons[item.deviceType] || Tractor;
-  const isZh = locale === "zh";
-  const tr = useTr();
-
-  return (
-    <Link
-      href={`/${locale}/expo/showroom/${item.id}`}
-      className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-    >
+    const CatIcon = categoryIcons[item.deviceType] || Tractor;
+    const isZh = locale === "zh";
+    const tr = useTr();
+    return (<Link href={`/${locale}/expo/showroom/${item.id}`} className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
       <div className="relative h-44 overflow-hidden bg-gradient-to-br from-amber-50 to-orange-50">
-        {item.coverImage ? (
-          <img
-            src={item.coverImage}
-            alt={`${item.brand} ${item.model}`}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center">
-            <CatIcon className="h-14 w-14 text-amber-200" />
-          </div>
-        )}
-        {item.isNewLaunch && (
-          <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-green-500 px-2.5 py-1 text-xs font-bold text-white shadow-md">
-            <Sparkles className="h-3 w-3" />
+        {item.coverImage ? (<img src={item.coverImage} alt={`${item.brand} ${item.model}`} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"/>) : (<div className="flex h-full items-center justify-center">
+            <CatIcon className="h-14 w-14 text-amber-200"/>
+          </div>)}
+        {item.isNewLaunch && (<span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-green-500 px-2.5 py-1 text-xs font-bold text-white shadow-md">
+            <Sparkles className="h-3 w-3"/>
             NEW
-          </span>
-        )}
-        {item.isFeatured && (
-          <span className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-amber-500 px-2.5 py-1 text-xs font-bold text-white shadow-md">
-            <TrendingUp className="h-3 w-3" />
+          </span>)}
+        {item.isFeatured && (<span className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-amber-500 px-2.5 py-1 text-xs font-bold text-white shadow-md">
+            <TrendingUp className="h-3 w-3"/>
             {tr("热销")}
-          </span>
-        )}
+          </span>)}
         {/* Bottom gradient overlay */}
-        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/40 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/40 to-transparent"/>
       </div>
 
       <div className="p-4">
         <div className="mb-2 flex items-center gap-2">
           <span className="text-sm font-bold text-gray-900">{item.brand}</span>
-          {item.brandRel?.brandTier === "flagship" && (
-            <Crown className="h-3.5 w-3.5 text-amber-500" />
-          )}
+          {item.brandRel?.brandTier === "flagship" && (<Crown className="h-3.5 w-3.5 text-amber-500"/>)}
         </div>
         <h3 className="mb-2 text-base font-semibold text-gray-800">
           {item.model}
         </h3>
         <div className="flex items-center justify-between text-xs">
           <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-gray-600">
-            <Tag className="h-3 w-3" />
+            <Tag className="h-3 w-3"/>
             {item.deviceType}
           </span>
-          {item.launchYear && (
-            <span className="text-gray-400">{item.launchYear}</span>
-          )}
+          {item.launchYear && (<span className="text-gray-400">{item.launchYear}</span>)}
         </div>
-        {(item.msrpCny || item.msrpUsd) && (
-          <div className="mt-3 border-t border-gray-50 pt-3">
-            {item.msrpUsd && (
-              <div className="text-lg font-extrabold text-amber-700">
+        {(item.msrpCny || item.msrpUsd) && (<div className="mt-3 border-t border-gray-50 pt-3">
+            {item.msrpUsd && (<div className="text-lg font-extrabold text-amber-700">
                 ${item.msrpUsd.toLocaleString()}
                 <span className="ml-1 text-xs font-normal text-gray-400">
                   USD
                 </span>
-              </div>
-            )}
-            {item.msrpCny && (
-              <div className="text-xs text-gray-400">
+              </div>)}
+            {item.msrpCny && (<div className="text-xs text-gray-400">
                 ¥{item.msrpCny.toLocaleString()}
-              </div>
-            )}
-          </div>
-        )}
+              </div>)}
+          </div>)}
       </div>
-    </Link>
-  );
+    </Link>);
 }
-
-export default function GlobalBrandsClient({
-  brands,
-  items,
-  categoryCounts,
-  tierCounts,
-  locale,
-}: {
-  brands: Brand[];
-  items: ShowcaseItem[];
-  categoryCounts: CategoryCount[];
-  tierCounts: TierCounts;
-  locale: string;
+export default function GlobalBrandsClient({ brands, items, categoryCounts, tierCounts, locale, }: {
+    brands: Brand[];
+    items: ShowcaseItem[];
+    categoryCounts: CategoryCount[];
+    tierCounts: TierCounts;
+    locale: string;
 }) {
-  const [selectedTier, setSelectedTier] = useState<string>("all");
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
-
-  const isZh = locale === "zh";
   const tr = useTr();
-
-  const filteredBrands = useMemo(() => {
-    return brands.filter((b) => {
-      if (selectedTier !== "all" && b.brandTier !== selectedTier) return false;
-      if (selectedCategory !== "all" && !b.categories?.some(c => c.includes(selectedCategory)))
-        return false;
-      return true;
-    });
-  }, [brands, selectedTier, selectedCategory]);
-
-  const filteredItems = useMemo(() => {
-    if (selectedCategory === "all") return items;
-    return items.filter((i) => i.deviceType?.includes(selectedCategory));
-  }, [items, selectedCategory]);
-
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-50 via-white to-gray-50">
+    const [selectedTier, setSelectedTier] = useState<string>("all");
+    const [selectedCategory, setSelectedCategory] = useState<string>("all");
+    const isZh = locale === "zh";
+        const filteredBrands = useMemo(() => {
+        return brands.filter((b) => {
+            if (selectedTier !== "all" && b.brandTier !== selectedTier)
+                return false;
+            if (selectedCategory !== "all" && !b.categories?.some(c => c.includes(selectedCategory)))
+                return false;
+            return true;
+        });
+    }, [brands, selectedTier, selectedCategory]);
+    const filteredItems = useMemo(() => {
+        if (selectedCategory === "all")
+            return items;
+        return items.filter((i) => i.deviceType?.includes(selectedCategory));
+    }, [items, selectedCategory]);
+    return (<div className="min-h-screen bg-gradient-to-b from-amber-50 via-white to-gray-50">
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-br from-amber-700 via-orange-800 to-amber-900 pb-20 pt-16 text-white">
         {/* Decorative elements */}
         <div className="absolute inset-0 opacity-20">
-          <div className="absolute -left-20 top-20 h-72 w-72 rounded-full bg-yellow-300 blur-[100px]" />
-          <div className="absolute -right-20 bottom-10 h-96 w-96 rounded-full bg-orange-400 blur-[100px]" />
+          <div className="absolute -left-20 top-20 h-72 w-72 rounded-full bg-yellow-300 blur-[100px]"/>
+          <div className="absolute -right-20 bottom-10 h-96 w-96 rounded-full bg-orange-400 blur-[100px]"/>
         </div>
         <div className="absolute inset-0 opacity-10">
           <svg className="absolute right-0 top-0 h-full w-1/2" viewBox="0 0 400 600">
-            <circle cx="350" cy="200" r="80" fill="none" stroke="white" strokeWidth="0.3" opacity="0.2" />
-            <circle cx="50" cy="400" r="60" fill="none" stroke="white" strokeWidth="0.3" opacity="0.2" />
-            <path d="M200 50 L250 150 L350 180 L275 260 L300 370 L200 320 L100 370 L125 260 L50 180 L150 150 Z"
-              fill="none" stroke="white" strokeWidth="0.5" opacity="0.3" />
+            <circle cx="350" cy="200" r="80" fill="none" stroke="white" strokeWidth="0.3" opacity="0.2"/>
+            <circle cx="50" cy="400" r="60" fill="none" stroke="white" strokeWidth="0.3" opacity="0.2"/>
+            <path d="M200 50 L250 150 L350 180 L275 260 L300 370 L200 320 L100 370 L125 260 L50 180 L150 150 Z" fill="none" stroke="white" strokeWidth="0.5" opacity="0.3"/>
           </svg>
         </div>
 
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Badge */}
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium backdrop-blur-md">
-            <Globe className="h-4 w-4" />
+            <Globe className="h-4 w-4"/>
             <span>{tr("全球领袖馆 · 主馆")}</span>
             <span className="ml-1 rounded-full bg-white/20 px-2 py-0.5 text-xs">
               {brands.length} {tr("品牌")}
@@ -476,7 +365,7 @@ export default function GlobalBrandsClient({
             </span>
           </h1>
           <span className="mt-3 block text-2xl font-semibold text-amber-100/90">
-            {locale === "zh" ? "神雕云展™ · 神雕农机展™" : "Shendiao Cloud Expo™ · Shendiao Agri-Machinery Expo™"}
+            {locale === "zh" ? "\u795E\u96D5\u4E91\u5C55\u2122 \u00B7 \u795E\u96D5\u519C\u673A\u5C55\u2122" : "Shendiao Cloud Expo\u2122 \u00B7 Shendiao Agri-Machinery Expo\u2122"}
           </span>
           <p className="max-w-2xl text-lg leading-relaxed text-amber-100">
             {tr("约翰迪尔、克拉斯、凯斯、纽荷兰、芬特、麦赛弗格森——全球农机行业的技术标杆与品质参照。汇聚全球顶尖品牌，建立国际最高标准。")}
@@ -484,34 +373,10 @@ export default function GlobalBrandsClient({
 
           {/* Stats Cards */}
           <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-4 lg:gap-6">
-            <StatCard
-              number={String(brands.length)}
-              label={tr("国际品牌")}
-              sub={tr("旗舰·核心·精选")}
-              icon={Globe}
-              gradient="from-amber-500 to-orange-600"
-            />
-            <StatCard
-              number={String(items.length)}
-              label={tr("标杆机型")}
-              sub={tr("最新技术前沿")}
-              icon={Tractor}
-              gradient="from-purple-500 to-indigo-600"
-            />
-            <StatCard
-              number="10+"
-              label={tr("覆盖国家")}
-              sub={tr("欧美日主要产区")}
-              icon={MapPin}
-              gradient="from-blue-500 to-cyan-600"
-            />
-            <StatCard
-              number="100+"
-              label={tr("行业年限")}
-              sub={tr("百年品牌传承")}
-              icon={Award}
-              gradient="from-green-500 to-emerald-600"
-            />
+            <StatCard number={String(brands.length)} label={tr("国际品牌")} sub={tr("旗舰·核心·精选")} icon={Globe} gradient="from-amber-500 to-orange-600"/>
+            <StatCard number={String(items.length)} label={tr("标杆机型")} sub={tr("最新技术前沿")} icon={Tractor} gradient="from-purple-500 to-indigo-600"/>
+            <StatCard number="10+" label={tr("覆盖国家")} sub={tr("欧美日主要产区")} icon={MapPin} gradient="from-blue-500 to-cyan-600"/>
+            <StatCard number="100+" label={tr("行业年限")} sub={tr("百年品牌传承")} icon={Award} gradient="from-green-500 to-emerald-600"/>
           </div>
         </div>
       </section>
@@ -522,68 +387,43 @@ export default function GlobalBrandsClient({
           {/* Tier Filter */}
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <span className="mr-2 flex items-center gap-1 text-sm font-medium text-gray-500">
-              <Filter className="h-4 w-4" />
+              <Filter className="h-4 w-4"/>
               {tr("品牌等级")}
             </span>
-            <button
-              onClick={() => setSelectedTier("all")}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
-                selectedTier === "all"
-                  ? "bg-amber-600 text-white shadow-md shadow-amber-200"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-            >
+            <button onClick={() => setSelectedTier("all")} className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all ${selectedTier === "all"
+            ? "bg-amber-600 text-white shadow-md shadow-amber-200"
+            : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
               {tr("全部")} ({brands.length})
             </button>
-            {(Object.keys(tierConfig) as string[]).map((tier) => {
-              const config = tierConfig[tier];
-              const count = tierCounts[tier as keyof TierCounts] || 0;
-              return (
-                <button
-                  key={tier}
-                  onClick={() => setSelectedTier(tier)}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
-                    selectedTier === tier
-                      ? `bg-gradient-to-r ${config.gradient} text-white shadow-md`
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
-                >
-                  <config.icon className="h-3.5 w-3.5" />
+            {(Object.keys(getTierConfig(tr)) as string[]).map((tier) => {
+  const tr = useTr();
+            const config = getTierConfig(tr)[tier];
+            const count = tierCounts[tier as keyof TierCounts] || 0;
+            return (<button key={tier} onClick={() => setSelectedTier(tier)} className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all ${selectedTier === tier
+                    ? `bg-gradient-to-r ${config.gradient} text-white shadow-md`
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
+                  <config.icon className="h-3.5 w-3.5"/>
                   {isZh ? config.label : config.labelEn} ({count})
-                </button>
-              );
-            })}
+                </button>);
+        })}
           </div>
 
           {/* Category Filter */}
           <div className="flex flex-wrap items-center gap-2">
             <span className="mr-2 flex items-center gap-1 text-sm font-medium text-gray-500">
-              <Tag className="h-4 w-4" />
+              <Tag className="h-4 w-4"/>
               {tr("产品品类")}
             </span>
-            <button
-              onClick={() => setSelectedCategory("all")}
-              className={`rounded-full px-3 py-1 text-sm font-medium transition-all ${
-                selectedCategory === "all"
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-200"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-            >
+            <button onClick={() => setSelectedCategory("all")} className={`rounded-full px-3 py-1 text-sm font-medium transition-all ${selectedCategory === "all"
+            ? "bg-blue-600 text-white shadow-md shadow-blue-200"
+            : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
               {tr("全部")}
             </button>
-            {categoryCounts.map((c) => (
-              <button
-                key={c.category}
-                onClick={() => setSelectedCategory(c.category)}
-                className={`rounded-full px-3 py-1 text-sm font-medium transition-all ${
-                  selectedCategory === c.category
-                    ? "bg-blue-600 text-white shadow-md shadow-blue-200"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
-              >
+            {categoryCounts.map((c) => (<button key={c.category} onClick={() => setSelectedCategory(c.category)} className={`rounded-full px-3 py-1 text-sm font-medium transition-all ${selectedCategory === c.category
+                ? "bg-blue-600 text-white shadow-md shadow-blue-200"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
                 {c.category} ({c.count})
-              </button>
-            ))}
+              </button>))}
           </div>
         </div>
       </section>
@@ -597,48 +437,35 @@ export default function GlobalBrandsClient({
             </h2>
             <p className="mt-1 text-sm text-gray-500">
               {tr("共")} {filteredBrands.length} {tr("个品牌")}
-              {selectedTier !== "all" && (
-                <span className="ml-1 text-amber-600">
-                  · {isZh ? tierConfig[selectedTier].label : tierConfig[selectedTier].labelEn}
-                </span>
-              )}
-              {selectedCategory !== "all" && (
-                <span className="ml-1 text-blue-600">
+              {selectedTier !== "all" && (<span className="ml-1 text-amber-600">
+                  · {isZh ? getTierConfig(tr)[selectedTier].label : getTierConfig(tr)[selectedTier].labelEn}
+                </span>)}
+              {selectedCategory !== "all" && (<span className="ml-1 text-blue-600">
                   · {selectedCategory}
-                </span>
-              )}
+                </span>)}
             </p>
           </div>
-          {(selectedTier !== "all" || selectedCategory !== "all") && (
-            <button
-              onClick={() => {
+          {(selectedTier !== "all" || selectedCategory !== "all") && (<button onClick={() => {
                 setSelectedTier("all");
                 setSelectedCategory("all");
-              }}
-              className="rounded-full bg-gray-100 px-3 py-1.5 text-sm text-gray-600 transition hover:bg-gray-200"
-            >
+            }} className="rounded-full bg-gray-100 px-3 py-1.5 text-sm text-gray-600 transition hover:bg-gray-200">
               {tr("清除筛选")}
-            </button>
-          )}
+            </button>)}
         </div>
 
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredBrands.map((brand) => (
-            <BrandCard key={brand.id} brand={brand} locale={locale} />
-          ))}
+          {filteredBrands.map((brand) => (<BrandCard key={brand.id} brand={brand} locale={locale}/>))}
         </div>
 
-        {filteredBrands.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-            <Filter className="mb-3 h-12 w-12 opacity-30" />
+        {filteredBrands.length === 0 && (<div className="flex flex-col items-center justify-center py-20 text-gray-400">
+            <Filter className="mb-3 h-12 w-12 opacity-30"/>
             <p className="text-lg font-medium">
               {tr("暂无符合条件的品牌")}
             </p>
             <p className="text-sm">
               {tr("尝试调整筛选条件")}
             </p>
-          </div>
-        )}
+          </div>)}
       </section>
 
       {/* Featured Machines */}
@@ -653,20 +480,15 @@ export default function GlobalBrandsClient({
                 {tr("精选")} {(selectedCategory === "all" ? items : filteredItems).length} {tr("台热门机型")}
               </p>
             </div>
-            <Link
-              href={`/${locale}/expo/showroom`}
-              className="inline-flex items-center gap-1 rounded-full bg-amber-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-700"
-            >
+            <Link href={`/${locale}/expo/showroom`} className="inline-flex items-center gap-1 rounded-full bg-amber-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-700">
               {tr("全部展厅")}
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4"/>
             </Link>
           </div>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {(selectedCategory === "all" ? items : filteredItems)
-              .slice(0, 16)
-              .map((item) => (
-                <MachineCard key={item.id} item={item} locale={locale} />
-              ))}
+            .slice(0, 16)
+            .map((item) => (<MachineCard key={item.id} item={item} locale={locale}/>))}
           </div>
         </div>
       </section>
@@ -674,8 +496,8 @@ export default function GlobalBrandsClient({
       {/* CTA */}
       <section className="relative overflow-hidden bg-gradient-to-r from-amber-600 to-orange-700 py-16">
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute left-1/4 top-0 h-48 w-48 rounded-full bg-white blur-[80px]" />
-          <div className="absolute right-1/4 bottom-0 h-64 w-64 rounded-full bg-yellow-300 blur-[80px]" />
+          <div className="absolute left-1/4 top-0 h-48 w-48 rounded-full bg-white blur-[80px]"/>
+          <div className="absolute right-1/4 bottom-0 h-64 w-64 rounded-full bg-yellow-300 blur-[80px]"/>
         </div>
         <div className="relative mx-auto max-w-4xl px-4 text-center text-white sm:px-6 lg:px-8">
           <h2 className="mb-4 text-3xl font-bold sm:text-4xl">
@@ -685,23 +507,16 @@ export default function GlobalBrandsClient({
             {tr("想知道顶尖品牌与行业腰部品牌的差距？进入新锐专业馆，横向参数对比，理性决策。")}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
-            <Link
-              href={`/${locale}/expo/compare`}
-              className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3.5 font-semibold text-amber-600 shadow-lg transition hover:bg-amber-50 hover:shadow-xl"
-            >
+            <Link href={`/${locale}/expo/compare`} className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3.5 font-semibold text-amber-600 shadow-lg transition hover:bg-amber-50 hover:shadow-xl">
               {tr("进入新锐专业馆")}
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4"/>
             </Link>
-            <Link
-              href={`/${locale}/expo/china-brands`}
-              className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-6 py-3.5 font-semibold text-white backdrop-blur-sm transition hover:bg-white/20"
-            >
+            <Link href={`/${locale}/expo/china-brands`} className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-6 py-3.5 font-semibold text-white backdrop-blur-sm transition hover:bg-white/20">
               {tr("查看中国品牌")}
-              <Factory className="h-4 w-4" />
+              <Factory className="h-4 w-4"/>
             </Link>
           </div>
         </div>
       </section>
-    </div>
-  );
+    </div>);
 }

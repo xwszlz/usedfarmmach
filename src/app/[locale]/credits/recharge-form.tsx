@@ -1,19 +1,16 @@
 "use client";
-
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-
+import { useTr } from "@/lib/i18n-tr";
 interface RechargeFormProps {
-  locale: string;
+    locale: string;
 }
-
 export function RechargeForm({ locale }: RechargeFormProps) {
-  const t = useTranslations("credits");
-
-  return (
-    <Card className="space-y-4 p-6">
+  const tr = useTr();
+    const t = useTranslations("credits");
+    return (<Card className="space-y-4 p-6">
       <h2 className="text-lg font-semibold">{t("recharge")}</h2>
 
       {/* 真实支付接入前，充值入口置灰为"即将上线"（P0 I-5 / I-6） */}
@@ -21,18 +18,10 @@ export function RechargeForm({ locale }: RechargeFormProps) {
         {t("rechargeComingSoon")}
       </div>
 
-      <Input
-        id="recharge-amount"
-        name="amount"
-        type="number"
-        label="自定义金额"
-        placeholder="输入积分数量"
-        disabled
-      />
+      <Input id="recharge-amount" name="amount" type="number" label="自定义金额" placeholder={tr("输入积分数量")} disabled/>
 
       <Button className="w-full" disabled>
         {t("recharge")}
       </Button>
-    </Card>
-  );
+    </Card>);
 }

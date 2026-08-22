@@ -1,3 +1,4 @@
+"use client";
 /**
  * AuctionLicenseBadge — 拍卖经营批准证书公示组件（S4 占位 / 上线组件）
  *
@@ -15,57 +16,35 @@
  * - "footer"：全局页脚精简条（融入 CnFooter）。
  * - "channel"：拍卖频道页突出公示块（满足50号文「拍卖频道公示」）。
  */
-
 import Link from "next/link";
-
+import { useTr } from "@/lib/i18n-tr";
 interface AuctionLicenseBadgeProps {
-  licenseNo: string | null;
-  variant?: "footer" | "channel";
+    licenseNo: string | null;
+    variant?: "footer" | "channel";
 }
-
 /** 公司法定全称与统一社会信用代码（公示固定信息） */
-const COMPANY_NAME = "石家庄神雕农机科技有限公司";
+const COMPANY_NAME = "\u77F3\u5BB6\u5E84\u795E\u96D5\u519C\u673A\u79D1\u6280\u6709\u9650\u516C\u53F8";
 const UNIFIED_SOCIAL_CREDIT_CODE = "91130132072058877W";
-
-export function AuctionLicenseBadge({
-  licenseNo,
-  variant = "footer",
-}: AuctionLicenseBadgeProps) {
-  // 安全闸门：未取证不渲染任何字样
-  if (!licenseNo) return null;
-
-  const isChannel = variant === "channel";
-
-  return (
-    <div className={isChannel ? "mx-auto max-w-7xl px-6 md:px-12 mt-4" : "mt-3"}>
-      <div
-        className={
-          "rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-900 " +
-          (isChannel ? "text-left" : "text-center")
-        }
-      >
+export function AuctionLicenseBadge({ licenseNo, variant = "footer", }: AuctionLicenseBadgeProps) {
+    const tr = useTr();
+    // 安全闸门：未取证不渲染任何字样
+    if (!licenseNo)
+        return null;
+    const isChannel = variant === "channel";
+    return (<div className={isChannel ? "mx-auto max-w-7xl px-6 md:px-12 mt-4" : "mt-3"}>
+      <div className={"rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-900 " +
+            (isChannel ? "text-left" : "text-center")}>
         <p className="font-semibold text-amber-800">
-          {isChannel ? "拍卖经营资质公示" : "拍卖经营批准证书公示"}
+          {isChannel ? "\u62CD\u5356\u7ECF\u8425\u8D44\u8D28\u516C\u793A" : "\u62CD\u5356\u7ECF\u8425\u6279\u51C6\u8BC1\u4E66\u516C\u793A"}
+        </p>
+        <p className="mt-1">{tr("本公司已取得《拍卖经营批准证书》（编号：")}{licenseNo}{tr("），依法开展网络拍卖业务。")}</p>
+        <p className="mt-1">
+          {COMPANY_NAME}{tr("· 统一社会信用代码：")}{UNIFIED_SOCIAL_CREDIT_CODE}
         </p>
         <p className="mt-1">
-          本公司已取得《拍卖经营批准证书》（编号：{licenseNo}），依法开展网络拍卖业务。
-        </p>
-        <p className="mt-1">
-          {COMPANY_NAME} · 统一社会信用代码：{UNIFIED_SOCIAL_CREDIT_CODE}
-        </p>
-        <p className="mt-1">
-          <Link
-            href="https://beian.miit.gov.cn"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline hover:text-amber-700"
-          >
-            冀ICP备2024053719号-4
-          </Link>
+          <Link href="https://beian.miit.gov.cn" target="_blank" rel="noopener noreferrer" className="underline hover:text-amber-700">{tr("冀ICP备2024053719号-4")}</Link>
         </p>
       </div>
-    </div>
-  );
+    </div>);
 }
-
 export default AuctionLicenseBadge;

@@ -1,107 +1,100 @@
 "use client";
-
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Building2, Globe, Video, BarChart3, Shield, ChevronRight, CheckCircle2, Sparkles } from "lucide-react";
 import { useTr } from "@/lib/i18n-tr";
-
 interface SelfBoothLandingProps {
-  locale: string;
+    locale: string;
 }
-
 export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
-  const t = useTranslations();
-  const isZh = locale === "zh";
-  const tr = useTr();
-
-  const tiers = [
-    {
-      name: tr("免费版"),
-      price: tr("¥0/年"),
-      period: tr("永久免费"),
-      features: [
-        tr("品牌收录于品牌库"),
-        tr("5台展品上线"),
-        tr("中文展示"),
-        tr("基础浏览量统计"),
-        tr("邮箱询盘通知"),
-      ],
-      cta: tr("免费开通"),
-      ctaHref: "/expo/brand-claim?tier=free",
-      popular: false,
-      gradient: "from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900",
-      border: "border-gray-200 dark:border-gray-700",
-    },
-    {
-      name: isZh ? "Pro" : "Pro",
-      price: tr("¥380/年"),
-      period: tr("日均¥1.04"),
-      features: [
-        tr("品牌库优先收录"),
-        tr("20台展品"),
-        tr("中文+英文双语"),
-        tr("3条产品视频"),
-        tr("月度浏览/询盘报告"),
-        tr("邮件+短信询盘通知"),
-      ],
-      cta: tr("开通Pro"),
-      ctaHref: "/expo/brand-claim?tier=pro",
-      popular: true,
-      gradient: "from-blue-500 to-cyan-500",
-      border: "border-blue-500",
-    },
-    {
-      name: tr("旗舰版"),
-      price: tr("¥980/年"),
-      period: tr("日均¥2.68"),
-      features: [
-        tr("品牌库置顶展示"),
-        tr("50台展品"),
-        tr("中/英/俄三语"),
-        tr("10条产品视频"),
-        tr("周度报告+竞品对比"),
-        tr("优先SEO排名"),
-        tr("月轮播推荐位"),
-      ],
-      cta: tr("开通旗舰"),
-      ctaHref: "/expo/brand-claim?tier=flagship",
-      popular: false,
-      gradient: "from-purple-500 to-pink-500",
-      border: "border-purple-500",
-    },
-    {
-      name: tr("战略版"),
-      price: tr("¥2,880/年"),
-      period: tr("日均¥7.89"),
-      features: [
-        tr("品牌库首页推荐"),
-        tr("无限展品"),
-        tr("全8语种覆盖"),
-        tr("无限视频+VR展示"),
-        tr("实时数据+行业对比"),
-        tr("SEO置顶+品牌词保护"),
-        tr("季度专题置顶位"),
-        tr("1对1客户经理"),
-      ],
-      cta: tr("联系开通"),
-      ctaHref: "/expo/brand-claim?tier=strategic",
-      popular: false,
-      gradient: "from-amber-500 to-orange-600",
-      border: "border-amber-500",
-    },
-  ];
-
-  const brandAssets = [
-    { num: "309", label: tr("品牌已收录") },
-    { num: "618", label: tr("配件入库") },
-    { num: "14", label: tr("品类手册") },
-    { num: "8", label: tr("语种覆盖") },
-    { num: "180+", label: tr("月均询盘") },
-    { num: "28届", label: tr("地头展背书") },
-  ];
-
-  return (
-    <div className="min-h-screen bg-white dark:bg-gray-950">
+    const t = useTranslations();
+    const isZh = locale === "zh";
+    const tr = useTr();
+    const tiers = [
+        {
+            name: tr("免费版"),
+            price: tr("¥0/年"),
+            period: tr("永久免费"),
+            features: [
+                tr("品牌收录于品牌库"),
+                tr("5台展品上线"),
+                tr("中文展示"),
+                tr("基础浏览量统计"),
+                tr("邮箱询盘通知"),
+            ],
+            cta: tr("免费开通"),
+            ctaHref: "/expo/brand-claim?tier=free",
+            popular: false,
+            gradient: "from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900",
+            border: "border-gray-200 dark:border-gray-700",
+        },
+        {
+            name: isZh ? "Pro" : "Pro",
+            price: tr("¥380/年"),
+            period: tr("日均¥1.04"),
+            features: [
+                tr("品牌库优先收录"),
+                tr("20台展品"),
+                tr("中文+英文双语"),
+                tr("3条产品视频"),
+                tr("月度浏览/询盘报告"),
+                tr("邮件+短信询盘通知"),
+            ],
+            cta: tr("开通Pro"),
+            ctaHref: "/expo/brand-claim?tier=pro",
+            popular: true,
+            gradient: "from-blue-500 to-cyan-500",
+            border: "border-blue-500",
+        },
+        {
+            name: tr("旗舰版"),
+            price: tr("¥980/年"),
+            period: tr("日均¥2.68"),
+            features: [
+                tr("品牌库置顶展示"),
+                tr("50台展品"),
+                tr("中/英/俄三语"),
+                tr("10条产品视频"),
+                tr("周度报告+竞品对比"),
+                tr("优先SEO排名"),
+                tr("月轮播推荐位"),
+            ],
+            cta: tr("开通旗舰"),
+            ctaHref: "/expo/brand-claim?tier=flagship",
+            popular: false,
+            gradient: "from-purple-500 to-pink-500",
+            border: "border-purple-500",
+        },
+        {
+            name: tr("战略版"),
+            price: tr("¥2,880/年"),
+            period: tr("日均¥7.89"),
+            features: [
+                tr("品牌库首页推荐"),
+                tr("无限展品"),
+                tr("全8语种覆盖"),
+                tr("无限视频+VR展示"),
+                tr("实时数据+行业对比"),
+                tr("SEO置顶+品牌词保护"),
+                tr("季度专题置顶位"),
+                tr("1对1客户经理"),
+            ],
+            cta: tr("联系开通"),
+            ctaHref: "/expo/brand-claim?tier=strategic",
+            popular: false,
+            gradient: "from-amber-500 to-orange-600",
+            border: "border-amber-500",
+        },
+    ];
+    const brandAssets = [
+        { num: "309", label: tr("品牌已收录") },
+        { num: "618", label: tr("配件入库") },
+        { num: "14", label: tr("品类手册") },
+        { num: "8", label: tr("语种覆盖") },
+        { num: "180+", label: tr("月均询盘") },
+        { num: "28\u5C4A", label: tr("地头展背书") },
+    ];
+    return (<div className="min-h-screen bg-white dark:bg-gray-950">
       {/* Hero */}
       <div className="relative bg-gradient-to-br from-green-700 via-green-600 to-emerald-500 text-white">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-8 lg:px-8">
@@ -119,12 +112,10 @@ export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
 
           {/* Trust bar */}
           <div className="mt-10 grid grid-cols-3 gap-4 sm:grid-cols-6">
-            {brandAssets.map((a, i) => (
-              <div key={i} className="rounded-lg bg-white/10 p-3 text-center backdrop-blur-sm">
+            {brandAssets.map((a, i) => (<div key={i} className="rounded-lg bg-white/10 p-3 text-center backdrop-blur-sm">
                 <div className="text-xl font-bold">{a.num}</div>
                 <div className="text-xs text-green-200">{a.label}</div>
-              </div>
-            ))}
+              </div>))}
           </div>
         </div>
       </div>
@@ -137,33 +128,31 @@ export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
           </h2>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              {
-                icon: <Globe className="h-8 w-8 text-green-600" />,
+            {
+                icon: <Globe className="h-8 w-8 text-green-600"/>,
                 title: tr("永久在线"),
                 desc: tr("不受线下展会时间限制，24小时×365天持续曝光，买家随时访问"),
-              },
-              {
-                icon: <Building2 className="h-8 w-8 text-blue-600" />,
+            },
+            {
+                icon: <Building2 className="h-8 w-8 text-blue-600"/>,
                 title: tr("自主发布"),
                 desc: tr("品牌信息、展品、视频、联系方式全部自助管理，实时更新"),
-              },
-              {
-                icon: <Video className="h-8 w-8 text-purple-600" />,
+            },
+            {
+                icon: <Video className="h-8 w-8 text-purple-600"/>,
                 title: tr("多语种展示"),
                 desc: tr("从中文到8语种，覆盖200+国家买家，Pro版起即含英/俄"),
-              },
-              {
-                icon: <BarChart3 className="h-8 w-8 text-amber-600" />,
+            },
+            {
+                icon: <BarChart3 className="h-8 w-8 text-amber-600"/>,
                 title: tr("数据驱动"),
                 desc: tr("浏览量、询盘量、来源分析一目了然，优化参展策略"),
-              },
-            ].map((item, i) => (
-              <div key={i} className="rounded-xl border border-gray-200 p-6 dark:border-gray-800">
+            },
+        ].map((item, i) => (<div key={i} className="rounded-xl border border-gray-200 p-6 dark:border-gray-800">
                 <div className="mb-4">{item.icon}</div>
                 <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">{item.title}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">{item.desc}</p>
-              </div>
-            ))}
+              </div>))}
           </div>
         </div>
       </section>
@@ -175,17 +164,11 @@ export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
             {tr("选择适合您的版本")}
           </h2>
           <div className="grid gap-6 lg:grid-cols-4">
-            {tiers.map((tier, i) => (
-              <div
-                key={i}
-                className={`relative flex flex-col rounded-2xl border-2 ${tier.border} ${tier.gradient} p-6 shadow-sm`}
-              >
-                {tier.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-blue-600 px-4 py-1 text-xs font-bold text-white shadow">
-                    <Sparkles className="mr-1 inline-block h-3 w-3" />
+            {tiers.map((tier, i) => (<div key={i} className={`relative flex flex-col rounded-2xl border-2 ${tier.border} ${tier.gradient} p-6 shadow-sm`}>
+                {tier.popular && (<div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-blue-600 px-4 py-1 text-xs font-bold text-white shadow">
+                    <Sparkles className="mr-1 inline-block h-3 w-3"/>
                     {tr("推荐")}
-                  </div>
-                )}
+                  </div>)}
                 <div className="mb-6">
                   <h3 className="text-xl font-bold text-gray-900 dark:text-white">{tier.name}</h3>
                   <div className="mt-2">
@@ -194,26 +177,18 @@ export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
                   </div>
                 </div>
                 <ul className="mb-8 flex-1 space-y-3">
-                  {tier.features.map((f, fi) => (
-                    <li key={fi} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-500" />
+                  {tier.features.map((f, fi) => (<li key={fi} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-500"/>
                       {f}
-                    </li>
-                  ))}
+                    </li>))}
                 </ul>
-                <Link
-                  href={`/${locale}${tier.ctaHref}`}
-                  className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-center font-semibold shadow transition ${
-                    tier.popular
-                      ? "bg-blue-600 text-white hover:bg-blue-700"
-                      : "border border-gray-300 bg-white text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
-                  }`}
-                >
+                <Link href={`/${locale}${tier.ctaHref}`} className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-center font-semibold shadow transition ${tier.popular
+                ? "bg-blue-600 text-white hover:bg-blue-700"
+                : "border border-gray-300 bg-white text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"}`}>
                   {tier.cta}
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="h-4 w-4"/>
                 </Link>
-              </div>
-            ))}
+              </div>))}
           </div>
         </div>
       </section>
@@ -230,32 +205,20 @@ export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
           <div className="grid gap-6 sm:grid-cols-2">
             {/* WeChat */}
             <div className="rounded-2xl border border-gray-200 bg-white p-6 text-center shadow-sm dark:border-gray-800 dark:bg-gray-900">
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800 dark:bg-green-900 dark:text-green-200">
-                💚 微信支付
-              </div>
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800 dark:bg-green-900 dark:text-green-200">{tr("💚 微信支付")}</div>
               <div className="flex justify-center">
-                <img
-                  src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/payment/wechat-qr.png"
-                  alt="微信支付二维码"
-                  className="h-56 w-56 rounded-lg border border-gray-200 object-contain p-2 dark:border-gray-700"
-                />
+                <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/payment/wechat-qr.png" alt={tr("微信支付二维码")} className="h-56 w-56 rounded-lg border border-gray-200 object-contain p-2 dark:border-gray-700"/>
               </div>
-              <p className="mt-3 text-xs text-gray-500">扫一扫即可付款</p>
+              <p className="mt-3 text-xs text-gray-500">{tr("扫一扫即可付款")}</p>
             </div>
 
             {/* Alipay */}
             <div className="rounded-2xl border border-gray-200 bg-white p-6 text-center shadow-sm dark:border-gray-800 dark:bg-gray-900">
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                💙 支付宝支付
-              </div>
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200">{tr("💙 支付宝支付")}</div>
               <div className="flex justify-center">
-                <img
-                  src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/payment/alipay-qr.jpg"
-                  alt="支付宝支付二维码"
-                  className="h-56 w-56 rounded-lg border border-gray-200 object-contain p-2 dark:border-gray-700"
-                />
+                <img src="https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/payment/alipay-qr.jpg" alt={tr("支付宝支付二维码")} className="h-56 w-56 rounded-lg border border-gray-200 object-contain p-2 dark:border-gray-700"/>
               </div>
-              <p className="mt-3 text-xs text-gray-500">扫一扫即可付款</p>
+              <p className="mt-3 text-xs text-gray-500">{tr("扫一扫即可付款")}</p>
             </div>
           </div>
           <p className="mt-6 text-center text-xs text-gray-400">
@@ -272,20 +235,18 @@ export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
           </h2>
           <div className="grid gap-6 sm:grid-cols-5">
             {[
-              { step: "1", title: tr("注册账号"), desc: tr("填写企业信息，选择版本") },
-              { step: "2", title: tr("品牌档案"), desc: tr("上传Logo、简介、定位、品类") },
-              { step: "3", title: tr("发布展品"), desc: tr("上传机型照片、视频、参数") },
-              { step: "4", title: tr("提交审核"), desc: tr("AI自动审+人工抽检") },
-              { step: "5", title: tr("开通上线"), desc: tr("获得专属品牌页和二维码") },
-            ].map((s, i) => (
-              <div key={i} className="rounded-xl bg-white p-6 text-center shadow-sm dark:bg-gray-800">
+            { step: "1", title: tr("注册账号"), desc: tr("填写企业信息，选择版本") },
+            { step: "2", title: tr("品牌档案"), desc: tr("上传Logo、简介、定位、品类") },
+            { step: "3", title: tr("发布展品"), desc: tr("上传机型照片、视频、参数") },
+            { step: "4", title: tr("提交审核"), desc: tr("AI自动审+人工抽检") },
+            { step: "5", title: tr("开通上线"), desc: tr("获得专属品牌页和二维码") },
+        ].map((s, i) => (<div key={i} className="rounded-xl bg-white p-6 text-center shadow-sm dark:bg-gray-800">
                 <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-lg font-bold text-green-700 dark:bg-green-900 dark:text-green-300">
                   {s.step}
                 </div>
                 <h3 className="mb-1 font-semibold text-gray-900 dark:text-white">{s.title}</h3>
                 <p className="text-sm text-gray-500">{s.desc}</p>
-              </div>
-            ))}
+              </div>))}
           </div>
         </div>
       </section>
@@ -293,7 +254,7 @@ export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
       {/* CTA */}
       <section className="py-12">
         <div className="mx-auto max-w-2xl px-4 text-center sm:px-6 lg:px-8">
-          <Shield className="mx-auto mb-4 h-10 w-10 text-green-600" />
+          <Shield className="mx-auto mb-4 h-10 w-10 text-green-600"/>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
             {tr("已有309个品牌入驻，下一个就是您")}
           </h2>
@@ -301,21 +262,14 @@ export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
             {tr("品牌入库即获全球曝光。从免费版开始，无风险试水。")}
           </p>
           <div className="mt-6 flex justify-center gap-4">
-            <Link
-              href={`/${locale}/expo/brand-claim`}
-              className="rounded-lg bg-green-600 px-8 py-3 font-semibold text-white shadow-lg transition hover:bg-green-700"
-            >
+            <Link href={`/${locale}/expo/brand-claim`} className="rounded-lg bg-green-600 px-8 py-3 font-semibold text-white shadow-lg transition hover:bg-green-700">
               {tr("免费开通→")}
             </Link>
-            <Link
-              href={`/${locale}/expo`}
-              className="rounded-lg border border-gray-300 px-8 py-3 font-semibold text-gray-800 transition hover:bg-gray-50 dark:border-gray-600 dark:text-white dark:hover:bg-gray-800"
-            >
+            <Link href={`/${locale}/expo`} className="rounded-lg border border-gray-300 px-8 py-3 font-semibold text-gray-800 transition hover:bg-gray-50 dark:border-gray-600 dark:text-white dark:hover:bg-gray-800">
               {tr("浏览展会")}
             </Link>
           </div>
         </div>
       </section>
-    </div>
-  );
+    </div>);
 }

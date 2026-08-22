@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Wrench } from "lucide-react";
 import { translate } from "@/lib/i18n-runtime";
+import { getLocale } from "next-intl/server";
 
 interface PartSpecsTableProps {
   specs: Record<string, string> | null;
@@ -165,7 +166,8 @@ export default function PartSpecsTable({ specs, locale }: PartSpecsTableProps) {
       <CardContent className="p-0">
         <table className="w-full text-sm">
           <tbody>
-            {entries.map(([key, value], index) => {
+            {entries.map(async ([key, value], index) => {
+  const locale = await getLocale();
               const label = translate(SPEC_LABELS[key]?.zh ?? key, locale);
               return (
                 <tr
