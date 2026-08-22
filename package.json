@@ -44,6 +44,7 @@
     "react-dom": "^18.3.0",
     "recharts": "^2.10.3",
     "resend": "^4.8.0",
+    "@sentry/nextjs": "^10.70.0",
     "stripe": "^22.3.2",
     "tailwind-merge": "^2.3.0",
     "wechatpay-node-v3": "^2.2.1",
