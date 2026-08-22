@@ -1,19 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import createMiddleware from "next-intl/middleware";
-import * as Sentry from '@sentry/nextjs';
 // 注意：不能用 @/lib/auth.ts（jsonwebtoken 是 Node.js-only，middleware 是 Edge Runtime）
 import { verifyTokenEdge } from "@/lib/auth-edge";
 
-// Sentry Edge 错误捕获
-Sentry.init({
-  dsn: process.env.SENTRY_DSN,
-  environment: `${process.env.NODE_ENV === 'production' ? 'production' : 'development'}-${process.env.SITE ?? 'com'}`,
-  release: process.env.npm_package_version ?? '0.1.0',
-  tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-  debug: process.env.NODE_ENV !== 'production',
-});
-
-export const onRequestError = Sentry.captureRequestError;
+// Sentry Edge 错误捕获已迁移到 lib/sentry（通过 instrumentation.ts 在 Node.js 运行时初始化）。
+// 原因：@sentry/nextjs 完整包无法在 Edge Runtime 打包（Vercel 构建报 Module not found）。
 
 // ============================================================
 // SITE 判断（Edge Runtime 无法直接读 process.env 文件系统，
