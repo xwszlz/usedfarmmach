@@ -75,3 +75,29 @@ jobs:
           VERCEL_ORG_ID: ${{ env.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ env.VERCEL_PROJECT_ID }}
           SITE: com
+
+      # Step 3: 安装依赖（含 @prisma/client 与 prisma CLI），
+      # 供后续 prisma 命令与导入脚本使用。之前 .com 流程只装 vercel CLI、未跑 npm ci。
+      - name: Install dependencies
+        run: npm ci
+
+      # Step 4: 生成 Prisma Client（按仓库 schema.prisma，
+      # binaryTargets 含 "native"，覆盖 ubuntu-latest runner，无需改 schema）
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      # Step 5: 在 Neon 上建/同步 MarketIntel 表（幂等）。
+      # 首次运行会在 Neon 新建全部表结构；--skip-generate 避免重复生成 client；
+      # --accept-data-loss 与 .cn 侧风格一致（空库/小表推送安全）。
+      - name: Push schema to Neon
+        run: npx prisma db push --skip-generate --accept-data-loss
+        env:
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+
+      # Step 6: 将市场情报 JSON 导入 Neon（幂等：按日期 deleteMany + create，
+      # 重复部署不重复累积）。复用 .cn 导入脚本，仅设置 DATABASE_URL=Neon
+      # （脚本逻辑 DATABASE_URL || DATABASE_URL_CN，本步骤不设置 DATABASE_URL_CN）。
+      - name: Import market intelligence into Neon
+        run: node scripts/import-intelligence-to-cn.js
+        env:
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
