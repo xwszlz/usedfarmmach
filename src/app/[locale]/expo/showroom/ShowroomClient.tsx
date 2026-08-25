@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import ExhibitionMap from "@/components/expo/ExhibitionMap";
+import GlobalBrandGlobe from "@/components/expo/GlobalBrandGlobe";
 
 interface BrandRel {
   id: string;
@@ -92,7 +93,7 @@ export default function ShowroomClient({
   const [selectedBrand, setSelectedBrand] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
-  const [viewMode, setViewMode] = useState<"list" | "map">("list");
+  const [viewMode, setViewMode] = useState<"list" | "map" | "globe">("list");
 
   const t = (zh: string, en: string, ru?: string) => {
     if (locale === "zh") return zh;
@@ -388,6 +389,14 @@ export default function ShowroomClient({
               >
                 {t("地图", "Map", "Карта")}
               </button>
+              <button
+                onClick={() => setViewMode("globe")}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                  viewMode === "globe" ? "bg-blue-600 text-white" : "text-gray-500 hover:bg-gray-100"
+                }`}
+              >
+                🌐 {t("全球品牌分布", "Global Brands", "Мировые бренды")}
+              </button>
             </div>
           </div>
 
@@ -462,6 +471,21 @@ export default function ShowroomClient({
       {viewMode === "map" && (
         <div className="mx-auto max-w-7xl px-4 pb-8 sm:px-6 lg:px-8 pt-4">
           <ExhibitionMap booths={mapBooths as any} locale={locale} />
+        </div>
+      )}
+
+      {/* Globe View - 国际品牌农机全球分布 */}
+      {viewMode === "globe" && (
+        <div className="mx-auto max-w-7xl px-4 pb-8 sm:px-6 lg:px-8 pt-4">
+          <div className="mb-3 flex items-baseline justify-between">
+            <h2 className="text-lg font-bold text-gray-900">
+              {t("国际品牌农机全球分布", "Global Agri-Machinery Brands", "Мировые бренды")}
+            </h2>
+            <p className="text-sm text-gray-500">
+              {t("27 个国际品牌总部与核心基地", "27 international brand HQs & key bases", "27 штаб-квартир")}
+            </p>
+          </div>
+          <GlobalBrandGlobe locale={locale} />
         </div>
       )}
 
