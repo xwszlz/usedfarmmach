@@ -1,27 +1,27 @@
 {
-  "date": "2026-08-19",
-  "eurCny": 7.82,
+  "date": "2026-08-26",
+  "eurCny": 7.84,
   "eurRub": 87.2,
-  "usdCny": 7.25,
+  "usdCny": 7.13,
   "productCount": 18,
   "totalCount": 97,
   "topArbitrage": [
     {
       "model": "Krone 1290XC(2014)",
-      "rate": "872%",
-      "intlPrice": "134.1万",
+      "rate": "870%",
+      "intlPrice": "133.9万",
       "domPrice": "13.8万"
     },
     {
       "model": "Kuhn 890大方捆(2014)",
-      "rate": "338%",
-      "intlPrice": "35.0万",
+      "rate": "345%",
+      "intlPrice": "35.6万",
       "domPrice": "8万"
     },
     {
       "model": "CLAAS 5300RC(2020)",
       "rate": "336%",
-      "intlPrice": "78.4万",
+      "intlPrice": "78.3万",
       "domPrice": "18万"
     },
     {
@@ -32,9 +32,9 @@
     },
     {
       "model": "NH FR9040(2012)",
-      "rate": "178%",
+      "rate": "53%",
       "intlPrice": "55.0万",
-      "domPrice": "19.8万"
+      "domPrice": "36万"
     }
   ],
   "markets": [
@@ -46,8 +46,8 @@
     "非洲"
   ],
   "keyEvents": [
-    "EUR/CNY 7.82回落至8月新低-进货窗口",
+    "EUR/CNY 7.84企稳7.84-双侧窗口开放",
     "ICP备案已通过! 冀ICP备2024053719号-4",
-    "MachineryPete供应增至532条(+21)"
+    "MachineryPete供应增至548条(+14)"
   ]
 }
