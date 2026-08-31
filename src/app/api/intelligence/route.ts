@@ -18,16 +18,16 @@ export async function GET(request: NextRequest) {
     if (dateStr) {
       dateFilter = new Date(dateStr);
     } else {
-      // 默认取最近一天
-      const latest = await prisma.marketIntel.findFirst({
+      // 默认取最近一天（用 aggregate 取 MAX(date)，避免 findFirst+orderBy 在 Neon 上的异常）
+      const agg = await prisma.marketIntel.aggregate({
         where: { isActive: true },
-        orderBy: { date: "desc" },
-        select: { date: true },
+        _max: { date: true },
       });
-      if (!latest) {
+      const latestDate = agg._max.date;
+      if (!latestDate) {
         return NextResponse.json({ success: true, data: [] });
       }
-      dateFilter = latest.date;
+      dateFilter = latestDate;
     }
 
     // 获取该日所有情报（按 sortOrder 排序）
@@ -73,9 +73,10 @@ export async function GET(request: NextRequest) {
       headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" },
     });
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     console.error("获取市场情报失败:", error);
     return NextResponse.json(
-      { success: false, error: "获取市场情报失败" },
+      { success: false, error: "获取市场情报失败", detail: message },
       { status: 500 }
     );
   }
