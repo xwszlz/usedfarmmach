@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    setTokenCookie(response, token);
+    setTokenCookie(response, token, request);
 
     return response;
   } catch (error: any) {
