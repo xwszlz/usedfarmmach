@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
     });
 
     // 写入 HTTP-only cookie（供中间件 SSR 读取）
-    setTokenCookie(response, token);
+    setTokenCookie(response, token, request);
 
     return response;
   } catch (error) {
