@@ -1,7 +1,9 @@
 import bcrypt from "bcryptjs";
 import jwt, { SignOptions } from "jsonwebtoken";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import { prisma } from "./db";
+import { isSecureContext } from "./cookie-secure";
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "7d") as SignOptions["expiresIn"];
@@ -153,12 +155,13 @@ export async function getUserFromRequest(req: {
 /**
  * 写 token 到响应 cookie（SSR 用）
  */
-export function setTokenCookie(response: NextResponse, token: string) {
+export function setTokenCookie(response: NextResponse, token: string, request?: NextRequest) {
+  const secure = request ? isSecureContext(request) : process.env.NODE_ENV === "production";
   response.cookies.set({
     name: "token",
     value: token,
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure,
     sameSite: "lax",
     maxAge: 60 * 60 * 24 * 7, // 7 天
     path: "/",

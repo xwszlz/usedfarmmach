@@ -41,7 +41,7 @@ const PROTECTED_PATHS = [
 ];
 
 const ADMIN_PATHS = ["/api/admin", "/admin"];
-const ADMIN_ROLES = ["admin", "super_admin"];
+const ADMIN_ROLES = ["admin", "super_admin", "editor"];
 
 const SUPER_ADMIN_PATHS = [
   "/admin/system",
