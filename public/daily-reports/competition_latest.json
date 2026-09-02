@@ -1,53 +1,98 @@
 {
-  "date": "2026-08-26",
+  "date": "2026-09-02",
   "eurCny": 7.84,
-  "eurRub": 87.2,
+  "eurRub": 87.34,
   "usdCny": 7.13,
-  "productCount": 18,
-  "totalCount": 97,
+  "agrolineCount": 150,
+  "machineryPeteCount": 536,
+  "productCount": 6,
+  "totalCount": 98,
   "topArbitrage": [
     {
-      "model": "Krone 1290XC(2014)",
-      "rate": "870%",
-      "intlPrice": "133.9万",
-      "domPrice": "13.8万"
+      "model": "克拉斯 980(2016)",
+      "rate": "155.2%",
+      "intlPrice": "365.0万",
+      "domPrice": "143.0万",
+      "spread": "222.0万",
+      "source": "Agroline"
     },
     {
-      "model": "Kuhn 890大方捆(2014)",
-      "rate": "345%",
-      "intlPrice": "35.6万",
-      "domPrice": "8万"
+      "model": "克拉斯 850(2018)",
+      "rate": "147.2%",
+      "intlPrice": "197.8万",
+      "domPrice": "80.0万",
+      "spread": "117.8万",
+      "source": "Agroline"
     },
     {
-      "model": "CLAAS 5300RC(2020)",
-      "rate": "336%",
-      "intlPrice": "78.3万",
-      "domPrice": "18万"
+      "model": "纽荷兰 FR450(2013)",
+      "rate": "97.7%",
+      "intlPrice": "21.8万",
+      "domPrice": "11.0万",
+      "spread": "10.8万",
+      "source": "TractorHouse"
     },
     {
-      "model": "NH FR450(2013)",
-      "rate": "300%",
-      "intlPrice": "44.0万",
-      "domPrice": "11万"
+      "model": "克拉斯 970(2017)",
+      "rate": "55.3%",
+      "intlPrice": "253.1万",
+      "domPrice": "163.0万",
+      "spread": "90.1万",
+      "source": "Agroline"
     },
     {
-      "model": "NH FR9040(2012)",
-      "rate": "53%",
-      "intlPrice": "55.0万",
-      "domPrice": "36万"
+      "model": "克拉斯 970(2021)",
+      "rate": "55.3%",
+      "intlPrice": "253.1万",
+      "domPrice": "163.0万",
+      "spread": "90.1万",
+      "source": "Agroline"
+    },
+    {
+      "model": "克拉斯 980(2015)",
+      "rate": "33.9%",
+      "intlPrice": "174.0万",
+      "domPrice": "130.0万",
+      "spread": "44.0万",
+      "source": "Agroline"
+    }
+  ],
+  "negative": [
+    {
+      "model": "纽荷兰 9080(2009)",
+      "rate": "-0.2%",
+      "advice": "转国内渠道，停止出口报价"
+    },
+    {
+      "model": "约翰迪尔 8400(2016)",
+      "rate": "-4%",
+      "advice": "转国内渠道，停止出口报价"
+    },
+    {
+      "model": "克拉斯 5300RC(2022)",
+      "rate": "-8.7%",
+      "advice": "转国内渠道，停止出口报价"
+    },
+    {
+      "model": "纽荷兰 FR500(2014)",
+      "rate": "-14.1%",
+      "advice": "转国内渠道，停止出口报价"
     }
   ],
   "markets": [
     "俄罗斯",
-    "乌克兰",
     "哈萨克斯坦",
     "乌兹别克斯坦",
+    "东南亚",
+    "中东/非洲",
     "巴西",
-    "非洲"
+    "白俄罗斯"
   ],
   "keyEvents": [
-    "EUR/CNY 7.84企稳7.84-双侧窗口开放",
-    "ICP备案已通过! 冀ICP备2024053719号-4",
-    "MachineryPete供应增至548条(+14)"
+    "EUR/CNY 7.84 维持7.84关口，欧元企稳",
+    "Agroline CLAAS 降至 150 条（-5.1%），欧洲供给收缩",
+    "MachineryPete 降至 536 条（-2.2%），北美同步去库",
+    "本期 6 台套利率>30%，理论总毛利 574.8 万元",
+    "⚠️ ICP备案 冀ICP备2024053719号-4 有效期今日到期，需确认续期"
   ]
 }
