@@ -48,7 +48,14 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies
-        run: npm ci
+        # 2026-09-02：由 npm ci 改为 npm install。
+        # 原因：仓库 package-lock.json 是在 Windows 上生成的，@emnapi/core / @emnapi/runtime
+        # 仅以 wasm32-wasi 的嵌套依赖存在（1.10.0），根级无提升条目；CI 为 ubuntu-latest，
+        # npm ci 重新解析后要求根级 @emnapi/core@1.11.3，而该版本不在 lock 内，
+        # 直接报 EUSAGE "Missing: @emnapi/core@1.11.3 from lock file"（run #107 / #108 连续失败）。
+        # npm install 允许就地补齐平台差异依赖，先恢复 .cn 部署通道；
+        # 待 lock 在 Linux 环境下重新生成后再改回 npm ci。
+        run: npm install --no-audit --no-fund
 
       - name: Generate Prisma Client
         run: npx prisma generate
