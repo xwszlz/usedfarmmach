@@ -1,10 +1,10 @@
 {
   "date": "2026-09-02",
-  "eurCny": 7.84,
-  "eurRub": 87.34,
-  "usdCny": 7.13,
-  "agrolineCount": 150,
-  "machineryPeteCount": 536,
+  "eurCny": 7.91,
+  "eurRub": "今日无数据",
+  "usdCny": 7.25,
+  "agrolineCount": 238,
+  "machineryPeteCount": 13,
   "productCount": 6,
   "totalCount": 98,
   "topArbitrage": [
@@ -89,9 +89,10 @@
     "白俄罗斯"
   ],
   "keyEvents": [
-    "EUR/CNY 7.84 维持7.84关口，欧元企稳",
-    "Agroline CLAAS 降至 150 条（-5.1%），欧洲供给收缩",
-    "MachineryPete 降至 536 条（-2.2%），北美同步去库",
+    "EUR/CNY 7.91（真实抓取 20260830），USD/CNY 7.25",
+    "Agroline CLAAS 在售 238 条（真实聚合，供给充足，此前“去库存”结论作废）",
+    "MachineryPete 13 条（数据日 2026-08-12，样本偏旧，不做趋势判断）",
+    "🔴 重大更正：原国际行情为硬编码模拟值，虚高 3.9~8.5 倍，已全量改为数据库真实记录",
     "本期 6 台套利率>30%，理论总毛利 574.8 万元",
     "⚠️ ICP备案 冀ICP备2024053719号-4 有效期今日到期，需确认续期"
   ]
