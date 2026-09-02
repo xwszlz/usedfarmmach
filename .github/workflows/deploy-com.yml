@@ -79,7 +79,12 @@ jobs:
       # Step 3: 安装依赖（含 @prisma/client 与 prisma CLI），
       # 供后续 prisma 命令与导入脚本使用。之前 .com 流程只装 vercel CLI、未跑 npm ci。
       - name: Install dependencies
-        run: npm ci
+        # 2026-09-02：由 npm ci 改为 npm install。
+        # 原因同 deploy-cn.yml：仓库 package-lock.json 在 Windows 上生成，
+        # @emnapi/core / @emnapi/runtime 只作为 @unrs/resolver-binding-wasm32-wasi 的
+        # 嵌套依赖存在，Linux runner 上 npm ci 要求根级 @emnapi/core@1.11.3 而 lock 内没有，
+        # 直接 EUSAGE 中止（本工作流 run #105 在此步失败）。
+        run: npm install --no-audit --no-fund
 
       # Step 4: 生成 Prisma Client（按仓库 schema.prisma，
       # binaryTargets 含 "native"，覆盖 ubuntu-latest runner，无需改 schema）
