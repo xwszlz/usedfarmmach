@@ -149,8 +149,8 @@ const intels = [
     text: '工信部ICP备案已通过(冀ICP备2024053719号-4)，公安备案审核中，.cn站合法运营',
     textEn: 'MIIT ICP filing approved (Ji-ICP 2024053719-4), PSB filing under review, .cn site legal',
     textRu: 'ICP MIIT одобрено (Ji-ICP 2024053719-4), PSB на рассмотрении, .cn сайт легален',
-    detailedContent: `## ICP备案已通过 .cn站合规运营\n\n**关键合规里程碑**：\n- ✅ 工信部ICP备案：**冀ICP备2024053719号-4**\n- ⏳ 公安联网数据码审核中：1915d880b1d0a11c78e85af485dcd575f\n- 有效期：至 2026-09-02\n\n### 合规要点\n- ✅ 在线询价(非拍卖模式)：盲报/卖方决定/无加价/1人即可/诚意金\n- ✅ 全站"议价"→"询价"统一\n- ✅ 数据不出境(.cn)：中国用户个人数据不离开境内\n- ✅ 外国公开行情数据：可入 Neon(新加坡)，可复制进 cn-postgres\n\n**结论**：.cn站合法合规运营中，无合规风险。`,
-    detailedContentEn: `## ICP Filing Approved - .cn Site Compliant\n\n**Milestones**:\n- ✅ MIIT ICP: Ji-ICP 2024053719-4\n- ⏳ PSB network code under review\n- Valid until: 2026-09-02\n\n**Conclusion**: .cn site legally compliant.`,
+    detailedContent: `## ICP备案已通过 .cn站合规运营\n\n**关键合规里程碑**：\n- ✅ 工信部ICP备案：**冀ICP备2024053719号-4**\n- ⏳ 公安联网数据码审核中：1915d880b1d0a11c78e85af485dcd575f\n\n### 合规要点\n- ✅ 在线询价(非拍卖模式)：盲报/卖方决定/无加价/1人即可/诚意金\n- ✅ 全站"议价"→"询价"统一\n- ✅ 数据不出境(.cn)：中国用户个人数据不离开境内\n- ✅ 外国公开行情数据：可入 Neon(新加坡)，可复制进 cn-postgres\n\n**结论**：.cn站合法合规运营中，无合规风险。`,
+    detailedContentEn: `## ICP Filing Approved - .cn Site Compliant\n\n**Milestones**:\n- ✅ MIIT ICP: Ji-ICP 2024053719-4\n- ⏳ PSB network code under review\n\n**Conclusion**: .cn site legally compliant.`,
     detailedContentRu: `## ICP одобрено - .cn сайт соответствует\n\n**Заключение**: Сайт .cn работает легально и в соответствии с требованиями.`,
     actionTips: JSON.stringify([
       '持续跟进公安备案进度',
