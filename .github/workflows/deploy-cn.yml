@@ -89,8 +89,16 @@ jobs:
         run: |
           # docker build 的 builder 阶段容器内 localhost 指容器自身，
           # 故用 host.docker.internal + host-gateway 到达 runner 上发布的 service 端口。
+          # 2026-09-03：移除 --no-cache，允许 Docker 复用层缓存。
+          # 注意：GitHub Actions 的 ubuntu-latest runner 每次都是全新 VM，本地 Docker
+          # 层缓存默认不跨 run 保留 —— 故在未接入 cache-from/cache-to 之前，此项
+          # 收益接近于 0。移除它是为后续接入 GHA/registry 层缓存铺路，且语义上
+          # 本就不该强制禁用缓存（Dockerfile.cn 已做 base/deps/builder/runner 分层）。
+          # ⚠️ 若要真正让缓存生效，需改用 docker/build-push-action + cache-from/cache-to
+          #    type=gha（或 type=registry），并单独验证 buildx 下 host.docker.internal
+          #    能否解析到 runner 上发布的临时 postgres —— 否则 next build 的 ISR
+          #    预渲染会连不上库而失败。此项留作后续独立变更。
           docker build \
-            --no-cache \
             --add-host=host.docker.internal:host-gateway \
             --build-arg SITE=cn \
             --build-arg DATABASE_URL=${{ env.CI_DATABASE_URL }} \
@@ -119,7 +127,10 @@ jobs:
           # 镜像 tag 与 OSS 对象名均以完整 commit SHA 命名（cn-app-<sha>.tar.gz）
           docker tag usedfarmmach-cn:latest "usedfarmmach-cn:${{ github.sha }}"
           mkdir -p /tmp/cn-images
-          docker save "usedfarmmach-cn:${{ github.sha }}" | gzip -9 > "/tmp/cn-images/cn-app-${{ github.sha }}.tar.gz"
+          # 2026-09-03：gzip -9 → gzip -1。镜像 tarball 仅经 OSS 在公网传输，
+          # 压缩级别对最终下载体积影响极小（Docker 层本身已去重/压缩），但 -9 比 -1
+          # 多耗 1~2 分钟 CPU。改为 -1 在不增加传输量的前提下显著缩短打包耗时。
+          docker save "usedfarmmach-cn:${{ github.sha }}" | gzip -1 > "/tmp/cn-images/cn-app-${{ github.sha }}.tar.gz"
           ls -lh /tmp/cn-images/
 
       - name: Upload image tarball to Aliyun OSS
