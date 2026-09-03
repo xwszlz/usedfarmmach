@@ -160,17 +160,37 @@ echo "==> 拉起 app + scout 容器（首次拉起，表结构尚未初始化）
 echo "    scout 为 #1 卖方采集定时 sidecar（每日 07:10 北京时间跑爬虫->入库 cn-postgres）"
 docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d app scout
 
-echo "==> 初始化数据库表结构（prisma db push，幂等）"
+echo "==> 初始化数据库表结构（prisma db push，幂等；schema 未变则跳过）"
 DB_URL_CN="$(grep -E '^DATABASE_URL_CN=' "$ENV_FILE" | head -1 | cut -d= -f2-)"
 if [ -z "$DB_URL_CN" ]; then
   echo "ERROR: .env.cn 缺少 DATABASE_URL_CN，无法初始化数据库" >&2
   exit 1
 fi
-# 复用已加载的 app 镜像（自带 prisma musl+openssl3 引擎与 prisma CLI，且就在
-# cn_cn-net 上能解析 cn-postgres:5432），docker exec 离线执行 db push，无需外网、
-# 不触发 apt 超时。schema 用容器内已 COPY 的 /app/prisma/schema.prisma。
-docker exec -e DATABASE_URL="$DB_URL_CN" cn-app \
-  prisma db push --skip-generate --accept-data-loss --schema=/app/prisma/schema.prisma
+
+# schema 哈希跳过闸门（2026-09-03 新增）：每次部署无条件跑 db push 会全表比对
+# （实测 30~120s），但绝大多数部署间 schema.prisma 不变。计算容器内
+# /app/prisma/schema.prisma 的 sha256，与主机持久化标记 $SCHEMA_HASH_FILE 比对：
+#   - 相同 → 跳过 db push（省 30~120s）
+#   - 不同 / 标记缺失（首次部署或 schema 变更）→ 执行 db push 并刷新标记
+# 标记存于 /opt/cn 主机卷（跨部署保留），不存容器内（容器每次重建都会被清）。
+# 已知边界：若运维在两次部署间手动重置/清空了 cn-postgres 且 schema 未变，会误跳过
+#   —— 此时手动删除 /opt/cn/.schema_hash 再触发一次部署即可恢复全量建表。
+SCHEMA_HASH_FILE="$DEPLOY_DIR/.schema_hash"
+NEW_HASH="$(docker exec cn-app node -e "const c=require('crypto'),fs=require('fs');const h=c.createHash('sha256');h.update(fs.readFileSync('/app/prisma/schema.prisma'));process.stdout.write(h.digest('hex'))")"
+OLD_HASH="$([ -f "$SCHEMA_HASH_FILE" ] && cat "$SCHEMA_HASH_FILE" || echo "")"
+
+if [ "$NEW_HASH" = "$OLD_HASH" ]; then
+  echo "==> schema 未变化（sha256=$NEW_HASH），跳过 prisma db push"
+else
+  echo "==> schema 变化（old=${OLD_HASH:-none} new=$NEW_HASH），执行 prisma db push"
+  # 复用已加载的 app 镜像（自带 prisma musl+openssl3 引擎与 prisma CLI，且就在
+  # cn_cn-net 上能解析 cn-postgres:5432），docker exec 离线执行 db push，无需外网、
+  # 不触发 apt 超时。schema 用容器内已 COPY 的 /app/prisma/schema.prisma。
+  docker exec -e DATABASE_URL="$DB_URL_CN" cn-app \
+    prisma db push --skip-generate --accept-data-loss --schema=/app/prisma/schema.prisma
+  printf '%s' "$NEW_HASH" > "$SCHEMA_HASH_FILE"
+  echo "==> 已更新 schema 哈希标记：$NEW_HASH"
+fi
 
 echo "==> 表结构就绪，重启 app 应用新表"
 docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" restart app
