@@ -173,10 +173,16 @@ export function MembershipCard({ locale }: MembershipCardProps) {
         </div>
       )}
 
-      {/* 真实支付接入前，升级按钮置灰 ?"即将上线"（P0 I-6 ? */}
-      <Button className="w-full" disabled title={t("upgradeComingSoon")}>
-        {tier === "enterprise" ? t("alreadyHighest") : t("upgradeComingSoon")}
-      </Button>
+      {/* 升级入口：跳转 /membership 定价页（收银台），消除"即将上线"死链 */}
+      {tier === "enterprise" ? (
+        <Button className="w-full border border-gray-300 bg-white text-gray-900 hover:bg-gray-50">
+          {t("alreadyHighest")}
+        </Button>
+      ) : (
+        <Link href={`/${locale}/membership`} className="block">
+          <Button className="w-full">{t("upgradeNow")}</Button>
+        </Link>
+      )}
     </Card>
   );
 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createHash } from "crypto";
 import { prisma } from "@/lib/db";
 import { getTokenFromHeaders, verifyToken } from "@/lib/auth";
 import { getQuotaUser, consumeQuota, quotaExceededResponse } from "@/lib/quota";
@@ -8,6 +9,57 @@ import { analyzeVideo } from "@/lib/valuation/video-analyzer";
 import { getVideoUrl } from "@/lib/image-url";
 
 export const dynamic = "force-dynamic";
+
+// ============================================================
+// P0 留资引擎：游客限流 + 区间化模糊结果
+// 游客（无 token）每日限 3 次，返回 ±12% 区间价；留资（邮箱）后经
+// /api/valuation/unlock 解锁精确值。登录用户逻辑完全不变。
+// TODO: 限流计数目前为内存 Map（单实例有效），迁移 Redis（INCR + EXPIRE）
+//       以支持多实例部署与重启后保留。
+// ============================================================
+const GUEST_DAILY_LIMIT = 3;
+const GUEST_WINDOW_MS = 24 * 60 * 60 * 1000; // 滚动 24 小时窗口
+const guestValuationCounters = new Map<string, { count: number; resetAt: number }>();
+
+function getClientIpHash(headers: Headers): string {
+  const ip =
+    headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    headers.get("x-real-ip") ||
+    "unknown";
+  return createHash("sha256").update(`valuation-gate:${ip}`).digest("hex");
+}
+
+/** 游客每日限流检查：未超限返回 true（并计数），超限返回 false */
+function checkGuestDailyLimit(ipHash: string): boolean {
+  const now = Date.now();
+  const entry = guestValuationCounters.get(ipHash);
+  if (!entry || entry.resetAt <= now) {
+    guestValuationCounters.set(ipHash, { count: 1, resetAt: now + GUEST_WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= GUEST_DAILY_LIMIT) return false;
+  entry.count += 1;
+  return true;
+}
+
+/** 把精确估值转换为游客可见的区间化模糊结果（±12%，拆解字段置 null） */
+function toBlurredValuation(result: ValuationResult) {
+  const mid = Math.round(result.estimatedValue);
+  return {
+    priceMid: mid,
+    priceLow: Math.round(mid * 0.88),
+    priceHigh: Math.round(mid * 1.12),
+    confidence: Math.round((result.confidenceScore ?? 0.7) * 100),
+    blurred: true,
+    // 留资解锁后才可见的字段（游客侧一律置 null，防绕过）
+    details: null as null,
+    analysis: null as null,
+    basePrice: null as null,
+    brandFactor: null as null,
+    yearFactor: null as null,
+    conditionFactor: null as null,
+  };
+}
 
 /**
  * POST /api/valuation
@@ -48,14 +100,31 @@ export async function POST(request: NextRequest) {
 
     // ── P1-a 额度闸门：仅登录用户计月度 AI 估值额度（先于昂贵计算，防绕过）──
     const token = getTokenFromHeaders(request.headers);
+    let isAuthenticated = false;
     if (token) {
       const payload = verifyToken(token);
       if (payload) {
+        isAuthenticated = true;
         const qUser = await getQuotaUser(payload.userId);
         if (qUser) {
           const q = await consumeQuota(qUser, "aiValuation");
           if (!q.ok) return quotaExceededResponse(q.resetAt);
         }
+      }
+    }
+
+    // ── P0 留资引擎：游客限流（无有效 token 时按 IP 哈希限 3 次/天）──
+    if (!isAuthenticated) {
+      const ipHash = getClientIpHash(request.headers);
+      if (!checkGuestDailyLimit(ipHash)) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "DAILY_LIMIT_REACHED",
+            message: "valuationGate.limitReached",
+          },
+          { status: 429 }
+        );
       }
     }
 
@@ -217,11 +286,26 @@ export async function POST(request: NextRequest) {
       result = calculateValuation(input);
     }
 
+    // ── P0 留资引擎：游客返回区间化模糊结果（留资后经 unlock 接口解锁精确值）──
+    if (!isAuthenticated) {
+      return NextResponse.json({
+        success: true,
+        blurred: true,
+        data: toBlurredValuation(result),
+        meta: {
+          engine: shouldUseV4 ? "v4" : "v2",
+          guest: true,
+        },
+      });
+    }
+
+    // 登录用户：照旧返回完整精确结果（响应增加 blurred: false 标识）
     return NextResponse.json({
       success: true,
+      blurred: false,
       version: result.version,
       data: result,
-      
+
       // V4 额外元信息
       meta: {
         engine: shouldUseV4 ? "v4" : "v2",

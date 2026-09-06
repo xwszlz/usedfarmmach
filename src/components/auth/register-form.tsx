@@ -82,7 +82,9 @@ export function RegisterForm({ locale }: RegisterFormProps) {
       if (result.success) {
         localStorage.setItem("token", result.data.token);
         localStorage.setItem("user", JSON.stringify(result.data.user));
-        router.push(`/${locale}`);
+        // 支持 ?redirect=/membership 等回跳（仅接受站内相对路径）
+        const redirect = new URLSearchParams(window.location.search).get("redirect");
+        router.push(redirect && redirect.startsWith("/") ? redirect : `/${locale}`);
         window.location.reload();
       } else {
         setError(result.error || t("error"));

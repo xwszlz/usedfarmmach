@@ -10,6 +10,7 @@ import {
 import Link from "next/link";
 import { DeepReportSection } from "@/components/valuation/deep-report-section";
 import AnalysisReportView from "@/components/valuation/analysis-report-view";
+import ValuationResultGate, { type BlurredValuation } from "@/components/valuation/valuation-result-gate";
 import {
   DOMESTIC_HP_REGRESSION,
   DOMESTIC_BRAND_PREMIUM,
@@ -562,6 +563,11 @@ export default function ValuationPage() {
   const [loading, setLoading] = useState(false);
   const [hasImage, setHasImage] = useState(false);
 
+  // ── P0 留资引擎：游客模糊区间结果 / 429 限流 / 解锁成功状态 ──
+  const [gateData, setGateData] = useState<BlurredValuation | null>(null);
+  const [limitReached, setLimitReached] = useState(false);
+  const [unlocked, setUnlocked] = useState(false);
+
   // 实时预览基准价
   const previewBasePrice = channel === "domestic"
     ? calcDomesticBasePrice(dBrand, dHP)
@@ -588,8 +594,34 @@ export default function ValuationPage() {
             skipImageAnalysis: !hasImage,
           }),
         });
+
+        // ── P0 留资引擎：游客 429（每日限 3 次已用完）→ 渲染留资引导 ──
+        if (res.status === 429) {
+          setLimitReached(true);
+          setGateData(null);
+          setResult(null);
+          return;
+        }
+
         const data = await res.json();
         if (data.success) {
+          // ── P0 留资引擎：游客模糊区间结果 → 渲染解锁卡片 ──
+          if (data.blurred === true) {
+            const r = data.data;
+            setGateData({
+              priceLow: r.priceLow,
+              priceHigh: r.priceHigh,
+              priceMid: r.priceMid,
+              confidence: r.confidence,
+            });
+            setLimitReached(false);
+            setResult(null);
+            return;
+          }
+
+          // 登录用户（blurred: false）：照旧展示精确结果
+          setGateData(null);
+          setLimitReached(false);
           const r = data.data;
           setResult({
             value: r.estimatedValue,
@@ -681,8 +713,42 @@ export default function ValuationPage() {
     return warnings;
   };
 
-  const handleRecognized = (data: RecognizeResult) => {
-    setHasImage(true);
+  // ── P0 留资引擎：解锁成功 → 服务端返回的精确估值映射为页面结果视图 ──
+  const handleUnlocked = (precise: Record<string, unknown>) => {
+    const r = precise as {
+      estimatedValue?: number;
+      confidenceScore?: number;
+      details?: { label?: string; value?: string; description?: string }[];
+      analysis?: string;
+    };
+    setResult({
+      value: r.estimatedValue ?? 0,
+      confidence: r.confidenceScore != null ? Math.round(r.confidenceScore * 100) : 80,
+      breakdown: (r.details || []).map((d) => ({
+        label: d.label ?? "",
+        value: d.value ?? "",
+        detail: d.description ?? "",
+      })),
+      formula: r.analysis || "",
+      warnings: [],
+    });
+    setGateData(null);
+    setLimitReached(false);
+    setUnlocked(true);
+  };
+
+  // ── P0 留资引擎：当前表单的估值参数（unlock 接口用于服务端重算精确值）──
+  const getValuationParams = (): Record<string, unknown> => ({
+    brand: dBrand,
+    category: dCategory,
+    year: dYear - dYears,
+    workingHours: dYears * 500,
+    condition: "good",
+    enginePower: dHP,
+    priceCny: dSellerPrice ? Number(dSellerPrice) : undefined,
+  });
+
+  const handleRecognized = (data: RecognizeResult) => {    setHasImage(true);
     if (data.brand) {
       if (data.isChineseBrand) {
         if (DOMESTIC_BRAND_LIST.includes(data.brand)) setDBrand(data.brand);
@@ -771,7 +837,7 @@ export default function ValuationPage() {
               return (
                 <button
                   key={tab.key}
-                  onClick={() => { setChannel(tab.key); setResult(null); setArbitrage(null); }}
+                  onClick={() => { setChannel(tab.key); setResult(null); setArbitrage(null); setGateData(null); setLimitReached(false); }}
                   className={`flex-1 rounded-lg py-2.5 text-sm font-medium transition-all ${
                     channel === tab.key
                       ? "bg-primary-600 text-white shadow-sm"
@@ -1071,6 +1137,29 @@ export default function ValuationPage() {
             </div>
           )}
 
+          {/* ── P0 留资引擎：游客模糊区间结果（交邮箱解锁精确值）── */}
+          {!result && gateData && (
+            <div className="mt-6 animate-in">
+              <ValuationResultGate
+                blurred={gateData}
+                valuationParams={getValuationParams()}
+                onUnlocked={handleUnlocked}
+                variant="gate"
+              />
+            </div>
+          )}
+
+          {/* ── P0 留资引擎：游客 429 限流引导 ── */}
+          {!result && !gateData && limitReached && (
+            <div className="mt-6 animate-in">
+              <ValuationResultGate
+                valuationParams={getValuationParams()}
+                onUnlocked={handleUnlocked}
+                variant="limit"
+              />
+            </div>
+          )}
+
           {/* Results */}
           {result && (
             <div className="mt-6 space-y-4 animate-in">
@@ -1102,6 +1191,17 @@ export default function ValuationPage() {
                   )}
                 </div>
               </div>
+
+              {/* ── P0 留资引擎：解锁成功后，一键发布出售提升为结果卡片下方第一按钮位 ── */}
+              {unlocked && (
+                <a
+                  href={`/${locale}/seller/products/new?prefill=true&brand=${encodeURIComponent(dBrand)}&model=${encodeURIComponent(`${dBrand} ${dCategory}`)}&category=${encodeURIComponent(dCategory)}&year=${dYear - dYears}&hp=${dHP}`}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 py-3 text-sm font-medium text-white transition-colors hover:bg-green-700"
+                >
+                  <TrendingUp className="h-4 w-4" />
+                  估价后一键发布出售 →
+                </a>
+              )}
 
               {/* Calculation Breakdown */}
               <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">

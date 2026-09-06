@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Loader2, CheckCircle, AlertCircle, Camera, Video, Plus, X, Sparkles } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { ArrowLeft, Loader2, CheckCircle, AlertCircle, Camera, Video, Plus, X, Sparkles, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import SellerAiAssistant from "@/components/seller/ai-assistant";
 import { matchPortByLocation } from "@/lib/port-matcher";
@@ -29,6 +30,8 @@ const PHOTO_SUGGESTIONS = [
 
 export default function NewProductPage() {
   const router = useRouter();
+  // P0 增长方案 2026-09-06：表单 24 字段 → 8 必填 + 选填折叠区；估值 prefill 提示条
+  const t = useTranslations("sellerPublish");
   const [brands, setBrands] = useState<{ id: string; nameZh: string }[]>([]);
   const [categories, setCategories] = useState<{ id: string; nameZh: string }[]>([]);
 
@@ -61,6 +64,8 @@ export default function NewProductPage() {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const prefillAppliedRef = useRef(false);
+  // 估值 prefill 提示条开关（C 任务：替代旧的 result 复用展示）
+  const [prefillActive, setPrefillActive] = useState(false);
 
   useEffect(() => {
     fetch("/api/brands-categories").then(r => r.json()).then(d => {
@@ -144,15 +149,26 @@ export default function NewProductPage() {
 
     setAiFilledFields(filled);
 
-    // 滚动到顶部 + 显示提示
+    // 滚动到顶部 + 显示预填提示条（C 任务）
     setTimeout(() => {
       window.scrollTo({ top: 0, behavior: "smooth" });
-      setResult({
-        success: true,
-        message: `已从估值结果预填 ${filled.size} 个字段（${Array.from(filled).slice(0, 3).join("、")}${filled.size > 3 ? "..." : ""}）`,
-      });
+      setPrefillActive(true);
     }, 100);
   }, [brands, categories]);
+
+  // 清除估值预填：还原被带入的字段 + 关闭提示条 + 去掉绿色高亮
+  const clearPrefill = () => {
+    setPrefillActive(false);
+    setAiFilledFields(new Set());
+    setBrandMode("select");
+    setCatMode("custom");
+    setForm((f) => ({
+      ...f,
+      brandId: "", brandName: "",
+      categoryId: "", categoryName: "",
+      modelName: "", year: 2020, enginePower: "",
+    }));
+  };
 
   const update = (key: string, value: any) => {
     setForm(f => {
@@ -557,8 +573,13 @@ export default function NewProductPage() {
 
   // ===== 提交 =====
   const handleSubmit = async () => {
-    if (!form.modelName || !form.priceCny) {
-      setResult({ success: false, message: "请填写完整信息（型号、价格为必填）" });
+    // P0 增长方案 2026-09-06：必填收敛为 8 项（品牌、品类、型号、年份、工况/小时数、价格、地区、图片）
+    if (!form.modelName || !form.priceCny || !form.workingHours) {
+      setResult({ success: false, message: "请填写完整信息（品牌、品类、型号、年份、工况/小时数、价格、地区为必填）" });
+      return;
+    }
+    if (!form.year) {
+      setResult({ success: false, message: "请填写出厂年份" });
       return;
     }
     // 产地校验：国内需选择省份，国际需选择国家
@@ -672,7 +693,7 @@ export default function NewProductPage() {
       fd.append("categoryName", form.categoryName || "其他");
       fd.append("modelName", form.modelName);
       fd.append("year", String(form.year));
-      fd.append("workingHours", "");
+      fd.append("workingHours", form.workingHours);
       fd.append("condition", form.condition);
       fd.append("priceCny", form.priceCny);
       fd.append("location", form.location);
@@ -753,6 +774,22 @@ export default function NewProductPage() {
       <p className="mb-8 text-sm text-gray-500">
         先传图片 → 传视频 → 智能识别 → 确认参数 → 发布（消耗 1 积分） v0723
       </p>
+
+      {/* ===== 估值预填提示条（C 任务）===== */}
+      {prefillActive && (
+        <div className="mb-6 flex items-center justify-between gap-3 rounded-lg bg-green-50 p-3 text-sm text-green-700">
+          <span className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 shrink-0" />
+            {t("prefillBanner")}
+          </span>
+          <button
+            onClick={clearPrefill}
+            className="shrink-0 rounded border border-green-300 px-2.5 py-1 text-xs font-medium text-green-700 hover:bg-green-100"
+          >
+            {t("prefillClear")}
+          </button>
+        </div>
+      )}
 
       {/* ===== Step 1: 上传图片 ===== */}
       <div className="mb-6 rounded-xl border bg-white p-6 shadow-sm">
@@ -950,11 +987,10 @@ export default function NewProductPage() {
               min={1980} max={2026} className={fieldClass("year")} />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">成色 *</label>
-            <select value={form.condition} onChange={e => update("condition", e.target.value)}
-              className={fieldClass("condition")}>
-              {CONDITIONS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-            </select>
+            {/* P0 增长方案 2026-09-06：工况/小时数提升为必填（原表单无此输入框） */}
+            <label className="mb-1 block text-sm font-medium text-gray-700">{t("workingHours")} *</label>
+            <input type="number" value={form.workingHours} onChange={e => update("workingHours", e.target.value)}
+              placeholder={t("workingHoursPlaceholder")} min={0} className={fieldClass("workingHours")} />
           </div>
         </div>
 
@@ -1050,8 +1086,27 @@ export default function NewProductPage() {
           </div>
         </div>
 
+        {/* ── P0 增长方案 2026-09-06：选填字段折叠区（默认收起）── */}
+        <details className="mt-6 rounded-lg border border-gray-200 bg-gray-50/60">
+          <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-bold text-gray-700">
+            <span>{t("moreInfoTitle")}</span>
+            <ChevronDown className="h-4 w-4 text-gray-400 transition-transform [[open]>&]:rotate-180" />
+          </summary>
+          <div className="border-t border-gray-200 px-4 pb-4 pt-4">
+
+        {/* 成色（转为选填） */}
+        <div className="mb-4">
+          <label className="mb-1 block text-sm font-medium text-gray-700">
+            成色 <span className="text-xs font-normal text-gray-400">{t("optionalTag")}</span>
+          </label>
+          <select value={form.condition} onChange={e => update("condition", e.target.value)}
+            className={fieldClass("condition")}>
+            {CONDITIONS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+          </select>
+        </div>
+
         {/* 详细规格 */}
-        <h3 className="mb-3 mt-6 text-sm font-bold text-gray-700 border-b pb-1">详细规格（推荐填写，提升曝光）</h3>
+        <h3 className="mb-3 text-sm font-bold text-gray-700 border-b pb-1">详细规格（推荐填写，提升曝光）</h3>
 
         <div className="mb-4 grid grid-cols-2 gap-4">
           <div>
@@ -1141,10 +1196,12 @@ export default function NewProductPage() {
         </div>
 
         {/* 补充描述 */}
-        <h3 className="mb-3 mt-6 text-sm font-bold text-gray-700 border-b pb-1">补充描述（可选）</h3>
+        <h3 className="mb-3 text-sm font-bold text-gray-700 border-b pb-1">补充描述（可选）</h3>
         <textarea value={form.descOther} onChange={e => update("descOther", e.target.value)}
           rows={3} placeholder="其他需要补充的信息：维修历史、附带配件、特殊配置等"
           className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-primary-500 focus:outline-none" />
+          </div>
+        </details>
       </div>
 
       {/* ===== 结果提示 ===== */}

@@ -38,37 +38,41 @@ const localizedMeta: Record<string, Record<string, { title: string; description:
     },
   },
   expo: {
+    // ⚠️ 合规约束（2026-09-06 修订，勿回退）：
+    // 1) 描述中不得出现「跨境交易担保 / cross-border escrow / эскроу / ضمان」等涉资金服务表述
+    //    —— .com 未 ICP 备案，且平台不触碰资金、不构成二清（见 messages zh.json 相关声明）；
+    // 2) 不得出现「全球首个 / the world's first / Первая / primera / première / أول / पहली」等绝对化表述。
     zh: {
       title: "永不落幕的农机世界展会_365天在线展厅_二手农机跨境展_神雕农机",
-      description: "永不落幕的农机世界展会 — 全球首个365天在线农机展会平台。虚拟展位、AI供需匹配、跨境交易担保。中国二手农机源头直达全球买家。",
+      description: "永不落幕的农机世界展会 — 365天在线农机展会平台。虚拟展位、AI供需匹配。中国二手农机源头直达全球买家。",
     },
     en: {
       title: "Global Agri-Machinery Expo | The Always-On 365-Day Online Exhibition | AgriTrade",
-      description: "Shendiao Agri-Machinery Expo™ — the world's first 365-day online farm machinery expo. Virtual booths, AI supply-demand matching, cross-border escrow. Verified machinery from China and beyond, direct to global buyers.",
+      description: "Shendiao Agri-Machinery Expo™ — the 365-day online farm machinery expo. Virtual booths, AI supply-demand matching. Verified machinery from China and beyond, direct to global buyers.",
     },
     ru: {
       title: "Всемирная выставка сельхозтехники без выходных | АгриТрейд",
-      description: "Первая круглогодичная онлайн-выставка сельхозтехники. Виртуальные стенды, AI-подбор, эскроу-сервис. Китайская б/у техника напрямую мировым покупателям.",
+      description: "Круглогодичная онлайн-выставка сельхозтехники. Виртуальные стенды, AI-подбор. Китайская б/у техника напрямую мировым покупателям.",
     },
     es: {
       title: "Expo Global de Maquinaria Agrícola 365 Días | AgriTrade",
-      description: "La primera expo online de maquinaria agrícola 365 días al año. Stands virtuales, matching con IA, escrow transfronterizo.",
+      description: "La expo online de maquinaria agrícola 365 días al año. Stands virtuales, matching con IA.",
     },
     pt: {
       title: "Expo Global de Máquinas Agrícolas 365 Dias | AgriTrade",
-      description: "A primeira expo online de máquinas agrícolas 365 dias por ano. Stands virtuais, matching com IA, escrow transfronteiriço.",
+      description: "A expo online de máquinas agrícolas 365 dias por ano. Stands virtuais, matching com IA.",
     },
     ar: {
       title: "معرض الآلات الزراعية العالمي على مدار العام | AgriTrade",
-      description: "أول معرض عبر الإنترنت على مدار 365 يومًا للآلات الزراعية. أجنحة افتراضية، مطابقة بالذكاء الاصطناعي، ضمان عبر الحدود.",
+      description: "معرض عبر الإنترنت على مدار 365 يومًا للآلات الزراعية. أجنحة افتراضية، مطابقة بالذكاء الاصطناعي.",
     },
     fr: {
       title: "Expo Mondiale de Machines Agricoles 365 Jours | AgriTrade",
-      description: "La première expo en ligne de machines agricoles 365 jours par an. Stands virtuels, matching IA, escrow transfrontalier.",
+      description: "L'expo en ligne de machines agricoles 365 jours par an. Stands virtuels, matching IA.",
     },
     hi: {
       title: "365-दिन वैश्विक कृषि मशीनरी एक्सपो | AgriTrade",
-      description: "पहली वर्षभर ऑनलाइन कृषि मशीनरी एक्सपो। वर्चुअल बूथ, AI मैचिंग, क्रॉस-बॉर्डर एस्क्रो।",
+      description: "वर्षभर ऑनलाइन कृषि मशीनरी एक्सपो। वर्चुअल बूथ, AI मैचिंग।",
     },
   },
   products: {
@@ -174,37 +178,39 @@ const localizedMeta: Record<string, Record<string, { title: string; description:
     },
   },
   engineer: {
+    // ⚠️ 合规约束（2026-09-06 修订，勿回退）：
+    // 不得出现「全球首个 / World's first / Первая в мире / Primera...mundial / Première...mondiale / أول...في العالم / दुनिया का पहला」等绝对化表述。
     zh: {
-      title: "AI农机工程师认证_八维技能体系_五级认证_全球首个农机AI认证_神雕农机",
-      description: "全球首个AI农机工程师认证体系：八维技能评分（AI编程/人机协同/多机调度/数据决策），五级认证（AI学徒到首席操控师）。拿到证书，解锁平台派单、验机、竞技加成。",
+      title: "AI农机工程师认证_八维技能体系_五级认证_农机AI认证_神雕农机",
+      description: "AI农机工程师认证体系：八维技能评分（AI编程/人机协同/多机调度/数据决策），五级认证（AI学徒到首席操控师）。拿到证书，解锁平台派单、验机、竞技加成。",
     },
     en: {
       title: "AI Farm Machinery Engineer Certification | 8-Skill System | AgriTrade",
-      description: "World's first AI farm machinery engineer certification: 8-dimension skills (AI programming, human-machine collaboration, fleet management, data decisions), 5-level certification. Get certified, unlock platform dispatch and arena bonuses.",
+      description: "AI farm machinery engineer certification: 8-dimension skills (AI programming, human-machine collaboration, fleet management, data decisions), 5-level certification. Get certified, unlock platform dispatch and arena bonuses.",
     },
     ru: {
       title: "Сертификация AI Инженера Сельхозтехники | 8 Навыков | AgriTrade",
-      description: "Первая в мире сертификация AI инженера сельхозтехники: 8 измерений навыков, 5 уровней. Получите сертификат и доступ к платформе.",
+      description: "Сертификация AI инженера сельхозтехники: 8 измерений навыков, 5 уровней. Получите сертификат и доступ к платформе.",
     },
     es: {
       title: "Certificación de Ingeniero en Maquinaria Agrícola AI | AgriTrade",
-      description: "Primera certificación mundial de ingeniero en maquinaria agrícola con IA: 8 dimensiones de habilidades, 5 niveles de certificación.",
+      description: "Certificación de ingeniero en maquinaria agrícola con IA: 8 dimensiones de habilidades, 5 niveles de certificación.",
     },
     pt: {
       title: "Certificação de Engenheiro de Máquinas Agrícolas AI | AgriTrade",
-      description: "Primeira certificação mundial de engenheiro de máquinas agrícolas com IA: 8 dimensões de habilidades, 5 níveis.",
+      description: "Certificação de engenheiro de máquinas agrícolas com IA: 8 dimensões de habilidades, 5 níveis.",
     },
     ar: {
       title: "شهادة مهندس الآلات الزراعية بالذكاء الاصطناعي | AgriTrade",
-      description: "أول شهادة في العالم لمهندس الآلات الزراعية بالذكاء الاصطناعي: 8 أبعاد للمهارات، 5 مستويات.",
+      description: "شهادة مهندس الآلات الزراعية بالذكاء الاصطناعي: 8 أبعاد للمهارات، 5 مستويات.",
     },
     fr: {
       title: "Certification d'Ingénieur en Machines Agricoles IA | AgriTrade",
-      description: "Première certification mondiale d'ingénieur en machines agricoles IA: 8 dimensions de compétences, 5 niveaux.",
+      description: "Certification d'ingénieur en machines agricoles IA: 8 dimensions de compétences, 5 niveaux.",
     },
     hi: {
       title: "AI कृषि मशीनरी इंजीनियर प्रमाणन | 8 कौशल | AgriTrade",
-      description: "दुनिया का पहला AI कृषि मशीनरी इंजीनियर प्रमाणन: 8 आयामी कौशल, 5 स्तरीय प्रमाणन।",
+      description: "AI कृषि मशीनरी इंजीनियर प्रमाणन: 8 आयामी कौशल, 5 स्तरीय प्रमाणन।",
     },
   },
   intelligence: {
@@ -715,6 +721,16 @@ const localizedMeta: Record<string, Record<string, { title: string; description:
     hi: {
       title: "कृषि मशीनरी पार्ट्स | इंजन, हाइड्रोलिक, फिल्टर | AgriTrade",
       description: "AgriTrade पार्ट्स केंद्र: 8 श्रेणियाँ जिनमें इंजन, हाइड्रोलिक, ट्रांसमिशन, इलेक्ट्रिकल, फिल्टर, टायर, बेयरिंग, बॉडी शामिल हैं। John Deere, CLAAS, New Holland पार्ट्स खोज के साथ।",
+    },
+  },
+  membership: {
+    zh: {
+      title: "会员定价_会员权益_神雕农机",
+      description: "神雕农机会员定价：免费版、专业版、旗舰版、企业版四档权益对比。AI 估价、无限发布、跨境套利数据、数据导出、产品置顶，选择适合你的会员方案。",
+    },
+    en: {
+      title: "Membership Pricing & Benefits | AgriTrade",
+      description: "AgriTrade membership pricing: compare Free, Basic, Premium and Enterprise plans. AI valuation, unlimited listings, cross-border arbitrage data, data export & product topping.",
     },
   },
 };

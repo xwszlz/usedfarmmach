@@ -44,7 +44,7 @@ export type MilestoneEvent = (typeof MILESTONE_EVENTS)[number];
 
 // ─── 奖励数值默认值（可被 SystemConfig reward_values 覆盖）────
 export const DEFAULT_REWARD_VALUES = {
-  registerGift: 5, // 注册即送（Q1 临时口径）
+  registerGift: 20, // P0 增长方案 2026-09-06：赠分 5→20，消解"发第6台卡死"，配合月额度 publishesPerMonth
   certPersonal: 5, // 实名认证（certType=personnel/personal）
   certEnterprise: 10, // 企业认证（certType=institution/enterprise）
   inviteCertInviter: 10, // 被邀请人认证通过 → 邀请人
