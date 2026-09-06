@@ -13,7 +13,7 @@ export const MEMBERSHIP_TIERS = {
     publishesPerMonth: 5,      // 每月免费发布产品数（P1：1 → 5）
     inquiriesPerMonth: 5,     // 每月免费询盘次数（P1 新增）
     contactsPerMonth: 5,       // 每月查看联系方式次数（P1 新增）
-    credits: 10,               // 注册赠送积分
+    credits: 20,               // P0 增长方案 2026-09-06：赠分 5→20，消解"发第6台卡死"，配合月额度 publishesPerMonth（与 DEFAULT_REWARD_VALUES.registerGift 保持一致）
     freeValuationsPerMonth: 5,
     canViewSellerContact: true, // 能否查看卖家联系方式
     canExportData: false,

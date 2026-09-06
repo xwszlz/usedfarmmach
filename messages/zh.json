@@ -1,4 +1,21 @@
 {
+  "valuationGate": {
+    "_todoTranslate": "",
+    "rangeLabel": "AI 估值区间（仅供参考）",
+    "midHint": "参考中间价",
+    "confidenceLabel": "置信度",
+    "blurredNotice": "详细拆解已加密，留邮箱解锁后可见",
+    "unlockTitle": "解锁精确估值",
+    "unlockDesc": "输入邮箱，立即获取 AI 精确估值、公式拆解与购买建议",
+    "emailPlaceholder": "输入您的邮箱",
+    "unlockButton": "解锁精确估值",
+    "unlocking": "解锁中...",
+    "emailInvalid": "请输入有效的邮箱地址",
+    "unlockFailed": "解锁失败，请稍后重试",
+    "limitReached": "今日免费估值次数已用完",
+    "limitReachedDesc": "留下邮箱即可解锁本次精确估值；注册登录后每日可享更多估值次数。",
+    "privacyNote": "我们承诺保护您的隐私，绝不发送垃圾邮件"
+  },
   "adminSystem": {
     "roles": "角色管理",
     "rolesDesc": "管理用户角色与权限分配",
@@ -80,6 +97,7 @@
     }
   },
   "credits": {
+    "upgradeNow": "立即升级",
     "title": "会员中心",
     "membershipStatus": "会员状态",
     "creditsBalance": "积分余额",
@@ -105,6 +123,72 @@
       "checkin": "签到",
       "admin_adjust": "后台调整",
       "gift": "礼包"
+    }
+  },
+  "membership": {
+    "title": "选择适合你的会员方案",
+    "subtitle": "AI 估价 · 无限发布 · 跨境套利数据 · 数据导出",
+    "loading": "加载中...",
+    "billing": {
+      "monthly": "按月付费",
+      "yearly": "按年付费"
+    },
+    "saveBadge": "限时 9 折",
+    "perMonth": "/月",
+    "perYear": "/年",
+    "currentPlan": "当前方案",
+    "popular": "最受欢迎",
+    "checkoutError": "支付发起失败，请稍后重试",
+    "tiers": {
+      "free": "免费版",
+      "basic": "专业版",
+      "premium": "旗舰版",
+      "enterprise": "企业版"
+    },
+    "cta": {
+      "startFree": "免费开始",
+      "upgrade": "立即升级",
+      "wechatPending": "微信支付（即将开通）",
+      "stripePay": "Stripe 安全支付"
+    },
+    "benefits": {
+      "free": [
+        "每月 5 次 AI 估价",
+        "每月发布 5 个产品",
+        "查看卖家联系方式",
+        "注册赠送 10 积分"
+      ],
+      "basic": [
+        "每月 50 次 AI 估价",
+        "每月发布 50 个产品",
+        "跨境套利数据",
+        "每产品 10 图 / 3 视频"
+      ],
+      "premium": [
+        "AI 估价不限次",
+        "发布产品不限量",
+        "询盘与联系方式不限",
+        "数据导出 + 产品置顶",
+        "每产品 20 图 / 5 视频"
+      ],
+      "enterprise": [
+        "尊享旗舰版全部权益",
+        "每产品 50 图 / 10 视频",
+        "专属大客户支持",
+        "优先参与行业活动"
+      ]
+    },
+    "waitlist": {
+      "title": "支付通道即将开放",
+      "desc": "留下邮箱，开通时第一时间通知你，建档赠送 7 天旗舰版体验。",
+      "placeholder": "输入邮箱地址",
+      "submit": "通知我",
+      "successTitle": "订阅成功！",
+      "successDesc": "我们会第一时间通知你，并为你预留 7 天旗舰版体验资格。",
+      "error": "提交失败，请稍后重试"
+    },
+    "trust": {
+      "cn": "中国农机流通协会·二手农机流通分会 副会长单位"
     }
   },
   "nav": {
@@ -183,7 +267,7 @@
     "learnCert": "了解AI农机工程师认证 →"
   },
   "engineer": {
-    "heroBadge": "全球首个农机AI认证体系",
+    "heroBadge": "农机AI认证体系",
     "title": "AI农机工程师认证",
     "subtitle": "不再是驾驶员，而是AI农机工程师。掌握八维技能，通过五级认证，用AI指挥机器群干活。",
     "heroCTA": "测试你的操控师等级",
@@ -949,7 +1033,7 @@
       "viewDetails": "查看详情",
       "register": "报名参加",
       "note": "说明",
-      "noteDesc": "展会活动由平台协办或合作方组织，具体安排以活动主办方公告为准。地头展为线下实地看机活动，报名后将有专员联系。"
+      "noteDesc": "展会活动由展会主办方组织，具体安排以主办方公告为准。地头展为线下实地看机活动，报名后将有专员联系。"
     },
     "govDashboard": {
       "title": "监管数据看板",
@@ -1039,5 +1123,13 @@
     "seeder": "播种机",
     "reaper": "收获机",
     "picker": "捡拾台"
+  },
+  "sellerPublish": {
+    "prefillBanner": "已为你带入 AI 估值信息，确认后即可发布",
+    "prefillClear": "清除",
+    "moreInfoTitle": "更多信息（选填，填得越全曝光越高）",
+    "optionalTag": "选填",
+    "workingHours": "工况/小时数",
+    "workingHoursPlaceholder": "如: 1200"
   }
 }

@@ -2134,3 +2134,21 @@ model AuctionRegistration {
   @@unique([auctionId, bidderId])
   @@index([auctionId, eligible])
 }
+
+/// P0 留资引擎 — AI 估值游客留资（邮箱解锁精确估值）
+/// 部署方式：npx prisma db push（项目约定用 db push，非 migrate）
+model ValuationLead {
+  id              String   @id @default(cuid())
+  email           String
+  locale          String   // 提交时的界面语言
+  valuationParams Json     // 估值输入参数（品牌/品类/马力/年限等）
+  estimate        Json     // 解锁返回的精确估值结果 JSON
+  paramsHash      String   // valuationParams 稳定序列化后的 sha256，用于同邮箱同参数去重
+  ipHash          String?  // 游客 IP 哈希（风控用）
+  source          String   @default("valuation")
+  createdAt       DateTime @default(now())
+
+  @@unique([email, paramsHash])
+  @@index([email])
+  @@index([createdAt])
+}

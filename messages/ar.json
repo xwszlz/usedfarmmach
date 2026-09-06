@@ -1,4 +1,21 @@
 {
+  "valuationGate": {
+    "_todoTranslate": "",
+    "rangeLabel": "AI Valuation Range (for reference only)",
+    "midHint": "Midpoint reference",
+    "confidenceLabel": "Confidence",
+    "blurredNotice": "Detailed breakdown is locked — leave your email to unlock",
+    "unlockTitle": "Unlock the precise valuation",
+    "unlockDesc": "Enter your email to instantly get the AI precise valuation, formula breakdown and buying advice",
+    "emailPlaceholder": "Enter your email",
+    "unlockButton": "Unlock precise valuation",
+    "unlocking": "Unlocking...",
+    "emailInvalid": "Please enter a valid email address",
+    "unlockFailed": "Unlock failed, please try again later",
+    "limitReached": "Daily free valuations used up",
+    "limitReachedDesc": "Leave your email to unlock this precise valuation; sign up or log in for more daily valuations.",
+    "privacyNote": "We respect your privacy — no spam, ever"
+  },
   "adminSystem": {
     "roles": "إدارة الأدوار",
     "rolesDesc": "إدارة أدوار المستخدمين وتعيين الصلاحيات",
@@ -80,6 +97,7 @@
     }
   },
   "credits": {
+    "upgradeNow": "Upgrade Now",
     "title": "مركز العضوية",
     "membershipStatus": "حالة العضوية",
     "creditsBalance": "رصيد النقاط",
@@ -105,6 +123,73 @@
       "checkin": "تسجيل الحضور",
       "admin_adjust": "تعديل الإدارة",
       "gift": "هدية"
+    }
+  },
+  "membership": {
+    "_todo": "TODO: translate membership section from English (zh/en are source of truth)",
+    "title": "Choose the Plan That Fits You",
+    "subtitle": "AI Valuation · Unlimited Listings · Cross-border Arbitrage Data · Data Export",
+    "loading": "Loading...",
+    "billing": {
+      "monthly": "Monthly",
+      "yearly": "Yearly"
+    },
+    "saveBadge": "10% Off Limited",
+    "perMonth": "/mo",
+    "perYear": "/yr",
+    "currentPlan": "Current Plan",
+    "popular": "Most Popular",
+    "checkoutError": "Failed to start checkout. Please try again later.",
+    "tiers": {
+      "free": "Free",
+      "basic": "Basic",
+      "premium": "Premium",
+      "enterprise": "Enterprise"
+    },
+    "cta": {
+      "startFree": "Start for Free",
+      "upgrade": "Upgrade Now",
+      "wechatPending": "WeChat Pay (Coming Soon)",
+      "stripePay": "Pay Securely with Stripe"
+    },
+    "benefits": {
+      "free": [
+        "5 AI valuations per month",
+        "5 product listings per month",
+        "View seller contact info",
+        "10 bonus credits on sign-up"
+      ],
+      "basic": [
+        "50 AI valuations per month",
+        "50 product listings per month",
+        "Cross-border arbitrage data",
+        "10 photos / 3 videos per listing"
+      ],
+      "premium": [
+        "Unlimited AI valuations",
+        "Unlimited product listings",
+        "Unlimited inquiries & contacts",
+        "Data export + product topping",
+        "20 photos / 5 videos per listing"
+      ],
+      "enterprise": [
+        "Everything in Premium",
+        "50 photos / 10 videos per listing",
+        "Dedicated key-account support",
+        "Priority access to industry events"
+      ]
+    },
+    "waitlist": {
+      "title": "Payment Channel Opening Soon",
+      "desc": "Leave your email and we'll notify you the moment it goes live — plus 7 days of free Premium trial for early sign-ups.",
+      "placeholder": "Enter your email",
+      "submit": "Notify Me",
+      "successTitle": "Subscribed!",
+      "successDesc": "We'll notify you as soon as the payment channel opens, and reserve your 7-day Premium trial.",
+      "error": "Submission failed. Please try again later."
+    },
+    "trust": {
+      "cn": "Vice President Unit, Used Farm Machinery Circulation Branch of China Association of Agricultural Machinery Circulation"
     }
   },
   "nav": {
@@ -956,7 +1041,7 @@
       "indoorExpo": "معرض داخلي",
       "online": "オンライン",
       "note": "ملاحظة",
-      "noteDesc": "الفعاليات منظمة بواسطة المنصة أو الشركاء."
+      "noteDesc": "تُنظَّم الفعاليات من قِبل الجهة المنظمة للمعرض؛ وتخضع التفاصيل للإعلانات الرسمية للجهة المنظمة."
     },
     "govDashboard": {
       "title": "لوحة حكومية",
@@ -1046,5 +1131,14 @@
     "seeder": "بازرع",
     "reaper": "حاصدة",
     "picker": "رأس التقاط"
+  },
+  "sellerPublish": {
+    "prefillBanner": "We've pre-filled your AI valuation info — confirm and publish",
+    "prefillClear": "Clear",
+    "moreInfoTitle": "More info (optional — the more complete, the more exposure)",
+    "optionalTag": "Optional",
+    "workingHours": "Working hours",
+    "workingHoursPlaceholder": "e.g. 1200",
+    "_todo": "TODO: translate sellerPublish keys to ar; values temporarily copied from en (P0 2026-09-06)"
   }
 }
