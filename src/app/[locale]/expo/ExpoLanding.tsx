@@ -218,7 +218,7 @@ const TEXTS: Record<string, {
     submit: "Submit Application",
     submitting: "Submitting...",
     success: "Submitted successfully! We'll contact you within 24 hours.",
-    error: "Submission failed. Please try again or contact Email: 932133255@qq.com",
+    error: "Submission failed. Please try again or contact Email: jiusei0319@gmail.com",
     selectPlaceholder: "Please select",
   },
   ru: {
@@ -368,7 +368,7 @@ const TEXTS: Record<string, {
     submit: "Enviar Solicitud",
     submitting: "Enviando...",
     success: "¡Enviado con éxito! Le contactaremos en 24 horas.",
-    error: "Error. Intente de nuevo o contacte Email: 932133255@qq.com",
+    error: "Error. Intente de nuevo o contacte Email: jiusei0319@gmail.com",
     selectPlaceholder: "Seleccione",
   },
   pt: {
@@ -557,7 +557,7 @@ const TEXTS: Record<string, {
     submit: "Envoyer la Demande",
     submitting: "Envoi...",
     success: "Envoyé avec succès! Nous vous contacterons sous 24 heures.",
-    error: "Échec de l'envoi. Réessayez ou contactez Email: 932133255@qq.com",
+    error: "Échec de l'envoi. Réessayez ou contactez Email: jiusei0319@gmail.com",
     selectPlaceholder: "Sélectionner",
   },
   hi: {
