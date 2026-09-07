@@ -1,0 +1,4 @@
+﻿品牌(中文),英文品牌,型号,年份,国内售价(万元),品类,国际价格,币种,源站,源链接(sourceUrl),备注
+科罗尼,Krone,580,2018,160.0,青储机,198000,EUR,agroline,https://www.agroline.de/gebraucht/krone-bigx-580,示例：BigX 580 同款，抄挂牌价
+奥库,Orkel,DENS-X,2019,120.0,裹包机,,EUR,agroline,,示例：没查到就留空，别瞎填
+麦赛福格森,Massey Ferguson,3404,2022,95.0,拖拉机,89000,USD,mascus,https://www.mascus.com/agriculture/massey-ferguson-3404,示例：美元源改 USD
