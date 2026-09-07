@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="3o7zyleEr9KITC4llzjqFU">
+<head data-page-node-id="TvkPcjlzuMVW97EugAkOPm">
+<meta charset="utf-8" data-page-node-id="SuoWR6OZNdtDmO6lx3KkIy">
+<meta name="viewport" content="width=device-width, initial-scale=1" data-page-node-id="uCJTAQ7AuDTDIPzQLxwDP9">
+<title>神雕农机 P0 增长改造 · 使用说明与下一步建议（2026-09-07）</title>
+<style>
+  :root{
+    --brand:#0b6b3a; --brand-dark:#07512c; --brand-light:#e8f4ee;
+    --ink:#1f2328; --gray:#5b6570; --line:#e3e7eb; --bg:#ffffff; --soft:#f7f9fa;
+    --warn:#b3261e; --warn-bg:#fdecea; --ok:#0b6b3a; --ok-bg:#e8f4ee;
+    --info:#0b5cad; --info-bg:#e9f1fb;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    font-size:15px;line-height:1.75;}
+  .wrap{max-width:960px;margin:0 auto;padding:48px 40px 80px;}
+  header{border-bottom:3px solid var(--brand);padding-bottom:20px;margin-bottom:32px;}
+  h1{font-size:27px;margin:0 0 8px;color:var(--brand-dark);letter-spacing:-.3px;}
+  .sub{color:var(--gray);font-size:14px;}
+  h2{font-size:20px;margin:44px 0 14px;padding-left:12px;border-left:4px solid var(--brand);color:var(--brand-dark);}
+  h3{font-size:16px;margin:26px 0 10px;color:var(--ink);}
+  h4{font-size:14px;margin:18px 0 8px;color:var(--brand-dark);}
+  p{margin:10px 0;}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px;}
+  th,td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top;}
+  th{background:var(--brand-light);color:var(--brand-dark);font-weight:600;white-space:nowrap;}
+  tbody tr:nth-child(even){background:var(--soft);}
+  code{background:#f0f3f5;padding:1.5px 5px;border-radius:4px;font-size:13px;
+    font-family:"SFMono-Regular",Consolas,Monaco,monospace;word-break:break-all;}
+  pre{background:#1f2428;color:#e6edf3;padding:14px 16px;border-radius:8px;overflow-x:auto;
+    font-size:12.5px;line-height:1.6;font-family:"SFMono-Regular",Consolas,Monaco,monospace;}
+  pre code{background:none;color:inherit;padding:0;}
+  .box{border-radius:8px;padding:14px 18px;margin:16px 0;font-size:14px;}
+  .box p:first-child{margin-top:0}.box p:last-child{margin-bottom:0}
+  .warn{background:var(--warn-bg);border-left:4px solid var(--warn);}
+  .ok{background:var(--ok-bg);border-left:4px solid var(--ok);}
+  .info{background:var(--info-bg);border-left:4px solid var(--info);}
+  .k{font-weight:700;color:var(--brand-dark);}
+  ul,ol{margin:10px 0;padding-left:24px;} li{margin:5px 0;}
+  .tag{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;font-weight:600;
+    margin-right:6px;vertical-align:middle;}
+  .t-p0{background:var(--warn-bg);color:var(--warn);}
+  .t-p1{background:#fff4e5;color:#8a5300;}
+  .t-p2{background:#eef0f2;color:#4a5259;}
+  .t-done{background:var(--ok-bg);color:var(--ok);}
+  .steps{counter-reset:s;list-style:none;padding-left:0;}
+  .steps>li{counter-increment:s;position:relative;padding-left:38px;margin:14px 0;}
+  .steps>li::before{content:counter(s);position:absolute;left:0;top:1px;width:26px;height:26px;
+    background:var(--brand);color:#fff;border-radius:50%;text-align:center;line-height:26px;
+    font-size:13px;font-weight:700;}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .card{border:1px solid var(--line);border-radius:8px;padding:14px 16px;background:var(--soft);}
+  .card h4{margin-top:0;}
+  .price{font-size:22px;font-weight:700;color:var(--brand-dark);}
+  .muted{color:var(--gray);font-size:13px;}
+  hr{border:0;border-top:1px solid var(--line);margin:36px 0;}
+  footer{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);color:var(--gray);font-size:12.5px;}
+  @media print{.wrap{padding:0}h2{page-break-after:avoid}table{page-break-inside:avoid}}
+</style>
+</head>
+<body data-page-node-id="wjHs8in43UbhVVV9z2KFBX">
+<div class="wrap" data-page-node-id="PYQ84p6hnfhxzs84UeCvdi">
+
+<header data-page-node-id="HIDD0PKmu1psSs6oE7U1us">
+  <h1 data-page-node-id="sVZUxjVqrRqMzoDzOVRygl">神雕农机 P0 增长改造 · 使用说明与下一步建议</h1>
+  <div class="sub" data-page-node-id="alqJpara5Uyr0PBzepEKsV">适用站点：usedfarmmach.com（境外）· usedfarmmach.cn（境内）· 微信小程序（后续同步）<br data-page-node-id="VjbbDBF8TuFM8T35Sm8Y2a">
+  版本日期：2026-09-07　|　上线分支：<code data-page-node-id="LmILOkUunyPA7lLyNRbWkh">growth/p0-lead-engine</code>（已合入 main 并全量部署）</div>
+</header>
+
+<div class="box ok" data-page-node-id="tazGifiTXBJYb5gz01aqF0">
+  <p data-page-node-id="TmXKTqiAZaviXZD1spX1wy"><span class="k" data-page-node-id="GqntKdVjKPpV5QREcFctit">一句话结论：</span>这次改造把「AI 估值」从一个免费白嫖工具，改造成了<span class="k" data-page-node-id="AmoBGseAI3J3GeHE4H9dzU">全站第一个自动留资入口</span>；同时修掉了会员页 404 死链、发布表单过长、注册赠分过低三个卡点。两端（.com / .cn）均已实测通过。</p>
+</div>
+
+<!-- ============ 0 ============ -->
+<h2 data-page-node-id="7JZHBDJhhgBq1VbGWfdATx">0. 一页速览</h2>
+<table data-page-node-id="X5dKHH1Gbz3dEJVkIgb6LF">
+  <thead data-page-node-id="0i6ELKsWtEujUKfrqRUeB8"><tr data-page-node-id="7JLRAqbHrrRf6nL3F9WVFi"><th style="width:32px" data-page-node-id="9IRHh4nRyVoiSHLPBR2Xcl">#</th><th data-page-node-id="xoZuaeyPXydYoxIvGxGeyR">改造项</th><th data-page-node-id="UoUlEe03yuE9eq3hxqEL5C">改前</th><th data-page-node-id="AUeuTontSv62MKIVm5rtbE">改后</th><th data-page-node-id="RJ5B4EMrh8RjTLisEU5xaY">状态</th></tr></thead>
+  <tbody data-page-node-id="G2KyVSCjvi7aCpQUn7ERNi">
+    <tr data-page-node-id="ruGh9Qz11MFhiq9PqikEnC"><td data-page-node-id="Etd2GM8LVFM1UHw0DAcdZx">1</td><td data-page-node-id="ZP4FxZO04bGTGT8pURBdmi"><b data-page-node-id="Hxc8rQ9xzTvJW6ENoEQFew">AI 估值留资引擎</b></td><td data-page-node-id="fdEd1OoGYaDpQRn4TUzk5M">游客无限次、不留邮箱，最大资产白流失</td><td data-page-node-id="0SK8v8C1BRokwlZNwuxUPZ">游客 3 次/天 → 结果模糊 ±12% → 留邮箱解锁精确值并入库</td><td data-page-node-id="VUHYoETqEkP4DtBed34vxX"><span class="tag t-done" data-page-node-id="TBHP5oue2qYvLx58jKcUlc">已上线</span></td></tr>
+    <tr data-page-node-id="QeGRa2fxE98xZhbIwv8vRC"><td data-page-node-id="WxgHGCjoKdHPQbR88qGIPD">2</td><td data-page-node-id="Z0geqTIXsSGdbaazg3WIyh"><b data-page-node-id="MHT3BZDlLp822kAFs01ydO">会员中心</b></td><td data-page-node-id="BWyNvrsUNTVnXESlGbzIar"><code data-page-node-id="zyytlETLtMqzMn5BRbV2nf">/membership</code> 404 死链；升级按钮 disabled</td><td data-page-node-id="9lE0AoUxtzOdAELO0CrDqO">4 档定价页 + 月/年切换；按钮解禁；支付未开通时转邮箱候补</td><td data-page-node-id="osctnghSuBucA7EIbsjgeW"><span class="tag t-done" data-page-node-id="h9smi0Lo0B7mcKywwXszhV">已上线</span></td></tr>
+    <tr data-page-node-id="opxiN66AsgLQHbW4UG0BgY"><td data-page-node-id="LeCOnJ7JrAs4oG8OcPBpBP">3</td><td data-page-node-id="tpHk1DTPHXgcnilY4TDDY2"><b data-page-node-id="PUSDFGmbBAecMmqguSajgA">发布简化</b></td><td data-page-node-id="bLX78pFcBY4jdRbwvRAeHS">24 个必填字段，卖家填到一半就跑</td><td data-page-node-id="1m9Ma212mwirOfbxKnhyc9">8 项必填（7 字段 + 1 张图）；11 项选填折叠</td><td data-page-node-id="gVNzqayfwSGrmnDNQPfABo"><span class="tag t-done" data-page-node-id="JEZNJy8006qAX23XUKdiNQ">已上线</span></td></tr>
+    <tr data-page-node-id="8YfZmkVTYVusjxyGCSeS2D"><td data-page-node-id="GrUtqnamidO0qQBGKPF7q5">4</td><td data-page-node-id="ahBds3yTIGv0d8RYWTX5Cj"><b data-page-node-id="R1a2tER5ZY2XYR0XrWQckr">注册激励</b></td><td data-page-node-id="RZnPd4nhbr6AASySB9mdUC">赠 5 积分，发第 6 台就卡死</td><td data-page-node-id="chu9AJrPzfxLCPApl6afVx">赠 20 积分，月额度同步 5 → 对齐</td><td data-page-node-id="4p5AefmHf7gXz8h5zTX3fG"><span class="tag t-done" data-page-node-id="ajoT9o2seLBQPHdia0eBdE">已上线</span></td></tr>
+    <tr data-page-node-id="b4SMBEkIlszaWps1yG5o13"><td data-page-node-id="pCenG29QN6GZT6UskX6K9k">5</td><td data-page-node-id="XUllG5YEKleUqV9bdMSY5e"><b data-page-node-id="DCNLKD3kYIAzNXJG7jzRNs">注册回跳</b></td><td data-page-node-id="N5QJ7TuDZiiRkSYySk5Eoq">注册后回首页，用户流失</td><td data-page-node-id="sSFAo1h9EGQV4RFCN2tKOY">支持 <code data-page-node-id="d6garEcY1PKdh2eeW47bZG">?redirect=</code>，注册完回原页面</td><td data-page-node-id="MD0qFw1qhl9KKlz5Wpm7eO"><span class="tag t-done" data-page-node-id="H51AqlHTzqRsDQJCoYSQId">已上线</span></td></tr>
+    <tr data-page-node-id="jokgHPjlCNWuASxD9TwAOR"><td data-page-node-id="6gnR1LW2ZI44WyUkEUtK5L">6</td><td data-page-node-id="8UsE7rDI2hQKd4vhpIMt4V"><b data-page-node-id="uUqAS3r0ILthXB01TCR66j">留资数据表</b></td><td data-page-node-id="NHsJfon8wEwwziF6iQBhCR">无</td><td data-page-node-id="Ac5KvGyybFXMOJKN47u0PO">新增 <code data-page-node-id="HR5yOynvB8OeGXsSxznfl5">ValuationLead</code> 表（.com / .cn 均已建）</td><td data-page-node-id="VStGqTRiUrOtu0Od9WsZVe"><span class="tag t-done" data-page-node-id="Wsla0FMk3LApeV7mRVRJ4u">已上线</span></td></tr>
+    <tr data-page-node-id="BRGjiXEatTSneTG6g4oqqv"><td data-page-node-id="BcPjLdBqyBFl4cGSVwAo5z">7</td><td data-page-node-id="vJmxOaVNBOI4YvCrZxDLGS"><b data-page-node-id="v7Zf1R99KNrf3kCSU5gLgT">稳定性</b></td><td data-page-node-id="lCiZCwEbcX0jl5zA5MHWjg">PrismaClient 生产环境不复用连接，.cn 首页间歇 500</td><td data-page-node-id="pW8Eg5KjBirjt9QjwsQ2qv">无条件单例缓存（Prisma 官方写法）</td><td data-page-node-id="cG37jKMZkOKIHdhowCmElO"><span class="tag t-done" data-page-node-id="ZsFcwWSEn5Jr6cVRQXCHGf">已上线</span></td></tr>
+    <tr data-page-node-id="EvYJZ8PmTdEKulazv5aE6B"><td data-page-node-id="xpGJoVRMC8t45bImxc6U7y">8</td><td data-page-node-id="WLfxr1V3iCYMKS2AG6faSm"><b data-page-node-id="wFpITG2gDi9xdPuWulFbGM">多语言</b></td><td data-page-node-id="onKOlrOZypzEkBHjXktEfw">无对应文案</td><td data-page-node-id="Cuook1zeUXJGFzdwZxnkOu">新增 <code data-page-node-id="FcAvp3xxcqLy3tOyZGmMLf">valuationGate</code> / <code data-page-node-id="H4Tb7ZcdpgFksGcFuYz6I5">sellerPublish</code> / <code data-page-node-id="oGIXXFngXYy8XQXJG3aLaJ">membership</code> 三个命名空间（8 语）</td><td data-page-node-id="1EKFVIioKjm5a6ffQO6IOx"><span class="tag t-p1" data-page-node-id="CxFTAirKjEreVPpkbcEBXm">中文已译，其余待补</span></td></tr>
+  </tbody>
+</table>
+
+<!-- ============ 1 ============ -->
+<h2 data-page-node-id="gGzI9NMYZVxDHaMKIEhoLb">1. AI 估值留资引擎 —— 使用说明</h2>
+
+<h3 data-page-node-id="xVwGy3zYfzSTTlwHvL6dAu">1.1 访客会看到什么（三步漏斗）</h3>
+<ol class="steps" data-page-node-id="CLBgLNA8yZ3ViGoHpsWEJm">
+  <li data-page-node-id="KIUvCwYggeWOlpp62z9kp7"><b data-page-node-id="rTZG0OAmNPvkWl68DMabfQ">填参数 → 出模糊结果。</b>访客选品牌/品类/型号/年份/小时数/成色，点估值，拿到一个 <b data-page-node-id="nS5fD7EyDDLTfYpbQXltc6">±12% 的价格区间</b>（如 36.9 万 – 47.1 万，中间价 42.0 万），并标注「置信度 85%」。
+    <br data-page-node-id="pFcXeTtgd65UftfhTze4uB"><span class="muted" data-page-node-id="svTmhNHEaREHLioaDsa6Q8">关键：此时<b data-page-node-id="VW5mNiFvrOr9zAFVV4ELah">公式拆解、基准价、品牌系数全部为空</b>，前端拿不到任何精确值——这是故意的，防止绕过留资。</span></li>
+  <li data-page-node-id="8rtXaFYRtZ6HQZfFcoevHa"><b data-page-node-id="GFzXxeikGhjCINfc8k2U6e">用满 3 次 → 触发门槛。</b>同一 IP 当天第 4 次调用会被挡下，页面提示「今日免费估值次数已用完」，引导留邮箱或注册登录。</li>
+  <li data-page-node-id="9MpHFZ2sOuSIrwnTirE2V4"><b data-page-node-id="5xdwhOaCVEpzMnp3l3TeSr">留邮箱 → 解锁精确值。</b>输入邮箱后，<b data-page-node-id="QtYrcuneO3BvF2BuHHVsmw">服务端重新算一遍</b>（不信任前端传值），返回精确估值 + 完整拆解，同时把这条线索写进 <code data-page-node-id="PLuQ9NyggabDeEfPRiRDGB">ValuationLead</code> 表。</li>
+</ol>
+
+<div class="box info" data-page-node-id="K4FjMXzleMS5P4Z7FcRqIq">
+  <p data-page-node-id="sAMHidDiv1IN9QfX5zWjgr"><span class="k" data-page-node-id="wV5Iqg8f8s4hIpe7tt2YqC">运营要点：</span>同一个邮箱 + 同一组参数重复提交，会直接返回缓存结果（<code data-page-node-id="OUGU7CU4fezFYjyOLBRY86">cached=true</code>），<b data-page-node-id="l92bq1nhu2OYAXiOEf0tOT">不会重复插数据</b>。所以你不用担心同一个人刷出几十条脏数据。</p>
+</div>
+
+<h3 data-page-node-id="HKriUjI7TXCQPttQ4e6igK">1.2 规则参数（改这里就能调）</h3>
+<table data-page-node-id="Aw0URnjiof2KqGG3f8Ad9J">
+  <thead data-page-node-id="i2gjlBiHJPO3On7wmPipBS"><tr data-page-node-id="hqwodZNmgPbf1Sa00wFECN"><th data-page-node-id="xhsWp9MjzyDuD6Wtj8NZ9j">规则</th><th data-page-node-id="R6GfFb0JtB1D3cNPGbvoEn">当前值</th><th data-page-node-id="b8ibCahnLCnlcpcmEDUhhI">代码位置</th></tr></thead>
+  <tbody data-page-node-id="q1bI09g2WIEcOiPEwtPQ8Q">
+    <tr data-page-node-id="lf1jGYLbscUxjneRArA224"><td data-page-node-id="Tg7NY22d6Ca4uFl0Hfh6lA">游客每日免费次数</td><td data-page-node-id="HEzaEm8B5PaGvSZXYYe9pA"><b data-page-node-id="9jiKJLOOmc9Kh379Sptpl4">3 次 / 天 / IP</b></td><td data-page-node-id="Vr9HsjAWhqFIJD8j0BOvyG"><code data-page-node-id="XECK9wv6h5OXo8nO0hBF5U">src/app/api/valuation/route.ts</code>（<code data-page-node-id="b4QHOeWRrup7WZHK6mUUSf">GUEST_DAILY_LIMIT</code>）</td></tr>
+    <tr data-page-node-id="iNeV0nD1tLx8hXjPiEs6Fn"><td data-page-node-id="OQP3AwCeMiUmHHDWURbjJ4">模糊区间幅度</td><td data-page-node-id="kVdXe5KxhLlREvVxOf6yhx"><b data-page-node-id="Q8xOWrlaJpIDnl696ows5G">±12%</b></td><td data-page-node-id="Q67sdZ78Sv4rN0zOMXcF7P">同上，<code data-page-node-id="k3hJICr3dzFxg73s918QHu">toBlurredValuation()</code></td></tr>
+    <tr data-page-node-id="yEQlZ1ygNEkzybc3U3uE07"><td data-page-node-id="LKcDH5D0TgepM20j3r90PC">登录用户月度次数</td><td data-page-node-id="DRnkBvdpZa9qO6TCG3llHC">免费档 5 次；旗舰/企业档不限</td><td data-page-node-id="q5aSJiiEn0u98CVnsLf6xk"><code data-page-node-id="SbLOh0jhEeB6tIkukaQ6d5">src/lib/permissions.ts</code>（<code data-page-node-id="lHHiS7ABC21KpLtbgzFTWs">freeValuationsPerMonth</code>）</td></tr>
+    <tr data-page-node-id="aLC5PC2hjaueICwcURqhCc"><td data-page-node-id="CXN48ipjavthQJGiiEMZo8">解锁接口</td><td data-page-node-id="mosbHKYpPTEWHa2HY80nSY"><code data-page-node-id="a0Ldpy256jKJKszAQzmEyE">POST /api/valuation/unlock</code></td><td data-page-node-id="8Ea1HH9Ha7qhwyx3tbW4DD"><code data-page-node-id="TSkeWlMlbwcZRXmvGPD5bV">src/app/api/valuation/unlock/route.ts</code></td></tr>
+  </tbody>
+</table>
+
+<h3 data-page-node-id="TplZX2XBTF8sris06jWWaA">1.3 运营怎么查留资（重要）</h3>
+<div class="box warn" data-page-node-id="lsB9vOpBuvFc2QwNHGkxwg">
+  <p data-page-node-id="WlYecn662zX0h9bEZEk6HE"><span class="k" data-page-node-id="j5cb5F2lGQq2XQig1Iv5c7">⚠️ 现状：还没有后台页面。</span>目前留资只能直连数据库查。这是本次改造最大的落地缺口，已在第 4 节列为 P0-3。</p>
+</div>
+
+<h4 data-page-node-id="suaE0tz8E2E0vFARhtqA1c">境外 .com（Neon / PostgreSQL）</h4>
+<pre data-page-node-id="VhOjejEzRGaPuDTrnQPRjT"><code data-page-node-id="IyDe86Bi7Am1dud1WzTDzs">-- 最近 100 条留资线索
+SELECT "createdAt", email, locale,
+       "valuationParams"-&gt;&gt;'brand'   AS brand,
+       "valuationParams"-&gt;&gt;'category' AS category,
+       "valuationParams"-&gt;&gt;'year'     AS year,
+       source
+FROM "ValuationLead"
+ORDER BY "createdAt" DESC
+LIMIT 100;
+
+-- 按天看留资量
+SELECT DATE("createdAt") AS d, COUNT(*) AS leads,
+       COUNT(DISTINCT email) AS uniq_emails
+FROM "ValuationLead"
+GROUP BY 1 ORDER BY 1 DESC;</code></pre>
+
+<h4 data-page-node-id="2ZuspE296D0gCLTLUHXp14">境内 .cn（ECS 上的 cn-postgres）</h4>
+<pre data-page-node-id="1ptcabGHhKUgmr2FBbLsKu"><code data-page-node-id="Gp62Bs5E82FFUdci0ceKxu"># 1) 进容器
+docker exec -it cn-postgres psql -U cn_app -d usedfarmmach_cn
+
+# 2) 查线索（同上 SQL）
+SELECT "createdAt", email, locale, "valuationParams"-&gt;&gt;'brand' AS brand
+FROM "ValuationLead" ORDER BY "createdAt" DESC LIMIT 50;</code></pre>
+
+<div class="box warn" data-page-node-id="uAhHJjfLlzgjd0t37fi5C1">
+  <p data-page-node-id="xbcv5xe0PHRCc32lNDqV3M"><span class="k" data-page-node-id="xCDltF5Yefvsx7uKMWbnwg">需要你清理的一条测试数据：</span>我在验证 .cn 链路时留下了一行测试留资，请执行下面这条删除（.com 的测试数据我已清掉，.cn 需要你在 ECS 上跑）：</p>
+  <pre style="margin:10px 0 0" data-page-node-id="VvH9JrI2hueeVpXTQfbSsq"><code data-page-node-id="a8MOJXiXwJANlNC1uhkKC0">DELETE FROM "ValuationLead" WHERE email = 'p0-selftest-cn@usedfarmmach.com';</code></pre>
+</div>
+
+<!-- ============ 2 ============ -->
+<h2 data-page-node-id="AB8OXgRKZ2QJGkg0Bj1DCN">2. 卖家发布 —— 使用说明</h2>
+
+<p data-page-node-id="NEg7AGdJeYEs4bTLalJAL2">发布页改成了<b data-page-node-id="uPCulMs8cyUEM9WhKNBfMA">三步向导</b>，必填从 24 项压到 8 项，实测填完约 2 分钟。</p>
+
+<h3 data-page-node-id="jGJs5a8BszWZC7qdUkZ3TW">2.1 发布三步</h3>
+<ol class="steps" data-page-node-id="oT4MguDNcC11Kbt4ydojo0">
+  <li data-page-node-id="lMof7w0FOom2XdnYwQlVRk"><b data-page-node-id="JH940CHiLkYMMfVGVS3Fjc">上传图片（必填，至少 1 张，最多 10 张）</b>　单张 ≤10MB，超了会自动压缩。<span class="muted" data-page-node-id="vti7897ZV9HIjnK6mXvXHq">免费档 10 张，旗舰档 20 张，企业档 50 张。</span></li>
+  <li data-page-node-id="bQULezUqZNnmbTWSg2KiCJ"><b data-page-node-id="HtFeKHxG1DIFyHCSc7Wqq2">上传运转视频（选填，最多 3 个）</b>　强烈建议传——带作业视频的机器询盘率明显更高。</li>
+  <li data-page-node-id="B7hatwgw3xO3rSt9aSEhrC"><b data-page-node-id="7g0nvtBXuG1OfOhjsOYCxo">填表单</b>　7 个必填字段 + 折叠的 11 个选填字段。</li>
+</ol>
+
+<h3 data-page-node-id="jQ4YxhqmymsD0CzFxoyeWa">2.2 必填字段（7 个 + 1 张图）</h3>
+<table data-page-node-id="e0OSH15IUElYiOnh5phFAB">
+  <thead data-page-node-id="yEM7EqKZeVa0VIclJnqCs9"><tr data-page-node-id="tblz07LRFcEllajPbBiFuk"><th style="width:130px" data-page-node-id="a8vAbKCgZSSZGGAD4qkett">字段</th><th data-page-node-id="wWKwutuPXpUQm4PiPxMUTH">说明</th><th data-page-node-id="EjcH2xnfB58HrQd9RGkidh">备注</th></tr></thead>
+  <tbody data-page-node-id="3zKXmDRBQNEmtukFWfmkHT">
+    <tr data-page-node-id="z97qNJBxNTiy6thlksNFsV"><td data-page-node-id="SgerFtEY58iqWMRteSqZtG">品牌 *</td><td data-page-node-id="ZC803SPfeH3xtRN2fOuJZ4">如 CLAAS / New Holland / Krone</td><td data-page-node-id="4P7HVN5sb0FeBGrPjsCgjM">下拉选择</td></tr>
+    <tr data-page-node-id="Yw88L6FbzUr1KY1coQ9Cse"><td data-page-node-id="J8PKZzLa3ZBgtYX4ROEjIA">品类 *</td><td data-page-node-id="vAzrY9md7S7y8TY9oE996t">方捆机 / 圆捆机 / 青贮机等</td><td data-page-node-id="FTfkmeoInnwdQc9sFyum9t">下拉选择</td></tr>
+    <tr data-page-node-id="iNU2Oc1HM6YAbuDzsMTRuS"><td data-page-node-id="ChM5GsqOEkvirtfCz3lfqq">型号 *</td><td data-page-node-id="ygOyB0hvwA41fqVG1JnEup">如 QUADRANT 2200</td><td data-page-node-id="PQg2QBQblN7TYrEVsOuuDE">手填</td></tr>
+    <tr data-page-node-id="9ESxrtBWNEhGBPxq9u6nuJ"><td data-page-node-id="3V33fhZ8GnyeIlHM3piWBJ">出厂年份 *</td><td data-page-node-id="vgSWF2lojfx1sqg47Z4n3I">默认 2020</td><td data-page-node-id="u86LbMNuYOxeCrqDwTfAk7">影响折旧系数</td></tr>
+    <tr data-page-node-id="c40SmpK9ccfdFVzze12tM6"><td data-page-node-id="jAv1FUQyUbM1npoa9i7YoU"><b data-page-node-id="WWPqrWQJW1NxjAfRfuwcAu">工况 / 小时数 *</b></td><td data-page-node-id="NLo79k6uW1bPowWhTzOJpL">如 1200</td><td data-page-node-id="TRSOnSnwaYtSQY2F5Ri0WC"><span class="k" data-page-node-id="3j0Q46uLADzpHBbKzdDBWu">本次新增的必填项</span>，买家最关心的字段之一</td></tr>
+    <tr data-page-node-id="Jh5sDSmFWO42uEpLabZ9em"><td data-page-node-id="WY8xh6EeBqnX6nI9u2EsvC">价格（元）*</td><td data-page-node-id="o8QG8eLrQWNvCNZxXbcf5w">卖家报价</td><td data-page-node-id="veEe7ZpeGAZFEq0DlxNN5b">可与 AI 估值对照</td></tr>
+    <tr data-page-node-id="9fX0efSRUMY1WlL66fyUMi"><td data-page-node-id="LkbVEBWpr9lre0mVXnGmgI">产地 *</td><td data-page-node-id="nnOBHxQksrof3EuLZotHi9">机器所在地</td><td data-page-node-id="BKPgU2WAJLpUaqiAPJZfWY">影响物流成本估算</td></tr>
+  </tbody>
+</table>
+
+<h3 data-page-node-id="qm0BpQ8YFrDOaCCHgmRA4J">2.3 选填字段（折叠在「更多信息」里）</h3>
+<p class="muted" data-page-node-id="474BKHppPtSodBkLSyDSqP">额定马力 (HP) · 发动机类型 · 驱动方式 · 主要配置 · 总长 · 总宽 · 总高 · 整机重量 (KG) · 价格模式 · 贸易术语 · 发货港口</p>
+<div class="box info" data-page-node-id="ewib3a4nAtEouAVcAO50Hh">
+  <p data-page-node-id="QDESAfvXwlNswkMAPuWxZ6"><span class="k" data-page-node-id="ifJK6AVqmaP3mqEA9krqS6">为什么要折叠而不是删掉？</span>这些字段对估值和搜索排名有用，但会吓跑新卖家。折叠后：想快发的填 7 项就能上线，想冲曝光的展开补全——填得越全，搜索权重越高。</p>
+</div>
+
+<h3 data-page-node-id="aXsbNYjFssVAjeBYO6C9B7">2.4 估值预填（省时设计）</h3>
+<p data-page-node-id="hV0GhgzPVZUcCMb3joW5Xq">如果卖家是从 AI 估值页点「发布这台机器」跳过来的，品牌/型号/年份/马力等会自动带进表单，顶部出现提示条「已为你带入 AI 估值信息，确认后即可发布」，旁边有「清除」按钮可以一键清空重填。</p>
+
+<h3 data-page-node-id="3JXPTnwZgatbxY4p2Mt8Z6">2.5 发布额度</h3>
+<table data-page-node-id="Cxrz851iJM6HrmstLiw3F6">
+  <thead data-page-node-id="3qndHeRqoPBvEEClR9CFE5"><tr data-page-node-id="FMIBliuLQvBze6FpfEVpKc"><th data-page-node-id="5sxmY78BowrQz7Dbn3Nqvw">会员档</th><th data-page-node-id="7rGxFY7vssx5iuio7pm0P2">每月可发布</th><th data-page-node-id="0IO69N10OR4qBUMvUSe1L8">每月 AI 估值</th><th data-page-node-id="wQZsCmJCnw531YB8UrjjDE">每产品图片/视频</th></tr></thead>
+  <tbody data-page-node-id="EoYNh9Byc32hnV0xhqD1K7">
+    <tr data-page-node-id="j9jjX9K5HO5SrA7ZXjLHip"><td data-page-node-id="S5eiETOSdOs8GFTMIcNKF9">免费版</td><td data-page-node-id="RLbsfNGYUMVkNkB0mEK9w5">5 台</td><td data-page-node-id="MTduot2pJgJR3frqNFgQO4">5 次</td><td data-page-node-id="z3QDP6eIwyHGKoGjUjZ8Xt">10 图 / 3 视频</td></tr>
+    <tr data-page-node-id="fY2QQ7SAIZhCWaXUT8GeNS"><td data-page-node-id="Q4WYYauxO84mNHHlHmoyD2">专业版</td><td data-page-node-id="dLUtcCh65JfCNyBeTmET61">50 台</td><td data-page-node-id="AgEAN5nMusKUbh6uWqV8gs">50 次</td><td data-page-node-id="oGWLSFdM9a4I0539EySw4n">10 图 / 3 视频</td></tr>
+    <tr data-page-node-id="Av0Z1GM2cdEtlTIlUlMGgy"><td data-page-node-id="0pS1EZl4fj5bfRanUYsRyG">旗舰版</td><td data-page-node-id="5JL9EFiZkS3XP2StnTi583">不限</td><td data-page-node-id="ApuP6JjZsqfcOVFO4dwEVe">不限</td><td data-page-node-id="qWVAHGUh39bteXgDrh41ro">20 图 / 5 视频</td></tr>
+    <tr data-page-node-id="3Z5qYrLMgLdh8LKbAsaleq"><td data-page-node-id="KBp4LIISbR249bGzxl2J5Y">企业版</td><td data-page-node-id="H5ApEzC0lwnaBZkxo4299y">不限</td><td data-page-node-id="Bi08lWiDDyMHT766BRTGiG">不限</td><td data-page-node-id="yzZAebodvMeFUBBzfTftgC">50 图 / 10 视频</td></tr>
+  </tbody>
+</table>
+<p class="muted" data-page-node-id="9R7DE26GlmfeeXmztX3iiq">发布消耗 1 积分/台；注册赠送 20 积分（改前 5 分），配合月额度 5 台，正好解决「发第 6 台卡死」。</p>
+
+<!-- ============ 3 ============ -->
+<h2 data-page-node-id="GoEAgmBvsQqUiYw76sjJOc">3. 会员中心 —— 使用说明</h2>
+
+<h3 data-page-node-id="HYCfwGDIXQLOkQaJXPrXDc">3.1 入口</h3>
+<p data-page-node-id="Vh5OOPY1YjQf2AuSc2udih"><code data-page-node-id="fvs0PjUPohkwssE65sKEQS">usedfarmmach.com/membership</code> 或 <code data-page-node-id="jeZmdTQrSgWyroYtvg2qzF">usedfarmmach.cn/membership</code>。<br data-page-node-id="QyrjFs6GSeLrwXuSuI2iro">
+<span class="muted" data-page-node-id="bIRQDMtvbjFf25mVEqp5vk">（改前这个地址是 404 —— 全站所有「升级会员」按钮点了都跳死链，本次已修复。）</span></p>
+
+<h3 data-page-node-id="pAzIWqFMhvTbXuO7iTLFUC">3.2 四档价目表</h3>
+<div class="grid" data-page-node-id="rSWDzG4KNYQW8Kv6A2uDNC">
+  <div class="card" data-page-node-id="3TrG8ZWJ3NKoGtbY0Inhso">
+    <h4 data-page-node-id="uwek22Ph95JQ03Apir4ANv">免费版</h4>
+    <div class="price" data-page-node-id="nw5gFPImds8Mctns1HioJ9">¥0</div>
+    <ul style="margin:8px 0;padding-left:18px;font-size:13px" data-page-node-id="Uf06kNiKThBP1uopU3oeXQ">
+      <li data-page-node-id="0dJnMEPAFe3VgOSfCWI40y">每月 5 次 AI 估价</li><li data-page-node-id="yuTIfu6iXc6tdCNwDhhmHv">每月发布 5 个产品</li>
+      <li data-page-node-id="kDFOHpMVNFWLDd2I9ekqVh">查看卖家联系方式</li><li data-page-node-id="pL6LlGbx8sNeHkjWfmBHr6">注册赠送 20 积分</li>
+    </ul>
+  </div>
+  <div class="card" data-page-node-id="erbi5olvVbkQnAwy67qC0r">
+    <h4 data-page-node-id="qsFAYBNo6uPsmFmIQLIDB2">专业版</h4>
+    <div class="price" data-page-node-id="gVGBROUsQ6yVTrGuqAkAKd">¥199<span style="font-size:13px" data-page-node-id="gXIr56AiFJ5ftnZGFHFsQm">/月</span> <span class="muted" data-page-node-id="sSWRJ0ljAqhywEcxhJPKQo">· ¥1,990/年</span></div>
+    <ul style="margin:8px 0;padding-left:18px;font-size:13px" data-page-node-id="fhkWQ7OdBdQfTCySAiz1hE">
+      <li data-page-node-id="QmpS8CzQuCXJ4X94P61vnG">每月 50 次 AI 估价</li><li data-page-node-id="9mFmkvEBYetD8GsUl1RPa4">每月发布 50 个产品</li>
+      <li data-page-node-id="ZTwQnIUi7MotrXmCXQuSEd">跨境套利数据</li><li data-page-node-id="vmlcXRKPCsxDEoCjnbvNNu">每产品 10 图 / 3 视频</li>
+    </ul>
+  </div>
+  <div class="card" style="border:2px solid var(--brand)" data-page-node-id="SbDxVpFkR3nffGUqkakqw1">
+    <h4 data-page-node-id="eUddh7uAmqjLJfQtfW7olm">旗舰版 <span class="tag t-done" data-page-node-id="bBBk39ftbc45ZueI4FMBdp">主推</span></h4>
+    <div class="price" data-page-node-id="2EVPZVNHI4jFAOvk7Nl6lu">¥499<span style="font-size:13px" data-page-node-id="eLsF4PZDJxuYqNVfHxOPvP">/月</span> <span class="muted" data-page-node-id="UioiB9K4NVuxlHvEw0WBxY">· ¥4,990/年</span></div>
+    <ul style="margin:8px 0;padding-left:18px;font-size:13px" data-page-node-id="MmkTV0eaiAd0SCuyLwasYH">
+      <li data-page-node-id="JmAK94EolDaQSbFmbpocsZ">AI 估价不限次</li><li data-page-node-id="aT6OkbNLrv0CSMwEdUvlox">发布产品不限量</li>
+      <li data-page-node-id="gdZnUmbjYXRaDtp2lalyB3">询盘与联系方式不限</li><li data-page-node-id="jd0qDOINlYbp81nuXA4MKZ">数据导出 + 产品置顶</li>
+      <li data-page-node-id="KqXwe5JZGG8w6ixYMZB7wm">每产品 20 图 / 5 视频</li>
+    </ul>
+  </div>
+  <div class="card" data-page-node-id="12PfjWjqyehoTuasTU1ylj">
+    <h4 data-page-node-id="2LI7UZfCpHeTwGoOhydWCj">企业版</h4>
+    <div class="price" data-page-node-id="TMfGZGhsFUnYD7qc3wVJFO">¥1,999<span style="font-size:13px" data-page-node-id="u2FfHz3HlTxRZA96smT7SL">/月</span> <span class="muted" data-page-node-id="YTssK9udOAIGrMrlQ2H4Lf">· ¥19,990/年</span></div>
+    <ul style="margin:8px 0;padding-left:18px;font-size:13px" data-page-node-id="e38tnCV22e3lyQtxwrcSwC">
+      <li data-page-node-id="HAHRZRnaghb7hnQkwTyoab">尊享旗舰版全部权益</li><li data-page-node-id="vqGzRxwpfXQGtlDPHoaCG0">每产品 50 图 / 10 视频</li>
+      <li data-page-node-id="OQWDQDk1TJeEZGVHYp9a93">专属大客户支持</li><li data-page-node-id="xWmYrwCbocs0GR3bHyanp9">优先参与行业活动</li>
+    </ul>
+  </div>
+</div>
+
+<p data-page-node-id="RP3Y2l1YjOrnRSEv8WJRTy"><b data-page-node-id="XcmgFbegu7EcKaOtTx1jMw">.com 境外站显示美元：</b>专业版 $29/月（$290/年）、旗舰版 $79/月（$790/年）、企业版 $299/月（$2,990/年）。<br data-page-node-id="m0n0jSnRJtApvpJdOR10aT">
+<b data-page-node-id="GJlqSTXQvM1UbwQNEso09P">年付限时 9 折</b>（页面默认切到「按年付费」，会划线显示原价再打折后价）。</p>
+
+<h3 data-page-node-id="xOV80j41gQ0AxDoxhGBwyO">3.3 支付状态（务必看清楚）</h3>
+<table data-page-node-id="VBULjshrky1j4YkCqVBzFI">
+  <thead data-page-node-id="pDMUCymASpRJORTmaVbOZO"><tr data-page-node-id="gfq1PhepnlM03o2mJWV6mw"><th data-page-node-id="wICK03aFWMhfIIOWj2PIzN">站点</th><th data-page-node-id="AKsdOmrdVTTQaccNbPWWwE">支付方式</th><th data-page-node-id="0Oq2rXdthyE5GdDqMuG16h">当前状态</th><th data-page-node-id="M0pENUQEqi4BHvootE2r6M">用户点「立即升级」会怎样</th></tr></thead>
+  <tbody data-page-node-id="jP3DaE9zrK7yuY9G2nDoeA">
+    <tr data-page-node-id="rw6uwdxqJ1rEDsulWWrKXb"><td data-page-node-id="tF0RHuGKbIn2tM7XLGNSuX"><b data-page-node-id="WRMvIvFSEjJg0ARMAiGTXa">.cn 境内</b></td><td data-page-node-id="3TKSkPyzXwqkWPguwEAQwQ">微信支付</td><td data-page-node-id="7B94LfqTdsrNys0agHGLWE"><span class="tag t-p1" data-page-node-id="FjbLpT98o0gbe9iJCxD3Ks">未开通</span></td><td data-page-node-id="lYB6cvm1o9q6ZZVkorG3wC">按钮显示「微信支付（即将开通）」，<b data-page-node-id="mftx6zfUw9A6D3cdYZDERz">不可用</b></td></tr>
+    <tr data-page-node-id="BnCAVCx3MCWPBEKueJVH2T"><td data-page-node-id="yWsRBf6yRFfIxTUuXCJUaR"><b data-page-node-id="jT8piOTe62J8zzybED1iXs">.com 境外</b></td><td data-page-node-id="yuzF7Vz0GCH2xrC5AgCMBs">Stripe</td><td data-page-node-id="TRiIov6OX2DPaUCstZfL6W"><span class="tag t-p1" data-page-node-id="bGNNey7HYA4csG0ZH3LEvI">密钥未配</span></td><td data-page-node-id="cAopqWhcc3ncL28Yr9hZYI">接口返回 503，前端自动降级为「留下邮箱，开通时通知你」</td></tr>
+  </tbody>
+</table>
+<div class="box warn" data-page-node-id="X5TF3qcWYlPf3CKItWmoiE">
+  <p data-page-node-id="UEjJAlAJDS4CM5gjCqkncY"><span class="k" data-page-node-id="3LWwurSPzIl4VA0LZ0Cciq">直白说：会员页现在能看、能选、能留邮箱，但收不了钱。</span>这是下一批要打通的核心（见 4.2）。<br data-page-node-id="5B4spbZPf06wgYGVHdpgsB">
+  好消息是降级逻辑做了兜底——点支付失败不会白屏，而是变成邮箱候补名单，所以这段时间流量不会浪费，反而在攒意向客户。</p>
+</div>
+
+<!-- ============ 4 ============ -->
+<h2 data-page-node-id="CapyVHaTGSmBTnDVvUyhK5">4. 下一步完善建议</h2>
+
+<p data-page-node-id="3huCJcnOcwLxvZfgTqAup2">按「先止血、再收钱、后放大」排序。前三条是<b data-page-node-id="3WEsXbGz3PIcuR9VYJrdZr">现在就该做</b>的，其中前两条是我在写这份文档时核对代码发现的<b data-page-node-id="EnRufV6vetcEPMaXImUsKn">线上问题</b>。</p>
+
+<h3 data-page-node-id="Io1zC7QSQd81YyL0Oge5jH"><span class="tag t-p0" data-page-node-id="Ube8zSRxlrokDl66s4MIOv">P0-1</span> 合规称谓写错了，必须立刻改</h3>
+<div class="box warn" data-page-node-id="e7Iau0di8S1TtPpCKmsd8P">
+  <p data-page-node-id="FJ1DkRwSEgc9yAddwrgA6Z"><b data-page-node-id="GkgWGcSjI7EcuEgLfazVEE">问题：</b>会员页底部的协会背书，中文版写的是</p>
+  <p style="text-align:center;color:var(--warn)" data-page-node-id="gj1DF1563PGCYJTMFpoz7r"><code data-page-node-id="GkLBWyNAlzAs5TaNQm9peL">中国农业机械流通协会·二手农机流通分会 副会长单位</code></p>
+  <p data-page-node-id="ZtlrNF2Yb23E1G9SiHCebt"><b data-page-node-id="Vc47ta8yRIF2iEHznJ2xZr">正确写法应是：</b></p>
+  <p style="text-align:center;color:var(--ok)" data-page-node-id="mUVQDmCnDzQ5LvlWcLG38v"><code data-page-node-id="UBQMnl4YpFby2xUAnwq8kF">中国农业机械流通协会二手农机流通分会 副会长单位</code></p>
+  <p data-page-node-id="ODu2onI3Lsd08EQW3NzKUo">① 协会全称是「<b data-page-node-id="lLwudThbFNWCaRiMnJuGul">中国农业机械</b>流通协会」，不能简写成「中国农业机械流通协会」；② 「分会」二字不能省；③ 中间那个「·」分隔符去掉。<br data-page-node-id="9BBSJaDG6R7dl0WMCeMGem">
+  英文版是对的（<i data-page-node-id="n7i0Q46S1ooBMa3DF2KcUQ">China Association of Agricultural Machinery Circulation</i>），<b data-page-node-id="0E52AIaza2L2yYvPeYSP5G">只有中文简写了</b>——而这句恰恰只在 .cn 境内站显示，属于对国内用户的正式背书，是明确的合规红线。<br data-page-node-id="mnNmvSNjZU0JpnQbb9S3FW">
+  <span class="k" data-page-node-id="mpEJm89eAhE39RmYRBaxJZ">改动位置：</span><code data-page-node-id="zEqfbLf0pRtelz9xhUrWOz">messages/zh.json</code> → <code data-page-node-id="rMKHY9qibNwrJLkb34DMj2">membership.trust.cn</code>　<span class="muted" data-page-node-id="eaSDbARBp79OneSAoGSLd2">（一行，改完重新部署 .cn）</span></p>
+</div>
+
+<h3 data-page-node-id="Bu74FM1vJqC8qQNDbRK3n6"><span class="tag t-p0" data-page-node-id="Ugj9YBV4PzGChvM9YTmFRH">P0-2</span> 免费档赠分文案与代码不一致（10 vs 20）</h3>
+<div class="box warn" data-page-node-id="SgtigWzXF1kmH0YcW2yVUd">
+  <p data-page-node-id="xog5SfwIgi27DUCuMEFsEu"><b data-page-node-id="WodP9r9q5lQjXpVblyaRY8">问题：</b>会员页免费档写「注册赠送 <b data-page-node-id="41DjXv76HVVk4x3EpHallF">10</b> 积分」，但代码里已经是 <b data-page-node-id="LdAqs9ckRSX78FLCjC86OA">20</b>（<code data-page-node-id="z8D4nfWdzPJG29Y9Oc7tu6">constants.ts:47 registerGift: 20</code>、<code data-page-node-id="HoxRv3FCEDm45CW3Enimoy">permissions.ts:16 credits: 20</code>）。<br data-page-node-id="8CrUTbtvniqCHbChucoxza">
+  <b data-page-node-id="0GUCp79D5jrdVHUQX20hi3">8 个语言文件全部写的是 10</b>，全部要改。<br data-page-node-id="RJtcq65saS6BikBmF4JEYl">
+  <span class="k" data-page-node-id="tomihT9ybNuo9jbs1chkmK">影响：</span>实际发 20 分，页面上写 10 分 —— 属于少宣传了自己的权益，白扔了一半的吸引力。<br data-page-node-id="isHHlQ0XBNIcrgALSDwx7D">
+  <span class="k" data-page-node-id="7BwgtqXU8CAge5g8jW5wq8">改动位置：</span><code data-page-node-id="YdOMGBtet9iCdMjQzkNvAp">messages/*.json</code>（8 个）→ <code data-page-node-id="FnnHzDZIEURSQirJY1XKO7">membership.benefits.free</code> 最后一条。</p>
+</div>
+
+<h3 data-page-node-id="QaxfprE0rKyaYn2kAhLVzO"><span class="tag t-p0" data-page-node-id="OHHd0dpuWB4rZQmgPXvZZG">P0-3</span> 留资进得来、看不见 —— 缺后台与通知</h3>
+<p data-page-node-id="gYITCrUFYB6bn2eLJSAsTz">现在线索躺在数据库里，<b data-page-node-id="4OapsxhHY4tEDfAcclGki3">没人会主动去查</b>，等于留资引擎只跑了一半。建议补三件事：</p>
+<ul data-page-node-id="bQC7tKYm9GDAxatlqNq78m">
+  <li data-page-node-id="sUvk681BhZwFVt39aDdoCE"><b data-page-node-id="Etxig1tKgUL6AQvkSDtYwP">后台留资列表页</b>：<code data-page-node-id="7JVDSbYseK481csEcEXMOm">/admin/leads</code>，表格展示 时间/邮箱/品牌/品类/年份/来源站点，支持按天筛选和导出 CSV。<span class="muted" data-page-node-id="xrs6koVDz6zQ78n0hZ76bY">（约 1 个页面 + 1 个 API，工作量小）</span></li>
+  <li data-page-node-id="HQv1EhQWUwaINEpCz5BdAx"><b data-page-node-id="BrD5YXcxqnWTONWbEHhEoL">企微实时推送</b>：有新留资就推到「神雕套利运营日报」小群（webkey 已配好，复用现有推送模块即可）。<b data-page-node-id="9ZthoUbEMBRJFnuQ1WHphw">这条最关键</b>——销售要能在 5 分钟内联系上刚估完值的客户，转化率差好几倍。</li>
+  <li data-page-node-id="7hG4at90mKMlAxeEmooFjp"><b data-page-node-id="nJ0ABosSh4ROdJap9umj9Q">自动回复邮件</b>：留邮箱后立刻发一封带精确估值报告的邮件，既是交付也是二次触达。</li>
+</ul>
+
+<h3 data-page-node-id="cpwBxtgX1ELVnrVr2BjDv1"><span class="tag t-p1" data-page-node-id="tebfn1ub75e6KicQv58d3R">P1-1</span> 打通收钱（变现的真正起点）</h3>
+<ol class="steps" data-page-node-id="9gdIAnboTHOBlUFh8kOOC6">
+  <li data-page-node-id="RCxF9Zhxa9mDhF6QTUKHbc"><b data-page-node-id="pwV6ZioChXA3NVNELXsIOM">.cn 微信支付优先。</b>境内已有 ICP 备案，走微信支付商户号合规性最顺。需要确认商户号归属与签约，然后接 Native/JSAPI 支付 + 回调。</li>
+  <li data-page-node-id="rf7MgCwO7KDrLWnKSqyYXz"><b data-page-node-id="2xQ0Iu0PFplE3mlUoFrm0Y">.com Stripe。</b>三张表已建，只差密钥。需要在 Vercel 配 <code data-page-node-id="MKRgMXeRtstfQYTGZZFT85">STRIPE_SECRET_KEY</code> / <code data-page-node-id="HqW7g8Qz6P0W2T2vKGMNxX">STRIPE_WEBHOOK_SECRET</code>；同时确认境外收款主体。</li>
+  <li data-page-node-id="izO4WcXfqBPmEJ0v4P16fI"><b data-page-node-id="AVku9BICB3jXHNeEbb3ZNA">深度报告先做在线支付试点。</b>现在是静态收款码 + 用户自点「我已付款」，既体验差又对不上账。改成在线支付带回调，跑通一单完整闭环，再复制到会员订阅。</li>
+</ol>
+
+<h3 data-page-node-id="DlwBQzVuZG7xuj3ZsI2T90"><span class="tag t-p1" data-page-node-id="tiebENiUgUDq2jLjkQmPwA">P1-2</span> 补齐 7 个语种的翻译</h3>
+<p data-page-node-id="8JRx2Cw4CGygp4rn7oc0NQ">新增的三个文案命名空间，目前只有中文是真翻译，其余 7 语（en/es/pt/ar/fr/hi/ru）还挂着 <code data-page-node-id="ianqACT0ofEFted9vDjbH6">_todoTranslate</code> 标记、实际显示英文占位。<br data-page-node-id="ZC2QOIViAqSACHDG11t2jF">
+<span class="muted" data-page-node-id="EkAaOZCu6BG76e5DgqYPVB">优先级建议：en → ru（俄语区是主战场）→ es/pt（南美）→ ar（中东）→ fr（非洲）→ hi。</span></p>
+
+<h3 data-page-node-id="T8Ovh70PMMxXZLmiAbEMO2"><span class="tag t-p1" data-page-node-id="rpuYxO6vEKrDoqRyPdTHz5">P1-3</span> 补埋点，否则优化全靠猜</h3>
+<p data-page-node-id="ZRKGA7bNLJnj7U2WWPvPbB">全站目前只有 Yandex Metrika（只覆盖俄语用户），<b data-page-node-id="lF4UdipTSWvDtMdHyivFom">注册 / 发布 / 估值 / 解锁 这四个关键转化事件一个都没埋</b>。<br data-page-node-id="6bWQuVTIzi6aPqV9Nw6ERL">
+建议：.cn 接百度统计，.com 接 GA4；至少埋 5 个事件：<code data-page-node-id="IqAOMPvMGxHyPjq2U0x7ha">valuation_start</code> / <code data-page-node-id="idlhAdNZuMA54ohmvubayu">valuation_blurred_shown</code> / <code data-page-node-id="FIM1RBPZWkClQaWKGNJbCN">lead_unlocked</code> / <code data-page-node-id="oc3VjRyGXWnMybx5IM4U5K">register</code> / <code data-page-node-id="eDp83Va2wvAhAkpSEFRD3p">publish_submit</code>。<br data-page-node-id="3z1uuvQbjGXoachiOxP8s1">
+有了这个，才能回答「留资率是多少」「哪一步流失最多」——现在这两个问题答不上来。</p>
+
+<h3 data-page-node-id="GRQDWAyFRsJ0skKEkkY2Fb"><span class="tag t-p2" data-page-node-id="Qhlur8BGwmw5eEqH6VzJXj">P2-1</span> 留资后的自动化培育</h3>
+<ul data-page-node-id="Co7womCXVYsh2EjLep95qd">
+  <li data-page-node-id="i36kvgYrIKsw012Xq0ADCo">留资 24 小时内未注册 → 自动发一封「同类机型在售清单」；</li>
+  <li data-page-node-id="TfAlPX0ZCXaGF68Qfw6m2Y">留资但 7 天未发布 → 推送「发布补贴/置位优惠」；</li>
+  <li data-page-node-id="jksfNZUQqyMOh0cia7pZgy">按品牌聚类：留资 CLAAS 的客户，推 CLAAS 相关货源与行情。</li>
+</ul>
+
+<h3 data-page-node-id="OcdeM2JbG4lUVwQNqcVysg"><span class="tag t-p2" data-page-node-id="EFgZ4pkywOPBsm35idzOn2">P2-2</span> 小程序同步</h3>
+<p data-page-node-id="ShhV0ZRCwkcXNTriGd3bIy">本次改造只在两端 Web 站生效，小程序还没跟上。建议同步顺序：AI 估值留资 → 发布简化 → 会员页。<span class="muted" data-page-node-id="Dov3ivVL9COyxpNfQ0r0zH">（会员支付在小程序内需注意平台规则，先做展示、暂不做支付。）</span></p>
+
+<h3 data-page-node-id="GDtPvXMVU8xwcHdxmZKnoI"><span class="tag t-p2" data-page-node-id="tTxPezviDJOPuEXqyVXUwt">P2-3</span> 数据库密码轮换</h3>
+<p data-page-node-id="QlUbFPi2pRAtARJJ0RlBcf">Neon <code data-page-node-id="Zzz3JVode1GOO6MUmmYvUl">neondb_owner</code> 连接串已在会话中明文出现，建议存 Bitwarden 后择期轮换，同步更新 Vercel 环境变量 + GitHub Actions secret。不紧急，但别拖过这个月。</p>
+
+<hr data-page-node-id="9k5kjAL59I4CfyForcKcat">
+
+<!-- ============ 5 ============ -->
+<h2 data-page-node-id="ah0EcF4ndFlPuUOFPHxoyz">5. 上线验证结果（2026-09-07 实测）</h2>
+<table data-page-node-id="SHoYnzlWpYDO4n8oaLQ1AI">
+  <thead data-page-node-id="bY9IT68pSVwOE1dlZAfC6C"><tr data-page-node-id="ErOUe2SNH7uvl8sCuHRvsH"><th data-page-node-id="ayK3EYivdSbuohlzE5Mvar">验证项</th><th data-page-node-id="YeVCXzqsAoFr7diyRbDyBO">.com 境外</th><th data-page-node-id="lz3s0mVYzw2Rxuz3bIfr7d">.cn 境内</th><th data-page-node-id="ZXHXBJkuEGqk6Hj4f7x2aP">结论</th></tr></thead>
+  <tbody data-page-node-id="MCyc1CBmXO82J3AVxUt3KN">
+    <tr data-page-node-id="ISrLgUSgAFp1G5exbhDfGt"><td data-page-node-id="lsEBCaJjTG9CTuXwcBiSvy">游客第 1–3 次估值</td><td data-page-node-id="JbOqilF2hFNwDN1LvpuilF">200，blurred=true，区间 369,741–470,579</td><td data-page-node-id="c7Af8QQLfYVETswykfHCiD">200，blurred=true，mid=420,160</td><td data-page-node-id="QGX8oCLxACEtaMw4ztSqXe">✅</td></tr>
+    <tr data-page-node-id="1Wt6x256ERUYQTJg9pqpdL"><td data-page-node-id="JyUinLHEGTRFaXul2tA513">游客第 4 次</td><td data-page-node-id="N0moDsx0RzLvbvEVAS1apA">429 <code data-page-node-id="auBEQhnC1WC3oI7oIencfX">DAILY_LIMIT_REACHED</code></td><td data-page-node-id="D0lJtIICVbrOuGJaO3aUV0">同逻辑</td><td data-page-node-id="JjWTc6i1JtCmR7XNIMjyEi">✅</td></tr>
+    <tr data-page-node-id="Kc7bDhTmLpADVFDJgKuBVB"><td data-page-node-id="NfiJrygYPFCvNRn29klDTw">游客侧精确值泄露</td><td data-page-node-id="KOo9gjrmzytJabxBcW3bj3"><code data-page-node-id="ZyAMxdkp2X2gCvvgSD3Ksp">details/basePrice/brandFactor</code> 全 null</td><td data-page-node-id="CcNwWWRFnbWNmOTxSGlRRI">同</td><td data-page-node-id="teE52LRYCgrPiCFHuPsmAa">✅ 防绕过生效</td></tr>
+    <tr data-page-node-id="wVn6vFTPJkv13LKmkEbdNq"><td data-page-node-id="2CtlVEVjwl0VIxITNboDiY">邮箱解锁</td><td data-page-node-id="Av5rpGpOxmB7JXlOwcO1Em">200，返回 basePrice=1,040,000 / brandFactor=1.3</td><td data-page-node-id="MObS5X8ENgFyjnzm3z5ZwE">200，ok=true，同值</td><td data-page-node-id="Qet82w6cgjemS5kmz4FTMk">✅ 两端落库</td></tr>
+    <tr data-page-node-id="Bu4BwuYjR2qMDQJIb1boUZ"><td data-page-node-id="dvEN0mhjNIzjS3LYdmBPTV">重复解锁幂等</td><td data-page-node-id="Rm3butU9voHi8CoCvHsaVi"><code data-page-node-id="kL5a1MCHUHP68okAo3USPf">cached=true</code>（不重复插数据）</td><td data-page-node-id="qw1EqD0a0NU3A7hFVKDnFJ">—</td><td data-page-node-id="wflGTBTcAlU6dJpYnOM4AA">✅</td></tr>
+    <tr data-page-node-id="fymJgU5NhlQL0ZjcMHncnC"><td data-page-node-id="ux85Ltj9Jmh2zku1mc9m5k">非法邮箱</td><td data-page-node-id="PfvnkOQwsQekGalirS19Ao">400 <code data-page-node-id="Ng9k10CrxNHk0bvfPgWcTx">INVALID_EMAIL</code></td><td data-page-node-id="dgYvL81XYZhq5h7k4sTi6X">—</td><td data-page-node-id="QsrS5HySVBU0Q21prTTLdc">✅</td></tr>
+    <tr data-page-node-id="3BOGFKSvhJjJUCPhyRJ4KG"><td data-page-node-id="5IXImRqXpfe6rhQgjzzE2x">会员页</td><td data-page-node-id="OMNgPUBfS90MDFWnfhhJw2">200（原 404）</td><td data-page-node-id="U7aFvCRGnmGkjxH2TjZgiH">200</td><td data-page-node-id="DXBvGqD1fjot7dtahMJx93">✅ 死链已修</td></tr>
+    <tr data-page-node-id="vqD0N4iD0dn1PmeYDQZxFM"><td data-page-node-id="HnEfyHARstlCjvPz7k1GmR">发布页</td><td data-page-node-id="oYiEF1vd9ObOln1KVr2HuO">200</td><td data-page-node-id="thqOSrSdtrVm7hDUfKttW6">200</td><td data-page-node-id="mfRvnH8KmtaUjIZE5dg3Ue">✅</td></tr>
+    <tr data-page-node-id="UqCLr7HJX8EtRJolKEk7XG"><td data-page-node-id="qSAbYSny8R3lU1ypVDvfNR">数据库表</td><td data-page-node-id="RKTElpgjeeiS4DkTVVvjPV"><code data-page-node-id="CK2nk3QE8VxuVzeOAtZtbd">ValuationLead</code> 已建（90 模型对齐）</td><td data-page-node-id="8yFE2BuuSF258crei30d2o"><code data-page-node-id="4mzeuqRJQMFLHvPuDUHv34">ValuationLead</code> 已建</td><td data-page-node-id="aASi0fupOlsD4ekEDZ7zcA">✅</td></tr>
+    <tr data-page-node-id="aiaRBNTpoJyDEWSjgcrQUV"><td data-page-node-id="NsvnkaAPQiU3WKcG9bJ2lO">CI 部署</td><td data-page-node-id="yz6uMDePIURMEr8oA04e74">run 34029964530 / attempt 5 → <b data-page-node-id="CfcpqOsIwp0lQ27vGRKOa5">success</b></td><td data-page-node-id="qF9t6BmxDew3xOuQtwU7dT">已部署</td><td data-page-node-id="pRdXFW9QxNZwAO4f8QcXD1">✅</td></tr>
+  </tbody>
+</table>
+
+<h2 data-page-node-id="aj1w68rzCzjySAANww1CMv">6. 本次改动文件清单</h2>
+<table data-page-node-id="RtJwq6oeAYIuI15GEpIDi4">
+  <thead data-page-node-id="Z4ajK5ivTEAbTwFoYaavWx"><tr data-page-node-id="xm11NEhFxj12gUfTKWU3xk"><th data-page-node-id="4lVxhXNVzImIrT47VJ7hoY">文件</th><th data-page-node-id="cDYlOt1lXfmwAqFSr0ZY1C">改动</th></tr></thead>
+  <tbody data-page-node-id="1WzMCP4F6cLaDk85YsMnRU">
+    <tr data-page-node-id="qY0idROxYBz0zt9i8FBfgl"><td data-page-node-id="RGqQc3LhkvOhHyeELdnibG"><code data-page-node-id="eq90wmBxUPGsGDOnW9uXx7">src/app/api/valuation/route.ts</code></td><td data-page-node-id="9Hs70Jjw5oLYZwaAYIqoHE">游客 3 次/天限流 + 结果模糊化</td></tr>
+    <tr data-page-node-id="7G9HEnhNkzU9yVSbgKAVhC"><td data-page-node-id="Kh5ZnfKnzBZpRniD3xXwAR"><code data-page-node-id="p5qq2mrWzEroUgPKXCQZcj">src/app/api/valuation/unlock/route.ts</code></td><td data-page-node-id="YycO5Ewg95gCorsRG0nzHx"><b data-page-node-id="pmZyyhhTeQ5OPZv7uBOgs0">新增</b> 邮箱解锁 + 服务端重算 + 写线索</td></tr>
+    <tr data-page-node-id="eWO8fbgieqDDV8UsqcbXBc"><td data-page-node-id="33yKswXBBgcrmwGx6qkoSk"><code data-page-node-id="NmRZj8A5HEaQpbfdLaiGbw">prisma/schema.prisma</code></td><td data-page-node-id="GiKyR1H3Ya4NgYcuuadJ2F"><b data-page-node-id="TPwsOoqpnB424Y0K7XqUCn">新增</b> <code data-page-node-id="6A5P5GhKl67tHsspWiDXEG">model ValuationLead</code></td></tr>
+    <tr data-page-node-id="QsDkKYYnLbrdqhG2VwAUej"><td data-page-node-id="p2kBXvJU96rSZtLLfgX5Gt"><code data-page-node-id="1mT1olDYI9zFfnzlwxepHo">src/components/valuation/valuation-result-gate.tsx</code></td><td data-page-node-id="SzKEzVTWwZ2xQYvrnHSsSw"><b data-page-node-id="tdr8BRz8eEGOTbzW8mr0cW">新增</b> 游客门槛卡片</td></tr>
+    <tr data-page-node-id="Xx4hTEBs1sT38iG4p7THSZ"><td data-page-node-id="B8BpeGqyvpR2M85BTtHexk"><code data-page-node-id="2SfDlGOByyQ5T6a1vWVqyI">src/app/[locale]/services/valuation/page.tsx</code></td><td data-page-node-id="EivcvoWfJHMZbm0CUOHG8N">接入门槛 / 429 / 已解锁三种状态</td></tr>
+    <tr data-page-node-id="hzAFBo63UadzZsT2XPjDHh"><td data-page-node-id="LF0psdVz0zOVndfsGWA4fl"><code data-page-node-id="dkLThScNvPbsdkCSNTJWME">src/app/[locale]/membership/page.tsx</code> + <code data-page-node-id="4u15D8xwCBUbnapacGE5qy">membership-pricing.tsx</code></td><td data-page-node-id="ZoMYnyfXsiuLCy0lHYzy2P"><b data-page-node-id="YqF2TtTV3Q1UkKVRq9WwuF">新增</b> 会员定价页（4 档 + 月/年切换）</td></tr>
+    <tr data-page-node-id="234Jdgwvr3EpLZrQLH0prI"><td data-page-node-id="vwkpJ72HK9JF9HiUDBJTzJ"><code data-page-node-id="sba1bxB3QXwXikf58jHVA1">src/app/[locale]/credits/membership-card.tsx</code></td><td data-page-node-id="vTGqpm2tDzBctSkaeHDhB5">移除升级按钮 <code data-page-node-id="bAk0XlzvSTkE6zPNERpbmT">disabled</code></td></tr>
+    <tr data-page-node-id="gvH3mmOSovzLCXdSENpoGr"><td data-page-node-id="olJmdqBbA4DGikbYiKxq8n"><code data-page-node-id="tdXd1eqPaxwKbAYKBTr56O">src/app/[locale]/seller/products/new/page.tsx</code></td><td data-page-node-id="qTBQ8RrwCk0dU2Xv3kMkC9">24 字段 → 7 必填 + 11 选填折叠 + 估值预填</td></tr>
+    <tr data-page-node-id="J8hFevq7W4SJEMG5dk00N1"><td data-page-node-id="pbEJqb9EHEJgEQBWyZTcL9"><code data-page-node-id="VyoZ2wkyAVEws75v7TBXSJ">src/lib/credits/constants.ts</code></td><td data-page-node-id="OGREwpJlBs1UoiaQDDR8c7"><code data-page-node-id="I8FA5aZGdTFNsQrKm8dMxM">registerGift: 5 → 20</code></td></tr>
+    <tr data-page-node-id="twF5ZTfZAQTeZZFsRZDe2z"><td data-page-node-id="JTzC8RavueLp4a7GZF173u"><code data-page-node-id="zvSfHBIdtuSe41brahqBYF">src/lib/permissions.ts</code></td><td data-page-node-id="VhHARCfr9Ye0H8YG0A84yt">免费档 <code data-page-node-id="MGVoqA8QMMKQSTo8LSv3uE">credits: 10 → 20</code></td></tr>
+    <tr data-page-node-id="809SEbr2QAjyJoY2mD05FU"><td data-page-node-id="4CC655QbZnR2UMJfGch6Kr"><code data-page-node-id="3YP2qSJW3swl1NhQ7jEIkx">src/components/auth/register-form.tsx</code></td><td data-page-node-id="7yQdpjPiwspMFCUEfJQ8aZ">支持 <code data-page-node-id="Dnn6C9E9UAmkcU5LZ5ZdDr">?redirect=</code> 回跳</td></tr>
+    <tr data-page-node-id="UimBTqxnocHUCbKNjcwPoD"><td data-page-node-id="rjuke4Kc7RfpbGGsKcefSs"><code data-page-node-id="Ff8rXI3MwecjoLGIiiyMhq">src/lib/db.ts</code></td><td data-page-node-id="bRW62DT6Mz4EEeTH409vOT">PrismaClient 无条件单例（修 .cn 首页崩溃）</td></tr>
+    <tr data-page-node-id="Kt0LcGoTntj48iI8bZMMV5"><td data-page-node-id="YHn75LLycXN6dIjBDZJZH0"><code data-page-node-id="d9BM3497Q6mSlZkyoEHbs0">messages/*.json</code> × 8</td><td data-page-node-id="pDGFPOjsous186SJeJrwKt">新增 3 个文案命名空间</td></tr>
+  </tbody>
+</table>
+
+<footer data-page-node-id="yFGtUDl7NCan6Bc8YIC2c9">
+  石家庄神雕农机科技有限公司 · 跨境二手农机平台运营文档<br data-page-node-id="m3gejmrDesjWVw8QzXiK0T">
+  生成时间：2026-09-07　|　本文档基于线上代码与实际接口实测编写，非推测。
+</footer>
+
+</div>
+</body>
+</html>
