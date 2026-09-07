@@ -24,6 +24,12 @@ set -euo pipefail
 
 # 部署基目录
 DEPLOY_DIR="/opt/cn"
+
+# 并发锁：防止两条部署流水线同时执行（互踩 ossutil 检查点 / 重复 docker load）
+if command -v flock >/dev/null 2>&1; then
+  exec 9>"$DEPLOY_DIR/.deploy.lock"
+  flock -n 9 || { echo "ERROR: 已有另一条部署流水线在执行，本次自动退出"; exit 1; }
+fi
 COMPOSE_FILE="$DEPLOY_DIR/docker-compose.yml"
 ENV_FILE="$DEPLOY_DIR/.env.cn"
 
@@ -110,6 +116,9 @@ install_ossutil() {
 # 避免 ossutil 默认在当前工作目录（/opt/cn，root 属主、deploy 无写权限）
 # 创建 .ossutil_checkpoint 时报 permission denied。
 ossutil_cp() {
+  # 每次下载前清空检查点目录：磁盘满/人工清理会留下失效检查点，
+  # 断点续传时报 "remove ...cp: no such file or directory"（2026-09-07 事故实测）
+  rm -rf "$OSSUTIL_CP_DIR"
   mkdir -p "$OSSUTIL_CP_DIR"
   "$OSSUTIL_BIN" "$@" -e "$OSS_ENDPOINT" -i "$OSS_ACCESS_KEY_ID" -k "$OSS_ACCESS_KEY_SECRET" \
     --checkpoint-dir "$OSSUTIL_CP_DIR"
@@ -235,6 +244,7 @@ echo "==> 清理旧镜像 tarball（保留最新 3 个）"
 ls -1t "$IMAGE_DIR"/*.tar.gz 2>/dev/null | tail -n +4 | xargs -r rm -f || true
 
 echo "==> 回收 Docker 悬空镜像"
-docker image prune -f || true
+# -af：清除所有未被容器引用的镜像（含旧版本标签镜像），防止磁盘慢性填满
+docker image prune -af || true
 
 echo "==> 部署完成：$CN_IMAGE（$CN_IMAGE_FILE）"
