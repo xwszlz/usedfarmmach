@@ -104,7 +104,7 @@ export default function AboutClient() {
             </h2>
             <p className="mx-auto max-w-2xl text-gray-600 leading-relaxed">
               {locale === "zh"
-                ? "神雕农机是中国农机流通协会·二手农机流通分会副会长单位，深耕二手农机流通领域。神雕农机展、神雕云展、神雕展翼为神雕农机自有品牌，独立运营，不代表协会官方。"
+                ? "神雕农机是中国农业机械流通协会二手农机流通分会 副会长单位，深耕二手农机流通领域。神雕农机展、神雕云展、神雕展翼为神雕农机自有品牌，独立运营，不代表协会官方。"
                 : "Shendiao Agricultural Machinery is a Vice-President Unit of the Used Farm Machinery Circulation Branch under the China Agricultural Machinery Circulation Association. Shendiao Agri-Machinery Expo™, Shendiao Cloud Expo™, and Shendiao WingShow™ are proprietary brands of Shendiao, operated independently and not representing the Association."}
             </p>
           </CardContent>
