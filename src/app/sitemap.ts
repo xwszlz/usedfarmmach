@@ -49,6 +49,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/expo/china-brands", priority: 0.7, freq: "weekly" as const },
     { path: "/expo/compare", priority: 0.6, freq: "weekly" as const },
     { path: "/expo/showroom", priority: 0.7, freq: "weekly" as const },
+    { path: "/expo/heilongjiang-2026", priority: 0.8, freq: "weekly" as const },
+    { path: "/expo/tianjin-2026", priority: 0.8, freq: "weekly" as const },
     { path: "/solutions", priority: 0.6, freq: "monthly" as const },
     { path: "/arbitrage-top", priority: 0.8, freq: "daily" as const },
     { path: "/arbitrage-calculator", priority: 0.7, freq: "weekly" as const },

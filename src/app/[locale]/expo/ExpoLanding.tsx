@@ -825,7 +825,7 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <div className="mb-10 text-center">
               <h2 className="text-3xl font-bold text-white">
-                {locale === "zh" ? "神雕展 · 四档服务" : "ShenDiao Expo · 4 Tiers"}
+                {locale === "zh" ? "神雕农机展™ · 四档服务" : "ShenDiao Expo™ · 4 Tiers"}
               </h2>
               <p className="mt-2 text-green-100">
                 {locale === "zh"
@@ -840,14 +840,14 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
                 price: "¥0",
                 tag: locale === "zh" ? "免费开通" : "Free",
                 items: locale === "zh"
-                  ? ["品牌收录309库","3台中文上线","基础浏览数据","被动接收询盘"]
+                  ? ["纳入平台品牌索引","3台中文上线","基础浏览数据","被动接收询盘"]
                   : ["Brand listing","3 products CN","Basic views","Passive inquiries"],
                 color: "bg-white/10",
                 priceColor: "text-green-200",
               },
               {
                 name: locale === "zh" ? "🟢 标准版" : "🟢 Standard",
-                price: "¥188",
+                price: "¥880",
                 tag: locale === "zh" ? "试水入门" : "Entry",
                 items: locale === "zh"
                   ? ["品牌故事页","10台·配件匹配","查看浏览数据","接收买家询价"]
@@ -857,21 +857,21 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
               },
               {
                 name: locale === "zh" ? "🟡 优选版" : "🟡 Premium",
-                price: "¥288",
-                tag: locale === "zh" ? "主推首选" : "Popular",
+                price: "¥1,580",
+                tag: locale === "zh" ? "主推人气档" : "Popular",
                 items: locale === "zh"
-                  ? ["品牌墙露出","30台·中英双语","月度报告+海外推送","询价报价+视频3条"]
-                  : ["Brand wall","30 CN/EN","Monthly report","Quotes + 3 videos"],
+                  ? ["数字品牌墙","30台·8语种","月度报告+海外推送","询价报价+视频3条"]
+                  : ["Digital brand wall","30 · 8 langs","Monthly report","Quotes + 3 videos"],
                 color: "bg-white/20 ring-2 ring-amber-300",
                 priceColor: "text-amber-200",
               },
               {
                 name: locale === "zh" ? "🔴 旗舰版" : "🔴 Flagship",
-                price: "¥388",
-                tag: locale === "zh" ? "最超值" : "Best Value",
+                price: "¥2,880",
+                tag: locale === "zh" ? "超值档" : "Best Value",
                 items: locale === "zh"
-                  ? ["策展品牌故事页","不限量·中英俄","VR看机+AI估值","周报+竞品+直播"]
-                  : ["Curated story","Unlimited CN/EN/RU","VR + AI valuation","Weekly+benchmark+live"],
+                  ? ["策展品牌故事页","50台·8语种","VR看机+AI估值","周报+竞品+直播"]
+                  : ["Curated story","50 · 8 languages","VR + AI valuation","Weekly+benchmark+live"],
                 color: "bg-white/20 ring-2 ring-orange-300",
                 priceColor: "text-orange-200",
               },

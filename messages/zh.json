@@ -822,7 +822,7 @@
     "description": "全球二手农机交易平台，连接中国与全球农机市场",
     "quickLinks": "行业权威平台",
     "quickLinkRb": "Ritchie Bros 拍卖行",
-    "quickLinkCamda": "中国农机流通协会",
+    "quickLinkCamda": "中国农业机械流通协会",
     "quickLinkTractorHouse": "拖拉机之家",
     "quickLinkAgriaffaires": "Agriaffaires",
     "contactUs": "联系我们",
@@ -1037,7 +1037,7 @@
     },
     "govDashboard": {
       "title": "监管数据看板",
-      "subtitle": "农机流通监管数据概览 — 仅供授权监管机构（中国农机流通协会 / 元氏县农业农村局）查看",
+      "subtitle": "农机流通监管数据概览 — 仅供授权监管机构（中国农业机械流通协会 / 元氏县农业农村局）查看",
       "restricted": "仅限授权账号访问",
       "totalListings": "发布总量",
       "verifiedCount": "已核验",
