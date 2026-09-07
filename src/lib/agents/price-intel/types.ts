@@ -14,6 +14,7 @@ export const PRICE_SOURCES = [
   "brief",      // 智能体简报 JSON         (D:/神雕农机/套利报告/智能体简报_*.json)
   "daily_md",   // 神雕日报 Markdown        (D:/神雕农机/神雕日报/*_跨境套利日报.md)
   "manual",     // 人工高置信度数据（硬编码兜底）
+  "benchmark",  // BrandBenchmark 真实抓取（Agroline/Mascus/…多源基准价，带 sourceUrl）
 ] as const;
 export type PriceSource = (typeof PRICE_SOURCES)[number];
 

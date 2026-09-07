@@ -7,6 +7,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import type { CollectedPrice, PriceSource } from "./types";
+import { BRAND_SLUG_TO_ZH } from "@/lib/model-alias";
 
 const ARBITRAGE_DIR = "D:/神雕农机/套利报告";
 const DAILY_DIR = "D:/神雕农机/神雕日报";
@@ -255,6 +256,65 @@ export function collectFromManual(): CollectedPrice[] {
 
 // ==================== 统一入口 ====================
 
+/**
+ * 5. BrandBenchmark 真实抓取（2026-09-07 新增）
+ *
+ * 【为什么要加这个源】
+ * BrandBenchmark 里躺着多源真实抓取结果（Agroline CLAAS 在售 240 台等 92 行），
+ * 每一条都带真实 sourceUrl / 币种 / 样本量，但这些型号是"带系列名的全称"
+ * （Jaguar 970 / BiG Pack 1290 / Quadrant 5300），旧匹配逻辑配不上库存的裸型号
+ * （970 / 1290XC / 5300RC），导致 240 台在售一台都转化不成配对 —— 覆盖率卡在 10%。
+ *
+ * 本源把 BrandBenchmark 行转成 CollectedPrice，交给 agent 用 ModelAlias 归一化后匹配，
+ * 把"已抓到的真实数据"真正变现成国际比价。
+ *
+ * 数据性质：priceForeign 为该源样本**中位价**（非单台挂牌），
+ * 故 confidence 由 agent 侧按样本量标注，notes 里写明样本数与源站，保证可溯源。
+ */
+export async function collectFromBenchmark(): Promise<CollectedPrice[]> {
+  const { prisma } = await import("@/lib/db");
+  const rows = await prisma.brandBenchmark.findMany({
+    where: { isActive: true, priceForeign: { gt: 0 } },
+    select: {
+      brand: true, brandNameZh: true, model: true, sourceSite: true,
+      priceForeign: true, currency: true, exchangeRate: true,
+      sourceUrl: true, sourceDate: true, sampleSize: true,
+      listingCount: true, region: true, priceType: true,
+    },
+  });
+
+  const out: CollectedPrice[] = [];
+  for (const r of rows) {
+    const cur = (r.currency || "EUR").toUpperCase();
+    const isEur = cur === "EUR";
+    // 无汇率时用当日默认（与既有源一致：EUR 7.91 / USD 7.25）
+    const rate = r.exchangeRate && r.exchangeRate > 0
+      ? r.exchangeRate
+      : (isEur ? DEFAULT_EUR_CNY : DEFAULT_USD_CNY);
+    const zh = BRAND_SLUG_TO_ZH[(r.brand || "").toLowerCase()] || r.brandNameZh || r.brand || "";
+    const source = normalizeSourceName(r.sourceSite);
+    out.push({
+      source,
+      brandNameZh: zh,
+      modelName: String(r.model || "").replace(/[（(].*?[)）]/g, "").trim(),
+      year: null,
+      domesticPriceWan: null,
+      priceEur: isEur ? r.priceForeign : null,
+      priceUsd: isEur ? null : r.priceForeign,
+      exchangeRate: rate,
+      sourceUrl: r.sourceUrl || null,
+      sourceTitle: r.model || null,
+      // BrandBenchmark.sourceDate 是 YYYY-MM-DD，CollectedPrice 约定 YYYYMMDD
+      sourceDate: (r.sourceDate || "").replace(/-/g, ""),
+      country: r.region === "US" ? "US" : r.region === "RU" ? "RU" : "DE",
+      opportunityLevel: "BrandBenchmark",
+      grossMarginPct: null,
+      note: `benchmark:${r.sourceSite} 样本n=${r.sampleSize} 在售${r.listingCount} ${r.priceType} 中位价`,
+    });
+  }
+  return out;
+}
+
 export async function collectFromSource(
   source: PriceSource,
   maxFiles: number,
@@ -265,5 +325,6 @@ export async function collectFromSource(
     case "brief":    return collectFromBrief(maxFiles, targetDate);
     case "daily_md": return collectFromDailyMd(maxFiles, targetDate);
     case "manual":   return collectFromManual();
+    case "benchmark": return collectFromBenchmark();
   }
 }

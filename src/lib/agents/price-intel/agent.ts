@@ -11,6 +11,10 @@
  */
 import { prisma } from "@/lib/db";
 import {
+  resolveModelCandidates,
+  normalizeModel,
+} from "@/lib/model-alias";
+import {
   PRICE_SOURCES,
   type CollectedPrice,
   type MatchedPrice,
@@ -115,7 +119,22 @@ export class PriceIntelAgent {
       where: { brandId, modelName: { contains: model.split(/\s+/)[0] } },
       select: { id: true },
     });
-    return p4 ? { productId: p4.id } : null;
+    if (p4) return { productId: p4.id };
+
+    // 5) 【2026-09-07 新增】ModelAlias 归一化匹配
+    //    解决"抓取型号带系列名（Jaguar 970 / BiG Pack 1290）配不上库存裸型号（970 / 1290XC）"
+    //    导致的覆盖率长期卡在 ~10% 的问题。候选已按优先级排序，依次尝试，命中即返回。
+    const candidates = resolveModelCandidates(brandId, model);
+    for (const cand of candidates) {
+      if (!cand || cand === normalizeModel(model)) continue; // 已在上面试过原始型号
+      // 用 startsWith 而非 contains：避免 "6R 250"→"250" 误吃库存 "7250" 这类错配
+      const p5 = await prisma.product.findFirst({
+        where: { brandId, modelName: { startsWith: cand, mode: "insensitive" } },
+        select: { id: true },
+      });
+      if (p5) return { productId: p5.id };
+    }
+    return null;
   }
 
   /**
