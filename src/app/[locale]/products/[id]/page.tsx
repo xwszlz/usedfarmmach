@@ -8,7 +8,7 @@ import { SpecificationTable } from "@/components/product/specification-table";
 import { StandardDescription } from "@/components/product/standard-description";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeftRight, Info, Mail, MessageCircle, Phone, Shield } from "lucide-react";
+import { ArrowLeftRight, Info, MessageCircle, Shield } from "lucide-react";
 import { getImageUrl, getVideoUrl, generateImageAlt } from "@/lib/image-url";
 import { formatPrice } from "@/lib/utils";
 import { normalizeCondition } from "@/lib/condition";
@@ -33,6 +33,7 @@ import { Wrench } from "lucide-react";
 import { ProductViewBadge } from "@/components/stats/ProductViewBadge";
 import { ProductVideoGallery } from "@/components/stats/ProductVideoGallery";
 import CompatiblePartsSection from "@/components/parts/CompatiblePartsSection";
+import { SellerContactCard } from "@/components/product/seller-contact-card";
 
 export const dynamic = "force-dynamic";
 
@@ -459,41 +460,8 @@ export default async function ProductDetailPage({
               <FavoriteButton productId={product.id} locale={locale} />
             </div>
 
-            {/* Contact Methods — WhatsApp / Phone / Email in one row */}
-            <div className="flex flex-wrap gap-6 text-sm text-gray-600">
-              <div className="flex items-center gap-2">
-                <MessageCircle className="h-4 w-4 text-gray-400" />
-                <span>WhatsApp: </span>
-                <a
-                  href="https://wa.me/8615511395016"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary-600 hover:text-primary-700 font-medium"
-                >
-                  +86 15511395016
-                </a>
-              </div>
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-gray-400" />
-                <span>{locale === "zh" ? "电话" : "Phone"}: </span>
-                <a
-                  href="tel:+8618633878701"
-                  className="text-primary-600 hover:text-primary-700 font-medium"
-                >
-                  +86 18633878701
-                </a>
-              </div>
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-gray-400" />
-                <span>Email: </span>
-                <a
-                  href="mailto:932133255@qq.com"
-                  className="text-primary-600 hover:text-primary-700 font-medium"
-                >
-                  932133255@qq.com
-                </a>
-              </div>
-            </div>
+            {/* 开放直连 P0：卖家自有联系方式（登录买家可见，替代原平台统一号码） */}
+            <SellerContactCard productId={product.id} locale={locale} />
 
             {/* Quick Contact: QR Codes */}
             <QuickContact locale={locale} />

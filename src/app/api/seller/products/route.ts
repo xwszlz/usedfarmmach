@@ -99,6 +99,12 @@ export async function POST(request: NextRequest) {
     const tradeTerm = formData.get("tradeTerm")?.toString();
     const tradePort = formData.get("tradePort")?.toString();
 
+    // 开放直连 P0：卖家自留联系方式（可空，展示给登录买家）
+    const contactName = formData.get("contactName")?.toString() || null;
+    const contactPhone = formData.get("contactPhone")?.toString() || null;
+    const contactWechat = formData.get("contactWechat")?.toString() || null;
+    const contactEmail = formData.get("contactEmail")?.toString() || null;
+
     // 自动生成 location 显示文本（如果结构化字段已提供但 location 为空）
     let finalLocation = location;
     if ((!finalLocation || finalLocation.trim() === "") && (country || province || city)) {
@@ -242,6 +248,10 @@ export async function POST(request: NextRequest) {
         priceMode: priceMode || "por",
         tradeTerm: tradeTerm || "FOB",
         tradePort: tradePort || null,
+        contactName,
+        contactPhone,
+        contactWechat,
+        contactEmail,
       },
     });
 
