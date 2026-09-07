@@ -139,6 +139,28 @@ jobs:
       # 镜像包已上传 OSS（cn-images/cn-app-<sha>.tar.gz），脚本内从 OSS 下载 + docker load；
       # OSS 对象名以完整 commit SHA 命名，与上方上传一致。
       # ----------------------------------------------------------
+      # ----------------------------------------------------------
+      # R-2026-09-07 磁盘满根因修复：每次部署 docker load 新镜像后，
+      # 旧标签镜像（usedfarmmach-cn:<sha>）不是 dangling，`prune -f`
+      # 永远清不掉，长期堆积把磁盘撑满（09-07 事故：scp 连小文件都写不进）。
+      # 必须在任何写 ECS 的步骤之前先清理未使用镜像/构建缓存并输出诊断。
+      # ----------------------------------------------------------
+      - name: Disk cleanup and diagnostics (before any ECS write)
+        uses: appleboy/ssh-action@v1
+        with:
+          host: 101.200.125.199
+          username: deploy
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            echo "==== 部署前磁盘诊断 ===="
+            df -h / || true
+            df -i / || true
+            echo "==== 清理未使用镜像与构建缓存（保留运行中容器所用镜像）===="
+            docker image prune -af || true
+            docker builder prune -af 2>/dev/null || true
+            echo "==== 清理后 ===="
+            df -h / || true
+
       # 部署前先把仓库最新的 deploy/deploy-cn.sh 同步到 ECS，
       # 避免 ECS 本地旧脚本（缺少 R4/#37/#38 等修复）导致部署失败。
       - name: Sync deploy script to ECS

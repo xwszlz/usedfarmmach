@@ -235,6 +235,7 @@ echo "==> 清理旧镜像 tarball（保留最新 3 个）"
 ls -1t "$IMAGE_DIR"/*.tar.gz 2>/dev/null | tail -n +4 | xargs -r rm -f || true
 
 echo "==> 回收 Docker 悬空镜像"
-docker image prune -f || true
+# -af：清除所有未被容器引用的镜像（含旧版本标签镜像），防止磁盘慢性填满
+docker image prune -af || true
 
 echo "==> 部署完成：$CN_IMAGE（$CN_IMAGE_FILE）"
