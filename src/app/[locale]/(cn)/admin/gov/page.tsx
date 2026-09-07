@@ -1,7 +1,7 @@
 /**
  * .cn 站 - 政府监管数据看板
  *
- * 面向中国农机流通协会 / 元氏县农业农村局等监管方，
+ * 面向中国农业机械流通协会 / 元氏县农业农村局等监管方，
  * 展示核验/备案/流通数据的综合看板。
  *
  * 权限：仅 super_admin 及授权的政府监管账号可访问。
@@ -28,7 +28,7 @@ export default function CnGovDashboardPage() {
         <p className="mt-2 text-gray-600">
           {t("subtitle", {
             fallback:
-              "农机流通监管数据概览 — 仅供授权监管机构（中国农机流通协会 / 元氏县农业农村局）查看",
+              "农机流通监管数据概览 — 仅供授权监管机构（中国农业机械流通协会 / 元氏县农业农村局）查看",
           })}
         </p>
         <span className="inline-block mt-2 text-xs text-red-600 bg-red-50 px-2 py-1 rounded">
