@@ -238,6 +238,11 @@ model Product {
   city                  String?
   country               String?
   province              String?
+  /// 开放直连 P0：卖家自留联系方式（买家登录后在产品详情页可见，替代平台统一号码）
+  contactName           String?
+  contactPhone          String?
+  contactWechat         String?
+  contactEmail          String?
   promotedUntil         DateTime?
   promotedAt            DateTime?
   refreshedAt           DateTime?

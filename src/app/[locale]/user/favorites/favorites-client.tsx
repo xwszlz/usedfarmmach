@@ -148,6 +148,17 @@ export function FavoritesClient({ locale }: { locale: string }) {
         {translate("我的收藏", locale)}
       </h1>
 
+      {/* 分销 P0：我的推广码入口 */}
+      <div className="mb-4">
+        <Link
+          href={`/${locale}/user/promo`}
+          className="inline-flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-700 hover:border-amber-300 hover:bg-amber-100"
+        >
+          <Star className="h-4 w-4" />
+          {isZh ? "推广赚奖励 · 我的推广码 →" : locale === "ru" ? "Реферальная программа · Мой промокод →" : "Referral rewards · My promo code →"}
+        </Link>
+      </div>
+
       {/* Tabs */}
       <div className="mb-6 flex gap-2 border-b">
         {tabs.map((t) => (

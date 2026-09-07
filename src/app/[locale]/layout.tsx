@@ -66,6 +66,11 @@ export default async function LocaleLayout({
           </NextIntlClientProvider>
         </ThemeProvider>
 
+        {/* 分销裂变 P0：?ref= 推广码捕获 → 30 天 Cookie（ref_code，不采集任何个人信息） */}
+        <Script id="affiliate-ref-capture" strategy="afterInteractive">{`
+          (function(){try{var p=new URLSearchParams(window.location.search);var r=p.get('ref');if(r){var v=encodeURIComponent(String(r).slice(0,64));document.cookie='ref_code='+v+';path=/;max-age=2592000;SameSite=Lax';}}catch(e){}})();
+        `}</Script>
+
         {/* Yandex Metrika — 俄罗斯广告流量监控 */}
         <Script
           id="yandex-metrika"

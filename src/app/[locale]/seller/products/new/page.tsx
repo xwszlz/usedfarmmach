@@ -49,6 +49,7 @@ export default function NewProductPage() {
     mainConfig: "", descOther: "",
     priceMode: "por", tradeTerm: "FOB", tradePort: "天津港",
     isChineseBrand: false as boolean,
+    contactName: "", contactPhone: "", contactWechat: "", contactEmail: "",
   });
 
   const [imageFiles, setImageFiles] = useState<File[]>([]);
@@ -71,6 +72,27 @@ export default function NewProductPage() {
     fetch("/api/brands-categories").then(r => r.json()).then(d => {
       if (d.success) { setBrands(d.brands); setCategories(d.categories); }
     });
+  }, []);
+
+  // 开放直连 P0：用注册信息预填联系方式（仅填空字段，不覆盖用户输入）
+  const contactPrefilledRef = useRef(false);
+  useEffect(() => {
+    if (contactPrefilledRef.current) return;
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    contactPrefilledRef.current = true;
+    fetch("/api/auth/me", { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then((d: any) => {
+        const u = d?.data?.user || {};
+        setForm(prev => ({
+          ...prev,
+          contactName: prev.contactName || u.companyName || u.username || "",
+          contactPhone: prev.contactPhone || u.phone || "",
+          contactEmail: prev.contactEmail || u.email || "",
+        }));
+      })
+      .catch(() => {});
   }, []);
 
   // 一键发布 prefill: 从URL参数 ?prefill=true&brand=...&model=...&category=...&year=...&hp=...
@@ -713,6 +735,11 @@ export default function NewProductPage() {
       fd.append("tradeTerm", form.tradeTerm);
       fd.append("tradePort", form.tradePort);
       fd.append("isChineseBrand", String(form.isChineseBrand));
+      // 开放直连 P0：卖家联系方式
+      fd.append("contactName", form.contactName);
+      fd.append("contactPhone", form.contactPhone);
+      fd.append("contactWechat", form.contactWechat);
+      fd.append("contactEmail", form.contactEmail);
       // 传递 OSS URL 数组（JSON 字符串），不再是文件
       fd.append("imageUrls", JSON.stringify(imageUrls));
       if (videoUrls.length > 0) {
@@ -1202,6 +1229,34 @@ export default function NewProductPage() {
           className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-primary-500 focus:outline-none" />
           </div>
         </details>
+
+        {/* 开放直连 P0：联系方式（买家可直接联系你） */}
+        <h3 className="mb-3 mt-6 text-sm font-bold text-gray-700 border-b pb-1">联系方式（买家可直接联系你）</h3>
+        <div className="mb-3 grid grid-cols-2 gap-4">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">联系人 / 公司名</label>
+            <input type="text" value={form.contactName} onChange={e => update("contactName", e.target.value)}
+              placeholder="如：张经理 / XX农机公司" className={fieldClass("contactName")} />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">微信号</label>
+            <input type="text" value={form.contactWechat} onChange={e => update("contactWechat", e.target.value)}
+              placeholder="买家会加你微信洽谈" className={fieldClass("contactWechat")} />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">电话</label>
+            <input type="tel" value={form.contactPhone} onChange={e => update("contactPhone", e.target.value)}
+              placeholder="如：+86 155 1139 5016" className={fieldClass("contactPhone")} />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">邮箱</label>
+            <input type="email" value={form.contactEmail} onChange={e => update("contactEmail", e.target.value)}
+              placeholder="如：you@example.com" className={fieldClass("contactEmail")} />
+          </div>
+        </div>
+        <div className="mb-4 rounded-lg bg-blue-50 p-3 text-xs leading-relaxed text-blue-700">
+          填写后，买家在你的产品页登录即可直接看到这些联系方式，双方直接洽谈、成交更快（至少填一项）。已用你的注册信息预填，可修改。仅登录用户可见，不对外公开抓取。
+        </div>
       </div>
 
       {/* ===== 结果提示 ===== */}
