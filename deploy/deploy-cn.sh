@@ -167,7 +167,7 @@ export CN_IMAGE
 # ------------------------------------------------------------
 echo "==> 拉起 app + scout 容器（首次拉起，表结构尚未初始化）"
 echo "    scout 为 #1 卖方采集定时 sidecar（每日 07:10 北京时间跑爬虫->入库 cn-postgres）"
-docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d app scout
+docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d --force-recreate app scout
 
 echo "==> 初始化数据库表结构（prisma db push，幂等；schema 未变则跳过）"
 DB_URL_CN="$(grep -E '^DATABASE_URL_CN=' "$ENV_FILE" | head -1 | cut -d= -f2-)"
