@@ -97,6 +97,9 @@
     }
   },
   "credits": {
+    "customAmount": "Custom amount",
+    "amountPlaceholder": "Enter credit amount",
+    "creditUnit": "pts",
     "upgradeNow": "Upgrade Now",
     "title": "Membership Center",
     "membershipStatus": "Membership Status",

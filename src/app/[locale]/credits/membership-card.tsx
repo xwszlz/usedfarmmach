@@ -39,8 +39,8 @@ export function MembershipCard({ locale }: MembershipCardProps) {
   const [quota, setQuota] = useState<QuotaState | null>(null);
 
   useEffect(() => {
-    //  ? cookie 会话鉴权：浏览器对同源请求自动附 ? httpOnly cookie ?
-    // 不再读取 localStorage token（与 middleware / 真实登录态一致） ?
+    // 走 cookie 会话鉴权：浏览器对同源请求自动附带 httpOnly cookie
+    // 不再读取 localStorage token（与 middleware / 真实登录态一致）
     fetch("/api/user/me", { method: "GET" })
       .then((res) => {
         if (res.status === 401) {
@@ -70,7 +70,7 @@ export function MembershipCard({ locale }: MembershipCardProps) {
     return (
       <Card className="space-y-4 p-6">
         <h2 className="text-lg font-semibold">{t("membershipStatus")}</h2>
-        <p className="text-sm text-gray-400">{t("refresh")} ?</p>
+        <p className="text-sm text-gray-400">{t("refresh")}…</p>
       </Card>
     );
   }
@@ -86,7 +86,7 @@ export function MembershipCard({ locale }: MembershipCardProps) {
 
   const tier = (user?.membershipTier || "free") as MembershipTier;
   const tierConfig = MEMBERSHIP_TIERS[tier] || MEMBERSHIP_TIERS.free;
-  // label 仅含 zh/en/ru，其 ? locale 回退 ? zh
+  // label 仅含 zh/en/ru，其他 locale 回退到 zh
   const tierLabel =
     (tierConfig.label as Record<string, string>)[locale] ||
     tierConfig.label.zh ||
@@ -111,7 +111,7 @@ export function MembershipCard({ locale }: MembershipCardProps) {
       <div className="space-y-2 text-sm text-gray-600">
         <div className="flex justify-between">
           <span>{t("creditsBalance")}</span>
-          <span className="font-semibold text-gray-900">{user?.credits || 0}  ?</span>
+          <span className="font-semibold text-gray-900">{user?.credits || 0} {t("creditUnit")}</span>
         </div>
         {user?.membershipExpiresAt && (
           <div className="flex justify-between">

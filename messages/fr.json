@@ -97,6 +97,9 @@
     }
   },
   "credits": {
+    "customAmount": "Montant personnalisé",
+    "amountPlaceholder": "Saisissez le nombre de crédits",
+    "creditUnit": "pts",
     "upgradeNow": "Upgrade Now",
     "title": "Espace adhérent",
     "membershipStatus": "Statut d'adhésion",

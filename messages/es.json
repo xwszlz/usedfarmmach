@@ -97,6 +97,9 @@
     }
   },
   "credits": {
+    "customAmount": "Importe personalizado",
+    "amountPlaceholder": "Introduce la cantidad de créditos",
+    "creditUnit": "pts",
     "upgradeNow": "Upgrade Now",
     "title": "Centro de miembros",
     "membershipStatus": "Estado de membresía",

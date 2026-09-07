@@ -97,6 +97,9 @@
     }
   },
   "credits": {
+    "customAmount": "مبلغ مخصص",
+    "amountPlaceholder": "أدخل عدد النقاط",
+    "creditUnit": "نقاط",
     "upgradeNow": "Upgrade Now",
     "title": "مركز العضوية",
     "membershipStatus": "حالة العضوية",

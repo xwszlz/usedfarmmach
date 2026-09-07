@@ -97,6 +97,9 @@
     }
   },
   "credits": {
+    "customAmount": "Своя сумма",
+    "amountPlaceholder": "Введите количество баллов",
+    "creditUnit": "баллов",
     "upgradeNow": "Upgrade Now",
     "title": "Центр участника",
     "membershipStatus": "Статус участника",

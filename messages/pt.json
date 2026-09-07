@@ -97,6 +97,9 @@
     }
   },
   "credits": {
+    "customAmount": "Valor personalizado",
+    "amountPlaceholder": "Digite a quantidade de créditos",
+    "creditUnit": "pts",
     "upgradeNow": "Upgrade Now",
     "title": "Central de membros",
     "membershipStatus": "Status de membresia",

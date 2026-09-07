@@ -25,8 +25,8 @@ export function RechargeForm({ locale }: RechargeFormProps) {
         id="recharge-amount"
         name="amount"
         type="number"
-        label="自定义金额"
-        placeholder="输入积分数量"
+        label={t("customAmount")}
+        placeholder={t("amountPlaceholder")}
         disabled
       />
 
