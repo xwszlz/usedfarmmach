@@ -1103,7 +1103,7 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
         {/* Contact info */}
         <div className="mt-8 text-center text-sm text-gray-500">
           <p>
-            Email: 932133255@qq.com
+            Email: jiusei0319@gmail.com
           </p>
         </div>
       </section>
