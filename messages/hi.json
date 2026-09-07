@@ -97,6 +97,9 @@
     }
   },
   "credits": {
+    "customAmount": "कस्टम राशि",
+    "amountPlaceholder": "क्रेडिट संख्या दर्ज करें",
+    "creditUnit": "अंक",
     "upgradeNow": "Upgrade Now",
     "title": "सदस्य केंद्र",
     "membershipStatus": "सदस्यता स्थिति",

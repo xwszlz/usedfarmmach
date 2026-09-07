@@ -97,7 +97,7 @@ export function CreditTransactionList({ locale }: CreditTransactionListProps) {
                   tx.amount > 0 ? "text-green-600" : "text-red-500"
                 }`}
               >
-                {tx.amount > 0 ? `+${tx.amount}` : tx.amount} 分
+                {tx.amount > 0 ? `+${tx.amount}` : tx.amount} {t("creditUnit")}
               </span>
             </div>
           ))}
