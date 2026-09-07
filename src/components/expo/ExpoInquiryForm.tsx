@@ -66,9 +66,9 @@ const TEXTS: Record<string, FormTexts> = {
     submit: "提交入驻申请",
     submitting: "提交中...",
     success: "提交成功！我们将在24小时内与您联系。",
-    error: "提交失败，请稍后重试或直接联系 932133255@qq.com",
+    error: "提交失败，请稍后重试或直接联系 jiusei0319@gmail.com",
     selectPlaceholder: "请选择",
-    contactNote: "Email: 932133255@qq.com",
+    contactNote: "Email: jiusei0319@gmail.com",
   },
   en: {
     fields: {
@@ -99,9 +99,9 @@ const TEXTS: Record<string, FormTexts> = {
     submit: "Submit Application",
     submitting: "Submitting...",
     success: "Submitted successfully! We'll contact you within 24 hours.",
-    error: "Submission failed. Please try again or contact 932133255@qq.com",
+    error: "Submission failed. Please try again or contact jiusei0319@gmail.com",
     selectPlaceholder: "Please select",
-    contactNote: "Email: 932133255@qq.com",
+    contactNote: "Email: jiusei0319@gmail.com",
   },
   ru: {
     fields: {
@@ -132,9 +132,9 @@ const TEXTS: Record<string, FormTexts> = {
     submit: "Отправить заявку",
     submitting: "Отправка...",
     success: "Заявка отправлена! Мы свяжемся с вами в течение 24 часов.",
-    error: "Ошибка отправки. Повторите или напишите на 932133255@qq.com",
+    error: "Ошибка отправки. Повторите или напишите на jiusei0319@gmail.com",
     selectPlaceholder: "Выберите",
-    contactNote: "Email: 932133255@qq.com",
+    contactNote: "Email: jiusei0319@gmail.com",
   },
 };
 
