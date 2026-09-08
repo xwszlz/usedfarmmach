@@ -18,23 +18,47 @@ const NOTIFY_URL = process.env.ALIPAY_NOTIFY_URL || "";
 const GATEWAY = process.env.ALIPAY_GATEWAY || "https://openapi.alipay.com/gateway.do";
 
 /**
- * 将裸 base64 密钥转换为 PEM 格式
+ * 将裸 base64 密钥 / 被压成一行的 PEM 还原为标准 PEM
+ *
+ * 两种常见脏数据形态（都必须处理，否则 crypto 直接报
+ * `DECODER routines::unsupported`，支付宝 100% 下单失败）：
+ *   1) 环境变量把换行存成了字面量 "\n"（两字符）
+ *   2) 粘贴时整个 PEM 被并成一行，BEGIN/END 和 body 糊在一起
  */
 function toPemKey(rawKey: string, isPrivate: boolean): string {
-  const trimmed = rawKey.trim();
-  if (trimmed.includes("-----BEGIN")) return trimmed;
+  const raw = (rawKey || "").trim();
+  if (!raw) return "";
 
-  // 纯 base64 → 补全 PEM 头尾
-  const header = isPrivate
-    ? "-----BEGIN RSA PRIVATE KEY-----"
-    : "-----BEGIN PUBLIC KEY-----";
-  const footer = isPrivate
-    ? "-----END RSA PRIVATE KEY-----"
-    : "-----END PUBLIC KEY-----";
+  // 1) 字面量 \n → 真实换行
+  const key = raw.replace(/\\n/g, "\n").replace(/\r\n/g, "\n").trim();
 
-  // 每 64 字符换行
-  const lines = trimmed.match(/.{1,64}/g) || [];
-  return `${header}\n${lines.join("\n")}\n${footer}`;
+  const beginMatch = key.match(/-----BEGIN [A-Z0-9 ]*-----/);
+  const endMatch = key.match(/-----END [A-Z0-9 ]*-----/);
+
+  let header: string;
+  let footer: string;
+  let body: string;
+
+  if (beginMatch && endMatch) {
+    // 已是 PEM：保留原始头尾（PKCS#1 与 PKCS#8 不能混用），只重排 body
+    header = beginMatch[0];
+    footer = endMatch[0];
+    body = key.slice(
+      key.indexOf(beginMatch[0]) + header.length,
+      key.indexOf(endMatch[0])
+    );
+  } else {
+    // 裸 base64：按微信/支付宝默认下发的 PKCS#8 补齐头尾
+    header = isPrivate ? "-----BEGIN PRIVATE KEY-----" : "-----BEGIN PUBLIC KEY-----";
+    footer = isPrivate ? "-----END PRIVATE KEY-----" : "-----END PUBLIC KEY-----";
+    body = key;
+  }
+
+  // 只保留 base64 字符，去掉所有空白与残留的标记文字
+  const clean = body.replace(/[^A-Za-z0-9+/=]/g, "");
+  if (!clean) return "";
+  const lines = clean.match(/.{1,64}/g) || [];
+  return `${header}\n${lines.join("\n")}\n${footer}\n`;
 }
 
 function getPrivateKey(): string {
@@ -76,7 +100,11 @@ export function verifyCallback(params: Record<string, string>): boolean {
 /**
  * 构造支付宝请求（带签名）
  */
-function buildSignedParams(bizContent: Record<string, any>, method: string): Record<string, string> {
+function buildSignedParams(
+  bizContent: Record<string, any>,
+  method: string,
+  notifyUrl?: string
+): Record<string, string> {
   const params: Record<string, string> = {
     app_id: APP_ID,
     method,
@@ -93,7 +121,7 @@ function buildSignedParams(bizContent: Record<string, any>, method: string): Rec
       hour12: false,
     }),
     version: "1.0",
-    notify_url: NOTIFY_URL,
+    notify_url: notifyUrl || NOTIFY_URL,
     biz_content: JSON.stringify(bizContent),
   };
 
@@ -142,7 +170,8 @@ export function createPagePayUrl(
 export async function createPrecreateOrder(
   orderNo: string,
   amount: number,
-  subject: string
+  subject: string,
+  notifyUrl?: string
 ): Promise<{ qr_code: string; out_trade_no: string }> {
   const bizContent = {
     out_trade_no: orderNo,
@@ -150,7 +179,7 @@ export async function createPrecreateOrder(
     subject,
   };
 
-  const params = buildSignedParams(bizContent, "alipay.trade.precreate");
+  const params = buildSignedParams(bizContent, "alipay.trade.precreate", notifyUrl);
 
   const query = Object.entries(params)
     .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)

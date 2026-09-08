@@ -12,8 +12,14 @@
 
 import crypto from "crypto";
 
-const APP_ID = process.env.WECHAT_APP_ID || "";
-const MINI_APP_ID = process.env.WECHAT_MINI_APPID || APP_ID; // 小程序支付必须用小程序 AppID
+// 双向兜底：两个 AppID 任意一个没配，就借另一个。
+// 只做单向兜底会踩两个坑：
+//   ① APP_ID 无兜底 → 只配 WECHAT_MINI_APPID 时 isConfigured()/createNativeOrder() 全局 503
+//   ② MINI_APP_ID 无兜底 → 只配 WECHAT_APP_ID 时小程序/担保交易 createMiniOrder() 传空 appid
+const APP_ID_RAW = process.env.WECHAT_APP_ID || "";
+const MINI_APP_ID_RAW = process.env.WECHAT_MINI_APPID || "";
+const APP_ID = APP_ID_RAW || MINI_APP_ID_RAW;
+const MINI_APP_ID = MINI_APP_ID_RAW || APP_ID_RAW;
 const MCH_ID = process.env.WECHAT_MCH_ID || "";
 const API_V3_KEY = process.env.WECHAT_API_V3_KEY || "";
 const SERIAL_NO = process.env.WECHAT_SERIAL_NO || "";
@@ -75,7 +81,8 @@ function buildAuthHeader(method: string, url: string, body: string): string {
 export async function createNativeOrder(
   orderNo: string,
   amountInCents: number,
-  description: string
+  description: string,
+  notifyUrl?: string
 ): Promise<{ code_url: string; prepay_id?: string }> {
   const urlPath = "/v3/pay/transactions/native";
   const body = JSON.stringify({
@@ -84,7 +91,7 @@ export async function createNativeOrder(
     out_trade_no: orderNo,
     description,
     amount: { total: amountInCents, currency: "CNY" },
-    notify_url: NOTIFY_URL,
+    notify_url: notifyUrl || NOTIFY_URL,
   });
 
   const authHeader = buildAuthHeader("POST", urlPath, body);
