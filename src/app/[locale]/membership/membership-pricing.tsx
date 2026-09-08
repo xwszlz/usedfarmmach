@@ -62,6 +62,8 @@ export function MembershipPricing({ locale }: { locale: string }) {
   const [authLoading, setAuthLoading] = useState(true);
   const [checkoutTier, setCheckoutTier] = useState<PaidTier | null>(null);
   const [checkoutError, setCheckoutError] = useState<PaidTier | null>(null);
+  // 存真实错误文案：只显示 i18n 通用文案的话，出错时根本看不出微信返回了什么
+  const [checkoutErrorMsg, setCheckoutErrorMsg] = useState<Partial<Record<PaidTier, string>>>({});
   const [showWaitlist, setShowWaitlist] = useState(false);
   const [qr, setQr] = useState<{ url: string; type: string } | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -136,6 +138,10 @@ export function MembershipPricing({ locale }: { locale: string }) {
       const result = await res.json();
       if (!result?.success || !result?.data?.codeUrl) {
         setCheckoutError(tier);
+        setCheckoutErrorMsg((prev) => ({
+          ...prev,
+          [tier]: result?.error || "下单失败（未返回支付二维码）",
+        }));
         return;
       }
 
@@ -183,8 +189,12 @@ export function MembershipPricing({ locale }: { locale: string }) {
           /* 忽略单次轮询失败 */
         }
       }, 3000);
-    } catch {
+    } catch (e: any) {
       setCheckoutError(tier);
+      setCheckoutErrorMsg((prev) => ({
+        ...prev,
+        [tier]: e?.message || "网络错误，请稍后重试",
+      }));
     } finally {
       setCheckoutTier(null);
     }
@@ -247,7 +257,9 @@ export function MembershipPricing({ locale }: { locale: string }) {
           {isCn ? "微信支付" : t("cta.stripePay")}
         </Button>
         {checkoutError === tier && (
-          <p className="text-xs text-red-600">{t("checkoutError")}</p>
+          <p className="break-all text-xs text-red-600">
+            {checkoutErrorMsg[tier as PaidTier] || t("checkoutError")}
+          </p>
         )}
       </div>
     );
