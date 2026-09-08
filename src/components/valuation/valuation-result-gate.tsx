@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Lock, Loader2, Mail, ShieldCheck, AlertTriangle, TrendingUp, Sparkles } from "lucide-react";
+import Link from "next/link";
+import { Lock, Loader2, Mail, ShieldCheck, AlertTriangle, TrendingUp, Sparkles, Crown } from "lucide-react";
 
 // ============================================================
 // P0 留资引擎 — 游客估值结果解锁卡片（valuation-result-gate）
@@ -96,6 +97,7 @@ export default function ValuationResultGate({
             email={email} setEmail={setEmail} error={error} submitting={submitting}
             onUnlock={handleUnlock} t={t}
           />
+          <MembershipUpsell locale={locale} t={t} />
         </div>
       ) : (
         /* ── 区间价 + 拆解打码 + 解锁表单 ── */
@@ -154,10 +156,39 @@ export default function ValuationResultGate({
               email={email} setEmail={setEmail} error={error} submitting={submitting}
               onUnlock={handleUnlock} t={t}
             />
+            <MembershipUpsell locale={locale} t={t} />
           </div>
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * 会员升级引导条 —— 挂在留资表单正下方。
+ *
+ * 为什么放这里：游客拿到的是 ±12% 的模糊区间，此刻"想知道精确值"的意愿最强，
+ * 是全站意向最高的流量节点。给一条不打断留资的二级入口，
+ * 把"留邮箱解锁一次"升级成"付费无限次 + 完整报告"。
+ * 用 next/link 站内跳转（与 navbar 一致），保留客户端路由、不整页刷新。
+ */
+function MembershipUpsell({ locale, t }: { locale: string; t: (key: string) => string }) {
+  return (
+    <Link
+      href={`/${locale}/membership`}
+      className="mt-3 flex items-center justify-between gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 transition-colors hover:border-amber-300 hover:bg-amber-100"
+    >
+      <span className="flex min-w-0 items-start gap-1.5">
+        <Crown className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+        <span className="min-w-0 text-xs text-amber-900 sm:text-sm">
+          <span className="font-medium">{t("membershipUpsell")}</span>
+          <span className="hidden sm:inline"> · {t("membershipUpsellDesc")}</span>
+        </span>
+      </span>
+      <span className="shrink-0 whitespace-nowrap text-xs font-semibold text-amber-700 sm:text-sm">
+        {t("membershipCta")} →
+      </span>
+    </Link>
   );
 }
 
