@@ -1,5 +1,8 @@
 {
   "valuationGate": {
+    "membershipUpsell": "ترقَّ إلى العضوية لفتح تقرير التقييم الكامل",
+    "membershipUpsellDesc": "تقييمات غير محدودة وتفصيل كامل ونصائح الشراء",
+    "membershipCta": "عرض الخطط",
     "_todoTranslate": "",
     "rangeLabel": "AI Valuation Range (for reference only)",
     "midHint": "Midpoint reference",
@@ -196,6 +199,7 @@
     }
   },
   "nav": {
+    "membership": "العضوية",
     "home": "الرئيسية",
     "products": "المعدات",
     "logistics": "الخدمات اللوجستية",

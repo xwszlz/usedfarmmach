@@ -1,5 +1,8 @@
 {
   "valuationGate": {
+    "membershipUpsell": "升级会员，解锁完整估值报告",
+    "membershipUpsellDesc": "无限次 AI 估值 + 完整公式拆解 + 购买建议",
+    "membershipCta": "查看会员方案",
     "_todoTranslate": "",
     "rangeLabel": "AI 估值区间（仅供参考）",
     "midHint": "参考中间价",
@@ -195,6 +198,7 @@
     }
   },
   "nav": {
+    "membership": "会员",
     "home": "首页",
     "products": "农机市场",
     "logistics": "物流方案",

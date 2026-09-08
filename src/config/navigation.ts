@@ -82,6 +82,10 @@ export const mainNav: TopNavItem[] = [
     ],
   },
 
+  // 会员（变现主入口：.cn 微信支付 / .com Stripe）
+  // 位置：放在服务支持之后、关于我们之前，属于主内容区，视觉上不抢"捡漏"的 spotlight。
+  { href: "/membership", labelKey: "nav.membership", highlight: true },
+
   { href: "/about", labelKey: "nav.about" },
   { href: "/arena", labelKey: "nav.arena", highlight: true },
   { href: "/credits", labelKey: "nav.credits", highlight: true },
