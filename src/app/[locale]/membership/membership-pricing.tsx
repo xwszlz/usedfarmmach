@@ -4,13 +4,14 @@
  * /membership 会员定价页（收银台）
  *
  * - 四档定价卡片（免费版列示作对比）
- * - isCnSite() 切换：.cn 显示 ¥ + 微信支付（即将开通）；.com 显示 $ + Stripe Checkout
- * - 月付/年付切换；年付展示划线价 + 上线期限时 9 折标
- * - 未登录 → 跳注册（带 redirect）；.com 已登录 → POST /api/billing/checkout；
- *   503（Stripe 未配）→ 降级邮箱收集（/api/subscribe, source=membership_waitlist）
+ * - 价格统一取自 @/lib/membership/pricing（唯一价格来源，杜绝「页面显示 A 价、实际扣 B 价」）
+ * - 月付/年付切换；年付划线价 = 月付 × 12，直观体现年付优惠
+ * - .com 已登录 → POST /api/billing/checkout（Stripe，既有链路，未改动）
+ * - .cn  已登录 → POST /api/membership/checkout（微信 Native 扫码，普通商户直收增值费）
+ *   503（支付未配置）→ 降级邮箱收集（/api/subscribe, source=membership_waitlist）
  */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Check, Loader2, ShieldCheck } from "lucide-react";
@@ -18,33 +19,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { isCnSite } from "@/config/site";
+import { MEMBERSHIP_PRICING, type BillingCycle } from "@/lib/membership/pricing";
 
 type PaidTier = "basic" | "premium" | "enterprise";
 type Tier = "free" | PaidTier;
-type BillingCycle = "monthly" | "yearly";
-
-/** 各档定价（老板拍板口径；年价已含 8.3 折） */
-const PRICING: Record<
-  "cn" | "com",
-  { currency: string; plans: Record<PaidTier, { monthly: number; yearly: number }> }
-> = {
-  cn: {
-    currency: "¥",
-    plans: {
-      basic: { monthly: 199, yearly: 1990 },
-      premium: { monthly: 499, yearly: 4990 },
-      enterprise: { monthly: 1999, yearly: 19990 },
-    },
-  },
-  com: {
-    currency: "$",
-    plans: {
-      basic: { monthly: 29, yearly: 290 },
-      premium: { monthly: 79, yearly: 790 },
-      enterprise: { monthly: 299, yearly: 2990 },
-    },
-  },
-};
 
 /** .com 会员档 → 现有 Stripe SKU（basic 无订阅 SKU，暂走增值包通道，实收以 SKU 中心表为准） */
 const STRIPE_PLAN: Record<PaidTier, string> = {
@@ -53,21 +31,31 @@ const STRIPE_PLAN: Record<PaidTier, string> = {
   enterprise: "enterprise",
 };
 
-/** 上线期限时 9 折（年付，前端展示口径） */
-const LIMITED_YEARLY_DISCOUNT = 0.9;
-
 const TIER_ORDER: Tier[] = ["free", "basic", "premium", "enterprise"];
 const HIGHLIGHT: PaidTier = "premium";
 
 interface MeUser {
   membershipTier: string;
+  membershipExpiresAt?: string | null;
 }
 
 export function MembershipPricing({ locale }: { locale: string }) {
   const t = useTranslations("membership");
   const isCn = isCnSite();
-  const siteKey: "cn" | "com" = isCn ? "cn" : "com";
-  const { currency, plans } = PRICING[siteKey];
+
+  const currency = isCn ? "¥" : "$";
+  /** 从唯一价格源派生，.cn 取人民币、.com 取美元 */
+  const plans = (["basic", "premium", "enterprise"] as PaidTier[]).reduce(
+    (acc, tier) => {
+      const p = MEMBERSHIP_PRICING[tier];
+      acc[tier] = {
+        monthly: isCn ? p.cnyMonthly : p.usdMonthly,
+        yearly: isCn ? p.cnyYearly : p.usdYearly,
+      };
+      return acc;
+    },
+    {} as Record<PaidTier, { monthly: number; yearly: number }>
+  );
 
   const [cycle, setCycle] = useState<BillingCycle>("yearly");
   const [user, setUser] = useState<MeUser | null>(null);
@@ -75,11 +63,17 @@ export function MembershipPricing({ locale }: { locale: string }) {
   const [checkoutTier, setCheckoutTier] = useState<PaidTier | null>(null);
   const [checkoutError, setCheckoutError] = useState<PaidTier | null>(null);
   const [showWaitlist, setShowWaitlist] = useState(false);
+  const [qr, setQr] = useState<{ url: string; type: string } | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // 未配 STRIPE_SECRET_KEY（.com 503）或 .cn 站：展示邮箱降级收集
-  useEffect(() => {
-    if (isCn) setShowWaitlist(true);
-  }, [isCn]);
+  const stopPoll = useCallback(() => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => stopPoll, [stopPoll]);
 
   useEffect(() => {
     fetch("/api/user/me", { method: "GET" })
@@ -93,7 +87,8 @@ export function MembershipPricing({ locale }: { locale: string }) {
 
   const currentTier = (user?.membershipTier || "free") as Tier;
 
-  async function handleCheckout(tier: PaidTier) {
+  // ---------- .com：Stripe（既有链路，未改动） ----------
+  async function handleStripeCheckout(tier: PaidTier) {
     setCheckoutTier(tier);
     setCheckoutError(null);
     try {
@@ -103,7 +98,6 @@ export function MembershipPricing({ locale }: { locale: string }) {
         body: JSON.stringify({ plan: STRIPE_PLAN[tier], currency: "USD" }),
       });
       if (res.status === 503) {
-        // 支付通道未开放 → 降级邮箱收集
         setShowWaitlist(true);
         return;
       }
@@ -113,6 +107,82 @@ export function MembershipPricing({ locale }: { locale: string }) {
         return;
       }
       setCheckoutError(tier);
+    } catch {
+      setCheckoutError(tier);
+    } finally {
+      setCheckoutTier(null);
+    }
+  }
+
+  // ---------- .cn：微信 Native 扫码 ----------
+  async function handleWechatCheckout(tier: PaidTier) {
+    setCheckoutTier(tier);
+    setCheckoutError(null);
+    // 快照：用于轮询时判断「有效期是否真的被延长」
+    const prevExpiry = user?.membershipExpiresAt
+      ? new Date(user.membershipExpiresAt).getTime()
+      : 0;
+    const prevTier = currentTier;
+    try {
+      const res = await fetch("/api/membership/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tier, channel: "wechat", cycle }),
+      });
+      if (res.status === 503) {
+        setShowWaitlist(true);
+        return;
+      }
+      const result = await res.json();
+      if (!result?.success || !result?.data?.codeUrl) {
+        setCheckoutError(tier);
+        return;
+      }
+
+      // 生成二维码（qrcode 已在 package.json；失败则降级为原始码串）
+      let dataUrl = "";
+      try {
+        const QRCodeMod = await import("qrcode").catch(() => null);
+        if (QRCodeMod?.default) {
+          dataUrl = await QRCodeMod.default.toDataURL(result.data.codeUrl);
+        }
+      } catch {
+        dataUrl = "";
+      }
+      setQr({ url: dataUrl || result.data.codeUrl, type: result.data.type });
+
+      // 轮询：支付成功后自动刷新，无需手动刷新页面
+      stopPoll();
+      let tries = 0;
+      pollRef.current = setInterval(async () => {
+        tries += 1;
+        if (tries > 60) {
+          stopPoll();
+          return;
+        }
+        try {
+          const r = await fetch("/api/user/me");
+          if (!r.ok) return;
+          const j = await r.json();
+          const nowTier = j?.data?.membershipTier || "free";
+          const nowExpiry = j?.data?.membershipExpiresAt
+            ? new Date(j.data.membershipExpiresAt).getTime()
+            : 0;
+          // 升档：档位真的变了即判定成功
+          const upgraded = prevTier !== tier && nowTier === tier;
+          // 续费：档位不变，必须比较有效期是否真被延长。
+          // 若只用 nowTier === tier 判定，存量会员点「续费」会在首次轮询就误判成功、
+          // 二维码直接消失、用户以为已付 —— 续费功能对老会员 100% 不可用。
+          const extended = nowExpiry > prevExpiry + 60_000;
+          if (upgraded || extended) {
+            stopPoll();
+            setQr(null);
+            setUser(j.data);
+          }
+        } catch {
+          /* 忽略单次轮询失败 */
+        }
+      }, 3000);
     } catch {
       setCheckoutError(tier);
     } finally {
@@ -146,55 +216,49 @@ export function MembershipPricing({ locale }: { locale: string }) {
       );
     }
 
-    if (tier === "free") {
+    if (tier === "free" || currentTier === tier) {
       return (
         <Button
           className="w-full border border-gray-300 bg-white text-gray-900 hover:bg-gray-50"
-          disabled
+          disabled={tier === "free" || checkoutTier !== null}
+          onClick={currentTier === tier && tier !== "free" ? () => handlePay(tier as PaidTier) : undefined}
         >
-          {t("currentPlan")}
+          {tier === "free"
+            ? t("currentPlan")
+            : checkoutTier === tier
+              ? "处理中…"
+              : isCn
+                ? "续费"
+                : t("currentPlan")}
         </Button>
       );
     }
 
-    if (currentTier === tier) {
-      return (
-        <Button
-          className="w-full border border-gray-300 bg-white text-gray-900 hover:bg-gray-50"
-          disabled
-        >
-          {t("currentPlan")}
-        </Button>
-      );
-    }
-
-    if (isCn) {
-      // .cn：微信支付通道未开通 → disabled + 页面底部邮箱降级收集
-      return (
-        <Button className="w-full bg-gray-100 text-gray-900 hover:bg-gray-200" disabled>
-          {t("cta.wechatPending")}
-        </Button>
-      );
-    }
-
-    // .com 已登录：POST 现有 Stripe Checkout API
     return (
       <div className="space-y-2">
         <Button
           className="w-full"
           disabled={checkoutTier !== null}
-          onClick={() => handleCheckout(tier)}
+          onClick={() => handlePay(tier as PaidTier)}
         >
           {checkoutTier === tier ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : null}
-          {t("cta.stripePay")}
+          {isCn ? "微信支付" : t("cta.stripePay")}
         </Button>
         {checkoutError === tier && (
           <p className="text-xs text-red-600">{t("checkoutError")}</p>
         )}
       </div>
     );
+  }
+
+  function handlePay(tier: PaidTier) {
+    if (isCn) {
+      void handleWechatCheckout(tier);
+    } else {
+      void handleStripeCheckout(tier);
+    }
   }
 
   return (
@@ -235,7 +299,8 @@ export function MembershipPricing({ locale }: { locale: string }) {
         {TIER_ORDER.map((tier) => {
           const paid = tier !== "free" ? plans[tier as PaidTier] : null;
           const isHighlight = tier === HIGHLIGHT;
-          const yearlyFinal = paid ? Math.round(paid.yearly * LIMITED_YEARLY_DISCOUNT) : 0;
+          // 年付划线价 = 月付 × 12（真实可核对，不用虚高的假原价）
+          const yearlyList = paid ? paid.monthly * 12 : 0;
           return (
             <Card
               key={tier}
@@ -266,7 +331,7 @@ export function MembershipPricing({ locale }: { locale: string }) {
                     <div>
                       <p className="text-3xl font-bold text-gray-900">
                         {currency}
-                        {yearlyFinal.toLocaleString()}
+                        {paid.yearly.toLocaleString()}
                         <span className="text-sm font-normal text-gray-500">
                           {t("perYear")}
                         </span>
@@ -274,7 +339,7 @@ export function MembershipPricing({ locale }: { locale: string }) {
                       <p className="mt-1 text-sm text-gray-400">
                         <span className="line-through">
                           {currency}
-                          {paid.yearly.toLocaleString()}
+                          {yearlyList.toLocaleString()}
                         </span>
                         <span className="ml-2 rounded bg-accent-500/10 px-1.5 py-0.5 text-xs text-accent-600">
                           {t("saveBadge")}
@@ -307,7 +372,32 @@ export function MembershipPricing({ locale }: { locale: string }) {
         })}
       </div>
 
-      {/* 降级邮箱收集（.cn 常驻；.com 在 Checkout 返回 503 时出现） */}
+      {/* 微信扫码支付弹层（.cn） */}
+      {qr && (
+        <Card className="mx-auto mt-10 max-w-sm space-y-3 p-6 text-center">
+          <p className="text-sm text-gray-600">请使用微信扫码支付</p>
+          {qr.url.startsWith("data:") ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={qr.url} alt="微信支付二维码" className="mx-auto h-48 w-48" />
+          ) : (
+            <code className="block break-all rounded bg-gray-100 p-2 text-xs">
+              {qr.url}
+            </code>
+          )}
+          <p className="text-xs text-gray-400">支付成功后本页自动更新，无需刷新</p>
+          <Button
+            className="w-full border border-gray-300 bg-white text-gray-900 hover:bg-gray-50"
+            onClick={() => {
+              stopPoll();
+              setQr(null);
+            }}
+          >
+            取消支付
+          </Button>
+        </Card>
+      )}
+
+      {/* 降级邮箱收集（支付通道未配置时出现） */}
       {showWaitlist && <WaitlistCard />}
 
       {/* 信任条（仅 .cn；唯一标准称谓为「分会」，勿写作协会本级） */}
