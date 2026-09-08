@@ -66,7 +66,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const outTradeNo = buildOutTradeNo(tier, user.id, cycle);
+    // 订单号只带 档位+周期+时间戳+随机（固定 20 字符，微信上限 32）；
+    // userId 走 attach / passback_params，回调原样返回后用于定位用户
+    const outTradeNo = buildOutTradeNo(tier, cycle);
     const cycleLabel = cycle === "yearly" ? "年费" : "月费";
     const description = `神雕农机会员${cycleLabel}`;
     const base = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.cn";
@@ -84,7 +86,8 @@ export async function POST(request: NextRequest) {
         outTradeNo,
         amountCents,
         description,
-        notifyWechat
+        notifyWechat,
+        user.id // attach：回调原样返回，用于定位是哪个用户买的
       );
       return NextResponse.json({
         success: true,
@@ -103,7 +106,8 @@ export async function POST(request: NextRequest) {
       outTradeNo,
       getMembershipCny(tier, cycle),
       description,
-      notifyAlipay
+      notifyAlipay,
+      user.id // passback_params：异步通知原样返回
     );
     return NextResponse.json({
       success: true,
