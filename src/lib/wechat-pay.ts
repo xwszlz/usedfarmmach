@@ -82,7 +82,9 @@ export async function createNativeOrder(
   orderNo: string,
   amountInCents: number,
   description: string,
-  notifyUrl?: string
+  notifyUrl?: string,
+  /** 附加数据，支付通知中原样返回（上限 128 字符）——会员下单用它带 userId */
+  attach?: string
 ): Promise<{ code_url: string; prepay_id?: string }> {
   const urlPath = "/v3/pay/transactions/native";
   const body = JSON.stringify({
@@ -90,6 +92,8 @@ export async function createNativeOrder(
     mchid: MCH_ID,
     out_trade_no: orderNo,
     description,
+    // attach 为 undefined 时 JSON.stringify 会自动省略该字段
+    attach: attach || undefined,
     amount: { total: amountInCents, currency: "CNY" },
     notify_url: notifyUrl || NOTIFY_URL,
   });

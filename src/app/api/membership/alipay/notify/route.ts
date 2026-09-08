@@ -64,7 +64,23 @@ export async function POST(request: NextRequest) {
     console.error("[Membership/AlipayNotify] 订单号无法解析:", params.out_trade_no);
     return okText();
   }
-  const { tier, cycle, userId, orderTs } = parsed;
+  const { tier, cycle, orderTs } = parsed;
+
+  // userId 由下单时的 passback_params 携带（支付宝异步通知原样返回，且是 URL 编码的）
+  const rawPassback = typeof params.passback_params === "string" ? params.passback_params : "";
+  let userId = "";
+  try {
+    userId = rawPassback ? decodeURIComponent(rawPassback) : "";
+  } catch {
+    userId = rawPassback;
+  }
+  if (!userId) {
+    console.error(
+      `[需人工补单][Membership/AlipayNotify] 回调缺少 passback_params，无法定位用户。` +
+        `order=${params.out_trade_no} tier=${tier} cycle=${cycle}`
+    );
+    return okText();
+  }
   const cycleMs = (CYCLE_DAYS[cycle] || 365) * DAY_MS;
 
   // 金额校验（支付宝 total_amount 单位为「元」）
