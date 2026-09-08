@@ -171,13 +171,18 @@ export async function createPrecreateOrder(
   orderNo: string,
   amount: number,
   subject: string,
-  notifyUrl?: string
+  notifyUrl?: string,
+  /** 公用回传参数，异步通知中原样返回（上限 512 字符）——会员下单用它带 userId */
+  passbackParams?: string
 ): Promise<{ qr_code: string; out_trade_no: string }> {
-  const bizContent = {
+  const bizContent: Record<string, any> = {
     out_trade_no: orderNo,
     total_amount: amount.toFixed(2),
     subject,
   };
+  if (passbackParams) {
+    bizContent.passback_params = encodeURIComponent(passbackParams);
+  }
 
   const params = buildSignedParams(bizContent, "alipay.trade.precreate", notifyUrl);
 
