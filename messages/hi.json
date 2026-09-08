@@ -1,5 +1,8 @@
 {
   "valuationGate": {
+    "membershipUpsell": "सदस्यता अपग्रेड करें, पूरी मूल्यांकन रिपोर्ट अनलॉक करें",
+    "membershipUpsellDesc": "असीमित मूल्यांकन, पूरा विवरण और खरीद सलाह",
+    "membershipCta": "योजनाएँ देखें",
     "_todoTranslate": "",
     "rangeLabel": "AI Valuation Range (for reference only)",
     "midHint": "Midpoint reference",
@@ -196,6 +199,7 @@
     }
   },
   "nav": {
+    "membership": "सदस्यता",
     "home": "होम",
     "products": "उपकरण",
     "logistics": "लॉजिस्टिक्स",
