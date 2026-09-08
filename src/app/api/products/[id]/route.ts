@@ -222,6 +222,11 @@ export async function PATCH(
     if (body.tradeTerm !== undefined) updateData.tradeTerm = String(body.tradeTerm);
     if (body.tradePort !== undefined) updateData.tradePort = body.tradePort === null ? null : String(body.tradePort);
     if (body.standardDescriptionEn !== undefined) updateData.standardDescriptionEn = body.standardDescriptionEn === null ? null : String(body.standardDescriptionEn);
+    // 员工分包留资：编辑页可写入负责人联系方式
+    if (body.contactName !== undefined) updateData.contactName = body.contactName === null ? null : String(body.contactName);
+    if (body.contactPhone !== undefined) updateData.contactPhone = body.contactPhone === null ? null : String(body.contactPhone);
+    if (body.contactWechat !== undefined) updateData.contactWechat = body.contactWechat === null ? null : String(body.contactWechat);
+    if (body.contactEmail !== undefined) updateData.contactEmail = body.contactEmail === null ? null : String(body.contactEmail);
 
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json({ success: false, error: "没有需要更新的字段" }, { status: 400 });

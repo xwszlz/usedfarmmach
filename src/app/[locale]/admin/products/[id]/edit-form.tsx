@@ -57,6 +57,10 @@ interface ProductData {
   priceMode: string;
   tradeTerm: string;
   tradePort: string | null;
+  contactName: string | null;
+  contactPhone: string | null;
+  contactWechat: string | null;
+  contactEmail: string | null;
 }
 
 interface Props {
@@ -121,6 +125,10 @@ export function ProductEditForm({ product, brands, categories }: Props) {
     priceMode: product.priceMode || "por",
     tradeTerm: product.tradeTerm || "FOB",
     tradePort: product.tradePort || "",
+    contactName: product.contactName || "",
+    contactPhone: product.contactPhone || "",
+    contactWechat: product.contactWechat || "",
+    contactEmail: product.contactEmail || "",
   });
 
   const [saving, setSaving] = useState(false);
@@ -172,6 +180,10 @@ export function ProductEditForm({ product, brands, categories }: Props) {
           priceMode: form.priceMode,
           tradeTerm: form.tradeTerm,
           tradePort: form.tradePort || null,
+          contactName: form.contactName || null,
+          contactPhone: form.contactPhone || null,
+          contactWechat: form.contactWechat || null,
+          contactEmail: form.contactEmail || null,
         }),
       });
 
@@ -747,6 +759,60 @@ export function ProductEditForm({ product, brands, categories }: Props) {
           {uploadStatus}
         </div>
       )}
+
+      {/* 联系方式：谁维护，留谁的联系方式 */}
+      <div className="rounded-xl border bg-white shadow-sm">
+        <div className="border-b px-6 py-4">
+          <h2 className="font-semibold text-gray-900">联系方式（谁维护，留谁的联系方式）</h2>
+        </div>
+        <div className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2">
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-gray-500">联系人 / 公司名</span>
+            <input
+              type="text"
+              value={form.contactName}
+              onChange={(e) => handleChange("contactName", e.target.value)}
+              placeholder="如：张经理 / XX农机公司"
+              className="rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-gray-500">电话</span>
+            <input
+              type="tel"
+              value={form.contactPhone}
+              onChange={(e) => handleChange("contactPhone", e.target.value)}
+              placeholder="如：+86 155 1139 5016"
+              className="rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-gray-500">微信号</span>
+            <input
+              type="text"
+              value={form.contactWechat}
+              onChange={(e) => handleChange("contactWechat", e.target.value)}
+              placeholder="买家会加你微信洽谈"
+              className="rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-gray-500">邮箱</span>
+            <input
+              type="email"
+              value={form.contactEmail}
+              onChange={(e) => handleChange("contactEmail", e.target.value)}
+              placeholder="如：you@example.com"
+              className="rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </label>
+        </div>
+        <div className="px-6 pb-4">
+          <p className="rounded-lg bg-blue-50 p-3 text-xs leading-relaxed text-blue-700">
+            填写后，买家在产品详情页登录即可看到这些联系方式，双方直接洽谈。请填<b>维护人本人</b>的信息，不要把全公司号码重复贴到每台机器上。
+          </p>
+        </div>
+      </div>
 
       {/* Actions */}
       <div className="flex items-center gap-3">
