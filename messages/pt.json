@@ -1,5 +1,8 @@
 {
   "valuationGate": {
+    "membershipUpsell": "Atualize para liberar o relatório completo",
+    "membershipUpsellDesc": "Avaliações ilimitadas, detalhamento completo e dicas de compra",
+    "membershipCta": "Ver planos",
     "_todoTranslate": "",
     "rangeLabel": "AI Valuation Range (for reference only)",
     "midHint": "Midpoint reference",
@@ -196,6 +199,7 @@
     }
   },
   "nav": {
+    "membership": "Assinatura",
     "home": "Início",
     "products": "Equipamentos",
     "logistics": "Logística",
