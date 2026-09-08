@@ -86,7 +86,18 @@ export async function POST(request: NextRequest) {
     console.error("[Membership/WechatNotify] 订单号无法解析:", data.out_trade_no);
     return ok("unknown order");
   }
-  const { tier, cycle, userId, orderTs } = parsed;
+  const { tier, cycle, orderTs } = parsed;
+
+  // userId 由下单时的 attach 字段携带（订单号只有 20 字符装不下 cuid），微信回调原样返回
+  const userId = typeof data.attach === "string" ? data.attach : "";
+  if (!userId) {
+    // 拿不到用户就只能留痕等人工补单，返回 SUCCESS 避免微信无限重投
+    console.error(
+      `[需人工补单][Membership/WechatNotify] 回调缺少 attach，无法定位用户。` +
+        `order=${data.out_trade_no} tier=${tier} cycle=${cycle} transaction=${data.transaction_id || "-"}`
+    );
+    return ok("missing attach");
+  }
   const cycleMs = (CYCLE_DAYS[cycle] || 365) * DAY_MS;
 
   // ---- 金额校验：单位均为「分」。amount 存在但取不到合法值 = 异常，拒绝开通 ----
