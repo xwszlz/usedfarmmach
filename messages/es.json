@@ -1,5 +1,8 @@
 {
   "valuationGate": {
+    "membershipUpsell": "Mejora tu plan para desbloquear el informe completo",
+    "membershipUpsellDesc": "Valoraciones ilimitadas, desglose completo y consejos de compra",
+    "membershipCta": "Ver planes",
     "_todoTranslate": "",
     "rangeLabel": "AI Valuation Range (for reference only)",
     "midHint": "Midpoint reference",
@@ -196,6 +199,7 @@
     }
   },
   "nav": {
+    "membership": "Membresía",
     "home": "Inicio",
     "products": "Maquinaria",
     "logistics": "Logística",
