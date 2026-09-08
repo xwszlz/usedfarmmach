@@ -1,5 +1,8 @@
 {
   "valuationGate": {
+    "membershipUpsell": "Оформите подписку, чтобы открыть полный отчёт",
+    "membershipUpsellDesc": "Безлимитные оценки, полная разбивка и советы по покупке",
+    "membershipCta": "Тарифы",
     "_todoTranslate": "",
     "rangeLabel": "AI Valuation Range (for reference only)",
     "midHint": "Midpoint reference",
@@ -196,6 +199,7 @@
     }
   },
   "nav": {
+    "membership": "Подписка",
     "home": "Главная",
     "products": "Оборудование",
     "logistics": "Логистика",
