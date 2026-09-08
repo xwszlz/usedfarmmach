@@ -69,6 +69,11 @@ export default async function ProductEditPage({
           priceMode: product.priceMode,
           tradeTerm: product.tradeTerm,
           tradePort: product.tradePort,
+          // 员工分包留资：把联系方式透传给编辑表单
+          contactName: product.contactName,
+          contactPhone: product.contactPhone,
+          contactWechat: product.contactWechat,
+          contactEmail: product.contactEmail,
         }}
         brands={brands.map((b) => ({ id: b.id, nameZh: b.nameZh, nameEn: b.nameEn }))}
         categories={categories.map((c) => ({ id: c.id, nameZh: c.nameZh, nameEn: c.nameEn }))}
