@@ -8,6 +8,107 @@
     "p3": "23 checkable items, progress saved on your phone",
     "cta": "Read the playbook free"
   },
+  "expoGuide": {
+    "banner": {
+      "title": "Heilongjiang International Agricultural Machinery Exhibition",
+      "subtitle": "Exhibitor & Visitor Playbook",
+      "tagline": "Registration · Booth Selection · Materials · Travel & Stay · Coupon Playbook · Pitfalls",
+      "badges": {
+        "date": "Sep 19–21",
+        "venue": "Harbin Ice & Snow World",
+        "scale": "300 booths / 30,000 m²",
+        "traffic": "30,000 buyers expected"
+      }
+    },
+    "countdown": {
+      "deadline": "{days} days left to register.",
+      "detail1": "But two earlier traps:",
+      "detail2": "Apply for electricity by Sep 10 (+100% surcharge after)",
+      "detail3": "Notify partition walls and high-power equipment by Sep 15",
+      "detail4": "Booth is confirmed on payment date, not registration date."
+    },
+    "models": {
+      "sectionTitle": "Find Shendiao on site · Buy / Consign Models",
+      "sectionDesc": "Shendiao purchases at premium and accepts consignment for the following international brand models at this expo. Square balers, round balers and forage harvesters — all in scope. Bring photos or nameplates to our booth for on-site quotes.",
+      "scanValuation": "Free AI Valuation →",
+      "registerSale": "List for Sale / Consign",
+      "contactInfo": "Inquiries (used machinery): WhatsApp +86 15511395016 | Phone +86 18633878701",
+      "nhForage": {
+        "brand": "New Holland",
+        "kind": "Forage Harvester"
+      },
+      "nhBaler": {
+        "brand": "New Holland",
+        "kind": "Square Baler"
+      },
+      "clForage": {
+        "brand": "CLAAS",
+        "kind": "Forage Harvester (Legacy)"
+      },
+      "clBaler": {
+        "brand": "CLAAS",
+        "kind": "Square Baler"
+      }
+    },
+    "toc": {
+      "title": "Table of Contents",
+      "items": [
+        "Quick Facts · 30-second overview",
+        "1. Visitor Guide",
+        "2. Exhibitor Guide",
+        "3. Choosing Your Booth",
+        "4. Materials Checklist (checkable)",
+        "5. Pre-Expo Timeline",
+        "6. On-Site Conversion SOP",
+        "7. 7-Day Post-Expo Follow-Up",
+        "8. Pitfalls to Avoid",
+        "9. FAQ",
+        "10. Case Study: How Shendiao Does It"
+      ]
+    },
+    "facts": {
+      "title": "Quick Facts · 30-second overview",
+      "time": {
+        "k": "Dates",
+        "v": "Sep 19–21, 2026, 8:30–16:30 daily",
+        "sub": "Opening ceremony: Sep 19, 10:00"
+      },
+      "venue": {
+        "k": "Venue",
+        "v": "Harbin Ice & Snow World",
+        "sub": "No. 1458 Sun Avenue, Songbei District, Harbin"
+      },
+      "host": {
+        "k": "Hosts",
+        "v": "Heilongjiang Agri-Machinery Circulation Association",
+        "sub": "Heilongjiang Agri-Machinery Industry Association"
+      },
+      "scale": {
+        "k": "Scale",
+        "v": "300 international standard booths, 30,000 m² total",
+        "sub": "5 indoor halls (A/B/C/D/E) + outdoor area"
+      },
+      "traffic": {
+        "k": "Expected Traffic",
+        "v": "~30,000 professional buyers"
+      }
+    },
+    "cta": {
+      "title": "About Shendiao Agri-Machinery",
+      "subtitle1": "Imported used square / round balers · forage harvesters · cross-border used machinery trading platform",
+      "subtitle2": "Full New Holland & CLAAS lineup · on-site purchase prices above industry average",
+      "button": "Contact Us",
+      "association": "中国农业机械流通协会二手农机流通分会 副会长单位"
+    },
+    "footer": {
+      "intro": "This playbook is compiled by {company} for free use and redistribution by industry peers.",
+      "source": "Information sourced from the official exhibitor manual and organizer publications; {disclaimer}.",
+      "company": "Shijiazhuang Shendiao Agri-Machinery Technology Co., Ltd.",
+      "disclaimer": "all prices and schedules are subject to the organizer's final announcement",
+      "lastUpdated": "Last updated: 2026-09-08",
+      "contact": "Inquiries (used machinery): WhatsApp +86 15511395016 | Phone +86 18633878701"
+    }
+  },
   "valuationGate": {
     "membershipUpsell": "Upgrade to unlock the full valuation report",
     "membershipUpsellDesc": "Unlimited valuations, full breakdown & buying advice",
