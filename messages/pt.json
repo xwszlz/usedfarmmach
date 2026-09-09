@@ -8,6 +8,108 @@
     "p3": "23 itens que pode assinalar; o progresso fica guardado no celular",
     "cta": "Ver o guia gratuitamente"
   },
+  "expoGuide": {
+    "banner": {
+      "title": "Exposição Internacional de Máquinas Agrícolas de Heilongjiang",
+      "subtitle": "Guia completo para expositores e visitantes",
+      "tagline": "Inscrição · Escolha do estande · Materiais · Transporte e hospedagem · Cupons · Armadilhas",
+      "badges": {
+        "date": "19–21 de setembro",
+        "venue": "Harbin · Mundo de Gelo e Neve",
+        "scale": "300 estandes / 30 000 m²",
+        "traffic": "30 000 compradores esperados"
+      }
+    },
+    "countdown": {
+      "deadline": "Faltam {days} dias para o encerramento das inscrições.",
+      "detail1": "Mas há duas armadilhas anteriores:",
+      "detail2": "Solicitar energia elétrica até 10 de setembro (+100 % de acréscimo depois)",
+      "detail3": "Avisar sobre divisórias e equipamentos de alta potência até 15 de setembro",
+      "detail4": "O estande é confirmado pela data do pagamento, não pela data da inscrição."
+    },
+    "models": {
+      "sectionTitle": "Encontre a Shendiao no local · Compra / Consignação de modelos",
+      "sectionDesc": "Nesta edição a Shendiao compra a preços elevados e aceita em consignação os seguintes modelos de marcas internacionais. Enfardadeiras de fardos retangulares e redondos e colhedoras de forragem: todos incluídos. Traga fotos ou placas de identificação ao nosso estande para avaliação no local.",
+      "scanValuation": "Avaliação IA gratuita →",
+      "publishFree": "Publicar grátis",
+      "registerSale": "Vender / Deixar em consignação",
+      "contactInfo": "Consultas (máquinas usadas): WhatsApp +86 15511395016 | Tel. +86 18633878701",
+      "nhForage": {
+        "brand": "New Holland",
+        "kind": "Colhedora de forragem"
+      },
+      "nhBaler": {
+        "brand": "New Holland",
+        "kind": "Enfardadeira de fardos retangulares"
+      },
+      "clForage": {
+        "brand": "CLAAS",
+        "kind": "Colhedora de forragem (antiga)"
+      },
+      "clBaler": {
+        "brand": "CLAAS",
+        "kind": "Enfardadeira de fardos retangulares"
+      }
+    },
+    "toc": {
+      "title": "Índice",
+      "items": [
+        "Dados essenciais · resumo em 30 segundos",
+        "1. Guia para visitantes",
+        "2. Guia para expositores",
+        "3. Como escolher o estande",
+        "4. Lista de materiais (com marcação)",
+        "5. Cronograma pré-feira",
+        "6. Procedimento de conversão no local",
+        "7. Fechamento em 7 dias após a feira",
+        "8. Armadilhas a evitar",
+        "9. Perguntas frequentes (FAQ)",
+        "10. Estudo de caso: como a Shendiao trabalha"
+      ]
+    },
+    "facts": {
+      "title": "Dados essenciais · resumo em 30 segundos",
+      "time": {
+        "k": "Datas",
+        "v": "19–21 de setembro de 2026, das 8:30 às 16:30",
+        "sub": "Cerimônia de abertura: 19 de setembro, 10:00"
+      },
+      "venue": {
+        "k": "Local",
+        "v": "Harbin · Mundo de Gelo e Neve",
+        "sub": "N.º 1458, Sun Avenue, distrito de Songbei, Harbin"
+      },
+      "host": {
+        "k": "Organizadores",
+        "v": "Associação de Comercialização de Máquinas Agrícolas de Heilongjiang",
+        "sub": "Associação da Indústria de Máquinas Agrícolas de Heilongjiang"
+      },
+      "scale": {
+        "k": "Escala",
+        "v": "300 estandes padrão internacionais, 30 000 m² no total",
+        "sub": "5 pavilhões cobertos (A/B/C/D/E) + área externa"
+      },
+      "traffic": {
+        "k": "Público esperado",
+        "v": "Cerca de 30 000 compradores profissionais"
+      }
+    },
+    "cta": {
+      "title": "Sobre a Shendiao Agri-Machinery",
+      "subtitle1": "Importação de enfardadeiras retangulares / redondas e colhedoras de forragem usadas · plataforma transfronteiriça de máquinas agrícolas usadas",
+      "subtitle2": "Linha completa New Holland e CLAAS · preços de compra no local acima da média do setor",
+      "button": "Avaliação IA",
+      "association": "中国农业机械流通协会二手农机流通分会 副会长单位"
+    },
+    "footer": {
+      "intro": "Este guia foi elaborado por {company} para uso gratuito e livre compartilhamento entre profissionais do setor.",
+      "source": "Informações do manual oficial do expositor e de publicações do organizador; {disclaimer}.",
+      "company": "Shijiazhuang Shendiao Agri-Machinery Technology Co., Ltd.",
+      "disclaimer": "todos os preços e horários estão sujeitos à publicação final do organizador",
+      "lastUpdated": "Última atualização: 2026-09-08",
+      "contact": "Consultas (máquinas usadas): WhatsApp +86 15511395016 | Tel. +86 18633878701"
+    }
+  },
   "valuationGate": {
     "membershipUpsell": "Atualize para liberar o relatório completo",
     "membershipUpsellDesc": "Avaliações ilimitadas, detalhamento completo e dicas de compra",
