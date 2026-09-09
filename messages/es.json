@@ -8,6 +8,107 @@
     "p3": "23 puntos que puede marcar; el progreso se guarda en su móvil",
     "cta": "Ver la guía gratis"
   },
+  "expoGuide": {
+    "banner": {
+      "title": "Exposición Internacional de Maquinaria Agrícola de Heilongjiang",
+      "subtitle": "Guía completa para expositores y visitantes",
+      "tagline": "Inscripción · Elección del stand · Materiales · Transporte y alojamiento · Cupones · Errores que evitar",
+      "badges": {
+        "date": "19–21 de septiembre",
+        "venue": "Harbin · Mundo de Hielo y Nieve",
+        "scale": "300 stands / 30 000 m²",
+        "traffic": "30 000 compradores previstos"
+      }
+    },
+    "countdown": {
+      "deadline": "Quedan {days} días para inscribirse.",
+      "detail1": "Pero hay dos trampas anteriores:",
+      "detail2": "Solicitar electricidad antes del 10 de septiembre (+100 % de recargo después)",
+      "detail3": "Notificar mamparas y equipos de alta potencia antes del 15 de septiembre",
+      "detail4": "El stand se confirma por la fecha de pago, no por la fecha de inscripción."
+    },
+    "models": {
+      "sectionTitle": "Encuentre a Shendiao en el recinto · Compra / Consignación de modelos",
+      "sectionDesc": "En esta edición Shendiao compra a buen precio y acepta en consignación los siguientes modelos de marcas internacionales. Empacadoras de pacas cuadradas y redondas y cosechadoras de forraje: todo incluido. Traiga fotos o placas de identificación a nuestro stand para una valoración en el momento.",
+      "scanValuation": "Valoración IA gratuita →",
+      "registerSale": "Vender / Dejar en consignación",
+      "contactInfo": "Consultas (maquinaria usada): WhatsApp +86 15511395016 | Tel. +86 18633878701",
+      "nhForage": {
+        "brand": "New Holland",
+        "kind": "Cosechadora de forraje"
+      },
+      "nhBaler": {
+        "brand": "New Holland",
+        "kind": "Empacadora de pacas cuadradas"
+      },
+      "clForage": {
+        "brand": "CLAAS",
+        "kind": "Cosechadora de forraje (antigua)"
+      },
+      "clBaler": {
+        "brand": "CLAAS",
+        "kind": "Empacadora de pacas cuadradas"
+      }
+    },
+    "toc": {
+      "title": "Índice",
+      "items": [
+        "Datos clave · resumen en 30 segundos",
+        "1. Guía para visitantes",
+        "2. Guía para expositores",
+        "3. Cómo elegir el stand",
+        "4. Lista de materiales (con casillas)",
+        "5. Calendario previo a la feria",
+        "6. Protocolo de conversión en el recinto",
+        "7. Seguimiento en los 7 días posteriores",
+        "8. Errores que evitar",
+        "9. Preguntas frecuentes (FAQ)",
+        "10. Caso práctico: cómo trabaja Shendiao"
+      ]
+    },
+    "facts": {
+      "title": "Datos clave · resumen en 30 segundos",
+      "time": {
+        "k": "Fechas",
+        "v": "19–21 de septiembre de 2026, de 8:30 a 16:30",
+        "sub": "Ceremonia de apertura: 19 de septiembre, 10:00"
+      },
+      "venue": {
+        "k": "Lugar",
+        "v": "Harbin · Mundo de Hielo y Nieve",
+        "sub": "N.º 1458, Sun Avenue, distrito de Songbei, Harbin"
+      },
+      "host": {
+        "k": "Organizadores",
+        "v": "Asociación de Comercialización de Maquinaria Agrícola de Heilongjiang",
+        "sub": "Asociación de la Industria de Maquinaria Agrícola de Heilongjiang"
+      },
+      "scale": {
+        "k": "Escala",
+        "v": "300 stands internacionales estándar, 30 000 m² en total",
+        "sub": "5 pabellones cubiertos (A/B/C/D/E) + zona exterior"
+      },
+      "traffic": {
+        "k": "Afluencia prevista",
+        "v": "Unos 30 000 compradores profesionales"
+      }
+    },
+    "cta": {
+      "title": "Sobre Shendiao Agri-Machinery",
+      "subtitle1": "Importación de empacadoras de pacas cuadradas y redondas y cosechadoras de forraje usadas · plataforma transfronteriza de maquinaria agrícola usada",
+      "subtitle2": "Toda la gama New Holland y CLAAS · precios de compra en el recinto por encima de la media del sector",
+      "button": "Contáctenos",
+      "association": "中国农业机械流通协会二手农机流通分会 副会长单位"
+    },
+    "footer": {
+      "intro": "Esta guía ha sido elaborada por {company} para uso gratuito y libre difusión entre profesionales del sector.",
+      "source": "Información obtenida del manual oficial del expositor y de las publicaciones del organizador; {disclaimer}.",
+      "company": "Shijiazhuang Shendiao Agri-Machinery Technology Co., Ltd.",
+      "disclaimer": "todos los precios y horarios quedan sujetos a la publicación definitiva del organizador",
+      "lastUpdated": "Última actualización: 2026-09-08",
+      "contact": "Consultas (maquinaria usada): WhatsApp +86 15511395016 | Tel. +86 18633878701"
+    }
+  },
   "valuationGate": {
     "membershipUpsell": "Mejora tu plan para desbloquear el informe completo",
     "membershipUpsellDesc": "Valoraciones ilimitadas, desglose completo y consejos de compra",
