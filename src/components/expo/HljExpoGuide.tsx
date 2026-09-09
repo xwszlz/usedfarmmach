@@ -16,7 +16,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   MapPin, CalendarDays, Ruler, Users, Building2, Train, Bus, Car,
-  Ticket, Gift, AlertTriangle, CheckSquare, ChevronDown, Phone,
+  Ticket, Gift, AlertTriangle, CheckSquare, ChevronDown,
   ArrowRight, Clock, Package, Ban, Volume2, Flame, Trash2, Lock,
   UserPlus,
 } from "lucide-react";
@@ -277,15 +277,8 @@ export function HljExpoGuide({ locale }: { locale: string }) {
         </div>
         <div className="mt-3 flex flex-wrap gap-2 text-sm">
           <a
-            href={`/${locale}/seller/products/new`}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700"
-          >
-            <Phone className="h-4 w-4" />
-            {t("models.registerSale")}
-          </a>
-          <a
             href={`/${locale}/auth/register?redirect=/seller/products/new`}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 px-4 py-2 font-semibold text-gray-800 hover:bg-gray-50"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700"
           >
             <UserPlus className="h-4 w-4" />
             {t("models.publishFree")}
