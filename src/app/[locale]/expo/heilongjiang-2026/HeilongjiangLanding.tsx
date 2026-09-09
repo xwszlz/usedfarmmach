@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
+  BookOpen,
   Calendar,
   CheckCircle2,
   Clock,
@@ -282,6 +283,40 @@ export function HeilongjiangLanding({ locale }: { locale: string }) {
               className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/40 bg-white/10 px-6 py-3 font-semibold backdrop-blur-sm transition hover:bg-white/20"
             >
               {t.secondaryCta}
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* 参展观展宝典入口 —— 通用攻略页，承接「怎么去/住哪/代金券」长尾搜索 */}
+      <section className="border-b border-gray-200 bg-amber-50 dark:border-gray-800 dark:bg-amber-950/20">
+        <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <BookOpen className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+              <div>
+                <div className="font-bold text-gray-900 dark:text-white">
+                  {locale === "zh"
+                    ? "参展 & 观展完全宝典（免费，同行也能用）"
+                    : locale === "ru"
+                    ? "Полное руководство участника и посетителя"
+                    : "Complete Exhibitor & Visitor Guide"}
+                </div>
+                <div className="mt-0.5 text-sm text-gray-600 dark:text-gray-400">
+                  {locale === "zh"
+                    ? "报名流程 · 展位选择 · 物料清单 · 交通住宿 · 20倍代金券玩法 · 避坑清单。手机随时查，不用到现场领资料。"
+                    : locale === "ru"
+                    ? "Регистрация, стенды, чек-лист, проезд, ваучеры, подводные камни."
+                    : "Registration, booths, checklist, transport, vouchers, pitfalls."}
+                </div>
+              </div>
+            </div>
+            <Link
+              href={`/${locale}/expo/heilongjiang-2026/guide`}
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-amber-500 px-5 py-2.5 font-semibold text-white shadow transition hover:bg-amber-600"
+            >
+              {locale === "zh" ? "查看完整宝典" : locale === "ru" ? "Открыть гайд" : "Open the guide"}
+              <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         </div>
