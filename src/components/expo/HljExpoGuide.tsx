@@ -13,45 +13,15 @@
  */
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   MapPin, CalendarDays, Ruler, Users, Building2, Train, Bus, Car,
   Ticket, Gift, AlertTriangle, CheckSquare, ChevronDown, Phone,
-  Clock, Package, Ban, Volume2, Flame, Trash2, Lock,
+  ArrowRight, Clock, Package, Ban, Volume2, Flame, Trash2, Lock,
+  UserPlus,
 } from "lucide-react";
 
 /* ─────────────── 展会核心事实（来源：官方参展手册 + 主办方公开资料） ─────────────── */
-
-const FACTS: Array<{ k: string; v: React.ReactNode; icon: React.ElementType }> = [
-  { icon: CalendarDays, k: "时间", v: <>2026年9月19日–21日，每日 8:30–16:30<br /><span className="text-gray-500">开幕式 9月19日 10:00</span></> },
-  { icon: MapPin, k: "地点", v: <>哈尔滨冰雪大世界<br /><span className="text-gray-500">哈尔滨市松北区太阳大道 1458 号</span></> },
-  { icon: Building2, k: "主办", v: <>黑龙江省农业机械流通协会<br />黑龙江省农业机械工业协会</> },
-  { icon: Ruler, k: "规模", v: <>300 个国际标准展位，总面积 3 万㎡<br /><span className="text-gray-500">A/B/C/D/E 五个室内展区 + 室外展区</span></> },
-  { icon: Users, k: "预计人流", v: "专业客商约 3 万人次" },
-];
-
-/** 神雕现场主推：收购 + 寄售机型清单（展会核心业务钩子） */
-const TRADE_MODELS = [
-  {
-    brand: "纽荷兰 New Holland",
-    kind: "青贮机",
-    models: ["FX38", "FX48", "FX375", "FX58", "FX50"],
-  },
-  {
-    brand: "纽荷兰 New Holland",
-    kind: "方捆机",
-    models: ["1290", "9080", "1270", "5070"],
-  },
-  {
-    brand: "克拉斯 CLAAS",
-    kind: "青贮机（老款）",
-    models: ["695", "850", "870"],
-  },
-  {
-    brand: "克拉斯 CLAAS",
-    kind: "方捆机",
-    models: ["65", "2200", "3300", "5300"],
-  },
-];
 
 /* ─────────────── 可勾选清单 ─────────────── */
 
@@ -219,23 +189,38 @@ function Faq({ q, a, open }: { q: string; a: React.ReactNode; open?: boolean }) 
 /* ─────────────── 主组件 ─────────────── */
 
 export function HljExpoGuide({ locale }: { locale: string }) {
+  const t = useTranslations("expoGuide");
   const site = "https://usedfarmmach.cn";
   const isZh = locale === "zh";
   const contactHref = isZh ? `${site}/zh/contact` : `${site}/${locale}/contact`;
 
-  const TOC = [
-    ["速览", "30 秒核心信息"],
-    ["一", "观展篇（观众看这里）"],
-    ["二", "参展篇（展商看这里）"],
-    ["三", "展位怎么选"],
-    ["四", "物料清单（可勾选）"],
-    ["五", "展前倒排表"],
-    ["六", "现场转化 SOP"],
-    ["七", "展后 7 天闭环"],
-    ["八", "避坑清单"],
-    ["九", "常见问题 FAQ"],
-    ["十", "案例：神雕农机怎么做"],
-  ] as const;
+  /* 展会核心事实（i18n：k / v / sub 全部走 expoGuide.facts） */
+  const FACTS: Array<{ k: string; v: React.ReactNode; icon: React.ElementType }> = [
+    { icon: CalendarDays, k: t("facts.time.k"), v: <>{t("facts.time.v")}<br /><span className="text-gray-500">{t("facts.time.sub")}</span></> },
+    { icon: MapPin, k: t("facts.venue.k"), v: <>{t("facts.venue.v")}<br /><span className="text-gray-500">{t("facts.venue.sub")}</span></> },
+    { icon: Building2, k: t("facts.host.k"), v: <>{t("facts.host.v")}<br />{t("facts.host.sub")}</> },
+    { icon: Ruler, k: t("facts.scale.k"), v: <>{t("facts.scale.v")}<br /><span className="text-gray-500">{t("facts.scale.sub")}</span></> },
+    { icon: Users, k: t("facts.traffic.k"), v: t("facts.traffic.v") },
+  ];
+
+  /* 神雕现场主推：收购 + 寄售机型清单（brand / kind 走 i18n，型号代号保留原文） */
+  const TRADE_MODELS = [
+    { brand: t("models.nhForage.brand"), kind: t("models.nhForage.kind"), models: ["FX38", "FX48", "FX375", "FX58", "FX50"] },
+    { brand: t("models.nhBaler.brand"), kind: t("models.nhBaler.kind"), models: ["1290", "9080", "1270", "5070"] },
+    { brand: t("models.clForage.brand"), kind: t("models.clForage.kind"), models: ["695", "850", "870"] },
+    { brand: t("models.clBaler.brand"), kind: t("models.clBaler.kind"), models: ["65", "2200", "3300", "5300"] },
+  ];
+
+  const tocItems = [
+    t("toc.items.0"), t("toc.items.1"), t("toc.items.2"), t("toc.items.3"),
+    t("toc.items.4"), t("toc.items.5"), t("toc.items.6"), t("toc.items.7"),
+    t("toc.items.8"), t("toc.items.9"), t("toc.items.10"),
+  ];
+
+  const bannerBadges = [
+    t("banner.badges.date"), t("banner.badges.venue"),
+    t("banner.badges.scale"), t("banner.badges.traffic"),
+  ];
 
   return (
     <div className="mx-auto max-w-3xl px-4 pb-16 pt-6 sm:px-6">
@@ -245,38 +230,33 @@ export function HljExpoGuide({ locale }: { locale: string }) {
           2026 · HEILONGJIANG EXPO PLAYBOOK
         </div>
         <h1 className="mb-2 text-2xl font-extrabold leading-tight sm:text-3xl">
-          黑龙江国际农机展<br />参展 &amp; 观展完全宝典
+          {t("banner.title")}<br />{t("banner.subtitle")}
         </h1>
-        <p className="text-sm opacity-90">
-          报名流程 · 展位选择 · 物料清单 · 交通住宿 · 代金券玩法 · 避坑清单
-        </p>
+        <p className="text-sm opacity-90">{t("banner.tagline")}</p>
         <div className="mt-4 flex flex-wrap gap-1.5 text-xs">
-          {["9月19–21日", "哈尔滨冰雪大世界", "300展位 / 3万㎡", "预计3万客商"].map((t) => (
+          {bannerBadges.map((b) => (
             <span
-              key={t}
+              key={b}
               className="rounded-full border border-white/25 bg-white/15 px-2.5 py-1"
             >
-              {t}
+              {b}
             </span>
           ))}
         </div>
       </div>
 
       <Note tone="red">
-        <b>距报名截止仅剩 7 天。</b>但更早的两个坑是：<b>9月10日</b>前须申报用电（逾期加收100%），
-        <b>9月15日</b>前须通知拆隔板与大功率用电。展位以<b>「款到日期」</b>确认，不是报名日期。
+        <b>{t("countdown.deadline", { days: 7 })}</b>{" "}
+        {t("countdown.detail1")} {t("countdown.detail2")} {t("countdown.detail3")} {t("countdown.detail4")}
       </Note>
 
       {/* ===== 神雕业务钩子（前置，突出收售机型） ===== */}
       <Card>
         <div className="mb-3 flex items-center gap-2">
           <Flame className="h-5 w-5 text-red-600" />
-          <h2 className="text-lg font-extrabold text-gray-900">现场找神雕 · 收购 / 寄售机型清单</h2>
+          <h2 className="text-lg font-extrabold text-gray-900">{t("models.sectionTitle")}</h2>
         </div>
-        <p className="text-sm text-gray-700">
-          神雕农机本届展会<b>现场高价收购</b>并承接<b>寄售</b>以下国际品牌机型，
-          大小方捆、圆捆均在收售范围，欢迎带机照片或铭牌到展位现场估价。
-        </p>
+        <p className="text-sm text-gray-700">{t("models.sectionDesc")}</p>
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
           {TRADE_MODELS.map((g, i) => (
             <div key={i} className="rounded-xl border border-gray-200 bg-gray-50 p-3">
@@ -297,33 +277,31 @@ export function HljExpoGuide({ locale }: { locale: string }) {
         </div>
         <div className="mt-3 flex flex-wrap gap-2 text-sm">
           <a
-            href={`/${locale}/services/valuation`}
+            href={`/${locale}/seller/products/new`}
             className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700"
           >
-            扫码免费 AI 估值 →
+            <Phone className="h-4 w-4" />
+            {t("models.registerSale")}
           </a>
           <a
-            href={contactHref}
+            href={`/${locale}/auth/register?redirect=/seller/products/new`}
             className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 px-4 py-2 font-semibold text-gray-800 hover:bg-gray-50"
           >
-            <Phone className="h-4 w-4" />
-            登记出售 / 寄售
+            <UserPlus className="h-4 w-4" />
+            {t("models.publishFree")}
           </a>
         </div>
-        <p className="mt-2 text-xs text-gray-400">
-          业务咨询（二手农机）：WhatsApp +86 15511395016 ｜ 电话 +86 18633878701
-        </p>
+        <p className="mt-2 text-xs text-gray-400">{t("models.contactInfo")}</p>
       </Card>
 
       {/* ===== 目录 ===== */}
       <Card>
-        <h2 className="mb-2 text-lg font-extrabold text-gray-900">目录</h2>
+        <h2 className="mb-2 text-lg font-extrabold text-gray-900">{t("toc.title")}</h2>
         <ul className="grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
-          {TOC.map(([n, t]) => (
-            <li key={n}>
-              <a href={`#sec-${n}`} className="text-gray-800 no-underline hover:text-red-600">
-                <span className="mr-1.5 text-xs text-red-600">{n}</span>
-                {t}
+          {tocItems.map((label, i) => (
+            <li key={i}>
+              <a href={`#sec-${i}`} className="text-gray-800 no-underline hover:text-red-600">
+                {label}
               </a>
             </li>
           ))}
@@ -332,7 +310,10 @@ export function HljExpoGuide({ locale }: { locale: string }) {
 
       {/* ===== 速览 ===== */}
       <Card>
-        <H2 n="速览">30 秒看完核心信息</H2>
+        {/* 标题整句走 i18n（字典为「速览：30 秒看完核心信息」整段），故不再套 H2 的红色序号徽章 */}
+        <h2 id="速览" className="mb-3 text-xl font-extrabold text-gray-900 scroll-mt-20">
+          {t("facts.title")}
+        </h2>
         <dl className="divide-y divide-gray-100">
           {FACTS.map((f) => {
             const Icon = f.icon;
@@ -923,33 +904,28 @@ export function HljExpoGuide({ locale }: { locale: string }) {
 
       {/* ===== CTA ===== */}
       <div className="mt-6 rounded-2xl bg-gradient-to-br from-emerald-700 to-emerald-900 p-6 text-center text-white">
-        <h3 className="mb-1.5 text-lg font-extrabold">关于神雕农机</h3>
-        <p className="text-sm opacity-90">进口二手方捆机 / 圆捆机 / 青贮机 · 二手农机跨境交易平台</p>
-        <p className="text-sm opacity-90">New Holland · CLAAS 全系 · 现场收购价优于行业平均</p>
+        <h3 className="mb-1.5 text-lg font-extrabold">{t("cta.title")}</h3>
+        <p className="text-sm opacity-90">{t("cta.subtitle1")}</p>
+        <p className="text-sm opacity-90">{t("cta.subtitle2")}</p>
         <a
-          href={contactHref}
+          href={`/${locale}/services/valuation`}
           className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white px-6 py-2.5 font-extrabold text-emerald-800"
         >
-          业务咨询 <Phone className="h-4 w-4" />
+          {t("cta.button")} <ArrowRight className="h-4 w-4" />
         </a>
-        <div className="mt-3 text-xs opacity-70">
-          中国农业机械流通协会二手农机流通分会 副会长单位
-        </div>
+        <div className="mt-3 text-xs opacity-70">{t("cta.association")}</div>
       </div>
 
       {/* ===== 页脚 ===== */}
       <footer className="mt-8 border-t border-gray-200 pt-5 text-center text-xs leading-relaxed text-gray-400">
         <p>
-          本宝典由 <b>石家庄神雕农机科技有限公司</b> 整理，供农机行业同仁免费使用、自由转发。
+          {t("footer.intro", { company: t("footer.company") })}
           <br />
-          信息来源于展会官方参展手册及主办方公开资料，
-          <b>所有价格与日程以组委会最终公布为准</b>。
+          {t("footer.source", { disclaimer: t("footer.disclaimer") })}
           <br />
-          最后更新：2026-09-08
+          {t("footer.lastUpdated")}
         </p>
-        <p className="mt-2">
-          业务咨询（二手农机）：WhatsApp +86 15511395016 ｜ 电话 +86 18633878701
-        </p>
+        <p className="mt-2">{t("footer.contact")}</p>
         <p className="mt-2 flex items-center justify-center gap-1">
           <Lock className="h-3 w-3" />
           本页面非组委会官方发布
