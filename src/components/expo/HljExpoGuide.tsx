@@ -16,7 +16,7 @@ import { useEffect, useState } from "react";
 import {
   MapPin, CalendarDays, Ruler, Users, Building2, Train, Bus, Car,
   Ticket, Gift, AlertTriangle, CheckSquare, ChevronDown, Phone,
-  ExternalLink, Clock, Package, Ban, Volume2, Flame, Trash2, Lock,
+  Clock, Package, Ban, Volume2, Flame, Trash2, Lock,
 } from "lucide-react";
 
 /* ─────────────── 展会核心事实（来源：官方参展手册 + 主办方公开资料） ─────────────── */
@@ -297,7 +297,7 @@ export function HljExpoGuide({ locale }: { locale: string }) {
         </div>
         <div className="mt-3 flex flex-wrap gap-2 text-sm">
           <a
-            href={`${site}/zh/valuation`}
+            href={`/${locale}/services/valuation`}
             className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700"
           >
             扫码免费 AI 估值 →
@@ -925,12 +925,12 @@ export function HljExpoGuide({ locale }: { locale: string }) {
       <div className="mt-6 rounded-2xl bg-gradient-to-br from-emerald-700 to-emerald-900 p-6 text-center text-white">
         <h3 className="mb-1.5 text-lg font-extrabold">关于神雕农机</h3>
         <p className="text-sm opacity-90">进口二手方捆机 / 圆捆机 / 青贮机 · 二手农机跨境交易平台</p>
-        <p className="text-sm opacity-90">New Holland · CLAAS 全系 · AI 智能估值</p>
+        <p className="text-sm opacity-90">New Holland · CLAAS 全系 · 现场收购价优于行业平均</p>
         <a
-          href={`${site}/zh/valuation`}
+          href={contactHref}
           className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white px-6 py-2.5 font-extrabold text-emerald-800"
         >
-          免费 AI 估值 <ExternalLink className="h-4 w-4" />
+          业务咨询 <Phone className="h-4 w-4" />
         </a>
         <div className="mt-3 text-xs opacity-70">
           中国农业机械流通协会二手农机流通分会 副会长单位
