@@ -8,6 +8,107 @@
     "p3": "23 points à cocher, progression enregistrée sur votre mobile",
     "cta": "Consulter le guide gratuitement"
   },
+  "expoGuide": {
+    "banner": {
+      "title": "Salon international des machines agricoles de Heilongjiang",
+      "subtitle": "Guide complet exposants & visiteurs",
+      "tagline": "Inscription · Choix du stand · Matériel · Transport et hébergement · Bons d'achat · Pièges à éviter",
+      "badges": {
+        "date": "19–21 septembre",
+        "venue": "Harbin · Monde de glace et de neige",
+        "scale": "300 stands / 30 000 m²",
+        "traffic": "30 000 acheteurs attendus"
+      }
+    },
+    "countdown": {
+      "deadline": "Il ne reste que {days} jours avant la clôture des inscriptions.",
+      "detail1": "Mais deux pièges surviennent plus tôt :",
+      "detail2": "Demander l'alimentation électrique avant le 10 septembre (+100 % de majoration ensuite)",
+      "detail3": "Signaler cloisons à démonter et équipements de forte puissance avant le 15 septembre",
+      "detail4": "Le stand est confirmé à la date de paiement, et non à la date d'inscription."
+    },
+    "models": {
+      "sectionTitle": "Retrouvez Shendiao sur place · Achat / Dépôt-vente de modèles",
+      "sectionDesc": "Lors de cette édition, Shendiao rachète au meilleur prix et accepte en dépôt-vente les modèles des marques internationales suivants. Presses à balles carrées, presses à balles rondes et ensileuses : tout est concerné. Apportez des photos ou des plaques signalétiques sur notre stand pour une estimation sur place.",
+      "scanValuation": "Estimation IA gratuite →",
+      "registerSale": "Vendre / Mettre en dépôt-vente",
+      "contactInfo": "Renseignements (machines d'occasion) : WhatsApp +86 15511395016 | Tél. +86 18633878701",
+      "nhForage": {
+        "brand": "New Holland",
+        "kind": "Ensileuse"
+      },
+      "nhBaler": {
+        "brand": "New Holland",
+        "kind": "Presse à balles carrées"
+      },
+      "clForage": {
+        "brand": "CLAAS",
+        "kind": "Ensileuse (ancien modèle)"
+      },
+      "clBaler": {
+        "brand": "CLAAS",
+        "kind": "Presse à balles carrées"
+      }
+    },
+    "toc": {
+      "title": "Sommaire",
+      "items": [
+        "Infos clés · résumé en 30 secondes",
+        "1. Guide du visiteur",
+        "2. Guide de l'exposant",
+        "3. Comment choisir son stand",
+        "4. Liste de matériel (à cocher)",
+        "5. Rétroplanning avant le salon",
+        "6. Méthode de conversion sur place",
+        "7. Suivi à 7 jours après le salon",
+        "8. Pièges à éviter",
+        "9. Foire aux questions (FAQ)",
+        "10. Étude de cas : comment travaille Shendiao"
+      ]
+    },
+    "facts": {
+      "title": "Infos clés · résumé en 30 secondes",
+      "time": {
+        "k": "Dates",
+        "v": "19–21 septembre 2026, de 8h30 à 16h30",
+        "sub": "Cérémonie d'ouverture : 19 septembre à 10h00"
+      },
+      "venue": {
+        "k": "Lieu",
+        "v": "Harbin · Monde de glace et de neige",
+        "sub": "N° 1458, Sun Avenue, district de Songbei, Harbin"
+      },
+      "host": {
+        "k": "Organisateurs",
+        "v": "Association de distribution de machinisme agricole du Heilongjiang",
+        "sub": "Association de l'industrie du machinisme agricole du Heilongjiang"
+      },
+      "scale": {
+        "k": "Envergure",
+        "v": "300 stands standards internationaux, 30 000 m² au total",
+        "sub": "5 halls couverts (A/B/C/D/E) + zone extérieure"
+      },
+      "traffic": {
+        "k": "Fréquentation attendue",
+        "v": "Environ 30 000 acheteurs professionnels"
+      }
+    },
+    "cta": {
+      "title": "À propos de Shendiao Agri-Machinery",
+      "subtitle1": "Import de presses à balles carrées / rondes et d'ensileuses d'occasion · plateforme transfrontalière de machines agricoles d'occasion",
+      "subtitle2": "Gamme complète New Holland et CLAAS · prix de rachat sur place supérieurs à la moyenne du secteur",
+      "button": "Contactez-nous",
+      "association": "中国农业机械流通协会二手农机流通分会 副会长单位"
+    },
+    "footer": {
+      "intro": "Ce guide est compilé par {company} pour une utilisation gratuite et une libre diffusion entre professionnels du secteur.",
+      "source": "Informations issues du manuel officiel de l'exposant et des publications de l'organisateur ; {disclaimer}.",
+      "company": "Shijiazhuang Shendiao Agri-Machinery Technology Co., Ltd.",
+      "disclaimer": "tous les prix et horaires sont soumis à la publication finale de l'organisateur",
+      "lastUpdated": "Dernière mise à jour : 2026-09-08",
+      "contact": "Renseignements (machines d'occasion) : WhatsApp +86 15511395016 | Tél. +86 18633878701"
+    }
+  },
   "valuationGate": {
     "membershipUpsell": "Passez à l'abonnement pour débloquer le rapport complet",
     "membershipUpsellDesc": "Évaluations illimitées, détail complet et conseils d'achat",
