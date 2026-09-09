@@ -5,6 +5,7 @@ import { PartsEntrance } from "@/components/home/parts-entrance";
 import { ServicesEntrance } from "@/components/home/services-entrance";
 import { EngineerCertSection } from "@/components/home/engineer-cert-section";
 import { ExpoEntrance } from "@/components/home/expo-entrance";
+import { ExpoGuideEntry } from "@/components/home/expo-guide-entry";
 import { HotEquipment } from "@/components/home/hot-equipment";
 import { ResearchHubEntry } from "@/components/home/research-hub-entry";
 import { DailyReportSection } from "@/components/home/daily-report-section";
@@ -174,6 +175,7 @@ export default async function HomePage({
 
       {/* 10 屏组装 */}
       <DualExpoBanner locale={locale} />
+      <ExpoGuideEntry locale={locale} />
       <RecruitmentBanner locale={locale} />
       <HotEquipment products={hotProducts} locale={locale} />
       <DailyReportSection locale={locale} initialArticles={initialArticles} />
