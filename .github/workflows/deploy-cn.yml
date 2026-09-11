@@ -119,7 +119,9 @@ jobs:
           # 镜像 tag 与 OSS 对象名均以完整 commit SHA 命名（cn-app-<sha>.tar.gz）
           docker tag usedfarmmach-cn:latest "usedfarmmach-cn:${{ github.sha }}"
           mkdir -p /tmp/cn-images
-          docker save "usedfarmmach-cn:${{ github.sha }}" | gzip -9 > "/tmp/cn-images/cn-app-${{ github.sha }}.tar.gz"
+          # 2026-09-14：gzip -9 → -1，用更大的产物换更短的压缩耗时（单线程压整个镜像 tar，产物约 +15%）。
+          # 净收益必须以 CI 日志里本步与「Upload image tarball to Aliyun OSS」步的实测耗时为准，不得凭感觉定论。
+          docker save "usedfarmmach-cn:${{ github.sha }}" | gzip -1 > "/tmp/cn-images/cn-app-${{ github.sha }}.tar.gz"
           ls -lh /tmp/cn-images/
 
       - name: Upload image tarball to Aliyun OSS
