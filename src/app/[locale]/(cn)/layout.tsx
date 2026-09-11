@@ -9,7 +9,15 @@
  */
 
 import type { ReactNode } from "react";
+import { notFound } from "next/navigation";
+import { isCnSite } from "@/config/site";
 
 export default function CnLayout({ children }: { children: ReactNode }) {
+  // 合规门禁：本路由组（询价 / 发布 / 情报 / 核验 / 政府监管看板）为 .cn 国内站专属，
+  // .com 站（未备案）一律 404，避免国内专属能力在境外站暴露。
+  if (!isCnSite()) {
+    notFound();
+  }
+
   return <>{children}</>;
 }

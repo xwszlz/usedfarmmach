@@ -112,9 +112,9 @@ export interface PlanSku {
 }
 
 export const DEFAULT_PLANS: PlanSku[] = [
-  { sku: "plan_basic", tier: "basic", priceCny: 99, credits: 50 },
-  { sku: "plan_premium", tier: "premium", priceCny: 299, credits: 0, popular: true },
-  { sku: "plan_enterprise", tier: "enterprise", priceCny: 999, credits: 0 },
+  { sku: "plan_basic", tier: "basic", priceCny: 88, credits: 50 },
+  { sku: "plan_premium", tier: "premium", priceCny: 158, credits: 0, popular: true },
+  { sku: "plan_enterprise", tier: "enterprise", priceCny: 288, credits: 0 },
 ];
 
 export const ALL_SKUS = [

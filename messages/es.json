@@ -1061,7 +1061,7 @@
       "required": "Obligatorio",
       "conditionCardDesc": "Proporcione 8 datos de estado",
       "feeNote": "Acerca de las tarifas",
-      "feeDetail": "Solo tarifa de servicio de información. Publicación gratuita.",
+      "feeDetail": "Esta plataforma solo cobra tarifas por servicios de información de valor agregado (no tarifas de transacción ni comisiones). Publicar es gratis; los servicios de valor agregado son opcionales. Los servicios de subasta los presta nuestro socio, una institución de subastas autorizada, que cobra las comisiones conforme a la ley; la plataforma no cobra comisiones de transacción ni gestiona fondos.",
       "submit": "Publicar",
       "tips": "Consejos",
       "tip1": "Asegúrese de que la información del estado sea precisa",

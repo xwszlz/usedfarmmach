@@ -6,6 +6,11 @@
  *   避免"有照无证"反向违规。2024-50号文要求「持证公示」，但无照时不得虚假公示。
  * - 取证后只需在 Vercel .cn 环境变量填入 CN_AUCTION_LICENSE_NO，无需改代码即上线。
  *
+ * ⚠️ 口径铁律（合规红线 #3）：本组件渲染的证书编号属于**合作持牌拍卖机构**，
+ *    不是平台自有资质。平台注册地在元氏县（县级），依冀商规字〔2020〕2号
+ *    无法取得《拍卖经营批准证书》。因此文案必须是「本平台拍卖业务由合作持牌机构…依法开展」，
+ *    绝不可写成「本公司已取得《拍卖经营批准证书》」——那是虚假公示。
+ *
  * 适配两端复用：
  * - 服务端（CnFooter）直接读取 siteConfig.compliance.auctionLicenseNo 后传入。
  * - 客户端（AuctionsClient）由服务端 page.tsx 将 licenseNo 作为 props 注入。
@@ -45,10 +50,11 @@ export function AuctionLicenseBadge({
         }
       >
         <p className="font-semibold text-amber-800">
-          {isChannel ? "拍卖经营资质公示" : "拍卖经营批准证书公示"}
+          {isChannel ? "合作拍卖机构资质公示" : "合作拍卖机构资质公示"}
         </p>
         <p className="mt-1">
-          本公司已取得《拍卖经营批准证书》（编号：{licenseNo}），依法开展网络拍卖业务。
+          本平台拍卖业务由合作持牌拍卖机构依法开展并持有《拍卖经营批准证书》（证书编号：{licenseNo}）。
+本平台为网络竞价技术服务与信息服务提供者，非拍卖活动的举办主体，亦非拍卖合同当事人或交易任何一方的代理人。
         </p>
         <p className="mt-1">
           {COMPANY_NAME} · 统一社会信用代码：{UNIFIED_SOCIAL_CREDIT_CODE}

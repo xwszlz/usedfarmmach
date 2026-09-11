@@ -1061,7 +1061,7 @@
       "required": "Obrigatório",
       "conditionCardDesc": "Forneça 8 dados de estado",
       "feeNote": "Sobre taxas",
-      "feeDetail": "Apenas taxa de serviço de informação. Publicação gratuita.",
+      "feeDetail": "Esta plataforma cobra apenas taxas por serviços de informação de valor agregado (não taxas de transação nem comissões). Publicar é gratuito; os serviços de valor agregado são opcionais. Os serviços de leilão são prestados pelo nosso parceiro, uma instituição de leilões licenciada, que cobra as comissões nos termos da lei; a plataforma não cobra comissões de transação nem lida com fundos.",
       "submit": "Publicar",
       "tips": "Dicas",
       "tip1": "Garanta informações precisas do estado",

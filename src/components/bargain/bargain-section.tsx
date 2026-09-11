@@ -737,7 +737,7 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
             })()}</li>
           </ul>
           <p className="text-xs text-gray-500 mt-2">
-            {tr("对明知或应知而未披露的重大瑕疵，卖方仍依法承担责任。平台仅提供信息展示与增值服务，不收取交易服务费、不碰支付。")}
+            {tr("对明知或应知而未披露的重大瑕疵，卖方仍依法承担责任。平台仅提供信息展示与增值服务，询价撮合不收取交易服务费、不碰支付；拍卖等增值服务收费标准以该服务页面公示为准。")}
           </p>
         </div>
       </div>

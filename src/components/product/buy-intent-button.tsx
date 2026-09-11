@@ -31,7 +31,7 @@ const LABELS: Record<string, {
     success: "询价提交成功！",
     successDesc: "卖家将尽快通过电话或 WhatsApp 向您报价",
     close: "关闭",
-    inquiryNote: "平台仅提供信息展示，不收取交易服务费。实际价格以双方合同为准。",
+    inquiryNote: "本服务仅提供信息展示，不收取交易服务费。实际价格以双方合同为准。",
   },
   en: {
     inquireNow: "Inquire Now",
@@ -46,7 +46,7 @@ const LABELS: Record<string, {
     success: "Inquiry Submitted!",
     successDesc: "Seller will contact you with a quote via phone or WhatsApp",
     close: "Close",
-    inquiryNote: "Platform provides information display only, no transaction fees. Final price subject to contract.",
+    inquiryNote: "This service provides information display only, no transaction fees. Final price subject to contract.",
   },
   ru: {
     inquireNow: "Запросить цену",
@@ -61,7 +61,7 @@ const LABELS: Record<string, {
     success: "Запрос отправлен!",
     successDesc: "Продавец свяжется с вами с предложением цены",
     close: "Закрыть",
-    inquiryNote: "Платформа только предоставляет информацию, без комиссий. Цена по договору.",
+    inquiryNote: "Данная услуга предоставляет только информацию, без комиссий. Цена по договору.",
   },
   es: {
     inquireNow: "Consultar Precio",
@@ -76,7 +76,7 @@ const LABELS: Record<string, {
     success: "¡Consulta Enviada!",
     successDesc: "El vendedor le contactará con una cotización",
     close: "Cerrar",
-    inquiryNote: "La plataforma solo muestra información, sin comisiones. Precio según contrato.",
+    inquiryNote: "Este servicio solo muestra información, sin comisiones. Precio según contrato.",
   },
   pt: {
     inquireNow: "Consultar Preço",
@@ -91,7 +91,7 @@ const LABELS: Record<string, {
     success: "Consulta Enviada!",
     successDesc: "O vendedor entrará em contato com uma cotação",
     close: "Fechar",
-    inquiryNote: "A plataforma apenas exibe informações, sem taxas. Preço conforme contrato.",
+    inquiryNote: "Este serviço apenas exibe informações, sem taxas. Preço conforme contrato.",
   },
   ar: {
     inquireNow: "استفسار عن السعر",
@@ -106,7 +106,7 @@ const LABELS: Record<string, {
     success: "تم إرسال الاستفسار!",
     successDesc: "سيتواصل البائع معك بعرض سعر",
     close: "إغلاق",
-    inquiryNote: "المنصة تعرض المعلومات فقط، بدون رسوم. السعر حسب العقد.",
+    inquiryNote: "هذه الخدمة تعرض المعلومات فقط، بدون رسوم. السعر حسب العقد.",
   },
   fr: {
     inquireNow: "Demander un Prix",
@@ -121,7 +121,7 @@ const LABELS: Record<string, {
     success: "Demande Envoyée!",
     successDesc: "Le vendeur vous contactera avec un prix",
     close: "Fermer",
-    inquiryNote: "La plateforme affiche uniquement les informations, sans frais. Prix selon contrat.",
+    inquiryNote: "Ce service affiche uniquement des informations, sans frais. Prix selon contrat.",
   },
   hi: {
     inquireNow: "मूल्य पूछें",
@@ -136,7 +136,7 @@ const LABELS: Record<string, {
     success: "पूछताछ सबमिट हो गई!",
     successDesc: "विक्रेता जल्द ही आपसे कीमत के साथ संपर्क करेगा",
     close: "बंद करें",
-    inquiryNote: "प्लेटफ़ॉर्म केवल जानकारी दिखाता है, कोई शुल्क नहीं। मूल्य अनुबंध के अनुसार।",
+    inquiryNote: "यह सेवा केवल जानकारी दिखाती है, कोई शुल्क नहीं। मूल्य अनुबंध के अनुसार।",
   },
 };
 

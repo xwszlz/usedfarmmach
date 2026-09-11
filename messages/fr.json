@@ -1061,7 +1061,7 @@
       "required": "Requis",
       "conditionCardDesc": "Fournir 8 données d'état",
       "feeNote": "À propos des frais",
-      "feeDetail": "Frais de service d'information uniquement. Publication gratuite.",
+      "feeDetail": "Cette plateforme ne facture que des services d'information à valeur ajoutée (ni frais de transaction ni commissions). La publication est gratuite ; les services à valeur ajoutée sont facultatifs. Les services d'enchères sont assurés par notre partenaire, une institution d'enchères agréée, qui perçoit les commissions conformément à la loi ; la plateforme ne perçoit aucune commission de transaction et ne gère pas les fonds.",
       "submit": "Publier",
       "tips": "Conseils",
       "tip1": "Assurez-vous que les informations d'état sont précises",

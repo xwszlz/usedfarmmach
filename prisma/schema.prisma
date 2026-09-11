@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   // R4.1 修复：Docker 构建（node:22-alpine/musl）需要 openssl3 引擎（libssl.so.3）。
   // Alpine 3.19+ 无 openssl1.1-compat，默认生成的 linux-musl-openssl-1.1.x 引擎
   // 会因缺 libssl.so.1.1 加载失败（Error loading shared library）。
@@ -14,104 +14,104 @@ datasource db {
 }
 
 model User {
-  id                    String               @id @default(cuid())
-  email                 String?              @unique
-  phone                 String?
+  id                       String                @id @default(cuid())
+  email                    String?               @unique
+  phone                    String?
   /// 邮箱待补全标记：小程序无邮箱注册自动置 true；web 注册有邮箱则 false
-  emailPending          Boolean              @default(false)
+  emailPending             Boolean               @default(false)
   /// 邮箱是否已验证：阶段0补全即视为已验证（自证）；阶段1改为令牌验证后置 true
-  emailVerified         Boolean              @default(false)
+  emailVerified            Boolean               @default(false)
   /// 数据出境单独同意时间（留痕合规证据，比仅校验更强）
-  consentCrossBorderAt  DateTime?
-  passwordHash          String
-  role                  String               @default("buyer")
-  companyName           String?
-  country               String?
-  preferredLanguage     String               @default("zh")
-  credits               Int                  @default(0)
-  createdAt             DateTime             @default(now())
-  updatedAt             DateTime             @updatedAt
-  freeValuationsResetAt DateTime             @default(now())
-  freeValuationsUsed    Int                  @default(0)
-  isActive              Boolean              @default(true)
-  lastLoginAt           DateTime?
-  membershipExpiresAt   DateTime?
-  membershipTier        String               @default("free")
+  consentCrossBorderAt     DateTime?
+  passwordHash             String
+  role                     String                @default("buyer")
+  companyName              String?
+  country                  String?
+  preferredLanguage        String                @default("zh")
+  credits                  Int                   @default(0)
+  createdAt                DateTime              @default(now())
+  updatedAt                DateTime              @updatedAt
+  freeValuationsResetAt    DateTime              @default(now())
+  freeValuationsUsed       Int                   @default(0)
+  isActive                 Boolean               @default(true)
+  lastLoginAt              DateTime?
+  membershipExpiresAt      DateTime?
+  membershipTier           String                @default("free")
   /// P1 额度：当前自然月用量窗口起点（惰性重置判定依据）
-  usagePeriodStart     DateTime?
+  usagePeriodStart         DateTime?
   /// P1 各动作月度独立计数器（互不挤占：发布/询盘/AI估值/查看联系方式）
-  usagePublish         Int                  @default(0)
-  usageInquiry        Int                  @default(0)
-  usageAiValuation    Int                  @default(0)
-  usageViewContact     Int                  @default(0)
-  username              String?              @unique
-  resetToken            String?
-  resetTokenExpires     DateTime?
-  wxOpenid              String?
-  miniOpenid            String?              @unique
-  inviteCode            String?              @unique
-  invitedViaCode        String?
-  lifetime              Boolean              @default(false)
-  badges                String[]             @default([])
-  deviceFingerprint     String?
-  registerIp            String?
-  apiKeys               ApiKey[]
-  auctionsAsSeller      Auction[]            @relation("AuctionSeller")
-  auctionsAsWinner      Auction[]            @relation("AuctionWinner")
-  auctionBids           Bid[]                @relation("AuctionBidder")
-  auctionRegistrations  AuctionRegistration[]
-  expoBooths            Booth[]
-  certifications        Certification[]
-  creditTransactions    CreditTransaction[]
-  creditLots            CreditLot[]
-  checkIns              CheckIn[]
-  milestones            UserMilestone[]
-  invitationsSent       Invitation[]          @relation("Inviter")
-  invitationReceived    Invitation?           @relation("Invitee")
-  serviceOrders         ServiceOrder[]
-  promotions            Promotion[]
-  demands               Demand[]
-  contractsAsBuyer      ElectronicContract[] @relation("ContractBuyer")
-  contractsAsSeller     ElectronicContract[] @relation("ContractSeller")
-  escrowAsBuyer         EscrowOrder[]        @relation("EscrowBuyer")
-  escrowAsSeller        EscrowOrder[]        @relation("EscrowSeller")
-  expoInquiries         ExpoInquiry[]
-  favorites             Favorite[]
-  followers             Follow[]             @relation("FollowSeller")
-  following             Follow[]             @relation("FollowFollower")
-  inquiries             Inquiry[]
-  notifications         Notification[]
-  inspectionBookings    InspectionBooking[]
-  inspectionReports     InspectionReport[]
-  loanApplications      LoanApplication[]
-  expoOrdersAsBuyer     Order[]              @relation("OrderBuyer")
-  expoOrdersAsSeller    Order[]              @relation("OrderSeller")
-  products              Product[]
-  expoQuotesAsBuyer     Quote[]              @relation("QuoteBuyer")
-  expoQuotesAsSeller    Quote[]              @relation("QuoteSeller")
-  rentalListings        RentalListing[]
-  expoReviewsReceived   Review[]             @relation("ReviewReviewee")
-  expoReviewsGiven      Review[]             @relation("ReviewReviewer")
-  savedSearches         SavedSearch[]
-  sellerRatingsGiven    SellerRating[]       @relation("SellerRatingsGiven")
-  sellerRatingsReceived SellerRating[]       @relation("SellerRatingsReceived")
+  usagePublish             Int                   @default(0)
+  usageInquiry             Int                   @default(0)
+  usageAiValuation         Int                   @default(0)
+  usageViewContact         Int                   @default(0)
+  username                 String?               @unique
+  resetToken               String?
+  resetTokenExpires        DateTime?
+  wxOpenid                 String?
+  miniOpenid               String?               @unique
+  inviteCode               String?               @unique
+  invitedViaCode           String?
+  lifetime                 Boolean               @default(false)
+  badges                   String[]              @default([])
+  deviceFingerprint        String?
+  registerIp               String?
+  apiKeys                  ApiKey[]
+  auctionsAsSeller         Auction[]             @relation("AuctionSeller")
+  auctionsAsWinner         Auction[]             @relation("AuctionWinner")
+  auctionBids              Bid[]                 @relation("AuctionBidder")
+  auctionRegistrations     AuctionRegistration[]
+  expoBooths               Booth[]
+  certifications           Certification[]
+  creditTransactions       CreditTransaction[]
+  creditLots               CreditLot[]
+  checkIns                 CheckIn[]
+  milestones               UserMilestone[]
+  invitationsSent          Invitation[]          @relation("Inviter")
+  invitationReceived       Invitation?           @relation("Invitee")
+  serviceOrders            ServiceOrder[]
+  promotions               Promotion[]
+  demands                  Demand[]
+  contractsAsBuyer         ElectronicContract[]  @relation("ContractBuyer")
+  contractsAsSeller        ElectronicContract[]  @relation("ContractSeller")
+  escrowAsBuyer            EscrowOrder[]         @relation("EscrowBuyer")
+  escrowAsSeller           EscrowOrder[]         @relation("EscrowSeller")
+  expoInquiries            ExpoInquiry[]
+  favorites                Favorite[]
+  followers                Follow[]              @relation("FollowSeller")
+  following                Follow[]              @relation("FollowFollower")
+  inquiries                Inquiry[]
+  notifications            Notification[]
+  inspectionBookings       InspectionBooking[]
+  inspectionReports        InspectionReport[]
+  loanApplications         LoanApplication[]
+  expoOrdersAsBuyer        Order[]               @relation("OrderBuyer")
+  expoOrdersAsSeller       Order[]               @relation("OrderSeller")
+  products                 Product[]
+  expoQuotesAsBuyer        Quote[]               @relation("QuoteBuyer")
+  expoQuotesAsSeller       Quote[]               @relation("QuoteSeller")
+  rentalListings           RentalListing[]
+  expoReviewsReceived      Review[]              @relation("ReviewReviewee")
+  expoReviewsGiven         Review[]              @relation("ReviewReviewer")
+  savedSearches            SavedSearch[]
+  sellerRatingsGiven       SellerRating[]        @relation("SellerRatingsGiven")
+  sellerRatingsReceived    SellerRating[]        @relation("SellerRatingsReceived")
   // 分站新增关联
-  stripeCustomer        StripeCustomer?
-  stripeSubscriptions   StripeSubscription[]
-  guaranteeIntentsAsBuyer  GuaranteeIntent[] @relation("GuaranteeBuyer")
-  guaranteeIntentsAsSeller GuaranteeIntent[] @relation("GuaranteeSeller")
-  accountLinksAsCom     AccountLink[]       @relation("AccountLinkCom")
-  accountLinksAsCn      AccountLink[]       @relation("AccountLinkCn")
+  stripeCustomer           StripeCustomer?
+  stripeSubscriptions      StripeSubscription[]
+  guaranteeIntentsAsBuyer  GuaranteeIntent[]     @relation("GuaranteeBuyer")
+  guaranteeIntentsAsSeller GuaranteeIntent[]     @relation("GuaranteeSeller")
+  accountLinksAsCom        AccountLink[]         @relation("AccountLinkCom")
+  accountLinksAsCn         AccountLink[]         @relation("AccountLinkCn")
 }
 
 /// PII 访问审计：记录谁、何时、读了哪个用户的哪个 PII 字段、用途（保留 ≥6 个月）
 model PiiAuditLog {
   id           String   @id @default(cuid())
-  actorId      String   // 操作人（admin/super_admin）userId
-  targetUserId String   // 被查看的用户
-  field        String   // 如 "email" | "phone"
+  actorId      String // 操作人（admin/super_admin）userId
+  targetUserId String // 被查看的用户
+  field        String // 如 "email" | "phone"
   action       String   @default("view_full") // view_full | export
-  purpose      String?  // 用途备注（可选）
+  purpose      String? // 用途备注（可选）
   createdAt    DateTime @default(now())
 
   @@index([actorId, createdAt])
@@ -123,14 +123,14 @@ model PiiAuditLog {
 /// 用于跨境传输追溯、限流排查、PIPIA 与 10 万人阈值监控。
 /// 注意：recipientHash = SHA-256(email)，【不存明文邮箱】，避免二次扩散 PII。
 model EmailSendLog {
-  id            String    @id @default(cuid())
-  userId        String?  // 目标用户（站内/本人场景有值；匿名找回场景可空）
-  type          String    // verify_email | reset_password | complete_profile_reminder
-  provider      String    // resend | aliyun_directmail | tencent_ses | console
-  recipientHash String    // 收件邮箱 SHA-256 摘要（不存明文）
-  status        String    @default("sent") // sent | failed
-  ip            String?   // 触发来源 IP（风控/追溯）
-  createdAt     DateTime  @default(now())
+  id            String   @id @default(cuid())
+  userId        String? // 目标用户（站内/本人场景有值；匿名找回场景可空）
+  type          String // verify_email | reset_password | complete_profile_reminder
+  provider      String // resend | aliyun_directmail | tencent_ses | console
+  recipientHash String // 收件邮箱 SHA-256 摘要（不存明文）
+  status        String   @default("sent") // sent | failed
+  ip            String? // 触发来源 IP（风控/追溯）
+  createdAt     DateTime @default(now())
 
   @@index([userId, createdAt])
   @@index([type, createdAt])
@@ -179,22 +179,22 @@ model Brand {
 }
 
 model Category {
-  id       String     @id @default(cuid())
-  nameZh   String
-  nameEn   String
-  parentId String?
-  nameRu   String     @default("")
-  nameEs   String     @default("")
-  namePt   String     @default("")
-  nameAr   String     @default("")
-  nameFr   String     @default("")
-  nameHi   String     @default("")
+  id        String     @id @default(cuid())
+  nameZh    String
+  nameEn    String
+  parentId  String?
+  nameRu    String     @default("")
+  nameEs    String     @default("")
+  namePt    String     @default("")
+  nameAr    String     @default("")
+  nameFr    String     @default("")
+  nameHi    String     @default("")
   /// 栏目（Category）访问量统计（product_view_stats），additive
-  viewCount Int       @default(0)
-  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children Category[] @relation("CategoryHierarchy")
-  demands  Demand[]
-  products Product[]
+  viewCount Int        @default(0)
+  parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryHierarchy")
+  demands   Demand[]
+  products  Product[]
 }
 
 model Product {
@@ -247,7 +247,7 @@ model Product {
   promotedAt            DateTime?
   refreshedAt           DateTime?
   /// 网站浏览量统计（product_view_stats）：产品详情页访问累计，默认 0，additive 不破坏既有字段
-  viewCount             Int       @default(0)
+  viewCount             Int                  @default(0)
   promotions            Promotion[]
   arbitrageTopCaches    ArbitrageTopCache[]
   auctions              Auction[]
@@ -333,22 +333,22 @@ model Demand {
 }
 
 model Inquiry {
-  id                 String           @id @default(cuid())
-  productId          String
-  buyerId            String?
-  source             String           @default("web") // "web" | "miniprogram"（Q8 打通）
-  guaranteeIntentId  String?          // 关联担保交易意向（可选）
-  name               String
-  email              String?
-  phone              String?
-  company            String?
-  message            String?
-  status             String           @default("pending")
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
-  buyer              User?            @relation(fields: [buyerId], references: [id])
-  product            Product          @relation(fields: [productId], references: [id])
-  guaranteeIntent    GuaranteeIntent? @relation(fields: [guaranteeIntentId], references: [id])
+  id                String           @id @default(cuid())
+  productId         String
+  buyerId           String?
+  source            String           @default("web") // "web" | "miniprogram"（Q8 打通）
+  guaranteeIntentId String? // 关联担保交易意向（可选）
+  name              String
+  email             String?
+  phone             String?
+  company           String?
+  message           String?
+  status            String           @default("pending")
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  buyer             User?            @relation(fields: [buyerId], references: [id])
+  product           Product          @relation(fields: [productId], references: [id])
+  guaranteeIntent   GuaranteeIntent? @relation(fields: [guaranteeIntentId], references: [id])
 }
 
 model Notification {
@@ -410,28 +410,28 @@ model Valuation {
 /// 准确性： priceForeign/medianPrice 取自样本中位（非均值），listingCount 为样本量，
 ///         confidenceScore 随源数与时效动态评分，lastVerified 超 30/60 天分别标黄/红。
 model BrandBenchmark {
-  id              String   @id @default(cuid())
-  brand           String   // 品牌标识，对齐 Brand.nameEn（小写），如 "claas" / "john-deere"
+  id              String    @id @default(cuid())
+  brand           String // 品牌标识，对齐 Brand.nameEn（小写），如 "claas" / "john-deere"
   brandNameZh     String?
-  model           String   // 机型，如 "Jaguar 970" / "8R 410" / "BigX 1180"
-  category        String   // tractor | harvester | forage | baler | soil | ...
-  sourceSite      String   // agroline | machinerypete | mascus | tractorhouse | efarm | avito | olx | research-seed
-  priceForeign    Float    // 该源样本的基准外币价（中位）
-  currency        String   @default("EUR")
-  priceCny        Float    // 按采集日汇率折算的人民币
-  exchangeRate    Float?   // 采集日 foreign→CNY 汇率
-  sourceUrl       String?  // 样本来源页（列表/搜索结果）
-  sourceDate      String?  // 采集日 YYYY-MM-DD
-  confidenceScore Float    @default(0.5)
-  sampleSize      Int      @default(1)   // 该源参与计算的有效样本数
-  medianPrice     Float?   // 该源样本外币中位价（与 priceForeign 通常一致）
-  listingCount    Int      @default(0)   // 该源检索到的挂牌总数（用于计数展示）
-  priceType       String   @default("listing") // listing(挂牌) | sold(成交) | asking(要价)
-  region          String?  // EU | US | RU | UA | GLOBAL
+  model           String // 机型，如 "Jaguar 970" / "8R 410" / "BigX 1180"
+  category        String // tractor | harvester | forage | baler | soil | ...
+  sourceSite      String // agroline | machinerypete | mascus | tractorhouse | efarm | avito | olx | research-seed
+  priceForeign    Float // 该源样本的基准外币价（中位）
+  currency        String    @default("EUR")
+  priceCny        Float // 按采集日汇率折算的人民币
+  exchangeRate    Float? // 采集日 foreign→CNY 汇率
+  sourceUrl       String? // 样本来源页（列表/搜索结果）
+  sourceDate      String? // 采集日 YYYY-MM-DD
+  confidenceScore Float     @default(0.5)
+  sampleSize      Int       @default(1) // 该源参与计算的有效样本数
+  medianPrice     Float? // 该源样本外币中位价（与 priceForeign 通常一致）
+  listingCount    Int       @default(0) // 该源检索到的挂牌总数（用于计数展示）
+  priceType       String    @default("listing") // listing(挂牌) | sold(成交) | asking(要价)
+  region          String? // EU | US | RU | UA | GLOBAL
   lastVerified    DateTime?
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   @@index([brand, model])
   @@index([category])
@@ -447,11 +447,11 @@ model CreditTransaction {
   balance    Int
   reason     String?
   relatedId  String?
-  account    String?   // gift | recharge | mixed（扣减跨账户时）
-  lotId      String?   // 入账时关联批次
+  account    String? // gift | recharge | mixed（扣减跨账户时）
+  lotId      String? // 入账时关联批次
   expiresAt  DateTime? // 入账时冗余批次过期时间
-  breakdown  String?   // 扣减拆分 JSON：[{lotId, account, amount}]
-  operatorId String?   // admin_adjust / 确认充值的操作人
+  breakdown  String? // 扣减拆分 JSON：[{lotId, account, amount}]
+  operatorId String? // admin_adjust / 确认充值的操作人
   createdAt  DateTime  @default(now())
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -960,52 +960,62 @@ model ElectronicContract {
 }
 
 model Auction {
-  id                 String              @id @default(cuid())
+  id                 String                 @id @default(cuid())
   productId          String
   sellerId           String
   title              String
   description        String?
-  startPrice         Float               @default(0)
+  startPrice         Float                  @default(0)
   reservePrice       Float?
-  priceIncrement     Float               @default(5000)
-  deposit            Float               @default(0)
+  priceIncrement     Float                  @default(5000)
+  deposit            Float                  @default(0)
   startTime          DateTime?
   endTime            DateTime?
   /// 状态机：BLIND 用 active/completed；LIVE 用 LIVE_DRAFT→LIVE_OPEN(报名+保证金)→LIVE_BIDDING(竞价)→LIVE_HAMMERED(落槌)→LIVE_SETTLED(结算)，流拍=LIVE_PASSED（P2 真实拍卖）
-  status             String              @default("active")
+  status             String                 @default("active")
   winnerId           String?
   winningBid         Float?
-  totalBids          Int                 @default(0)
-  totalBidders       Int                 @default(0)
+  totalBids          Int                    @default(0)
+  totalBidders       Int                    @default(0)
   settledAt          DateTime?
   contractId         String?
   coverImage         String?
-  viewCount          Int                 @default(0)
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-  acceptedBidId      String?             @unique
+  viewCount          Int                    @default(0)
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  acceptedBidId      String?                @unique
   acceptedPrice      Float?
   sellerQuoteAmount  Float?
   sellerQuoteMsg     String?
   sellerQuoteAt      DateTime?
   askingPrice        Float
-  bargainNo          String              @unique
+  bargainNo          String                 @unique
   announcementNo     String?
-  announcementHtml   String?             @db.Text
+  announcementHtml   String?                @db.Text
   contractTemplateNo String?
-  contractHtml       String?             @db.Text
+  contractHtml       String?                @db.Text
   evaluationPrice    Float?
   knownFlaws         String?
-  minParticipants    Int                 @default(3)
+  minParticipants    Int                    @default(3)
   paymentDeadline    DateTime?
   /// S5 路径C：真实拍卖（LIVE）扩展字段
-  auctionMode        String               @default("BLIND") // BLIND 盲报 | LIVE 真实拍卖
+  auctionMode        String                 @default("BLIND") // BLIND 盲报 | LIVE 真实拍卖
   hammerPrice        Float?
   auctioneerId       String?
-  settlementId       String?              @unique
-  product            Product             @relation(fields: [productId], references: [id])
-  seller             User                @relation("AuctionSeller", fields: [sellerId], references: [id])
-  winner             User?               @relation("AuctionWinner", fields: [winnerId], references: [id])
+  settlementId       String?                @unique
+  /// 合规红线 #1：落槌主体 —— 合作持牌拍卖机构（非平台）。落槌须落在此机构名下。
+  licensedAgencyId   String?
+  licensedAgency     LicensedAuctionAgency? @relation(fields: [licensedAgencyId], references: [id])
+  /// 主持拍卖师（须执业注册归属该持牌机构，落槌前校验）
+  auctioneer         Auctioneer?            @relation("AuctionHost", fields: [auctioneerId], references: [id])
+  /// 落槌事实（合规留痕）
+  hammeredAt         DateTime?
+  hammeredBy         String?
+  hammeredByType     String?
+  hammeredByLabel    String?
+  product            Product                @relation(fields: [productId], references: [id])
+  seller             User                   @relation("AuctionSeller", fields: [sellerId], references: [id])
+  winner             User?                  @relation("AuctionWinner", fields: [winnerId], references: [id])
   bids               Bid[]
   inspectionBookings InspectionBooking[]
   registrations      AuctionRegistration[]
@@ -1796,9 +1806,9 @@ model MachinePart {
 model CreditLot {
   id              String   @id @default(cuid())
   userId          String
-  account         String   // gift | recharge
-  sourceType      String   // register_gift|cert_gift|invite_reward|checkin|first_order_reward|recharge|admin_adjust|migration
-  sourceId        String?  // milestoneId / serviceOrderId / adminUserId
+  account         String // gift | recharge
+  sourceType      String // register_gift|cert_gift|invite_reward|checkin|first_order_reward|recharge|admin_adjust|migration
+  sourceId        String? // milestoneId / serviceOrderId / adminUserId
   initialAmount   Int
   remainingAmount Int
   expiresAt       DateTime // gift=+90天 recharge=+1年（入账时刻起算）
@@ -1847,7 +1857,7 @@ model Invitation {
 model UserMilestone {
   id        String   @id @default(cuid())
   userId    String
-  event     String   // register_gift|cert_personal|cert_enterprise|first_publish|first_inquiry|first_deal
+  event     String // register_gift|cert_personal|cert_enterprise|first_publish|first_inquiry|first_deal
   relatedId String?
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -1860,8 +1870,8 @@ model ServiceOrder {
   id            String    @id @default(cuid())
   orderNo       String    @unique
   userId        String
-  orderType     String    // credit_pack | membership
-  sku           String    // pack10|pack30|pack60|pack150 | plan_basic|plan_premium|plan_enterprise
+  orderType     String // credit_pack | membership
+  sku           String // pack10|pack30|pack60|pack150 | plan_basic|plan_premium|plan_enterprise
   amountCny     Float
   credits       Int       @default(0)
   status        String    @default("pending") // pending|paid|closed|rejected|refunded
@@ -1884,7 +1894,7 @@ model Promotion {
   id          String    @id @default(cuid())
   userId      String
   productId   String
-  type        String    // top | refresh | home_feature
+  type        String // top | refresh | home_feature
   creditsCost Int
   startAt     DateTime  @default(now())
   endAt       DateTime?
@@ -1919,9 +1929,9 @@ model SystemConfig {
 /// 风控审核队列（E6：命中规则不直拒，进人工）
 model RiskReview {
   id           String    @id @default(cuid())
-  relationType String    // invitation | register
+  relationType String // invitation | register
   relationId   String
-  rule         String    // same_device | same_phone | same_payaccount | multi_register_ip
+  rule         String // same_device | same_phone | same_payaccount | multi_register_ip
   status       String    @default("pending") // pending | approved | rejected
   handledBy    String?
   handledAt    DateTime?
@@ -1933,23 +1943,23 @@ model RiskReview {
 
 /// 深度估值报告订单（付费报告，信任模式人工确认收款）
 model ValuationReportOrder {
-  id              String   @id @default(cuid())
-  orderNo         String   @unique
-  tier            String   // basic | standard | premium
+  id              String    @id @default(cuid())
+  orderNo         String    @unique
+  tier            String // basic | standard | premium
   price           Float
-  paymentMethod   String?  // wechat | alipay
-  paid            Boolean  @default(false)
-  status          String   @default("created") // created|paid|generating|completed|failed
+  paymentMethod   String? // wechat | alipay
+  paid            Boolean   @default(false)
+  status          String    @default("created") // created|paid|generating|completed|failed
   reportHtml      String?
   productInfo     Json?
   valuationResult Json?
   productName     String?
   productId       String?
-  userId          String?  // 关联下单用户（可选，未登录为空）
-  createdAt       DateTime @default(now())
+  userId          String? // 关联下单用户（可选，未登录为空）
+  createdAt       DateTime  @default(now())
   paidAt          DateTime?
   completedAt     DateTime?
-  updatedAt       DateTime @updatedAt
+  updatedAt       DateTime  @updatedAt
 
   @@index([orderNo])
   @@index([status, createdAt])
@@ -1962,12 +1972,12 @@ model ValuationReportOrder {
 
 /// .com 专属：Stripe 客户关联
 model StripeCustomer {
-  id               String   @id @default(cuid())
-  userId           String   @unique
-  stripeCustomerId String   @unique
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String               @id @default(cuid())
+  userId           String               @unique
+  stripeCustomerId String               @unique
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  user             User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   subscriptions    StripeSubscription[]
 
   @@index([stripeCustomerId])
@@ -1975,17 +1985,17 @@ model StripeCustomer {
 
 /// .com 专属：Stripe 增值服务订阅（仅外币）
 model StripeSubscription {
-  id               String            @id @default(cuid())
+  id               String          @id @default(cuid())
   userId           String
   stripeCustomerId String
-  plan             String            // valuation_pack|intel_pack|premium|enterprise
-  currency         String            // USD|EUR|GBP
-  status           String            @default("active") // active|canceled|past_due
+  plan             String // valuation_pack|intel_pack|premium|enterprise
+  currency         String // USD|EUR|GBP
+  status           String          @default("active") // active|canceled|past_due
   currentPeriodEnd DateTime
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  customer         StripeCustomer    @relation(fields: [stripeCustomerId], references: [id], onDelete: Cascade)
-  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  customer         StripeCustomer  @relation(fields: [stripeCustomerId], references: [id], onDelete: Cascade)
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   invoices         StripeInvoice[]
 
   @@index([userId, status])
@@ -1994,17 +2004,17 @@ model StripeSubscription {
 
 /// .com 专属：Stripe 账单/发票
 model StripeInvoice {
-  id               String              @id @default(cuid())
-  subscriptionId   String
-  stripeInvoiceId  String              @unique
-  amount           Float
-  currency         String              @default("USD")
-  status           String              @default("paid") // paid|open|uncollectible|void
-  paidAt           DateTime?
-  periodStart      DateTime?
+  id              String             @id @default(cuid())
+  subscriptionId  String
+  stripeInvoiceId String             @unique
+  amount          Float
+  currency        String             @default("USD")
+  status          String             @default("paid") // paid|open|uncollectible|void
+  paidAt          DateTime?
+  periodStart     DateTime?
   periodEnd       DateTime?
-  createdAt        DateTime            @default(now())
-  subscription     StripeSubscription  @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  createdAt       DateTime           @default(now())
+  subscription    StripeSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
   @@index([subscriptionId])
   @@index([stripeInvoiceId])
@@ -2012,20 +2022,20 @@ model StripeInvoice {
 
 /// .cn 专属：担保交易意向（资金在微信小程序收付通闭环）
 model GuaranteeIntent {
-  id                 String    @id @default(cuid())
-  inquiryId          String?   // 可选关联询价
-  productId          String
-  buyerUserId        String
-  sellerUserId       String
-  amountCny          Float
-  wechatSubMerchantId String   // 卖家子商户号
-  wechatOrderNo      String?   // 微信支付订单号（支付成功后回写）
-  status             String    @default("created") // created|paying|paid|delivered|completed|refunded|disputed
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  buyer              User      @relation("GuaranteeBuyer", fields: [buyerUserId], references: [id])
-  seller             User      @relation("GuaranteeSeller", fields: [sellerUserId], references: [id])
-  inquiries          Inquiry[]
+  id                  String    @id @default(cuid())
+  inquiryId           String? // 可选关联询价
+  productId           String
+  buyerUserId         String
+  sellerUserId        String
+  amountCny           Float
+  wechatSubMerchantId String // 卖家子商户号
+  wechatOrderNo       String? // 微信支付订单号（支付成功后回写）
+  status              String    @default("created") // created|paying|paid|delivered|completed|refunded|disputed
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  buyer               User      @relation("GuaranteeBuyer", fields: [buyerUserId], references: [id])
+  seller              User      @relation("GuaranteeSeller", fields: [sellerUserId], references: [id])
+  inquiries           Inquiry[]
 
   @@index([buyerUserId, status])
   @@index([sellerUserId, status])
@@ -2035,10 +2045,10 @@ model GuaranteeIntent {
 /// 跨站账户关联（Q5 — 仅存 token，不复制 PII）
 model AccountLink {
   id        String   @id @default(cuid())
-  comUserId String   // .com 站 userId
-  cnUserId  String   // .cn 站 userId
-  linkToken String   // 关联 token（sha256 hash）
-  method    String   // email|phone|manual
+  comUserId String // .com 站 userId
+  cnUserId  String // .cn 站 userId
+  linkToken String // 关联 token（sha256 hash）
+  method    String // email|phone|manual
   linkedAt  DateTime @default(now())
   createdAt DateTime @default(now())
   comUser   User     @relation("AccountLinkCom", fields: [comUserId], references: [id], onDelete: Cascade)
@@ -2081,60 +2091,97 @@ model FieldVideo {
 
 /// 网站总览单例行（O(1) 读取，避免运行时 sum）。固定 id = 'global'，两站各自独立计数。
 model SiteStat {
-  id                String   @id
-  totalPageViews    Int      @default(0) // 仅 product + category 页面访问（视频播放不计入 PV）
-  totalProductViews Int      @default(0)
-  totalCategoryViews Int     @default(0)
-  totalVideoPlays   Int      @default(0) // video + fieldVideo 播放合计
-  updatedAt         DateTime @updatedAt
+  id                 String   @id
+  totalPageViews     Int      @default(0) // 仅 product + category 页面访问（视频播放不计入 PV）
+  totalProductViews  Int      @default(0)
+  totalCategoryViews Int      @default(0)
+  totalVideoPlays    Int      @default(0) // video + fieldVideo 播放合计
+  updatedAt          DateTime @updatedAt
 }
 
 /// 拍卖师档案（路径C：持牌拍卖企业的拍卖师，支持挂靠）。
 /// userId 为逻辑外键（可空：外部挂靠拍卖师无平台账号），不声明 Prisma relation 以最小改动 User 核心模型。
 model Auctioneer {
-  id            String   @id @default(cuid())
-  userId        String?  // 关联平台用户（可空：外部挂靠拍卖师无平台账号）
-  licenseNo     String   @unique // 拍卖师执业证书编号
-  realName      String
-  phone         String?
-  isAffiliated  Boolean  @default(true) // 是否挂靠
-  hostedCount   Int      @default(0)   // 实际主持场次（合规留痕）
-  remark        String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id               String   @id @default(cuid())
+  userId           String? // 关联平台用户（可空：外部挂靠拍卖师无平台账号）
+  licenseNo        String   @unique // 拍卖师执业证书编号
+  realName         String
+  phone            String?
+  /// 合规红线 #1：执业注册须归属于合作持牌拍卖机构（拍卖师只能代表持证企业执业）。
+  /// 为空 = 执业关系未登记，不得主持真实拍卖（落槌校验会拦下）。
+  licensedAgencyId String?
+  isAffiliated     Boolean  @default(true) // 是否挂靠
+  hostedCount      Int      @default(0) // 实际主持场次（合规留痕）
+  remark           String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  licensedAgency LicensedAuctionAgency? @relation(fields: [licensedAgencyId], references: [id])
+  hostedAuctions Auction[]              @relation("AuctionHost")
 
   @@index([licenseNo])
   @@index([isAffiliated])
+  @@index([licensedAgencyId])
+}
+
+/// 合作持牌拍卖机构档案（合规红线 #4「须核验并登记具牌机构资质」的数据底座）
+/// 平台自身不持有《拍卖经营批准证书》，全部真实拍卖业务由本表登记的合作机构作为拍卖人依法开展。
+/// 语义注意：证书编号属于「合作机构」，不是平台自有资质 —— 对外文案不得写成「本公司已取得」。
+model LicensedAuctionAgency {
+  id                String    @id @default(cuid())
+  name              String // 机构法定全称
+  licenseNo         String    @unique // 该机构《拍卖经营批准证书》编号
+  unifiedCreditCode String? // 统一社会信用代码
+  licenseAuthority  String? // 发证机关（省级商务主管部门）
+  licenseValidTo    DateTime? // 证书有效期至（用于资质失效自动下线）
+  contactName       String?
+  contactPhone      String?
+  /// 准入状态：ACTIVE 合作中 | SUSPENDED 暂停 | EXPIRED 已失效 | REVOKED 已吊销
+  status            String    @default("ACTIVE")
+  /// 资质核验留痕（《网络拍卖规程》要求平台核验 + 登记 + 留存）
+  licenseVerifiedAt DateTime?
+  licenseVerifiedBy String?
+  licenseFileUrl    String? // 证书扫描件 URL（存 OSS）
+  remark            String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  auctions    Auction[]
+  auctioneers Auctioneer[]
+
+  @@index([status])
+  @@index([licenseNo])
 }
 
 /// 拍卖价款结算单（对接拍卖证清算，复用收付通结算层；P1 仅建表，P2 真实结算）。
 model Settlement {
-  id          String   @id @default(cuid())
-  auctionId   String   @unique
-  buyerPaid   Float    // 买受人实付（含佣金）
-  hammerPrice Float    // 落槌价（给委托人）
-  commission   Float    // 平台佣金
-  status      String   @default("PENDING") // PENDING | SETTLED | REFUNDED
+  id          String    @id @default(cuid())
+  auctionId   String    @unique
+  buyerPaid   Float // 买受人实付（含佣金）
+  hammerPrice Float // 落槌价（给委托人）
+  commission  Float // 合作持牌拍卖机构佣金（平台不收交易佣金）
+  status      String    @default("PENDING") // PENDING | SETTLED | REFUNDED
   settledAt   DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@index([status])
   @@index([auctionId])
 }
+
 /// P2 真实拍卖（LIVE）— 报名与保证金资格
 /// 竞买人报名某场 LIVE 拍卖并缴纳保证金后，eligible=true 方可出价。
 model AuctionRegistration {
-  id               String    @id @default(cuid())
-  auctionId        String
-  bidderId         String
-  depositAmount    Float? // 应缴保证金（取自 auction.deposit）
-  depositPaid      Boolean   @default(false)
+  id                 String    @id @default(cuid())
+  auctionId          String
+  bidderId           String
+  depositAmount      Float? // 应缴保证金（取自 auction.deposit）
+  depositPaid        Boolean   @default(false)
   depositConfirmedAt DateTime?
-  eligible         Boolean   @default(false) // 保证金确认后具备竞价资格
-  registeredAt     DateTime  @default(now())
-  auction          Auction   @relation(fields: [auctionId], references: [id], onDelete: Cascade)
-  bidder           User      @relation(fields: [bidderId], references: [id], onDelete: Cascade)
+  eligible           Boolean   @default(false) // 保证金确认后具备竞价资格
+  registeredAt       DateTime  @default(now())
+  auction            Auction   @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+  bidder             User      @relation(fields: [bidderId], references: [id], onDelete: Cascade)
 
   @@unique([auctionId, bidderId])
   @@index([auctionId, eligible])
@@ -2145,11 +2192,11 @@ model AuctionRegistration {
 model ValuationLead {
   id              String   @id @default(cuid())
   email           String
-  locale          String   // 提交时的界面语言
-  valuationParams Json     // 估值输入参数（品牌/品类/马力/年限等）
-  estimate        Json     // 解锁返回的精确估值结果 JSON
-  paramsHash      String   // valuationParams 稳定序列化后的 sha256，用于同邮箱同参数去重
-  ipHash          String?  // 游客 IP 哈希（风控用）
+  locale          String // 提交时的界面语言
+  valuationParams Json // 估值输入参数（品牌/品类/马力/年限等）
+  estimate        Json // 解锁返回的精确估值结果 JSON
+  paramsHash      String // valuationParams 稳定序列化后的 sha256，用于同邮箱同参数去重
+  ipHash          String? // 游客 IP 哈希（风控用）
   source          String   @default("valuation")
   createdAt       DateTime @default(now())
 
