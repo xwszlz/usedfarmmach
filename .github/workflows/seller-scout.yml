@@ -36,7 +36,9 @@ jobs:
           cache: "npm"
 
       - name: Install Python dependencies
-        run: pip install urllib3
+        # 两个采集脚本都 `import requests`，此前只装了 urllib3
+        # → ModuleNotFoundError 被 continue-on-error 吞掉，job 报 success 但采集条数恒为 0
+        run: pip install urllib3 requests
 
       - name: Install Node dependencies
         # 2026-09-02 起 package-lock.json 与 package.json 不同步（缺
