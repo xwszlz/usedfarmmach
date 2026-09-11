@@ -79,6 +79,7 @@ function signPut(folder: string, filename: string, contentType: string) {
 }
 
 // 1. Client asks for a signed upload URL
+export const dynamic = "force-dynamic"; // 防 .cn 构建期静态固化，详见 scripts/check-route-dynamic.mjs
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const filename = url.searchParams.get("filename") || `video_${Date.now()}.mp4`;

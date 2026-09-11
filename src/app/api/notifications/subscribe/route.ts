@@ -16,6 +16,7 @@ const NOTIFICATION_TYPES = {
   INQUIRY_REPLY: "inquiry_reply",    // 询价回复
 };
 
+export const dynamic = "force-dynamic"; // 防 .cn 构建期静态固化，详见 scripts/check-route-dynamic.mjs
 export async function POST(req: NextRequest) {
   try {
     const authHeader = req.headers.get("authorization");

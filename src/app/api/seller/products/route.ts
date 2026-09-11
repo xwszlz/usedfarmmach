@@ -15,6 +15,7 @@ import { checkContent, isBlocked } from "@/lib/wechat-sec-check";
 import { checkDuplicateProduct, fireVideoModeration, MAX_VIDEOS_PER_PRODUCT, MAX_VIDEO_DURATION_SECONDS, MAX_VIDEO_FILE_SIZE_BYTES } from "@/lib/content-moderation";
 
 // 图片上传 + AI审核需要较长时间
+export const dynamic = "force-dynamic"; // 防 .cn 构建期静态固化，详见 scripts/check-route-dynamic.mjs
 export const maxDuration = 120;
 
 const PUBLISH_COST = 1;

@@ -22,6 +22,7 @@ const exchangeRateService = new ExchangeRateService();
  *   error?: string
  * }
  */
+export const dynamic = "force-dynamic"; // 防 .cn 构建期静态固化，详见 scripts/check-route-dynamic.mjs
 export async function GET(request: NextRequest) {
   try {
     // TODO: 从ExchangeRateService获取所有汇率数据

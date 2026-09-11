@@ -9,9 +9,8 @@ import { prisma } from "@/lib/db";
 // Next.js 14 会把它当作可静态化的 GET Route Handler，在 next build 阶段预渲染
 // 并把结果烤进镜像 —— 于是线上永远返回构建期的空数组（恰好 44 字节：
 // {"success":true,"brands":[],"categories":[]}），品牌/品类下拉恒为空。
-// 改为动态渲染 + 短 ISR，确保读活库。
+// 改为动态渲染，确保读活库（force-dynamic 优先，revalidate 已移除）。
 export const dynamic = "force-dynamic";
-export const revalidate = 60;
 
 export async function GET() {
   try {
