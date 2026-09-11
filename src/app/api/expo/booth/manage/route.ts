@@ -17,6 +17,7 @@ async function getAuthUser(req: NextRequest) {
 }
 
 // GET: 获取我的 booth 和展品
+export const dynamic = "force-dynamic"; // 防 .cn 构建期静态固化，详见 scripts/check-route-dynamic.mjs
 export async function GET(req: NextRequest) {
   try {
     const user = await getAuthUser(req);

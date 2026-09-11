@@ -18,6 +18,7 @@ import { siteConfig } from "@/config/site";
  * 入参: { productId, deliveryAddress?, contactPhone? }
  * 出参: { success, data: { orderId, orderNo, payParams, depositAmount, balanceAmount } }
  */
+export const dynamic = "force-dynamic"; // 防 .cn 构建期静态固化，详见 scripts/check-route-dynamic.mjs
 export async function POST(request: NextRequest) {
   try {
     const user = await getUserFromRequest(request);

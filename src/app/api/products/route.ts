@@ -5,9 +5,8 @@ import { getImageUrl } from "@/lib/image-url";
 import { sortByDailyRank } from "@/config/daily-report-ranking";
 import { cache, cacheKey } from "@/lib/cache";
 
-// ISR: 每5分钟重新验证
+// 必须动态渲染（.cn 构建期连空库）；force-dynamic 优先级更高，revalidate 是无效配置，已移除
 export const dynamic = 'force-dynamic';
-export const revalidate = 300;
 
 // ✅ Round3 修复: Vercel Serverless 超时延长到30秒
 // 原因: 此接口执行复杂查询（多表 JOIN: product+brand+category+images+videos+internationalPrices+seller）

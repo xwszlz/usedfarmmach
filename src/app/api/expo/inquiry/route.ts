@@ -13,6 +13,7 @@ import { prisma } from "@/lib/db";
 
 const ADMIN_EMAIL = "jiusei0319@gmail.com";
 
+export const dynamic = "force-dynamic"; // 防 .cn 构建期静态固化，详见 scripts/check-route-dynamic.mjs
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();

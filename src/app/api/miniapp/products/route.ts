@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
 // Vercel Serverless Function 超时延长至60秒（默认10秒，含SCP优化可能超时）
+export const dynamic = "force-dynamic"; // 防 .cn 构建期静态固化，详见 scripts/check-route-dynamic.mjs
 export const maxDuration = 60;
 
 function requireAuth(req: NextRequest) {

@@ -1,0 +1,44 @@
+name: Route Guard
+
+# 守门：拦截会被 Next.js 14 在 `next build` 阶段静态预渲染（"静态固化"）的读库 GET 路由。
+#
+# 为什么要守：.cn 的 CI 构建连的是**空 postgres**（数据不出境，构建期不接生产库）。
+# 一个 GET 路由只要在构建期的实际执行路径上不触碰 cookies()/headers()/searchParams，
+# 又没有 `export const dynamic`，Next 就会把它的响应烤进镜像 —— 在 .cn 上等于
+# 把"空库快照"永久固化。注意 `export const revalidate` 救不了：它只在预渲染结果
+# 之上叠加 ISR，部署后仍有一个窗口返回空快照。
+#
+# 历史事故：/api/brands-categories(44B)、/api/products/filters(119B)、
+#          /api/parts/catalog(26B)、/api/miniapp/brands-categories(53B, 永久固化)
+#
+# 本 workflow 只跑一个纯 Node 脚本（无依赖、无 npm install），秒级完成。
+on:
+  pull_request:
+    paths:
+      - "src/app/api/**"
+      - "src/lib/**"
+      - "scripts/check-route-dynamic.mjs"
+      - ".github/workflows/route-guard.yml"
+  push:
+    branches: [main]
+    paths:
+      - "src/app/api/**"
+      - "src/lib/**"
+      - "scripts/check-route-dynamic.mjs"
+      - ".github/workflows/route-guard.yml"
+  workflow_dispatch:
+
+jobs:
+  route-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: 检查没有会被构建期静态固化的读库 GET 路由
+        run: node scripts/check-route-dynamic.mjs

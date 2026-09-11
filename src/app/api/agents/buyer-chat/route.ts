@@ -17,6 +17,7 @@ const chatInputSchema = z.object({
   dryRun: z.boolean().optional(),
 });
 
+export const dynamic = "force-dynamic"; // 防 .cn 构建期静态固化，详见 scripts/check-route-dynamic.mjs
 export async function POST(request: Request) {
   try {
     const body = await request.json();

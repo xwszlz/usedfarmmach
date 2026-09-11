@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { TopArbitrageService } from "@/lib/services/top-arbitrage-service";
 import type { ArbitrageTopItem, TopArbitrageResponse } from "@/types/arbitrage";
 
-// ISR: 套利榜单每周更新一次
+// 必须动态渲染（.cn 构建期连空库）；force-dynamic 优先级更高，revalidate 是无效配置，已移除
 export const dynamic = 'force-dynamic';
-export const revalidate = 604800; // 7天 = 604800秒
 
 /**
  * GET /api/arbitrage/top-products
