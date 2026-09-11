@@ -2159,7 +2159,7 @@ model Settlement {
   auctionId   String   @unique
   buyerPaid   Float    // 买受人实付（含佣金）
   hammerPrice Float    // 落槌价（给委托人）
-  commission   Float    // 平台佣金
+  commission   Float    // 合作持牌拍卖机构佣金（平台不收交易佣金）
   status      String   @default("PENDING") // PENDING | SETTLED | REFUNDED
   settledAt   DateTime?
   createdAt   DateTime @default(now())

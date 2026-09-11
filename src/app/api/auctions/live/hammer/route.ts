@@ -1,20 +1,22 @@
 /**
  * P2 真实拍卖（LIVE）— 落槌
  * POST /api/auctions/live/hammer
- * 权限：合作持牌拍卖机构操作员（法定落槌主体）/ 平台拍卖运营岗（代录）  站点：仅 .cn
+ * 权限：合作持牌拍卖机构操作员（法定落槌主体）/ 平台身份（超管·管理员，仅代录）  站点：仅 .cn
  *
  * ⚠️ 合规红线 #1：落槌是「拍卖人」的法定行为。平台不持《拍卖经营批准证书》，
- *    因此落槌权必须落在合作持牌拍卖机构名下 —— 本路由不接受「平台管理员」这一身份，
+ *    因此落槌权必须落在合作持牌拍卖机构名下 —— 平台身份（含平台管理员）一律记为代录，
+ *    不得作为法定落槌主体，也不得升级为 licensed_agency。
  *    且必须同时满足：主持拍卖师已登记于该场落槌的持牌机构、该机构状态为 ACTIVE。
  *    平台身份调用时仅记为「代录」（recorder=platform_proxy），不改变拍卖人认定。
  *
  * 取当前 isWinning 最高价；
  *   - 达保留价 → 落槌（hammerPrice / winnerId / 建结算单 / 拍卖师 hostedCount+1）；
- *   - 未达保留价或无出价 → 流拍（LIVE_PASSED），保证金退还（STUB）。
+ *   - 未达保留价或无出价 → 流拍（LIVE_PASSED），保证金退还（STUB）；
+ *     流拍走 assertPassPrerequisite 轻校验（要求已指派主持拍卖师 + 已指定落槌主体，不查机构状态）。
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { assertCnOnly, assertAuctionStaff, assertHammerPrivilege } from "@/lib/auction-live-guards";
+import { assertCnOnly, assertAuctionStaff, assertHammerPrivilege, assertPassPrerequisite } from "@/lib/auction-live-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +57,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const meetsReserve = top != null && (reserve == null || top.amount >= reserve);
 
   if (!meetsReserve) {
+    const prereq = assertPassPrerequisite(auction);
+    if (!prereq.ok) return prereq.error;
     // 流拍
     await prisma.auction.update({ where: { id: auctionId }, data: { status: "LIVE_PASSED" } });
     // TODO(路径C): 退还保证金（持牌代收代付原路退回）。
