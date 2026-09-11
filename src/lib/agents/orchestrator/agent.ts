@@ -305,21 +305,29 @@ async function executeAgent(
     }
 
     case "seller-scout": {
-      // #1 直接调用共享执行模块（不走 HTTP 内部 fetch，避免 Vercel 部署期页面响应问题）
+      // #1 统一执行入口：本地有 Python 直跑；Vercel 上自动触发 GitHub Actions + 回读 DB
       const { executeSellerScout } = await import("@/lib/agents/seller-scout/execute");
       const result = await executeSellerScout({
         mode: (params.mode as "domestic" | "international" | "all") || "all",
         dryRun: !!params.dryRun,
         maxBrands: (params.maxBrands as number) || undefined,
+        awaitMs: (params.awaitMs as number) || 90000,
       });
+      const via = result.triggeredVia === "github-actions" ? "GitHub Actions" : "本地 Python";
+      const ghNote = result.github
+        ? (result.github.dispatched
+            ? `（已触发 workflow${result.github.runId ? " #" + result.github.runId : ""}，状态 ${result.github.runStatus}）`
+            : `（触发失败：${result.error || "未知"}）`)
+        : "";
       return {
-        mode: "direct-execution",
+        mode: result.triggeredVia,
         ok: result.ok,
         summary: result.summary,
+        github: result.github,
         log: result.log,
         durationMs: result.durationMs,
         message: result.ok
-          ? `采集完成：国内 ${result.summary.domesticCount} 条 / 国际 ${result.summary.intlCount} 条，已导入数据库`
+          ? `卖方采集已执行（${via}${ghNote}）：RawListing 当前 国内 ${result.summary.domesticCount} 条 / 国际 ${result.summary.intlCount} 条，总计 ${result.summary.totalListings} 条`
           : (result.error || "采集失败"),
         error: result.error,
       };
