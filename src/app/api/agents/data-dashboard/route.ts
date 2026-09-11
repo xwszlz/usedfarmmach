@@ -18,6 +18,6 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
-  const status = await dataDashboardAgent.getStatus();
-  return NextResponse.json(status);
+  const overview = await dataDashboardAgent.getSchedulingOverview();
+  return NextResponse.json(overview);
 }
