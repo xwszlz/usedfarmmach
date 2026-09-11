@@ -58,7 +58,7 @@ const LIVE_PREVIEW_FEATURES: { icon: string; title: string; desc: string }[] = [
   {
     icon: "🤖",
     title: "AI 智能保留价",
-    desc: "合法保留价机制，卖方净到手率 >95%，告别强制无底价对卖方的伤害。",
+    desc: "合法保留价机制，卖方净到手率 98%（扣除合作持牌机构 2% 佣金后），告别强制无底价对卖方的伤害。",
   },
   {
     icon: "🔍",
@@ -99,6 +99,8 @@ export default function BargainsClient({
   const locale = useLocale();
   const tr = useTr();
   const isCn = site === "cn";
+  // 真实拍卖入口闸门：取证前仅管理员可见（合规红线：未取证不得对外展示）
+  const canSeeLive = isCn && (isAdmin || !!auctionLicenseNo);
   const [bargains, setBargains] = useState<Bargain[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
@@ -160,7 +162,7 @@ export default function BargainsClient({
             </h1>
             <p className="text-sm md:text-base text-blue-200 mt-2">
               {mode === "live"
-                ? tr("依法公开拍卖，持牌拍卖师主持，价高者得")
+                ? tr("由合作持牌拍卖机构依法举办，其拍卖师主持，价高者得")
                 : tr("一对一报价，透明询价，高效成交高价值农机设备")}
             </p>
           </div>
@@ -206,7 +208,7 @@ export default function BargainsClient({
             >
               {tr("在线询价")}
             </button>
-            {isCn && (
+            {canSeeLive && (
               <button
                 onClick={() => setMode("live")}
                 className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
@@ -233,7 +235,7 @@ export default function BargainsClient({
         </div>
       </div>
 
-      {mode === "blind" ? (
+      {mode === "blind" || !canSeeLive ? (
         <>
           {/* Filter Bar */}
           <div className="bg-white border-b border-gray-200">
@@ -376,6 +378,28 @@ export default function BargainsClient({
               </p>
             </div>
 
+            {/* 拍卖收费标准（随资质徽章上线；取证前仅管理员预览） */}
+            {(auctionLicenseNo || isAdmin) && (
+              <div className="pt-8 border-t border-gray-100">
+                <p className="text-center text-gray-700 font-semibold">{tr("拍卖收费标准")}</p>
+                <p className="text-center text-gray-400 text-sm mt-1 mb-6 max-w-2xl mx-auto leading-relaxed">
+                  {tr("本通道拍卖业务由持牌拍卖机构依法开展，佣金由其按下列标准收取；平台不收取交易佣金、不接触交易资金。以上标准自取得《拍卖经营批准证书》并正式开拍之日起适用。")}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
+                  <div className="rounded-xl border border-gray-200 p-5">
+                    <p className="text-xs text-gray-500">{tr("买方佣金")}</p>
+                    <p className="text-lg font-bold text-gray-900 mt-1">{tr("落槌价的 3%（由买受人承担）")}</p>
+                  </div>
+                  <div className="rounded-xl border border-gray-200 p-5">
+                    <p className="text-xs text-gray-500">{tr("卖方佣金")}</p>
+                    <p className="text-lg font-bold text-gray-900 mt-1">{tr("落槌价的 2%（从成交款中扣除）")}</p>
+                  </div>
+                </div>
+                <p className="text-center text-gray-500 text-sm mt-4">
+                  {tr("费用示例：落槌价 ¥100,000 → 买受人实付 ¥103,000，委托人净得 ¥98,000。")}
+                </p>
+              </div>
+            )}
             {/* 上线后将有 — 差异化能力预览（内部演示） */}
             <div className="pt-8">
               <p className="text-center text-gray-700 font-semibold">{tr("上线后将有")}</p>

@@ -13,6 +13,14 @@ interface Auctioneer {
   hostedCount: number;
   remark: string | null;
   createdAt: string;
+  licensedAgencyId: string | null;
+}
+
+interface Agency {
+  id: string;
+  name: string;
+  licenseNo: string;
+  status: string;
 }
 
 const inputCls =
@@ -27,6 +35,7 @@ export default function AuctioneersAdminPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [agencies, setAgencies] = useState<Agency[]>([]);
   const [form, setForm] = useState({
     licenseNo: "",
     realName: "",
@@ -34,6 +43,7 @@ export default function AuctioneersAdminPage() {
     isAffiliated: true,
     remark: "",
     userId: "",
+    licensedAgencyId: "",
   });
 
   const load = async () => {
@@ -50,8 +60,21 @@ export default function AuctioneersAdminPage() {
     }
   };
 
+  const loadAgencies = async () => {
+    try {
+      const res = await fetch("/api/admin/auction-agencies");
+      const json = await res.json();
+      if (json.success) {
+        setAgencies((json.data || []).filter((a: Agency) => a.status === "ACTIVE"));
+      }
+    } catch {
+      /* 机构列表加载失败不阻塞主流程 */
+    }
+  };
+
   useEffect(() => {
     load();
+    loadAgencies();
   }, []);
 
   const update = (key: keyof typeof form, value: string | boolean) =>
@@ -65,6 +88,10 @@ export default function AuctioneersAdminPage() {
       setError("执业证书编号与姓名为必填");
       return;
     }
+    if (!form.licensedAgencyId) {
+      setError("必须选择执业注册所属的合作持牌拍卖机构（未登记归属不得主持落槌）");
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await fetch("/api/admin/auctioneers", {
@@ -75,7 +102,15 @@ export default function AuctioneersAdminPage() {
       const json = await res.json();
       if (json.success) {
         setSuccess(`已录入拍卖师：${json.data.realName}（${json.data.licenseNo}）`);
-        setForm({ licenseNo: "", realName: "", phone: "", isAffiliated: true, remark: "", userId: "" });
+        setForm({
+          licenseNo: "",
+          realName: "",
+          phone: "",
+          isAffiliated: true,
+          remark: "",
+          userId: "",
+          licensedAgencyId: "",
+        });
         load();
       } else {
         setError(json.error || "录入失败");
@@ -92,7 +127,10 @@ export default function AuctioneersAdminPage() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">拍卖师挂靠</h1>
         <p className="mt-1 text-sm text-gray-500">
-          录入持《拍卖师执业资格证书》的挂靠拍卖师，用于路径C真实拍卖主持。仅 .cn 站点依法开展网络拍卖。
+          录入持《拍卖师执业资格证书》的拍卖师，用于合作持牌机构主持真实拍卖。仅 .cn 站点依法开展网络拍卖。
+        </p>
+        <p className="mt-1 text-sm text-amber-700">
+          每位拍卖师必须登记执业注册所属的合作持牌拍卖机构；未登记归属者，落槌接口会拒绝。
         </p>
       </div>
 
@@ -135,6 +173,26 @@ export default function AuctioneersAdminPage() {
               onChange={(e) => update("userId", e.target.value)}
               placeholder="可选（外部挂靠拍卖师可留空）"
             />
+          </div>
+          <div>
+            <label className={labelCls}>执业注册所属持牌拍卖机构 *</label>
+            <select
+              className={inputCls}
+              value={form.licensedAgencyId}
+              onChange={(e) => update("licensedAgencyId", e.target.value)}
+            >
+              <option value="">请选择（必选）</option>
+              {agencies.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}（{a.licenseNo}）
+                </option>
+              ))}
+            </select>
+            {agencies.length === 0 && (
+              <p className="mt-1 text-xs text-red-600">
+                尚无「合作中」的持牌机构，请先到「合作持牌机构」页登记。
+              </p>
+            )}
           </div>
           <div className="md:col-span-2 flex items-center gap-2">
             <input
@@ -189,6 +247,7 @@ export default function AuctioneersAdminPage() {
                   <th className="px-6 py-3 font-medium">执业证书编号</th>
                   <th className="px-6 py-3 font-medium">电话</th>
                   <th className="px-6 py-3 font-medium">类型</th>
+                  <th className="px-6 py-3 font-medium">所属持牌机构</th>
                   <th className="px-6 py-3 font-medium">主持场次</th>
                   <th className="px-6 py-3 font-medium">备注</th>
                   <th className="px-6 py-3 font-medium">录入时间</th>
@@ -207,6 +266,11 @@ export default function AuctioneersAdminPage() {
                         {a.isAffiliated ? "挂靠" : "自有"}
                       </span>
                     </td>
+                    <td className="px-6 py-3 text-gray-700">
+                      {a.licensedAgencyId
+                        ? agencies.find((g) => g.id === a.licensedAgencyId)?.name || "已登记"
+                        : <span className="text-red-600">未登记（不得主持落槌）</span>}
+                    </td>
                     <td className="px-6 py-3 text-gray-900">{a.hostedCount}</td>
                     <td className="px-6 py-3 text-gray-500">{a.remark || "-"}</td>
                     <td className="px-6 py-3 text-gray-400">
@@ -216,7 +280,7 @@ export default function AuctioneersAdminPage() {
                 ))}
                 {list.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-6 py-10 text-center text-gray-400">
+                    <td colSpan={8} className="px-6 py-10 text-center text-gray-400">
                       暂无挂靠拍卖师
                     </td>
                   </tr>

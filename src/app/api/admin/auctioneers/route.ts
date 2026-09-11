@@ -9,6 +9,8 @@
  *
  * 说明：Auctioneer.userId 为逻辑外键（可空，支持外部挂靠拍卖师无平台账号）。
  *       P1 仅建档案，hostedCount 由 P2 真实主持时回写留痕。
+ * 合规红线 #1：拍卖师执业注册必须归属到某家合作持牌拍卖机构（licensedAgencyId），
+ *       未登记归属的拍卖师不得主持落槌（hammer 路由会拦下）。
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -76,6 +78,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const remark = typeof body.remark === "string" && body.remark.trim() ? body.remark.trim() : null;
   const userId = typeof body.userId === "string" && body.userId.trim() ? body.userId.trim() : null;
   const isAffiliated = body.isAffiliated === false ? false : true;
+  const licensedAgencyId =
+    typeof body.licensedAgencyId === "string" && body.licensedAgencyId.trim()
+      ? body.licensedAgencyId.trim()
+      : null;
 
   if (!licenseNo || !realName) {
     return NextResponse.json(
@@ -92,6 +98,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         phone,
         remark,
         userId,
+        licensedAgencyId,
         isAffiliated,
       },
     });

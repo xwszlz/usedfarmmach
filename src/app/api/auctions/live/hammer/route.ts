@@ -1,7 +1,12 @@
 /**
  * P2 真实拍卖（LIVE）— 落槌
  * POST /api/auctions/live/hammer
- * 权限：平台管理员  站点：仅 .cn
+ * 权限：合作持牌拍卖机构操作员（法定落槌主体）/ 平台拍卖运营岗（代录）  站点：仅 .cn
+ *
+ * ⚠️ 合规红线 #1：落槌是「拍卖人」的法定行为。平台不持《拍卖经营批准证书》，
+ *    因此落槌权必须落在合作持牌拍卖机构名下 —— 本路由不接受「平台管理员」这一身份，
+ *    且必须同时满足：主持拍卖师已登记于该场落槌的持牌机构、该机构状态为 ACTIVE。
+ *    平台身份调用时仅记为「代录」（recorder=platform_proxy），不改变拍卖人认定。
  *
  * 取当前 isWinning 最高价；
  *   - 达保留价 → 落槌（hammerPrice / winnerId / 建结算单 / 拍卖师 hostedCount+1）；
@@ -9,7 +14,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { assertCnOnly, assertAuctionAdmin } from "@/lib/auction-live-guards";
+import { assertCnOnly, assertAuctionStaff, assertHammerPrivilege } from "@/lib/auction-live-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -20,8 +25,8 @@ function round2(n: number): number {
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const cn = assertCnOnly();
   if (!cn.ok) return cn.error;
-  const admin = assertAuctionAdmin(req);
-  if (!admin.ok) return admin.error;
+  const staff = await assertAuctionStaff(req);
+  if (!staff.ok) return staff.error;
 
   let body: { auctionId?: string };
   try {
@@ -61,10 +66,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   const hammerPrice = top!.amount;
-  const buyerPremium = round2(hammerPrice * 0.03); // 买方佣金 3%
-  const sellerCommission = round2(hammerPrice * 0.02); // 卖方佣金 2%
+  const buyerPremium = round2(hammerPrice * 0.03); // 买方佣金 3%（由合作持牌拍卖机构收取）
+  const sellerCommission = round2(hammerPrice * 0.02); // 卖方佣金 2%（由合作持牌拍卖机构收取）
   const commission = round2(buyerPremium + sellerCommission);
   const buyerPaid = round2(hammerPrice + buyerPremium);
+
+  // 合规红线 #1：落槌主体校验（持牌机构 + 其登记拍卖师），不通过不得落槌
+  const priv = await assertHammerPrivilege(auction, staff.liveRole);
+  if (!priv.ok) return priv.error;
 
   await prisma.$transaction(async (tx) => {
     await tx.auction.update({
@@ -74,6 +83,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         hammerPrice,
         winnerId: top!.bidderId,
         winningBid: hammerPrice,
+        hammeredAt: new Date(),
+        hammeredBy: staff.payload!.userId,
+        hammeredByType: priv.recorder,
+        hammeredByLabel:
+          `${staff.label ?? ""}｜落槌机构：${priv.agencyName}（${priv.agencyLicenseNo}）` +
+          `｜主持拍卖师：${priv.auctioneerName}（${priv.auctioneerLicenseNo}）`,
       },
     });
     await tx.settlement.upsert({
@@ -95,6 +110,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     winnerId: top!.bidderId,
     buyerPaid,
     commission,
+    hammeredByType: priv.recorder,
+    licensedAgency: { name: priv.agencyName, licenseNo: priv.agencyLicenseNo },
+    auctioneer: { name: priv.auctioneerName, licenseNo: priv.auctioneerLicenseNo },
     note: "落槌成功，待结算（settle 路由，路径C 持牌代收代付）",
   });
 }

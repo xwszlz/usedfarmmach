@@ -1003,6 +1003,16 @@ model Auction {
   hammerPrice        Float?
   auctioneerId       String?
   settlementId       String?              @unique
+  /// 合规红线 #1：落槌主体 —— 合作持牌拍卖机构（非平台）。落槌须落在此机构名下。
+  licensedAgencyId   String?
+  licensedAgency     LicensedAuctionAgency? @relation(fields: [licensedAgencyId], references: [id])
+  /// 主持拍卖师（须执业注册归属该持牌机构，落槌前校验）
+  auctioneer         Auctioneer?            @relation("AuctionHost", fields: [auctioneerId], references: [id])
+  /// 落槌事实（合规留痕）
+  hammeredAt         DateTime?
+  hammeredBy         String?
+  hammeredByType     String?
+  hammeredByLabel    String?
   product            Product             @relation(fields: [productId], references: [id])
   seller             User                @relation("AuctionSeller", fields: [sellerId], references: [id])
   winner             User?               @relation("AuctionWinner", fields: [winnerId], references: [id])
@@ -2097,14 +2107,50 @@ model Auctioneer {
   licenseNo     String   @unique // 拍卖师执业证书编号
   realName      String
   phone         String?
+  /// 合规红线 #1：执业注册须归属于合作持牌拍卖机构（拍卖师只能代表持证企业执业）。
+  /// 为空 = 执业关系未登记，不得主持真实拍卖（落槌校验会拦下）。
+  licensedAgencyId String?
   isAffiliated  Boolean  @default(true) // 是否挂靠
   hostedCount   Int      @default(0)   // 实际主持场次（合规留痕）
   remark        String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  licensedAgency LicensedAuctionAgency? @relation(fields: [licensedAgencyId], references: [id])
+  hostedAuctions Auction[]              @relation("AuctionHost")
+
   @@index([licenseNo])
   @@index([isAffiliated])
+  @@index([licensedAgencyId])
+}
+
+/// 合作持牌拍卖机构档案（合规红线 #4「须核验并登记具牌机构资质」的数据底座）
+/// 平台自身不持有《拍卖经营批准证书》，全部真实拍卖业务由本表登记的合作机构作为拍卖人依法开展。
+/// 语义注意：证书编号属于「合作机构」，不是平台自有资质 —— 对外文案不得写成「本公司已取得」。
+model LicensedAuctionAgency {
+  id                String    @id @default(cuid())
+  name              String // 机构法定全称
+  licenseNo         String    @unique // 该机构《拍卖经营批准证书》编号
+  unifiedCreditCode String? // 统一社会信用代码
+  licenseAuthority  String? // 发证机关（省级商务主管部门）
+  licenseValidTo    DateTime? // 证书有效期至（用于资质失效自动下线）
+  contactName       String?
+  contactPhone      String?
+  /// 准入状态：ACTIVE 合作中 | SUSPENDED 暂停 | EXPIRED 已失效 | REVOKED 已吊销
+  status            String    @default("ACTIVE")
+  /// 资质核验留痕（《网络拍卖规程》要求平台核验 + 登记 + 留存）
+  licenseVerifiedAt DateTime?
+  licenseVerifiedBy String?
+  licenseFileUrl    String? // 证书扫描件 URL（存 OSS）
+  remark            String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  auctions    Auction[]
+  auctioneers Auctioneer[]
+
+  @@index([status])
+  @@index([licenseNo])
 }
 
 /// 拍卖价款结算单（对接拍卖证清算，复用收付通结算层；P1 仅建表，P2 真实结算）。
