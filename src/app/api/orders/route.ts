@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getUserFromRequest } from "@/lib/auth";
 import { generateOrderNo, calculateFee, calculateDeposit, ESCROW_STATUS, DEPOSIT_TIMEOUT_DAYS } from "@/lib/escrow";
 import { createMiniOrder, buildMiniPaySign, isConfigured } from "@/lib/wechat-pay";
+import { siteConfig } from "@/config/site";
 
 /**
  * POST /api/orders
@@ -131,11 +132,20 @@ export async function POST(request: NextRequest) {
 
     // JSAPI 预支付——金额为定金（非全款）
     const desc = `神雕农机定金-${product.modelName}`.slice(0, 60);
+    // 回调必须落到担保订单处理器（/api/orders/wxpay-notify → handlePaymentSuccess）。
+    // 若缺省会回退到全局 WECHAT_NOTIFY_URL，而 .cn 的该值指向会员回调
+    // /api/membership/wechat/notify；该处理器用会员订单号正则解析 "SD-ESC-" 必然失败，
+    // 返回 HTTP 200 SUCCESS 后微信不再重投，导致定金永不置为已付（静默丢单）。
+    // 缺省域名按站点派生（.cn→usedfarmmach.cn / .com→usedfarmmach.com），
+    // 避免两站共用同一缺省值导致回调指向对侧域名。
+    const base = process.env.NEXT_PUBLIC_APP_URL || `https://${siteConfig.domains.primary}`;
+    const notifyUrl = `${base}/api/orders/wxpay-notify`;
     const { prepay_id } = await createMiniOrder(
       orderNo,
       Math.round(depositAmount * 100),
       desc,
-      buyer.miniOpenid!
+      buyer.miniOpenid!,
+      notifyUrl
     );
     const payParams = buildMiniPaySign(prepay_id);
 

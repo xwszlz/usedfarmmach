@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/auth";
 import { prisma } from "@/lib/escrow";
 import { createNativeOrder, isConfigured as wechatConfigured, APP_ID } from "@/lib/wechat-pay";
+import { siteConfig } from "@/config/site";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -71,7 +72,17 @@ export async function POST(request: NextRequest) {
     const amountInCents = Math.round(order.amount * 100);
     const description = `神雕农机 - ${order.product.modelName}`;
 
-    const result = await createNativeOrder(order.orderNo, amountInCents, description);
+    // 必须显式传回调地址：缺省会回退到全局 WECHAT_NOTIFY_URL，
+    // 而 .cn 的该值指向会员回调（/api/membership/wechat/notify），
+    // 担保订单号 "SD-ESC-" 在其正则下解析失败 → 返回 200 → 微信不重投 → 静默丢单。
+    // 缺省域名按站点派生，避免两站共用同一缺省值导致回调指向对侧域名。
+    const base = process.env.NEXT_PUBLIC_APP_URL || `https://${siteConfig.domains.primary}`;
+    const result = await createNativeOrder(
+      order.orderNo,
+      amountInCents,
+      description,
+      `${base}/api/orders/wxpay-notify`
+    );
 
     // 更新支付记录
     await prisma.paymentRecord.update({

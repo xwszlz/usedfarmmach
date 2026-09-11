@@ -229,13 +229,15 @@ export function isConfigured(): boolean {
  * @param amountInCents 金额（分）
  * @param description   商品描述（含"神雕农机"字样，审核友好）
  * @param openid        小程序用户 openid（payer.openid）
+ * @param notifyUrl     可选：本次下单的回调地址；缺省回退全局 WECHAT_NOTIFY_URL
  * @returns prepay_id
  */
 export async function createMiniOrder(
   orderNo: string,
   amountInCents: number,
   description: string,
-  openid: string
+  openid: string,
+  notifyUrl?: string
 ): Promise<{ prepay_id: string }> {
   if (!openid) {
     throw new Error("JSAPI 支付缺少 openid");
@@ -247,7 +249,7 @@ export async function createMiniOrder(
     mchid: MCH_ID,
     description,
     out_trade_no: orderNo,
-    notify_url: NOTIFY_URL,
+    notify_url: notifyUrl || NOTIFY_URL,
     amount: { total: amountInCents, currency: "CNY" },
     payer: { openid },
   });
