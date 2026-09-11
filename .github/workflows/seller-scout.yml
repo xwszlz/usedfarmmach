@@ -32,7 +32,12 @@ jobs:
         run: pip install urllib3
 
       - name: Install Node dependencies
-        run: npm ci
+        # 2026-09-02 起 package-lock.json 与 package.json 不同步（缺
+        # @emnapi/core@1.11.3、@emnapi/runtime@1.11.3），npm ci 会以 EUSAGE
+        # 直接失败 → 本工作流自 2026-09-02 起每日停摆。deploy-cn.yml /
+        # deploy-com.yml 已于同日改为 npm install，此处补齐。
+        # 待 lock 在 Linux 环境下重新生成后可改回 npm ci。
+        run: npm install --no-audit --no-fund
 
       - name: Generate Prisma Client
         run: npx prisma generate
