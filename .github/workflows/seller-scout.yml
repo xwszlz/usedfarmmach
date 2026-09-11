@@ -13,6 +13,13 @@ on:
 jobs:
   scrape-and-import:
     runs-on: ubuntu-latest
+    # ⚠️ DATABASE_URL 必须在 job 级声明：step 自己的 env 对它自己的 `if` 不可见
+    # （step 级 env 参与该 step 的环境构建发生在 `if` 判定之后），写在 step 级会让
+    # `if: env.DATABASE_URL != ''` 恒为 false —— 实测 2026-08-13~09-01 共 7 次成功
+    # run，两个 import 步骤 100% skipped、产出从未入库。
+    # 另：仓库 secrets 里并没有 DATABASE_URL，正确名字是 NEON_DATABASE_URL。
+    env:
+      DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -80,25 +87,25 @@ jobs:
           echo "listing_count=$TOTAL" >> $GITHUB_OUTPUT
           echo "📊 总计: $TOTAL 条"
 
+      # 国际数据 = Agriaffaires 等**境外公开行情**，写入 Neon（境外库）合规。
+      # 注意：不要在这里再写 step 级 env: DATABASE_URL，会覆盖掉 job 级、并让 if 失效。
       - name: Import international data to database
         id: import
         if: env.DATABASE_URL != ''
         continue-on-error: true
         run: npx tsx scripts/import-seller-scout.ts
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      - name: Import domestic data to database
-        id: import_domestic
-        if: env.DATABASE_URL != '' && hashFiles('scripts/domestic_sellers_data_v2.json') != ''
-        continue-on-error: true
-        run: npx tsx scripts/import-seller-scout-domestic.ts
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      # 🔴 国内导入**按合规要求停用**，不要打开。
+      # scripts/import-seller-scout-domestic.ts 会把国内卖方数据（含个人联系信息）
+      # 写入 Neon（境外库），撞「中国用户个人数据不得出境」红线。
+      # 国内采集的正路是 ECS 上的采集器直写 cn-postgres。
+      # 脚本保留在仓库中供 ECS 侧复用，本工作流不再调用。
+      - name: Domestic import intentionally disabled (compliance)
+        run: echo "⏭️ 国内导入已按合规要求停用：国内数据由 ECS 采集器写入 cn-postgres，不入 Neon"
 
       - name: Skip import (no DATABASE_URL)
         if: env.DATABASE_URL == ''
-        run: echo "⚠️ DATABASE_URL secret 未配置，跳过数据库导入"
+        run: echo "⚠️ NEON_DATABASE_URL secret 未配置，跳过数据库导入"
 
       - name: Upload scrape data as artifact
         if: always()
