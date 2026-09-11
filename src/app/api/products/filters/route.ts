@@ -8,8 +8,13 @@ import {
   getCountryTranslations,
 } from "@/lib/location-data";
 
-// ISR: 筛选选项几乎不变，每小时更新
-export const revalidate = 3600;
+// ⚠️ 必须动态渲染。本路由不收 request、不用 cookies()/headers()，若只声明 revalidate，
+// Next.js 14 会在 next build 阶段把它当作可静态化的 GET Route Handler 预渲染，
+// 并把结果固化进镜像。.cn 镜像在 CI 内构建时连的是空库（数据不出境，构建期不接生产库），
+// 于是线上恒返回构建期快照 —— 品牌 / 品类 / 地区筛选数组全部为空，
+// 且每次重新部署后都要再等一个 revalidate 周期才有机会自愈。
+// force-dynamic 后不再产生构建期快照，每次请求读活库。
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
