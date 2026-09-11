@@ -92,7 +92,7 @@ export default function RulesClient() {
     },
     {
       q: tr("成交后服务费怎么收？"),
-      a: tr("本功能为信息发布与价格协商撮合服务，平台不收取任何交易服务费、佣金或成交手续费。会员费、AI估值费等属于增值信息服务费，与设备交易无关。买卖双方按合同约定自行完成交易及资金收付。"),
+      a: tr("本功能为信息发布与价格协商撮合服务，不收取交易服务费、佣金或成交手续费。会员费、AI估值费等属于增值信息服务费，与设备交易无关。拍卖等增值服务如需使用，其收费标准以该服务页面公示为准。买卖双方按合同约定自行完成交易及资金收付。"),
     },
   ];
 
@@ -181,13 +181,13 @@ export default function RulesClient() {
                 {tr("信息撮合平台")}
               </span>
               <span className="text-sm text-gray-600">
-                {tr("平台不收取任何交易服务费")}
+                {tr("询价撮合不收取交易服务费")}
               </span>
             </div>
 
             <div className="bg-white rounded-xl p-4 border border-blue-200">
               <p className="text-sm text-gray-700 leading-relaxed mb-3">
-                {tr("本平台定位为农机设备信息发布与交流平台，提供信息展示、AI估值参考等增值服务。平台不参与交易撮合、不代收代付任何交易资金、不收取任何与成交相关的服务费或佣金。买卖双方自行完成交易，资金直接往来。")}
+                {tr("本平台定位为农机设备信息发布与交流平台，提供信息展示、AI估值参考等增值服务。平台不参与设备交易撮合、不代收代付任何交易资金、不就询价撮合收取成交服务费或佣金；拍卖等增值服务如需使用，其收费标准以该服务页面公示为准。买卖双方自行完成交易，资金直接往来。")}
               </p>
             </div>
 
@@ -195,7 +195,7 @@ export default function RulesClient() {
               <div className="bg-white rounded-xl p-4 border border-gray-200">
                 <p className="text-xs text-gray-500 mb-1">{tr("会员服务")}</p>
                 <p className="text-lg font-bold text-gray-900">
-                  {tr("免费 / ¥99 / ¥299 / ¥999")}
+                  {tr("免费 / ¥88 / ¥158 / ¥288")}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
                   {tr("不同等级会员可享受不同的信息查看次数、AI估值次数等增值权益")}
@@ -220,13 +220,13 @@ export default function RulesClient() {
                 <li className="flex items-start gap-2">
                   <span className="flex-shrink-0 mt-1 w-1.5 h-1.5 rounded-full bg-blue-500"></span>
                   <span>
-                    {tr("平台不收取任何与交易相关的服务费、佣金或手续费。交易完全由买卖双方自行协商完成。")}
+                    {tr("询价撮合不收取与交易相关的服务费、佣金或手续费；拍卖等增值服务收费标准以该服务页面公示为准。交易完全由买卖双方自行协商完成。")}
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="flex-shrink-0 mt-1 w-1.5 h-1.5 rounded-full bg-blue-500"></span>
                   <span>
-                    {tr("平台不代收代付任何交易资金，不设资金池，不提供资金托管或担保服务。")}
+                    {tr("平台自身不代收代付交易资金、不设资金池，不自行提供资金托管或担保服务；相关服务（如有）由具备相应资质的机构依法独立提供。")}
                   </span>
                 </li>
                 <li className="flex items-start gap-2">

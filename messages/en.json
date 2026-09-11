@@ -1053,7 +1053,7 @@
       "required": "Required",
       "conditionCardDesc": "Provide 8 condition data points",
       "feeNote": "About Fees",
-      "feeDetail": "This platform only charges value-added service fees. Listing is free.",
+      "feeDetail": "This platform only charges value-added information service fees (not transaction fees or commissions). Listing is free; value-added services are optional paid items. Auction services are conducted by our licensed auction partner, which collects commissions in accordance with the law; the platform charges no transaction commission and does not handle transaction funds.",
       "submit": "Submit Listing",
       "tips": "Tips",
       "tip1": "Ensure accurate condition information",
