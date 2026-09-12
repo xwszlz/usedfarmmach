@@ -27,20 +27,37 @@ export function Navbar({ locale }: NavbarProps) {
   const navItems = mainNav;
 
   useEffect(() => {
-    const userStr = localStorage.getItem("user");
-    if (userStr) {
-      try {
-        const u = JSON.parse(userStr);
-        setUser({
-          role: u.role,
-          email: u.email,
-          membershipTier: u.membershipTier || "free",
-        });
-      } catch {}
-    }
+    let cancelled = false;
+    fetch("/api/auth/me", { credentials: "include" })
+      .then(async (res) => {
+        if (cancelled) return;
+        if (res.ok) {
+          const json = await res.json();
+          if (json?.success && json?.data?.user) {
+            setUser({
+              role: json.data.user.role,
+              email: json.data.user.email,
+              membershipTier: json.data.user.membershipTier || "free",
+            });
+            return;
+          }
+        }
+        setUser(null);
+      })
+      .catch(() => {
+        if (!cancelled) setUser(null);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      /* noop */
+    }
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setUser(null);

@@ -94,15 +94,23 @@ export default function BargainSection({ auctionId, locale, sellerId }: BargainS
   const [showContract, setShowContract] = useState(false);
 
   useEffect(() => {
-    const userStr = typeof window !== "undefined" ? localStorage.getItem("user") : null;
-    if (userStr) {
-      try {
-        const u = JSON.parse(userStr);
-        setCurrentUserId(u.id || null);
-      } catch {
-        /* noop */
-      }
-    }
+    let cancelled = false;
+    fetch("/api/auth/me", { credentials: "include" })
+      .then(async (res) => {
+        if (cancelled) return;
+        if (res.ok) {
+          const json = await res.json();
+          setCurrentUserId(json?.data?.user?.id || null);
+        } else {
+          setCurrentUserId(null);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setCurrentUserId(null);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const fetchBargain = useCallback(async () => {

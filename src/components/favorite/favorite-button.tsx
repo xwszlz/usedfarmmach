@@ -4,12 +4,6 @@ import { translate } from "@/lib/i18n-runtime";
 import { useState, useEffect } from "react";
 import { Heart, Star } from "lucide-react";
 
-function getToken(): string | null {
-  if (typeof document === "undefined") return null;
-  const m = document.cookie.match(/token=([^;]+)/);
-  return m ? decodeURIComponent(m[1]) : null;
-}
-
 export function FavoriteButton({
   productId,
   locale,
@@ -20,15 +14,10 @@ export function FavoriteButton({
   const [isFavorited, setIsFavorited] = useState(false);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    const token = getToken();
-    if (!token) {
-      setLoading(false);
-      return;
-    }
     async function check() {
       try {
         const res = await fetch(`/api/favorites?productId=${productId}`, {
-          headers: { Authorization: `Bearer ${getToken()}` },
+          credentials: "include",
         });
         if (res.ok) {
           const data = await res.json();
@@ -44,29 +33,24 @@ export function FavoriteButton({
   }, [productId]);
 
   async function toggleFavorite() {
-    const token = getToken();
-    if (!token) {
-      window.location.href = `/${locale}/login?redirect=${encodeURIComponent(window.location.pathname)}`;
-      return;
-    }
-
     try {
-      if (isFavorited) {
-        await fetch(`/api/favorites?productId=${productId}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setIsFavorited(false);
-      } else {
-        await fetch(`/api/favorites`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ productId }),
-        });
-        setIsFavorited(true);
+      const res = isFavorited
+        ? await fetch(`/api/favorites?productId=${productId}`, {
+            method: "DELETE",
+            credentials: "include",
+          })
+        : await fetch(`/api/favorites`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ productId }),
+          });
+      if (res.status === 401) {
+        window.location.href = `/${locale}/auth/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+        return;
+      }
+      if (res.ok) {
+        setIsFavorited(!isFavorited);
       }
     } catch {
       // ignore
@@ -106,15 +90,10 @@ export function FollowButton({
   const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    const token = getToken();
-    if (!token) {
-      setLoading(false);
-      return;
-    }
     async function check() {
       try {
         const res = await fetch(`/api/follows?sellerId=${sellerId}`, {
-          headers: { Authorization: `Bearer ${getToken()}` },
+          credentials: "include",
         });
         if (res.ok) {
           const data = await res.json();
@@ -130,29 +109,24 @@ export function FollowButton({
   }, [sellerId]);
 
   async function toggleFollow() {
-    const token = getToken();
-    if (!token) {
-      window.location.href = `/${locale}/login?redirect=${encodeURIComponent(window.location.pathname)}`;
-      return;
-    }
-
     try {
-      if (isFollowing) {
-        await fetch(`/api/follows?sellerId=${sellerId}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setIsFollowing(false);
-      } else {
-        await fetch(`/api/follows`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ sellerId }),
-        });
-        setIsFollowing(true);
+      const res = isFollowing
+        ? await fetch(`/api/follows?sellerId=${sellerId}`, {
+            method: "DELETE",
+            credentials: "include",
+          })
+        : await fetch(`/api/follows`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ sellerId }),
+          });
+      if (res.status === 401) {
+        window.location.href = `/${locale}/auth/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+        return;
+      }
+      if (res.ok) {
+        setIsFollowing(!isFollowing);
       }
     } catch {
       // ignore

@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
+import { clearTokenCookie } from "@/lib/auth";
 
 export async function POST() {
-  return NextResponse.json({ success: true });
+  const response = NextResponse.json({ success: true });
+  clearTokenCookie(response);
+  return response;
 }

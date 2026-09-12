@@ -24,21 +24,31 @@ export function InquiryActions({ productId, productName, locale }: InquiryAction
   const [open, setOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [upgradeUrl, setUpgradeUrl] = useState("");
   const [form, setForm] = useState({ name: "", phone: "", message: "" });
   const l = LABELS[locale] || LABELS.zh;
 
   const scrollToInquiry = () => {
-    document.getElementById("bargain")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const el = document.getElementById("bargain");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      window.location.href = `/${locale}/auth/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.phone) return;
     setLoading(true);
+    setError("");
+    setUpgradeUrl("");
     try {
-      await fetch("/api/inquiries", {
+      const res = await fetch("/api/inquiries", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           productId,
           name: form.name,
@@ -46,9 +56,19 @@ export function InquiryActions({ productId, productName, locale }: InquiryAction
           message: form.message,
         }),
       });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (res.status === 403 && json?.code === "QUOTA_EXCEEDED") {
+          setError(json?.error || "本月额度已用尽");
+          setUpgradeUrl(json?.data?.upgradeUrl || "");
+        } else {
+          setError(json?.error || "提交失败，请稍后重试");
+        }
+        return;
+      }
       setSubmitted(true);
     } catch {
-      /* noop */
+      setError("网络错误，请稍后重试");
     } finally {
       setLoading(false);
     }
@@ -120,6 +140,16 @@ export function InquiryActions({ productId, productName, locale }: InquiryAction
                   className="w-full resize-none rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none"
                 />
                 <div className="rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-700">{l.note}</div>
+                {error && (
+                  <div className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
+                    <p>{error}</p>
+                    {upgradeUrl && (
+                      <a href={upgradeUrl} className="mt-1 inline-block font-medium text-emerald-700 underline">
+                        升级会员
+                      </a>
+                    )}
+                  </div>
+                )}
                 <button
                   type="submit"
                   disabled={loading}

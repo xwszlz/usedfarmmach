@@ -56,8 +56,23 @@ export default function InspectionBookingModal({
   // 检查登录状态
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   useEffect(() => {
-    const userStr = typeof window !== "undefined" ? localStorage.getItem("user") : null;
-    setIsLoggedIn(!!userStr);
+    let cancelled = false;
+    fetch("/api/auth/me", { credentials: "include" })
+      .then(async (res) => {
+        if (cancelled) return;
+        if (res.ok) {
+          const json = await res.json();
+          setIsLoggedIn(!!json?.data?.user);
+        } else {
+          setIsLoggedIn(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setIsLoggedIn(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [isOpen]);
 
   // 重置表单
@@ -90,11 +105,6 @@ export default function InspectionBookingModal({
     setError("");
     try {
       const headers: Record<string, string> = { "Content-Type": "application/json" };
-      const userStr = localStorage.getItem("user");
-      if (userStr) {
-        const u = JSON.parse(userStr);
-        if (u.token) headers["Authorization"] = `Bearer ${u.token}`;
-      }
 
       const res = await fetch(`/api/auctions/${auctionId}/inspection-booking`, {
         method: "POST",
@@ -129,12 +139,7 @@ export default function InspectionBookingModal({
       const formData = new FormData();
       formData.append("file", file);
 
-      const userStr = localStorage.getItem("user");
       const headers: Record<string, string> = {};
-      if (userStr) {
-        const u = JSON.parse(userStr);
-        if (u.token) headers["Authorization"] = `Bearer ${u.token}`;
-      }
 
       const res = await fetch("/api/upload", {
         method: "POST",
