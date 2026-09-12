@@ -116,18 +116,13 @@ export function SellerContactCard({ productId, locale }: { productId: string; lo
   const [authed, setAuthed] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setAuthed(false);
-      return;
-    }
     let cancelled = false;
     fetch(`/api/products/${productId}/contact`, {
-      headers: { Authorization: `Bearer ${token}` },
+      credentials: "include",
     })
       .then(async (r) => {
         if (cancelled) return;
-        if (r.status === 401) {
+        if (!r.ok) {
           setAuthed(false);
           return;
         }
