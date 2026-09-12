@@ -24,8 +24,8 @@ export function FloatingBargainAd({ locale = "zh" }: { locale?: string }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    // Don't show on auction pages (would be redundant)
-    if (pathname.includes("/auctions")) return;
+    // Don't show on auction pages or product detail pages (would be redundant)
+    if (/\/auctions|\/products\//.test(pathname)) return;
     // Respect the per-session dismissal
     if (sessionStorage.getItem(DISMISS_KEY) === "1") return;
 
