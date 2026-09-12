@@ -100,9 +100,16 @@ export default function BoothManageClient({ locale }: BoothManageClientProps) {
   }
 
   async function handleLogout() {
-    await fetch("/api/auth/logout");
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      /* noop */
+    }
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
     setUser(null);
     setBooth(null);
+    window.location.href = `/${locale}`;
   }
 
   async function saveShowcaseItem(item: Partial<ShowcaseItem>) {

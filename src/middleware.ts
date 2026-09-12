@@ -159,7 +159,7 @@ export async function middleware(request: NextRequest) {
         { status: 401 }
       );
     }
-    const loginUrl = new URL(`/${site === "cn" ? "zh" : "en"}/login`, request.url);
+    const loginUrl = new URL(`/${site === "cn" ? "zh" : "en"}/auth/login`, request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }
@@ -173,7 +173,7 @@ export async function middleware(request: NextRequest) {
         { status: 401 }
       );
     }
-    const loginUrl = new URL(`/${site === "cn" ? "zh" : "en"}/login`, request.url);
+    const loginUrl = new URL(`/${site === "cn" ? "zh" : "en"}/auth/login`, request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }
