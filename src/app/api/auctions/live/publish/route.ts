@@ -4,7 +4,7 @@
  * 权限：平台管理员  站点：仅 .cn
  *
  * 状态机：LIVE_DRAFT/active → LIVE_OPEN（报名+保证金）→ LIVE_BIDDING（竞价）
- * 前置：auctionMode=LIVE、已指派 auctioneerId、已设 reservePrice（保留价）。
+ * 前置：auctionMode=LIVE、已指派 auctioneerId、已设 reservePrice（保留价）、已指定落槌主体（licensedAgencyId），且落槌机构与拍卖师归属机构一致且为 ACTIVE。
  * 资金：本接口不碰钱；保证金与结算见 deposit / settle 路由（路径C 持牌代收代付）。
  */
 import { NextRequest, NextResponse } from "next/server";
@@ -45,6 +45,42 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
   if (auction.reservePrice == null) {
     return NextResponse.json({ success: false, error: "未设置保留价（reservePrice）" }, { status: 400 });
+  }
+  if (!auction.licensedAgencyId) {
+    return NextResponse.json(
+      { success: false, error: "该场拍卖未指定落槌主体（合作持牌拍卖机构），不得开竞价" },
+      { status: 400 }
+    );
+  }
+  // 合规红线 #1：落槌主体须与主持拍卖师归属机构一致且机构为 ACTIVE —— 在「开竞价」环节就拦住，
+  // 避免场次先开放报名 / 收保证金、到落槌时才发现无合法落槌主体（届时既不能落槌也不能流拍）。
+  const [host, agency] = await Promise.all([
+    prisma.auctioneer.findUnique({
+      where: { id: auction.auctioneerId },
+      select: { licensedAgencyId: true },
+    }),
+    prisma.licensedAuctionAgency.findUnique({
+      where: { id: auction.licensedAgencyId },
+      select: { status: true, name: true },
+    }),
+  ]);
+  if (!host || host.licensedAgencyId !== auction.licensedAgencyId) {
+    return NextResponse.json(
+      { success: false, error: "主持拍卖师所属机构与该场落槌机构不一致，不得开竞价（不得跨机构主持）" },
+      { status: 409 }
+    );
+  }
+  if (!agency) {
+    return NextResponse.json(
+      { success: false, error: "落槌主体（合作持牌拍卖机构）档案不存在" },
+      { status: 400 }
+    );
+  }
+  if (agency.status !== "ACTIVE") {
+    return NextResponse.json(
+      { success: false, error: `合作持牌拍卖机构「${agency.name}」当前状态为 ${agency.status}，不得开竞价` },
+      { status: 403 }
+    );
   }
   if (!PRE_OPEN.includes(auction.status)) {
     return NextResponse.json(
