@@ -145,7 +145,10 @@ export async function middleware(request: NextRequest) {
   }
 
   // 跳过非保护路径
-  const isProtected = PROTECTED_PATHS.some((p) => pathname.startsWith(p));
+  // 🔒 localePrefix: "always" 下 pathname 恒为 /<locale>/...，
+  // 必须先剥离 locale 前缀再匹配，否则 /zh/admin 永远匹不上 /admin。
+  const pathnameWithoutLocale = pathname.replace(/^\/(zh|en|ru|es|pt|ar|fr|hi)(?=\/|$)/, "");
+  const isProtected = PROTECTED_PATHS.some((p) => pathnameWithoutLocale.startsWith(p));
   if (!isProtected) {
     return intlResponse;
   }
@@ -179,7 +182,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // 检查管理员权限
-  const isAdminPath = ADMIN_PATHS.some((p) => pathname.startsWith(p));
+  const isAdminPath = ADMIN_PATHS.some((p) => pathnameWithoutLocale.startsWith(p));
   if (isAdminPath && !ADMIN_ROLES.includes(payload.role)) {
     return NextResponse.json(
       { success: false, error: "Forbidden: admin only" },
@@ -188,7 +191,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // super_admin 专属路径收紧
-  const isSuperAdminPath = SUPER_ADMIN_PATHS.some((p) => pathname.startsWith(p));
+  const isSuperAdminPath = SUPER_ADMIN_PATHS.some((p) => pathnameWithoutLocale.startsWith(p));
   if (isSuperAdminPath && payload.role !== "super_admin") {
     return NextResponse.json(
       { success: false, error: "Forbidden: super admin only" },

@@ -16,19 +16,22 @@ function getTokenFromHeaders(headersList: Headers) {
 
 export default async function AdminLayout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params: Promise<{ locale: string }>;
 }) {
+  const { locale } = await params;
   const headersList = headers();
   const token = getTokenFromHeaders(headersList);
 
   if (!token) {
-    redirect("/");
+    redirect(`/${locale}/auth/login?redirect=${encodeURIComponent(`/${locale}/admin`)}`);
   }
 
   const payload = verifyToken(token);
   if (!payload) {
-    redirect("/");
+    redirect(`/${locale}/auth/login?redirect=${encodeURIComponent(`/${locale}/admin`)}`);
   }
 
   const user = await prisma.user.findUnique({
@@ -37,7 +40,7 @@ export default async function AdminLayout({
   });
 
   if (!user || !["admin", "super_admin", "editor"].includes(user.role)) {
-    redirect("/");
+    redirect(`/${locale}/auth/login?redirect=${encodeURIComponent(`/${locale}/admin`)}`);
   }
 
   return (
