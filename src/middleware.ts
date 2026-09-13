@@ -61,6 +61,46 @@ function getTokenFromRequest(request: NextRequest): string | null {
   return cookie || null;
 }
 
+/**
+ * 构造“已放行”下游响应，并注入用户信息头。
+ *
+ * ⚠️ 关键：当请求经过 next-intl 中间件（intlResponse 存在）时，
+ * 必须把 intlResponse 上的 `x-middleware-*` 请求头（尤其
+ * `x-middleware-request-x-next-intl-locale`）一并带到最终响应，
+ * 否则页面在渲染期由 next-intl 解析 locale 失败会触发 notFound() → 404。
+ * （历史缺陷：此前用 `new Headers(request.headers)` 重建响应，丢掉了该头。）
+ */
+function nextResponseWithUser(
+  request: NextRequest,
+  payload: { userId: string; role: string },
+  intlResponse?: NextResponse
+): NextResponse {
+  const response = NextResponse.next({
+    request: { headers: new Headers(request.headers) },
+  });
+
+  // 保留 next-intl 注入的内部中间件头（含 locale / rewrite / override-headers）
+  if (intlResponse) {
+    intlResponse.headers.forEach((value, key) => {
+      if (key.toLowerCase().startsWith("x-middleware-")) {
+        response.headers.set(key, value);
+      }
+    });
+  }
+
+  // 注入用户信息（以 Next 的 x-middleware-request-* 约定下发）
+  const existingOverride = response.headers.get("x-middleware-override-headers");
+  const extra = "x-user-id,x-user-role";
+  response.headers.set(
+    "x-middleware-override-headers",
+    existingOverride ? `${existingOverride},${extra}` : extra
+  );
+  response.headers.set("x-middleware-request-x-user-id", payload.userId);
+  response.headers.set("x-middleware-request-x-user-role", payload.role);
+
+  return response;
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const host = request.headers.get("host") || "";
@@ -124,13 +164,7 @@ export async function middleware(request: NextRequest) {
       );
     }
 
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set("x-user-id", payload.userId);
-    requestHeaders.set("x-user-role", payload.role);
-
-    return NextResponse.next({
-      request: { headers: requestHeaders },
-    });
+    return nextResponseWithUser(request, payload);
   }
 
   // ============================================================
@@ -199,14 +233,8 @@ export async function middleware(request: NextRequest) {
     );
   }
 
-  // 在请求头中传递用户信息
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-user-id", payload.userId);
-  requestHeaders.set("x-user-role", payload.role);
-
-  return NextResponse.next({
-    request: { headers: requestHeaders },
-  });
+  // 在请求头中传递用户信息，并保留 next-intl 的内部头（否则页面会 404）
+  return nextResponseWithUser(request, payload, intlResponse);
 }
 
 export const config = {
