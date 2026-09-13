@@ -1,11 +1,12 @@
 import { MetadataRoute } from "next";
+import { siteConfig } from "@/config/site";
 import { prisma } from "@/lib/db";
 import { toSlug } from "@/lib/slug";
 
-// ISR: 每天重新生成站点地图
-export const revalidate = 86400;
+// 动态生成站点地图（force-dynamic）：每次请求读真实 DB，避免构建期空库快照被缓存。
+export const dynamic = "force-dynamic";
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || `https://${siteConfig.domains.primary}`;
 const locales = ["zh", "en", "ru", "es", "pt", "ar", "fr", "hi"];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
