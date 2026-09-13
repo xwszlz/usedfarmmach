@@ -24,7 +24,7 @@ export async function POST(
 
     const bargain = await prisma.auction.findUnique({
       where: { id: params.id },
-      select: { id: true, sellerId: true, status: true, sellerQuoteAmount: true, title: true, seller: { select: { id: true, email: true } } },
+      select: { id: true, sellerId: true, status: true, sellerQuoteAmount: true, title: true, seller: { select: { id: true, email: true, preferredLanguage: true } } },
     });
     if (!bargain) return NextResponse.json({ error: "Bargain not found" }, { status: 404 });
     if (bargain.status !== "active") {
@@ -63,6 +63,8 @@ export async function POST(
       body: `${bargain.title}：成交价 ¥${bargain.sellerQuoteAmount.toLocaleString()}`,
       link: "/seller/inquiries",
       email: bargain.seller.email,
+      origin: request.nextUrl.origin,
+      locale: bargain.seller.preferredLanguage || "zh",
     });
 
     return NextResponse.json({ success: true, data: updated, message: "Deal made" });

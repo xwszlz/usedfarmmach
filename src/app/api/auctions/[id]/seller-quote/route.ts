@@ -54,7 +54,7 @@ export async function POST(
     // 通知所有已报价买家（去重）
     const bids = await prisma.bid.findMany({
       where: { auctionId: params.id },
-      select: { bidderId: true, bidder: { select: { id: true, email: true } } },
+      select: { bidderId: true, bidder: { select: { id: true, email: true, preferredLanguage: true } } },
       distinct: ["bidderId"],
     });
     for (const b of bids) {
@@ -65,6 +65,8 @@ export async function POST(
         body: `${bargain.title}：卖家还价 ¥${parseFloat(amount).toLocaleString()}${message ? ` — ${message}` : ""}`,
         link: "/auctions/my-offers",
         email: b.bidder.email,
+        origin: request.nextUrl.origin,
+        locale: b.bidder.preferredLanguage || "zh",
       });
     }
 
