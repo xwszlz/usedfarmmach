@@ -2,7 +2,7 @@
  * POST  /api/agents/export-compliance   触发出口合规分析
  * GET   /api/agents/export-compliance   查询 Agent 支持的国家/品牌/HS编码
  *
- * Auth：Bearer CRON_API_KEY（生产）/ 开放（dev）
+ * Auth：Bearer CRON_API_KEY（必填；env 缺失即 fail-closed，无开发环境放行）
  *
  * Body (POST):
  *   {

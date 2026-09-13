@@ -2,7 +2,7 @@
  * POST  /api/agents/price-intel   触发 Agent 跑一次
  * GET   /api/agents/price-intel   查询状态
  *
- * Auth：Bearer CRON_API_KEY（生产）/ 开放（dev）
+ * Auth：Bearer CRON_API_KEY（必填；env 缺失即 fail-closed，无开发环境放行）
  *
  * Body:
  *   {
