@@ -7,7 +7,8 @@ import { AuditLogTable } from "./AuditLogTable";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminAuditPage() {
+export default async function AdminAuditPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
   // 仅 super_admin 可见
   const headersList = headers();
   const token = (() => {
@@ -29,7 +30,7 @@ export default async function AdminAuditPage() {
       role = u?.role ?? null;
     }
   }
-  if (role !== "super_admin") redirect("/admin");
+  if (role !== "super_admin") redirect(`/${locale}/admin`);
 
   const t = await getTranslations("adminSystem");
   return (

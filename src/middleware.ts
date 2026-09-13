@@ -148,6 +148,10 @@ export async function middleware(request: NextRequest) {
   // 🔒 localePrefix: "always" 下 pathname 恒为 /<locale>/...，
   // 必须先剥离 locale 前缀再匹配，否则 /zh/admin 永远匹不上 /admin。
   const pathnameWithoutLocale = pathname.replace(/^\/(zh|en|ru|es|pt|ar|fr|hi)(?=\/|$)/, "");
+  // 登录跳转语种：优先取「用户实际访问路径」里的 locale，
+  // 取不到（裸路径 /、/seller、/api/... 等无 locale 前缀）时回退到按站点默认语种。
+  const pathnameLocale = pathname.match(/^\/(zh|en|ru|es|pt|ar|fr|hi)(?=\/|$)/)?.[1];
+  const loginLocale = pathnameLocale ?? (site === "cn" ? "zh" : "en");
   const isProtected = PROTECTED_PATHS.some((p) => pathnameWithoutLocale.startsWith(p));
   if (!isProtected) {
     return intlResponse;
@@ -162,7 +166,7 @@ export async function middleware(request: NextRequest) {
         { status: 401 }
       );
     }
-    const loginUrl = new URL(`/${site === "cn" ? "zh" : "en"}/auth/login`, request.url);
+    const loginUrl = new URL(`/${loginLocale}/auth/login`, request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }
@@ -176,7 +180,7 @@ export async function middleware(request: NextRequest) {
         { status: 401 }
       );
     }
-    const loginUrl = new URL(`/${site === "cn" ? "zh" : "en"}/auth/login`, request.url);
+    const loginUrl = new URL(`/${loginLocale}/auth/login`, request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }

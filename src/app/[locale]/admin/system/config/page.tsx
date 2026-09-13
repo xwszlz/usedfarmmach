@@ -7,7 +7,8 @@ import { getSystemConfig } from "@/lib/admin/system";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminConfigPage() {
+export default async function AdminConfigPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
   // 仅 super_admin 可见（双层校验）
   const headersList = headers();
   const token = (() => {
@@ -29,7 +30,7 @@ export default async function AdminConfigPage() {
       role = u?.role ?? null;
     }
   }
-  if (role !== "super_admin") redirect("/admin");
+  if (role !== "super_admin") redirect(`/${locale}/admin`);
 
   const cfg = getSystemConfig();
   const t = await getTranslations("adminSystem");

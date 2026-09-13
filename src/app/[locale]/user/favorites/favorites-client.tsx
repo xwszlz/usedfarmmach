@@ -306,7 +306,7 @@ function EmptyState({ icon: Icon, text, isZh, locale }: { icon: typeof Heart; te
       <Icon className="mb-3 h-12 w-12 opacity-30" />
       <p className="text-sm">{text}</p>
       <Link
-        href={isZh ? "/zh/products" : "/en/products"}
+        href={`/${locale}/products`}
         className="mt-4 text-sm text-primary-600 hover:text-primary-700"
       >
         {translate("去浏览农机 →", locale)}

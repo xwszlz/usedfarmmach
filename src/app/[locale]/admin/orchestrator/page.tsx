@@ -9,7 +9,12 @@ export const metadata = {
   description: "智能体群协同控制中心",
 };
 
-export default async function OrchestratorPage() {
+export default async function OrchestratorPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
   // Editor 角色不能访问此页面
   const headersList = headers();
   const token = (() => {
@@ -24,7 +29,7 @@ export default async function OrchestratorPage() {
     if (payload) {
       const user = await prisma.user.findUnique({ where: { id: payload.userId }, select: { role: true } });
       if (user?.role === "editor") {
-        redirect("/admin/products");
+        redirect(`/${locale}/admin/products`);
       }
     }
   }

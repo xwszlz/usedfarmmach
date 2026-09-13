@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Upload, FileSpreadsheet, CheckCircle, XCircle, Loader2, Download, AlertCircle } from "lucide-react";
 import Link from "next/link";
+import { useLocale } from "next-intl";
 
 interface Booth {
   id: string;
@@ -34,6 +35,7 @@ const FIELD_HELP: Record<string, string> = {
 };
 
 export default function BatchImportPage() {
+  const locale = useLocale();
   const [booths, setBooths] = useState<Booth[]>([]);
   const [selectedBooth, setSelectedBooth] = useState("");
   const [csvText, setCsvText] = useState("");
@@ -124,7 +126,7 @@ export default function BatchImportPage() {
     <div className="mx-auto max-w-4xl px-4 py-8">
       {/* Header */}
       <div className="mb-6">
-        <Link href="/zh/admin/expo" className="mb-3 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700">
+        <Link href={`/${locale}/admin/expo`} className="mb-3 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700">
           ← 返回博览会管理
         </Link>
         <h1 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
@@ -235,7 +237,7 @@ export default function BatchImportPage() {
             <div className="mt-3 flex items-center gap-2 rounded-lg bg-green-50 p-3 text-sm text-green-700">
               <CheckCircle className="h-4 w-4" />
               成功导入 {results.summary.success} 台设备，可前往
-              <Link href="/zh/admin/expo" className="underline">博览会管理</Link>
+              <Link href={`/${locale}/admin/expo`} className="underline">博览会管理</Link>
               查看
             </div>
           )}

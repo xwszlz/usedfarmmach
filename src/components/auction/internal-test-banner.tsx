@@ -16,6 +16,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useLocale } from "next-intl";
 
 interface InternalTestBannerProps {
   site: "com" | "cn";
@@ -25,6 +26,7 @@ const DISMISS_KEY = "sd_auction_internal_test_banner_dismissed";
 
 export function InternalTestBanner({ site }: InternalTestBannerProps) {
   // 初始显示，挂载后若已收起则隐藏（避免 SSR/CSR 水合不一致）
+  const locale = useLocale();
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
@@ -63,10 +65,10 @@ export function InternalTestBanner({ site }: InternalTestBannerProps) {
             <p>
               • 后台拍卖师挂靠录入：
               <Link
-                href="/zh/admin/auctioneers"
+                href={`/${locale}/admin/auctioneers`}
                 className="underline hover:text-amber-700"
               >
-                /zh/admin/auctioneers
+                {`/${locale}/admin/auctioneers`}
               </Link>
             </p>
             {!isCn && (

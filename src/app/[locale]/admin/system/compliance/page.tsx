@@ -7,7 +7,8 @@ import { getComplianceMetrics } from "@/lib/admin/system";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminCompliancePage() {
+export default async function AdminCompliancePage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
   // 仅 super_admin 可见（双层校验）
   const headersList = headers();
   const token = (() => {
@@ -29,7 +30,7 @@ export default async function AdminCompliancePage() {
       role = u?.role ?? null;
     }
   }
-  if (role !== "super_admin") redirect("/admin");
+  if (role !== "super_admin") redirect(`/${locale}/admin`);
 
   const m = await getComplianceMetrics();
   const t = await getTranslations("adminSystem");

@@ -1,7 +1,12 @@
 import { FileText, CheckCircle, AlertTriangle, DollarSign, Camera, MessageCircle } from "lucide-react";
 import Link from "next/link";
 
-export default function PublishGuidePage() {
+export default async function PublishGuidePage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
       <div className="mb-8 text-center">
@@ -101,7 +106,7 @@ export default function PublishGuidePage() {
       {/* 开始发布 */}
       <div className="text-center">
         <Link
-          href="/zh/seller/products/new"
+          href={`/${locale}/seller/products/new`}
           className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-6 py-3 text-sm font-medium text-white hover:bg-primary-700"
         >
           立即发布产品

@@ -19,11 +19,16 @@ function getTokenFromHeaders(headersList: Headers): string | null {
   return m ? decodeURIComponent(m[1]) : null;
 }
 
-export default async function AdminViewsAnalyticsPage() {
+export default async function AdminViewsAnalyticsPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
   const token = getTokenFromHeaders(headers());
   const payload = token ? verifyToken(token) : null;
   if (!payload || !["admin", "super_admin"].includes(payload.role)) {
-    redirect("/");
+    redirect(`/${locale}`);
   }
 
   return <ViewsAnalyticsClient role={payload.role} variant="admin" />;
