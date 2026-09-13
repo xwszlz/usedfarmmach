@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
 import { Shield, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
@@ -19,6 +20,7 @@ export function EscrowPurchaseButton({
   price,
 }: EscrowPurchaseButtonProps) {
   const router = useRouter();
+  const locale = useLocale();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("wechat");
@@ -47,7 +49,7 @@ export function EscrowPurchaseButton({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           orderId: data.data.orderId,
-          returnUrl: `${window.location.origin}/escrow/${data.data.orderId}`,
+          returnUrl: `${window.location.origin}/${locale}/escrow/${data.data.orderId}`,
         }),
       });
       const payData = await payRes.json();
@@ -60,7 +62,7 @@ export function EscrowPurchaseButton({
       if (paymentMethod === "alipay" && payData.data.pay_url) {
         window.location.href = payData.data.pay_url;
       } else if (paymentMethod === "wechat" && payData.data.code_url) {
-        router.push(`/escrow/${data.data.orderId}?code_url=${encodeURIComponent(payData.data.code_url)}`);
+        router.push(`/${locale}/escrow/${data.data.orderId}?code_url=${encodeURIComponent(payData.data.code_url)}`);
       }
     } catch (err: any) {
       setError(err.message || "创建订单失败");

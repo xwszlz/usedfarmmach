@@ -375,14 +375,14 @@ export default function PartsClient({ locale, initialCatalogTree }: PartsClientP
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               <a
-                href="/about#contact"
+                href={`/${locale}/about#contact`}
                 className="inline-flex items-center gap-2 rounded-xl bg-white text-orange-600 px-7 py-3.5 font-bold hover:bg-orange-50 transition-colors shadow-lg"
               >
                 {translate("提交需求", locale)}
                 <ArrowRight className="h-4 w-4" />
               </a>
               <a
-                href="/products"
+                href={`/${locale}/products`}
                 className="inline-flex items-center gap-2 rounded-xl bg-white/20 backdrop-blur text-white px-7 py-3.5 font-medium hover:bg-white/30 transition-colors border border-white/30"
               >
                 {translate("浏览农机", locale)}

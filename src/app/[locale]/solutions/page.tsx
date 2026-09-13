@@ -309,7 +309,7 @@ export default async function SolutionsPage({
                         {solution.brands.map((brand) => (
                           <Link
                             key={brand}
-                            href={`/brand/${brand.toLowerCase().replace(/\s+/g, "-")}`}
+                            href={`/${locale}/brand/${brand.toLowerCase().replace(/\s+/g, "-")}`}
                             className="rounded-lg bg-white px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 border border-gray-200"
                           >
                             {brand}
@@ -320,7 +320,7 @@ export default async function SolutionsPage({
 
                     {/* CTA */}
                     <Link
-                      href={`/products?solution=${solution.id}`}
+                      href={`/${locale}/products?solution=${solution.id}`}
                       className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900"
                     >
                       {translate("查看相关设备", locale)}

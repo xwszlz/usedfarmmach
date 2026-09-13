@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
 import { Shield, Package, Clock, CheckCircle2, AlertTriangle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,6 +32,7 @@ const STATUS_MAP: Record<string, { label: string; color: string; icon: any }> = 
 
 export default function EscrowOrdersPage() {
   const router = useRouter();
+  const locale = useLocale();
   const [orders, setOrders] = useState<EscrowOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState("all");
@@ -81,7 +83,7 @@ export default function EscrowOrdersPage() {
             const Icon = si.icon;
             return (
               <Card key={order.id} className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => router.push(`/escrow/${order.id}`)}>
+                onClick={() => router.push(`/${locale}/escrow/${order.id}`)}>
                 <CardContent className="flex items-center gap-4 py-4">
                   <div className="w-16 h-16 rounded-lg bg-gray-100 flex-shrink-0 overflow-hidden">
                     {order.product.images[0] && (
