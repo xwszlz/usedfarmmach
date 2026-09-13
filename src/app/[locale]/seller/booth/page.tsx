@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
 import Link from "next/link";
 import {
   Store, Upload, Save, Eye, Package, Trash2, Plus, ArrowUp, ArrowDown,
@@ -66,6 +67,7 @@ const HALL_NAMES: Record<string, string> = {
 
 export default function SellerBoothPage() {
   const router = useRouter();
+  const locale = useLocale();
   const [booths, setBooths] = useState<Booth[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -77,7 +79,7 @@ export default function SellerBoothPage() {
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
   const fetchBooths = useCallback(async () => {
-    if (!token) { router.push("/zh/auth/login"); return; }
+    if (!token) { router.push(`/${locale}/auth/login`); return; }
     try {
       const res = await fetch("/api/seller/booth", { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
@@ -214,7 +216,7 @@ export default function SellerBoothPage() {
           <p className="mt-2 text-sm text-gray-500">
             展位由管理员分配。请联系管理员或在招商意向表中提交申请，获得展位后即可在此管理您的线上展厅。
           </p>
-          <Link href="/zh/expo#inquiry-form" className="mt-6 inline-block rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700">
+          <Link href={`/${locale}/expo#inquiry-form`} className="mt-6 inline-block rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700">
             申请参展
           </Link>
         </div>
@@ -237,7 +239,7 @@ export default function SellerBoothPage() {
         </div>
         <div className="flex items-center gap-2">
           {saved && <span className="flex items-center gap-1 text-sm text-green-600"><CheckCircle className="h-4 w-4" />已保存</span>}
-          <Link href={`/zh/expo/booth/${booth.id}`} target="_blank"
+          <Link href={`/${locale}/expo/booth/${booth.id}`} target="_blank"
             className="flex items-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
             <Eye className="h-4 w-4" />预览 <ExternalLink className="h-3 w-3" />
           </Link>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { useLocale } from "next-intl";
 import {
   Play,
   Pause,
@@ -98,6 +99,7 @@ const runStatusIcons: Record<RunStatus, React.ReactNode> = {
 // ── 主组件 ──
 
 export function OrchestratorDashboard() {
+  const locale = useLocale();
   const [data, setData] = useState<OrchestratorData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -214,7 +216,7 @@ export function OrchestratorDashboard() {
             </button>
             {error.includes("401") && (
               <a
-                href="/zh/auth/login?redirect=/zh/admin/orchestrator"
+                href={`/${locale}/auth/login?redirect=/${locale}/admin/orchestrator`}
                 className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
               >
                 重新登录

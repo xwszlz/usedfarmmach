@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { ArrowLeft, Loader2, CheckCircle, AlertCircle, Camera, Video, Plus, X, Sparkles, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import SellerAiAssistant from "@/components/seller/ai-assistant";
@@ -30,6 +30,7 @@ const PHOTO_SUGGESTIONS = [
 
 export default function NewProductPage() {
   const router = useRouter();
+  const locale = useLocale();
   // P0 增长方案 2026-09-06：表单 24 字段 → 8 必填 + 选填折叠区；估值 prefill 提示条
   const t = useTranslations("sellerPublish");
   const [brands, setBrands] = useState<{ id: string; nameZh: string }[]>([]);
@@ -763,7 +764,7 @@ export default function NewProductPage() {
 
       if (data.success) {
         setResult({ success: true, message: `发布成功！剩余 ${data.creditsRemaining} 积分` });
-        setTimeout(() => router.push("/zh/seller/products"), 2500);
+        setTimeout(() => router.push(`/${locale}/seller/products`), 2500);
       } else if (res.status === 401) {
         setResult({ success: false, message: "请先登录后再发布" });
       } else if (res.status === 403) {
@@ -793,7 +794,7 @@ export default function NewProductPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <Link href="/zh/seller/products" className="mb-6 flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700">
+      <Link href={`/${locale}/seller/products`} className="mb-6 flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700">
         <ArrowLeft className="h-4 w-4" /> 返回产品列表
       </Link>
 

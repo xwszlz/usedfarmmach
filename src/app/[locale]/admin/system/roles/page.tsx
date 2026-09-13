@@ -8,7 +8,8 @@ import { RoleManager } from "./RoleManager";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminRolesPage() {
+export default async function AdminRolesPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
   // 仅 super_admin 可见（双层：middleware 网关 + 此处再校验）
   const headersList = headers();
   const token = (() => {
@@ -30,7 +31,7 @@ export default async function AdminRolesPage() {
       role = u?.role ?? null;
     }
   }
-  if (role !== "super_admin") redirect("/admin");
+  if (role !== "super_admin") redirect(`/${locale}/admin`);
 
   const users = await prisma.user.findMany({
     orderBy: { createdAt: "desc" },

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useLocale } from "next-intl";
 import { Plus, Package, Clock, MapPin, DollarSign, Eye, BookOpen } from "lucide-react";
 
 interface SellerProduct {
@@ -19,6 +20,7 @@ interface SellerProduct {
 }
 
 export default function SellerProductsPage() {
+  const locale = useLocale();
   const [products, setProducts] = useState<SellerProduct[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -44,13 +46,13 @@ export default function SellerProductsPage() {
         </div>
         <div className="flex items-center gap-3">
           <Link
-            href="/zh/seller/guide"
+            href={`/${locale}/seller/guide`}
             className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700"
           >
             <BookOpen className="h-4 w-4" /> 发布指引
           </Link>
           <Link
-            href="/zh/seller/products/new"
+            href={`/${locale}/seller/products/new`}
             className="flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
           >
             <Plus className="h-4 w-4" /> 发布新产品
@@ -62,7 +64,7 @@ export default function SellerProductsPage() {
         <div className="rounded-xl border-2 border-dashed border-gray-200 py-20 text-center">
           <Package className="mx-auto mb-4 h-12 w-12 text-gray-300" />
           <p className="text-gray-500">还没有发布产品</p>
-          <Link href="/zh/seller/products/new" className="mt-4 inline-block text-sm font-medium text-primary-600 hover:text-primary-700">
+          <Link href={`/${locale}/seller/products/new`} className="mt-4 inline-block text-sm font-medium text-primary-600 hover:text-primary-700">
             立即发布第一台产品
           </Link>
         </div>
@@ -92,7 +94,7 @@ export default function SellerProductsPage() {
                 {p.status === "active" ? "在售" : p.status}
               </span>
               <Link
-                href={`/zh/seller/products/${p.id}/edit`}
+                href={`/${locale}/seller/products/${p.id}/edit`}
                 className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-600 hover:bg-blue-100"
               >
                 编辑

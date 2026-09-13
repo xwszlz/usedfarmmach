@@ -7,7 +7,12 @@ import { UsersTable, type AdminUserRow } from "./users-table";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminUsersPage() {
+export default async function AdminUsersPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
   // 角色门禁：仅 admin / super_admin 可进入用户管理（T07 收紧）
   const headersList = headers();
   const token = (() => {
@@ -32,10 +37,10 @@ export default async function AdminUsersPage() {
 
   // editor 继续重定向到商品管理；其余非 admin / super_admin 角色一律拒绝进入
   if (viewerRole === "editor") {
-    redirect("/admin/products");
+    redirect(`/${locale}/admin/products`);
   }
   if (!["admin", "super_admin"].includes(viewerRole ?? "")) {
-    redirect("/");
+    redirect(`/${locale}`);
   }
 
   const users = await prisma.user.findMany({

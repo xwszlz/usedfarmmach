@@ -5,7 +5,12 @@ import { verifyToken } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminDashboard() {
+export default async function AdminDashboard({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
   const headersList = headers();
   const token = (() => {
     const auth = headersList.get("authorization");
@@ -19,7 +24,7 @@ export default async function AdminDashboard() {
     if (payload) {
       const user = await prisma.user.findUnique({ where: { id: payload.userId }, select: { role: true } });
       if (user?.role === "editor") {
-        redirect("/admin/products");
+        redirect(`/${locale}/admin/products`);
       }
     }
   }

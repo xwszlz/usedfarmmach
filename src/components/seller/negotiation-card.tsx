@@ -185,7 +185,7 @@ export default function NegotiationCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <Link
-              href={`/zh/products/${auction.product.id}`}
+              href={`/${localeHook}/products/${auction.product.id}`}
               className="font-semibold text-gray-900 hover:text-[#1E40AF] hover:underline truncate"
             >
               {productName}
