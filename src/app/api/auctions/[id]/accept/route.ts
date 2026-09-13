@@ -53,7 +53,7 @@ export async function POST(
     // 验证报价属于此询价
     const bid = await prisma.bid.findFirst({
       where: { id: bidId, auctionId: params.id },
-      include: { bidder: { select: { id: true, email: true } } },
+      include: { bidder: { select: { id: true, email: true, preferredLanguage: true } } },
     });
 
     if (!bid) {
@@ -86,6 +86,8 @@ export async function POST(
       body: `成交价 ¥${bid.amount.toLocaleString()}。请与卖家联系看货与交付事宜。`,
       link: "/auctions/my-offers",
       email: bid.bidder.email,
+      origin: request.nextUrl.origin,
+      locale: bid.bidder.preferredLanguage || "zh",
     });
 
     return NextResponse.json({

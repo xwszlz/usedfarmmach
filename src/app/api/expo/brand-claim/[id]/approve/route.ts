@@ -113,6 +113,9 @@ export async function POST(
     let emailSent = false;
     let emailSkippedReason: string | undefined;
     const recipientEmail = emailValid ? (claim.email ?? "") : "";
+    // 邮件链接站点感知 + 收件人语种（ExpoRegistration.locale，缺省 zh）
+    const mailOrigin = request.nextUrl.origin;
+    const mailLocale = claim.locale || "zh";
 
     if (emailValid) {
       try {
@@ -130,10 +133,10 @@ export async function POST(
             <li>登录密码：${rawPassword}</li>
           </ul>
           <p>登录后即可管理您的展品、查看询盘。</p>
-          <p><a href="https://usedfarmmach.com/zh/expo/booth/${booth.id}" style="background:#16a34a;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:16px;">进入我的展台 →</a></p>
+          <p><a href="${mailOrigin}/${mailLocale}/expo/booth/${booth.id}" style="background:#16a34a;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:16px;">进入我的展台 →</a></p>
           <p style="margin-top:24px;color:#666;font-size:12px;">建议首次登录后立即修改密码。</p>
         `,
-          text: `祝贺您！${brandName} 已成功入驻神雕农机始终展。\n登录账号：${username}\n登录密码：${rawPassword}\n\n登录后管理展品：https://usedfarmmach.com/zh/expo/booth/manage`,
+          text: `祝贺您！${brandName} 已成功入驻神雕农机始终展。\n登录账号：${username}\n登录密码：${rawPassword}\n\n登录后管理展品：${mailOrigin}/${mailLocale}/expo/booth/manage`,
         });
         if (!emailSent) {
           // sendEmail 在缺 RESEND_API_KEY 或 API 失败时返回 false（已内部打印日志）

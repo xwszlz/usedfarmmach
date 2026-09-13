@@ -41,7 +41,7 @@ export async function POST(
     const bargain = await prisma.auction.findUnique({
       where: { id: params.id },
       include: {
-        seller: { select: { id: true, email: true } },
+        seller: { select: { id: true, email: true, preferredLanguage: true } },
         product: {
           select: {
             modelName: true,
@@ -109,6 +109,8 @@ export async function POST(
       body: `${pName}：买家报价 ¥${parseFloat(amount).toLocaleString()}`,
       link: "/seller/inquiries",
       email: bargain.seller.email,
+      origin: request.nextUrl.origin,
+      locale: bargain.seller.preferredLanguage || "zh",
     });
 
     return NextResponse.json({
