@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useLocale } from "next-intl";
 
 interface Rental {
   id: string;
@@ -30,8 +30,7 @@ interface Rental {
 }
 
 export default function RentalsClient() {
-  const searchParams = useSearchParams();
-  const locale = searchParams.get("locale") || "zh";
+  const locale = useLocale();
   const [rentals, setRentals] = useState<Rental[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState("");
@@ -185,7 +184,7 @@ export default function RentalsClient() {
 
                     {/* CTA */}
                     <a
-                      href={`/products/${rental.product.id}`}
+                      href={`/${locale}/products/${rental.product.id}`}
                       className="block w-full text-center mt-4 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition font-medium"
                     >
                       {locale === "zh" ? "查看详情" : "View Details"}

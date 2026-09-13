@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
+import { useLocale } from "next-intl";
 import {
   Shield, Clock, CheckCircle2, AlertTriangle, Truck, Loader2, ArrowLeft,
 } from "lucide-react";
@@ -38,6 +39,7 @@ interface OrderDetail {
 export default function EscrowOrderDetailPage() {
   const params = useParams();
   const searchParams = useSearchParams();
+  const locale = useLocale();
   const orderId = params.id as string;
   const codeUrl = searchParams.get("code_url");
 
@@ -109,7 +111,7 @@ export default function EscrowOrderDetailPage() {
     return (
       <div className="container mx-auto py-20 text-center">
         <p className="text-gray-400">订单不存在或无权查看</p>
-        <Link href="/escrow"><Button variant="outline" className="mt-4"><ArrowLeft className="h-4 w-4 mr-2" /> 返回列表</Button></Link>
+        <Link href={`/${locale}/escrow`}><Button variant="outline" className="mt-4"><ArrowLeft className="h-4 w-4 mr-2" /> 返回列表</Button></Link>
       </div>
     );
   }
@@ -129,7 +131,7 @@ export default function EscrowOrderDetailPage() {
 
   return (
     <div className="container mx-auto max-w-3xl py-8 px-4">
-      <Link href="/escrow" className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4">
+      <Link href={`/${locale}/escrow`} className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4">
         <ArrowLeft className="h-4 w-4 mr-1" /> 返回担保交易列表
       </Link>
 
@@ -184,7 +186,7 @@ export default function EscrowOrderDetailPage() {
             </div>
             <div>
               <div className="font-medium">{order.product.modelName}</div>
-              <Link href={`/products/${order.product.id}`} className="text-sm text-blue-600 hover:underline">查看产品详情</Link>
+              <Link href={`/${locale}/products/${order.product.id}`} className="text-sm text-blue-600 hover:underline">查看产品详情</Link>
             </div>
           </div>
         </CardContent>

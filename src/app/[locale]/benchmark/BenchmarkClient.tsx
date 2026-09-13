@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useLocale } from "next-intl";
 import {
   Loader2,
   RefreshCw,
@@ -129,6 +130,7 @@ function FreshBadge({ iso }: { iso: string | null }) {
 }
 
 export default function BenchmarkClient() {
+  const locale = useLocale();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<BenchmarkResponse | null>(null);
@@ -371,7 +373,7 @@ export default function BenchmarkClient() {
                       <td className="px-4 py-3 text-center">
                         {p ? (
                           <a
-                            href={`/products/${p.id}`}
+                            href={`/${locale}/products/${p.id}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-blue-600 hover:text-blue-900 inline-flex items-center gap-1"
