@@ -83,6 +83,8 @@ jobs:
           DATABASE_URL: ${{ env.CI_DATABASE_URL }}
           DATABASE_URL_CN: ${{ env.CI_DATABASE_URL }}
           NEXT_PUBLIC_SITE: cn
+          # 站点域名：本步 npm run build（CI runner 侧）用它内联 NEXT_PUBLIC_APP_URL；
+          # 下方 docker build 步骤经 --build-arg NEXT_PUBLIC_APP_URL 传同一值，二者须一致。
           NEXT_PUBLIC_APP_URL: https://usedfarmmach.cn
 
       - name: Build Docker image
@@ -93,6 +95,7 @@ jobs:
             --no-cache \
             --add-host=host.docker.internal:host-gateway \
             --build-arg SITE=cn \
+            --build-arg NEXT_PUBLIC_APP_URL=https://usedfarmmach.cn \
             --build-arg DATABASE_URL=${{ env.CI_DATABASE_URL }} \
             --build-arg DATABASE_URL_CN=${{ env.CI_DATABASE_URL_DOCKER }} \
             -t usedfarmmach-cn:latest \

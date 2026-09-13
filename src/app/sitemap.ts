@@ -1,12 +1,13 @@
 import { MetadataRoute } from "next";
+import { siteConfig } from "@/config/site";
 import { prisma } from "@/lib/db";
 import { toSlug } from "@/lib/slug";
 
-// ISR: 每天重新生成站点地图
-export const revalidate = 86400;
+// 动态生成站点地图（force-dynamic）：每次请求读真实 DB，避免构建期空库快照被缓存。
+export const dynamic = "force-dynamic";
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
-const locales = ["zh", "en", "ru", "es", "pt", "ar", "fr", "hi"];
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || `https://${siteConfig.domains.primary}`;
+const locales = siteConfig.locales;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Fetch all data in parallel
@@ -72,6 +73,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const entries: MetadataRoute.Sitemap = [];
 
+  // 站点地图去重：多个 nameEn 可能塌缩为同一 slug（含空串），避免向搜索引擎提交重复 URL。
+  const seen = new Set<string>();
+  const push = (entry: MetadataRoute.Sitemap[number]) => {
+    if (seen.has(entry.url)) return;
+    seen.add(entry.url);
+    entries.push(entry);
+  };
+
   for (const locale of locales) {
     // Static pages
     for (const page of staticPages) {
@@ -113,20 +122,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       });
     }
 
-    // Brand pages
+    // Brand pages（跳过 slug 为空串的 nameEn，避免生成 /brand/ 空路径 404）
     for (const brand of brands) {
-      entries.push({
-        url: `${BASE_URL}/${locale}/brand/${toSlug(brand.nameEn)}`,
+      const slug = toSlug(brand.nameEn);
+      if (!slug) continue;
+      push({
+        url: `${BASE_URL}/${locale}/brand/${slug}`,
         lastModified: new Date(),
         changeFrequency: "weekly",
         priority: 0.7,
       });
     }
 
-    // Category pages
+    // Category pages（跳过 slug 为空串的 nameEn，避免生成 /category/ 空路径 404）
     for (const category of categories) {
-      entries.push({
-        url: `${BASE_URL}/${locale}/category/${toSlug(category.nameEn)}`,
+      const slug = toSlug(category.nameEn);
+      if (!slug) continue;
+      push({
+        url: `${BASE_URL}/${locale}/category/${slug}`,
         lastModified: new Date(),
         changeFrequency: "weekly",
         priority: 0.7,
