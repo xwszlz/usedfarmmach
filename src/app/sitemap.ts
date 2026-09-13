@@ -7,7 +7,7 @@ import { toSlug } from "@/lib/slug";
 export const dynamic = "force-dynamic";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || `https://${siteConfig.domains.primary}`;
-const locales = ["zh", "en", "ru", "es", "pt", "ar", "fr", "hi"];
+const locales = siteConfig.locales;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Fetch all data in parallel
