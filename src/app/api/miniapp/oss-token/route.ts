@@ -64,9 +64,10 @@ function requireAuth(req: NextRequest): boolean {
   if (!header) return false;
   const expected = process.env.INTERNAL_API_KEY;
   if (!expected) {
-    // 未配置 INTERNAL_API_KEY 时跳过认证（开发模式兼容）
-    console.warn("[oss-token] INTERNAL_API_KEY 未配置，跳过认证");
-    return true;
+    // ⚠️ fail-closed：未配置密钥时必须拒绝，绝不跳过认证。
+    // 原实现返回 true（放行），任何人都能拿到云存储直传凭证。
+    console.error("[oss-token] INTERNAL_API_KEY 未配置，拒绝所有请求");
+    return false;
   }
   return header === expected;
 }
