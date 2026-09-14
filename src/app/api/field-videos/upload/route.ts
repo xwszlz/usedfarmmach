@@ -6,17 +6,27 @@ const OSS_BUCKET = "usedfarmmach-oss";
 const OSS_REGION = "oss-cn-beijing";
 const OSS_HOST = `https://${OSS_BUCKET}.${OSS_REGION}.aliyuncs.com`;
 
-const FALLBACK_OSS = {
-  accessKeyId: Buffer.from("TFRBSTV0NjkydGNMdnhjbVR5Tm1nWU1z", "base64").toString("utf-8"),
-  accessKeySecret: Buffer.from("RFpYUElNQXk0cGllRmpIdGVkWWswN2dPaWZlbkZB", "base64").toString("utf-8"),
-} as const;
+/**
+ * 读取 OSS 凭据。
+ *
+ * 🔒 安全（2026-09-13）：移除历史遗留的 Base64 硬编码 FALLBACK_OSS 凭据，
+ *    改为仅从环境变量 OSS_ACCESS_KEY_ID / OSS_ACCESS_KEY_SECRET 读取；
+ *    缺失即抛错（调用方 GET/POST 均以 try/catch 兜底为 500），
+ *    绝不静默回退到硬编码凭据。
+ */
+function getOSSCredentials(): { accessKeyId: string; accessKeySecret: string } {
+  const accessKeyId = process.env.OSS_ACCESS_KEY_ID?.trim();
+  const accessKeySecret = process.env.OSS_ACCESS_KEY_SECRET?.trim();
 
-function getOSSCredentials() {
-  const envId = process.env.OSS_ACCESS_KEY_ID?.trim();
-  const envSecret = process.env.OSS_ACCESS_KEY_SECRET?.trim();
-  if (!envId || !envSecret) return FALLBACK_OSS;
-  if (!envSecret.startsWith("DZXPIM")) return FALLBACK_OSS;
-  return { accessKeyId: envId, accessKeySecret: envSecret };
+  if (!accessKeyId || !accessKeySecret) {
+    console.error(
+      "[field-videos/upload] ❌ OSS 凭据缺失：请配置环境变量 OSS_ACCESS_KEY_ID / OSS_ACCESS_KEY_SECRET"
+    );
+    throw new Error(
+      "OSS 凭据未配置：缺失环境变量 OSS_ACCESS_KEY_ID / OSS_ACCESS_KEY_SECRET"
+    );
+  }
+  return { accessKeyId, accessKeySecret };
 }
 
 const DB_KEY = "uploads/field-expo-videos/db.json";
@@ -81,29 +91,37 @@ function signPut(folder: string, filename: string, contentType: string) {
 // 1. Client asks for a signed upload URL
 export const dynamic = "force-dynamic"; // 防 .cn 构建期静态固化，详见 scripts/check-route-dynamic.mjs
 export async function GET(req: NextRequest) {
-  const url = new URL(req.url);
-  const filename = url.searchParams.get("filename") || `video_${Date.now()}.mp4`;
-  const contentType = url.searchParams.get("contentType") || "video/mp4";
-  const folder = url.searchParams.get("folder") || "field-expo-videos";
-  const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const ext = safeName.split(".").pop()?.toLowerCase() || "mp4";
-  if (!ALLOWED_EXT.includes(ext)) {
-    return NextResponse.json({ success: false, error: "Invalid file extension" }, { status: 400 });
+  try {
+    const url = new URL(req.url);
+    const filename = url.searchParams.get("filename") || `video_${Date.now()}.mp4`;
+    const contentType = url.searchParams.get("contentType") || "video/mp4";
+    const folder = url.searchParams.get("folder") || "field-expo-videos";
+    const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const ext = safeName.split(".").pop()?.toLowerCase() || "mp4";
+    if (!ALLOWED_EXT.includes(ext)) {
+      return NextResponse.json({ success: false, error: "Invalid file extension" }, { status: 400 });
+    }
+    const finalName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const sig = signPut(folder, finalName, contentType);
+    return NextResponse.json({
+      success: true,
+      data: {
+        url: OSS_HOST,
+        key: sig.key,
+        policy: sig.policyBase64,
+        signature: sig.signature,
+        accessKeyId: sig.accessKeyId,
+        maxSize: MAX_SIZE,
+        finalUrl: `${OSS_HOST}/${sig.key}`,
+      },
+    });
+  } catch (e: any) {
+    console.error("[field-videos/upload] GET 签名失败：", e?.message || e);
+    return NextResponse.json(
+      { success: false, error: "OSS 未配置或签名失败" },
+      { status: 500 }
+    );
   }
-  const finalName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
-  const sig = signPut(folder, finalName, contentType);
-  return NextResponse.json({
-    success: true,
-    data: {
-      url: OSS_HOST,
-      key: sig.key,
-      policy: sig.policyBase64,
-      signature: sig.signature,
-      accessKeyId: sig.accessKeyId,
-      maxSize: MAX_SIZE,
-      finalUrl: `${OSS_HOST}/${sig.key}`,
-    },
-  });
 }
 
 // 2. After successful upload, client confirms with metadata

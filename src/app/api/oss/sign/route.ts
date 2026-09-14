@@ -13,30 +13,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyToken, getTokenFromHeaders } from "@/lib/auth";
 
 // ── OSS 凭证（与 oss-upload.ts 保持一致）──
-const FALLBACK_OSS = {
-  accessKeyId: Buffer.from("TFRBSTV0NjkydGNMdnhjbVR5Tm1nWU1z", "base64").toString(
-    "utf-8"
-  ),
-  accessKeySecret: Buffer.from(
-    "RFpYUElNQXk0cGllRmpIdGVkWWswN2dPaWZlbkZB",
-    "base64"
-  ).toString("utf-8"),
-} as const;
-
-const CORRECT_SECRET_PREFIX = FALLBACK_OSS.accessKeySecret.slice(0, 6);
-
+// 🔒 安全（2026-09-13）：移除历史遗留的 Base64 硬编码 FALLBACK_OSS 凭据与
+//    CORRECT_SECRET_PREFIX 回退逻辑，改为仅从环境变量读取；缺失即抛错（由 POST
+//    的 try/catch 兜底为 500），绝不静默回退到硬编码凭据。
 function getCredentials(): { accessKeyId: string; accessKeySecret: string } {
-  const envId = process.env.OSS_ACCESS_KEY_ID?.trim();
-  const envSecret = process.env.OSS_ACCESS_KEY_SECRET?.trim();
+  const accessKeyId = process.env.OSS_ACCESS_KEY_ID?.trim();
+  const accessKeySecret = process.env.OSS_ACCESS_KEY_SECRET?.trim();
 
-  if (!envId || !envSecret || envId === "your-access-key-id") {
-    return FALLBACK_OSS;
+  if (!accessKeyId || !accessKeySecret) {
+    console.error(
+      "[oss/sign] ❌ OSS 凭据缺失：请配置环境变量 OSS_ACCESS_KEY_ID / OSS_ACCESS_KEY_SECRET"
+    );
+    throw new Error(
+      "OSS 凭据未配置：缺失环境变量 OSS_ACCESS_KEY_ID / OSS_ACCESS_KEY_SECRET"
+    );
   }
-  if (!envSecret.startsWith(CORRECT_SECRET_PREFIX)) {
-    console.warn("[oss/sign] ⚠️ 环境变量异常，切换到 Fallback");
-    return FALLBACK_OSS;
-  }
-  return { accessKeyId: envId, accessKeySecret: envSecret };
+  return { accessKeyId, accessKeySecret };
 }
 
 function createOssClient(): {
