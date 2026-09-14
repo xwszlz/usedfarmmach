@@ -12,10 +12,27 @@ interface LoginFormProps {
   locale: string;
 }
 
+// 重定向目标净化：只接受「解析后同源」的站内路径。
+// 用 WHATWG URL 解析再比对 origin，天然免疫 //evil.com、/\evil.com、\\evil.com、
+// javascript:、前导 tab 等解析期绕过手法（字符串前缀检查做不到这一点）。
+function resolveSafeRedirect(raw: string | null, fallback: string): string {
+  if (!raw || typeof window === "undefined") return fallback;
+  try {
+    const resolved = new URL(raw, window.location.origin);
+    if (resolved.origin !== window.location.origin) return fallback;
+    // 防御：pathname 解码后若出现 "\" 或以 "//" 开头，下游再解析可能变成 authority/外站 → 拒绝
+    const decodedPath = decodeURIComponent(resolved.pathname);
+    if (decodedPath.includes("\\") || decodedPath.startsWith("//")) return fallback;
+    return resolved.pathname + resolved.search + resolved.hash;
+  } catch {
+    return fallback;
+  }
+}
+
 export function LoginForm({ locale }: LoginFormProps) {
   const t = useTranslations("auth.login");
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || `/${locale}`;
+  const redirectParam = searchParams.get("redirect");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -65,7 +82,7 @@ export function LoginForm({ locale }: LoginFormProps) {
 
         setTimeout(() => {
           // 使用 window.location.href 进行完整页面跳转，避免 router.push + reload 竞争
-          window.location.href = redirect;
+          window.location.href = resolveSafeRedirect(redirectParam, `/${locale}`);
         }, 800);
       } else {
         // 后端返回了业务错误（如密码错误、账号不存在等）
