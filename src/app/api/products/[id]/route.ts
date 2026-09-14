@@ -135,6 +135,59 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: "产品不存在" }, { status: 404 });
     }
 
+    // 关联业务记录预检（纯只读，绝不删除任何业务数据）。
+    // 仅“必填关系”（productId String，Prisma 对必填关系默认 onDelete: Restrict）会阻塞删除，共 6 类：
+    //   Inquiry / Auction / ElectronicContract / EscrowOrder / Warranty / MaintenanceRecord
+    // 已知的非阻塞项，请勿再加回预检：
+    //   - LoanApplication(schema L1125)、GovMachineryData(L1248) 的 productId 是可选(String?)，
+    //     Prisma 对可选关系默认 onDelete: SetNull（DDL: ON DELETE SET NULL），删除产品时会置空而非阻塞。
+    //   - ProductImage / ProductVideo / InternationalPrice 等为 Cascade，不阻塞（且前 3 者已在下方事务手动清理）。
+    // 预检属“尽力而为”的友好提示：若预检自身出错，直接跳过预检、照常执行原有删除事务，
+    // 以保证“预检不可用 == 改动前行为”（不引入新的失败路径）。
+    try {
+      const [
+        inquiryCount,
+        auctionCount,
+        contractCount,
+        escrowOrderCount,
+        warrantyCount,
+        maintenanceCount,
+      ] = await Promise.all([
+        prisma.inquiry.count({ where: { productId: id } }),
+        prisma.auction.count({ where: { productId: id } }),
+        prisma.electronicContract.count({ where: { productId: id } }),
+        prisma.escrowOrder.count({ where: { productId: id } }),
+        prisma.warranty.count({ where: { productId: id } }),
+        prisma.maintenanceRecord.count({ where: { productId: id } }),
+      ]);
+
+      const relatedLabels: Array<{ model: string; label: string; count: number }> = [
+        { model: "Inquiry", label: "询价", count: inquiryCount },
+        { model: "Auction", label: "拍卖", count: auctionCount },
+        { model: "ElectronicContract", label: "电子合同", count: contractCount },
+        { model: "EscrowOrder", label: "托管订单", count: escrowOrderCount },
+        { model: "Warranty", label: "质保", count: warrantyCount },
+        { model: "MaintenanceRecord", label: "维保记录", count: maintenanceCount },
+      ];
+      const blockers = relatedLabels.filter((item) => item.count > 0);
+
+      if (blockers.length > 0) {
+        const detail = blockers.map((item) => `${item.label} ${item.count} 条`).join("、");
+        return NextResponse.json(
+          {
+            success: false,
+            code: "HAS_RELATED_RECORDS",
+            error: `该产品存在关联业务记录，无法删除：${detail}。请先处理这些记录；若只是想让它不在站上显示，请把「状态」改为「归档」后保存。`,
+            blockers,
+          },
+          { status: 409 }
+        );
+      }
+    } catch (precheckError) {
+      // 预检失败不应阻塞删除：降级为改动前行为（跳过预检，直接尝试删除）
+      console.warn("Product delete related-records precheck failed, skip precheck:", precheckError);
+    }
+
     // 删除关联数据（级联或手动）
     await prisma.$transaction([
       prisma.productImage.deleteMany({ where: { productId: id } }),
@@ -153,8 +206,20 @@ export async function DELETE(
     });
   } catch (error) {
     console.error("Product delete error:", error);
+    const errCode = (error as any)?.code;
+    // P2003：数据库外键约束失败 —— 说明仍有未预检到的关联记录引用该产品
+    if (errCode === "P2003") {
+      return NextResponse.json(
+        {
+          success: false,
+          code: "FK_CONSTRAINT",
+          error: "该产品仍被关联记录引用，数据库外键约束拒绝了删除。请先处理相关业务记录后再试。",
+        },
+        { status: 409 }
+      );
+    }
     return NextResponse.json(
-      { success: false, error: "删除失败" },
+      { success: false, code: errCode ?? "UNKNOWN", error: "删除失败" },
       { status: 500 }
     );
   }
