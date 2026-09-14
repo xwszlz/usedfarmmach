@@ -13,6 +13,23 @@ interface RegisterFormProps {
   locale: string;
 }
 
+// 重定向目标净化：只接受「解析后同源」的站内路径。
+// 用 WHATWG URL 解析再比对 origin，天然免疫 //evil.com、/\evil.com、\\evil.com、
+// javascript:、前导 tab 等解析期绕过手法（字符串前缀检查做不到这一点）。
+function resolveSafeRedirect(raw: string | null, fallback: string): string {
+  if (!raw || typeof window === "undefined") return fallback;
+  try {
+    const resolved = new URL(raw, window.location.origin);
+    if (resolved.origin !== window.location.origin) return fallback;
+    // 防御：pathname 解码后若出现 "\" 或以 "//" 开头，下游再解析可能变成 authority/外站 → 拒绝
+    const decodedPath = decodeURIComponent(resolved.pathname);
+    if (decodedPath.includes("\\") || decodedPath.startsWith("//")) return fallback;
+    return resolved.pathname + resolved.search + resolved.hash;
+  } catch {
+    return fallback;
+  }
+}
+
 export function RegisterForm({ locale }: RegisterFormProps) {
   const t = useTranslations("auth.register");
   const router = useRouter();
@@ -84,7 +101,7 @@ export function RegisterForm({ locale }: RegisterFormProps) {
         localStorage.setItem("user", JSON.stringify(result.data.user));
         // 支持 ?redirect=/membership 等回跳（仅接受站内相对路径）
         const redirect = new URLSearchParams(window.location.search).get("redirect");
-        router.push(redirect && redirect.startsWith("/") ? redirect : `/${locale}`);
+        router.push(resolveSafeRedirect(redirect, `/${locale}`));
         window.location.reload();
       } else {
         setError(result.error || t("error"));
