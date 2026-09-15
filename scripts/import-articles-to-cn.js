@@ -9,6 +9,7 @@
  * 容错：单条失败不影响整体；外部由 deploy-cn.sh 用 `|| echo WARN` 包裹，不阻塞部署。
  */
 
+require('./lib/neon-connect').bootstrap(); // fake-ip 绕过
 const { PrismaClient } = require('@prisma/client');
 const fs = require('fs');
 const path = require('path');
@@ -30,10 +31,17 @@ const ARTICLE_FIELDS = [
   'publishedAt', 'isPinned',
 ];
 
+// 标量必填字段：Prisma schema 中无 `?` 且无 @default，传 null 会直接报
+// 「Argument `xxx` must not be null」。合成产物里若写成 null，必须在入库前清洗。
+// 注意：String? 字段收 null 是合法的，不能一刀切把 null 全删。
+const REQUIRED_SCALARS = ['slug', 'titleZh', 'contentZh', 'isPinned'];
+
 function toData(it) {
   const data = {};
   for (const f of ARTICLE_FIELDS) {
     if (it[f] === undefined) continue;
+    // 必填标量字段遇 null 直接跳过，交给下面的默认值补齐
+    if (it[f] === null && REQUIRED_SCALARS.includes(f)) continue;
     if (f === 'publishedAt' && it[f]) {
       data[f] = new Date(it[f]);
     } else {
@@ -42,6 +50,8 @@ function toData(it) {
   }
   if (!data.status) data.status = 'published';
   if (!data.publishedAt) data.publishedAt = new Date();
+  // isPinned 是必填 Boolean，缺省按「非置顶」处理
+  if (data.isPinned === undefined) data.isPinned = false;
   return data;
 }
 

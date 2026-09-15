@@ -8,6 +8,7 @@
  * 幂等：每个文件对应一天，删除该日全部 marketIntel 再写入，重复部署不重复累积。
  */
 
+require('./lib/neon-connect').bootstrap(); // fake-ip 绕过
 const { PrismaClient } = require('@prisma/client');
 const fs = require('fs');
 const path = require('path');
@@ -28,15 +29,21 @@ const INTEL_FIELDS = [
   'regionAr', 'regionFr',
 ];
 
+// 标量必填字段：Prisma schema 中无 `?` 且无 @default，传 null 会直接报
+// 「Argument `xxx` must not be null」。合成产物里若写成 null，必须在入库前清洗。
+// 注意：其余 String? 字段收 null 是合法的，不能一刀切把 null 全删。
+const REQUIRED_SCALARS = ['date', 'icon', 'region', 'tags', 'text'];
+
 function toData(it) {
   const data = {};
   for (const f of INTEL_FIELDS) {
     if (it[f] === undefined) continue;
+    if (it[f] === null && REQUIRED_SCALARS.includes(f)) continue;
     if (f === 'date' && it[f]) data[f] = new Date(it[f]);
     else data[f] = it[f];
   }
-  if (data.isActive === undefined) data.isActive = true;
-  if (data.sortOrder === undefined) data.sortOrder = 0;
+  if (data.isActive === undefined || data.isActive === null) data.isActive = true;
+  if (data.sortOrder === undefined || data.sortOrder === null) data.sortOrder = 0;
   return data;
 }
 
