@@ -2,3 +2,6 @@
 # 容器 TZ=Asia/Shanghai（Dockerfile.cn 已设），busybox crond 按本地时间调度。
 # 由 cn-scout 容器读取（/var/spool/cron/crontabs/root）。
 10 7 * * * sh /app/scripts/run-domestic-scout.sh >> /var/log/scout.log 2>&1
+
+# 国际价/基准价同步 — 每日 09:30 北京时间，从 Neon(.com) 读公开价 upsert 进 cn-postgres
+30 9 * * * node /app/scripts/sync-prices-from-neon.js >> /var/log/price-sync.log 2>&1
