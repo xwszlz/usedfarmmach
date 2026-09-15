@@ -112,6 +112,16 @@ services:
       - cn-net
     # 前台运行 cron 守护；定时任务见镜像内 /var/spool/cron/crontabs/root
     command: ["crond", "-f", "-L", "/dev/stdout", "-c", "/var/spool/cron/crontabs"]
+    # 🔴 必须显式覆盖 healthcheck：Dockerfile.cn 的 HEALTHCHECK 是给 app(Next.js) 写的，
+    # 探 127.0.0.1:3000；但 scout 只跑 crond、不提供 HTTP 服务 ⇒
+    # 不覆盖则探针必然 Connection refused，容器长期 unhealthy（纯误报，无业务影响）。
+    # 改为探 crond 进程本身，这才是该容器「活着」的真实信号。
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep crond >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
 
 volumes:
   cn-pg-data:
