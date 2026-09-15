@@ -8,7 +8,10 @@
  * 幂等：每个文件对应一天，删除该日全部 marketIntel 再写入，重复部署不重复累积。
  */
 
-require('./lib/neon-connect').bootstrap(); // fake-ip 绕过
+// 本机开发者可选：scripts/lib/ 被 .gitignore 排除，远端/容器内并不存在。
+// 该补丁只对 .com 侧的 fake-ip 环境有意义，.cn 容器直连境内库无需它，
+// 因此必须是「可选依赖」——硬 require 会让容器内脚本直接 MODULE_NOT_FOUND 崩溃。
+try { require('./lib/neon-connect').bootstrap(); } catch (_) { /* 无补丁环境：正常继续 */ }
 const { PrismaClient } = require('@prisma/client');
 const fs = require('fs');
 const path = require('path');
