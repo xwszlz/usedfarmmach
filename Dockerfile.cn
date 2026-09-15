@@ -106,6 +106,9 @@ RUN chmod +x ./scripts/run-domestic-scout.sh
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/domestic_sellers_seed.json ./scripts/domestic_sellers_seed.json
 # busybox crond 每日定时任务（cn-scout 容器读取 /var/spool/cron/crontabs/root）
 COPY --from=builder --chown=root:root /app/scripts/scout-crontab /var/spool/cron/crontabs/root
+# 国际价/基准价同步（Neon 公开价 → cn-postgres；由 cn-scout 容器 cron 调用）
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/sync-prices-from-neon.js ./scripts/sync-prices-from-neon.js
+
 
 # 境外欧系基准价 + 套利情报种子（公开行情，合规可双库；ECS 部署后幂等导入）
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/eu-benchmark-evidence.json ./scripts/eu-benchmark-evidence.json
