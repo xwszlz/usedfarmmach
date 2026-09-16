@@ -72,6 +72,7 @@ export const metadata: Metadata = {
   verification: {
     other: {
       "baidu-site-verification": "codeva-zsOnKgvGxK",
+      "msvalidate.01": "54632BE95342693D306EFC1F62CEE943",
     },
   },
   robots: {
