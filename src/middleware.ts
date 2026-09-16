@@ -173,6 +173,31 @@ export async function middleware(request: NextRequest) {
   const intlMiddleware = createIntlMiddleware(site);
   const intlResponse = intlMiddleware(request);
 
+  // ============================================================
+  // 【根路径返回 200】仅 .cn 站点生效
+  // 背景：localePrefix: "always" 会让 / 恒为 307 -> /zh。
+  // 百度站长平台的 HTML 标签验证要求验证地址返回 200，
+  // 307 会导致验证失败（报「未知原因:307」/「网页存在跳转」）。
+  // 依据 next-intl 官方推荐：createMiddleware 之后条件性 rewrite。
+  // rewrite 对浏览器与爬虫返回 200，且地址栏 URL 保持 / 不变。
+  // ⚠️ 必须注入 x-middleware-request-x-next-intl-locale，
+  //    否则 getRequestConfig 拿到 undefined -> notFound() -> 404
+  //    （同类教训见本文件上方 nextResponseWithUser 注释）。
+  // 仅 site === "cn" 生效：.com（Vercel，8 语）行为完全不变。
+  // ============================================================
+  if (site === "cn" && pathname === "/") {
+    // 复用 next-intl 协商结果，保住浏览器语言自动跳转体验
+    const negotiated =
+      intlResponse.headers.get("x-middleware-request-x-next-intl-locale") || "zh";
+    const rootLocale = ["zh", "en"].includes(negotiated) ? negotiated : "zh";
+    const headers = new Headers(request.headers);
+    headers.set("x-next-intl-locale", rootLocale);
+    return NextResponse.rewrite(
+      new URL("/" + rootLocale + request.nextUrl.search, request.url),
+      { request: { headers } }
+    );
+  }
+
   // 如果 next-intl 返回了重定向，直接返回
   if (intlResponse.status === 307 || intlResponse.status === 308) {
     return intlResponse;
