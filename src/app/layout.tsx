@@ -69,6 +69,11 @@ export const metadata: Metadata = {
     title: "神雕农机",
     statusBarStyle: "default",
   },
+  verification: {
+    other: {
+      "baidu-site-verification": "codeva-zsOnKgvGxK",
+    },
+  },
   robots: {
     index: true,
     follow: true,
