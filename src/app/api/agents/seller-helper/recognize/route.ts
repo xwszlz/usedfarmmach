@@ -744,7 +744,6 @@ export async function POST(request: NextRequest) {
     const videoUrls: string[] = body.videoUrls || [];
     const forceChineseBrand = body.isChineseBrand as boolean | undefined;
     const images = [...imageUrls, ...imageDataUris];
-    const hasBase64Images = imageDataUris.some((u) => u.startsWith("data:"));
 
     if (!images || !Array.isArray(images) || images.length === 0) {
       return NextResponse.json(
@@ -783,11 +782,6 @@ export async function POST(request: NextRequest) {
       }
 
       // 豆包不支持 base64 图片 → 如果只有base64则跳过豆包
-      if (entry.provider === "ark" && hasBase64Images) {
-        console.log("[SellerHelper] 有base64图片，跳过豆包（不支持base64）");
-        errors.push("[豆包] 跳过base64图片");
-        continue;
-      }
 
       console.log(`[SellerHelper] 尝试模型: ${entry.label}`);
 
@@ -796,8 +790,9 @@ export async function POST(request: NextRequest) {
 
         if (entry.provider === "ark") {
           // 豆包：使用 OpenAI 兼容格式
-          const content = buildDoubaoContent(imageUrls, videoUrls, activePrompt);
-          if (content.length <= 1) {
+          const content = await buildDoubaoContent(images, videoUrls, activePrompt);
+          const imageParts = content.filter((c) => c.type === "image_url").length;
+    if (imageParts === 0) {
             // 只有文字没有有效图片
             lastError = new Error("豆包无有效图片输入");
             errors.push("[豆包] 无有效图片输入");
