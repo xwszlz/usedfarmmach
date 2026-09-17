@@ -335,21 +335,37 @@ const INTERNATIONAL_PROMPT = `你是一位资深二手农业机械专家，熟�
 10. isChineseBrand 固定为 false`;
 
 // ── 构建豆包(ARK)格式的消息内容（OpenAI兼容）──
-function buildDoubaoContent(images: string[], videoUrls: string[] = [], prompt: string) {
+// 注意：豆包服务端下载公开图片 URL 会超时失败
+// （InvalidParameter: Timeout while downloading url），
+// 因此公开 URL 一律在服务端先下载并转成 base64 data URI 再传入。
+// 豆包支持 base64 data URI 传图（已实测可用），data: 输入原样透传。
+async function buildDoubaoContent(
+  images: string[],
+  videoUrls: string[] = [],
+  prompt: string
+): Promise<Array<Record<string, unknown>>> {
   const content: Array<Record<string, unknown>> = [
     { type: "text", text: prompt },
   ];
   for (const url of images) {
     if (url.startsWith("data:")) {
-      // base64 → 豆包不支持，跳过（会降级到Gemini）
-      console.warn("[SellerHelper] 豆包不支持base64图片，该图片将被跳过");
+      // data: 本身就是 base64，原样透传
+      content.push({
+        type: "image_url",
+        image_url: { url },
+      });
       continue;
     }
-    // HTTP URL → image_url 格式
-    content.push({
-      type: "image_url",
-      image_url: { url },
-    });
+    // HTTP URL → 服务端下载转 base64（豆包服务端自行下载会超时）
+    try {
+      const { mimeType, data } = await downloadImageAsBase64(url);
+      content.push({
+        type: "image_url",
+        image_url: { url: `data:${mimeType};base64,${data}` },
+      });
+    } catch (err: any) {
+      console.warn(`[SellerHelper] 下载图片失败 ${url}:`, err.message?.substring(0, 80));
+    }
   }
   // 视频URL作为文本描述传入（多模态模型可参考）
   for (const vUrl of videoUrls) {
@@ -728,7 +744,6 @@ export async function POST(request: NextRequest) {
     const videoUrls: string[] = body.videoUrls || [];
     const forceChineseBrand = body.isChineseBrand as boolean | undefined;
     const images = [...imageUrls, ...imageDataUris];
-    const hasBase64Images = imageDataUris.some((u) => u.startsWith("data:"));
 
     if (!images || !Array.isArray(images) || images.length === 0) {
       return NextResponse.json(
@@ -767,11 +782,6 @@ export async function POST(request: NextRequest) {
       }
 
       // 豆包不支持 base64 图片 → 如果只有base64则跳过豆包
-      if (entry.provider === "ark" && hasBase64Images) {
-        console.log("[SellerHelper] 有base64图片，跳过豆包（不支持base64）");
-        errors.push("[豆包] 跳过base64图片");
-        continue;
-      }
 
       console.log(`[SellerHelper] 尝试模型: ${entry.label}`);
 
@@ -780,8 +790,9 @@ export async function POST(request: NextRequest) {
 
         if (entry.provider === "ark") {
           // 豆包：使用 OpenAI 兼容格式
-          const content = buildDoubaoContent(imageUrls, videoUrls, activePrompt);
-          if (content.length <= 1) {
+          const content = await buildDoubaoContent(images, videoUrls, activePrompt);
+          const imageParts = content.filter((c) => c.type === "image_url").length;
+    if (imageParts === 0) {
             // 只有文字没有有效图片
             lastError = new Error("豆包无有效图片输入");
             errors.push("[豆包] 无有效图片输入");

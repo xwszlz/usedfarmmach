@@ -85,6 +85,19 @@ export default function DeepAnalysisCard({
       }
 
       if (!res.ok || !data.success) {
+        // 503 + ALL_MODELS_FAILED：把服务端 debug（各模型真实报错）透出到界面，
+        // 否则只显示笼统文案，排查时完全看不出根因。
+        if (res.status === 503 && data.code === "ALL_MODELS_FAILED") {
+          console.error("[DeepAnalysis] 全部模型失败，完整响应:", data);
+          const details = Array.isArray(data.debug)
+            ? data.debug.slice(0, 2).join(" / ")
+            : "";
+          throw new Error(
+            locale === "zh"
+              ? `AI服务暂时不可用（模型均调用失败）。技术细节：${details || "无"}`
+              : `AI service unavailable (all models failed). Details: ${details || "none"}`
+          );
+        }
         throw new Error(data.error || data.message || `${locale === "zh" ? "分析失败" : "Analysis failed"} (${res.status})`);
       }
 
