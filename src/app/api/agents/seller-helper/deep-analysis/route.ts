@@ -20,7 +20,7 @@ export const maxDuration = 120; // 豆包深度分析需要更长时间
 
 const ARK_API_KEY = process.env.ARK_API_KEY || "";
 const ARK_BASE_URL = process.env.ARK_BASE_URL || "https://ark.cn-beijing.volces.com/api/v3";
-const ARK_MODEL_ID = process.env.ARK_MODEL_ID || "doubao-1-5-vision-pro-32k";
+const ARK_MODEL_ID = process.env.ARK_MODEL_ID || "doubao-seed-evolving";
 
 // 备用：Gemini 和 OpenRouter（与 recognize 路由共享配置）
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || "";
@@ -259,22 +259,43 @@ const DOMESTIC_ANALYSIS_PROMPT = `你是一位拥有20年经验的中国资深�
 
 /**
  * 构建豆包API的多模态消息内容
+ *
+ * 注意 1（图片）：豆包服务端下载公开图片 URL 会超时失败
+ * （InvalidParameter: Timeout while downloading url），
+ * 因此这里统一在服务端先下载并转成 base64 data URI 再传入。
+ * data: 开头的输入本身就是 base64，直接透传。
+ *
+ * 注意 2（视频）：视频仍以 video_url 形式透传，该格式未在 .cn 生产环境验证过，
+ * 若豆包侧不支持或抓取失败，会抛错并被上层 catch 记入 errors 后降级到备用模型，
+ * 不会阻断整条链路。视频支持保留。
  */
-function buildDoubaoContent(
+async function buildDoubaoContent(
   images: string[],
   videos: string[],
   prompt: string
-): Array<Record<string, unknown>> {
+): Promise<Array<Record<string, unknown>>> {
   const content: Array<Record<string, unknown>> = [
     { type: "text", text: prompt },
   ];
 
-  // 图片
+  // 图片：公开 URL 需服务端下载转 base64，下载失败则跳过该图不中断
   for (const url of images) {
-    content.push({
-      type: "image_url",
-      image_url: { url },
-    });
+    if (url.startsWith("data:")) {
+      content.push({
+        type: "image_url",
+        image_url: { url },
+      });
+      continue;
+    }
+    try {
+      const { mimeType, data } = await downloadImageAsBase64(url);
+      content.push({
+        type: "image_url",
+        image_url: { url: `data:${mimeType};base64,${data}` },
+      });
+    } catch (err: any) {
+      console.warn(`[DeepAnalysis] 下载图片失败 ${url}:`, err.message?.substring(0, 80));
+    }
   }
 
   // 视频（豆包支持 video_url 类型）
@@ -531,7 +552,7 @@ export async function POST(request: NextRequest) {
       if (ARK_API_KEY) {
         try {
           console.log(`[DeepAnalysis] 首选豆包: ${ARK_MODEL_ID}, 引擎: ${engineLabel}, 图片数: ${images.length}, 视频数: ${videoUrls.length}`);
-          const content = buildDoubaoContent(images, videoUrls, activePrompt);
+          const content = await buildDoubaoContent(images, videoUrls, activePrompt);
           analysisText = await callDoubao(content);
           modelUsed = `豆包 ${ARK_MODEL_ID} [${engineLabel}]`;
         } catch (error: any) {
@@ -564,7 +585,7 @@ export async function POST(request: NextRequest) {
     if (!analysisText && OPENROUTER_API_KEY) {
       try {
         console.log(`[DeepAnalysis] 降级到 OpenRouter, 引擎: ${engineLabel}`);
-        const content = buildDoubaoContent(images, [], activePrompt); // OpenRouter 不支持 video_url
+        const content = await buildDoubaoContent(images, [], activePrompt); // OpenRouter 不支持 video_url
         const response = await axios.post(
           "https://openrouter.ai/api/v1/chat/completions",
           {
