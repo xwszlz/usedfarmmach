@@ -6,34 +6,26 @@ import Link from "next/link";
 import { ProductGrid } from "@/components/product/product-grid";
 import { ArrowLeft, Globe, Tractor } from "lucide-react";
 import type { Product, Brand as BrandType } from "@/types";
-
-interface BrandWithSlug extends BrandType {
-  slug: string;
-  productCount: number;
-  nameRu?: string;
-}
-
-interface BrandPageData {
-  brand: BrandWithSlug;
-  products: Product[];
-}
+import type { BrandPageData } from "./page";
 
 interface Props {
   initialLocale: string;
   initialSlug: string;
+  initialData?: BrandPageData;
 }
 
-export default function BrandClientPage({ initialLocale, initialSlug }: Props) {
+export default function BrandClientPage({ initialLocale, initialSlug, initialData }: Props) {
   const t = useTranslations("brandPage");
   const locale = useLocale();
   const slug = initialSlug || "";
 
-  const [data, setData] = useState<BrandPageData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<BrandPageData | null>(initialData ?? null);
+  const [loading, setLoading] = useState(!initialData);
   const [error, setError] = useState("");
 
   useEffect(() => {
     async function fetchBrand() {
+      if (initialData) return;
       try {
         const res = await fetch(`/api/brands?slug=${encodeURIComponent(slug)}`);
         const json = await res.json();
@@ -49,7 +41,7 @@ export default function BrandClientPage({ initialLocale, initialSlug }: Props) {
       }
     }
     fetchBrand();
-  }, [slug]);
+  }, [slug, initialData]);
 
   const brandName = data?.brand
     ? locale === "zh"

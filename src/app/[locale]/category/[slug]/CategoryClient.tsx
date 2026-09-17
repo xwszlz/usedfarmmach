@@ -6,37 +6,26 @@ import Link from "next/link";
 import { ProductGrid } from "@/components/product/product-grid";
 import { CategoryViewBadge } from "@/components/stats/CategoryViewBadge";
 import { ArrowLeft, Wheat, ChevronRight } from "lucide-react";
-import type { Product, Category as CategoryType } from "@/types";
-
-interface CategoryWithSlug extends CategoryType {
-  slug: string;
-  productCount: number;
-  nameRu?: string;
-  viewCount?: number;
-}
-
-interface CategoryPageData {
-  category: CategoryWithSlug;
-  children: CategoryWithSlug[];
-  products: Product[];
-}
+import type { CategoryPageData } from "./page";
 
 interface Props {
   initialLocale: string;
   initialSlug: string;
+  initialData?: CategoryPageData;
 }
 
-export default function CategoryClientPage({ initialLocale, initialSlug }: Props) {
+export default function CategoryClientPage({ initialLocale, initialSlug, initialData }: Props) {
   const t = useTranslations("categoryPage");
   const locale = useLocale();
   const slug = initialSlug || "";
 
-  const [data, setData] = useState<CategoryPageData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<CategoryPageData | null>(initialData ?? null);
+  const [loading, setLoading] = useState(!initialData);
   const [error, setError] = useState("");
 
   useEffect(() => {
     async function fetchCategory() {
+      if (initialData) return;
       try {
         const res = await fetch(`/api/categories?slug=${encodeURIComponent(slug)}`);
         const json = await res.json();
@@ -52,7 +41,7 @@ export default function CategoryClientPage({ initialLocale, initialSlug }: Props
       }
     }
     fetchCategory();
-  }, [slug]);
+  }, [slug, initialData]);
 
   const categoryName = data?.category
     ? locale === "zh"
