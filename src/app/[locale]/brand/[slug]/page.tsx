@@ -6,19 +6,38 @@ import { BreadcrumbStructuredData } from "@/components/seo/structured-data";
 import { prisma } from "@/lib/db";
 import { getImageUrl } from "@/lib/image-url";
 import { toSlug } from "@/lib/slug";
-import type { Brand as BrandType, Category, Product, ProductImage } from "@/types";
+import type { Brand as BrandType, Category, InternationalPrice, Product, ProductImage } from "@/types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
 
 export const revalidate = 600;
 
+/**
+ * 国际比价行：InternationalPrice 的 createdAt/updatedAt/lastVerified 是 Prisma DateTime，
+ * 直连取数时是真 Date 实例，必须与 Product 一样在服务端边界序列化为 ISO 字符串，
+ * 否则会以 Date 实例穿过 RSC 边界传给 Client Component（sourceDate 在 schema 里本就是 String）。
+ */
+type SerializedInternationalPrice = Omit<
+  InternationalPrice,
+  "createdAt" | "updatedAt" | "lastVerified"
+> & {
+  createdAt: string;
+  updatedAt: string;
+  lastVerified: string | null;
+};
+
 /** 品牌页产品：字段与 /api/brands?slug= 的返回保持一致，但 Date 在服务端边界序列化为 ISO 字符串 */
-type BrandPageProduct = Omit<Product, "createdAt" | "updatedAt" | "brand" | "category" | "images" | "seller"> & {
+type BrandPageProduct = Omit<
+  Product,
+  "createdAt" | "updatedAt" | "brand" | "category" | "images" | "seller" | "internationalPrices"
+> & {
   createdAt: string;
   updatedAt: string;
   brand: BrandType;
   category: Category;
   images: ProductImage[];
+  /** 与 /api/brands 一致只取 1 条（按 sourceDate desc） */
+  internationalPrices: SerializedInternationalPrice[];
 };
 
 /** 品牌页数据：服务端直连 Prisma 取数后交给客户端组件（不含任何 Date 实例） */
@@ -70,6 +89,12 @@ export const getBrandData = cache(
         createdAt: p.createdAt.toISOString(),
         updatedAt: p.updatedAt.toISOString(),
         images: (p.images || []).map((img) => ({ ...img, url: getImageUrl(img.url) })),
+        internationalPrices: (p.internationalPrices || []).map((ip) => ({
+          ...ip,
+          createdAt: ip.createdAt.toISOString(),
+          updatedAt: ip.updatedAt.toISOString(),
+          lastVerified: ip.lastVerified ? ip.lastVerified.toISOString() : null,
+        })),
       }));
 
       return {
