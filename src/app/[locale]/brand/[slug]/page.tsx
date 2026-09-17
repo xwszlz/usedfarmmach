@@ -37,20 +37,15 @@ export interface BrandPageData {
   products: BrandPageProduct[];
 }
 
-export let getBrandData: (slug: string) => Promise<BrandPageData | null>;
-
 /**
  * 服务端直连 Prisma 取数（不再 HTTP 自请求 /api/brands，避免构建期依赖线上域名）。
  * 用 React cache() 去重：generateMetadata 与页面 body 中的两次调用只查一次库。
  *
  * 语义与 /api/brands?slug= 完全一致：Brand 表无 slug 字段 → 全表扫描按 toSlug(nameEn) 反查；
  * 在售过滤 status === "active"；图片经 getImageUrl() 在服务端转换；priceCny desc，无分页。
- *
- * 用 Object.assign 导出：cache() 在类型层会把入参收窄成 string | undefined，
- * 直接导出实现会让 BrandClient 侧以 string 调用时报 TS2345；此处收窄为 (slug: string)。
  */
-export const revalidateBrandData = () => {
-  getBrandData = cache(async (slug: string): Promise<BrandPageData | null> => {
+export const getBrandData = cache(
+  async (slug: string): Promise<BrandPageData | null> => {
     try {
       const allBrands = await prisma.brand.findMany();
       const brand = allBrands.find((b) => toSlug(b.nameEn) === slug);
@@ -88,10 +83,8 @@ export const revalidateBrandData = () => {
     } catch {
       return null;
     }
-  });
-};
-
-revalidateBrandData();
+  }
+);
 
 export async function generateMetadata({
   params,
