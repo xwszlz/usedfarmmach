@@ -69,7 +69,7 @@ export interface CategoryPageData {
  * 在售过滤 status === "active"；图片经 getImageUrl() 在服务端转换；priceCny desc，无分页；
  * 子分类由已取回的 allCategories 内存过滤，不额外查库。
  */
-export const getCategoryData = cache(
+const getCategoryData = cache(
   async (slug: string): Promise<CategoryPageData | null> => {
     try {
       const allCategories = await prisma.category.findMany();

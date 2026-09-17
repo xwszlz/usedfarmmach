@@ -63,7 +63,7 @@ export interface BrandPageData {
  * 语义与 /api/brands?slug= 完全一致：Brand 表无 slug 字段 → 全表扫描按 toSlug(nameEn) 反查；
  * 在售过滤 status === "active"；图片经 getImageUrl() 在服务端转换；priceCny desc，无分页。
  */
-export const getBrandData = cache(
+const getBrandData = cache(
   async (slug: string): Promise<BrandPageData | null> => {
     try {
       const allBrands = await prisma.brand.findMany();
