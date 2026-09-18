@@ -69,8 +69,8 @@ export async function POST(request: NextRequest) {
         emailPending: email ? false : true,
         // 阶段0：注册即视为未验证，补全资料后置 true（自证）
         emailVerified: false,
-        // 数据出境单独同意留痕（注册已强制勾选）
-        consentCrossBorderAt: dataCrossBorderConsent ? new Date() : null,
+        // 数据出境单独同意留痕：仅 .com 站且真实勾选时才写入时间戳；.cn 无条件为 null（即使客户端伪造传 true 也不写）
+        consentCrossBorderAt: isComSite() && dataCrossBorderConsent ? new Date() : null,
         credits: 0,
         freeValuationsUsed: 0,
       },
@@ -93,9 +93,10 @@ export async function POST(request: NextRequest) {
     const gift = await grantRegisterGiftIfNeeded(user.id);
     const finalCredits = (user.credits ?? 0) + (gift.granted ? gift.amount : 0);
 
-    // 阶段 1（T05）：注册成功且提供了邮箱并已勾选数据出境同意 → 自动发验证邮件
+    // 阶段 1（T05）：注册成功且提供了邮箱 → 自动发验证邮件
+    // 注：原先额外要求 dataCrossBorderConsent；.cn 站不再收取该同意，故解耦，仅看 email。
     // 邮件发送失败不影响注册成功（catch 兜底）。
-    if (user.email && dataCrossBorderConsent) {
+    if (user.email) {
       try {
         await sendVerificationEmail({
           userId: user.id,

@@ -87,8 +87,8 @@ export function RegisterForm({ locale }: RegisterFormProps) {
       companyName: (form.elements.namedItem("companyName") as HTMLInputElement).value || undefined,
       country: (form.elements.namedItem("country") as HTMLSelectElement).value || undefined,
       role: (form.elements.namedItem("role") as HTMLSelectElement).value || "buyer",
-      // 必须携带，否则后端返回 400（方案 3.5 / 共享知识 §8）
-      dataCrossBorderConsent: isCom ? consent : true,
+      // 仅 .com 站需勾选；.cn 传 false（后端 schema 中该字段在 .cn 为可选）
+      dataCrossBorderConsent: isCom ? consent : false,
     };
 
     try {
