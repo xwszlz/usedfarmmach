@@ -1,6 +1,7 @@
 import { translate } from "@/lib/i18n-runtime";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { isCnSite } from "@/config/site";
 
 export async function generateMetadata({
@@ -9,6 +10,10 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
+  // .cn 站数据不出境，本页在 .cn 不可达（见下方 notFound 门禁）→ 不索引
+  if (isCnSite()) {
+    return { robots: { index: false, follow: false } };
+  }
   const title =
     locale === "zh"
       ? "《数据出境》单独同意条款 - 神雕农机"
@@ -30,6 +35,14 @@ export default async function CrossBorderConsentPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
+
+  // 站点门禁（合规）：.cn 站数据境内存储、不涉及出境，
+  // 故不存在「数据出境单独同意」这件事 → 该页在 .cn 一律 404。
+  // 参照 src/app/[locale]/escrow/layout.tsx 的站点头模式（方向相反）。
+  if (isCnSite()) {
+    notFound();
+  }
+
   const isZh = locale === "zh";
   const isCn = isCnSite();
 
