@@ -19,7 +19,8 @@ const PAGE_PATH = "/expo/heilongjiang-2026/guide";
 const TDK: Record<string, { title: string; description: string; keywords: string[] }> = {
   zh: {
     title:
-      "2026黑龙江农机展攻略_参展报名·观展交通住宿·代金券玩法（9/19-21 冰雪大世界）",
+    // ⚠️ 品牌后缀必须自带：根 layout 已不再用 title.template 追加（2026-09-18 修重复 bug）
+      "2026黑龙江农机展攻略_参展报名·观展交通住宿·代金券玩法（9/19-21 冰雪大世界）_神雕农机",
     description:
       "2026黑龙江国际农业机械展览会（9月19-21日·哈尔滨冰雪大世界）参展与观展完全宝典：报名流程、展位价格、物料清单、倒排时间表、交通住宿、20倍购机代金券玩法、避坑清单、常见问题。手机随时查。",
     keywords: [
