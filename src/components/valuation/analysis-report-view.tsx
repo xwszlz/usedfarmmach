@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
-import { Printer, Download, Copy, Check, BarChart3, FileText, Lock, Loader2 } from "lucide-react";
+import { useState, useMemo, useRef } from "react";
+import { Printer, Download, Copy, Check, BarChart3, FileText } from "lucide-react";
 import { getSubsidyPriceHistory, type SubsidyYearDatum } from "@/lib/valuation/brand-data";
 
 interface AnalysisReportViewProps {
@@ -75,27 +75,14 @@ export default function AnalysisReportView({
   valuationPrice,
 }: AnalysisReportViewProps) {
   const [copied, setCopied] = useState(false);
-  const [paying, setPaying] = useState(false);
-  const [countdown, setCountdown] = useState(10);
   const reportRef = useRef<HTMLDivElement>(null);
   const reportId = useMemo(() => genReportId(), []);
   const reportTime = useMemo(() => new Date().toLocaleString("zh-CN"), []);
 
-  // Payment countdown
-  const handlePayment = () => {
-    setPaying(true);
-    setCountdown(10);
-  };
-  useEffect(() => {
-    if (!paying) return;
-    if (countdown <= 0) {
-      setPaying(false);
-      onUnlock?.();
-      return;
-    }
-    const timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [paying, countdown, onUnlock]);
+  // Payment tiers were removed: the full report is always visible.
+  // `locked` / `onUnlock` are kept only so existing callers keep type-checking.
+  void locked;
+  void onUnlock;
 
   const sections = useMemo(() => parseMarkdownSections(report), [report]);
 
@@ -435,72 +422,21 @@ ${reportRef.current?.innerHTML || ""}
 
         {/* Report Sections */}
         <div className="divide-y divide-gray-100 bg-white">
-          {sections.map((section, i) => {
-            const isLockedSection = locked && i >= 2;
-            return (
-              <div key={i} className="px-5 py-4">
-                <h3 className="mb-2 text-sm font-bold text-gray-900">
-                  <span className="mr-2 text-purple-500">{"\u00a7"}{i + 1}</span>
-                  {section.title}
-                </h3>
-                <div
-                  className={`prose prose-sm max-w-none ${isLockedSection ? "filter blur-sm pointer-events-none select-none" : ""}`}
-                  dangerouslySetInnerHTML={{
-                    __html: `<p class="text-gray-600">${mdToHtml(section.content)}</p>`,
-                  }}
-                />
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Payment Gate */}
-        {locked && sections.length > 2 && (
-          <div className="border-t-2 border-purple-200 bg-gradient-to-b from-purple-50 to-white p-6">
-            <div className="flex flex-col items-center">
-              <Lock className="mb-2 h-8 w-8 text-purple-500" />
-              <p className="text-sm font-bold text-gray-800">{zh ? "解锁完整深度分析报告" : "Unlock Full Report"}</p>
-              <p className="mb-3 text-xs text-gray-500">
-                {zh ? `剩余 ${sections.length - 2} 个章节待解锁` : `${sections.length - 2} more sections locked`}
-              </p>
-
-              {paying ? (
-                <div className="flex flex-col items-center py-4">
-                  <Loader2 className="mb-2 h-8 w-8 animate-spin text-purple-600" />
-                  <p className="text-sm font-medium text-purple-600">
-                    {zh ? `正在解锁... ${countdown}s` : `Unlocking... ${countdown}s`}
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <div className="mb-3 flex items-baseline gap-1">
-                    <span className="text-3xl font-bold text-purple-600">{"\u00a5"}9</span>
-                    <span className="text-xs text-gray-400">{zh ? "一键解锁全部" : "one-time"}</span>
-                  </div>
-                  <div className="mb-4 flex gap-4">
-                    <div className="flex flex-col items-center">
-                      <img src="/qrcode/wechat-pay.png" alt="WeChat Pay" className="h-28 w-28 rounded-lg border border-gray-200 object-cover" />
-                      <span className="mt-1 text-xs text-gray-500">{zh ? "微信支付" : "WeChat"}</span>
-                    </div>
-                    <div className="flex flex-col items-center">
-                      <img src="/qrcode/alipay.jpg" alt="Alipay" className="h-28 w-28 rounded-lg border border-gray-200 object-cover" />
-                      <span className="mt-1 text-xs text-gray-500">{zh ? "支付宝" : "Alipay"}</span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={handlePayment}
-                    className="rounded-lg bg-purple-600 px-8 py-2.5 text-sm font-medium text-white transition-colors hover:bg-purple-700"
-                  >
-                    {zh ? "已付款，解锁全部" : "I've Paid, Unlock All"}
-                  </button>
-                  <p className="mt-2 text-[10px] text-gray-400">
-                    {zh ? "扫码付款后点击按钮即可解锁全部内容" : "Scan to pay, then click the button"}
-                  </p>
-                </>
-              )}
+          {sections.map((section, i) => (
+            <div key={i} className="px-5 py-4">
+              <h3 className="mb-2 text-sm font-bold text-gray-900">
+                <span className="mr-2 text-purple-500">{"\u00a7"}{i + 1}</span>
+                {section.title}
+              </h3>
+              <div
+                className="prose prose-sm max-w-none"
+                dangerouslySetInnerHTML={{
+                  __html: `<p class="text-gray-600">${mdToHtml(section.content)}</p>`,
+                }}
+              />
             </div>
-          </div>
-        )}
+          ))}
+        </div>
 
         {/* Footer */}
         <div className="border-t border-gray-100 bg-gray-50 px-5 py-3 text-center text-[10px] text-gray-400">

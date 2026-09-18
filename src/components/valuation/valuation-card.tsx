@@ -5,7 +5,6 @@ import { ChevronDown, ChevronUp, Sparkles, ThumbsUp, AlertTriangle, Shield } fro
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatValuationMoney } from "@/lib/valuation/formulas";
 import type { ValuationResult } from "@/lib/valuation/formulas";
-import { DeepReportSection } from "./deep-report-section";
 
 const LABELS: Record<string, {
   title: string;
@@ -34,7 +33,7 @@ const LABELS: Record<string, {
     range: "合理区间",
     details: "估值详情",
     viewReport: "深度报告",
-    reportHint: "深度估值报告含市场对比、趋势分析、购买建议（¥9-29）",
+    reportHint: "深度估值报告含市场对比、趋势分析、购买建议",
     loading: "估值计算中...",
     error: "估值失败",
     retry: "重试",
@@ -52,7 +51,7 @@ const LABELS: Record<string, {
     range: "Price Range",
     details: "Details",
     viewReport: "Deep Report",
-    reportHint: "Full report with market comparison, trends & buying advice (¥9-29)",
+    reportHint: "Full report with market comparison, trends & buying advice",
     loading: "Calculating...",
     error: "Failed",
     retry: "Retry",
@@ -70,7 +69,7 @@ const LABELS: Record<string, {
     range: "Диапазон",
     details: "Детали",
     viewReport: "Отчёт",
-    reportHint: "Полный отчёт с анализом рынка (¥9-29)",
+    reportHint: "Полный отчёт с анализом рынка",
     loading: "Расчёт...",
     error: "Ошибка",
     retry: "Повтор",
@@ -214,14 +213,6 @@ export function ValuationCard({ productId, productName, locale, autoLoad = true 
             ))}
           </div>
         )}
-
-        {/* 深度报告入口 — 内嵌展开三档选择+支付+生成 */}
-        <DeepReportSection
-          productId={productId}
-          productName={productName}
-          valuationResult={result}
-          locale={locale}
-        />
       </CardContent>
     </Card>
   );
