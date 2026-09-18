@@ -757,7 +757,8 @@
       "success": "Cadastro realizado",
       "passwordMismatch": "As senhas não coincidem",
       "crossBorderConsent": "Li e concordo com o consentimento separado para transferência transfronteiriça de dados",
-      "crossBorderConsentRequired": "Marque e concorde com o consentimento separado para transferência transfronteiriça de dados"
+      "crossBorderConsentRequired": "Marque e concorde com o consentimento separado para transferência transfronteiriça de dados",
+      "crossBorderConsentLink": "Consentimento para transferência transfronteiriça de dados"
     },
     "forgotPassword": {
       "title": "Recuperar senha",

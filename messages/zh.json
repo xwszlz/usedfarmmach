@@ -749,7 +749,8 @@
       "success": "注册成功",
       "passwordMismatch": "两次密码不一致",
       "crossBorderConsent": "我已阅读并同意《数据出境》单独同意条款",
-      "crossBorderConsentRequired": "请勾选并同意《数据出境》单独同意条款"
+      "crossBorderConsentRequired": "请勾选并同意《数据出境》单独同意条款",
+      "crossBorderConsentLink": "《数据出境》单独同意条款"
     },
     "forgotPassword": {
       "title": "忘记密码",

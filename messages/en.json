@@ -749,7 +749,8 @@
       "username": "Username",
       "usernamePlaceholder": "At least 3 characters",
       "usernameTooShort": "Username must be at least 3 characters",
-      "passwordTooShort": "Password must be at least 6 characters"
+      "passwordTooShort": "Password must be at least 6 characters",
+      "crossBorderConsentLink": "Consent for Cross-Border Data Transfer"
     },
     "forgotPassword": {
       "title": "Forgot Password",

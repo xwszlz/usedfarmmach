@@ -757,7 +757,8 @@
       "success": "पंजीकरण सफल",
       "passwordMismatch": "पासवर्ड मेल नहीं खाते",
       "crossBorderConsent": "मैंने सीमा-पार डेटा स्थानांतरण के लिए अलग सहमति पढ़ी है और सहमत हूँ",
-      "crossBorderConsentRequired": "कृपया सीमा-पार डेटा स्थानांतरण के लिए अलग सहमति चुनें और स्वीकार करें"
+      "crossBorderConsentRequired": "कृपया सीमा-पार डेटा स्थानांतरण के लिए अलग सहमति चुनें और स्वीकार करें",
+      "crossBorderConsentLink": "सीमा-पार डेटा स्थानांतरण हेतु सहमति"
     },
     "forgotPassword": {
       "title": "पासवर्ड भूल गए",

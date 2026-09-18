@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { UserPlus } from "lucide-react";
+import { isComSite } from "@/config/site";
 
 interface RegisterFormProps {
   locale: string;
@@ -32,6 +33,8 @@ function resolveSafeRedirect(raw: string | null, fallback: string): string {
 
 export function RegisterForm({ locale }: RegisterFormProps) {
   const t = useTranslations("auth.register");
+  // 数据出境单独同意仅在 .com 站适用（.cn 数据境内存储，不出境）
+  const isCom = isComSite();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -69,7 +72,7 @@ export function RegisterForm({ locale }: RegisterFormProps) {
     }
 
     // 数据出境单独同意：未勾选则拦截（后端亦强制校验）
-    if (!consent) {
+    if (isCom && !consent) {
       setError(t("crossBorderConsentRequired") || "请勾选并同意《数据出境》单独同意条款");
       setLoading(false);
       return;
@@ -85,7 +88,7 @@ export function RegisterForm({ locale }: RegisterFormProps) {
       country: (form.elements.namedItem("country") as HTMLSelectElement).value || undefined,
       role: (form.elements.namedItem("role") as HTMLSelectElement).value || "buyer",
       // 必须携带，否则后端返回 400（方案 3.5 / 共享知识 §8）
-      dataCrossBorderConsent: true,
+      dataCrossBorderConsent: isCom ? consent : true,
     };
 
     try {
@@ -199,16 +202,26 @@ export function RegisterForm({ locale }: RegisterFormProps) {
         defaultValue="buyer"
       />
 
-      {/* 数据出境单独同意（合规红线，必勾选） */}
-      <label className="flex items-start gap-2 text-sm text-gray-600">
-        <input
-          type="checkbox"
-          checked={consent}
-          onChange={(e) => setConsent(e.target.checked)}
-          className="mt-1"
-        />
-        <span>{t("crossBorderConsent") || "我已阅读并同意《数据出境》单独同意条款"}</span>
-      </label>
+      {/* 数据出境单独同意（合规红线，必勾选）——仅 .com 站适用；.cn 数据境内存储，不涉及出境 */}
+      {isCom && (
+        <label className="flex items-start gap-2 text-sm text-gray-600">
+          <input
+            type="checkbox"
+            checked={consent}
+            onChange={(e) => setConsent(e.target.checked)}
+            className="mt-1"
+          />
+          <span>
+            {locale === "zh" ? "我已阅读并同意" : t("crossBorderConsent")}{" "}
+            <Link
+              href={`/${locale}/cross-border-consent`}
+              className="font-medium text-primary-600 hover:underline"
+            >
+              {t("crossBorderConsentLink")}
+            </Link>
+          </span>
+        </label>
+      )}
 
       {error && <p className="text-sm text-red-500">{error}</p>}
       <Button type="submit" className="w-full" disabled={loading}>
