@@ -36,9 +36,15 @@ function getOSSCredentials(): { accessKeyId: string; accessKeySecret: string } {
   const accessKeyId = process.env.OSS_ACCESS_KEY_ID?.trim();
   const accessKeySecret = process.env.OSS_ACCESS_KEY_SECRET?.trim();
 
-  if (!accessKeyId || !accessKeySecret) {
+  // ⚠️ 防御纵深（fail-closed）：占位符值同样视为未配置，绝不当成可用凭据。
+  if (
+    !accessKeyId ||
+    !accessKeySecret ||
+    accessKeyId === "your-access-key-id" ||
+    accessKeySecret === "your-access-key-secret"
+  ) {
     console.error(
-      "[TempUpload] ❌ OSS 凭据缺失：请配置环境变量 OSS_ACCESS_KEY_ID / OSS_ACCESS_KEY_SECRET"
+      "[TempUpload] ❌ OSS 凭据缺失或仍是占位值：请配置环境变量 OSS_ACCESS_KEY_ID / OSS_ACCESS_KEY_SECRET"
     );
     throw new Error(
       "OSS 凭据未配置：缺失环境变量 OSS_ACCESS_KEY_ID / OSS_ACCESS_KEY_SECRET"
