@@ -8,7 +8,7 @@ import {
   Zap, Globe, Ship, CheckCircle2, XCircle,
 } from "lucide-react";
 import Link from "next/link";
-import { DeepReportSection } from "@/components/valuation/deep-report-section";
+import { PublishCta } from "@/components/valuation/publish-cta";
 import AnalysisReportView from "@/components/valuation/analysis-report-view";
 import ValuationResultGate, { type BlurredValuation } from "@/components/valuation/valuation-result-gate";
 import {
@@ -460,7 +460,6 @@ function DeepAnalysisSection({
           <FileText className="h-5 w-5 text-purple-600" />
           <h3 className="text-sm font-semibold text-gray-800">深度估值报告</h3>
         </div>
-        <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-medium text-purple-700">¥9</span>
       </div>
       <p className="mb-3 text-xs text-gray-500">
         包含：六维度现状评估 · 技术参数 · 操作维修 · 估值引擎参考价 · 购买建议 · 资源文档
@@ -567,6 +566,8 @@ export default function ValuationPage() {
   const [gateData, setGateData] = useState<BlurredValuation | null>(null);
   const [limitReached, setLimitReached] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
+  // 登录用户本月 AI 估值额度已用完（后端 403 QUOTA_EXCEEDED）→ 已降级为本地模型
+  const [quotaExhausted, setQuotaExhausted] = useState(false);
 
   // 实时预览基准价
   const previewBasePrice = channel === "domestic"
@@ -603,7 +604,24 @@ export default function ValuationPage() {
           return;
         }
 
-        const data = await res.json();
+        // ── 登录用户本月 AI 估值次数用尽（403 QUOTA_EXCEEDED）──
+        // 之前只认 429，403 会掉进 else 分支静默降级，用户看不到原因。
+        // body 只能读一次：先取出再分支，避免二次 res.json() 报
+        // "body stream already read" 导致结果区卡死。
+        const data = await res.json().catch(() => null);
+
+        if (res.status === 403 && data?.code === "QUOTA_EXCEEDED") {
+          setQuotaExhausted(true);
+          setGateData(null);
+          setResult(null);
+          doClientCalc();
+          return;
+        }
+
+        if (!data) {
+          doClientCalc();
+          return;
+        }
         if (data.success) {
           // ── P0 留资引擎：游客模糊区间结果 → 渲染解锁卡片 ──
           if (data.blurred === true) {
@@ -622,6 +640,7 @@ export default function ValuationPage() {
           // 登录用户（blurred: false）：照旧展示精确结果
           setGateData(null);
           setLimitReached(false);
+          setQuotaExhausted(false);
           const r = data.data;
           setResult({
             value: r.estimatedValue,
@@ -809,7 +828,7 @@ export default function ValuationPage() {
         >
           <Zap className="mr-1 inline h-4 w-4" />
           快速估价
-          <span className="ml-1 text-xs opacity-70">免费 · 秒级</span>
+          <span className="ml-1 text-xs opacity-70">本地模型 · 秒级</span>
         </button>
         <button
           onClick={() => setMode("deep")}
@@ -819,7 +838,7 @@ export default function ValuationPage() {
         >
           <FileText className="mr-1 inline h-4 w-4" />
           深度报告
-          <span className="ml-1 text-xs opacity-70">¥9-29 · 30秒</span>
+          <span className="ml-1 text-xs opacity-70">AI 深度分析 · 免费</span>
         </button>
       </div>
 
@@ -1160,6 +1179,19 @@ export default function ValuationPage() {
             </div>
           )}
 
+          {/* 本月 AI 估值额度已用完提示 */}
+          {quotaExhausted && (
+            <div className="mt-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <div>
+                <strong className="font-semibold">本月 AI 估值次数已用完</strong>
+                <p className="mt-1 text-xs text-amber-700">
+                  下方结果由本地模型估算，精度略低于 AI 模型。额度将在下个自然月重置。
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Results */}
           {result && (
             <div className="mt-6 space-y-4 animate-in">
@@ -1257,19 +1289,14 @@ export default function ValuationPage() {
                 </div>
               )}
 
-              {/* Deep Report Section (paid, three tiers) */}
-              <DeepReportSection
+              {/* 估价后一键发布出售（转化入口，免费） */}
+              <PublishCta
                 brand={channel === "domestic" ? dBrand : iBrand}
                 model={channel === "domestic" ? `${dBrand} ${dCategory}` : iBrand}
                 year={channel === "domestic" ? dYear - dYears : iYear}
                 horsepower={channel === "domestic" ? dHP : iHP}
                 category={dCategory}
-                valuationResult={result ? {
-                  estimatedValue: result.value,
-                  confidenceScore: result.confidence / 100,
-                } : null}
                 locale={locale}
-                showPublishButton={true}
               />
             </div>
           )}
