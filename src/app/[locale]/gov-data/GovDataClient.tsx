@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
 
 interface Policy {
   id: string;
@@ -22,9 +21,10 @@ interface Policy {
   status: string;
 }
 
-export default function GovDataClient() {
-  const searchParams = useSearchParams();
-  const locale = searchParams.get("locale") || "zh";
+export default function GovDataClient({ locale = "zh" }: { locale?: string }) {
+  // locale 由服务端 page.tsx 从路由参数传入（next-intl 的 localePrefix=always）。
+  // 历史写法 useSearchParams().get("locale") 读的是查询参数，而真实语言在路径里，
+  // 导致 /en/gov-data 等非中文页面渲染出中文 H1。已移除 useSearchParams 依赖。
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"policies" | "registry">("policies");
