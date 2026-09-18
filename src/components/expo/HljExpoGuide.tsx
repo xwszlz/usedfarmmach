@@ -246,8 +246,8 @@ export function HljExpoGuide({ locale }: { locale: string }) {
       </div>
 
       <Note tone="red">
-        <b>{t("countdown.deadline", { days: 7 })}</b>{" "}
-        {t("countdown.detail1")} {t("countdown.detail2")} {t("countdown.detail3")} {t("countdown.detail4")}
+        <b>{t("countdown.deadline")}</b>{" "}
+        {t("countdown.detail1")} {t("countdown.detail2")} {t("countdown.detail3")}
       </Note>
 
       {/* ===== 神雕业务钩子（前置，突出收售机型） ===== */}
@@ -429,7 +429,7 @@ export function HljExpoGuide({ locale }: { locale: string }) {
 
       {/* ===== 二、参展篇 ===== */}
       <Card>
-        <H2 n="二">参展篇 · 展商看这里</H2>
+        <H2 n="二">参展篇 · 现场须知</H2>
 
         <h3 className="mt-4 font-bold text-gray-900">1. 报名五步走</h3>
         <Tbl
@@ -516,7 +516,7 @@ export function HljExpoGuide({ locale }: { locale: string }) {
 
       {/* ===== 三、展位怎么选 ===== */}
       <Card>
-        <H2 n="三">展位怎么选</H2>
+        <H2 n="三">展位怎么选（下一届参考）</H2>
 
         <h3 className="mt-4 font-bold text-gray-900">价格参考</h3>
         <Tbl
@@ -579,7 +579,7 @@ export function HljExpoGuide({ locale }: { locale: string }) {
 
       {/* ===== 四、物料清单 ===== */}
       <Card>
-        <H2 n="四">物料清单（点一下就打勾，自动保存）</H2>
+        <H2 n="四">现场自检清单（点一下就打勾，自动保存）</H2>
         <p className="text-xs text-gray-500">
           勾选状态保存在你手机本地，关掉再打开还在，可做展前自检表。
         </p>
@@ -641,26 +641,18 @@ export function HljExpoGuide({ locale }: { locale: string }) {
         </div>
       </Card>
 
-      {/* ===== 五、倒排表 ===== */}
+      {/* ===== 五、三天现场节奏（现场版） ===== */}
       <Card>
-        <H2 n="五">展前倒排表</H2>
-        <ol className="relative ml-2 border-l-2 border-gray-200 pl-5">
+        <H2 n="五">{t("onsite.title")}</H2>
+        <p className="text-sm text-gray-700">{t("onsite.desc")}</p>
+
+        <ol className="relative ml-2 mt-4 border-l-2 border-gray-200 pl-5">
           {[
-            ["展前 11 天（9/8）", "致电组委会确认展位余位 + 价格 + 索取展位平面图；订酒店和往返交通", true],
-            ["展前 10 天（9/9）", "选定展位；填《参展回执》+ 营业执照盖章件回传", true],
-            ["展前 9 天（9/10）", "🔴 用电申报截止（逾期加收 100%）", true],
-            ["展前 8–9 天（9/10–11）", "付款 + 上传汇款底单（款到才算确认）", false],
-            ["展前 7 天（9/11）", "确认楣板文字、是否拆隔板、是否大功率用电", false],
-            ["展前 5–6 天（9/12–13）", "物料设计定稿 → 下单制作（留足 3 天工期）", false],
-            ["展前 4 天（9/14）", "物料验收；确认《展商证》领取方式", false],
-            ["展前 3 天（9/15）", "🔴 报名截止 + 拆隔板/大功率用电最终确认", true],
-            ["展前 3 天（9/15）", "参展人员培训：话术 + 代金券推介 + 合规红线", true],
-            ["展前 2–0 天（9/16–18）", "布展（标准展位 9/17–18 进场即可）", false],
-            ["展前 1 天（9/18）", "人员抵达、展位彩排、设备联调", false],
-            ["展期（9/19–21）", "每日 8:00 进场，16:30 闭馆，闭馆前不得提前离开", false],
-            ["展后（9/22）", "撤展 8:30–16:30", false],
-            ["展后 7 天（9/23–30）", "线索闭环跟进", false],
-          ].map(([d, t, hot], i) => (
+            ["onsite.day1.t", "onsite.day1.d", true],
+            ["onsite.day2.t", "onsite.day2.d", false],
+            ["onsite.day3.t", "onsite.day3.d", false],
+            ["onsite.after.t", "onsite.after.d", true],
+          ].map(([kt, kd, hot], i) => (
             <li key={i} className="mb-3.5">
               <span
                 className={`absolute -left-[7px] mt-1.5 h-3 w-3 rounded-full border-2 ${
@@ -668,12 +660,14 @@ export function HljExpoGuide({ locale }: { locale: string }) {
                 }`}
               />
               <div className={`text-sm font-extrabold ${hot ? "text-red-600" : "text-red-500"}`}>
-                {d as string}
+                {t(kt as string)}
               </div>
-              <div className="text-sm text-gray-700">{t as string}</div>
+              <div className="text-sm text-gray-700">{t(kd as string)}</div>
             </li>
           ))}
         </ol>
+
+        <Note tone="blue">{t("onsite.note")}</Note>
       </Card>
 
       {/* ===== 六、现场 SOP ===== */}
@@ -775,19 +769,8 @@ export function HljExpoGuide({ locale }: { locale: string }) {
           />
           <Faq
             open
-            q="参展报名什么时候截止？"
-            a={
-              <>
-                报名时间为 2026 年 6 月 22 日至 <b>9 月 15 日</b>。
-                <br />
-                <br />
-                需特别注意三个更早的节点：<b>9 月 10 日</b>前无搭建展商须申报用电（逾期加收 100%）；
-                <b>9 月 15 日</b>前须通知拆隔板与大功率用电需求。
-                <br />
-                <br />
-                更重要的是：<b>展位以「款到日期」确认，不是报名日期</b>。未按时付款，组委会有权取消且不另行通知。
-              </>
-            }
+            q="参展报名还能报吗？"
+            a="本届参展报名已于 2026 年 9 月 15 日截止，现场不再受理。若想参加下一届，可参考第三节展位价格与第四节现场自检清单提前准备；天津展（10 月 26–28 日）另有一套报名安排。"
           />
           <Faq
             open
