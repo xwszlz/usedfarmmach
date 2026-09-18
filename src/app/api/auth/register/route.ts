@@ -69,8 +69,8 @@ export async function POST(request: NextRequest) {
         emailPending: email ? false : true,
         // 阶段0：注册即视为未验证，补全资料后置 true（自证）
         emailVerified: false,
-        // 数据出境单独同意留痕（仅 .com 站勾选时留痕；.cn 为 null）
-        consentCrossBorderAt: dataCrossBorderConsent ? new Date() : null,
+        // 数据出境单独同意留痕：仅 .com 站且真实勾选时才写入时间戳；.cn 无条件为 null（即使客户端伪造传 true 也不写）
+        consentCrossBorderAt: isComSite() && dataCrossBorderConsent ? new Date() : null,
         credits: 0,
         freeValuationsUsed: 0,
       },
