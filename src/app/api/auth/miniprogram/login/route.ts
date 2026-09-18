@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { signToken, ensureJwtSecret } from "@/lib/auth";
 import { code2Session } from "@/lib/wechat-miniprogram";
+import { grantRegisterGiftIfNeeded } from "@/lib/credits/grant";
 
 /**
  * POST /api/auth/miniprogram/login
@@ -51,12 +52,21 @@ export async function POST(request: NextRequest) {
         },
       });
       console.log(`[miniprogram/login] 新建小程序用户 ${user.id} (openid=${openid.slice(0, 6)}...)`);
+
+      // 与网页注册口径统一：新建用户即发注册礼包（幂等，靠 UserMilestone.register_gift 去重）
+      const gift = await grantRegisterGiftIfNeeded(user.id);
+      user = {
+        ...user,
+        credits: (user.credits ?? 0) + (gift.granted ? gift.amount : 0),
+      };
     } else {
       await prisma.user.update({
         where: { id: user.id },
         data: { lastLoginAt: new Date() },
       });
     }
+
+    const finalCredits = user.credits ?? 0;
 
     const token = signToken({
       userId: user.id,
@@ -75,6 +85,7 @@ export async function POST(request: NextRequest) {
           companyName: user.companyName,
           country: user.country,
           phone: user.phone,
+          credits: finalCredits,
         },
       },
     });
