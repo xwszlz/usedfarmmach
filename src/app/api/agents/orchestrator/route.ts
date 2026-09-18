@@ -31,9 +31,10 @@ function checkAuth(req: NextRequest): NextResponse | null {
   }
 
   // 2) 回退：CRON_API_KEY（外部 cron / CLI 调用）
-  const apiKey = process.env.CRON_API_KEY || "dev-secret-key";
+  // ⚠️ 安全约定（务必保留）：绝不为密钥设置默认值兜底，env 缺失即不可比对（fail-closed）。
+  const apiKey = process.env.CRON_API_KEY;
   const auth = req.headers.get("Authorization");
-  if (auth && auth.startsWith("Bearer ") && auth.substring(7) === apiKey) {
+  if (apiKey && auth && auth.startsWith("Bearer ") && auth.substring(7) === apiKey) {
     return null; // OK：放行
   }
 

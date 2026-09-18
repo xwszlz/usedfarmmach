@@ -21,7 +21,8 @@ export async function POST(request: NextRequest) {
   try {
     // API密钥验证
     const authHeader = request.headers.get("Authorization");
-    const apiKey = process.env.CRON_API_KEY || "dev-secret-key";
+    // ⚠️ 绝不为密钥设置默认值兜底，env 缺失即 fail-closed。
+    const apiKey = process.env.CRON_API_KEY;
     
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return NextResponse.json(
@@ -31,7 +32,7 @@ export async function POST(request: NextRequest) {
     }
     
     const token = authHeader.substring(7);
-    if (token !== apiKey && process.env.NODE_ENV === "production") {
+    if (!apiKey || token !== apiKey) {
       return NextResponse.json(
         { success: false, error: "无效的API密钥" },
         { status: 401 }
