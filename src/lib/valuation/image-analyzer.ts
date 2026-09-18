@@ -6,13 +6,19 @@
  */
 
 import axios from "axios";
+import { isOverseasAiAllowed } from "@/config/site";
 
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || "";
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
 const OPENROUTER_BASE = "https://openrouter.ai/api/v1";
 
-// 优先使用 Google Gemini（免费），其次使用 OpenRouter
-const USE_GOOGLE_PRIMARY = GOOGLE_API_KEY !== "";
+// 🔴 合规：.cn 站数据不出境 —— Gemini / OpenRouter 均为境外服务，一律禁用。
+// 模块级常量：站点在进程生命周期内不变，可安全提升到模块作用域。
+const ALLOW_OVERSEAS_AI = isOverseasAiAllowed();
+
+// 优先使用 Google Gemini（免费），其次使用 OpenRouter（仅 .com 可用）
+const USE_GOOGLE_PRIMARY = GOOGLE_API_KEY !== "" && ALLOW_OVERSEAS_AI;
+const USE_OPENROUTER = OPENROUTER_API_KEY !== "" && ALLOW_OVERSEAS_AI;
 
 export interface ImageAnalysisResult {
   conditionScore: number;      // 成色评分 1-10
@@ -43,6 +49,7 @@ export async function analyzeProductImage(
   console.log(`[ImageAnalyzer] API配置状态:`, {
     hasGoogleKey: !!GOOGLE_API_KEY,
     hasOpenRouterKey: !!OPENROUTER_API_KEY,
+    allowOverseasAi: ALLOW_OVERSEAS_AI,
     useGooglePrimary: USE_GOOGLE_PRIMARY
   });
 
@@ -57,7 +64,7 @@ export async function analyzeProductImage(
       console.error(`[ImageAnalyzer] Google Gemini 调用失败:`, error?.message || String(error));
       console.log(`[ImageAnalyzer] 尝试降级到 OpenRouter...`);
       // 如果Google失败且有OpenRouter密钥，尝试降级
-      if (OPENROUTER_API_KEY) {
+      if (USE_OPENROUTER) {
         try {
           const result = await analyzeWithOpenRouter(imageUrl);
           return result;
@@ -70,8 +77,8 @@ export async function analyzeProductImage(
     }
   }
 
-  // 降级到 OpenRouter
-  if (OPENROUTER_API_KEY) {
+  // 降级到 OpenRouter（仅 .com）
+  if (USE_OPENROUTER) {
     console.log(`[ImageAnalyzer] 使用 OpenRouter API`);
     try {
       const result = await analyzeWithOpenRouter(imageUrl);

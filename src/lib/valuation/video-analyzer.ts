@@ -9,6 +9,7 @@
  */
 
 import axios from "axios";
+import { isOverseasAiAllowed } from "@/config/site";
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
 const OPENROUTER_BASE = "https://openrouter.ai/api/v1";
@@ -33,6 +34,12 @@ export interface VideoAnalysisResult {
 export async function analyzeVideo(
   videoUrl: string
 ): Promise<VideoAnalysisResult> {
+  // 🔴 合规：.cn 站数据不出境 —— GPT-4o 经 OpenRouter 属境外服务，一律禁用
+  if (!isOverseasAiAllowed()) {
+    console.warn("[VideoAnalyzer] 国内站禁用境外模型（OpenRouter），使用降级方案");
+    return getDefaultAnalysis();
+  }
+
   if (!OPENROUTER_API_KEY) {
     console.warn("[VideoAnalyzer] OPENROUTER_API_KEY 未配置，使用降级方案");
     return getDefaultAnalysis();

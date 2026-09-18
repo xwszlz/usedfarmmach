@@ -15,6 +15,7 @@
 // ───────────────────────────────────────────────
 
 import { NextRequest, NextResponse } from "next/server";
+import { isOverseasAiAllowed } from "@/config/site";
 import axios from "axios";
 import { parseLocationText, buildLocationText } from "@/lib/location-parser";
 import { findCountryInText } from "@/lib/location-data";
@@ -766,7 +767,15 @@ export async function POST(request: NextRequest) {
     const errors: string[] = [];
     let finalRecognized: Record<string, any> | null = null;
 
+    // 🔴 合规：.cn 站数据不出境 —— 只允许境内 provider（ark/豆包）
+    const allowOverseasAi = isOverseasAiAllowed();
+
     for (const entry of MODEL_CHAIN) {
+      // 站点过滤：.cn 跳过一切境外模型（google / openrouter）
+      if (!allowOverseasAi && entry.provider !== "ark") {
+        errors.push(`[${entry.label}] 国内站禁用境外模型`);
+        continue;
+      }
       // 检查 API Key 是否可用
       if (entry.provider === "ark" && !ARK_API_KEY) {
         errors.push("[豆包] ARK_API_KEY未配置");
@@ -850,7 +859,8 @@ export async function POST(request: NextRequest) {
 
     // 关键字段（brand/modelName）缺失时，用 Gemini 做一次聚焦补识别
     if (!finalRecognized.brand || !finalRecognized.modelName) {
-      if (GOOGLE_API_KEY) {
+      // 🔴 .cn 站禁用 Gemini 补识别（数据不出境）
+      if (GOOGLE_API_KEY && allowOverseasAi) {
         try {
           console.log("[SellerHelper] 关键字段缺失，启动 Gemini 聚焦补识别...");
           const fallbackPrompt = buildBrandModelFallbackPrompt(useDomestic);
@@ -869,7 +879,7 @@ export async function POST(request: NextRequest) {
           console.warn("[SellerHelper] 品牌型号补识别失败:", e?.message?.substring(0, 100));
         }
       } else {
-        console.warn("[SellerHelper] 关键字段缺失但 GOOGLE_API_KEY 未配置，跳过补识别");
+        console.warn(`[SellerHelper] 关键字段缺失，跳过 Gemini 补识别（${allowOverseasAi ? "GOOGLE_API_KEY 未配置" : "国内站禁用境外模型"}）`);
       }
     }
 

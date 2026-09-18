@@ -160,3 +160,20 @@ export function isCnSite(): boolean {
 export function isComSite(): boolean {
   return getSiteVariant() === "com";
 }
+
+/**
+ * 是否允许调用「境外 AI 服务」（Gemini / OpenRouter / OpenAI 等）。
+ *
+ * 🔴 合规红线：.cn 站数据不出境。
+ *    - .cn：一律返回 false —— 所有境外 AI 分支必须被跳过，只允许走境内的豆包（ARK/火山引擎）。
+ *    - .com：返回 true —— 维持原有国际链路不变。
+ *
+ * 用法：在调用境外 AI 之前将其并入守卫条件，例如
+ *   if (!text && GOOGLE_API_KEY && isOverseasAiAllowed()) { ... }
+ *
+ * 注意：本函数只回答「站点是否允许」。是否真的调用，仍取决于对应 API Key 是否配置。
+ * 两者是「与」关系，缺一不可 —— 这样即使未来 .cn 误配了境外 key，也不会出境。
+ */
+export function isOverseasAiAllowed(): boolean {
+  return getSiteVariant() !== "cn";
+}
