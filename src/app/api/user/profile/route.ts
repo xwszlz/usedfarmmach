@@ -25,6 +25,7 @@ import { getTokenFromHeaders, verifyToken, hashPassword } from "@/lib/auth";
 import { completeProfileSchema } from "@/lib/validators";
 import { grantRegisterGiftIfNeeded } from "@/lib/credits/grant";
 import { sendVerificationEmail } from "@/lib/email-actions";
+import { isComSite } from "@/config/site";
 
 export async function POST(request: NextRequest) {
   try {
@@ -51,8 +52,8 @@ export async function POST(request: NextRequest) {
     const { email, companyName, country, password, dataCrossBorderConsent } =
       parsed.data;
 
-    // 3) 数据出境单独同意兜底校验（schema 已 refine 为 true，此处再次防御）
-    if (!dataCrossBorderConsent) {
+    // 3) 数据出境单独同意兜底校验（仅 .com 站；.cn 数据境内存储，不涉及出境）
+    if (isComSite() && !dataCrossBorderConsent) {
       return NextResponse.json(
         { success: false, error: "请勾选并同意《数据出境》单独同意条款" },
         { status: 400 }
@@ -102,8 +103,10 @@ export async function POST(request: NextRequest) {
       // 阶段 1：补全提交邮箱不再"自证为已验证"（撤回阶段 0 行为）；
       // 改为发验证邮件，点击 magic-link 后才置 true（见 verify-email 回调）。
       ...(shouldVerify ? { emailVerified: false, emailPending: true } : {}),
-      // 数据出境单独同意留痕
-      consentCrossBorderAt: new Date(),
+      // 数据出境单独同意留痕（仅 .com 站勾选时留痕；.cn 不涉及出境，不写留痕）
+      ...(isComSite() && dataCrossBorderConsent
+        ? { consentCrossBorderAt: new Date() }
+        : {}),
     };
     if (normalizedEmail) updateData.email = normalizedEmail;
     if (companyName && companyName.trim().length > 0) {

@@ -76,7 +76,7 @@ export function CompleteProfileForm({ locale }: CompleteProfileFormProps) {
       companyName,
       country,
       password,
-      dataCrossBorderConsent: isCom ? consent : true,
+      dataCrossBorderConsent: isCom ? consent : false,
     };
 
     try {

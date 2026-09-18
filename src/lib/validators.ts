@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isComSite } from "@/config/site";
 
 export const registerSchema = z
   .object({
@@ -16,12 +17,14 @@ export const registerSchema = z
     companyName: z.string().optional(),
     country: z.string().optional(),
     role: z.enum(["buyer", "seller"]).default("buyer"),
-    // 数据出境单独同意：必须勾选（true），否则拦截（方案 3.5 / 共享知识 §8）
-    dataCrossBorderConsent: z
-      .boolean({ required_error: "请勾选数据出境单独同意" })
-      .refine((v) => v === true, {
-        message: "请勾选并同意《数据出境》单独同意条款",
-      }),
+    // 数据出境单独同意：仅 .com 站强制（.cn 数据境内存储，不涉及出境）
+    dataCrossBorderConsent: isComSite()
+      ? z
+          .boolean({ required_error: "请勾选数据出境单独同意" })
+          .refine((v) => v === true, {
+            message: "请勾选并同意《数据出境》单独同意条款",
+          })
+      : z.boolean().optional().default(false),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -70,18 +73,20 @@ export type ProductQueryInput = z.infer<typeof productQuerySchema>;
 /**
  * 补全资料（本人，POST /api/user/profile）
  * email/companyName/country 可选；password 可选（≥6 位）；
- * dataCrossBorderConsent 必须 true。
+ * dataCrossBorderConsent 仅 .com 站强制；.cn 不涉及出境。
  */
 export const completeProfileSchema = z.object({
   email: z.string().email("Invalid email address").optional().or(z.literal("")),
   companyName: z.string().optional(),
   country: z.string().optional(),
   password: z.string().min(6, "Password must be at least 6 characters").optional(),
-  dataCrossBorderConsent: z
-    .boolean({ required_error: "请勾选数据出境单独同意" })
-    .refine((v) => v === true, {
-      message: "请勾选并同意《数据出境》单独同意条款",
-    }),
+  dataCrossBorderConsent: isComSite()
+    ? z
+        .boolean({ required_error: "请勾选数据出境单独同意" })
+        .refine((v) => v === true, {
+          message: "请勾选并同意《数据出境》单独同意条款",
+        })
+    : z.boolean().optional().default(false),
 });
 
 /**
