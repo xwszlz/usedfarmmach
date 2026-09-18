@@ -13,9 +13,15 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
+  // ⚠️ 2026-09-18 修复 title 品牌重复：
+  //   原为 template: "%s_神雕农机"，但全站子页面 TDK 结尾**多数已自带**「_神雕农机」，
+  //   被 template 再追加一次 → 线上出现「..._神雕农机_神雕农机」；
+  //   英文/俄文等 locale 页 TDK 结尾是「| AgriTrade」，更会被强接中文品牌 →「AgriTrade_神雕农机」。
+  //   现改为纯透传 "%s"：品牌统一由各页面自身 TDK 负责（zh 侧 21 处均已自带）。
+  //   注：template 不可省略 —— Next 的 DefaultTemplateString 要求 default 与 template 同时存在。
   title: {
     default: "二手农机交易平台_跨境农机出口_全球二手农机买卖_神雕农机",
-    template: "%s_神雕农机",
+    template: "%s",
   },
   description:
     "神雕农机—全球二手农机交易平台，提供CLAAS青储机、约翰迪尔拖拉机、凯斯农机等品牌二手农机买卖服务。AI智能估价、跨境套利分析、一站式物流，让农机交易更透明高效。",

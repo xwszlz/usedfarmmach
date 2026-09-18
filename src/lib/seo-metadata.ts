@@ -385,7 +385,7 @@ const localizedMeta: Record<string, Record<string, { title: string; description:
   },
   about: {
     zh: {
-      title: "关于神雕农机_全球二手农机交易平台_跨境农机出口专家",
+      title: "关于神雕农机_全球二手农机交易平台_跨境农机出口专家_神雕农机",
       description: "神雕农机—石家庄神雕农机科技有限公司旗下全球二手农机交易平台。连接中国与全球农机市场，通过AI估价、跨境套利和一站式物流，让农机交易更透明。",
     },
     en: {
