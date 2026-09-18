@@ -536,8 +536,11 @@ export async function POST(request: NextRequest) {
     const engineLabel = isChineseBrand ? "国内(DOMESTIC)" : "国际(INTERNATIONAL)";
 
     // 站点感知：国内站 (.cn) 网络环境下优先且强制使用豆包，避免依赖 Google/OpenRouter
-    const site = process.env.SITE || process.env.NEXT_PUBLIC_SITE || "com";
+    const site = process.env.SITE || process.env.NEXT_PUBLIC_SITE || "";
     const isCnSite = site === "cn";
+    // 🔴 境外 AI 开关：.cn 一律禁用（数据不出境）。
+    // fail-closed：站点标识缺失（site 为空）时也按 .cn 处理，绝不放行。
+    const allowOverseasAi = site === "com";
     console.log(`[DeepAnalysis] 引擎模式: ${engineLabel}, isChineseBrand: ${isChineseBrand}, site: ${site}, isCnSite: ${isCnSite}`);
 
     let analysisText = "";
@@ -565,8 +568,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Gemini：国际站国际品牌首选 / 豆包失败后降级；国内站仅作为降级（不强制）
-    if (!analysisText && GOOGLE_API_KEY) {
+    // Gemini：国际站国际品牌首选 / 豆包失败后降级。
+    // 🔴 .cn 站禁用：数据不出境（allowOverseasAi 为 false 时整段跳过）
+    if (!analysisText && GOOGLE_API_KEY && allowOverseasAi) {
       try {
         const geminiRole = isCnSite ? "国内站降级" : (isChineseBrand === false ? "国际首选" : "降级备用");
         console.log(`[DeepAnalysis] Gemini ${geminiRole}, 引擎: ${engineLabel}`);
@@ -578,11 +582,11 @@ export async function POST(request: NextRequest) {
         errors.push(msg);
       }
     } else if (!analysisText) {
-      errors.push("[Gemini] GOOGLE_API_KEY未配置");
+      errors.push(allowOverseasAi ? "[Gemini] GOOGLE_API_KEY未配置" : "[Gemini] 国内站禁用境外模型");
     }
 
-    // 备用：OpenRouter
-    if (!analysisText && OPENROUTER_API_KEY) {
+    // 备用：OpenRouter（🔴 .cn 站禁用，数据不出境）
+    if (!analysisText && OPENROUTER_API_KEY && allowOverseasAi) {
       try {
         console.log(`[DeepAnalysis] 降级到 OpenRouter, 引擎: ${engineLabel}`);
         const content = await buildDoubaoContent(images, [], activePrompt); // OpenRouter 不支持 video_url
@@ -611,7 +615,7 @@ export async function POST(request: NextRequest) {
         errors.push(msg);
       }
     } else if (!analysisText) {
-      errors.push("[OpenRouter] OPENROUTER_API_KEY未配置");
+      errors.push(allowOverseasAi ? "[OpenRouter] OPENROUTER_API_KEY未配置" : "[OpenRouter] 国内站禁用境外模型");
     }
 
     if (!analysisText || analysisText.trim().length < 50) {
