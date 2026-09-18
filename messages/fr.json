@@ -757,7 +757,8 @@
       "success": "Inscription réussie",
       "passwordMismatch": "Les mots de passe ne correspondent pas",
       "crossBorderConsent": "J'ai lu et j'accepte le consentement distinct au transfert transfrontalier de données",
-      "crossBorderConsentRequired": "Veuillez cocher et accepter le consentement distinct au transfert transfrontalier de données"
+      "crossBorderConsentRequired": "Veuillez cocher et accepter le consentement distinct au transfert transfrontalier de données",
+      "crossBorderConsentLink": "Consentement au transfert transfrontalière de données"
     },
     "forgotPassword": {
       "title": "Mot de passe oublié",

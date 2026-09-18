@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2 } from "lucide-react";
+import { isComSite } from "@/config/site";
 
 interface CompleteProfileFormProps {
   locale: string;
@@ -21,6 +22,8 @@ interface CompleteProfileFormProps {
  */
 export function CompleteProfileForm({ locale }: CompleteProfileFormProps) {
   const t = useTranslations("auth.register");
+  // 数据出境单独同意仅在 .com 站适用（.cn 数据境内存储，不出境）
+  const isCom = isComSite();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -50,7 +53,7 @@ export function CompleteProfileForm({ locale }: CompleteProfileFormProps) {
     setSuccess(false);
 
     // 数据出境单独同意为必选项
-    if (!consent) {
+    if (isCom && !consent) {
       setError(
         t("crossBorderConsentRequired") ||
           "请勾选并同意《数据出境》单独同意条款"
@@ -73,7 +76,7 @@ export function CompleteProfileForm({ locale }: CompleteProfileFormProps) {
       companyName,
       country,
       password,
-      dataCrossBorderConsent: true,
+      dataCrossBorderConsent: isCom ? consent : true,
     };
 
     try {
@@ -186,24 +189,26 @@ export function CompleteProfileForm({ locale }: CompleteProfileFormProps) {
         minLength={6}
       />
 
-      {/* 数据出境单独同意（必填） */}
-      <label className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300">
-        <input
-          type="checkbox"
-          checked={consent}
-          onChange={(e) => setConsent(e.target.checked)}
-          className="mt-1 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-        />
-        <span>
-          {t("crossBorderConsent")}{" "}
-          <Link
-            href={`/${locale}/privacy`}
-            className="font-medium text-primary-600 hover:underline"
-          >
-            {locale === "zh" ? "隐私政策" : "Privacy Policy"}
-          </Link>
-        </span>
-      </label>
+      {/* 数据出境单独同意（必填）——仅 .com 站适用；.cn 数据境内存储，不涉及出境 */}
+      {isCom && (
+        <label className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300">
+          <input
+            type="checkbox"
+            checked={consent}
+            onChange={(e) => setConsent(e.target.checked)}
+            className="mt-1 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+          />
+          <span>
+            {locale === "zh" ? "我已阅读并同意" : t("crossBorderConsent")}{" "}
+            <Link
+              href={`/${locale}/cross-border-consent`}
+              className="font-medium text-primary-600 hover:underline"
+            >
+              {t("crossBorderConsentLink")}
+            </Link>
+          </span>
+        </label>
+      )}
 
       {error && <p className="text-sm text-red-500">{error}</p>}
 
