@@ -25,8 +25,10 @@ export async function POST(req: NextRequest) {
     // 验证调用权限（API密钥或Vercel Cron）
     const authHeader = req.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET;
-    
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+
+    // ⚠️ 安全约定（务必保留）：原写法 `if (cronSecret && ...)` 在 CRON_SECRET 未配置时
+    // 整个判断为假 ⇒ 完全不鉴权，任何人都能触发群发。必须 fail-closed。
+    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
         { status: 401 }

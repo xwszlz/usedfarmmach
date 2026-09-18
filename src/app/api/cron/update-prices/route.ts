@@ -20,21 +20,17 @@ export const maxDuration = 120;
 function isValidToken(token: string | null | undefined): boolean {
   if (!token) return false;
 
-  // 开发环境直接放行 dev-secret-key
-  const cronApiKey = process.env.CRON_API_KEY || "dev-secret-key";
+  // ⚠️ 安全约定（务必保留）：这里【绝不】为密钥设置默认值兜底。
+  // 若写成 `process.env.CRON_API_KEY || "dev-secret-key"`，当环境漏配密钥时，
+  // `?token=dev-secret-key` 会退化成万能钥匙。env 缺失即不可比对（fail-closed）。
+  // 与 src/app/api/cron/daily-report/route.ts 的约定保持一致。
+  const cronApiKey = process.env.CRON_API_KEY;
   const internalApiKey = process.env.INTERNAL_API_KEY;
 
-  // 非生产环境放行 dev-secret-key（方便本地调试）
-  if (token === cronApiKey) return true;
+  if (cronApiKey && token === cronApiKey) return true;
   if (internalApiKey && token === internalApiKey) return true;
 
-  // 生产环境严格要求匹配
-  if (process.env.NODE_ENV === "production") {
-    return false;
-  }
-
-  // 非生产环境且 token 等于 dev-secret-key 也放行
-  return token === "dev-secret-key";
+  return false;
 }
 
 /**
@@ -100,7 +96,6 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get("Authorization");
-  const apiKey = process.env.CRON_API_KEY || "dev-secret-key";
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return NextResponse.json(
@@ -108,16 +103,12 @@ export async function POST(request: NextRequest) {
       { status: 401 }
     );
   }
-  const token = authHeader.substring(7);
-  if (token !== apiKey && process.env.NODE_ENV === "production") {
-    // 同时检查 INTERNAL_API_KEY
-    const internalApiKey = process.env.INTERNAL_API_KEY;
-    if (!internalApiKey || token !== internalApiKey) {
-      return NextResponse.json(
-        { success: false, error: "无效的API密钥" },
-        { status: 401 }
-      );
-    }
+  // 复用与 GET 相同的校验（含 fail-closed 约定），避免两处判定漂移。
+  if (!isValidToken(authHeader.substring(7))) {
+    return NextResponse.json(
+      { success: false, error: "无效的API密钥" },
+      { status: 401 }
+    );
   }
 
   try {

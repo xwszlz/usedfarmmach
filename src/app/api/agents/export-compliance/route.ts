@@ -2,7 +2,7 @@
  * POST  /api/agents/export-compliance   触发出口合规分析
  * GET   /api/agents/export-compliance   查询 Agent 支持的国家/品牌/HS编码
  *
- * Auth：Bearer CRON_API_KEY（生产）/ 开放（dev）
+ * Auth：Bearer CRON_API_KEY（必填；env 缺失即 fail-closed，无开发环境放行）
  *
  * Body (POST):
  *   {
@@ -31,12 +31,13 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 function checkAuth(req: NextRequest): NextResponse | null {
-  const apiKey = process.env.CRON_API_KEY || "dev-secret-key";
+  // ⚠️ 安全约定（务必保留）：这里【绝不】为密钥设置默认值兜底。
+  // 原先"非生产环境完全不校验 + 生产环境用 dev-secret-key 兜底"两者都是绕过面。
+  // env 缺失即不可比对（fail-closed）。
+  const apiKey = process.env.CRON_API_KEY;
   const auth = req.headers.get("Authorization");
-  if (process.env.NODE_ENV === "production") {
-    if (!auth || !auth.startsWith("Bearer ") || auth.substring(7) !== apiKey) {
-      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
-    }
+  if (!apiKey || !auth || !auth.startsWith("Bearer ") || auth.substring(7) !== apiKey) {
+    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
   return null;
 }
