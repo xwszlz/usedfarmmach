@@ -460,7 +460,6 @@ function DeepAnalysisSection({
           <FileText className="h-5 w-5 text-purple-600" />
           <h3 className="text-sm font-semibold text-gray-800">深度估值报告</h3>
         </div>
-        <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-medium text-purple-700">¥9</span>
       </div>
       <p className="mb-3 text-xs text-gray-500">
         包含：六维度现状评估 · 技术参数 · 操作维修 · 估值引擎参考价 · 购买建议 · 资源文档
@@ -606,19 +605,23 @@ export default function ValuationPage() {
         }
 
         // ── 登录用户本月 AI 估值次数用尽（403 QUOTA_EXCEEDED）──
-        // 之前的代码只认 429，403 会掉进 else 分支静默降级，用户看不到原因。
-        if (res.status === 403) {
-          const quotaBody = await res.json().catch(() => null);
-          if (quotaBody?.code === "QUOTA_EXCEEDED") {
-            setQuotaExhausted(true);
-            setGateData(null);
-            setResult(null);
-            doClientCalc();
-            return;
-          }
+        // 之前只认 429，403 会掉进 else 分支静默降级，用户看不到原因。
+        // body 只能读一次：先取出再分支，避免二次 res.json() 报
+        // "body stream already read" 导致结果区卡死。
+        const data = await res.json().catch(() => null);
+
+        if (res.status === 403 && data?.code === "QUOTA_EXCEEDED") {
+          setQuotaExhausted(true);
+          setGateData(null);
+          setResult(null);
+          doClientCalc();
+          return;
         }
 
-        const data = await res.json();
+        if (!data) {
+          doClientCalc();
+          return;
+        }
         if (data.success) {
           // ── P0 留资引擎：游客模糊区间结果 → 渲染解锁卡片 ──
           if (data.blurred === true) {
