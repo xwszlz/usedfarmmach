@@ -329,6 +329,7 @@ async function callDoubao(
       max_tokens: 4096,
       temperature: 0.7,
       top_p: 0.9,
+      thinking: { type: "disabled" }, // ★ 关闭思考链：同 recognize，思考 token 是超时主因（本接口原 90s 超时、100% 失败）
     },
     {
       headers: {

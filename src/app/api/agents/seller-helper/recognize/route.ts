@@ -397,6 +397,7 @@ async function callDoubao(content: Array<Record<string, unknown>>): Promise<stri
       model: ARK_MODEL_ID,
       messages: [{ role: "user", content }],
       max_tokens: 2048, // 21个字段完整JSON需要更大输出空间
+      thinking: { type: "disabled" }, // ★ 关闭思考链：实测同图同prompt 63.0s -> 2.0s。豆包是思考型模型，reasoning_tokens 1692~3154 是唯一的超时来源（max_tokens 管不住它）
     },
     {
       headers: {
