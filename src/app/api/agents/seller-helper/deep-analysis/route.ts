@@ -336,7 +336,7 @@ async function callDoubao(
         Authorization: `Bearer ${ARK_API_KEY}`,
         "Content-Type": "application/json",
       },
-      timeout: 90000, // 90秒超时（图片下载~20s + 长prompt + 大量生成）
+      timeout: 140000, // 140秒：实测长报告 3223 输出 token（reasoning=0，纯生成）需 107.474s，原 90s 必挂。关 thinking 只解决「思考拖慢」，解决不了「长输出就是慢」。.cn 真实上限是 nginx proxy_read_timeout 180s（自托管 Next 不执行 maxDuration）；.com 走 Gemini 不受影响
     }
   );
 
