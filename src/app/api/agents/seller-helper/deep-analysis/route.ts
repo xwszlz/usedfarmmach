@@ -20,7 +20,7 @@ export const maxDuration = 120; // 豆包深度分析需要更长时间
 
 const ARK_API_KEY = process.env.ARK_API_KEY || "";
 const ARK_BASE_URL = process.env.ARK_BASE_URL || "https://ark.cn-beijing.volces.com/api/v3";
-const ARK_MODEL_ID = process.env.ARK_MODEL_ID || "doubao-seed-evolving";
+const ARK_MODEL_ID = process.env.ARK_MODEL_ID || "doubao-seed-2-1-pro-260915";
 
 // 备用：Gemini 和 OpenRouter（与 recognize 路由共享配置）
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || "";

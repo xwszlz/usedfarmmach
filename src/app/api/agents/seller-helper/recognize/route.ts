@@ -31,7 +31,7 @@ const GOOGLE_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 // 豆包（火山引擎ARK）
 const ARK_API_KEY = process.env.ARK_API_KEY || "";
 const ARK_BASE_URL = process.env.ARK_BASE_URL || "https://ark.cn-beijing.volces.com/api/v3";
-const ARK_MODEL_ID = process.env.ARK_MODEL_ID || "doubao-seed-evolving";
+const ARK_MODEL_ID = process.env.ARK_MODEL_ID || "doubao-seed-2-1-pro-260915";
 
 // 模型优先级链：豆包（免费主力）→ Gemini → OpenRouter 备选
 const MODEL_CHAIN = [
