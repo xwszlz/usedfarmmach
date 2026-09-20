@@ -190,6 +190,24 @@ jobs:
           source: "docker-compose.yml"
           target: "/opt/cn"
 
+      # R-2026-09-20 修复：同步 nginx 配置到 ECS。
+      # 与上方 docker-compose.yml 同因：这两份文件此前都只靠人工放到 /opt/cn，
+      # CI 从不覆盖 => 仓库改动在 ECS 上不可见。实测已证实：
+      #   .cn 反代被 nginx proxy_read_timeout 60s 硬顶，
+      #   而 AI 识别单张真实图需 ~67s（.com 同图 66.7s 成功）=> 必然 504。
+      # 注意 source 只列 conf.d 与 nginx.conf，【绝不包含 ssl/】：
+      #   证书是本机持有材料，不进 CI、不进 git。
+      - name: Sync nginx config to ECS
+        uses: appleboy/scp-action@v1
+        with:
+          host: 101.200.125.199
+          username: deploy
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          source: "deploy/nginx/nginx.conf,deploy/nginx/conf.d"
+          target: "/opt/cn"
+          overwrite: true
+          strip_components: 0
+
       - name: Deploy to Aliyun ECS
         uses: appleboy/ssh-action@v1
         env:
