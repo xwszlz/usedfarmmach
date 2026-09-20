@@ -65,7 +65,7 @@ const MODEL_CHAIN = [
 ];
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 90; // Vercel PRO 最大 120s，90s 确保 3 张图片下载+识别不超时
+export const maxDuration = 90; // Vercel PRO 最大 120s。预算：图片下载(并行，最坏20s) + 豆包(75s) = 95s 理论峰值，90s 内靠 deadline 收敛；.cn 侧 nginx proxy_read_timeout 已放宽至 180s（2026-09-20），不再被 60s 掐断
 
 // ── 国内农机品牌关键词（用于自动检测 isChineseBrand） ──
 const CHINESE_BRAND_KEYWORDS = [
@@ -348,24 +348,32 @@ async function buildDoubaoContent(
   const content: Array<Record<string, unknown>> = [
     { type: "text", text: prompt },
   ];
-  for (const url of images) {
-    if (url.startsWith("data:")) {
-      // data: 本身就是 base64，原样透传
+  // 并行下载全部图片（原为 for...of 逐张串行 await，3 张图最坏 3x20s=60s，
+  // 会把模型的时间预算全部吃光；并行后最坏 20s）。
+  // 注意：必须【保持原有顺序】，否则图片次序变化可能影响模型对多图的判断。
+  const downloaded = await Promise.all(
+    images.map(async (url, idx) => {
+      if (url.startsWith("data:")) {
+        // data: 本身就是 base64，原样透传
+        return { idx, ok: true as const, url };
+      }
+      // HTTP URL -> 服务端下载转 base64（豆包服务端自行下载会超时）
+      try {
+        const { mimeType, data } = await downloadImageAsBase64(url);
+        return { idx, ok: true as const, url: `data:${mimeType};base64,${data}` };
+      } catch (err: any) {
+        console.warn(`[SellerHelper] 下载图片失败 ${url}:`, err.message?.substring(0, 80));
+        return { idx, ok: false as const, url };
+      }
+    })
+  );
+  // 按原顺序回填，只保留成功的
+  for (const item of downloaded.sort((a, b) => a.idx - b.idx)) {
+    if (item.ok) {
       content.push({
         type: "image_url",
-        image_url: { url },
+        image_url: { url: item.url },
       });
-      continue;
-    }
-    // HTTP URL → 服务端下载转 base64（豆包服务端自行下载会超时）
-    try {
-      const { mimeType, data } = await downloadImageAsBase64(url);
-      content.push({
-        type: "image_url",
-        image_url: { url: `data:${mimeType};base64,${data}` },
-      });
-    } catch (err: any) {
-      console.warn(`[SellerHelper] 下载图片失败 ${url}:`, err.message?.substring(0, 80));
     }
   }
   // 视频URL作为文本描述传入（多模态模型可参考）
@@ -395,7 +403,7 @@ async function callDoubao(content: Array<Record<string, unknown>>): Promise<stri
         Authorization: `Bearer ${ARK_API_KEY}`,
         "Content-Type": "application/json",
       },
-      timeout: 60000, // 60秒（图片下载~20s + 8张图片处理 + 17字段JSON生成）
+      timeout: 75000, // 75秒（实测单张真实产品图需>60s：.com 同图 66.7s 成功；60s 卡在临界点导致 timeout of 60000ms exceeded 后 503。maxDuration=90，留 15s 序列化余量）
     }
   );
 
