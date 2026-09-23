@@ -36,6 +36,125 @@ export const dynamic = "force-dynamic";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
 
+/**
+ * P1-4：产地展示统一。
+ * 公司名/品牌名不是产地，截断值也不是 —— 统一显示为「河北·石家庄」；只到市一级的补齐为省市。
+ * 只影响页面呈现层，不修改任何产品数据。
+ */
+const DEFAULT_ORIGIN = "河北·石家庄";
+
+function normalizeOriginLocation(raw: string | null | undefined): string {
+  const v = (raw || "").trim();
+  if (!v) return "";
+  if (v.includes("神雕") || v === "石") return DEFAULT_ORIGIN;
+  if (v === "石家庄" || v === "石家庄市") return DEFAULT_ORIGIN;
+  return v;
+}
+
+/** P1-5：产品描述为空时的兜底说明单位表 */
+const DESC_UNITS: Record<string, { hours: string; power: string }> = {
+  zh: { hours: "小时", power: "马力" },
+  en: { hours: "hrs", power: "HP" },
+  ru: { hours: "моточасов", power: "л.с." },
+  es: { hours: "horas", power: "CV" },
+  pt: { hours: "horas", power: "cv" },
+  ar: { hours: "ساعة", power: "حصان" },
+  fr: { hours: "heures", power: "ch" },
+  hi: { hours: "घंटे", power: "HP" },
+};
+
+interface FallbackDescInput {
+  brand: string;
+  model: string;
+  year: number;
+  category: string;
+  workingHours: number | null;
+  enginePower: number | null;
+  condition: string;
+  location: string;
+}
+
+/**
+ * P1-5：仅用该机「真实字段」拼一段兜底说明。
+ * 硬约束：字段缺失时对应整句不出现 —— 不推断、不补全、不编造任何参数。
+ */
+function buildFallbackDescription(locale: string, p: FallbackDescInput): string {
+  const u = DESC_UNITS[locale] || DESC_UNITS.en;
+  const hours = p.workingHours != null ? `${p.workingHours.toLocaleString()} ${u.hours}` : "";
+  const power = p.enginePower != null ? `${p.enginePower} ${u.power}` : "";
+  const sep = locale === "zh" ? "" : " ";
+  const seg: string[] = [];
+
+  switch (locale) {
+    case "zh":
+      seg.push(`这是一台 ${p.year} 年的 ${p.brand} ${p.model} ${p.category}。`);
+      if (p.condition) seg.push(`设备状况：${p.condition}。`);
+      if (hours) seg.push(`累计工作${hours}。`);
+      if (power) seg.push(`额定功率${power}。`);
+      if (p.location) seg.push(`现机所在地：${p.location}。`);
+      seg.push("更多配置细节与实拍图片可在下方询价获取，以上信息以实机查验为准。");
+      break;
+    case "ru":
+      seg.push(`Это подержанный ${p.category} ${p.brand} ${p.model} ${p.year} года выпуска.`);
+      if (p.condition) seg.push(`Состояние: ${p.condition}.`);
+      if (hours) seg.push(`Наработка: ${hours}.`);
+      if (power) seg.push(`Мощность: ${power}.`);
+      if (p.location) seg.push(`Местонахождение: ${p.location}.`);
+      seg.push("Дополнительные характеристики и фотографии — по запросу. Приведённые данные уточняются при осмотре машины.");
+      break;
+    case "es":
+      seg.push(`Se trata de un ${p.category} ${p.brand} ${p.model} del año ${p.year}.`);
+      if (p.condition) seg.push(`Estado: ${p.condition}.`);
+      if (hours) seg.push(`Horas de trabajo: ${hours}.`);
+      if (power) seg.push(`Potencia nominal: ${power}.`);
+      if (p.location) seg.push(`Ubicación de la máquina: ${p.location}.`);
+      seg.push("Contáctenos para más detalles y fotos. La información anterior está sujeta a la inspección física de la máquina.");
+      break;
+    case "pt":
+      seg.push(`Trata-se de um ${p.category} ${p.brand} ${p.model} do ano ${p.year}.`);
+      if (p.condition) seg.push(`Estado: ${p.condition}.`);
+      if (hours) seg.push(`Horas de trabalho: ${hours}.`);
+      if (power) seg.push(`Potência nominal: ${power}.`);
+      if (p.location) seg.push(`Localização da máquina: ${p.location}.`);
+      seg.push("Fale conosco para mais detalhes e fotos. As informações acima estão sujeitas à inspeção física da máquina.");
+      break;
+    case "ar":
+      seg.push(`هذه ${p.category} ${p.brand} ${p.model} موديل ${p.year}.`);
+      if (p.condition) seg.push(`الحالة: ${p.condition}.`);
+      if (hours) seg.push(`ساعات العمل: ${hours}.`);
+      if (power) seg.push(`القدرة المقدرة: ${power}.`);
+      if (p.location) seg.push(`موقع الآلة: ${p.location}.`);
+      seg.push("تواصل معنا للحصول على مزيد من التفاصيل والصور. المعلومات أعلاه تخضع للفحص الفعلي للآلة.");
+      break;
+    case "fr":
+      seg.push(`Il s'agit d'un ${p.category} ${p.brand} ${p.model} de ${p.year}.`);
+      if (p.condition) seg.push(`État : ${p.condition}.`);
+      if (hours) seg.push(`Heures de travail : ${hours}.`);
+      if (power) seg.push(`Puissance nominale : ${power}.`);
+      if (p.location) seg.push(`Machine située à : ${p.location}.`);
+      seg.push("Contactez-nous pour plus de détails et de photos. Les informations ci-dessus sont soumises à l'inspection physique de la machine.");
+      break;
+    case "hi":
+      seg.push(`यह ${p.year} मॉडल का ${p.brand} ${p.model} ${p.category} है।`);
+      if (p.condition) seg.push(`स्थिति: ${p.condition}।`);
+      if (hours) seg.push(`कार्य घंटे: ${hours}।`);
+      if (power) seg.push(`रेटेड पावर: ${power}।`);
+      if (p.location) seg.push(`मशीन का स्थान: ${p.location}।`);
+      seg.push("अधिक जानकारी और तस्वीरों के लिए हमसे संपर्क करें। ऊपर दी गई जानकारी मशीन के भौतिक निरीक्षण के अधीन है।");
+      break;
+    default:
+      seg.push(`This is a ${p.year} ${p.brand} ${p.model} ${p.category}.`);
+      if (p.condition) seg.push(`Condition: ${p.condition}.`);
+      if (hours) seg.push(`Working hours: ${hours}.`);
+      if (power) seg.push(`Rated power: ${power}.`);
+      if (p.location) seg.push(`Machine located in: ${p.location}.`);
+      seg.push("Message us for more configuration details and photos. The information above is subject to physical inspection of the machine.");
+      break;
+  }
+
+  return seg.join(sep);
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -175,6 +294,25 @@ export default async function ProductDetailPage({
       : conditionSuffix
     : "";
 
+  // P1-4：产地展示统一（「神雕农机」/截断值不再作为产地）
+  const originLocation = normalizeOriginLocation(product.location);
+
+  // P1-5：描述为空时用该机真实字段生成兜底说明；描述非空则一字不动
+  const fallbackDescription = buildFallbackDescription(locale, {
+    brand: brandName,
+    model: product.modelName,
+    year: product.year,
+    category: categoryName,
+    workingHours: product.workingHours ?? null,
+    enginePower: product.enginePower ?? null,
+    condition: conditionLabel,
+    location: originLocation,
+  });
+  // 注：StandardDescription 的非中文分支读的是 descriptionEn 入参，
+  // 因此这里把「按当前语言」的兜底文本经由该入参传入（不改动第二个组件）。
+  const zhDescriptionText = (product.descriptionZh || "").trim() || fallbackDescription;
+  const nonZhDescriptionText = (product.descriptionEn || "").trim() || fallbackDescription;
+
   // Use real international price from 神雕日报 if available, fallback to simple USD conversion
   const latestIntlPrice = product.internationalPrices[0] || null;
   const intlPriceCny = latestIntlPrice?.priceForeignCny || null;
@@ -207,7 +345,7 @@ export default async function ProductDetailPage({
         description={description || ""}
         priceCny={product.priceCny}
         condition={product.condition}
-        location={product.location || ""}
+        location={originLocation}
         workingHours={product.workingHours ?? undefined}
         imageUrl={product.images[0] ? getImageUrl(product.images[0].url) : `${BASE_URL}/images/og.png`}
         locale={locale}
@@ -279,7 +417,7 @@ export default async function ProductDetailPage({
             netWeight={product.netWeight ?? null}
             conditionLabel={conditionLabel}
             categoryName={categoryName}
-            location={product.location || ""}
+            location={originLocation}
             locale={locale}
           />
 
@@ -288,8 +426,8 @@ export default async function ProductDetailPage({
           {/* ================================================================ */}
           <StandardDescription
             standardDescriptionEn={product.standardDescriptionEn ?? null}
-            descriptionZh={product.descriptionZh ?? null}
-            descriptionEn={product.descriptionEn ?? null}
+            descriptionZh={zhDescriptionText}
+            descriptionEn={nonZhDescriptionText}
             locale={locale}
           />
 

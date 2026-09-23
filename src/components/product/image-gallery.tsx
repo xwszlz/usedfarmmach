@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { getDetailImageUrl } from "@/lib/image-url";
 import type { ProductImage } from "@/types";
 
@@ -9,20 +10,27 @@ interface ImageGalleryProps {
   locale: string;
 }
 
-const LABELS: Record<string, { realShooting: string }> = {
-  zh: { realShooting: "所有图片均为实拍，以实机为准。" },
-  en: { realShooting: "All pictures are real shooting, actual machine as shown." },
-  ru: { realShooting: "Все фотографии реальные, соответствует фактической машине." },
-  es: { realShooting: "Todas las fotos son reales, máquina real como se muestra." },
-  pt: { realShooting: "Todas as fotos são reais, máquina real conforme mostrado." },
-  ar: { realShooting: "جميع الصور حقيقية، الآلة الفعلية كما هو موضح." },
-  fr: { realShooting: "Toutes les photos sont réelles, machine réelle comme illustrée." },
-  hi: { realShooting: "सभी तस्वीरें वास्तविक हैं, वास्तविक मशीन जैसा दिखाया गया है।" },
+const LABELS: Record<string, { realShooting: string; showAll: string; showLess: string }> = {
+  // P1-6：实拍承诺改为「可核验表述」（原「所有图片均为实拍」对全部机型无差别承诺，与个别机型实情不符）
+  zh: { realShooting: "图片为实机拍摄，具体以实机为准。", showAll: "查看全部 {n} 张图片", showLess: "收起" },
+  en: { realShooting: "Photos are of the actual machine; the physical machine prevails.", showAll: "View all {n} photos", showLess: "Show less" },
+  ru: { realShooting: "Фотографии сделаны с реальной машины; приоритет имеет фактическая машина.", showAll: "Показать все {n} фото", showLess: "Свернуть" },
+  es: { realShooting: "Las fotos son de la máquina real; prevalece la máquina física.", showAll: "Ver las {n} fotos", showLess: "Mostrar menos" },
+  pt: { realShooting: "As fotos são da máquina real; prevalece a máquina física.", showAll: "Ver as {n} fotos", showLess: "Mostrar menos" },
+  ar: { realShooting: "الصور للآلة الفعلية، والأولوية للآلة عند الفحص.", showAll: "عرض جميع الصور ({n})", showLess: "إخفاء" },
+  fr: { realShooting: "Les photos sont celles de la machine réelle ; la machine physique prévaut.", showAll: "Voir les {n} photos", showLess: "Réduire" },
+  hi: { realShooting: "तस्वीरें वास्तविक मशीन की हैं; अंतिम आधार वास्तविक मशीन है।", showAll: "सभी {n} तस्वीरें देखें", showLess: "कम दिखाएँ" },
 };
+
+/** 首屏渲染张数：超过此数量时才出现「查看全部」按钮（P0-3） */
+const PREVIEW_COUNT = 8;
 
 export function ImageGallery({ images, alt, locale }: ImageGalleryProps) {
   const l = LABELS[locale] || LABELS.en;
-  const displayImages = images.slice(0, 8);
+  // P0-3：默认仍只渲染前 8 张（保住首屏速度），其余可一键展开查看全部
+  const [expanded, setExpanded] = useState(false);
+  const hasMore = images.length > PREVIEW_COUNT;
+  const displayImages = expanded ? images : images.slice(0, PREVIEW_COUNT);
 
   if (displayImages.length === 0) {
     return (
@@ -81,6 +89,17 @@ export function ImageGallery({ images, alt, locale }: ImageGalleryProps) {
           </div>
         ))}
       </div>
+      {hasMore && (
+        <div className="text-center">
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
+          >
+            {expanded ? l.showLess : l.showAll.replace("{n}", String(images.length))}
+          </button>
+        </div>
+      )}
       <p className="text-center text-xs text-gray-400">{l.realShooting}</p>
     </div>
   );

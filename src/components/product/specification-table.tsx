@@ -103,11 +103,13 @@ export function SpecificationTable({
 
   const formatDimension = (): string => {
     const parts = [overallLength, overallWidth, overallHeight];
-    if (parts.every((p) => p == null)) return l.notAvailable;
+    // P0-1：整机尺寸缺失时返回空串 → 该行整行隐藏（不再显示「暂无」）
+    if (parts.every((p) => p == null)) return "";
     const formatted = parts.map((p) => (p != null ? String(p) : "—"));
     return `${formatted[0]}×${formatted[1]}×${formatted[2]}`;
   };
 
+  // P0-1：value 为空串的行不渲染 —— 空字段整行隐藏，不再把「暂无」铺成一张半空表
   const rows: { icon: React.ReactNode; label: string; value: string }[] = [
     { icon: <Wrench className="h-4 w-4 text-gray-400" />, label: l.brand, value: brandName },
     { icon: <Settings className="h-4 w-4 text-gray-400" />, label: l.model, value: modelName },
@@ -116,27 +118,27 @@ export function SpecificationTable({
     {
       icon: <Clock className="h-4 w-4 text-gray-400" />,
       label: l.workingHours,
-      value: workingHours != null ? `${workingHours.toLocaleString()} ${l.hoursUnit}` : l.notAvailable,
+      value: workingHours != null ? `${workingHours.toLocaleString()} ${l.hoursUnit}` : "",
     },
     {
       icon: <Cpu className="h-4 w-4 text-gray-400" />,
       label: l.engineType,
-      value: engineType || l.notAvailable,
+      value: engineType || "",
     },
     {
       icon: <Gauge className="h-4 w-4 text-gray-400" />,
       label: l.ratedPower,
-      value: enginePower != null ? String(enginePower) : l.notAvailable,
+      value: enginePower != null ? String(enginePower) : "",
     },
     {
       icon: <Cog className="h-4 w-4 text-gray-400" />,
       label: l.driveSystem,
-      value: driveSystem || l.notAvailable,
+      value: driveSystem || "",
     },
     {
       icon: <Settings className="h-4 w-4 text-gray-400" />,
       label: l.mainConfig,
-      value: mainConfig || l.notAvailable,
+      value: mainConfig || "",
     },
     {
       icon: <Ruler className="h-4 w-4 text-gray-400" />,
@@ -146,12 +148,12 @@ export function SpecificationTable({
     {
       icon: <Weight className="h-4 w-4 text-gray-400" />,
       label: l.netWeight,
-      value: netWeight != null ? netWeight.toLocaleString() : l.notAvailable,
+      value: netWeight != null ? netWeight.toLocaleString() : "",
     },
     {
       icon: <MapPin className="h-4 w-4 text-gray-400" />,
       label: l.location,
-      value: location || l.notAvailable,
+      value: location || "",
     },
     {
       icon: <CheckCircle2 className="h-4 w-4 text-gray-400" />,
@@ -185,7 +187,7 @@ export function SpecificationTable({
               )}
             </td>
           </tr>
-          {rows.slice(1).map((row, idx) => (
+          {rows.slice(1).filter((row) => row.value !== "").map((row, idx) => (
             <tr
               key={row.label}
               className={(idx + 1) % 2 === 0 ? "bg-gray-50/50" : "bg-white"}

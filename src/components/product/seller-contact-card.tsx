@@ -16,6 +16,8 @@ const LABELS: Record<string, {
   loginGate: string;
   loginBtn: string;
   none: string;
+  inquireCta: string;
+  sellerSupplement: string;
   name: string;
   phone: string;
   wechat: string;
@@ -25,7 +27,9 @@ const LABELS: Record<string, {
     title: "加载卖家联系方式",
     loginGate: "登录后即可直接联系卖家，双方直接洽谈",
     loginBtn: "登录 / 注册后查看",
-    none: "卖家暂未留下联系方式，可通过上方询价联系",
+    none: "该设备暂未提供卖家联系方式。留下您的联系方式，我们会第一时间帮您对接卖家。",
+    inquireCta: "立即询价",
+    sellerSupplement: "我是卖家？补充联系方式 →",
     name: "联系人",
     phone: "电话",
     wechat: "微信",
@@ -35,7 +39,9 @@ const LABELS: Record<string, {
     title: "Loading seller contact",
     loginGate: "Log in to contact the seller directly",
     loginBtn: "Log in to view",
-    none: "Seller has not provided contact info yet — use the inquiry form above",
+    none: "This listing has no seller contact info yet. Leave your contact and we will connect you with the seller shortly.",
+    inquireCta: "Inquire now",
+    sellerSupplement: "Are you the seller? Add contact info →",
     name: "Contact",
     phone: "Phone",
     wechat: "WeChat",
@@ -45,7 +51,9 @@ const LABELS: Record<string, {
     title: "Загрузка контактов",
     loginGate: "Войдите, чтобы связаться с продавцом напрямую",
     loginBtn: "Войти и посмотреть",
-    none: "Продавец не указал контакты — задайте вопрос в форме выше",
+    none: "В объявлении пока нет контактов продавца. Оставьте свой контакт — мы свяжем вас с продавцом.",
+    inquireCta: "Запросить цену",
+    sellerSupplement: "Вы продавец? Добавить контакты →",
     name: "Контакт",
     phone: "Тел.",
     wechat: "WeChat",
@@ -55,7 +63,9 @@ const LABELS: Record<string, {
     title: "Cargando contacto del vendedor",
     loginGate: "Inicie sesión para contactar directamente con el vendedor",
     loginBtn: "Iniciar sesión para ver",
-    none: "El vendedor aún no ha facilitado datos de contacto — use el formulario de consulta de arriba",
+    none: "Este anuncio aún no tiene datos de contacto del vendedor. Deje su contacto y le pondremos en contacto con el vendedor.",
+    inquireCta: "Consultar ahora",
+    sellerSupplement: "¿Es usted el vendedor? Añadir datos de contacto →",
     name: "Contacto",
     phone: "Teléfono",
     wechat: "WeChat",
@@ -65,7 +75,9 @@ const LABELS: Record<string, {
     title: "Carregando contacto do vendedor",
     loginGate: "Inicie sessão para contactar o vendedor diretamente",
     loginBtn: "Entrar para ver",
-    none: "O vendedor ainda não indicou contactos — use o formulário de consulta acima",
+    none: "Este anúncio ainda não tem contactos do vendedor. Deixe o seu contacto e iremos ligá-lo ao vendedor.",
+    inquireCta: "Consultar agora",
+    sellerSupplement: "É o vendedor? Adicionar contactos →",
     name: "Contacto",
     phone: "Telefone",
     wechat: "WeChat",
@@ -75,7 +87,9 @@ const LABELS: Record<string, {
     title: "جارٍ تحميل بيانات البائع",
     loginGate: "سجّل الدخول للتواصل مع البائع مباشرة",
     loginBtn: "تسجيل الدخول للعرض",
-    none: "لم يضف البائع بيانات تواصل بعد — استخدم نموذج الاستفسار أعلاه",
+    none: "لا يتضمن هذا الإعلان بيانات تواصل للبائع بعد. اترك بياناتك وسنوصلك بالبائع في أقرب وقت.",
+    inquireCta: "استفسر الآن",
+    sellerSupplement: "هل أنت البائع؟ أضف بيانات التواصل ←",
     name: "جهة الاتصال",
     phone: "الهاتف",
     wechat: "WeChat",
@@ -85,7 +99,9 @@ const LABELS: Record<string, {
     title: "Chargement du contact du vendeur",
     loginGate: "Connectez-vous pour contacter directement le vendeur",
     loginBtn: "Se connecter pour voir",
-    none: "Le vendeur n'a pas encore fourni de coordonnées — utilisez le formulaire de demande ci-dessus",
+    none: "Cette annonce n'a pas encore de coordonnées de vendeur. Laissez votre contact, nous vous mettrons en relation avec le vendeur.",
+    inquireCta: "Demander un prix",
+    sellerSupplement: "Vous êtes le vendeur ? Ajouter des coordonnées →",
     name: "Contact",
     phone: "Téléphone",
     wechat: "WeChat",
@@ -95,7 +111,9 @@ const LABELS: Record<string, {
     title: "विक्रेता संपर्क लोड हो रहा है",
     loginGate: "विक्रेता से सीधे संपर्क करने के लिए लॉग इन करें",
     loginBtn: "देखने के लिए लॉग इन करें",
-    none: "विक्रेता ने अभी तक संपर्क जानकारी नहीं दी है — ऊपर दिए पूछताछ फ़ॉर्म का उपयोग करें",
+    none: "इस लिस्टिंग में विक्रेता की संपर्क जानकारी अभी नहीं है। अपना संपर्क छोड़ें, हम आपको विक्रेता से जोड़ेंगे।",
+    inquireCta: "अभी पूछताछ करें",
+    sellerSupplement: "आप विक्रेता हैं? संपर्क जोड़ें →",
     name: "संपर्क",
     phone: "फ़ोन",
     wechat: "WeChat",
@@ -145,6 +163,17 @@ export function SellerContactCard({ productId, locale }: { productId: string; lo
 
   const t = LABELS[locale] || LABELS.zh;
 
+  // P0-2：卖家未留联系方式时的兜底 —— 改为引导询价（滚动到下方统一询价区），
+  // 而不是向买家陈述「卖家没留联系方式」；同时保留卖家自助补录入口。
+  const scrollToInquiry = () => {
+    const el = document.getElementById("bargain");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      window.location.href = `/${locale}/auth/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+    }
+  };
+
   // 登录态校验中
   if (authed === null) {
     return (
@@ -176,7 +205,25 @@ export function SellerContactCard({ productId, locale }: { productId: string; lo
   const hasAny =
     contact && (contact.contactName || contact.contactPhone || contact.contactWechat || contact.contactEmail);
   if (!hasAny) {
-    return <p className="text-sm text-gray-500">{t.none}</p>;
+    return (
+      <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+        <p className="text-sm text-gray-600">{t.none}</p>
+        <button
+          type="button"
+          onClick={scrollToInquiry}
+          className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700"
+        >
+          <MessageCircle className="h-4 w-4" />
+          {t.inquireCta}
+        </button>
+        <Link
+          href={`/${locale}/seller/products/${productId}/edit`}
+          className="mt-2 block text-xs text-gray-400 hover:text-primary-600 hover:underline"
+        >
+          {t.sellerSupplement}
+        </Link>
+      </div>
+    );
   }
 
   return (
