@@ -24,7 +24,7 @@ export const TJ_FAQS: Record<string, ExpoFaqItem[]> = {
   zh: [
     {
       q: "神雕农机在本届展会中扮演什么角色？",
-      a: "神雕农机以参展企业身份参与本届展会，为参展企业提供 8 语种线上展台与海外买家曝光服务。本页为神雕农机自有服务专题，不是展会官方网站。展会相关信息以主办方公告为准。",
+      a: "神雕农机为参展企业提供 8 语种线上展台与海外买家曝光服务，是神雕云展的运营方；我们不是展会主办方，也不是本届参展企业。本页为神雕农机自有服务专题，不是展会官方网站。展会相关信息以主办方公告为准。",
     },
     {
       q: "本届展会的时间和举办城市是？",
@@ -40,13 +40,13 @@ export const TJ_FAQS: Record<string, ExpoFaqItem[]> = {
     },
     {
       q: "我想申报线下展位，应该找谁？",
-      a: "线下展位申报与展位费用请通过展会官方渠道（camf.com.cn）办理，申报截止时间以主办方公告为准。神雕农机不代办线下展位。",
+      a: "线下展位申报与展位费用请通过展会官方渠道（camf.com.cn）办理；官方申报期为 2026-04-26 ~ 05-15，现已结束。神雕农机不代办线下展位。",
     },
   ],
   en: [
     {
       q: "What is Shendiao's role at this expo?",
-      a: "Shendiao attends the expo as an exhibiting company, providing 8-language online booths and overseas buyer exposure for exhibitors. This page is a Shendiao service page, not the official expo website. Expo details are subject to the organizer's announcements.",
+      a: "Shendiao provides 8-language online booths and overseas buyer exposure for exhibitors, and operates Shendiao Cloud Expo. We are neither the expo organizer nor an exhibiting company at this expo. This page is a Shendiao service page, not the official expo website. Expo details are subject to the organizer's announcements.",
     },
     {
       q: "When and where is the expo held?",
@@ -62,13 +62,13 @@ export const TJ_FAQS: Record<string, ExpoFaqItem[]> = {
     },
     {
       q: "I want to apply for an on-site booth — who should I contact?",
-      a: "On-site booth applications and fees are handled by the expo organizer through official channels; both the official website and the application deadline are to be verified. Shendiao does not act as an agent for on-site booths.",
+      a: "On-site booth applications and fees are handled by the expo organizer through official channels (camf.com.cn); the official application window was 2026-04-26 to 05-15 and is now closed. Shendiao does not act as an agent for on-site booths.",
     },
   ],
   ru: [
     {
       q: "Какова роль Shendiao на этой выставке?",
-      a: "Shendiao участвует как экспонент и предоставляет участникам онлайн-стенды на 8 языках и выход на зарубежных покупателей. Это сервисная страница Shendiao, а не официальный сайт выставки. Сведения о выставке уточняйте в объявлениях организатора.",
+      a: "Shendiao предоставляет участникам онлайн-стенды на 8 языках и выход на зарубежных покупателей и является оператором Shendiao Cloud Expo. Мы не организатор выставки и не являемся экспонентом. Это сервисная страница Shendiao, а не официальный сайт выставки. Сведения о выставке уточняйте в объявлениях организатора.",
     },
     {
       q: "Когда и где проходит выставка?",
@@ -84,7 +84,7 @@ export const TJ_FAQS: Record<string, ExpoFaqItem[]> = {
     },
     {
       q: "Хочу оформить офлайн-стенд — к кому обращаться?",
-      a: "Заявки и стоимость офлайн-стендов — через официальные каналы организатора; сайт и срок подачи уточняются. Shendiao не является агентом по продаже офлайн-стендов.",
+      a: "Заявки и стоимость офлайн-стендов — через официальные каналы организатора (camf.com.cn); официальное окно подачи 2026-04-26 — 05-15 закрыто. Shendiao не является агентом по продаже офлайн-стендов.",
     },
   ],
 };

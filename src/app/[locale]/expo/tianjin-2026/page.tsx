@@ -16,13 +16,13 @@ const TDK: Record<string, { title: string; description: string; keywords: string
   zh: {
     title: "天津农机展2026_10月26-28中国国际农机展_展商入驻神雕农机",
     description:
-      "2026中国国际农业机械展览会10月26–28日在天津举办。神雕农机以参展企业身份到场，为参展企业开通8语种线上展台（神雕云展），365天在线、全球买家可见。线上展台可免费开通，现场登记即可。",
+      "2026中国国际农业机械展览会10月26–28日在天津举办。神雕农机为参展企业开通8语种线上展台（神雕云展），365天在线、全球买家可见。线上展台可免费开通，现场登记即可。",
     keywords: ["天津农机展", "2026中国国际农机展", "天津农机博览会", "农机展参展", "线上展台入驻"],
   },
   en: {
     title: "China International Agricultural Machinery Exhibition 2026 | Oct 26-28 Tianjin",
     description:
-      "The 2026 China International Agricultural Machinery Exhibition runs Oct 26-28, 2026 in Tianjin. Shendiao attends as an exhibitor and opens an 8-language online booth (Shendiao Cloud Expo) — 365 days online, visible to global buyers. Free to open, register on site.",
+      "The 2026 China International Agricultural Machinery Exhibition runs Oct 26-28, 2026 in Tianjin. Shendiao opens an 8-language online booth (Shendiao Cloud Expo) — 365 days online, visible to global buyers. Free to open, register on site.",
     keywords: [
       "Tianjin farm machinery expo",
       "China International Agricultural Machinery Exhibition 2026",
@@ -33,7 +33,7 @@ const TDK: Record<string, { title: string; description: string; keywords: string
   ru: {
     title: "Китайская международная выставка сельхозтехники 2026 | 26-28 октября, Тяньцзинь",
     description:
-      "Китайская международная выставка сельхозтехники 2026 пройдёт 26–28 октября 2026 года в Тяньцзине. Shendiao участвует как экспонент и открывает онлайн-стенд Shendiao Cloud Expo на 8 языках — 365 дней онлайн, видно покупателям по всему миру.",
+      "Китайская международная выставка сельхозтехники 2026 пройдёт 26–28 октября 2026 года в Тяньцзине. Shendiao открывает онлайн-стенд Shendiao Cloud Expo на 8 языках — 365 дней онлайн, видно покупателям по всему миру.",
     keywords: [
       "выставка сельхозтехники Тяньцзинь",
       "Китайская международная выставка сельхозтехники 2026",
