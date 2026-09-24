@@ -14,7 +14,7 @@ export function TrustBadges({ locale }: TrustBadgesProps) {
     {
       icon: Award,
       title: t("trust.camda"),
-      desc: locale === "zh" ? "行业协会会员单位" : "Industry association member",
+      desc: locale === "zh" ? "独立运营，不代表协会官方" : "Independently operated; not an official association representative",
     },
     {
       icon: Cloud,
@@ -38,10 +38,10 @@ export function TrustBadges({ locale }: TrustBadgesProps) {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-10 text-center">
           <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-3xl">
-            {locale === "zh" ? "全球信任 · 行业组织背书" : "Global Trust · Industry Endorsement"}
+            {locale === "zh" ? "全球信任 · 独立运营" : "Global Trust · Independently Operated"}
           </h2>
           <p className="mt-2 text-sm text-gray-500">
-            {locale === "zh" ? "CAMDA副会长单位 · 全球加速 · 多语言服务" : "CAMDA Vice-President Unit · Global CDN · Multilingual"}
+            {locale === "zh" ? "独立运营 · 全球加速 · 多语言服务" : "Independently operated · Global CDN · Multilingual"}
           </p>
         </div>
 

@@ -28,6 +28,26 @@ const nextConfig = {
       },
     ],
   },
+
+  // 黑龙江农机展（2026-09-19~21）已收官且不再推进：相关页面已下线，
+  // 旧 URL 永久 301 到当前主战场天津页，避免 404 白白丢掉已积累的权重。
+  // 注意：next.config 的 redirects 在 middleware 之前执行，故这里按「带语言前缀」的
+  // 真实收录形态匹配；无前缀的请求由 middleware 先补语言前缀，会多一跳但结果一致。
+  async redirects() {
+    const LOCALES = "zh|en|ru|es|pt|ar|fr|hi";
+    return [
+      {
+        source: `/:locale(${LOCALES})/expo/heilongjiang-2026`,
+        destination: "/:locale/expo/tianjin-2026",
+        statusCode: 301,
+      },
+      {
+        source: `/:locale(${LOCALES})/expo/heilongjiang-2026/:path*`,
+        destination: "/:locale/expo/tianjin-2026",
+        statusCode: 301,
+      },
+    ];
+  },
 };
 
 module.exports = withNextIntl(nextConfig);

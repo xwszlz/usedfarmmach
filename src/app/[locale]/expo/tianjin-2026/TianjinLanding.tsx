@@ -16,9 +16,9 @@ import { TJ_FAQS, pickFaqs } from "@/components/expo/expo-faqs";
 /**
  * 2026 中国国际农业机械展览会（天津）· 神雕农机展™ 参展服务专题
  *
- * ⚠️ 事实边界：本届展会的场馆、规模、主办（第三家单位中文全称）、承办、官网、
- * 申报截止在已核实资料中均无记载，页面内一律写「待核实」，不做任何推测填充。
- * 页面同样不出现四档价格、不出现"招展"等主办方行为动词。
+ * ⚠️ 事实边界：本届展会的场馆、规模、主办（第三家单位中文全称）、承办等字段尚无官方来源，
+ * 页面内一律写「待核实」；官网与展位申报期已由官方《申报说明》核实，按官方口径写实。
+ * 页面同样不出现四档价格、不出现"招展"等主办方行为动词；不宣称参展企业身份。
  */
 
 interface TianjinTexts {
@@ -38,7 +38,6 @@ interface TianjinTexts {
   stepsTitle: string;
   steps: { title: string; desc: string }[];
   faqTitle: string;
-  nextExpo: string;
   ctaTitle: string;
   ctaSub: string;
   secondaryCta: string;
@@ -50,7 +49,7 @@ const TEXTS: Record<string, TianjinTexts> = {
   zh: {
     badge: "2026 展会季 · 天津站",
     h1: "2026 中国国际农业机械展览会（10月26–28日 · 天津）｜ 神雕农机展™ 参展服务专题",
-    sub: "现场展位 3 天，线上展台 365 天。神雕农机以参展企业身份到场，为参展企业开通 8 语种线上展台（神雕云展），把展会三天的曝光延长到一整年。",
+    sub: "现场展位 3 天，线上展台 365 天。神雕农机为参展企业开通 8 语种线上展台（神雕云展），把展会三天的曝光延长到一整年。",
     disclaimer: "本页为神雕农机自有服务，非本届展会官方网站；展会信息以主办方公告为准。",
     factsTitle: "展会基本信息",
     facts: [
@@ -64,9 +63,9 @@ const TEXTS: Record<string, TianjinTexts> = {
       },
       { label: "承办单位", value: "待核实" },
       { label: "展会规模", value: "近30万㎡ · 3000余家企业参展 · 预计20万人次专业观众" },
-      { label: "参展申报", value: "2026年4月26日启动申报（截止以主办方公告为准）" },
+      { label: "展位申报", value: "官方申报期 2026-04-26 ~ 05-15（已结束）；神雕农机不代主办方受理申报" },
       { label: "官方网站", value: "camf.com.cn" },
-      { label: "神雕农机身份", value: "以参展企业身份参与本届展会" },
+      { label: "神雕农机身份", value: "神雕云展运营方 · 线上展台服务商（非展会主办方）" },
     ],
     pending: "待核实",
     whyTitle: "为什么还需要一个线上第二展位",
@@ -103,18 +102,17 @@ const TEXTS: Record<string, TianjinTexts> = {
       { title: "上线", desc: "线上展台自动开通，8 语种页面同步上线，有人询价会通知你" },
     ],
     faqTitle: "常见问题",
-    nextExpo: "上一场：2026 黑龙江国际农业机械展览会（9月19–21日 · 哈尔滨）",
     ctaTitle: "现场展位 3 天，线上展台 365 天",
     ctaSub: "填写以下信息，我们在展前与你确认线上展台开通事宜。",
     secondaryCta: "先看看线上展厅",
     sourceTitle: "信息来源与免责声明",
     sourceNote:
-      "本页展会信息来自神雕农机 2026 秋季双展内部战役方案的记载。标注「待核实」的字段（展馆 / 承办 / 规模 / 申报截止 / 官网 / 主办单位第三家中文全称）尚未取得官方来源，正式对外前须以主办方公告为准。神雕农机为本届参展企业，与展会主办方无隶属关系。",
+      "本页展会信息来自神雕农机 2026 秋季展会战役方案的记载。标注「待核实」的字段（展馆 / 承办 / 规模 / 主办单位第三家中文全称）尚未取得官方来源，正式对外前须以主办方公告为准。神雕农机独立运营线上展台服务，与展会主办方无隶属关系，亦不代表主办方。",
   },
   en: {
     badge: "2026 Expo Season · Tianjin",
     h1: "2026 China International Agricultural Machinery Exhibition (Oct 26–28 · Tianjin) | Shendiao Agri-Machinery Expo™ On-Site Service",
-    sub: "An on-site booth lasts 3 days. An online booth lasts 365. Shendiao attends as an exhibitor and opens an 8-language online booth (Shendiao Cloud Expo) for exhibitors, extending three days of exposure across a full year.",
+    sub: "An on-site booth lasts 3 days. An online booth lasts 365. Shendiao opens an 8-language online booth (Shendiao Cloud Expo) for exhibitors, extending three days of exposure across a full year.",
     disclaimer:
       "This page is a Shendiao Agri-Machinery service page, not the official expo website. Expo details are subject to the organizer's announcements.",
     factsTitle: "Expo Facts",
@@ -129,9 +127,9 @@ const TEXTS: Record<string, TianjinTexts> = {
       },
       { label: "Executed by", value: "To be verified" },
       { label: "Scale", value: "To be verified (internal campaign estimate: approx. 3,000 exhibitors)" },
-      { label: "Application Deadline", value: "To be verified" },
-      { label: "Official Website", value: "To be verified" },
-      { label: "Shendiao's Role", value: "Participates as an exhibiting company" },
+      { label: "Booth Application", value: "Official window 2026-04-26 to 05-15 (closed); Shendiao does not handle applications on the organizer's behalf" },
+      { label: "Official Website", value: "camf.com.cn" },
+      { label: "Shendiao's Role", value: "Operator of Shendiao Cloud Expo · online booth service provider (not the expo organizer)" },
     ],
     pending: "To be verified",
     whyTitle: "Why you need a second, online booth",
@@ -168,19 +166,17 @@ const TEXTS: Record<string, TianjinTexts> = {
       { title: "Go live", desc: "Your online booth opens automatically in 8 languages; inquiries reach you directly" },
     ],
     faqTitle: "FAQ",
-    nextExpo:
-      "Previous: 2026 Heilongjiang International Agricultural Machinery Exhibition (Sep 19–21 · Harbin)",
     ctaTitle: "An on-site booth lasts 3 days. An online booth lasts 365.",
     ctaSub: "Fill in the form and we will confirm your online booth before the expo opens.",
     secondaryCta: "Browse the online showroom first",
     sourceTitle: "Sources & Disclaimer",
     sourceNote:
-      "Expo facts on this page come from Shendiao's internal 2026 autumn dual-expo campaign records. Fields marked \"To be verified\" (venue / executor / scale / application deadline / official website / full Chinese name of the third organizer) have no official source yet and must be confirmed against the organizer's announcements before external use. Shendiao attends as an exhibiting company and has no affiliation with the expo organizer.",
+      "Expo facts on this page come from Shendiao's internal 2026 autumn expo campaign records. Fields marked \"To be verified\" (venue / executor / scale / full Chinese name of the third organizer) have no official source yet and must be confirmed against the organizer's announcements before external use. Shendiao operates its online booth service independently and has no affiliation with, and does not represent, the expo organizer.",
   },
   ru: {
     badge: "Сезон выставок 2026 · Тяньцзинь",
     h1: "Китайская международная выставка сельхозтехники 2026 (26–28 октября · Тяньцзинь) | Shendiao Agri-Machinery Expo™ — сервисная страница",
-    sub: "Офлайн-стенд работает 3 дня, онлайн-стенд — 365. Shendiao участвует как экспонент и открывает онлайн-стенд Shendiao Cloud Expo на 8 языках, продлевая три выставочных дня на целый год.",
+    sub: "Офлайн-стенд работает 3 дня, онлайн-стенд — 365. Shendiao открывает онлайн-стенд Shendiao Cloud Expo на 8 языках для экспонентов, продлевая три выставочных дня на целый год.",
     disclaimer:
       "Это сервисная страница Shendiao, а не официальный сайт выставки. Сведения о выставке уточняйте в объявлениях организатора.",
     factsTitle: "Основные сведения",
@@ -195,9 +191,9 @@ const TEXTS: Record<string, TianjinTexts> = {
       },
       { label: "Исполнитель", value: "уточняется" },
       { label: "Масштаб", value: "уточняется (внутренняя оценка: ок. 3 000 экспонентов)" },
-      { label: "Срок подачи заявок", value: "уточняется" },
-      { label: "Официальный сайт", value: "уточняется" },
-      { label: "Роль Shendiao", value: "участвует как экспонент" },
+      { label: "Подача заявок на стенд", value: "официальное окно 2026-04-26 — 05-15 (закрыто); Shendiao не принимает заявки от имени организатора" },
+      { label: "Официальный сайт", value: "camf.com.cn" },
+      { label: "Роль Shendiao", value: "оператор Shendiao Cloud Expo · поставщик услуг онлайн-стенда (не организатор выставки)" },
     ],
     pending: "уточняется",
     whyTitle: "Зачем нужен второй, онлайн-стенд",
@@ -234,14 +230,12 @@ const TEXTS: Record<string, TianjinTexts> = {
       { title: "Публикация", desc: "Стенд открывается автоматически на 8 языках, запросы приходят вам" },
     ],
     faqTitle: "Вопросы и ответы",
-    nextExpo:
-      "Предыдущая: Хэйлунцзянская международная выставка сельхозтехники 2026 (19–21 сентября · Харбин)",
     ctaTitle: "Офлайн-стенд — 3 дня. Онлайн-стенд — 365 дней.",
     ctaSub: "Заполните форму, и мы подтвердим открытие онлайн-стенда до начала выставки.",
     secondaryCta: "Сначала посмотреть онлайн-шоурум",
     sourceTitle: "Источники и оговорка",
     sourceNote:
-      "Сведения о выставке взяты из внутренних материалов кампании Shendiao «Осенние две выставки 2026». Поля, помеченные «уточняется» (павильон / исполнитель / масштаб / срок подачи / официальный сайт / полное китайское название третьего организатора), пока не подтверждены официальным источником и должны быть сверены с объявлениями организатора перед внешним использованием. Shendiao участвует как экспонент и не связана с организатором выставки.",
+      "Сведения о выставке взяты из внутренних материалов кампании Shendiao «Осенняя выставка 2026». Поля, помеченные «уточняется» (павильон / исполнитель / масштаб / полное китайское название третьего организатора), пока не подтверждены официальным источником и должны быть сверены с объявлениями организатора перед внешним использованием. Shendiao самостоятельно управляет сервисом онлайн-стенда и не связана с организатором выставки, а также не представляет его.",
   },
 };
 
@@ -364,13 +358,6 @@ export function TianjinLanding({ locale }: { locale: string }) {
             {t.crossTitle}
           </h2>
           <p className="text-base leading-relaxed text-gray-700 dark:text-gray-300">{t.crossBody}</p>
-          <Link
-            href={`/${locale}/expo/heilongjiang-2026`}
-            className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-blue-700 hover:underline dark:text-blue-400"
-          >
-            {t.nextExpo}
-            <ArrowRight className="h-4 w-4" />
-          </Link>
         </div>
       </section>
 

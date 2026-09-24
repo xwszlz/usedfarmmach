@@ -9,6 +9,7 @@ import { prisma } from "@/lib/db";
  * 接收表单数据：
  * 1. 写入 ExpoRegistration 表（Phase 1 升级）
  * 2. 发送邮件通知管理员
+ * 3. 保留前端传入的 source 归因字段（展会展位/渠道来源），无则回退 "website"
  */
 
 const ADMIN_EMAIL = "jiusei0319@gmail.com";
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    const { type, company, contact, phone, email, country, category, boothType, message, locale } = body;
+    const { type, company, contact, phone, email, country, category, boothType, message, locale, source } = body;
 
     // === 展位询盘（来自展位详情页）===
     if (type === "booth_inquiry") {
@@ -198,7 +199,8 @@ export async function POST(request: NextRequest) {
           category: category || null,
           boothType: boothType || null,
           message: message || null,
-          source: "website",
+          // 归因来源：优先用前端按展会传入的 source（如 "tj-2026"），无则回退 website
+          source: source || "website",
           expoType: "virtual",
           locale: locale || null,
           status: "pending",
