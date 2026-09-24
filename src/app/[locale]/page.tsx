@@ -5,13 +5,12 @@ import { PartsEntrance } from "@/components/home/parts-entrance";
 import { ServicesEntrance } from "@/components/home/services-entrance";
 import { EngineerCertSection } from "@/components/home/engineer-cert-section";
 import { ExpoEntrance } from "@/components/home/expo-entrance";
-import { ExpoGuideEntry } from "@/components/home/expo-guide-entry";
 import { HotEquipment } from "@/components/home/hot-equipment";
 import { ResearchHubEntry } from "@/components/home/research-hub-entry";
 import { DailyReportSection } from "@/components/home/daily-report-section";
 import { TrustBadges } from "@/components/home/trust-badges";
 import { CTASection } from "@/components/home/cta-section";
-import { DualExpoBanner } from "@/components/home/dual-expo-banner";
+import { ExpoBanner } from "@/components/home/expo-banner";
 import { ArbitrageShowcase } from "@/components/home/arbitrage-showcase";
 import { DAILY_REPORT_RANKING } from "@/config/daily-report-ranking";
 import { generatePageMetadata } from "@/lib/seo-metadata";
@@ -27,10 +26,10 @@ const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
  * 首页 H1 文案。
  * 背景：首页此前**没有任何 H1**（实测 .com/.cn 各语种 h1=0、h2=11），属于结构性 SEO 缺失。
  * 文案对齐首页 <title> 的核心词（"used farm machinery trading platform" / "二手农机交易平台"），
- * 而不是展会口号 —— 因为 .com 上 dual-expo-banner 的主标题位渲染的是口号
- * （GLOBAL_NARRATIVE: "Two major exhibitions. One global stage."），无品牌无关键词，
+ * 而不是展会口号 —— 因为 .com 上 expo-banner 的主标题位渲染的是口号
+ * （GLOBAL_NARRATIVE: "One global stage — CIAME 2026"），无品牌无关键词，
  * 不适合作为站点首页的 H1。
- * 其余 6 语（es/pt/ar/fr/hi）沿用英文，与站内既有回落策略一致（见 dual-expo-banner.tsx 注释）。
+ * 其余 6 语（es/pt/ar/fr/hi）沿用英文，与站内既有回落策略一致（见 expo-banner.tsx 注释）。
  */
 const HOME_H1: Record<string, string> = {
   zh: "二手农机交易平台",
@@ -194,7 +193,7 @@ export default async function HomePage({
       />
 
       {/* 10 屏组装 */}
-      <DualExpoBanner locale={locale} />
+      <ExpoBanner locale={locale} />
 
       {/* 首页 H1（此前缺失）：可见、服务端渲染，文案对齐 <title> 关键词 */}
       <section className="bg-white pt-8 pb-2">
@@ -208,7 +207,6 @@ export default async function HomePage({
         </div>
       </section>
 
-      <ExpoGuideEntry locale={locale} />
       <RecruitmentBanner locale={locale} />
       <HotEquipment products={hotProducts} locale={locale} />
       <DailyReportSection locale={locale} initialArticles={initialArticles} />

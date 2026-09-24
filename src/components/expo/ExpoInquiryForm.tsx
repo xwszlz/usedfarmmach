@@ -145,7 +145,7 @@ export function getFormTexts(locale: string): FormTexts {
 
 interface ExpoInquiryFormProps {
   locale: string;
-  /** 展会归因标识，例如 "hlj-2026"，随表单写入管理员通知邮件 */
+  /** 展会归因标识，例如 "tj-2026"，随表单写入管理员通知邮件 */
   source: string;
 }
 

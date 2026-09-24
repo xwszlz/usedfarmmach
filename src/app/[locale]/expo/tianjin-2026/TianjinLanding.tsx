@@ -38,7 +38,6 @@ interface TianjinTexts {
   stepsTitle: string;
   steps: { title: string; desc: string }[];
   faqTitle: string;
-  nextExpo: string;
   ctaTitle: string;
   ctaSub: string;
   secondaryCta: string;
@@ -103,13 +102,12 @@ const TEXTS: Record<string, TianjinTexts> = {
       { title: "上线", desc: "线上展台自动开通，8 语种页面同步上线，有人询价会通知你" },
     ],
     faqTitle: "常见问题",
-    nextExpo: "上一场：2026 黑龙江国际农业机械展览会（9月19–21日 · 哈尔滨）",
     ctaTitle: "现场展位 3 天，线上展台 365 天",
     ctaSub: "填写以下信息，我们在展前与你确认线上展台开通事宜。",
     secondaryCta: "先看看线上展厅",
     sourceTitle: "信息来源与免责声明",
     sourceNote:
-      "本页展会信息来自神雕农机 2026 秋季双展内部战役方案的记载。标注「待核实」的字段（展馆 / 承办 / 规模 / 申报截止 / 官网 / 主办单位第三家中文全称）尚未取得官方来源，正式对外前须以主办方公告为准。神雕农机为本届参展企业，与展会主办方无隶属关系。",
+      "本页展会信息来自神雕农机 2026 秋季展会战役方案的记载。标注「待核实」的字段（展馆 / 承办 / 规模 / 申报截止 / 官网 / 主办单位第三家中文全称）尚未取得官方来源，正式对外前须以主办方公告为准。神雕农机为本届参展企业，与展会主办方无隶属关系。",
   },
   en: {
     badge: "2026 Expo Season · Tianjin",
@@ -168,14 +166,12 @@ const TEXTS: Record<string, TianjinTexts> = {
       { title: "Go live", desc: "Your online booth opens automatically in 8 languages; inquiries reach you directly" },
     ],
     faqTitle: "FAQ",
-    nextExpo:
-      "Previous: 2026 Heilongjiang International Agricultural Machinery Exhibition (Sep 19–21 · Harbin)",
     ctaTitle: "An on-site booth lasts 3 days. An online booth lasts 365.",
     ctaSub: "Fill in the form and we will confirm your online booth before the expo opens.",
     secondaryCta: "Browse the online showroom first",
     sourceTitle: "Sources & Disclaimer",
     sourceNote:
-      "Expo facts on this page come from Shendiao's internal 2026 autumn dual-expo campaign records. Fields marked \"To be verified\" (venue / executor / scale / application deadline / official website / full Chinese name of the third organizer) have no official source yet and must be confirmed against the organizer's announcements before external use. Shendiao attends as an exhibiting company and has no affiliation with the expo organizer.",
+      "Expo facts on this page come from Shendiao's internal 2026 autumn expo campaign records. Fields marked \"To be verified\" (venue / executor / scale / application deadline / official website / full Chinese name of the third organizer) have no official source yet and must be confirmed against the organizer's announcements before external use. Shendiao attends as an exhibiting company and has no affiliation with the expo organizer.",
   },
   ru: {
     badge: "Сезон выставок 2026 · Тяньцзинь",
@@ -234,14 +230,12 @@ const TEXTS: Record<string, TianjinTexts> = {
       { title: "Публикация", desc: "Стенд открывается автоматически на 8 языках, запросы приходят вам" },
     ],
     faqTitle: "Вопросы и ответы",
-    nextExpo:
-      "Предыдущая: Хэйлунцзянская международная выставка сельхозтехники 2026 (19–21 сентября · Харбин)",
     ctaTitle: "Офлайн-стенд — 3 дня. Онлайн-стенд — 365 дней.",
     ctaSub: "Заполните форму, и мы подтвердим открытие онлайн-стенда до начала выставки.",
     secondaryCta: "Сначала посмотреть онлайн-шоурум",
     sourceTitle: "Источники и оговорка",
     sourceNote:
-      "Сведения о выставке взяты из внутренних материалов кампании Shendiao «Осенние две выставки 2026». Поля, помеченные «уточняется» (павильон / исполнитель / масштаб / срок подачи / официальный сайт / полное китайское название третьего организатора), пока не подтверждены официальным источником и должны быть сверены с объявлениями организатора перед внешним использованием. Shendiao участвует как экспонент и не связана с организатором выставки.",
+      "Сведения о выставке взяты из внутренних материалов кампании Shendiao «Осенняя выставка 2026». Поля, помеченные «уточняется» (павильон / исполнитель / масштаб / срок подачи / официальный сайт / полное китайское название третьего организатора), пока не подтверждены официальным источником и должны быть сверены с объявлениями организатора перед внешним использованием. Shendiao участвует как экспонент и не связана с организатором выставки.",
   },
 };
 
@@ -364,13 +358,6 @@ export function TianjinLanding({ locale }: { locale: string }) {
             {t.crossTitle}
           </h2>
           <p className="text-base leading-relaxed text-gray-700 dark:text-gray-300">{t.crossBody}</p>
-          <Link
-            href={`/${locale}/expo/heilongjiang-2026`}
-            className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-blue-700 hover:underline dark:text-blue-400"
-          >
-            {t.nextExpo}
-            <ArrowRight className="h-4 w-4" />
-          </Link>
         </div>
       </section>
 
