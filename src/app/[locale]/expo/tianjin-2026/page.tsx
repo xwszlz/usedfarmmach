@@ -94,7 +94,8 @@ export default async function TianjinExpoPage({
           description: tdk.description,
           startDate: "2026-10-26",
           endDate: "2026-10-28",
-          // 官方网址待核实 —— 核实前不输出 url，避免把本页当成官方入口
+          // 官网已核实（camf.com.cn）—— 这是展会官方入口，不是本页
+          url: "https://www.camf.com.cn",
           venueName: isZh ? "国家会展中心（天津）" : "National Exhibition and Convention Center (Tianjin)",
           city: isZh ? "天津市" : "Tianjin",
           country: "CN",

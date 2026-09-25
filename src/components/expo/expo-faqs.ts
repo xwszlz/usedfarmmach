@@ -5,7 +5,7 @@
  * 和落地页的可视化 FAQ（Client Component）。若把 FAQ 写在 "use client" 模块里再导出，
  * 服务端拿到的是 client reference 而非真实数据，JSON.stringify 会失败。
  *
- * zh / en / ru 完整写；es / pt / ar / fr / hi 回落到英文。
+ * 天津场（TJ_FAQS）已实现全部 8 语种（zh/en/ru/es/pt/ar/fr/hi）。
  */
 
 export interface ExpoFaqItem {
@@ -85,6 +85,116 @@ export const TJ_FAQS: Record<string, ExpoFaqItem[]> = {
     {
       q: "Хочу оформить офлайн-стенд — к кому обращаться?",
       a: "Заявки и стоимость офлайн-стендов — через официальные каналы организатора (camf.com.cn); официальное окно подачи 2026-04-26 — 05-15 закрыто. Shendiao не является агентом по продаже офлайн-стендов.",
+    },
+  ],
+  es: [
+    {
+      q: "¿Cuál es el papel de Shendiao en esta feria?",
+      a: "Shendiao ofrece a los expositores stands online en 8 idiomas y visibilidad ante compradores extranjeros, y opera Shendiao Cloud Expo. No somos el organizador de la feria ni una empresa expositora en esta edición. Esta página es un servicio propio de Shendiao, no la web oficial de la feria. Los datos de la feria están sujetos a los anuncios del organizador.",
+    },
+    {
+      q: "¿Cuándo y dónde se celebra la feria?",
+      a: "La Exposición Internacional de Maquinaria Agrícola de China 2026 se celebra del 26 al 28 de octubre de 2026 en Tianjin. El recinto concreto está por verificar; consulte los anuncios del organizador.",
+    },
+    {
+      q: "¿Quién organiza esta feria?",
+      a: "Según los registros disponibles, la feria está organizada por la Asociación China de Distribución de Maquinaria Agrícola, la Asociación China de Industria de Maquinaria Agrícola y otras entidades (una de ellas abreviada CAAMM, cuyo nombre chino completo está por verificar). Los anuncios del organizador son la fuente autorizada.",
+    },
+    {
+      q: "¿Qué incluye el stand online (Shendiao Cloud Expo)?",
+      a: "Un stand online de 365 días, carga de fotos y vídeo, páginas de producto en 8 idiomas y acceso a las estadísticas de visitas y consultas. El stand puede abrirse gratis; el volumen de publicaciones y los servicios dependen del plan que elija.",
+    },
+    {
+      q: "Quiero solicitar un stand presencial, ¿con quién debo contactar?",
+      a: "Las solicitudes y tarifas de stands presenciales las gestiona el organizador a través de canales oficiales (camf.com.cn); la ventana oficial de solicitud fue del 2026-04-26 al 05-15 y ya está cerrada. Shendiao no actúa como agente para stands presenciales.",
+    },
+  ],
+  pt: [
+    {
+      q: "Qual é o papel da Shendiao nesta feira?",
+      a: "A Shendiao oferece aos expositores estandes online em 8 idiomas e visibilidade junto a compradores estrangeiros, e opera a Shendiao Cloud Expo. Não somos a organizadora da feira nem uma empresa expositora nesta edição. Esta página é um serviço próprio da Shendiao, não o site oficial da feira. Os dados da feira estão sujeitos aos anúncios do organizador.",
+    },
+    {
+      q: "Quando e onde acontece a feira?",
+      a: "A Exposição Internacional de Máquinas Agrícolas da China 2026 acontece de 26 a 28 de outubro de 2026 em Tianjin. O recinto específico está a verificar — consulte os anúncios do organizador.",
+    },
+    {
+      q: "Quem organiza esta feira?",
+      a: "Segundo os registros disponíveis, a feira é organizada pela Associação Chinesa de Distribuição de Máquinas Agrícolas, pela Associação Chinesa da Indústria de Máquinas Agrícolas e por outras entidades (uma delas abreviada CAAMM, cujo nome chinês completo está a verificar). Os anúncios do organizador são a fonte autorizada.",
+    },
+    {
+      q: "O que está incluído no estande online (Shendiao Cloud Expo)?",
+      a: "Um estande online de 365 dias, upload de fotos e vídeos, páginas de produto em 8 idiomas e acesso às estatísticas de visualizações e consultas. O estande pode ser aberto gratuitamente; o volume de anúncios e os serviços dependem do plano escolhido.",
+    },
+    {
+      q: "Quero solicitar um estande presencial — com quem devo falar?",
+      a: "As solicitações e taxas de estandes presenciais são tratadas pelo organizador por canais oficiais (camf.com.cn); a janela oficial de inscrição foi de 2026-04-26 a 05-15 e agora está encerrada. A Shendiao não atua como agente de estandes presenciais.",
+    },
+  ],
+  ar: [
+    {
+      q: "ما هو دور Shendiao في هذا المعرض؟",
+      a: "توفّر Shendiao للعارضين أجنحة إلكترونية بثماني لغات ووصولًا إلى المشترين الأجانب، وهي مشغّلة Shendiao Cloud Expo. نحن لسنا منظّم المعرض ولا شركة عارضة في هذه النسخة. هذه الصفحة خدمة خاصة بـ Shendiao وليست الموقع الرسمي للمعرض. تخضع بيانات المعرض لإعلانات المنظّم.",
+    },
+    {
+      q: "متى وأين يُقام المعرض؟",
+      a: "يُقام المعرض الدولي الصيني للآلات الزراعية 2026 في الفترة من 26 إلى 28 أكتوبر 2026 في تيانجين. المقر المحدّد قيد التحقق — يُرجى الرجوع إلى إعلانات المنظّم.",
+    },
+    {
+      q: "من ينظّم هذا المعرض؟",
+      a: "وفقًا للسجلات المتاحة، ينظّم المعرض الجمعية الصينية لتوزيع الآلات الزراعية والجمعية الصينية لصناعة الآلات الزراعية وجهات أخرى (إحداها يُشار إليها بـ CAAMM واسمها الصيني الكامل قيد التحقق). إعلانات المنظّم هي المصدر المعتمد.",
+    },
+    {
+      q: "ماذا يشمل الجناح الإلكتروني (Shendiao Cloud Expo)؟",
+      a: "جناح إلكتروني لمدة 365 يومًا، ورفع الصور والفيديو، وصفحات منتجات بثماني لغات، والاطلاع على إحصاءات المشاهدات والاستفسارات. يمكن فتح الجناح مجانًا؛ ويعتمد حجم الإدراج والخدمات على الباقة التي تختارها.",
+    },
+    {
+      q: "أرغب في التقديم على جناح حضوري — بمن أتواصل؟",
+      a: "تُدار طلبات ورسوم الأجنحة الحضورية من قِبل المنظّم عبر القنوات الرسمية (camf.com.cn)؛ وكانت نافذة التقديم الرسمية من 2026-04-26 إلى 05-15 وقد أُغلقت الآن. لا تعمل Shendiao كوسيط للأجنحة الحضورية.",
+    },
+  ],
+  fr: [
+    {
+      q: "Quel est le rôle de Shendiao à ce salon ?",
+      a: "Shendiao propose aux exposants des stands en ligne en 8 langues ainsi qu'une visibilité auprès des acheteurs étrangers, et exploite Shendiao Cloud Expo. Nous ne sommes ni l'organisateur du salon, ni une entreprise exposante de cette édition. Cette page est un service propre à Shendiao, et non le site officiel du salon. Les informations sur le salon sont soumises aux annonces de l'organisateur.",
+    },
+    {
+      q: "Quand et où se tient le salon ?",
+      a: "Le Salon international chinois de la machinerie agricole 2026 se tient du 26 au 28 octobre 2026 à Tianjin. Le lieu précis reste à vérifier — consultez les annonces de l'organisateur.",
+    },
+    {
+      q: "Qui organise ce salon ?",
+      a: "Selon les informations disponibles, le salon est organisé par l'Association chinoise de distribution de machines agricoles, l'Association chinoise de l'industrie des machines agricoles et d'autres entités (l'une étant abrégée CAAMM, dont le nom chinois complet reste à vérifier). Les annonces de l'organisateur font foi.",
+    },
+    {
+      q: "Que comprend le stand en ligne (Shendiao Cloud Expo) ?",
+      a: "Un stand en ligne de 365 jours, l'envoi de photos et de vidéos, des pages produits en 8 langues et l'accès aux statistiques de vues et de demandes. Le stand peut être ouvert gratuitement ; le volume de publications et les services dépendent de la formule choisie.",
+    },
+    {
+      q: "Je souhaite demander un stand physique — à qui m'adresser ?",
+      a: "Les demandes et tarifs des stands physiques sont traités par l'organisateur via les canaux officiels (camf.com.cn) ; la fenêtre officielle de candidature allait du 2026-04-26 au 05-15 et est désormais close. Shendiao n'agit pas comme intermédiaire pour les stands physiques.",
+    },
+  ],
+  hi: [
+    {
+      q: "इस प्रदर्शनी में शेंडियाओ की भूमिका क्या है?",
+      a: "शेंडियाओ प्रदर्शकों को 8 भाषाओं वाले ऑनलाइन स्टॉल तथा विदेशी खरीदारों तक पहुँच प्रदान करती है और शेंडियाओ क्लाउड एक्सपो का संचालन करती है। हम न प्रदर्शनी के आयोजक हैं, न इस संस्करण में प्रदर्शक कंपनी। यह पृष्ठ शेंडियाओ की अपनी सेवा है, प्रदर्शनी की आधिकारिक वेबसाइट नहीं। प्रदर्शनी की जानकारी आयोजक की घोषणाओं के अधीन है।",
+    },
+    {
+      q: "प्रदर्शनी कब और कहाँ आयोजित होती है?",
+      a: "2026 चीन अंतर्राष्ट्रीय कृषि मशीनरी प्रदर्शनी 26–28 अक्टूबर 2026 को तियानजिन में आयोजित होगी। विशिष्ट स्थल सत्यापन बाकी है — आयोजक की घोषणाएँ देखें।",
+    },
+    {
+      q: "इस प्रदर्शनी का आयोजक कौन है?",
+      a: "उपलब्ध अभिलेखों के अनुसार, इस प्रदर्शनी का आयोजन चीन कृषि मशीनरी वितरण संघ, चीन कृषि मशीनरी उद्योग संघ तथा अन्य संस्थाएँ करती हैं (इनमें एक का संक्षिप्त नाम CAAMM है, जिसका पूरा चीनी नाम सत्यापन बाकी है)। आयोजक की घोषणाएँ ही प्रामाणिक स्रोत हैं।",
+    },
+    {
+      q: "ऑनलाइन स्टॉल (शेंडियाओ क्लाउड एक्सपो) में क्या शामिल है?",
+      a: "365 दिन का ऑनलाइन स्टॉल, फोटो और वीडियो अपलोड, 8 भाषाओं वाले उत्पाद पृष्ठ, तथा व्यू और पूछताछ के आँकड़े देखने की सुविधा। स्टॉल निःशुल्क खोला जा सकता है; लिस्टिंग की संख्या और सेवाएँ आपके चुने हुए प्लान पर निर्भर करती हैं।",
+    },
+    {
+      q: "मैं स्थल पर स्टॉल हेतु आवेदन करना चाहता हूँ — किससे संपर्क करूँ?",
+      a: "स्थल पर स्टॉल के आवेदन और शुल्क आयोजक द्वारा आधिकारिक चैनलों (camf.com.cn) से संभाले जाते हैं; आधिकारिक आवेदन विंडो 2026-04-26 से 05-15 थी और अब बंद हो चुकी है। शेंडियाओ स्थल पर स्टॉल के लिए एजेंट के रूप में कार्य नहीं करती।",
     },
   ],
 };
