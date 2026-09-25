@@ -1,8 +1,9 @@
 import { MetadataRoute } from "next";
 
 import { siteConfig } from "@/config/site";
+import { SITE_ORIGIN } from "@/lib/site-url";
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || `https://${siteConfig.domains.primary}`;
+const BASE_URL = SITE_ORIGIN;
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -14,6 +15,7 @@ export default function robots(): MetadataRoute.Robots {
       },
     ],
     sitemap: `${BASE_URL}/sitemap.xml`,
-    host: BASE_URL,
+    // robots 的 host 指令要求「纯主机名」（不带协议）
+    host: siteConfig.domains.canonical,
   };
 }

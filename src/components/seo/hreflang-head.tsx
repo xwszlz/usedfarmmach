@@ -1,12 +1,15 @@
-import { ALL_LOCALES } from "@/lib/seo-metadata";
-import type { Locale } from "@/lib/seo-metadata";
+import { siteConfig } from "@/config/site";
+import { SITE_ORIGIN } from "@/lib/site-url";
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
+const BASE_URL = SITE_ORIGIN;
+
+/** x-default 指向站点默认语言（.com=en / .cn=zh），真相源 = siteConfig */
+const DEFAULT_LOCALE = siteConfig.defaultLocale;
 
 interface HreflangHeadProps {
   locale: string;
   path: string;
-  xDefaultLocale?: Locale;
+  xDefaultLocale?: string;
 }
 
 /**
@@ -15,17 +18,17 @@ interface HreflangHeadProps {
  *
  * Example: <HreflangHead locale="zh" path="/products" />
  * Generates:
- *   <link rel="alternate" hreflang="zh" href="https://usedfarmmach.com/zh/products" />
- *   <link rel="alternate" hreflang="en" href="https://usedfarmmach.com/en/products" />
+ *   <link rel="alternate" hreflang="zh" href="${BASE_URL}/zh/products" />
+ *   <link rel="alternate" hreflang="en" href="${BASE_URL}/en/products" />
  *   ...
- *   <link rel="alternate" hreflang="x-default" href="https://usedfarmmach.com/en/products" />
+ *   <link rel="alternate" hreflang="x-default" href="${BASE_URL}/en/products" />
  */
-export function HreflangHead({ locale, path, xDefaultLocale = "en" }: HreflangHeadProps) {
+export function HreflangHead({ locale, path, xDefaultLocale = DEFAULT_LOCALE }: HreflangHeadProps) {
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
 
   return (
     <>
-      {ALL_LOCALES.map((lang) => (
+      {siteConfig.locales.map((lang) => (
         <link
           key={lang}
           rel="alternate"
@@ -49,11 +52,11 @@ export function HreflangHead({ locale, path, xDefaultLocale = "en" }: HreflangHe
  * Example: getHreflangLanguages("/products") returns:
  *   { zh: "...", en: "...", ..., "x-default": "..." }
  */
-export function getHreflangLanguages(path: string, xDefaultLocale: Locale = "en"): Record<string, string> {
+export function getHreflangLanguages(path: string, xDefaultLocale: string = DEFAULT_LOCALE): Record<string, string> {
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
   const languages: Record<string, string> = {};
 
-  for (const lang of ALL_LOCALES) {
+  for (const lang of siteConfig.locales) {
     languages[lang] = `${BASE_URL}/${lang}${cleanPath}`;
   }
   languages["x-default"] = `${BASE_URL}/${xDefaultLocale}${cleanPath}`;

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { siteConfig } from "@/config/site";
+import { SITE_ORIGIN } from "@/lib/site-url";
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
+const BASE_URL = SITE_ORIGIN;
 
 const localizedMeta: Record<string, Record<string, { title: string; description: string }>> = {
   home: {
@@ -733,6 +735,49 @@ const localizedMeta: Record<string, Record<string, { title: string; description:
       description: "AgriTrade membership pricing: compare Free, Basic, Premium and Enterprise plans. AI valuation, unlimited listings, cross-border arbitrage data, data export & product topping.",
     },
   },
+  // ⚠️ 合规约束同 expo：不得出现涉资金服务表述、不得出现绝对化表述。
+  expoWingShow: {
+    zh: {
+      title: "神雕展翼_真实农机作业视频_真机下地实拍_神雕农机",
+      description:
+        "神雕展翼（Shendiao WingShow™）—— 神雕农机展旗下真实作业视频模块，常年常设、持续更新。真机下地实拍，为每台展机提供可核验的工况证据；天津 CIAME 2026 参展申报作业视频同步汇集于此。",
+    },
+    en: {
+      title: "Shendiao WingShow™ | Real Farm Machinery Operation Videos",
+      description:
+        "Shendiao WingShow™ — field-operation videos from Shendiao Agri-Machinery Expo™. Always on, continuously updated: genuine in-field footage as verifiable condition evidence. Operation videos submitted for CIAME 2026 Tianjin are aggregated here.",
+    },
+    ru: {
+      title: "神雕展翼™ | Реальные видео работы сельхозтехники",
+      description:
+        "Реальные видео работы техники от выставки 神雕农机. Работает круглый год, регулярно обновляется: настоящие съёмки в поле как проверяемое подтверждение состояния. Здесь также собраны видео, поданные для CIAME 2026 (Тяньцзинь).",
+    },
+    es: {
+      title: "神雕展翼™ | Vídeos reales de trabajo de maquinaria agrícola",
+      description:
+        "Vídeos reales de trabajo de la Expo de Maquinaria Agrícola 神雕农机. Permanente y en actualización continua: grabaciones reales en campo como evidencia verificable del estado. Aquí se reúnen también los vídeos presentados para CIAME 2026 (Tianjín).",
+    },
+    pt: {
+      title: "神雕展翼™ | Vídeos reais de trabalho de máquinas agrícolas",
+      description:
+        "Vídeos reais de trabalho da Expo de Máquinas Agrícolas 神雕农机. Permanente e em atualização contínua: filmagens reais no campo como prova verificável de estado. Os vídeos submetidos para a CIAME 2026 (Tianjin) também são reunidos aqui.",
+    },
+    ar: {
+      title: "神雕展翼™ | فيديوهات حقيقية لتشغيل الآلات الزراعية",
+      description:
+        "فيديوهات حقيقية لتشغيل الآلات من معرض 神雕农机. متاحة على مدار العام ومحدَّثة باستمرار: تصوير ميداني حقيقي كدليل قابل للتحقق على الحالة. تُجمع هنا أيضًا الفيديوهات المقدَّمة لمعرض CIAME 2026 في تيانجين.",
+    },
+    fr: {
+      title: "神雕展翼™ | Vidéos réelles d'exploitation de machines agricoles",
+      description:
+        "Vidéos réelles d'exploitation de l'Expo de machines agricoles 神雕农机. Permanent et mis à jour en continu : tournages réels au champ comme preuve vérifiable de l'état. Les vidéos soumises pour CIAME 2026 (Tianjin) y sont également rassemblées.",
+    },
+    hi: {
+      title: "神雕展翼™ | वास्तविक कृषि मशीनरी ऑपरेशन वीडियो",
+      description:
+        "神雕农机 एक्सपो से वास्तविक क्षेत्र-संचालन वीडियो। स्थायी और निरंतर अद्यतन: वास्तविक फील्ड फुटेज, सत्यापन-योग्य स्थिति प्रमाण के रूप में। CIAME 2026 (तियानजिन) हेतु जमा किए गए ऑपरेशन वीडियो भी यहाँ संग्रहित हैं।",
+    },
+  },
 };
 
 export const ALL_LOCALES = ["zh", "en", "ru", "es", "pt", "ar", "fr", "hi"] as const;
@@ -745,8 +790,14 @@ export type Locale = (typeof ALL_LOCALES)[number];
  */
 export function buildHreflang(pagePath: string): Record<string, string> {
   const path = pagePath.startsWith("/") ? pagePath : `/${pagePath}`;
-  const alternates: Record<string, string> = { "x-default": `${BASE_URL}/en${path}` };
-  for (const lang of ALL_LOCALES) {
+  const alternates: Record<string, string> = {
+    "x-default": `${BASE_URL}/${siteConfig.defaultLocale}${path}`,
+  };
+  // ⚠️ 必须用 siteConfig.locales（.com=8 / .cn=2），不要用 ALL_LOCALES。
+  //    .cn 站只有 zh/en，若按 ALL_LOCALES 声明 ru/es/pt/ar/fr/hi，
+  //    等于对外声明 6 个**实测 404** 的语言版本 —— 自相矛盾，
+  //    且是主动向搜索引擎/AI 投喂错误事实（2026-09-25 线上实测确认）。
+  for (const lang of siteConfig.locales) {
     alternates[lang] = `${BASE_URL}/${lang}${path}`;
   }
   return alternates;

@@ -11,9 +11,10 @@ import { OrganizationStructuredData } from "@/components/seo/structured-data";
 import { ThemeProvider } from "@/lib/theme/theme-provider";
 import { SmoothScrollProvider } from "@/lib/lenis/smooth-scroll-provider";
 import { FloatingBargainAd } from "@/components/bargain/floating-bargain-ad";
+import { SITE_ORIGIN } from "@/lib/site-url";
 
 const locales = ["zh", "en", "ru", "es", "pt", "ar", "fr", "hi"] as const;
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
+const BASE_URL = SITE_ORIGIN;
 
 export async function generateMetadata({
   params,

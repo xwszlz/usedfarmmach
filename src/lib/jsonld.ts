@@ -3,7 +3,9 @@
  * Generates Schema.org compliant JSON-LD for all page types.
  */
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
+import { SITE_ORIGIN } from "@/lib/site-url";
+
+const BASE_URL = SITE_ORIGIN;
 
 // ─────── Organization ───────
 
@@ -32,7 +34,7 @@ export function generateOrganizationJsonLd(locale: string) {
       contactType: "customer service",
       availableLanguage: ["Chinese", "English", "Russian", "Spanish", "Portuguese", "Arabic", "French", "Hindi"],
     },
-    sameAs: ["https://usedfarmmach.com"],
+    sameAs: [BASE_URL],
     subOrganization: [
       {
         "@type": "Organization",

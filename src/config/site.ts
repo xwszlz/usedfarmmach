@@ -57,6 +57,8 @@ export interface SiteConfigItem {
   defaultLocale: string;
   domains: {
     primary: string;
+    /** canonical 主机名（不带协议）—— 线上最终落地的那个，SEO 输出一律用它 */
+    canonical: string;
     aliases: string[];
   };
   payments: SitePayments;
@@ -76,6 +78,10 @@ export const siteConfigMap: SiteConfigMap = {
     defaultLocale: "en",
     domains: {
       primary: "usedfarmmach.com",
+      // 2026-09-25 实测：裸域 usedfarmmach.com --308--> www.usedfarmmach.com。
+      // 故 canonical 必须带 www，否则 canonical / hreflang / og:url / sitemap
+      // 输出的每条 URL 都指向一个「会跳转的地址」。
+      canonical: "www.usedfarmmach.com",
       aliases: ["usedfarmmach.com", "www.usedfarmmach.com"],
     },
     payments: { stripe: true, wechatPay: false },
@@ -105,6 +111,8 @@ export const siteConfigMap: SiteConfigMap = {
     defaultLocale: "zh",
     domains: {
       primary: "usedfarmmach.cn",
+      // .cn 裸域与 www 均**直接 200**（无跳转，2026-09-25 实测）⇒ 保持裸域不变。
+      canonical: "usedfarmmach.cn",
       aliases: ["usedfarmmach.cn", "www.usedfarmmach.cn"],
     },
     payments: { stripe: false, wechatPay: true },

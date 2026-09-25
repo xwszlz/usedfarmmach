@@ -1,12 +1,13 @@
 import { MetadataRoute } from "next";
 import { siteConfig } from "@/config/site";
+import { SITE_ORIGIN } from "@/lib/site-url";
 import { prisma } from "@/lib/db";
 import { toSlug } from "@/lib/slug";
 
 // 动态生成站点地图（force-dynamic）：每次请求读真实 DB，避免构建期空库快照被缓存。
 export const dynamic = "force-dynamic";
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || `https://${siteConfig.domains.primary}`;
+const BASE_URL = SITE_ORIGIN;
 const locales = siteConfig.locales;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -51,6 +52,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/expo/compare", priority: 0.6, freq: "weekly" as const },
     { path: "/expo/showroom", priority: 0.7, freq: "weekly" as const },
     { path: "/expo/tianjin-2026", priority: 0.8, freq: "weekly" as const },
+    { path: "/expo/field-videos", priority: 0.7, freq: "weekly" as const },
     { path: "/solutions", priority: 0.6, freq: "monthly" as const },
     { path: "/services", priority: 0.7, freq: "monthly" as const },
     { path: "/services/valuation", priority: 0.8, freq: "monthly" as const },
