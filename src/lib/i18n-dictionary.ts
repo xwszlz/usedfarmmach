@@ -9427,4 +9427,22 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "fr": "Couple maximal",
     "hi": "अधिकतम टॉर्क",
   },
+  "常年常设 · 真机下地实拍 · 持续更新": {
+    "en": "Always-On · Real In-Field Footage · Continuously Updated",
+    "ru": "Постоянно действует · Реальные съёмки в поле · Регулярное обновление",
+    "es": "Permanente · Grabación real en el campo · Actualización continua",
+    "pt": "Permanente · Filmagem real no campo · Atualização contínua",
+    "ar": "دائم · تصوير ميداني حقيقي · تحديث مستمر",
+    "fr": "Permanent · Tournage réel au champ · Mise à jour continue",
+    "hi": "स्थायी · वास्तविक खेत फुटेज · निरंतर अपडेट",
+  },
+  "神雕展翼": {
+    "en": "Shendiao WingShow™",
+    "ru": "神雕农机展翼™",
+    "es": "神雕展翼™",
+    "pt": "神雕展翼™",
+    "ar": "神雕展翼™",
+    "fr": "神雕展翼™",
+    "hi": "शेनडाओ विंगशो™",
+  },
 };

@@ -1,5 +1,16 @@
 "use client";
 
+/**
+ * 神雕展翼（Shendiao WingShow™）—— 真实作业视频入口。
+ *
+ * 2026-09-25 改版（老板决策）：原「地头展」专题页改为**常年常设**入口 ——
+ * 不再绑定任何单场展会日期（旧版把「7月29日 河北元氏·第28届河北农机地头展」
+ * 硬编码在 Hero 里，展期过后线上长期显示过期信息）。
+ * 天津 CIAME 2026 参展申报的作业视频同步汇集到本页。
+ * TDK / canonical / hreflang 见同目录 layout.tsx（本文件是 client component，
+ * 无法导出 generateMetadata）。
+ */
+
 import { translate } from "@/lib/i18n-runtime";
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
@@ -146,10 +157,10 @@ export default function FieldVideosPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-green-900/80 to-gray-950" />
         <div className="relative mx-auto max-w-6xl px-4 py-16 text-center">
           <h1 className="text-4xl font-bold text-white sm:text-5xl">
-            {translate("地头展·作业视频大赏", locale)}
+            {translate("神雕展翼 · 真实作业视频", locale)}
           </h1>
           <p className="mt-3 text-lg text-green-200">
-            {translate("7月29日 河北元氏·第28届河北农机地头展", locale)}
+            {translate("常年常设 · 真机下地实拍 · 持续更新", locale)}
           </p>
           <p className="mt-1 text-sm text-gray-400">
             {translate("扫码上传您的现场作业视频，即刻在大屏和线上同步展示", locale)}
@@ -279,7 +290,7 @@ export default function FieldVideosPage() {
                     <VideoPlayBadge
                       playCount={playCounts[v.id] ?? v.playCount ?? 0}
                       locale={locale}
-                      badgeLabel={translate("地头展现场", locale)}
+                      badgeLabel={translate("神雕展翼", locale)}
                     />
                   </div>
                 </div>

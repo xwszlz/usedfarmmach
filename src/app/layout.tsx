@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { siteConfig } from "@/config/site";
+import { SITE_ORIGIN } from "@/lib/site-url";
 import "./globals.css";
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
+const BASE_URL = SITE_ORIGIN;
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -34,17 +35,14 @@ export const metadata: Metadata = {
   creator: "神雕农机",
   publisher: "石家庄神雕农机科技有限公司",
   alternates: {
-    canonical: `${BASE_URL}/zh`,
+    canonical: `${BASE_URL}/${siteConfig.defaultLocale}`,
+    // ⚠️ 由 siteConfig.locales 生成，不要硬编码 8 语：
+    //    .cn 站只有 zh/en，硬编码会让 .cn 声明 6 个实测 404 的语言版本。
     languages: {
-      zh: `${BASE_URL}/zh`,
-      en: `${BASE_URL}/en`,
-      ru: `${BASE_URL}/ru`,
-      es: `${BASE_URL}/es`,
-      pt: `${BASE_URL}/pt`,
-      ar: `${BASE_URL}/ar`,
-      fr: `${BASE_URL}/fr`,
-      hi: `${BASE_URL}/hi`,
-      "x-default": `${BASE_URL}/en`,
+      ...Object.fromEntries(
+        siteConfig.locales.map((l) => [l, `${BASE_URL}/${l}`])
+      ),
+      "x-default": `${BASE_URL}/${siteConfig.defaultLocale}`,
     },
   },
   openGraph: {
