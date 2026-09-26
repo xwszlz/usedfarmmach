@@ -35,7 +35,6 @@ export default function DeepAnalysisCard({
   const [modelUsed, setModelUsed] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [locked, setLocked] = useState(false);
-  const [valuationPrice, setValuationPrice] = useState<number | null>(null);
 
   // 只取前3张图片（豆包处理够用，避免超时）
   const selectedImages = imageUrls.slice(0, 3);
@@ -52,7 +51,6 @@ export default function DeepAnalysisCard({
     setStructured(null);
     setModelUsed("");
     setLocked(false);
-    setValuationPrice(null);
 
     try {
       const res = await fetch("/api/agents/seller-helper/deep-analysis", {
@@ -104,7 +102,6 @@ export default function DeepAnalysisCard({
       setReport(data.data.analysis || "");
       setStructured(data.data.structured || null);
       setModelUsed(data.data.model || "");
-      setValuationPrice(data.data.valuationPrice ?? null);
       setLocked(true);
     } catch (err: any) {
       setError(err.message || (locale === "zh" ? "深度分析失败，请稍后重试" : "Analysis failed, please try again"));
@@ -119,10 +116,10 @@ export default function DeepAnalysisCard({
     : (locale === "zh" ? "国际农机引擎" : "International Engine");
   const desc = isChineseBrand
     ? (locale === "zh"
-      ? `接入大模型，对 ${productName} 进行详尽的国内设备分析（技术参数、操作维修、补贴参考价、地区行情、购买建议）`
+      ? `接入大模型，对 ${productName} 进行详尽的国内设备分析（技术参数、操作维修、车况评估、购买建议）`
       : `Powered by AI Model — comprehensive domestic equipment analysis for ${productName}`)
     : (locale === "zh"
-      ? `接入大模型，对 ${productName} 进行详尽的设备分析（技术参数、操作维修、市场参考价、FOB出口价、购买建议）`
+      ? `接入大模型，对 ${productName} 进行详尽的设备分析（技术参数、操作维修、车况评估、验机要点、购买建议）`
       : `Powered by AI Model — comprehensive equipment analysis for ${productName}`);
   const btnText = analyzing
     ? (locale === "zh" ? "分析中（约15-30秒）..." : "Analyzing...")
@@ -205,7 +202,6 @@ export default function DeepAnalysisCard({
             locale={locale}
             locked={locked}
             onUnlock={() => setLocked(false)}
-            valuationPrice={valuationPrice}
           />
           <button
             onClick={handleAnalyze}
