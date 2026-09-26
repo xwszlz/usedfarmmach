@@ -12,11 +12,6 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
-import { calculateValuationV4 } from "@/lib/valuation/formulas";
-import { CATEGORY_BASE_PRICES, MODEL_BASE_PRICES } from "@/lib/valuation/brand-data";
-
-export const dynamic = "force-dynamic";
-export const maxDuration = 120; // 豆包深度分析需要更长时间
 
 const ARK_API_KEY = process.env.ARK_API_KEY || "";
 const ARK_BASE_URL = process.env.ARK_BASE_URL || "https://ark.cn-beijing.volces.com/api/v3";
@@ -68,13 +63,6 @@ const INTERNATIONAL_ANALYSIS_PROMPT = `你是一位拥有20年经验的资深二
 - 易损件清单
 - 关键操作技巧
 
-## 五、市场参考价格
-- 国内二手市场参考价（人民币）
-- 国际二手市场参考价（美元）
-- FOB天津港出口参考价（美元）
-- 影响价格的关键因素分析
-- 该型号在当前市场的供需情况
-
 ## 六、购买建议
 - 该设备的优缺点总结
 - 适合的作业场景
@@ -112,9 +100,6 @@ const INTERNATIONAL_ANALYSIS_PROMPT = `你是一位拥有20年经验的资深二
     "hydraulic": 1-10,
     "overall": 1-10
   },
-  "estimatedPriceCny": 估值人民币,
-  "estimatedPriceUsd": 估值美元,
-  "fobPriceUsd": FOB美元,
   "isChineseBrand": false,
   "confidence": 0.0-1.0
 }
@@ -122,37 +107,7 @@ const INTERNATIONAL_ANALYSIS_PROMPT = `你是一位拥有20年经验的资深二
 
 重要提示：
 1. **请充分利用你的专业知识**，不要仅依赖照片信息
-2. 报告内容要详实、专业、有深度，至少2000字
-3. **市场价格请严格以「估值引擎参考数据」为准**，在此基础上分析影响因素，不要自行编造价格
-4. FOB价格需考虑设备状况、年份和出口物流成本`;
-
-/**
- * 根据型号名推断品类（用于前端未传 category 时的兜底）
- */
-function inferCategoryFromModelName(modelName: string): string | undefined {
-  if (!modelName) return undefined;
-
-  // 1. 精确/子串匹配 MODEL_BASE_PRICES，按 key 长度降序
-  const sortedEntries = Object.entries(MODEL_BASE_PRICES).sort(
-    (a, b) => b[0].length - a[0].length
-  );
-  for (const [key, val] of sortedEntries) {
-    if (modelName === key || modelName.includes(key)) {
-      return val.category;
-    }
-  }
-
-  // 2. 匹配 CATEGORY_BASE_PRICES 的 key
-  for (const [key] of Object.entries(CATEGORY_BASE_PRICES).sort(
-    (a, b) => b[0].length - a[0].length
-  )) {
-    if (modelName.includes(key)) {
-      return key;
-    }
-  }
-
-  return undefined;
-}
+2. 报告内容要详实、专业、有深度，至少2000字`;
 
 /**
  * 国内农机深度分析 Prompt — 补贴参考价、国内市场行情
@@ -195,14 +150,6 @@ const DOMESTIC_ANALYSIS_PROMPT = `你是一位拥有20年经验的中国资深�
 - 易损件清单及参考价格
 - 关键操作技巧
 
-## 五、补贴与市场参考价格
-- 该型号新机购置补贴额度（中央补贴+地方补贴，如有）
-- 新机市场参考价（含补贴后价格）
-- 二手市场参考价（人民币）
-- 各地区价格差异分析（如山东、河南、东北等主产区）
-- 二手保值率分析（按年份折旧曲线）
-- 出口可行性评估（如有出口潜力，给出FOB参考价）
-
 ## 六、购买建议
 - 该设备的优缺点总结
 - 适合的作业场景和地块规模
@@ -241,10 +188,6 @@ const DOMESTIC_ANALYSIS_PROMPT = `你是一位拥有20年经验的中国资深�
     "hydraulic": 1-10,
     "overall": 1-10
   },
-  "subsidyAmount": 补贴金额元,
-  "newMachinePrice": 新机价格元,
-  "estimatedPriceCny": 二手估值人民币,
-  "fobPriceUsd": FOB美元或null,
   "isChineseBrand": true,
   "confidence": 0.0-1.0
 }
@@ -252,10 +195,7 @@ const DOMESTIC_ANALYSIS_PROMPT = `你是一位拥有20年经验的中国资深�
 
 重要提示：
 1. **请充分利用你的专业知识**，不要仅依赖照片信息
-2. 报告内容要详实、专业、有深度，至少2000字
-3. 补贴金额请根据你的知识给出合理估算，并注明是中央补贴还是含地方补贴
-4. **市场价格请严格以「估值引擎参考数据」为准**，在此基础上分析影响因素，不要自行编造价格
-5. 如果该型号有出口潜力（如沃得、雷沃在东南亚、中亚有市场），请给出出口参考价`;
+2. 报告内容要详实、专业、有深度，至少2000字`;
 
 /**
  * 构建豆包API的多模态消息内容
@@ -505,34 +445,6 @@ export async function POST(request: NextRequest) {
     if (knownParams.length > 0) {
       activePrompt += `\n\n⚠️ 已知信息（请以此为准，照片作为辅助验证）：\n${knownParams.join("\n")}`;
     }
-    // 调用估值引擎获取真实参考价（价格统一核心逻辑）
-    let valuationContext = "";
-    let valuationPrice: number | null = null;
-    try {
-      const enginePowerNum = enginePower ? parseInt(String(enginePower).replace(/[^0-9]/g, "")) : undefined;
-
-      // 修复：category 与 modelName 分离。优先用前端传入的 category，否则从型号推断。
-      const modelName = productName || "";
-      const category = categoryName || inferCategoryFromModelName(modelName) || "青储机";
-
-      const valuationInput: any = {
-        brand: brandName || "未知品牌",
-        modelName,
-        category,
-        year: year || 2020,
-        enginePower: enginePowerNum,
-        condition: "good",
-      };
-      const valuationResult = await calculateValuationV4(valuationInput);
-      valuationPrice = valuationResult.estimatedValue;
-      valuationContext = `\n\n⚠️ 估值引擎参考数据（请严格以此为基础撰写价格分析，不要自行编造价格）：\n- AI二手参考估值：¥${valuationResult.estimatedValue.toLocaleString()}\n- 估值区间：¥${valuationResult.priceRange.low.toLocaleString()} - ¥${valuationResult.priceRange.high.toLocaleString()}\n- 新机基准价：¥${valuationResult.basePrice.toLocaleString()}\n- 品牌系数：${valuationResult.brandFactor.toFixed(2)}\n- 年份折旧：${Math.round((1 - valuationResult.yearFactor) * 100)}%\n- 规格因子：${(valuationResult.specFactor ?? 1.0).toFixed(2)}\n- 估值引擎版本：${valuationResult.version}`;
-      const dataSourceDesc = valuationResult.details.find((d: any) => d.label === "基准价来源")?.description || "估值引擎";
-      valuationContext += `\n- 数据来源：${dataSourceDesc}`;
-      console.log(`[DeepAnalysis] 估值引擎成功: ¥${valuationResult.estimatedValue.toLocaleString()} (category=${category}, model=${modelName})`);
-    } catch (e) {
-      console.warn("[DeepAnalysis] 估值引擎调用失败:", e);
-    }
-    activePrompt += valuationContext;
 
     const engineLabel = isChineseBrand ? "国内(DOMESTIC)" : "国际(INTERNATIONAL)";
 
@@ -638,7 +550,6 @@ export async function POST(request: NextRequest) {
         analysis: analysisText,
         structured: structured || {},
         model: modelUsed,
-        valuationPrice,
         mediaCount: { images: images.length, videos: videoUrls.length },
       },
     });
