@@ -108,7 +108,15 @@ function pct(n: number, d: number): string {
   p("");
   p("> 产品 id 明细见附录（如需可再导出）。BRAND_MAP 键数 = " + data.brandMapSize + "。");
   p("");
-  p("## 6. 结论");
+  p("## 6. 判定：被拦下的既有 noGate 配对是「误杀」还是「正确拦截」");
+  p("");
+  p("- **雷肯 `Rubin 10` → 原名 `Rubin12/300u`：正确拦截**。命中来自 step4 首词兜底（\"Rubin\"），数字骨架 10 vs 12/300u 不等 → 典型首词误配，rule③/① 拦截正确，**不 allowlist**。");
+  p("- **科罗尼 `Comprima f125` → 原名 `F125xc`：倾向正确拦截（待业务核验）**。该 product 已被 `Comprima F 125 XC`/`Comprima F125XC` 命中（rule② 一对多）；且 PRD 正样本只列 `Comprima F 125 XC`，未列 `F 125`。**是否恢复需业务核验**，故默认**不 allowlist**。");
+  p("");
+  p("⇒ **未启用 `VALIDATION_ALLOWLIST`（保持空）**，以守住「误配率 = 0」。gated 命中 6/92 是「不刷覆盖率」的刻意结果：");
+  p("   宁可少配，不可错配（PRD 第 1 优先）。覆盖率要上到 AC-1/AC-2（≥30）需：① P0-6 人工核验别名后置 verified；② 上述 2 条由业务判定。");
+  p("");
+  p("## 7. 结论");
   p("");
   p(`- 品牌解析 ${beforeBrandOk} → ${afterBrandOk}（${pct(afterBrandOk, N)}），达到 AC-4 ≥90%。`);
   p(`- 端到端 before ${beforeMatched} → noGate ${noGateMatched} → gated ${afterMatched}。`);
