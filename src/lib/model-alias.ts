@@ -19,6 +19,10 @@
  *   - 纯函数、零 DB 依赖、零迁移风险（不新增表，随代码一起部署即可生效）
  *   - 全部 additive：调用方拿不到结果时保持原有行为不变
  */
+import {
+  buildVerifiedAliasMap,
+  SERIES_PREFIX_ADDITIONS,
+} from "./model-alias.config";
 
 /** 品牌标识（BrandBenchmark.brand / Product.brandId）→ 中文品牌名（反向映射用） */
 export const BRAND_SLUG_TO_ZH: Record<string, string> = {
@@ -334,6 +338,24 @@ const SERIES_PREFIXES: string[] = [
   "fr", "br", "bb", "cr", "cx", "cs", "fr", "tv", "tm", "td", "tl",
 ];
 
+/**
+ * 合并「已验证」的增量别名到只读有效表（P0-2）。
+ * 旧 ALIAS_MAP **不变**；增量条目优先覆盖同键。增量表为空时 === ALIAS_MAP（行为逐字节等价）。
+ */
+const EFFECTIVE_ALIAS_MAP: Record<string, Record<string, string>> = (() => {
+  const merged: Record<string, Record<string, string>> = {};
+  for (const [slug, m] of Object.entries(ALIAS_MAP)) merged[slug] = { ...m };
+  for (const [slug, m] of Object.entries(buildVerifiedAliasMap())) {
+    merged[slug] = { ...(merged[slug] || {}), ...m };
+  }
+  return merged;
+})();
+
+/** 合并系列前缀（旧 SERIES_PREFIXES 不变，增量追加去重） */
+const EFFECTIVE_SERIES_PREFIXES: string[] = Array.from(
+  new Set([...SERIES_PREFIXES, ...SERIES_PREFIX_ADDITIONS])
+);
+
 /** 规范化：小写 + 去掉所有非字母数字字符（空格、连字符、点、斜杠） */
 export function normalizeModel(raw: string | null | undefined): string {
   if (!raw) return "";
@@ -350,7 +372,7 @@ export function lookupExactAlias(
 ): string | null {
   const norm = normalizeModel(rawModel);
   if (!norm) return null;
-  const table = (brandSlug && ALIAS_MAP[brandSlug]) || {};
+  const table = (brandSlug && EFFECTIVE_ALIAS_MAP[brandSlug]) || {};
   const hit = table[norm];
   if (hit === undefined) return null;
   return hit === "" ? null : hit; // "" 表示"已知但无有效候选"（如裸系列名）
@@ -361,7 +383,7 @@ export function stripSeriesPrefix(norm: string): string | null {
   if (!norm) return null;
   // 取最长匹配前缀
   let best: string | null = null;
-  for (const p of SERIES_PREFIXES) {
+  for (const p of EFFECTIVE_SERIES_PREFIXES) {
     if (norm.startsWith(p) && norm.length > p.length) {
       const rest = norm.slice(p.length);
       if (!best || rest.length > best.length) best = rest;
