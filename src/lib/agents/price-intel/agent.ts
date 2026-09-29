@@ -25,6 +25,12 @@ import {
   type SourceRunResult,
 } from "./types";
 import { collectFromSource } from "./sources";
+import {
+  validateMatch,
+  type MatchCandidate,
+  type OneToManyState,
+} from "./match-validation";
+import { VALIDATION_ALLOWLIST } from "@/lib/model-alias.config";
 
 export const AGENT_NAME = "price-intel";
 export const AGENT_VERSION = "0.1.0";
@@ -64,15 +70,113 @@ const BRAND_MAP: Record<string, string> = {
   "马赛": "massey",
 };
 
+// ==================== DB 驱动品牌解析（P0-1，新增；BRAND_MAP 降级为兜底） ====================
+
+/** 进程内品牌索引（一次性预取，避免每条约 1 次 round-trip） */
+interface BrandIndex {
+  /** normalizeBrandKey(nameZh) → brandId */
+  byNameZh: Map<string, string>;
+  /** normalizeBrandKey(nameEn) → brandId */
+  byNameEn: Map<string, string>;
+  /** brand.id（含 slug 与 cuid 两种形态）→ brandId（恒等） */
+  byId: Map<string, string>;
+}
+
+/** 品牌名归一化：trim + 小写 + 去空格（中文品牌名可能含空格，如 "凯 斯"） */
+function normalizeBrandKey(s: string | null | undefined): string {
+  return String(s ?? "").trim().toLowerCase().replace(/\s+/g, "");
+}
+
 // ==================== Agent 主体 ====================
 
 export class PriceIntelAgent {
   private logs: string[] = [];
+  /** P0-1：品牌索引缓存（DB 驱动，进程内一次性预取） */
+  private brandIndex: BrandIndex | null = null;
+  /** P0-1：并发去重，避免同时多次预取 */
+  private brandIndexLoading: Promise<void> | null = null;
+  /** P0-3：校验层状态（规则② 一对多禁令，单次运行内共享） */
+  private validationState: OneToManyState | null = null;
 
   private log(msg: string) {
     const line = `[${new Date().toISOString()}] ${msg}`;
     this.logs.push(line);
     console.log(line);
+  }
+
+  /**
+   * P0-1：一次性预取品牌索引并缓存（Brand 表 ~157 行）。
+   * 并发安全：多个调用共享同一 Promise。失败不抛出（品牌解析退化为 BRAND_MAP 兜底）。
+   */
+  private async loadBrandIndex(): Promise<void> {
+    if (this.brandIndex) return;
+    if (this.brandIndexLoading) return this.brandIndexLoading;
+    this.brandIndexLoading = (async () => {
+      try {
+        const rows = await prisma.brand.findMany({
+          select: {
+            id: true,
+            nameZh: true,
+            nameEn: true,
+            // 消歧用：仅统计 active 产品数（与"优先取 active 产品数多的品牌"规则一致）
+            _count: { select: { products: { where: { status: "active" } } } },
+          },
+        });
+        // 先建 id→row 映射，避免循环内 rows.find 的 O(n²)
+        const rowById = new Map<string, (typeof rows)[number]>();
+        for (const r of rows) rowById.set(r.id, r);
+        const pick = (aId: string, bId: string): string => {
+          const a = rowById.get(aId);
+          const b = rowById.get(bId);
+          if (!a) return bId;
+          if (!b) return aId;
+          const pa = a._count.products;
+          const pb = b._count.products;
+          if (pa !== pb) return pa > pb ? aId : bId;
+          return aId < bId ? aId : bId; // 确定性 tie-break
+        };
+        const byNameZh = new Map<string, string>();
+        const byNameEn = new Map<string, string>();
+        const byId = new Map<string, string>();
+        for (const r of rows) {
+          byId.set(r.id, r.id);
+          const kz = normalizeBrandKey(r.nameZh);
+          if (kz) byNameZh.set(kz, byNameZh.has(kz) ? pick(byNameZh.get(kz)!, r.id) : r.id);
+          const ke = normalizeBrandKey(r.nameEn);
+          if (ke) byNameEn.set(ke, byNameEn.has(ke) ? pick(byNameEn.get(ke)!, r.id) : r.id);
+        }
+        this.brandIndex = { byNameZh, byNameEn, byId };
+        this.log(`🏷️ 品牌索引已加载：${rows.length} 条`);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        this.log(`⚠️ 品牌索引加载失败，回落 BRAND_MAP：${msg.slice(0, 160)}`);
+        this.brandIndex = null;
+      } finally {
+        this.brandIndexLoading = null;
+      }
+    })();
+    return this.brandIndexLoading;
+  }
+
+  /**
+   * P0-1：品牌解析（新）—— DB 索引优先，BRAND_MAP 兜底。
+   * 优先级：nameZh 精确 > nameEn 精确 > id 相等；均未命中返回 null 交调用方兜底。
+   */
+  private async resolveBrandIdAsync(nameZh: string): Promise<string | null> {
+    const key = nameZh?.trim();
+    if (!key) return null;
+    let idx = this.brandIndex;
+    if (!idx) {
+      await this.loadBrandIndex();
+      idx = this.brandIndex;
+    }
+    if (idx) {
+      const k = normalizeBrandKey(key);
+      const hit =
+        idx.byNameZh.get(k) ?? idx.byNameEn.get(k) ?? idx.byId.get(key) ?? null;
+      if (hit) return hit;
+    }
+    return null;
   }
 
   /**
@@ -89,10 +193,19 @@ export class PriceIntelAgent {
    * 策略：精确 → 去 year → 模糊 contains
    */
   private async matchProduct(c: CollectedPrice): Promise<{ productId: string } | null> {
-    const brandId = this.resolveBrandId(c.brandNameZh);
+    // P0-1：DB 索引优先（resolveBrandIdAsync），旧 BRAND_MAP 兜底（resolveBrandId 本体未改）
+    const brandId =
+      (await this.resolveBrandIdAsync(c.brandNameZh)) ??
+      this.resolveBrandId(c.brandNameZh);
     if (!brandId) return null;
     const model = c.modelName?.trim();
     if (!model) return null;
+
+    // P0-3：校验态（规则② 一对多禁令），单次运行内共享
+    const vstate: OneToManyState = (this.validationState ??= {
+      seenByProduct: new Map(),
+      allowlist: VALIDATION_ALLOWLIST,
+    });
 
     // 1) 精确：brand + model + year
     if (c.year) {
@@ -111,15 +224,19 @@ export class PriceIntelAgent {
     // 3) 模糊：brand + model contains
     const p3 = await prisma.product.findFirst({
       where: { brandId, modelName: { contains: model } },
-      select: { id: true },
+      select: { id: true, modelName: true },
     });
-    if (p3) return { productId: p3.id };
-    // 4) 反向：product contains brand model
+    if (p3 && this.gate({ brandSlug: brandId, rawListingModel: model, productId: p3.id, productModelName: p3.modelName, viaStep: 3 }, vstate)) {
+      return { productId: p3.id };
+    }
+    // 4) 反向：product contains brand model 首词
     const p4 = await prisma.product.findFirst({
       where: { brandId, modelName: { contains: model.split(/\s+/)[0] } },
-      select: { id: true },
+      select: { id: true, modelName: true },
     });
-    if (p4) return { productId: p4.id };
+    if (p4 && this.gate({ brandSlug: brandId, rawListingModel: model, productId: p4.id, productModelName: p4.modelName, viaStep: 4 }, vstate)) {
+      return { productId: p4.id };
+    }
 
     // 5) 【2026-09-07 新增】ModelAlias 归一化匹配
     //    解决"抓取型号带系列名（Jaguar 970 / BiG Pack 1290）配不上库存裸型号（970 / 1290XC）"
@@ -130,11 +247,25 @@ export class PriceIntelAgent {
       // 用 startsWith 而非 contains：避免 "6R 250"→"250" 误吃库存 "7250" 这类错配
       const p5 = await prisma.product.findFirst({
         where: { brandId, modelName: { startsWith: cand, mode: "insensitive" } },
-        select: { id: true },
+        select: { id: true, modelName: true },
       });
-      if (p5) return { productId: p5.id };
+      if (p5 && this.gate({ brandSlug: brandId, rawListingModel: model, productId: p5.id, productModelName: p5.modelName, viaStep: 5 }, vstate)) {
+        return { productId: p5.id };
+      }
     }
     return null;
+  }
+
+  /**
+   * P0-3：校验闸门。不过则返回 false（调用方继续尝试下一候选），不改变匹配顺序。
+   */
+  private gate(cand: MatchCandidate, state: OneToManyState): boolean {
+    const r = validateMatch(cand, state);
+    if (!r.ok) {
+      this.log(`⛔ 拒绝配对 [${r.rejection!.rule}] ${r.rejection!.reason}`);
+      return false;
+    }
+    return true;
   }
 
   /**
@@ -258,6 +389,10 @@ export class PriceIntelAgent {
     const startedAt = new Date();
     this.logs = [];
     this.log(`🤖 ${AGENT_NAME}@${AGENT_VERSION} 启动`);
+    // P0-1：一次性预取品牌索引（失败已内部兜底为 BRAND_MAP）
+    await this.loadBrandIndex();
+    // P0-3：每轮运行重置校验态（一对多禁令按"单次运行"判定）
+    this.validationState = null;
     const sources = input.sources && input.sources.length > 0
       ? input.sources
       : [...PRICE_SOURCES];
