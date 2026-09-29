@@ -31,6 +31,17 @@
  */
 'use strict';
 
+// ── 平台守卫（2026-09-29）───────────────────────────────────────────────
+// 本模块的全部机制——劫持 dns.lookup / 用系统 curl 做 DoH 取裸 IP / 注入 IP_SNAPSHOT——
+// 都是为「本机 Windows + Clash fake-ip」这一**平台专属**场景设计的。
+// 远端 / 容器（非 win32）不会、也不应发生这些行为：
+//   ① 绝不 patch dns.lookup（容器 DNS 正常，劫持只会把域名钉死成裸 IP 导致握手失败）；
+//   ② 绝不把 _ips 换成 IP_SNAPSHOT（该快照是 Asia 出口的固定 IP，远端无意义）；
+//   ③ 绝不调用系统 curl 做 DoH（容器内可能根本没有 curl）。
+// ⇒ 非 win32 下 bootstrap*() 一律退化为「直接用主机名」，本模块等价于 no-op。
+// win32 下所有执行语句与改造前**逐语句等价**（本次只新增非 win32 的早返回，未改任何 win32 语句）。
+const IS_WIN32 = process.platform === 'win32';
+
 const dns = require('dns');
 const net = require('net');
 const tls = require('tls');
@@ -46,7 +57,7 @@ const DOH_SOURCES = [
 ];
 
 let _patched = false;
-let _ips = IP_SNAPSHOT.slice();
+let _ips = IS_WIN32 ? IP_SNAPSHOT.slice() : []; // 非 win32 绝不预置 IP_SNAPSHOT
 let _target = null;
 let _ready = null;
 
@@ -136,6 +147,7 @@ function resolveTarget(host) {
 
 /** 安装 dns.lookup 劫持 */
 function installHijack() {
+  if (!IS_WIN32) return; // 非 win32 绝不 patch dns.lookup
   if (!_target) return;
   const origLookup = dns.lookup;
   dns.lookup = function (hostname, o, cb) {
@@ -161,12 +173,18 @@ async function bootstrapAsync(host, opts) {
 
   _target = resolveTarget(host);
   if (!_target) {
-    _ips = IP_SNAPSHOT.slice();
+    _ips = IS_WIN32 ? IP_SNAPSHOT.slice() : []; // 非 win32 绝不用快照
     _ready = Promise.resolve(_ips);
     return _ready;
   }
 
   _ready = (async () => {
+    // 非 win32：容器/远端原生 DNS 正常，跳过全部平台专属机制，直接用主机名
+    if (!IS_WIN32) {
+      _ips = [_target];
+      if (verbose) console.log('[neon-connect] 非 win32 ⇒ 跳过平台专属劫持，直接用主机名（' + _target + '）');
+      return _ips;
+    }
     // 先试原生链路（fake-ip + TUN 场景下按域名回映射，通常可用且更正确）
     if (process.env.NEON_FORCE_HIJACK !== '1') {
       const nat = await probeNativeTls(_target, port, opt.nativeTimeout || 6000);
@@ -207,6 +225,14 @@ function bootstrap(host, opts) {
   if (process.env.NEON_NO_HIJACK === '1') {
     if (!opts || opts.verbose !== false) {
       console.log('[neon-connect] NEON_NO_HIJACK=1 ⇒ 不劫持 DNS，直接用主机名（' + _target + '）');
+    }
+    _ips = [_target];
+    return _ips;
+  }
+  // 非 win32：绝不劫持、绝不用快照（等价于 NEON_NO_HIJACK）
+  if (!IS_WIN32) {
+    if (!opts || opts.verbose !== false) {
+      console.log('[neon-connect] 非 win32 ⇒ 跳过平台专属劫持，直接用主机名（' + _target + '）');
     }
     _ips = [_target];
     return _ips;
