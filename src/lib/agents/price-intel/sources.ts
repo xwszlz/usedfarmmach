@@ -275,6 +275,8 @@ export async function collectFromBenchmark(): Promise<CollectedPrice[]> {
   const { prisma } = await import("@/lib/db");
   const rows = await prisma.brandBenchmark.findMany({
     where: { isActive: true, priceForeign: { gt: 0 } },
+    // 修复2：补 orderBy，保证同一输入多次运行的行序稳定（结果可复现）
+    orderBy: [{ sourceSite: "asc" }, { brand: "asc" }, { model: "asc" }, { id: "asc" }],
     select: {
       brand: true, brandNameZh: true, model: true, sourceSite: true,
       priceForeign: true, currency: true, exchangeRate: true,

@@ -30,6 +30,12 @@ export const PriceIntelInputSchema = z.object({
   dryRun: z.boolean().default(false),
   /** 仅采集某一天（YYYYMMDD 格式），用于回填 */
   targetDate: z.string().regex(/^\d{8}$/).optional(),
+  /**
+   * 诊断模式（可选，默认关闭）：为 true 时 SourceRunResult 会多返回 `allMatches`，
+   * 逐条列出**全部**条目的匹配结果（供只读 dry-run / 审计用）。
+   * 🔴 不传该字段（或为 false）时，行为与输出与改动前**完全一致**。
+   */
+  diagnostics: z.boolean().optional(),
 });
 export type PriceIntelInput = z.infer<typeof PriceIntelInputSchema>;
 
@@ -62,6 +68,19 @@ export interface MatchedPrice extends CollectedPrice {
   currency: "EUR" | "USD";
 }
 
+/**
+ * 诊断用的逐条匹配明细（仅在 PriceIntelInput.diagnostics === true 时填充）。
+ * 纯 additive：扩展自 MatchedPrice，额外带品牌解析结果、命中型号与被校验层拒绝的规则。
+ */
+export interface DiagnosticMatch extends MatchedPrice {
+  /** 解析得到的品牌 id（slug 或 cuid）；null = 品牌解析失败（A 类） */
+  brandId: string | null;
+  /** 命中的库存型号（Product.modelName）；未命中为 null */
+  productModelName: string | null;
+  /** 被校验层（P0-3）拒绝的规则（去重）；未经历或未被拒为空数组 */
+  rejectRules: string[];
+}
+
 // ==================== 输出 ====================
 
 /** 每个源执行结果 */
@@ -75,6 +94,11 @@ export interface SourceRunResult {
   errors: string[];
   /** 前 3 条样本，方便人工核对 */
   samples: MatchedPrice[];
+  /**
+   * 诊断明细（仅当 PriceIntelInput.diagnostics === true 时存在）：**全部**条目的匹配结果。
+   * 默认不产生该字段 ⇒ 既有消费方输出不变。
+   */
+  allMatches?: DiagnosticMatch[];
 }
 
 /** Agent 总体执行结果 */
