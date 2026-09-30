@@ -6,7 +6,7 @@
  *
  * Body:
  *   {
- *     sources?: ["snapshot","brief","daily_md","manual"],
+ *     sources?: ["snapshot","brief","daily_md","benchmark"],
  *     maxFilesPerSource?: number,        // 默认 3
  *     force?: boolean,                   // 强制重写
  *     dryRun?: boolean,                  // 只看不写

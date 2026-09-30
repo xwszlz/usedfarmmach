@@ -1,7 +1,7 @@
 /**
  * 国际价格采集 Agent（#3）— 数据源采集器
  *
- * 4 个数据源的归一化采集：snapshot / brief / daily_md / manual
+ * 4 个数据源的归一化采集：snapshot / brief / daily_md / benchmark
  * 每个函数返回 CollectedPrice[]，不做产品匹配、不写库
  */
 import * as fs from "fs";
@@ -230,30 +230,6 @@ export async function collectFromDailyMd(
   return out;
 }
 
-// ==================== 4. 人工高置信度（硬编码兜底） ====================
-
-const MANUAL_PRICES: Array<Omit<CollectedPrice, "exchangeRate" | "sourceDate" | "sourceUrl" | "sourceTitle"> & { rateHint?: number }> = [
-  { source: "Agroline",   brandNameZh: "克拉斯",    modelName: "970",     year: 2017, priceEur: 320000, priceUsd: null, domesticPriceWan: 163.0, opportunityLevel: "★★★", grossMarginPct: 1.64, country: "DE", note: "2019款 ~253万RMB" },
-  { source: "Agroline",   brandNameZh: "克拉斯",    modelName: "980",     year: 2016, priceEur: 461438, priceUsd: null, domesticPriceWan: 143.0, opportunityLevel: "★★★", grossMarginPct: 1.09, country: "DE", note: "2022款 T4/E5 ~365万RMB" },
-  { source: "Agroline",   brandNameZh: "克拉斯",    modelName: "980",     year: 2015, priceEur: 220000, priceUsd: null, domesticPriceWan: null,  opportunityLevel: "★★",  grossMarginPct: null,  country: "DE", note: "2014旧款 ~174万RMB" },
-  { source: "Agroline",   brandNameZh: "克拉斯",    modelName: "850",     year: 2020, priceEur: 250000, priceUsd: null, domesticPriceWan: null,  opportunityLevel: "★★",  grossMarginPct: null,  country: "DE", note: "准新机 ~197万RMB" },
-  { source: "TractorHouse", brandNameZh: "纽荷兰", modelName: "FR450",   year: 2013, priceEur: null,  priceUsd: 30000,  domesticPriceWan: null,  opportunityLevel: "★",   grossMarginPct: null,  country: "US", note: "同类参考 $3-4万" },
-  { source: "TractorHouse", brandNameZh: "纽荷兰", modelName: "FR500",   year: 2014, priceEur: null,  priceUsd: 45000,  domesticPriceWan: null,  opportunityLevel: "★",   grossMarginPct: null,  country: "US", note: "同类参考 $4-5万" },
-  { source: "TractorHouse", brandNameZh: "纽荷兰", modelName: "9080",    year: null, priceEur: null,  priceUsd: 95000,  domesticPriceWan: null,  opportunityLevel: "★★",  grossMarginPct: null,  country: "US", note: "740马力卡特发动机" },
-  { source: "TractorHouse", brandNameZh: "约翰迪尔", modelName: "8400",  year: 2016, priceEur: null,  priceUsd: 90000,  domesticPriceWan: null,  opportunityLevel: "★★",  grossMarginPct: null,  country: "US", note: "中东线主力" },
-  { source: "e-farm",     brandNameZh: "克拉斯",    modelName: "5300RC",  year: 2022, priceEur: 75000,  priceUsd: null,  domesticPriceWan: 95.0,  opportunityLevel: "★★",  grossMarginPct: 0.83,  country: "DE", note: "全新大方捆 ~59万RMB" },
-];
-
-export function collectFromManual(): CollectedPrice[] {
-  return MANUAL_PRICES.map(p => ({
-    ...p,
-    exchangeRate: p.priceEur ? DEFAULT_EUR_CNY : DEFAULT_USD_CNY,
-    sourceDate: new Date().toISOString().slice(0, 10).replace(/-/g, ""),
-    sourceUrl: null,
-    sourceTitle: null,
-  }));
-}
-
 // ==================== 统一入口 ====================
 
 /**
@@ -326,7 +302,6 @@ export async function collectFromSource(
     case "snapshot": return collectFromSnapshot(maxFiles, targetDate);
     case "brief":    return collectFromBrief(maxFiles, targetDate);
     case "daily_md": return collectFromDailyMd(maxFiles, targetDate);
-    case "manual":   return collectFromManual();
     case "benchmark": return collectFromBenchmark();
   }
 }

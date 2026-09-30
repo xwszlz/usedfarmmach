@@ -252,7 +252,7 @@ async function executeAgent(
       const { priceIntelAgent } = await import("@/lib/agents/price-intel/agent");
       const result = await priceIntelAgent.run({
         sources: (params.sources as string[])?.filter((s): s is PriceSource =>
-          ["snapshot", "brief", "daily_md", "manual"].includes(s)
+          ["snapshot", "brief", "daily_md", "benchmark"].includes(s)
         ) || undefined,
         maxFilesPerSource: (params.maxFilesPerSource as number) || 3,
         force: !!params.force,
