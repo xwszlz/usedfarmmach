@@ -12,8 +12,10 @@
  *      禁止用于 contains 兜底匹配（仅当命中来自 step4 首词兜底时生效）。
  *   ② 一对多禁令：同一 productId 不得被 ≥ 2 个语义不同的 rawModel 命中
  *      （单次运行内硬拦；全局只读审计见 scripts/audit-one-to-many.ts）。
- *   ③ 数字骨架一致性：候选与库存的"数字段（长度 ≥ 2）"必须存在相等，或为库存段的上游前缀。
- *      ⚠️ 取"存在性匹配"而非"最长段"，否则 "980 (2016)"（归一化 9802016）会被误判为 2016。
+ *   ③ 数字骨架一致性（修复版）：候选的**每一个非年份数字段**都要与库存的非年份数字段「全对齐」
+ *      （相等，或为库存段的上游前缀）；年份段（19xx/20xx，如 "980 (2016)" 的 2016）豁免缺失/不一致。
+ *      ⚠️ 不做 length≥2 过滤——单数字段（如 "Rubin 9/300 U" 的 9）也必须参与，否则会被滤掉、
+ *         仅凭共享的 300 误配到 "Rubin12/300u"。
  *   ④ 长度约束：候选规范化后长度 < 2 的必须丢弃。
  *
  * 【设计原则】
@@ -65,30 +67,52 @@ export interface OneToManyState {
 }
 
 /**
- * 取原始串中所有"有意义的"数字段：长度 ≥ 2 才算骨架。
+ * 取原始串中的**全部**数字段（**不做 length >= 2 过滤**，单数字段也参与）。
  *
  * ⚠️ 必须从**原始串**（未 normalizeModel）里取数字段：
  *   normalizeModel 会把 "980 (2016)" 去掉空格/括号变成 "9802016"（两段被粘连成一段），
  *   从归一化串里取数字段会得到 ["9802016"]，反而把年度括号误当骨架 ⇒ 误杀榜首 980。
- *   从原始串取则为 ["980","2016"]，存在性匹配下与库存 "980" 命中，正确放行。
- *   单数字段（如 "6R 250" 里的 "6"）视为噪声，过滤掉。
+ *   从原始串取则为 ["980","2016"]，可被正确识别为「型号 980 + 年度 2016」。
  */
-function digitSkeletons(raw: string): string[] {
-  return (String(raw ?? "").match(/\d+/g) ?? []).filter((r) => r.length >= 2);
+function allDigitSegments(raw: string): string[] {
+  return String(raw ?? "").match(/\d+/g) ?? [];
 }
 
 /**
- * 规则③：候选的任一骨架 == 库存的任一骨架，或为库存骨架的上游前缀（用原始串判定）。
- * 正例：980(2016)→980、'BiG Pack 1290'→1290XC、'F 125 XC'→F125xc。
- * 反例：VB 3290→VbP3165、6R 250→7250、LX2204→LX2004、Magnum 380→420。
+ * 年份段判定：4 位纯数字且落在 19xx / 20xx。榜单方常带年份（如 "980 (2016)"）而库内不带，
+ * 故年份段**参与匹配时豁免**（允许缺失、允许不一致）。
+ */
+function isYearSegment(seg: string): boolean {
+  return /^(19|20)\d{2}$/.test(seg);
+}
+
+/** 取原始串中的「非年份」数字段（年份段被排除，不参与骨架对齐） */
+function nonYearSegments(raw: string): string[] {
+  return allDigitSegments(raw).filter((s) => !isYearSegment(s));
+}
+
+/**
+ * 规则③（修复版）：非年份数字段「全对齐 + 年度豁免」。
+ *
+ * - 候选的**每一个**非年份数字段，都必须能在产品的非年份数字段中找到对应
+ *   （相等，或产品段以候选段开头）——**不允许"任一命中即通过"**。
+ * - 年份段（19xx/20xx）豁免：允许缺失、允许不一致。
+ *
+ * 正例：980 (2016)→980（[980]⊆[980]）、'BiG Pack 1290'→1290xchdp（[1290]⊆[1290]）、
+ *       'Comprima F 125 XC'→F125xc（[125]⊆[125]）。
+ * 反例：'Rubin 9/300 U'→Rubin12/300u（[9,300]⊄[12,300]，9 对不上）→ 拒绝；
+ *       VB 3290→VbP3165、6R 250→7250、LX2204→LX2004、Magnum 380→420。
  */
 function skeletonOk(candRaw: string, prodRaw: string): boolean {
-  const a = digitSkeletons(candRaw);
-  const b = digitSkeletons(prodRaw);
-  if (!a.length) return true;   // 候选无骨架 → 规则③不适用（交给规则①④②）
-  if (!b.length) return false;  // 候选有骨架、库存纯字母 → 拒绝
-  for (const x of a) for (const y of b) if (x === y || y.startsWith(x)) return true;
-  return false;
+  const a = nonYearSegments(candRaw);
+  const b = nonYearSegments(prodRaw);
+  if (!a.length) return true;   // 候选无「非年份」数字段 → 规则③不适用（交给规则①④②）
+  if (!b.length) return false;  // 候选有非年份数字段、库存无 → 拒绝
+  // 非年份段必须「全对齐」：候选的每个非年份段都要在库存非年份段里找到对应
+  for (const x of a) {
+    if (!b.some((y) => y === x || y.startsWith(x))) return false;
+  }
+  return true;
 }
 
 /** 规则①：首词是否"弱 token"（无数字或仅 1 位数字，且长度 ≤ 4） */
@@ -134,17 +158,17 @@ export function validateMatch(
     );
   }
 
-  // ③ 数字骨架一致性（用原始串取数字段，避免 normalizeModel 粘连）
+  // ③ 数字骨架一致性（修复版：非年份段「全对齐」+ 年度豁免；用原始串取数字段，避免 normalizeModel 粘连）
   if (!skeletonOk(cand.rawListingModel, cand.productModelName)) {
-    const a = digitSkeletons(cand.rawListingModel);
-    const b = digitSkeletons(cand.productModelName);
+    const a = nonYearSegments(cand.rawListingModel);
+    const b = nonYearSegments(cand.productModelName);
     if (a.length && !b.length) {
-      return reject(cand, "digit_skeleton", `候选骨架 ${a.join("/")}，库存无数字`);
+      return reject(cand, "digit_skeleton", `候选非年份骨架 ${a.join("/")}，库存无非年份数字段`);
     }
     return reject(
       cand,
       "digit_skeleton",
-      `候选骨架 ${a.join("/")} ≠ 库存骨架 ${b.join("/")}（亦非其前缀）`
+      `候选非年份骨架 ${a.join("/")} 未与库存骨架 ${b.join("/")} 全对齐（每个候选段须相等或为库存段前缀）`
     );
   }
 

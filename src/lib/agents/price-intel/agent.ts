@@ -17,6 +17,7 @@ import {
 import {
   PRICE_SOURCES,
   type CollectedPrice,
+  type DiagnosticMatch,
   type MatchedPrice,
   type PriceIntelInput,
   type PriceSource,
@@ -87,6 +88,38 @@ function normalizeBrandKey(s: string | null | undefined): string {
   return String(s ?? "").trim().toLowerCase().replace(/\s+/g, "");
 }
 
+/**
+ * 修复2：确定性择优 —— 多个候选等价命中同一型号时，按确定性规则排序：
+ *   ① 精确相等优先（normalizeModel(product.modelName) === candNorm）
+ *   ② 长度差最小（|productNorm.length - candNorm.length| 最小）
+ *   ③ id 字典序（升序）
+ * 纯函数、零副作用 ⇒ 同一输入多次运行结果完全一致（替代 findFirst 先到先得）。
+ */
+function pickBestProducts<T extends { id: string; modelName: string }>(
+  list: T[],
+  candNorm: string
+): T[] {
+  return [...list].sort((a, b) => {
+    const an = normalizeModel(a.modelName);
+    const bn = normalizeModel(b.modelName);
+    const aExact = an === candNorm ? 0 : 1;
+    const bExact = bn === candNorm ? 0 : 1;
+    if (aExact !== bExact) return aExact - bExact;
+    const aDiff = Math.abs(an.length - candNorm.length);
+    const bDiff = Math.abs(bn.length - candNorm.length);
+    if (aDiff !== bDiff) return aDiff - bDiff;
+    return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+  });
+}
+
+/** 单条匹配诊断（内部用；仅在 diagnostics 模式下透出） */
+interface MatchDiagnostics {
+  brandId: string | null;
+  productId: string | null;
+  productModelName: string | null;
+  rejectRules: string[];
+}
+
 // ==================== Agent 主体 ====================
 
 export class PriceIntelAgent {
@@ -97,6 +130,10 @@ export class PriceIntelAgent {
   private brandIndexLoading: Promise<void> | null = null;
   /** P0-3：校验层状态（规则② 一对多禁令，单次运行内共享） */
   private validationState: OneToManyState | null = null;
+  /** 修复2/诊断：最近一次 matchProduct 的明细（仅在 diagnostics 模式下被读取） */
+  private lastMatch: MatchDiagnostics | null = null;
+  /** 修复2/诊断：当前 matchProduct 调用内被校验层拒绝的规则累积 */
+  private currentRejectRules: string[] = [];
 
   private log(msg: string) {
     const line = `[${new Date().toISOString()}] ${msg}`;
@@ -114,6 +151,7 @@ export class PriceIntelAgent {
     this.brandIndexLoading = (async () => {
       try {
         const rows = await prisma.brand.findMany({
+          orderBy: { id: "asc" }, // 修复2：稳定行序（后续消歧 pick 本身已确定性）
           select: {
             id: true,
             nameZh: true,
@@ -193,13 +231,23 @@ export class PriceIntelAgent {
    * 策略：精确 → 去 year → 模糊 contains
    */
   private async matchProduct(c: CollectedPrice): Promise<{ productId: string } | null> {
+    // 修复2/诊断：每次调用重置留痕
+    this.currentRejectRules = [];
+    this.lastMatch = null;
+
     // P0-1：DB 索引优先（resolveBrandIdAsync），旧 BRAND_MAP 兜底（resolveBrandId 本体未改）
     const brandId =
       (await this.resolveBrandIdAsync(c.brandNameZh)) ??
       this.resolveBrandId(c.brandNameZh);
-    if (!brandId) return null;
+    if (!brandId) {
+      this.lastMatch = { brandId: null, productId: null, productModelName: null, rejectRules: [] };
+      return null;
+    }
     const model = c.modelName?.trim();
-    if (!model) return null;
+    if (!model) {
+      this.lastMatch = { brandId, productId: null, productModelName: null, rejectRules: [] };
+      return null;
+    }
 
     // P0-3：校验态（规则② 一对多禁令），单次运行内共享
     const vstate: OneToManyState = (this.validationState ??= {
@@ -207,52 +255,79 @@ export class PriceIntelAgent {
       allowlist: VALIDATION_ALLOWLIST,
     });
 
-    // 1) 精确：brand + model + year
+    // 命中即记留痕（诊断/审计用）；既有返回值语义不变
+    const hit = (productId: string, productModelName: string | null): { productId: string } => {
+      this.lastMatch = {
+        brandId,
+        productId,
+        productModelName,
+        rejectRules: [...this.currentRejectRules],
+      };
+      return { productId };
+    };
+
+    // 1) 精确：brand + model + year（修复2：补 orderBy，稳定命中）
     if (c.year) {
       const p = await prisma.product.findFirst({
         where: { brandId, modelName: model, year: c.year },
-        select: { id: true },
+        orderBy: { id: "asc" },
+        select: { id: true, modelName: true },
       });
-      if (p) return { productId: p.id };
+      if (p) return hit(p.id, p.modelName);
     }
-    // 2) 精确：brand + model（去 year）
+    // 2) 精确：brand + model（去 year）（修复2：补 orderBy，稳定命中）
     const p2 = await prisma.product.findFirst({
       where: { brandId, modelName: model },
-      select: { id: true },
+      orderBy: [{ year: "desc" }, { id: "asc" }],
+      select: { id: true, modelName: true },
     });
-    if (p2) return { productId: p2.id };
-    // 3) 模糊：brand + model contains
-    const p3 = await prisma.product.findFirst({
+    if (p2) return hit(p2.id, p2.modelName);
+
+    // 3) 模糊：brand + model contains（修复2：findMany + 确定性打分，替代 findFirst 先到先得）
+    const list3 = await prisma.product.findMany({
       where: { brandId, modelName: { contains: model } },
+      orderBy: { id: "asc" },
       select: { id: true, modelName: true },
     });
-    if (p3 && this.gate({ brandSlug: brandId, rawListingModel: model, productId: p3.id, productModelName: p3.modelName, viaStep: 3 }, vstate)) {
-      return { productId: p3.id };
+    for (const pm of pickBestProducts(list3, normalizeModel(model))) {
+      if (this.gate({ brandSlug: brandId, rawListingModel: model, productId: pm.id, productModelName: pm.modelName, viaStep: 3 }, vstate)) {
+        return hit(pm.id, pm.modelName);
+      }
     }
-    // 4) 反向：product contains brand model 首词
-    const p4 = await prisma.product.findFirst({
+
+    // 4) 反向：product contains brand model 首词（修复2：findMany + 确定性打分）
+    const list4 = await prisma.product.findMany({
       where: { brandId, modelName: { contains: model.split(/\s+/)[0] } },
+      orderBy: { id: "asc" },
       select: { id: true, modelName: true },
     });
-    if (p4 && this.gate({ brandSlug: brandId, rawListingModel: model, productId: p4.id, productModelName: p4.modelName, viaStep: 4 }, vstate)) {
-      return { productId: p4.id };
+    for (const pm of pickBestProducts(list4, normalizeModel(model))) {
+      if (this.gate({ brandSlug: brandId, rawListingModel: model, productId: pm.id, productModelName: pm.modelName, viaStep: 4 }, vstate)) {
+        return hit(pm.id, pm.modelName);
+      }
     }
 
     // 5) 【2026-09-07 新增】ModelAlias 归一化匹配
     //    解决"抓取型号带系列名（Jaguar 970 / BiG Pack 1290）配不上库存裸型号（970 / 1290XC）"
     //    导致的覆盖率长期卡在 ~10% 的问题。候选已按优先级排序，依次尝试，命中即返回。
+    //    修复2：候选内改用 findMany + 确定性打分（精确相等优先 → 长度差最小 → id 字典序），
+    //          替代 findFirst 先到先得，保证结果可复现。
     const candidates = resolveModelCandidates(brandId, model);
     for (const cand of candidates) {
       if (!cand || cand === normalizeModel(model)) continue; // 已在上面试过原始型号
       // 用 startsWith 而非 contains：避免 "6R 250"→"250" 误吃库存 "7250" 这类错配
-      const p5 = await prisma.product.findFirst({
+      const list5 = await prisma.product.findMany({
         where: { brandId, modelName: { startsWith: cand, mode: "insensitive" } },
+        orderBy: { id: "asc" },
         select: { id: true, modelName: true },
       });
-      if (p5 && this.gate({ brandSlug: brandId, rawListingModel: model, productId: p5.id, productModelName: p5.modelName, viaStep: 5 }, vstate)) {
-        return { productId: p5.id };
+      for (const pm of pickBestProducts(list5, cand)) {
+        if (this.gate({ brandSlug: brandId, rawListingModel: model, productId: pm.id, productModelName: pm.modelName, viaStep: 5 }, vstate)) {
+          return hit(pm.id, pm.modelName);
+        }
       }
     }
+    this.lastMatch = { brandId, productId: null, productModelName: null, rejectRules: [...this.currentRejectRules] };
     return null;
   }
 
@@ -262,6 +337,7 @@ export class PriceIntelAgent {
   private gate(cand: MatchCandidate, state: OneToManyState): boolean {
     const r = validateMatch(cand, state);
     if (!r.ok) {
+      this.currentRejectRules.push(r.rejection!.rule);
       this.log(`⛔ 拒绝配对 [${r.rejection!.rule}] ${r.rejection!.reason}`);
       return false;
     }
@@ -336,7 +412,8 @@ export class PriceIntelAgent {
     maxFiles: number,
     targetDate: string | undefined,
     force: boolean,
-    dryRun: boolean
+    dryRun: boolean,
+    diagnostics: boolean
   ): Promise<SourceRunResult> {
     const start = Date.now();
     const result: SourceRunResult = {
@@ -349,13 +426,25 @@ export class PriceIntelAgent {
       errors: [],
       samples: [],
     };
+    // 修复3/诊断：diagnostics=true 时逐条收集匹配明细（默认不产生 ⇒ 输出不变）
+    const allMatches: DiagnosticMatch[] = [];
     try {
       this.log(`▶ source=${source} maxFiles=${maxFiles} dryRun=${dryRun}`);
       const items = await collectFromSource(source, maxFiles, targetDate);
       result.processed = items.length;
       for (const c of items) {
         try {
+          this.lastMatch = null;
           const m = await this.toMatched(c, force);
+          if (diagnostics) {
+            const d = this.lastMatch as MatchDiagnostics | null;
+            allMatches.push({
+              ...m,
+              brandId: d?.brandId ?? null,
+              productModelName: d?.productModelName ?? null,
+              rejectRules: d?.rejectRules ?? [],
+            });
+          }
           if (dryRun || !m.productId) {
             // 仅记入样本，不写库
             if (result.samples.length < 3) result.samples.push(m);
@@ -378,6 +467,7 @@ export class PriceIntelAgent {
       result.errors.push(e instanceof Error ? e.message : String(e));
     }
     result.durationMs = Date.now() - start;
+    if (diagnostics) result.allMatches = allMatches;
     this.log(`  ↳ processed=${result.processed} imported=${result.imported} updated=${result.updated} skipped=${result.skipped} ${result.durationMs}ms`);
     return result;
   }
@@ -400,7 +490,7 @@ export class PriceIntelAgent {
     let totalImported = 0, totalUpdated = 0, totalSkipped = 0, totalCollected = 0;
     try {
       for (const s of sources) {
-        const r = await this.runSource(s, input.maxFilesPerSource, input.targetDate, input.force, input.dryRun);
+        const r = await this.runSource(s, input.maxFilesPerSource, input.targetDate, input.force, input.dryRun, input.diagnostics === true);
         perSource.push(r);
         totalImported += r.imported;
         totalUpdated += r.updated;
