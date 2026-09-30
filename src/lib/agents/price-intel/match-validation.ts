@@ -10,12 +10,18 @@
  * 【四条规则】
  *   ① 首词前缀禁令：model 首词若为"弱 token"（长度 ≤ 4 且数字 < 2 位，如 VB / MF / 8R / T7），
  *      禁止用于 contains 兜底匹配（仅当命中来自 step4 首词兜底时生效）。
- *   ② 一对多禁令：同一 productId 不得被 ≥ 2 个语义不同的 rawModel 命中
- *      （单次运行内硬拦；全局只读审计见 scripts/audit-one-to-many.ts）。
- *   ③ 数字骨架一致性（修复版）：候选的**每一个非年份数字段**都要与库存的非年份数字段「全对齐」
- *      （相等，或为库存段的上游前缀）；年份段（19xx/20xx，如 "980 (2016)" 的 2016）豁免缺失/不一致。
- *      ⚠️ 不做 length≥2 过滤——单数字段（如 "Rubin 9/300 U" 的 9）也必须参与，否则会被滤掉、
- *         仅凭共享的 300 误配到 "Rubin12/300u"。
+ *   ② 一对多禁令：同一 productId 不得被 ≥ 2 个**语义不同**的 rawModel 命中（归一化后相同视为同一条）。
+ *      ⚠️ 本函数仅在**显式传入 state** 时才做单次运行内的有状态拦截（供单测 / 只读审计用）；
+ *         生产链路的跨条裁决已改由 agent 的 Pass 2「全局裁决」完成，以消除"边遍历边占坑"的顺序敏感。
+ *   ③ 数字段一致性（定稿版：「集合成员 + 条件年度豁免」）：
+ *      seg(s)    = String(s).match(/\d+/g) ?? []   // 全部数字段，**不做 length≥2 过滤**（单数字也参与）
+ *      isYear(x) = /^(19|20)\d{2}$/.test(x)
+ *      L = dedup(seg(候选)),  P = dedup(seg(库存))
+ *        ① 对 L 中每个段 x：x ∈ P ⇒ 通过；x ∉ P 且 isYear(x) ⇒ 豁免；否则 ⇒ 拒绝
+ *        ② 对 P 中每个段 y：y ∈ L ⇒ 通过；y ∉ L 且 isYear(y) ⇒ 豁免；否则 ⇒ 拒绝（对称，堵空集/年度绕过）
+ *        ③ L 与 P 均为空 ⇒ 模糊步骤(3/4/5)拒绝；步骤 1/2 不受此判据约束
+ *        ④ 成员判定 = **完全相等**（不做前缀）：`9` 与 `970` 不再互相通过
+ *      ⚠️ 从**原始串**取数字段（normalizeModel 会把 "980 (2016)" 粘连成 "9802016"）。
  *   ④ 长度约束：候选规范化后长度 < 2 的必须丢弃。
  *
  * 【设计原则】
@@ -25,7 +31,7 @@
  */
 import { normalizeModel } from "@/lib/model-alias";
 
-/** 匹配来源步（用于规则①的差异化适用） */
+/** 匹配来源步（用于规则①的差异化适用与规则③的空集约束） */
 export type MatchStep = 1 | 2 | 3 | 4 | 5;
 
 export interface MatchCandidate {
@@ -67,50 +73,56 @@ export interface OneToManyState {
 }
 
 /**
- * 取原始串中的**全部**数字段（**不做 length >= 2 过滤**，单数字段也参与）。
+ * 取原始串中的**全部**数字段（**不做 length ≥ 2 过滤**，单数字段也参与）。
  *
  * ⚠️ 必须从**原始串**（未 normalizeModel）里取数字段：
  *   normalizeModel 会把 "980 (2016)" 去掉空格/括号变成 "9802016"（两段被粘连成一段），
  *   从归一化串里取数字段会得到 ["9802016"]，反而把年度括号误当骨架 ⇒ 误杀榜首 980。
- *   从原始串取则为 ["980","2016"]，可被正确识别为「型号 980 + 年度 2016」。
+ *   从原始串取则为 ["980","2016"]，可分别判定"型号 980"与"年度 2016"。
  */
 function allDigitSegments(raw: string): string[] {
   return String(raw ?? "").match(/\d+/g) ?? [];
 }
 
-/**
- * 年份段判定：4 位纯数字且落在 19xx / 20xx。榜单方常带年份（如 "980 (2016)"）而库内不带，
- * 故年份段**参与匹配时豁免**（允许缺失、允许不一致）。
- */
+/** 年份段判定：4 位纯数字且落在 19xx / 20xx（用于「条件豁免」） */
 function isYearSegment(seg: string): boolean {
   return /^(19|20)\d{2}$/.test(seg);
 }
 
-/** 取原始串中的「非年份」数字段（年份段被排除，不参与骨架对齐） */
-function nonYearSegments(raw: string): string[] {
-  return allDigitSegments(raw).filter((s) => !isYearSegment(s));
+/** 去重（成员判定用；顺序不影响语义） */
+function dedup(list: string[]): string[] {
+  return Array.from(new Set(list));
 }
 
 /**
- * 规则③（修复版）：非年份数字段「全对齐 + 年度豁免」。
+ * 规则③（定稿）：数字段「集合成员 + 条件年度豁免」。
  *
- * - 候选的**每一个**非年份数字段，都必须能在产品的非年份数字段中找到对应
- *   （相等，或产品段以候选段开头）——**不允许"任一命中即通过"**。
- * - 年份段（19xx/20xx）豁免：允许缺失、允许不一致。
+ *   设 L = dedup(seg(候选))、P = dedup(seg(库存))。
+ *   ① 候选每个段：∈P ⇒ 通过；∉P 且是年份 ⇒ 豁免；否则 ⇒ 拒绝。
+ *   ② 库存每个段：∈L ⇒ 通过；∉L 且是年份 ⇒ 豁免；否则 ⇒ 拒绝（对称；堵住"候选空集/全年度"绕过）。
+ *   ③ L、P 皆空 ⇒ 模糊步骤(3/4/5)拒绝；步骤 1/2 不受约束。
+ *   ④ 成员 = 完全相等（**不做前缀**）：`9` 与 `970` 不互相通过；`BiG Pack 12` 不再命中 `1290`。
  *
- * 正例：980 (2016)→980（[980]⊆[980]）、'BiG Pack 1290'→1290xchdp（[1290]⊆[1290]）、
- *       'Comprima F 125 XC'→F125xc（[125]⊆[125]）。
- * 反例：'Rubin 9/300 U'→Rubin12/300u（[9,300]⊄[12,300]，9 对不上）→ 拒绝；
- *       VB 3290→VbP3165、6R 250→7250、LX2204→LX2004、Magnum 380→420。
+ *   正例：980 (2016)→980（2016 年份豁免）、'Jaguar 970'→970、'Comprima F 125 XC'→F125xc。
+ *   反例：'Rubin 9/300 U'→Rubin12/300u（9∉[12,300] 且非年份）、'Jaguar 9'→970、'BiG Pack 12'→1290、
+ *         'Comprima F 12'→F125xc、LX2204→LX2004、Magnum 380→420。
  */
-function skeletonOk(candRaw: string, prodRaw: string): boolean {
-  const a = nonYearSegments(candRaw);
-  const b = nonYearSegments(prodRaw);
-  if (!a.length) return true;   // 候选无「非年份」数字段 → 规则③不适用（交给规则①④②）
-  if (!b.length) return false;  // 候选有非年份数字段、库存无 → 拒绝
-  // 非年份段必须「全对齐」：候选的每个非年份段都要在库存非年份段里找到对应
-  for (const x of a) {
-    if (!b.some((y) => y === x || y.startsWith(x))) return false;
+function skeletonOk(candRaw: string, prodRaw: string, viaStep: MatchStep): boolean {
+  const L = dedup(allDigitSegments(candRaw));
+  const P = dedup(allDigitSegments(prodRaw));
+  // ③ 双边空集：模糊步骤一律拒绝（步骤 1/2 不约束）
+  if (L.length === 0 && P.length === 0) return viaStep === 1 || viaStep === 2;
+  // ① 候选每个数字段：成员 或 年度豁免
+  for (const x of L) {
+    if (P.includes(x)) continue;
+    if (isYearSegment(x)) continue;
+    return false;
+  }
+  // ② 库存每个数字段：成员 或 年度豁免（对称）
+  for (const y of P) {
+    if (L.includes(y)) continue;
+    if (isYearSegment(y)) continue;
+    return false;
   }
   return true;
 }
@@ -158,21 +170,25 @@ export function validateMatch(
     );
   }
 
-  // ③ 数字骨架一致性（修复版：非年份段「全对齐」+ 年度豁免；用原始串取数字段，避免 normalizeModel 粘连）
-  if (!skeletonOk(cand.rawListingModel, cand.productModelName)) {
-    const a = nonYearSegments(cand.rawListingModel);
-    const b = nonYearSegments(cand.productModelName);
-    if (a.length && !b.length) {
-      return reject(cand, "digit_skeleton", `候选非年份骨架 ${a.join("/")}，库存无非年份数字段`);
+  // ③ 数字段一致性（定稿：集合成员 + 条件年度豁免；用原始串取数字段，避免 normalizeModel 粘连）
+  if (!skeletonOk(cand.rawListingModel, cand.productModelName, cand.viaStep)) {
+    const L = dedup(allDigitSegments(cand.rawListingModel));
+    const P = dedup(allDigitSegments(cand.productModelName));
+    if (L.length === 0 && P.length === 0) {
+      return reject(
+        cand,
+        "digit_skeleton",
+        `候选与库存均无数字段（模糊步骤 step${cand.viaStep} 拒绝）`
+      );
     }
     return reject(
       cand,
       "digit_skeleton",
-      `候选非年份骨架 ${a.join("/")} 未与库存骨架 ${b.join("/")} 全对齐（每个候选段须相等或为库存段前缀）`
+      `候选数字段 [${L.join("/")}] 与库存 [${P.join("/")}] 不满足「成员相等/年度豁免」`
     );
   }
 
-  // ② 一对多禁令（单次运行内）
+  // ② 一对多禁令（仅当显式传入 state 时；生产链路已改由 agent Pass 2 全局裁决）
   if (state) {
     const seen = state.seenByProduct.get(cand.productId) ?? new Set<string>();
     for (const prev of seen) {
