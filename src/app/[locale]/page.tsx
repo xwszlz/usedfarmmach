@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
+import { BrandFilmBanner } from "@/components/home/brand-film-banner";
 import { RecruitmentBanner } from "@/components/home/recruitment-banner";
 import { PartsEntrance } from "@/components/home/parts-entrance";
 import { ServicesEntrance } from "@/components/home/services-entrance";
@@ -206,6 +207,10 @@ export default async function HomePage({
           </p>
         </div>
       </section>
+
+      {/* 品牌影片横幅《神雕跨山海》30 秒版：静态海报 + 点击弹窗播放。
+          preload="none" + 弹窗打开才挂载 <video>，首页首屏不拉 7 MB 视频。*/}
+      <BrandFilmBanner locale={locale} />
 
       <RecruitmentBanner locale={locale} />
       <HotEquipment products={hotProducts} locale={locale} />
