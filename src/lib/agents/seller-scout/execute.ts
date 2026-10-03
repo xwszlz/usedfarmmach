@@ -206,24 +206,36 @@ async function triggerGitHubActions(): Promise<{ ok: boolean; runId?: number; ru
   const token = process.env.GITHUB_TOKEN;
   const repo = process.env.GITHUB_REPO; // 形如 "xwszlz/usedfarmmach"
   if (!token || !repo) {
-    return { ok: false, error: "缺少 GITHUB_TOKEN / GITHUB_REPO 环境变量（需在 Vercel 项目配置）" };
+    return { ok: false, error: "缺少 GITHUB_TOKEN / GITHUB_REPO 环境变量（需在部署环境配置）" };
   }
   const url = `${GH_API}/repos/${repo}/actions/workflows/seller-scout.yml/dispatches`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: ghHeaders(),
-    body: JSON.stringify({ ref: "main" }),
-  });
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers: ghHeaders(),
+      body: JSON.stringify({ ref: "main" }),
+    });
+  } catch (e: any) {
+    // 网络不可达 / 超时：返回结构化失败，绝不让异常逃逸（否则 route 层 500）。
+    return { ok: false, error: `GitHub API 不可达：${e?.message || e}` };
+  }
   if (!res.ok) {
     const txt = await res.text();
     return { ok: false, error: `GitHub dispatch ${res.status}: ${txt.slice(0, 300)}` };
   }
   // 找到刚触发的 run
   await new Promise((r) => setTimeout(r, 4000)); // 等 GH 注册 run
-  const listRes = await fetch(
-    `${GH_API}/repos/${repo}/actions/runs?event=workflow_dispatch&per_page=5`,
-    { headers: ghHeaders() }
-  );
+  let listRes: Response;
+  try {
+    listRes = await fetch(
+      `${GH_API}/repos/${repo}/actions/runs?event=workflow_dispatch&per_page=5`,
+      { headers: ghHeaders() }
+    );
+  } catch (e: any) {
+    // 网络不可达 / 超时：返回结构化失败，绝不让异常逃逸。
+    return { ok: false, error: `GitHub API 不可达：${e?.message || e}` };
+  }
   if (!listRes.ok) {
     return { ok: true, runId: undefined, runUrl: `https://github.com/${repo}/actions/workflows/seller-scout.yml` };
   }
@@ -334,9 +346,59 @@ export async function executeSellerScout(input: ScoutInput): Promise<ScoutOutput
 
   log(`🚜 seller-scout 执行开始 mode=${mode} dryRun=${dryRun}`);
 
+  // ── 境内站（.cn）：ECS 镜像内【无 Python】，采集由 cn-scout 定时任务（种子台账）负责；
+  //    后台手动触发不适用于本站 —— 显式短路，绝不触发 GitHub Actions
+  //    （既避免跨站副作用，也避免 CN→api.github.com 不通导致的网络失败）。──
+  if (process.env.SITE === "cn") {
+    log("ℹ️ 检测到 SITE=cn：已按 SITE=cn 短路，未触发 GitHub；本站采集由 cn-scout 定时任务（每日 07:10，种子台账）入库");
+    let stats: { total: number; domestic: number; intl: number; bySource: Record<string, number> } = {
+      total: 0,
+      domestic: 0,
+      intl: 0,
+      bySource: {},
+    };
+    try {
+      stats = await getSellerScoutDbStats();
+    } catch (e: any) {
+      log(`  ⚠️ 读取 DB 统计失败（不影响短路判定）: ${e?.message || e}`);
+    }
+    const finishedAt = new Date();
+    return {
+      ok: false,
+      mode,
+      triggeredVia: "local",
+      startedAt: startedAt.toISOString(),
+      finishedAt: finishedAt.toISOString(),
+      durationMs: finishedAt.getTime() - startedAt.getTime(),
+      summary: { domesticCount: stats.domestic, intlCount: stats.intl, importsRun: 0, totalListings: stats.total, platforms: stats.bySource },
+      log: logs,
+      error: "本站（.cn）的卖方数据由 ECS 上的 cn-scout 定时任务（每日 07:10，种子台账）入库；后台手动触发不适用于本站。",
+    };
+  }
+
   // ── 云端模式（Vercel）：无 Python，走 GitHub Actions ──
   if (!canRunLocal()) {
-    return runViaGitHub(input, logs);
+    // 兜底：runViaGitHub 内部 await 了多个可能抛错的调用（fetch / DB），
+    // 任何未预期异常都在此收敛为结构化失败，绝不逃逸成 route 层 500。
+    try {
+      return await runViaGitHub(input, logs);
+    } catch (e: any) {
+      const msg = e?.message || String(e);
+      log(`❌ GitHub 分支异常: ${msg}`);
+      const finishedAt = new Date();
+      return {
+        ok: false,
+        mode,
+        triggeredVia: "github-actions",
+        startedAt: startedAt.toISOString(),
+        finishedAt: finishedAt.toISOString(),
+        durationMs: finishedAt.getTime() - startedAt.getTime(),
+        summary: { domesticCount: 0, intlCount: 0, importsRun: 0, totalListings: 0, platforms: {} },
+        github: { dispatched: false, awaited: false },
+        log: logs,
+        error: `GitHub 分支异常：${msg}`,
+      };
+    }
   }
 
   // ── 本地模式：直接跑 Python ──
