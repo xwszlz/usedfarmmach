@@ -52,6 +52,8 @@ export interface ScoutOutput {
   };
   log: string[];
   error?: string;
+  /** 本地模式：非致命告警（例如部分采集器失败），不影响 ok 判定 */
+  warnings?: string[];
 }
 
 /** 找到仓库根目录：当前是 /api/agents/seller-scout 或 /lib/agents/seller-scout */
@@ -72,9 +74,30 @@ function findRepoRoot(): string {
 
 const EXEC_TIMEOUT_MS = 90000; // 90秒（Python 爬虫超时）
 
+/**
+ * 探测可用的 Python 解释器（python3 优先，回退 python）。
+ * 找不到返回 null —— 这是判定「能否本地跑采集」的决定性依据：
+ * 仅有 scripts/ 目录 / .py 文件并不代表解释器存在（云端函数包就是这种情况）。
+ */
+function detectPythonBin(): string | null {
+  for (const bin of ["python3", "python"]) {
+    try {
+      execSync(`${bin} -V`, { timeout: 5000, stdio: "ignore" });
+      return bin;
+    } catch {
+      // 该解释器不可用，继续尝试下一个
+    }
+  }
+  return null;
+}
+
 function runPython(scriptPath: string, cwd: string, args: string = ""): { ok: boolean; stdout: string; stderr: string } {
+  const pythonBin = detectPythonBin();
+  if (!pythonBin) {
+    return { ok: false, stdout: "", stderr: "未找到 Python 解释器（python3 / python 均不可用）" };
+  }
   try {
-    const cmd = `python "${scriptPath}" ${args}`;
+    const cmd = `${pythonBin} "${scriptPath}" ${args}`;
     const stdout = execSync(cmd, {
       cwd,
       timeout: EXEC_TIMEOUT_MS,
@@ -111,17 +134,24 @@ function runTsx(scriptPath: string, cwd: string): { ok: boolean; stdout: string;
 }
 
 /**
- * 判断当前环境是否能本地跑 Python（Vercel serverless 无 scripts/ 目录、无 Python）
+ * 判断当前环境是否能本地跑 Python。
+ *
+ * ⚠️ 注意：Vercel / Lambda 的函数包内【确实带着】scripts/ 目录 ——
+ * Next 对动态 fs.existsSync 调用无法静态分析，@vercel/nft 会整包 tracing。
+ * 因此「文件存在」不能作为判据，必须显式排除云端运行时，
+ * 并确认 Python 解释器真的能执行。
  */
 function canRunLocal(): boolean {
+  // 云端（Vercel / Lambda）没有 Python 解释器，一律走 GitHub Actions。
+  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) return false;
   const repoRoot = findRepoRoot();
   const scriptsDir = path.join(repoRoot, "scripts");
   if (!fs.existsSync(scriptsDir)) return false;
-  // 进一步确认爬虫脚本存在
+  // 进一步确认爬虫脚本存在，且解释器可执行
   const hasPy =
     fs.existsSync(path.join(scriptsDir, "scrape_agriaffaires.py")) ||
     fs.existsSync(path.join(scriptsDir, "seller_scout_domestic_scraper.py"));
-  return hasPy;
+  return hasPy && detectPythonBin() !== null;
 }
 
 /**
@@ -319,6 +349,21 @@ export async function executeSellerScout(input: ScoutInput): Promise<ScoutOutput
   let importsRun = 0;
   const platforms: Record<string, number> = {};
 
+  // ── 本地模式执行结果统计（用于取代此前硬编码的 ok:true，避免「假成功」）──
+  let failedCollectors = 0; // 被请求但执行失败的采集器数量
+  let succeededCollectors = 0; // 执行成功的采集器数量
+  const warnings: string[] = [];
+  let firstError = "";
+  const recordFail = (name: string, reason: string) => {
+    failedCollectors += 1;
+    const w = `${name}失败：${reason}`;
+    warnings.push(w);
+    if (!firstError) firstError = w;
+  };
+  const recordOk = () => {
+    succeededCollectors += 1;
+  };
+
   try {
     // ── 1) 国内爬虫 ──
     if (mode === "all" || mode === "domestic") {
@@ -328,9 +373,17 @@ export async function executeSellerScout(input: ScoutInput): Promise<ScoutOutput
       if (!fs.existsSync(pyScript)) {
         log(`  ⚠️ 脚本不存在: ${pyScript}`);
       } else {
+        let collectorOk = true;
+        let failReason = "";
+
         const r = runPython(pyScript, scriptsDir);
         log(`  爬虫 exit=${r.ok ? 0 : 1}`);
         if (r.stdout) log(`  stdout: ${r.stdout.slice(-300)}`);
+        if (!r.ok && r.stderr) log(`  stderr: ${r.stderr.slice(0, 400)}`);
+        if (!r.ok) {
+          collectorOk = false;
+          failReason = r.stderr ? `爬虫失败：${r.stderr.slice(0, 200)}` : "爬虫非零退出";
+        }
 
         const resultPath = path.join(scriptsDir, "domestic_sellers_data_v2.json");
         if (fs.existsSync(resultPath)) {
@@ -353,11 +406,24 @@ export async function executeSellerScout(input: ScoutInput): Promise<ScoutOutput
               log("  ▶ 导入国内数据...");
               const ir = runTsx(importScript, repoRoot);
               log(`  导入 exit=${ir.ok ? 0 : 1}`);
-              if (ir.ok) importsRun += 1;
+              if (ir.ok) {
+                importsRun += 1;
+              } else {
+                collectorOk = false;
+                if (!failReason) failReason = "导入脚本非零退出";
+              }
             }
           }
         } else {
           log("  ⚠️ 国内采集文件未生成（可能被平台反爬）");
+          collectorOk = false;
+          if (!failReason) failReason = "结果文件未生成（可能被平台反爬）";
+        }
+
+        if (collectorOk) {
+          recordOk();
+        } else {
+          recordFail("国内采集", failReason || "未知原因");
         }
       }
     }
@@ -370,9 +436,17 @@ export async function executeSellerScout(input: ScoutInput): Promise<ScoutOutput
       if (!fs.existsSync(pyScript)) {
         log(`  ⚠️ 脚本不存在: ${pyScript}`);
       } else {
+        let collectorOk = true;
+        let failReason = "";
+
         const r = runPython(pyScript, scriptsDir);
         log(`  爬虫 exit=${r.ok ? 0 : 1}`);
         if (r.stdout) log(`  stdout: ${r.stdout.slice(-300)}`);
+        if (!r.ok && r.stderr) log(`  stderr: ${r.stderr.slice(0, 400)}`);
+        if (!r.ok) {
+          collectorOk = false;
+          failReason = r.stderr ? `爬虫失败：${r.stderr.slice(0, 200)}` : "爬虫非零退出";
+        }
 
         const resultPath = path.join(scriptsDir, "agriaffaires_data.json");
         if (fs.existsSync(resultPath)) {
@@ -391,18 +465,50 @@ export async function executeSellerScout(input: ScoutInput): Promise<ScoutOutput
               log("  ▶ 导入国际数据...");
               const ir = runTsx(importScript, repoRoot);
               log(`  导入 exit=${ir.ok ? 0 : 1}`);
-              if (ir.ok) importsRun += 1;
+              if (ir.ok) {
+                importsRun += 1;
+              } else {
+                collectorOk = false;
+                if (!failReason) failReason = "导入脚本非零退出";
+              }
             }
           }
         } else {
           log("  ⚠️ 国际采集文件未生成");
+          collectorOk = false;
+          if (!failReason) failReason = "结果文件未生成";
+        }
+
+        if (collectorOk) {
+          recordOk();
+        } else {
+          recordFail("国际采集", failReason || "未知原因");
         }
       }
     }
 
     log(`✅ 完成 domestic=${domesticCount} intl=${intlCount} imports=${importsRun}`);
+    if (failedCollectors > 0) {
+      log(`⚠️ ${failedCollectors} 个采集器失败`);
+    }
 
     const finishedAt = new Date();
+    // 「失败」只取决于执行是否失败，与「新数据是否为 0 条」无关（去重后 0 条是正常的）。
+    const allFailed = failedCollectors > 0 && succeededCollectors === 0;
+    if (allFailed) {
+      return {
+        ok: false,
+        mode,
+        triggeredVia: "local",
+        startedAt: startedAt.toISOString(),
+        finishedAt: finishedAt.toISOString(),
+        durationMs: finishedAt.getTime() - startedAt.getTime(),
+        summary: { domesticCount, intlCount, importsRun, totalListings: domesticCount + intlCount, platforms },
+        log: logs,
+        error: `本地采集全部失败：${firstError || "未知原因"}`,
+        warnings: warnings.length ? warnings : undefined,
+      };
+    }
     return {
       ok: true,
       mode,
@@ -412,6 +518,7 @@ export async function executeSellerScout(input: ScoutInput): Promise<ScoutOutput
       durationMs: finishedAt.getTime() - startedAt.getTime(),
       summary: { domesticCount, intlCount, importsRun, totalListings: domesticCount + intlCount, platforms },
       log: logs,
+      warnings: warnings.length ? warnings : undefined,
     };
   } catch (err: any) {
     log(`❌ 异常: ${err.message}`);
@@ -425,6 +532,7 @@ export async function executeSellerScout(input: ScoutInput): Promise<ScoutOutput
       summary: { domesticCount, intlCount, importsRun, totalListings: domesticCount + intlCount, platforms },
       log: logs,
       error: err.message,
+      warnings: warnings.length ? warnings : undefined,
     };
   }
 }
