@@ -66,6 +66,8 @@ export function RawListingReviewTable({ items, brands, categories, locale }: Pro
   const [batchBrand, setBatchBrand] = useState("");
   const [batchCat, setBatchCat] = useState("");
   const [modelName, setModelName] = useState("");
+  const [yearInput, setYearInput] = useState<Record<string, string>>({});
+  const [priceInput, setPriceInput] = useState<Record<string, string>>({});
 
   const allChecked = items.length > 0 && selected.size === items.length;
   const toggleAll = () => {
@@ -87,6 +89,10 @@ export function RawListingReviewTable({ items, brands, categories, locale }: Pro
       if (action === "approve") {
         if (brandSel[id]) body.brandId = brandSel[id];
         if (catSel[id]) body.categoryId = catSel[id];
+        const y = Number(yearInput[id]);
+        if (yearInput[id] && Number.isInteger(y)) body.year = y;
+        const p = Number(priceInput[id]);
+        if (priceInput[id] && Number.isFinite(p) && p > 0) body.priceCny = p;
       }
       const data = await postJson(`/api/admin/raw-listings/${id}`, body);
       if (data.success) {
@@ -323,6 +329,14 @@ export function RawListingReviewTable({ items, brands, categories, locale }: Pro
                               ))}
                             </select>
                           </div>
+                          {it.reasons.includes("invalid_year") && (
+                            <input value={yearInput[it.id] || ""} onChange={(e) => setYearInput((prev) => ({ ...prev, [it.id]: e.target.value }))}
+                              inputMode="numeric" placeholder="年份 如2015" className="w-24 rounded border px-1 py-0.5 text-[11px]" />
+                          )}
+                          {it.reasons.includes("no_price") && (
+                            <input value={priceInput[it.id] || ""} onChange={(e) => setPriceInput((prev) => ({ ...prev, [it.id]: e.target.value }))}
+                              inputMode="numeric" placeholder="价格 CNY" className="w-24 rounded border px-1 py-0.5 text-[11px]" />
+                          )}
                           <div className="flex gap-1">
                             <button disabled={busy} onClick={() => singleAct(it.id, "approve")} className="rounded bg-cyan-600 px-2 py-0.5 text-[11px] font-medium text-white hover:bg-cyan-700 disabled:opacity-50">
                               通过并转换
