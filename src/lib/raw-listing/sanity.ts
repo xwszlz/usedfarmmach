@@ -15,7 +15,12 @@
  *  §2.1 表格把「host 缺失」列为 auto_reject，但 §2.2-5 明确
  *  「sourceUrl 缺失」属**必须人工确认**。二者冲突，本实现取保守侧：
  *  空 sourceUrl → `needs_review`（不误杀合法但缺链的采集行）；
- *  仅当 URL 存在却非 http(s)/不可解析、或命中黑名单域名时才 auto_reject。
+ *  仅当 URL 存在却非 http(s)/不可解析时才 auto_reject。
+ *
+ * 需求变更（老板决策）：`domain_blacklist`（youtube/youtu.be/facebook/
+ *  instagram/tiktok/pinterest）由 `auto_reject` 改为 `needs_review` ——
+ *  该渠道可能是获取有效信息的重要来源，不判死刑，转人工核实。
+ *  `source_url_invalid`（非 http(s)）仍保持 auto_reject 不变。
  */
 
 import {
@@ -138,8 +143,8 @@ export function evaluateSanity(
     } else if (isBlacklistedHost(parsed.host)) {
       hits.push({
         rule: "domain_blacklist",
-        action: "auto_reject",
-        detail: `来源域名命中黑名单：${parsed.host}`,
+        action: "needs_review",
+        detail: `命中黑名单域名 ${parsed.host}，按新策略转人工核实（可能为有效信息渠道）`,
       });
     }
   }

@@ -72,7 +72,7 @@ export const PRICE_MAX_CNY = 20_000_000;
 /** 离群倍数阈值：偏离同品牌中位价 > 8× 或 < 1/8 → needs_review */
 export const PRICE_OUTLIER_RATIO = 8;
 
-/** 噪声域名黑名单（sourceUrl host 命中即 auto_reject） */
+/** 噪声域名黑名单（sourceUrl host 命中即 needs_review，转人工核实） */
 export const SOURCE_URL_BLACKLIST: readonly string[] = [
   "youtube.com",
   "youtu.be",
