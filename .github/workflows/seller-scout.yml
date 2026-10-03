@@ -99,6 +99,10 @@ jobs:
         id: check
         run: |
           TOTAL=0
+          INTL=0
+          AGROLINE=0
+          MASCUS=0
+          SEARCH_API=0
           for SRC in agriaffaires agroline mascus search_api; do
             FILE="scripts/${SRC}_data.json"
             if [ ! -f "$FILE" ]; then
@@ -108,8 +112,15 @@ jobs:
             fi
             COUNT=$(python3 -c "import json;print(json.load(open('$FILE')).get('totalListings',0))")
             TOTAL=$((TOTAL + COUNT))
+            INTL=$((INTL + COUNT))
             echo "✅ ${SRC}: ${COUNT} 条"
+            case "$SRC" in
+              agroline)   AGROLINE=$COUNT ;;
+              mascus)     MASCUS=$COUNT ;;
+              search_api) SEARCH_API=$COUNT ;;
+            esac
           done
+          DCOUNT=0
           if [ -f scripts/domestic_sellers_data_v2.json ]; then
             DCOUNT=$(python3 -c "import json;print(json.load(open('scripts/domestic_sellers_data_v2.json')).get('totalListings',0))")
             TOTAL=$((TOTAL + DCOUNT))
@@ -117,8 +128,26 @@ jobs:
           else
             echo "⚠️ 国内采集文件不存在"
           fi
+          # 逐源计数导出：intl_count = 国际四源之和（**不含 domestic**），供「防假绿」断言分层判定。
           echo "listing_count=$TOTAL" >> "$GITHUB_OUTPUT"
-          echo "📊 总计: $TOTAL 条"
+          echo "intl_count=$INTL" >> "$GITHUB_OUTPUT"
+          echo "agroline_count=$AGROLINE" >> "$GITHUB_OUTPUT"
+          echo "mascus_count=$MASCUS" >> "$GITHUB_OUTPUT"
+          echo "search_api_count=$SEARCH_API" >> "$GITHUB_OUTPUT"
+          echo "domestic_count=$DCOUNT" >> "$GITHUB_OUTPUT"
+          echo "📊 总计: $TOTAL 条（国际 ${INTL} / 国内 ${DCOUNT}）"
+          {
+            echo "### 📊 Seller Scout 采集明细"
+            echo ""
+            echo "| 源 | 条数 |"
+            echo "| --- | ---: |"
+            echo "| agroline | ${AGROLINE} |"
+            echo "| mascus | ${MASCUS} |"
+            echo "| search_api | ${SEARCH_API} |"
+            echo "| **国际合计（不含 domestic）** | **${INTL}** |"
+            echo "| domestic | ${DCOUNT} |"
+            echo "| **总计** | **${TOTAL}** |"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       # 国际数据 = 境外公开行情，写入 Neon（境外库）合规。
       # 注意：不要在这里再写 step 级 env: DATABASE_URL，会覆盖掉 job 级、并让 if 失效。
@@ -157,7 +186,8 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "📊 Seller Scout Daily 报告"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "采集条数: ${{ steps.check.outputs.listing_count || 0 }}"
+          echo "采集条数: ${{ steps.check.outputs.listing_count || 0 }}  (国际 ${{ steps.check.outputs.intl_count || 0 }} / 国内 ${{ steps.check.outputs.domestic_count || 0 }})"
+          echo "逐源: agroline=${{ steps.check.outputs.agroline_count || 0 }}  mascus=${{ steps.check.outputs.mascus_count || 0 }}  search_api=${{ steps.check.outputs.search_api_count || 0 }}"
           echo "agroline:   ${{ steps.scrape_agroline.outcome }}"
           echo "mascus:     ${{ steps.scrape_mascus.outcome }}"
           echo "search_api: ${{ steps.scrape_search_api.outcome }}"
@@ -165,13 +195,26 @@ jobs:
           echo "时间: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-      # 🔴 0 条不许判绿：防止此前三重容错（continue-on-error / 产物缺失写空 JSON /
-      #    skipDuplicates 无 update）再次制造「永远 success 的假绿」。
+      # 🔴 0 条不许判绿（两层）：① 国际源全 0 ⇒ 空转；② agroline+mascus 双双 0 ⇒ 硬指标源全挂。
+      #    防止此前三重容错（continue-on-error / 产物缺失写空 JSON / skipDuplicates 无 update）
+      #    再次制造「永远 success 的假绿」——尤其防止 domestic 折进 TOTAL 后掩盖国际源全挂。
       #    首次上线若真 0 条会变红，这是**预期行为**，不要为绕过它而放宽条件。
       - name: Fail if no listings scraped
         if: always()
         run: |
-          if [ "${{ steps.check.outputs.listing_count }}" = "0" ] || [ -z "${{ steps.check.outputs.listing_count }}" ]; then
-            echo "❌ 本次采集 0 条 —— 判定失败（防止假绿）"
+          INTL="${{ steps.check.outputs.intl_count }}"
+          AGRO="${{ steps.check.outputs.agroline_count }}"
+          MASC="${{ steps.check.outputs.mascus_count }}"
+          SEARCH="${{ steps.check.outputs.search_api_count }}"
+          # ① 国际源全 0（含 intl_count 缺失）⇒ 空转，判红
+          if [ -z "$INTL" ] || [ "$INTL" = "0" ]; then
+            echo "❌ 国际源全 0 条（空转）—— 判定失败（防止假绿）"
             exit 1
           fi
+          # ② 两个免 key 硬指标源（agroline / mascus）双双 0 ⇒ 判红。
+          #    注意：search_api 依赖尚未配置的 SEARCH_API_KEY，**不纳入硬指标**，避免误红。
+          if [ "$AGRO" = "0" ] && [ "$MASC" = "0" ]; then
+            echo "❌ agroline 与 mascus 双双 0 条（硬指标源全挂）—— 判定失败"
+            exit 1
+          fi
+          echo "✅ 防假绿断言通过：国际 ${INTL} 条（agroline=${AGRO} / mascus=${MASC} / search_api=${SEARCH}）"
