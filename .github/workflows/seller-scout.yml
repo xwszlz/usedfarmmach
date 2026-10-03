@@ -1,6 +1,12 @@
 # #1 卖方采集 Agent — 每日定时采集工作流
 # 触发：每天 06:00 UTC+8 (前一天 22:00 UTC)
-# 行为：运行 Python 采集脚本 → 导入到 Neon DB（容错模式）
+# 行为：运行多源采集脚本 → 导入到 Neon DB（容错模式）→ 0 条即判失败（防假绿）
+#
+# 数据源：
+#   - agroline.cn   中文站 拖拉机/打捆机（服务端渲染，纯 HTTP 可抓，无需代理）
+#   - mascus.co.uk  英国站 拖拉机（服务端渲染，纯 HTTP 可抓，无需代理）
+#   - 搜索 API      引擎索引里已有的带价挂牌（env-gated：无 SEARCH_API_KEY 时优雅跳过）
+#   ※ Agriaffaires 已上 DataDome 商业反爬（首页/sitemap/详情页全 403），本工作流不再依赖它。
 
 name: Seller Scout Daily
 
@@ -36,7 +42,7 @@ jobs:
           cache: "npm"
 
       - name: Install Python dependencies
-        # 两个采集脚本都 `import requests`，此前只装了 urllib3
+        # 采集脚本均 `import requests`，此前只装了 urllib3
         # → ModuleNotFoundError 被 continue-on-error 吞掉，job 报 success 但采集条数恒为 0
         run: pip install urllib3 requests
 
@@ -51,12 +57,34 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
-      - name: Run Agriaffaires scraper
-        id: scrape
+      # ── 替代源 1：agroline.cn（中文站，拖拉机/打捆机）──
+      - name: Run agroline scraper
+        id: scrape_agroline
         continue-on-error: true
-        run: python scripts/scrape_agriaffaires.py
+        run: python scripts/scrape_agroline.py
         env:
           PYTHONIOENCODING: utf-8
+          HTTPS_PROXY: "" # 强制直连（脚本支持 HTTPS_PROXY，可选）
+
+      # ── 替代源 2：mascus.co.uk（英国站拖拉机）──
+      - name: Run mascus scraper
+        id: scrape_mascus
+        continue-on-error: true
+        run: python scripts/scrape_mascus.py
+        env:
+          PYTHONIOENCODING: utf-8
+          HTTPS_PROXY: "" # 强制直连
+
+      # ── 替代源 3：搜索 API 路线（无 SEARCH_API_KEY 时优雅跳过，退出码 0）──
+      - name: Run search API route
+        id: scrape_search_api
+        continue-on-error: true
+        run: npx tsx scripts/scout-via-search-api.ts
+        env:
+          # SEARCH_API_PROVIDER 故意不设：脚本按 key 前缀自动识别（tvly- → tavily）
+          SEARCH_API_KEY: ${{ secrets.SEARCH_API_KEY }}
+          ARK_API_KEY: ${{ secrets.ARK_API_KEY }}
+          ARK_MODEL_ID: ${{ secrets.ARK_MODEL_ID }}
 
       - name: Run domestic seller scraper
         id: scrape_domestic
@@ -71,25 +99,28 @@ jobs:
         id: check
         run: |
           TOTAL=0
-          if [ -f scripts/agriaffaires_data.json ]; then
-            COUNT=$(python3 -c "import json; d=json.load(open('scripts/agriaffaires_data.json')); print(d.get('totalListings', 0))")
+          for SRC in agriaffaires agroline mascus search_api; do
+            FILE="scripts/${SRC}_data.json"
+            if [ ! -f "$FILE" ]; then
+              echo "⚠️ ${SRC}: 数据文件不存在，按 0 计"
+              printf '{"scrapedAt":"%s","source":"%s","totalListings":0,"withPrice":0,"priceOnRequest":0,"listings":[]}' \
+                "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$SRC" > "$FILE"
+            fi
+            COUNT=$(python3 -c "import json;print(json.load(open('$FILE')).get('totalListings',0))")
             TOTAL=$((TOTAL + COUNT))
-            echo "✅ 国际采集: $COUNT 条"
-          else
-            echo "⚠️ 国际采集文件不存在"
-            echo '{"scrapedAt":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","source":"agriaffaires","totalListings":0,"withPrice":0,"priceOnRequest":0,"listings":[]}' > scripts/agriaffaires_data.json
-          fi
+            echo "✅ ${SRC}: ${COUNT} 条"
+          done
           if [ -f scripts/domestic_sellers_data_v2.json ]; then
-            DCOUNT=$(python3 -c "import json; d=json.load(open('scripts/domestic_sellers_data_v2.json')); print(d.get('totalListings', 0))")
+            DCOUNT=$(python3 -c "import json;print(json.load(open('scripts/domestic_sellers_data_v2.json')).get('totalListings',0))")
             TOTAL=$((TOTAL + DCOUNT))
-            echo "✅ 国内采集: $DCOUNT 条"
+            echo "✅ domestic: ${DCOUNT} 条"
           else
             echo "⚠️ 国内采集文件不存在"
           fi
-          echo "listing_count=$TOTAL" >> $GITHUB_OUTPUT
+          echo "listing_count=$TOTAL" >> "$GITHUB_OUTPUT"
           echo "📊 总计: $TOTAL 条"
 
-      # 国际数据 = Agriaffaires 等**境外公开行情**，写入 Neon（境外库）合规。
+      # 国际数据 = 境外公开行情，写入 Neon（境外库）合规。
       # 注意：不要在这里再写 step 级 env: DATABASE_URL，会覆盖掉 job 级、并让 if 失效。
       - name: Import international data to database
         id: import
@@ -113,8 +144,11 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: agriaffaires-data-${{ github.run_number }}
-          path: scripts/agriaffaires_data.json
+          name: seller-scout-data-${{ github.run_number }}
+          path: |
+            scripts/*_data.json
+            scripts/*_data_v2.json
+          if-no-files-found: ignore
           retention-days: 30
 
       - name: Report status
@@ -124,7 +158,20 @@ jobs:
           echo "📊 Seller Scout Daily 报告"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "采集条数: ${{ steps.check.outputs.listing_count || 0 }}"
-          echo "采集状态: ${{ steps.scrape.outcome }}"
-          echo "导入状态: ${{ steps.import.outcome || 'skipped' }}"
+          echo "agroline:   ${{ steps.scrape_agroline.outcome }}"
+          echo "mascus:     ${{ steps.scrape_mascus.outcome }}"
+          echo "search_api: ${{ steps.scrape_search_api.outcome }}"
+          echo "import:     ${{ steps.import.outcome || 'skipped' }}"
           echo "时间: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+      # 🔴 0 条不许判绿：防止此前三重容错（continue-on-error / 产物缺失写空 JSON /
+      #    skipDuplicates 无 update）再次制造「永远 success 的假绿」。
+      #    首次上线若真 0 条会变红，这是**预期行为**，不要为绕过它而放宽条件。
+      - name: Fail if no listings scraped
+        if: always()
+        run: |
+          if [ "${{ steps.check.outputs.listing_count }}" = "0" ] || [ -z "${{ steps.check.outputs.listing_count }}" ]; then
+            echo "❌ 本次采集 0 条 —— 判定失败（防止假绿）"
+            exit 1
+          fi
