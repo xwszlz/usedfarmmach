@@ -1,6 +1,8 @@
 // ───────────────────────────────────────────────
-// #1 卖方采集 Agent — 国际卖家数据导入脚本 (Agriaffaires)
-// 将 scrape_agriaffaires.py 采集的 JSON 导入 RawListing 表（去重）
+// #1 卖方采集 Agent — 国际卖家数据导入脚本（多源）
+// 将各采集器产出的 JSON 统一导入 RawListing 表（按 contentHash 去重）
+// 数据源: agriaffaires_data.json / agroline_data.json / mascus_data.json / search_api_data.json
+//   （缺哪个就跳过哪个，不算错）
 // 用法: tsx scripts/import-seller-scout.ts
 // ───────────────────────────────────────────────
 
@@ -11,6 +13,20 @@ import * as crypto from "crypto";
 
 const prisma = new PrismaClient();
 const EXCHANGE_RATE_EUR_CNY = 7.91; // 与国内导入脚本、爬虫保持一致
+
+/** 国际数据源文件清单（按顺序导入；缺失的文件直接跳过，不算错误） */
+const SOURCE_FILES = [
+  "agriaffaires_data.json",
+  "agroline_data.json",
+  "mascus_data.json",
+  "search_api_data.json",
+];
+
+interface ImportResult {
+  imported: number;
+  skipped: number;
+  errors: number;
+}
 
 interface IntlListing {
   brand: string;
@@ -63,7 +79,7 @@ function parseScrapeDate(sourceDate?: string, fallback?: string): Date {
   return tryParse(sourceDate) || tryParse(fallback) || new Date();
 }
 
-async function importFromJson(jsonPath: string) {
+async function importFromJson(jsonPath: string): Promise<ImportResult> {
   console.log(`📂 读取国际采集数据: ${jsonPath}`);
 
   if (!fs.existsSync(jsonPath)) {
@@ -100,7 +116,8 @@ async function importFromJson(jsonPath: string) {
     .map((l) => {
       const priceCny = l.item.priceCny || (l.item.priceEur ? Math.round(l.item.priceEur * EXCHANGE_RATE_EUR_CNY) : null);
       return {
-        source: "agriaffaires", // 国际源明确标识，便于运营区分国内外挂牌
+        // 🔧 修复：此前硬编码 "agriaffaires"，会把 agroline/mascus/search_api 的数据全部错标成国际源
+        source: l.item.source || "agriaffaires", // 以条目自带 source 为准，便于运营按源区分
         sourceUrl: l.item.sourceUrl || "",
         brandName: l.item.brand,
         modelName: l.item.modelName,
@@ -110,7 +127,8 @@ async function importFromJson(jsonPath: string) {
         priceRaw: l.item.priceEur || l.item.priceCny || null,
         currency: l.item.priceEur ? "EUR" : l.item.priceCny ? "CNY" : null,
         priceCny,
-        location: l.item.location || "France",
+        // 多源下不再默认 "France"：优先 location，其次 country，最后留空（不误标国别）
+        location: l.item.location || l.item.country || "",
         sellerName: l.item.sellerName || null,
         sellerPhone: l.item.sellerPhone || null,
         sellerWechat: null,
@@ -141,16 +159,36 @@ async function importFromJson(jsonPath: string) {
 }
 
 async function main() {
-  const jsonPath = path.join(__dirname, "agriaffaires_data.json");
-
   console.log("=".repeat(60));
-  console.log("🌍 #1 卖方采集 Agent — 国际卖家导入 (Agriaffaires)");
+  console.log("🌍 #1 卖方采集 Agent — 国际卖家导入（多源）");
   console.log("=".repeat(60));
 
-  const result = await importFromJson(jsonPath);
+  let totalImported = 0;
+  let totalSkipped = 0;
+  const details: string[] = [];
+
+  for (const fname of SOURCE_FILES) {
+    const jsonPath = path.join(__dirname, fname);
+    if (!fs.existsSync(jsonPath)) {
+      console.log(`⏭️  跳过（文件不存在）: ${fname}`);
+      continue;
+    }
+    const result = await importFromJson(jsonPath);
+    if (result.errors > 0) {
+      details.push(`  • ${fname}: ⚠️ 解析/导入异常，跳过`);
+      continue;
+    }
+    details.push(`  • ${fname}: 新增 ${result.imported} 条 / 跳过 ${result.skipped} 条`);
+    totalImported += result.imported;
+    totalSkipped += result.skipped;
+  }
+
   console.log("─".repeat(50));
-  console.log(`✅ 导入完成: ${result.imported} 条新增`);
-  console.log(`⏭️  跳过重复: ${result.skipped} 条`);
+  console.log("📊 各源明细:");
+  for (const line of details) console.log(line);
+  console.log("─".repeat(50));
+  console.log(`✅ 总计新增: ${totalImported} 条`);
+  console.log(`⏭️  总计跳过重复: ${totalSkipped} 条`);
 
   await prisma.$disconnect();
 }

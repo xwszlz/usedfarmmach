@@ -1,6 +1,9 @@
 /**
  * #1 卖方采集 Agent — 核心执行逻辑
  *
+ * 国际源：agroline.cn / mascus.co.uk / 搜索 API
+ * （Agriaffaires 已上 DataDome 商业反爬，首页/sitemap/详情页全部 403，已弃用）。
+ *
  * 双模式：
  *  - 本地模式（有 Python + scripts/ 目录，如本地开发 / run_seller_scout_v2.bat）：
  *    直接跑 Python 爬虫 + tsx 导入，返回真实条数。
@@ -175,8 +178,10 @@ async function getSellerScoutDbStats(): Promise<{
   for (const r of bySourceRows) {
     const c = r._count._all;
     bySource[r.source] = c;
-    if (r.source === "agriaffaires") intl += c;
-    else domestic += c;
+    // 国内源以 "domestic" 前缀识别（domestic_baixing / domestic_nongjitong / domestic_websearch）；
+    // 其余（agriaffaires / agroline / mascus / search_api …）一律计为国际源。
+    if (r.source.startsWith("domestic")) domestic += c;
+    else intl += c;
   }
   return {
     total,
@@ -490,62 +495,88 @@ export async function executeSellerScout(input: ScoutInput): Promise<ScoutOutput
       }
     }
 
-    // ── 2) 国际爬虫 ──
+    // ── 2) 国际爬虫（多源：agroline / mascus；Agriaffaires 已弃用）──
     if (mode === "all" || mode === "international") {
-      log("▶ [2/3] 国际采集 (Agriaffaires)...");
-      const pyScript = path.join(scriptsDir, "scrape_agriaffaires.py");
+      log("▶ [2/3] 国际采集（多源：agroline / mascus / 搜索 API）...");
 
-      if (!fs.existsSync(pyScript)) {
-        log(`  ⚠️ 脚本不存在: ${pyScript}`);
-      } else {
-        let collectorOk = true;
-        let failReason = "";
+      // 依次运行各国际源采集器，累加各自 totalListings；任一源失败仅告警，不影响其余源。
+      // （搜索 API 路线为 env-gated，本地不做，交由 CI 执行 scout-via-search-api.ts）
+      const intlSources: Array<{ name: string; script: string; file: string }> = [
+        { name: "agroline", script: "scrape_agroline.py", file: "agroline_data.json" },
+        { name: "mascus", script: "scrape_mascus.py", file: "mascus_data.json" },
+      ];
+
+      let collectorOk = true;
+      let failReason = "";
+      let ranAny = false;
+
+      for (const src of intlSources) {
+        const pyScript = path.join(scriptsDir, src.script);
+        if (!fs.existsSync(pyScript)) {
+          log(`  ⚠️ [${src.name}] 脚本不存在: ${pyScript}`);
+          collectorOk = false;
+          if (!failReason) failReason = `${src.name} 脚本不存在`;
+          continue;
+        }
+        ranAny = true;
 
         const r = runPython(pyScript, scriptsDir);
-        log(`  爬虫 exit=${r.ok ? 0 : 1}`);
-        if (r.stdout) log(`  stdout: ${r.stdout.slice(-300)}`);
-        if (!r.ok && r.stderr) log(`  stderr: ${r.stderr.slice(0, 400)}`);
+        log(`  [${src.name}] 爬虫 exit=${r.ok ? 0 : 1}`);
+        if (r.stdout) log(`  [${src.name}] stdout: ${r.stdout.slice(-300)}`);
+        if (!r.ok && r.stderr) log(`  [${src.name}] stderr: ${r.stderr.slice(0, 400)}`);
         if (!r.ok) {
           collectorOk = false;
-          failReason = r.stderr ? `爬虫失败：${r.stderr.slice(0, 200)}` : "爬虫非零退出";
+          if (!failReason) {
+            failReason = `${src.name} 爬虫${r.stderr ? `失败：${r.stderr.slice(0, 200)}` : "非零退出"}`;
+          }
         }
 
-        const resultPath = path.join(scriptsDir, "agriaffaires_data.json");
+        const resultPath = path.join(scriptsDir, src.file);
         if (fs.existsSync(resultPath)) {
           try {
             const data = JSON.parse(fs.readFileSync(resultPath, "utf-8"));
-            intlCount = data.totalListings || 0;
-            platforms["agriaffaires"] = (platforms["agriaffaires"] || 0) + intlCount;
-            log(`  ✅ 国际采集: ${intlCount} 条`);
+            const count = data.totalListings || 0;
+            intlCount += count;
+            platforms[src.name] = (platforms[src.name] || 0) + count;
+            log(`  ✅ [${src.name}] 采集: ${count} 条`);
           } catch (e: any) {
-            log(`  ⚠️ 解析结果失败: ${e.message}`);
-          }
-
-          if (!dryRun) {
-            const importScript = path.join(scriptsDir, "import-seller-scout.ts");
-            if (fs.existsSync(importScript)) {
-              log("  ▶ 导入国际数据...");
-              const ir = runTsx(importScript, repoRoot);
-              log(`  导入 exit=${ir.ok ? 0 : 1}`);
-              if (ir.ok) {
-                importsRun += 1;
-              } else {
-                collectorOk = false;
-                if (!failReason) failReason = "导入脚本非零退出";
-              }
-            }
+            log(`  ⚠️ [${src.name}] 解析结果失败: ${e.message}`);
+            collectorOk = false;
+            if (!failReason) failReason = `${src.name} 结果解析失败`;
           }
         } else {
-          log("  ⚠️ 国际采集文件未生成");
+          log(`  ⚠️ [${src.name}] 采集文件未生成`);
           collectorOk = false;
-          if (!failReason) failReason = "结果文件未生成";
+          if (!failReason) failReason = `${src.name} 结果文件未生成`;
         }
+      }
 
-        if (collectorOk) {
-          recordOk();
-        } else {
-          recordFail("国际采集", failReason || "未知原因");
+      if (!ranAny) {
+        log("  ⚠️ 未找到任何国际采集脚本");
+        collectorOk = false;
+        if (!failReason) failReason = "国际采集脚本均不存在";
+      }
+
+      // 导入一次即可：import-seller-scout.ts 已支持多源（缺失文件自动跳过）
+      if (!dryRun && ranAny) {
+        const importScript = path.join(scriptsDir, "import-seller-scout.ts");
+        if (fs.existsSync(importScript)) {
+          log("  ▶ 导入国际数据...");
+          const ir = runTsx(importScript, repoRoot);
+          log(`  导入 exit=${ir.ok ? 0 : 1}`);
+          if (ir.ok) {
+            importsRun += 1;
+          } else {
+            collectorOk = false;
+            if (!failReason) failReason = "导入脚本非零退出";
+          }
         }
+      }
+
+      if (collectorOk) {
+        recordOk();
+      } else {
+        recordFail("国际采集", failReason || "未知原因");
       }
     }
 

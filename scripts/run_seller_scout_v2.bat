@@ -2,7 +2,7 @@
 chcp 65001 >nul
 echo ============================================
 echo  #1 卖方采集 Agent — 一键运行
-echo  国内全平台 + 国际 Agriaffaires
+echo  国内全平台 + 国际（agroline / mascus）
 echo ============================================
 echo.
 
@@ -18,12 +18,16 @@ if %errorlevel% neq 0 (
 )
 echo.
 
-:: 国际爬虫（Agriaffaires）
+:: 国际爬虫（agroline + mascus；Agriaffaires 已弃用）
 echo [2/3] 国际卖家采集...
 cd /d "%SCRIPTS_DIR%"
-C:\Users\guofu\.workbuddy\binaries\python\versions\3.13.12\python.exe scrape_agriaffaires.py
+C:\Users\guofu\.workbuddy\binaries\python\versions\3.13.12\python.exe scrape_agroline.py
 if %errorlevel% neq 0 (
-    echo ⚠️ 国际爬虫有错误，继续执行
+    echo ⚠️ agroline 爬虫有错误，继续执行
+)
+C:\Users\guofu\.workbuddy\binaries\python\versions\3.13.12\python.exe scrape_mascus.py
+if %errorlevel% neq 0 (
+    echo ⚠️ mascus 爬虫有错误，继续执行
 )
 echo.
 
