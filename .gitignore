@@ -80,3 +80,10 @@ nul
 # build/temporary directory created by automation jobs
 _pull_tmp/
 _trash/
+
+# leaked-key local scaffolding (never commit)
+test_ark.js
+_probe_*.js
+_repro_*.js
+_ai_bench_*.js
+_ark_probe*.js
