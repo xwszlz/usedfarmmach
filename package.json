@@ -13,7 +13,8 @@
     "db:seed": "tsx prisma/seed.ts",
     "import:data": "tsx scripts/import-data.ts",
     "import:images": "tsx scripts/import-images.ts",
-    "import:real": "tsx scripts/import-real-data.ts"
+    "import:real": "tsx scripts/import-real-data.ts",
+    "convert:raw": "tsx scripts/convert-raw-to-product.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.14.0",

@@ -631,6 +631,10 @@ model RawListing {
   reviewedAt     DateTime?
   reviewedBy     String?
   notes          String?
+  /// 转换产物关联（additive，nullable）：非空表示已由 RawListing→Product 转换生成，脚本据此幂等跳过
+  productId      String?
+  /// 转换时间（additive，nullable）
+  convertedAt    DateTime?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
