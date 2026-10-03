@@ -195,7 +195,7 @@ jobs:
           echo "时间: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-      # 🔴 0 条不许判绿（两层）：① 国际源全 0 ⇒ 空转；② agroline+mascus 双双 0 ⇒ 硬指标源全挂。
+      # 🔴 0 条不许判绿（两层）：① 国际源全 0 ⇒ 空转；② agroline/mascus **任一为 0** ⇒ 硬指标源静默死亡。
       #    防止此前三重容错（continue-on-error / 产物缺失写空 JSON / skipDuplicates 无 update）
       #    再次制造「永远 success 的假绿」——尤其防止 domestic 折进 TOTAL 后掩盖国际源全挂。
       #    首次上线若真 0 条会变红，这是**预期行为**，不要为绕过它而放宽条件。
@@ -211,10 +211,10 @@ jobs:
             echo "❌ 国际源全 0 条（空转）—— 判定失败（防止假绿）"
             exit 1
           fi
-          # ② 两个免 key 硬指标源（agroline / mascus）双双 0 ⇒ 判红。
+          # ② 两个免 key 硬指标源（agroline / mascus）**任一为 0** ⇒ 判红（任一静默归零都是重大丢失）。
           #    注意：search_api 依赖尚未配置的 SEARCH_API_KEY，**不纳入硬指标**，避免误红。
-          if [ "$AGRO" = "0" ] && [ "$MASC" = "0" ]; then
-            echo "❌ agroline 与 mascus 双双 0 条（硬指标源全挂）—— 判定失败"
+          if [ "$AGRO" = "0" ] || [ "$MASC" = "0" ]; then
+            echo "❌ agroline/mascus 有主源为 0 条（硬指标源静默死亡）—— 判定失败"
             exit 1
           fi
           echo "✅ 防假绿断言通过：国际 ${INTL} 条（agroline=${AGRO} / mascus=${MASC} / search_api=${SEARCH}）"
