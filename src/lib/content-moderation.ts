@@ -132,7 +132,7 @@ export async function checkDuplicateProduct(
     };
   }
 
-  // 额外检查：同卖家同品牌最近7天内是否"海量"重复发布同型号（仅拦截疑似刷屏，阈值已放宽）
+  // 额外检查：同卖家同品牌最近7天内是否有大量相同型号产品（防止刷屏）
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const recentCount = await prisma.product.count({
     where: {
@@ -144,7 +144,7 @@ export async function checkDuplicateProduct(
     },
   });
 
-  if (recentCount >= 10) {
+  if (recentCount >= 3) {
     return {
       isDuplicate: true,
       message: `您最近7天已发布 ${recentCount} 个「${modelName}」产品，请勿频繁重复发布相同型号。`,
