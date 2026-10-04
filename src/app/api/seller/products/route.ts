@@ -166,7 +166,18 @@ export async function POST(request: NextRequest) {
         seller.userId,
         finalBrandId,
         modelName,
-        Number(yearStr)
+        Number(yearStr),
+        undefined,
+        {
+          // 可区分特征：只要有任一不同即为另一台设备，放行发布
+          signature: {
+            workingHours: workingHoursStr ? Number(workingHoursStr) : null,
+            condition: condition || null,
+            priceCny: priceCnyStr ? Number(priceCnyStr) : null,
+            enginePower: enginePower ? Number(enginePower) : null,
+            descriptionZh: descriptionZh || null,
+          },
+        }
       );
       if (dupCheck.isDuplicate) {
         return NextResponse.json(
