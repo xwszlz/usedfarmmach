@@ -5,6 +5,21 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# ---------------------------------------------------------------------------
+# 并发控制（2026-10-04 加）：把 .cn 部署串行化。
+# 起因：同一分钟内连续两次合并到 main 会起两条并行的 .cn 部署流水线，
+#       第二条在最后一步撞上 deploy-cn.sh 的 `flock -n` 守卫（E8401）而退出，
+#       且退出前已白跑约 10 分钟构建（docker build + save + 上传 OSS）——纯浪费。
+# cancel-in-progress: false —— 必须为 false。true 会在部署中途强杀，
+#       可能留下半新半旧的容器状态；false 则让后一条排队等前一条结束。
+# 注意：GitHub 同组只保留「1 个运行中 + 1 个排队」，连续快速推送时
+#       中间那条排队的会被后到的取代并标记为 cancelled —— 这正是期望行为
+#       （它已被更新的提交取代）。
+# ---------------------------------------------------------------------------
+concurrency:
+  group: deploy-cn
+  cancel-in-progress: false
+
 env:
   SITE: cn
   NODE_VERSION: "22"
