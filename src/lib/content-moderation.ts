@@ -39,8 +39,13 @@ export async function checkDuplicateProduct(
   brandId: string,
   modelName: string,
   year: number,
-  excludeProductId?: string
+  excludeProductId?: string,
+  options?: { bypass?: boolean }
 ): Promise<DuplicateCheckResult> {
+  // 管理员/编辑角色可跳过重复检测：二手车同型号同年份常为不同单台设备。
+  // 纯增量：不传 options 时行为与原先完全一致。
+  if (options?.bypass) return { isDuplicate: false };
+
   // 标准化型号名称用于模糊匹配（去除空格、大小写不敏感）
   const normalizedModel = modelName.trim().toLowerCase().replace(/\s+/g, "");
 
