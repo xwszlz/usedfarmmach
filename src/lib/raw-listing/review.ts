@@ -84,6 +84,8 @@ export interface RawListingListItem {
   priceRaw: number | null;
   currency: string | null;
   priceCny: number | null;
+  /** 折算后的人民币价（priceCny 为空但 priceRaw/currency 可折算时非空；供前端红标口径） */
+  effectivePriceCny: number | null;
   location: string;
   sellerName: string | null;
   sellerPhone: string | null;
@@ -113,6 +115,8 @@ export interface ProductBrief {
 export interface ListResult {
   items: RawListingListItem[];
   total: number;
+  /** 全库未过滤行数（各 status 计数之和），供「全部」Tab 计数 */
+  allTotal: number;
   page: number;
   pageSize: number;
   totalPages: number;
@@ -249,6 +253,7 @@ function mapItem(r: RawListingRow): RawListingListItem {
     brandName: r.brandName, brandNormalized: normalizeBrandName(r.brandName), modelName: r.modelName,
     year: r.year, workingHours: r.workingHours, condition: r.condition,
     priceRaw: r.priceRaw, currency: r.currency, priceCny: r.priceCny, location: r.location,
+    effectivePriceCny: resolveEffectivePriceCny({ priceCny: r.priceCny, priceRaw: r.priceRaw, currency: r.currency }),
     sellerName: r.sellerName, sellerPhone: r.sellerPhone, sellerWechat: r.sellerWechat, sellerWhatsapp: r.sellerWhatsapp,
     images: r.images,
     scrapedAt: r.scrapedAt.toISOString(),
@@ -301,9 +306,13 @@ export async function listRawListings(q: ListQuery): Promise<ListResult> {
   for (const s of ALL_STATUSES) statusCounts[s] = 0;
   for (const g of grouped) statusCounts[g.status] = g._count._all;
 
+  // 全库未过滤行数 = 各 status 计数之和（grouped 无 where，零额外查询）
+  const allTotal = grouped.reduce((sum, g) => sum + g._count._all, 0);
+
   return {
     items: (rows as RawListingRow[]).map(mapItem),
     total,
+    allTotal,
     page,
     pageSize,
     totalPages: Math.max(1, Math.ceil(total / pageSize)),

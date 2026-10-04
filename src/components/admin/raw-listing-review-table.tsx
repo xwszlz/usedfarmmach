@@ -176,6 +176,17 @@ export function RawListingReviewTable({ items, brands, categories, locale }: Pro
 
   const brandOptions = brands;
   const catLabel = (c: CatOpt) => (c.parentId ? `  ↳ ${c.nameZh}` : c.nameZh);
+  // 行内品牌下拉预选：按归一/原始名称在 brands 里匹配第一条（纯客户端，不改 API）
+  const matchBrandId = (it: RawListingListItem): string => {
+    const hit = brands.find(
+      (b) =>
+        b.nameZh === it.brandNormalized ||
+        b.nameEn === it.brandNormalized ||
+        b.nameZh === it.brandName ||
+        b.nameEn === it.brandName
+    );
+    return hit ? hit.id : "";
+  };
 
   return (
     <div className="rounded-xl border bg-white shadow-sm">
@@ -242,7 +253,7 @@ export function RawListingReviewTable({ items, brands, categories, locale }: Pro
           <tbody>
             {items.map((it) => {
               const badge = STATUS_STYLE[it.status] || "bg-gray-100 text-gray-600";
-              const priceOut = it.priceCny != null && (it.priceCny < 3000 || it.priceCny > 20000000);
+              const priceOut = it.effectivePriceCny != null && (it.effectivePriceCny < 3000 || it.effectivePriceCny > 20000000);
               const priceOutlier = it.reasons.includes("price_outlier");
               return (
                 <tr key={it.id} className="border-b align-top last:border-0 hover:bg-gray-50">
@@ -255,9 +266,15 @@ export function RawListingReviewTable({ items, brands, categories, locale }: Pro
                   <td className="px-3 py-2.5 text-xs text-gray-500">
                     <div>{it.source}</div>
                     {it.sourceUrl ? (
-                      <a href={it.sourceUrl} target="_blank" rel="noreferrer" className="text-primary-600 hover:underline" title={it.sourceUrl}>
-                        {it.sourceUrl.length > 28 ? it.sourceUrl.slice(0, 28) + "…" : it.sourceUrl}
-                      </a>
+                      /^https?:\/\//i.test(it.sourceUrl) ? (
+                        <a href={it.sourceUrl} target="_blank" rel="noreferrer" className="text-primary-600 hover:underline" title={it.sourceUrl}>
+                          {it.sourceUrl.length > 28 ? it.sourceUrl.slice(0, 28) + "…" : it.sourceUrl}
+                        </a>
+                      ) : (
+                        <span className="text-gray-400" title={it.sourceUrl}>
+                          {it.sourceUrl.length > 28 ? it.sourceUrl.slice(0, 28) + "…" : it.sourceUrl}
+                        </span>
+                      )
                     ) : (
                       <span className="text-gray-400">(无链接)</span>
                     )}
@@ -275,7 +292,13 @@ export function RawListingReviewTable({ items, brands, categories, locale }: Pro
                     {it.year ?? "-"} / {it.workingHours ?? "-"}
                   </td>
                   <td className={`px-3 py-2.5 font-medium ${priceOut ? "text-red-600" : priceOutlier ? "text-amber-600" : "text-gray-900"}`}>
-                    {it.priceCny != null ? `¥${Math.round(it.priceCny).toLocaleString()}` : "-"}
+                    {it.priceCny != null ? (
+                      `¥${Math.round(it.priceCny).toLocaleString()}`
+                    ) : it.effectivePriceCny != null ? (
+                      <span className="text-gray-400">≈¥{Math.round(it.effectivePriceCny).toLocaleString()}</span>
+                    ) : (
+                      "-"
+                    )}
                     {it.currency && it.priceRaw != null && (
                       <span className="ml-1 text-xs text-gray-400">({it.priceRaw}{it.currency})</span>
                     )}
@@ -305,11 +328,12 @@ export function RawListingReviewTable({ items, brands, categories, locale }: Pro
                   </td>
                   <td className="px-3 py-2.5">
                     <div className="flex flex-col gap-1.5">
+                      <a href={`/${locale}/admin/raw-listings/${it.id}`} className="text-[11px] text-primary-600 hover:underline">详情</a>
                       {(it.status === "needs_review" || it.status === "pending" || it.status === "approved") && (
                         <>
                           <div className="flex gap-1">
                             <select
-                              value={brandSel[it.id] || ""}
+                              value={brandSel[it.id] || matchBrandId(it) || ""}
                               onChange={(e) => setBrandSel((p) => ({ ...p, [it.id]: e.target.value }))}
                               className="w-24 rounded border px-1 py-0.5 text-[11px]"
                             >
