@@ -443,7 +443,17 @@ export async function POST(request: NextRequest) {
       finalSellerId,
       finalBrandId,
       modelName,
-      Number(year)
+      Number(year),
+      undefined,
+      {
+        // 可区分特征：只要有任一不同即为另一台设备，放行发布
+        // 小程序不采集 workingHours（DB 恒为 null），故不参与比对
+        signature: {
+          condition: condition || null,
+          priceCny: priceCny ? Number(priceCny) : null,
+          enginePower: finalEnginePower ? Number(finalEnginePower) : null,
+        },
+      }
     );
     if (dupCheck.isDuplicate) {
       return NextResponse.json(
