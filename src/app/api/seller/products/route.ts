@@ -169,8 +169,6 @@ export async function POST(request: NextRequest) {
         Number(yearStr),
         undefined,
         {
-          // 管理员/编辑角色可发布同型号同年份的多台设备（增量；普通卖家仍受限）
-          bypass: ["admin", "super_admin", "editor"].includes(user.role),
           // 可区分特征：只要有任一不同即为另一台设备，放行发布
           signature: {
             workingHours: workingHoursStr ? Number(workingHoursStr) : null,
