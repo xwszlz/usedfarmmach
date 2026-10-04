@@ -166,7 +166,10 @@ export async function POST(request: NextRequest) {
         seller.userId,
         finalBrandId,
         modelName,
-        Number(yearStr)
+        Number(yearStr),
+        undefined,
+        // 管理员/编辑角色可发布同型号同年份的多台设备（增量；普通卖家仍受限）
+        { bypass: ["admin", "super_admin", "editor"].includes(user.role) }
       );
       if (dupCheck.isDuplicate) {
         return NextResponse.json(
