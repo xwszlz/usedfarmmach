@@ -1,0 +1,210 @@
+name: "Ops - backfill 4 products to .cn"
+
+# ============================================================================
+# 一次性运维 workflow：把 4 台「只在 .com」的国际品牌产品（含图片/视频）补进 .cn 生产库。
+#
+# 背景：.cn 库是 2026-08-03~08-25 从 .com 复制出来的（cuid 原样保留）。这 4 台是
+#       复制时点之后发布的，因此 .cn 里没有 → 小程序 2026-09-14 切读 .cn 后消失。
+#       本 workflow 把它们反向补进 .cn，且**保留 cuid**（这样后续 .cn→.com 主同步
+#       会走「认领/adopt」路径，不会在 .com 产生重复挂牌）。
+#
+# 数据安全（本仓库是 PUBLIC，必须严格遵守）：
+#   1. 产品数据只在 runner 内存 + workspace 临时目录 + ECS 临时目录中存在，
+#      绝不写入仓库、绝不打成 artifact、绝不打印到日志（含纬度/经度坐标）。
+#   2. 日志只输出「可公开摘要」：id / 机型 / 年份 / 品牌 / 图片视频数 / sha256。
+#   3. 迁移为 psql 单事务 + ON_ERROR_STOP=1，任一步出错整体回滚。
+#   4. 传输完整性由 sha256 双向核对，不一致直接中止，绝不执行。
+#   5. dry 模式只执行只读预检片段，物理上不存在任何写语句。
+#
+# 触发方式：
+#   A. 手动 workflow_dispatch（首选）
+#        mode=dry   → 只跑只读预检，证明通道可用，零写入
+#        mode=apply → 真正写入，必须同时填 confirm=MIGRATE-4
+#   B. 兜底通道（当 workflow_dispatch 在非默认分支不可用时）
+#        向分支推送 .github/ops/cn-backfill-4-apply，内容恰为 MIGRATE-4 → apply
+#        其余内容 / 该文件不推送 → dry。该文件仅作触发闸门，不参与运行时逻辑。
+# ============================================================================
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "dry=只跑只读预检；apply=真正写入 .cn 生产库"
+        required: true
+        default: "dry"
+        type: choice
+        options:
+          - "dry"
+          - "apply"
+      confirm:
+        description: "mode=apply 时必须填 MIGRATE-4"
+        required: false
+        default: "none"
+        type: string
+  push:
+    branches:
+      - "ops/cn-backfill-4"
+    paths:
+      - ".github/ops/cn-backfill-4-apply"
+
+permissions:
+  contents: read
+
+# 绝不并发：同一时刻只允许一个实例接触生产库
+concurrency:
+  group: ops-backfill-4
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: "22"
+  WORK_DIR: "ops-m4-out"
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # ----------------------------------------------------------------------
+      # 闸门：解析本次运行到底是 dry 还是 apply。缺省永远落到 dry（fail-safe）。
+      # ----------------------------------------------------------------------
+      - name: Resolve mode (fail-safe to dry)
+        id: gate
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_MODE: ${{ inputs.mode }}
+          INPUT_CONFIRM: ${{ inputs.confirm }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            MODE="${INPUT_MODE:-dry}"
+            CONFIRM="${INPUT_CONFIRM:-none}"
+          else
+            MODE=dry
+            CONFIRM=""
+            if [ -f .github/ops/cn-backfill-4-apply ]; then
+              CONFIRM="$(tr -d '[:space:]' < .github/ops/cn-backfill-4-apply)"
+            fi
+            if [ "$CONFIRM" = "MIGRATE-4" ]; then MODE=apply; fi
+          fi
+          case "$MODE" in
+            dry|apply) ;;
+            *) echo "::error::非法 mode: $MODE"; exit 1 ;;
+          esac
+          if [ "$MODE" = "apply" ] && [ "$CONFIRM" != "MIGRATE-4" ]; then
+            echo "::error::mode=apply 但 confirm 不等于 MIGRATE-4，拒绝执行"
+            exit 1
+          fi
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+          echo "本次运行 mode = $MODE"
+
+      # ----------------------------------------------------------------------
+      # 只装 pg，不碰仓库依赖（规避本仓库 lockfile 在 Linux 下的 npm ci 已知问题）
+      # ----------------------------------------------------------------------
+      - name: Install pg into isolated dir
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/pgdeps"
+          cd "$RUNNER_TEMP/pgdeps"
+          printf '{"name":"ops-pgdeps","private":true}\n' > package.json
+          npm install pg@8 --no-audit --no-fund --loglevel=error
+          test -d node_modules/pg
+          echo "NODE_PATH=$RUNNER_TEMP/pgdeps/node_modules" >> "$GITHUB_ENV"
+
+      # ----------------------------------------------------------------------
+      # 从 .com(Neon) 实时读取 4 台 → 在 runner 内存里合成幂等迁移 SQL。
+      # 只打印可公开摘要；SQL 落在 workspace/<WORK_DIR>（未跟踪，随 runner 销毁）。
+      # ----------------------------------------------------------------------
+      - name: Generate migration SQL from Neon
+        env:
+          NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+          OUT_DIR: ${{ github.workspace }}/ops-m4-out
+        run: node .github/scripts/cn-backfill-4.cjs
+
+      - name: Read expected sha256
+        id: sha
+        run: |
+          set -euo pipefail
+          SHA="$(cat "$WORK_DIR/SHA")"
+          if [ "${#SHA}" -ne 64 ]; then echo "::error::SHA 长度异常"; exit 1; fi
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+
+      # ----------------------------------------------------------------------
+      # 传给 ECS（整个目录：m4.sql 完整版 + m4.pre.sql 只读预检版 + SHA）
+      # ----------------------------------------------------------------------
+      - name: Transfer generated SQL to ECS
+        uses: appleboy/scp-action@v1
+        with:
+          host: 101.200.125.199
+          username: deploy
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          source: "ops-m4-out"
+          target: "/opt/cn"
+
+      # ----------------------------------------------------------------------
+      # 在 ECS 上执行：先核对 sha256，再按 mode 选择 SQL，psql 单事务执行
+      # ----------------------------------------------------------------------
+      - name: Execute on ECS (sha256 verified, single transaction)
+        uses: appleboy/ssh-action@v1
+        env:
+          MODE: ${{ steps.gate.outputs.mode }}
+          EXPECT_SHA: ${{ steps.sha.outputs.sha }}
+        with:
+          host: 101.200.125.199
+          username: deploy
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          envs: MODE,EXPECT_SHA
+          script: |
+            set -uo pipefail
+
+            echo "==== .cn 反向补数 | MODE=${MODE:-unset} ===="
+            echo "expect_sha=${EXPECT_SHA:-unset}"
+
+            DIR="$(dirname "$(find /opt/cn/ops-m4-out -name m4.sql -type f 2>/dev/null | head -1)")"
+            if [ -z "${DIR:-}" ] || [ ! -f "$DIR/m4.sql" ] || [ ! -f "$DIR/m4.pre.sql" ]; then
+              echo "::error::ECS 上未找到生成的 SQL 文件，scp 步骤可能失败"
+              exit 1
+            fi
+            echo "workdir=$DIR"
+            ls -l "$DIR"
+
+            # 无论成功失败，都在退出前清掉 ECS 上的明文数据
+            cleanup() { rm -rf /opt/cn/ops-m4-out; echo "cleanup: 已删除 /opt/cn/ops-m4-out"; }
+            trap cleanup EXIT
+
+            ACTUAL_SHA="$(sha256sum "$DIR/m4.sql" | awk '{print $1}')"
+            echo "actual_sha=$ACTUAL_SHA"
+            if [ -z "${EXPECT_SHA:-}" ] || [ "$ACTUAL_SHA" != "$EXPECT_SHA" ]; then
+              echo "::error::sha256 不一致，拒绝执行（传输损坏或文件陈旧）"
+              exit 1
+            fi
+            echo "sha256 校验通过"
+
+            # dry → 只跑只读预检；apply → 完整脚本（预检 + 单事务写入 + 核对）
+            if [ "$MODE" = "apply" ]; then
+              FILE="$DIR/m4.sql"
+              echo ">>> APPLY：即将写入 .cn 生产库（单事务，出错整体回滚）"
+            else
+              FILE="$DIR/m4.pre.sql"
+              echo ">>> DRY：只读预检，本轮不写入任何数据"
+            fi
+
+            docker exec -i cn-postgres sh -c \
+              'psql -X -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -f -' < "$FILE"
+            RC=$?
+
+            if [ "$RC" != "0" ]; then
+              echo "::error::psql 退出码 $RC —— 单事务已整体回滚，.cn 库未被修改"
+              exit "$RC"
+            fi
+            echo "==== psql 成功 | MODE=${MODE} ===="
+
+      - name: Cleanup runner workspace
+        if: always()
+        run: rm -rf ops-m4-out "$RUNNER_TEMP/pgdeps"
