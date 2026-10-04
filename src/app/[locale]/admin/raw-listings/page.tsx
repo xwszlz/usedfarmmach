@@ -10,7 +10,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { verifyToken } from "@/lib/auth";
+import { verifyToken, getTokenFromHeaders } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { isRawListingAdminRole } from "@/lib/raw-listing/admin-auth";
 import { listRawListings } from "@/lib/raw-listing/review";
@@ -28,14 +28,6 @@ const TABS: { key: string; label: string }[] = [
   { key: "rejected", label: "已拒绝" },
   { key: "all", label: "全部" },
 ];
-
-function getTokenFromHeaders(headersList: Headers): string | null {
-  const auth = headersList.get("authorization");
-  if (auth?.startsWith("Bearer ")) return auth.slice(7);
-  const cookie = headersList.get("cookie");
-  const m = cookie?.match(/token=([^;]+)/);
-  return m ? decodeURIComponent(m[1]) : null;
-}
 
 export default async function RawListingsPage({
   params,
@@ -91,7 +83,7 @@ export default async function RawListingsPage({
       <div className="mb-4 flex flex-wrap gap-2">
         {TABS.map((tb) => {
           const active = status === tb.key;
-          const count = tb.key === "all" ? list.total : list.statusCounts[tb.key] ?? 0;
+          const count = tb.key === "all" ? list.allTotal : list.statusCounts[tb.key] ?? 0;
           return (
             <Link
               key={tb.key}
