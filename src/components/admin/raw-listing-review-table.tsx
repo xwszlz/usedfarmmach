@@ -322,6 +322,7 @@ export function RawListingReviewTable({ items, brands, categories, locale }: Pro
                   </td>
                   <td className="px-3 py-2.5">
                     <div className="flex flex-col gap-1.5">
+                      <a href={`/${locale}/admin/raw-listings/${it.id}`} className="text-[11px] text-primary-600 hover:underline">详情</a>
                       {(it.status === "needs_review" || it.status === "pending" || it.status === "approved") && (
                         <>
                           <div className="flex gap-1">
