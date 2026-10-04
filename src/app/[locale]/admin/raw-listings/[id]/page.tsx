@@ -108,9 +108,13 @@ export default async function RawListingDetailPage({
           <Field label="来源">{data.source || "-"}</Field>
           <Field label="原始链接">
             {data.sourceUrl ? (
-              <a href={data.sourceUrl} target="_blank" rel="noreferrer" className="break-all text-primary-600 hover:underline">
-                {data.sourceUrl}
-              </a>
+              /^https?:\/\//i.test(data.sourceUrl) ? (
+                <a href={data.sourceUrl} target="_blank" rel="noreferrer" className="break-all text-primary-600 hover:underline">
+                  {data.sourceUrl}
+                </a>
+              ) : (
+                <span className="break-all text-gray-700">{data.sourceUrl}</span>
+              )
             ) : (
               <span className="text-gray-400">(无链接)</span>
             )}

@@ -266,9 +266,15 @@ export function RawListingReviewTable({ items, brands, categories, locale }: Pro
                   <td className="px-3 py-2.5 text-xs text-gray-500">
                     <div>{it.source}</div>
                     {it.sourceUrl ? (
-                      <a href={it.sourceUrl} target="_blank" rel="noreferrer" className="text-primary-600 hover:underline" title={it.sourceUrl}>
-                        {it.sourceUrl.length > 28 ? it.sourceUrl.slice(0, 28) + "…" : it.sourceUrl}
-                      </a>
+                      /^https?:\/\//i.test(it.sourceUrl) ? (
+                        <a href={it.sourceUrl} target="_blank" rel="noreferrer" className="text-primary-600 hover:underline" title={it.sourceUrl}>
+                          {it.sourceUrl.length > 28 ? it.sourceUrl.slice(0, 28) + "…" : it.sourceUrl}
+                        </a>
+                      ) : (
+                        <span className="text-gray-400" title={it.sourceUrl}>
+                          {it.sourceUrl.length > 28 ? it.sourceUrl.slice(0, 28) + "…" : it.sourceUrl}
+                        </span>
+                      )
                     ) : (
                       <span className="text-gray-400">(无链接)</span>
                     )}
