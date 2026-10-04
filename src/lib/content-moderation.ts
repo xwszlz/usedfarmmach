@@ -21,6 +21,45 @@ export interface DuplicateCheckResult {
   message?: string;
 }
 
+/**
+ * 产品「可区分特征签名」——判断两次发布是否为同一台设备。
+ * 二手车同型号同年份常为不同单台设备（工时/车况/价格不同），
+ * 只要签名中任一字段不同（含既有无、新有值），即视为不同设备放行。
+ */
+export interface DuplicateSignature {
+  workingHours?: number | null;
+  condition?: string | null;
+  priceCny?: number | null;
+  enginePower?: number | null;
+  descriptionZh?: string | null;
+}
+
+/** 存在"可区分差异" → 不是同一台设备 */
+function hasDistinguishingDifference(
+  incoming: DuplicateSignature,
+  existing: DuplicateSignature
+): boolean {
+  const keys: (keyof DuplicateSignature)[] = [
+    "workingHours",
+    "condition",
+    "priceCny",
+    "enginePower",
+    "descriptionZh",
+  ];
+  for (const k of keys) {
+    const a = incoming[k];
+    if (a === undefined || a === null || a === "") continue;
+    const b = existing[k];
+    if (b === undefined || b === null || b === "") return true;
+    if (typeof a === "number" && typeof b === "number") {
+      if (a !== b) return true;
+    } else if (String(a).trim().toLowerCase() !== String(b).trim().toLowerCase()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // ── 重复产品检测 ──
 
 /**
@@ -40,7 +79,7 @@ export async function checkDuplicateProduct(
   modelName: string,
   year: number,
   excludeProductId?: string,
-  options?: { bypass?: boolean }
+  options?: { bypass?: boolean; signature?: DuplicateSignature }
 ): Promise<DuplicateCheckResult> {
   // 管理员/编辑角色可跳过重复检测：二手车同型号同年份常为不同单台设备。
   // 纯增量：不传 options 时行为与原先完全一致。
@@ -66,28 +105,38 @@ export async function checkDuplicateProduct(
     where.id = { not: excludeProductId };
   }
 
-  const existing = await prisma.product.findFirst({
+  const signature = options?.signature;
+  const candidates = await prisma.product.findMany({
     where: where as any,
+    orderBy: { createdAt: "desc" },
     select: {
       id: true,
       modelName: true,
       year: true,
       status: true,
       createdAt: true,
+      workingHours: true,
+      condition: true,
+      priceCny: true,
+      enginePower: true,
+      descriptionZh: true,
       images: { take: 1, select: { url: true } },
     },
   });
 
-  if (existing) {
+  // 逐个比对：只要有任一「可区分字段」不同，即视为另一台设备 → 放行；
+  // 全部可比字段都一致（或本次未提供任何可区分字段）→ 判为重复。
+  for (const existing of candidates) {
+    if (signature && hasDistinguishingDifference(signature, existing)) continue;
     return {
       isDuplicate: true,
       existingProductId: existing.id,
       existingProductStatus: existing.status,
-      message: `您已发布过同型号产品（${modelName}/${year}年），请勿重复发布。如需修改请编辑已有产品。`,
+      message: `您已发布过同型号产品（${modelName}/${year}年），且工时/车况/价格/配置等信息一致，请勿重复发布。如需修改请编辑已有产品。`,
     };
   }
 
-  // 额外检查：同卖家同品牌最近7天内是否有大量相同型号产品（防止刷屏）
+  // 额外检查：同卖家同品牌最近7天内是否"海量"重复发布同型号（仅拦截疑似刷屏，阈值已放宽）
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const recentCount = await prisma.product.count({
     where: {
@@ -99,7 +148,7 @@ export async function checkDuplicateProduct(
     },
   });
 
-  if (recentCount >= 3) {
+  if (recentCount >= 10) {
     return {
       isDuplicate: true,
       message: `您最近7天已发布 ${recentCount} 个「${modelName}」产品，请勿频繁重复发布相同型号。`,
