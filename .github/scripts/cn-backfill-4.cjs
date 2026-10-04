@@ -190,14 +190,14 @@ function cleanUrl(raw) {
   L.push("COMMIT;");
   L.push("");
   L.push("-- ===== 核对（期望 4 行）=====");
-  L.push(
+  const verifySelect =
     `SELECT p.id, p."modelName", p.year, p.status, b."nameZh" AS brand_zh, c."nameZh" AS cat_zh,` +
     ` (SELECT count(*) FROM "ProductImage" i WHERE i."productId"=p.id) AS imgs,` +
     ` (SELECT count(*) FROM "ProductVideo" v WHERE v."productId"=p.id) AS vids,` +
     ` (p."brandId" IS NULL OR p."categoryId" IS NULL OR p."sellerId" IS NULL) AS has_null_fk` +
     ` FROM "Product" p LEFT JOIN "Brand" b ON b.id=p."brandId" LEFT JOIN "Category" c ON c.id=p."categoryId"` +
-    ` WHERE p.id IN (${idList}) ORDER BY p.id;`
-  );
+    ` WHERE p.id IN (${idList}) ORDER BY p.id;`;
+  L.push(verifySelect);
 
   const sql = L.join("\n") + "\n";
   fs.mkdirSync(OUT_DIR, { recursive: true });
@@ -209,6 +209,21 @@ function cleanUrl(raw) {
   const pre = (cut > 0 ? L.slice(0, cut) : L).join("\n") + "\n";
   if (cut <= 0) throw new Error("未找到事务分界标记，拒绝产出 dry-run 片段");
   fs.writeFileSync(path.join(OUT_DIR, "m4.pre.sql"), pre, "utf8");
+
+  // verify 版：在真实生产库上把全部 INSERT 真跑一遍，但以 ROLLBACK 收尾。
+  // 目的：证明真实 schema 下 FK 解析 / 列类型 / NOT NULL / 唯一约束全部成立，
+  //       同时保证 .cn 库零改动（ON_ERROR_STOP 下任何报错也会整体回滚）。
+  const commitIdx = L.findIndex((ln) => ln === "COMMIT;");
+  if (commitIdx <= 0) throw new Error("未找到 COMMIT，拒绝产出 verify 片段");
+  const V = L.slice(0, commitIdx);
+  V.push("\\echo '--- VERIFY：真实 schema 全量演练，末尾 ROLLBACK，生产库零改动 ---'");
+  V.push("\\echo '--- V1 事务内已写入（期望 4 行；此时尚未提交）---'");
+  V.push(verifySelect);
+  V.push("\\echo '--- ROLLBACK：撤销整个事务 ---'");
+  V.push("ROLLBACK;");
+  V.push("\\echo '--- V2 回滚自检（期望 leaked=0）---'");
+  V.push(`SELECT count(*) AS leaked_after_rollback FROM "Product" WHERE id IN (${idList});`);
+  fs.writeFileSync(path.join(OUT_DIR, "m4.verify.sql"), V.join("\n") + "\n", "utf8");
 
   fs.writeFileSync(path.join(OUT_DIR, "SHA"), crypto.createHash("sha256").update(sql, "utf8").digest("hex"), "utf8");
 
