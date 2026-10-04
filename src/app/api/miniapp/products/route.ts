@@ -233,7 +233,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: { id: product.id, modelName: product.modelName },
-      message: "产品发布成功！网站同步展示中。",
+      message: "产品发布成功！产品将同步至网站展示（可能有延迟）。",
     });
   } catch (error) {
     console.error("miniapp products POST error:", error);

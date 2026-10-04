@@ -2204,3 +2204,41 @@ model ValuationLead {
   @@index([email])
   @@index([createdAt])
 }
+
+// ============================================================
+// .cn → .com 产品同步（Stage 0 — additive）
+// 仅新增模型，不修改 / 删除任何既有表；两站同源 schema，
+// 各自通过 prisma db push 落地（本项目约定用 db push，非 migrate）。
+// ============================================================
+
+/// .cn → .com 产品同步映射与存活账本（additive）
+/// 作用：来源追溯 + 内容哈希（变更检测）+ 对账存活判定 + 物理删除后审计轨迹
+model ProductSyncMap {
+  id              String    @id @default(cuid())
+  cnProductId     String    @unique // .cn 侧 Product.id
+  neonProductId   String    @unique // .com 侧 Product.id（= cnProductId 直通）
+  sourceHash      String // 白名单内容 sha256
+  sourceUpdatedAt DateTime // .cn 侧 updatedAt（增量水位依据）
+  syncedAt        DateTime  @default(now())
+  lastSeenAt      DateTime  @default(now())
+  isActive        Boolean   @default(true)
+  /// 【硬删护栏·审计轨迹】非空 = 曾同步、已在 .com 物理删除（Product 行已不存在）
+  deletedAt       DateTime?
+
+  @@index([isActive, lastSeenAt])
+  @@index([sourceUpdatedAt])
+}
+
+/// 【硬删护栏·删除前留档】物理删除前写入最小快照，供人工恢复
+model ProductSyncTombstone {
+  id            String   @id @default(cuid())
+  cnProductId   String
+  neonProductId String
+  /// 删除前的最小快照（白名单字段 JSON.stringify），排除 PII / 坐标
+  snapshot      String
+  reason        String   @default("reconcile-absent")
+  deletedAt     DateTime @default(now())
+
+  @@index([cnProductId])
+  @@index([deletedAt])
+}
