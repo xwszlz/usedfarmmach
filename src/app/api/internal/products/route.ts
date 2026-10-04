@@ -905,7 +905,7 @@ export async function POST(request: NextRequest) {
         aiEnhanced,
         aiValuation: aiValuationResult,
         message: isImported
-          ? "国际品牌，手机+网站同时展示"
+          ? "国际品牌，产品将同步至网站展示（可能有延迟）"
           : "国产品牌，仅在小程序展示",
       },
     });
