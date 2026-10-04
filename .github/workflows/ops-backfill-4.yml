@@ -17,24 +17,27 @@ name: "Ops - backfill 4 products to .cn"
 #   5. dry 模式只执行只读预检片段，物理上不存在任何写语句。
 #
 # 触发方式：
-#   A. 手动 workflow_dispatch（首选）
-#        mode=dry   → 只跑只读预检，证明通道可用，零写入
-#        mode=apply → 真正写入，必须同时填 confirm=MIGRATE-4
-#   B. 兜底通道（当 workflow_dispatch 在非默认分支不可用时）
-#        向分支推送 .github/ops/cn-backfill-4-apply，内容恰为 MIGRATE-4 → apply
-#        其余内容 / 该文件不推送 → dry。该文件仅作触发闸门，不参与运行时逻辑。
+#   A. 手动 workflow_dispatch（首选，需先合并到默认分支才可用）
+#        mode=dry    → 只跑只读预检，证明通道可用，零写入
+#        mode=verify → 在真实 schema 上把全部 INSERT 真跑一遍再 ROLLBACK，零改动实证
+#        mode=apply  → 真正写入，必须同时填 confirm=MIGRATE-4
+#   B. 兜底通道（当 workflow_dispatch 在非默认分支不可用时 —— 实测会 404）
+#        向分支推送 .github/ops/cn-backfill-4-apply：
+#          内容 MIGRATE-4 → apply ／ VERIFY-4 → verify ／ 其余 → dry
+#        该文件仅作触发闸门，不参与运行时逻辑。
 # ============================================================================
 
 on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "dry=只跑只读预检；apply=真正写入 .cn 生产库"
+        description: "dry=只读预检；verify=真实 schema 演练+回滚；apply=真正写入"
         required: true
         default: "dry"
         type: choice
         options:
           - "dry"
+          - "verify"
           - "apply"
       confirm:
         description: "mode=apply 时必须填 MIGRATE-4"
@@ -91,10 +94,14 @@ jobs:
             if [ -f .github/ops/cn-backfill-4-apply ]; then
               CONFIRM="$(tr -d '[:space:]' < .github/ops/cn-backfill-4-apply)"
             fi
-            if [ "$CONFIRM" = "MIGRATE-4" ]; then MODE=apply; fi
+            if [ "$CONFIRM" = "MIGRATE-4" ]; then
+              MODE=apply
+            elif [ "$CONFIRM" = "VERIFY-4" ]; then
+              MODE=verify
+            fi
           fi
           case "$MODE" in
-            dry|apply) ;;
+            dry|verify|apply) ;;
             *) echo "::error::非法 mode: $MODE"; exit 1 ;;
           esac
           if [ "$MODE" = "apply" ] && [ "$CONFIRM" != "MIGRATE-4" ]; then
@@ -167,7 +174,7 @@ jobs:
             echo "expect_sha=${EXPECT_SHA:-unset}"
 
             DIR="$(dirname "$(find /opt/cn/ops-m4-out -name m4.sql -type f 2>/dev/null | head -1)")"
-            if [ -z "${DIR:-}" ] || [ ! -f "$DIR/m4.sql" ] || [ ! -f "$DIR/m4.pre.sql" ]; then
+            if [ -z "${DIR:-}" ] || [ ! -f "$DIR/m4.sql" ] || [ ! -f "$DIR/m4.pre.sql" ] || [ ! -f "$DIR/m4.verify.sql" ]; then
               echo "::error::ECS 上未找到生成的 SQL 文件，scp 步骤可能失败"
               exit 1
             fi
@@ -186,14 +193,23 @@ jobs:
             fi
             echo "sha256 校验通过"
 
-            # dry → 只跑只读预检；apply → 完整脚本（预检 + 单事务写入 + 核对）
-            if [ "$MODE" = "apply" ]; then
-              FILE="$DIR/m4.sql"
-              echo ">>> APPLY：即将写入 .cn 生产库（单事务，出错整体回滚）"
-            else
-              FILE="$DIR/m4.pre.sql"
-              echo ">>> DRY：只读预检，本轮不写入任何数据"
-            fi
+            # dry    → 只读预检
+            # verify → 预检 + 全量 INSERT + ROLLBACK（真实 schema 演练，零改动）
+            # apply  → 预检 + 全量 INSERT + COMMIT + 核对
+            case "$MODE" in
+              apply)
+                FILE="$DIR/m4.sql"
+                echo ">>> APPLY：即将写入 .cn 生产库（单事务，出错整体回滚）"
+                ;;
+              verify)
+                FILE="$DIR/m4.verify.sql"
+                echo ">>> VERIFY：真实 schema 全量演练，末尾 ROLLBACK，生产库零改动"
+                ;;
+              *)
+                FILE="$DIR/m4.pre.sql"
+                echo ">>> DRY：只读预检，本轮不写入任何数据"
+                ;;
+            esac
 
             docker exec -i cn-postgres sh -c \
               'psql -X -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -f -' < "$FILE"
