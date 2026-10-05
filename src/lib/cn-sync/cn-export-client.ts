@@ -99,16 +99,20 @@ export async function fetchIncremental(params: {
  * 增量分页循环（keyset 复合游标）：
  * - 下一页同时携带 since=nextSince 与 sinceId=nextId；
  * - **仅在 `items.length === limit` 时继续**，否则停止（不足一页 = 已到底）；
- * - fetchPage 返回 null（失败）→ 立即停止并回报 error（绝不视作空结果）。
+ * - fetchPage 返回 null（失败）→ 立即停止并回报 error（绝不视作空结果）；
+ * - **时间预算**：`opts.deadlineAt`（epoch ms）存在时，在**每个 item 处理前**校验
+ *   `Date.now() >= deadlineAt` → 立即 `return { error: "time-budget-exceeded" }`，
+ *   **不处理该项**（安全停在「整条产品边界」，绝不半写）。
  *
  * `fetchPage` 可注入（单测用），默认走真实 fetchIncremental。
  */
 export async function iterateIncremental(
   handler: (item: CnExportItem) => Promise<void>,
-  opts: { since?: string; limit?: number; fetchPage?: FetchPageFn } = {}
+  opts: { since?: string; limit?: number; fetchPage?: FetchPageFn; deadlineAt?: number } = {}
 ): Promise<{ processed: number; pages: number; error: string | null }> {
   const limit = opts.limit ?? 100;
   const fetchPage: FetchPageFn = opts.fetchPage ?? fetchIncremental;
+  const deadlineAt = opts.deadlineAt;
 
   let since = opts.since;
   let sinceId: string | undefined;
@@ -122,6 +126,10 @@ export async function iterateIncremental(
     }
     pages++;
     for (const item of page.items) {
+      // 时间预算守卫：超时则停在当前项之前（不处理该项），避免半写与平台强杀
+      if (deadlineAt !== undefined && Date.now() >= deadlineAt) {
+        return { processed, pages, error: "time-budget-exceeded" };
+      }
       await handler(item);
       processed++;
     }

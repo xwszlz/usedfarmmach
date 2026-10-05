@@ -28,8 +28,8 @@ import {
   type CnExportItem,
   type FetchPageFn,
 } from "@/lib/cn-sync/cn-export-client";
-import { resolveCnSyncClient, writeCnSyncRunLog } from "@/lib/cn-sync/runtime";
-import { pushToGroup } from "@/lib/wecom/group-webhook";
+import { resolveCnSyncClient, writeCnSyncRunLog, type CnSyncStatus } from "@/lib/cn-sync/runtime";
+import { pushToGroup, type GroupPushPayload } from "@/lib/wecom/group-webhook";
 
 /** 系统卖家邮箱：.com /api/products 可见性规则以该 email 为判定键 */
 export const MINIAPP_SELLER_EMAIL = "miniprogram@shendiao.com";
@@ -51,6 +51,8 @@ export interface SyncStats {
   brandMismatch: number;
   /** 认领时命中「同 id 但机型/年份不符」的产品数（血缘可疑，仅上报） */
   lineageMismatch: number;
+  /** 时间预算耗尽：本轮未跑完（安全停在产品边界，下一轮继续）。纯增量字段 */
+  partial?: boolean;
   error?: string;
 }
 
@@ -493,6 +495,8 @@ export interface RunCnProductSyncOptions {
   fetchPage?: FetchPageFn;
   /** 分页尺寸覆盖（单测用） */
   limit?: number;
+  /** 注入告警推送函数（单测用）；缺省走真实企微 webhook */
+  pushAlert?: (payload: GroupPushPayload) => Promise<void>;
 }
 
 /**
@@ -514,11 +518,16 @@ export async function runCnProductSync(
     brandMismatch: 0,
     lineageMismatch: 0,
   };
-  let status: "success" | "error" = "success";
+  // 时间预算：默认 240s（Vercel Pro 单函数上限 300s，留 60s 给收尾写日志 + 推送）
+  const budgetMs = Number(process.env.CN_SYNC_RUN_BUDGET_MS ?? 240_000);
+  const effectiveBudgetMs = Number.isFinite(budgetMs) && budgetMs > 0 ? budgetMs : 240_000;
+  const deadlineAt = t0 + effectiveBudgetMs;
+  let status: CnSyncStatus = "success";
   let errorMessage: string | undefined;
   let client: PrismaClient | null = null;
   const mismatchBrands = new Map<string, string>(); // brandId -> nameZh（跨产品去重）
   const lineageWarnings = new Set<string>(); // 血缘可疑告警（跨产品去重）
+  const pushAlert = opts.pushAlert ?? pushToGroup; // 告警推送（单测可注入）
 
   try {
     client = await resolveCnSyncClient(opts.client);
@@ -548,10 +557,21 @@ export async function runCnProductSync(
           );
         }
       },
-      { since: opts.since, limit: opts.limit ?? INCREMENTAL_PAGE_LIMIT, fetchPage: opts.fetchPage }
+      {
+        since: opts.since,
+        limit: opts.limit ?? INCREMENTAL_PAGE_LIMIT,
+        fetchPage: opts.fetchPage,
+        deadlineAt,
+      }
     );
     stats.processed = result.processed;
-    if (result.error) {
+    if (result.error === "time-budget-exceeded") {
+      // 时间预算耗尽：本轮未跑完（安全停在产品边界）→ 记为 partial（非 error，避免拖垮对账护栏②）
+      status = "partial";
+      errorMessage = "time-budget-exceeded";
+      stats.partial = true;
+      stats.ok = false;
+    } else if (result.error) {
       status = "error";
       errorMessage = result.error;
       stats.ok = false;
@@ -578,7 +598,7 @@ export async function runCnProductSync(
       "产品已同步并挂到该品牌，但因 .com 可见性规则要求 isImported=true，当前网站不可见。",
       "请人工确认该品牌是否为进口品牌并修正标记，或核对是否同名误匹配。"
     );
-    await pushToGroup({
+    await pushAlert({
       title: "⚠️ .cn→.com 同步：品牌 isImported 不一致，产品可能不可见",
       lines,
       level: "warn",
@@ -587,7 +607,7 @@ export async function runCnProductSync(
 
   // 血缘可疑（同 id 但机型/年份不符）：每轮最多 1 条告警（循环结束后统一推，去重后最多列 10 条）
   if (lineageWarnings.size > 0) {
-    await pushToGroup({
+    await pushAlert({
       title: "⚠️ .cn→.com 同步：同 id 但机型不一致（血缘可疑，已认领未覆盖）",
       lines: [
         ...Array.from(lineageWarnings).slice(0, 10),
@@ -598,8 +618,20 @@ export async function runCnProductSync(
     });
   }
 
-  if (!stats.ok) {
-    await pushToGroup({
+  // partial（时间预算耗尽）：本轮未跑完 → 独立告警（不复用「❌ 失败」分支）
+  if (stats.partial) {
+    await pushAlert({
+      title: "⚠️ .cn→.com 同步未跑完（时间预算耗尽）",
+      lines: [
+        `本轮已处理 ${stats.processed} 台（created=${stats.created} updated=${stats.updated} skipped=${stats.skipped} adopted=${stats.adopted} conflict=${stats.conflict} errors=${stats.errors}）。`,
+        `预算 ${effectiveBudgetMs}ms 内未跑完全量；已安全停在产品边界（无半写），下一轮从同一水位继续（幂等）。`,
+      ],
+      level: "warn",
+    });
+  }
+
+  if (status === "error") {
+    await pushAlert({
       title: "❌ .cn→.com 产品增量同步失败",
       lines: [
         `原因：${errorMessage ?? "unknown"}`,

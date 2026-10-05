@@ -15,7 +15,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { runCnProductSync } from "@/lib/cn-sync/run-sync";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+export const maxDuration = 300; // Vercel Pro 单函数上限 300s；同步预算 240s（CN_SYNC_RUN_BUDGET_MS）+ 60s 收尾写日志/推送
 
 function isAuthorized(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
