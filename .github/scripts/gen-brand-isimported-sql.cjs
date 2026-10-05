@@ -19,6 +19,9 @@
  *              并在事务内用「恰好 N 行 false→true」「0 行 true→false」「Brand 总行数不变」
  *              三重断言保证零误伤、零增删。任何断言失败 → 抛异常 → ON_ERROR_STOP 下整体回滚。
  *
+ * 说明（v2）：apply 作用集 = CONFIRMED（当前 7 行：5 个同名重复行 + 2 个 Agronic 重复对）。
+ *             行数全部由 `CONFIRMED.length` 推导，**不写死**；预期指标随之外同步。
+ *
  * 硬性红线：
  *   - ⛔ 绝不删除任何 Brand 行（决策 #10：品牌归一 = B，只归一/映射，不删除既有 Brand 行）。
  *   - ⛔ 绝不改 `Product.brandId`（不迁移产品到别的品牌行）。
@@ -42,9 +45,11 @@ const OUT_DIR = process.env.OUT_DIR || "/tmp/out";
 const APPLY_TOKEN = "FIX-BRAND-ISIMPORTED";
 
 /* ---------------------------------------------------------------------------
- * 已确认应改为 `isImported = true` 的行 —— apply **唯一**作用对象（5 行）。
- * 判据：与某个 isImported=true 的正牌品牌同名（nameEn 大小写/空格不敏感），
- *       或为明显错别字重复行（麦塞福格森 vs 麦赛福格森）。
+ * 已确认应改为 `isImported = true` 的行 —— apply **唯一**作用对象（行数 = CONFIRMED.length）。
+ * 判据：
+ *   a) 与某个 isImported=true 的正牌品牌同名（nameEn 大小写/空格不敏感）；或
+ *   b) 明显错别字重复行（麦塞福格森 vs 麦赛福格森）；或
+ *   c) 已拍板的进口品牌重复行（Agronic / AGRONIC —— 无同名 true 正牌行，一并置 true）。
  * ------------------------------------------------------------------------- */
 const CONFIRMED = [
   {
@@ -77,10 +82,22 @@ const CONFIRMED = [
     nameEn: "麦塞福格森",
     note: "错别字重复行（「塞」vs「赛」）；正牌 massey-ferguson（麦赛福格森）已 isImported=true",
   },
+  {
+    id: "cmu1bgyf2000fp7snncnxvah",
+    nameZh: "Agronic",
+    nameEn: "Agronic",
+    note: "进口品牌（芬兰 Agronic Oy）；与下一行 AGRONIC 互为重复、均为 false，且**没有**同名 isImported=true 的正牌行 → 一并置 true",
+  },
+  {
+    id: "cmutjcl7c006hyjpcvv9sba7d",
+    nameZh: "AGRONIC",
+    nameEn: "AGRONIC",
+    note: "进口品牌（芬兰 Agronic Oy）；与上一行 Agronic 互为重复、均为 false → 一并置 true",
+  },
 ];
 
 /* ---------------------------------------------------------------------------
- * 待人工确认的行 —— 只出现在 dry 报告里，**绝不**被 apply 触碰（3 行）。
+ * 待人工确认 / 已判定的行 —— 只出现在 dry 报告里，**绝不**被 apply 触碰（行数 = PENDING.length）。
  * 说明：以下 id 原样复制自任务清单；dry 的 `found` 列会逐一确认其存在性，
  *       若某行 found=0 说明 id 需校正（dry 为只读，重跑无副作用）。
  * ------------------------------------------------------------------------- */
@@ -89,19 +106,7 @@ const PENDING = [
     id: "cmutjj8xt008byjpc7b60dkbb",
     nameZh: "世达尔",
     nameEn: "世达尔",
-    note: "⚠️ 疑似国产品牌 → 未确认前保持 false（若确为国产则**不应**改）",
-  },
-  {
-    id: "cmu1bgyf2000fp7snncnxvah",
-    nameZh: "Agronic",
-    nameEn: "Agronic",
-    note: "⚠️ 与 AGRONIC 行互为重复；无同名 isImported=true 行，需人工判定是否进口品牌",
-  },
-  {
-    id: "cmutjcl7c006hyjpcvv9sba7d",
-    nameZh: "AGRONIC",
-    nameEn: "AGRONIC",
-    note: "⚠️ 同上（Agronic 重复对）",
+    note: "已查证为国产（上海世达尔 Modern Agricultural Machinery，IHI Agri-Tech 51% + 上海电气 49%，注册地上海、在华生产，2023-12 已注销）→ 保持 false，不改",
   },
 ];
 
@@ -225,7 +230,10 @@ function buildDry() {
   L.push("\\echo '=== 0. 连接与库身份 ==='");
   L.push("SELECT current_database() AS db, current_user AS usr;");
   L.push("");
-  L.push("\\echo '=== 1. 已知候选行（CONFIRMED=5, PENDING=3；found=false 表示 id 不存在）==='");
+  L.push(
+    "\\echo '=== 1. 已知候选行（CONFIRMED=" + CONFIRMED.length +
+      ", PENDING=" + PENDING.length + "；found=false 表示 id 不存在）==='"
+  );
   L.push(knownCandidatesQuery(CONFIRMED, 1));
   L.push("");
   L.push(knownCandidatesQuery(PENDING, 100));
@@ -235,11 +243,20 @@ function buildDry() {
   L.push(discoveryQuery());
   L.push("");
   L.push("\\echo '=== 3. 预期影响（apply 作用集 = CONFIRMED，精确数字）==='");
-  L.push("\\echo '    期望：confirmed_ids=5, confirmed_found=5, will_flip_false_to_true=5, already_true=0'");
-  L.push("\\echo '    若 will_flip < 5 或 found < 5：先查因（id 笔误 / 已被手工改过），不要 apply。'");
+  L.push(
+    "\\echo '    期望：confirmed_ids=" + CONFIRMED.length + ", confirmed_found=" + CONFIRMED.length +
+      ", will_flip_false_to_true=" + CONFIRMED.length + ", already_true=0'"
+  );
+  L.push(
+    "\\echo '    若 will_flip < " + CONFIRMED.length + " 或 found < " + CONFIRMED.length +
+      "：先查因（id 笔误 / 已被手工改过），不要 apply。'"
+  );
   L.push(expectedImpactQuery());
   L.push("");
-  L.push("\\echo '=== 4. 全表基线（记住这三个数，apply 后 brand_total 应不变、imported_true_total 应 +5）==='");
+  L.push(
+    "\\echo '=== 4. 全表基线（记住这三个数，apply 后 brand_total 应不变、imported_true_total 应 +" +
+      CONFIRMED.length + "）==='"
+  );
   L.push(baselineQuery());
   L.push("");
   L.push("\\echo '=== DRY 完成：本模式未写入任何数据 ==='");
@@ -254,7 +271,7 @@ function buildVerify() {
   L.push("\\echo '=== V0. 连接与库身份 ==='");
   L.push("SELECT current_database() AS db, current_user AS usr;");
   L.push("");
-  L.push("\\echo '=== V1. 断言：CONFIRMED 5 行均存在且 isImported=true（失败即抛异常）==='");
+  L.push("\\echo '=== V1. 断言：CONFIRMED " + CONFIRMED.length + " 行均存在且 isImported=true（失败即抛异常）==='");
   L.push("DO $$");
   L.push("DECLARE bad integer;");
   L.push("BEGIN");
@@ -265,7 +282,7 @@ function buildVerify() {
   L.push("  IF bad <> 0 THEN");
   L.push("    RAISE EXCEPTION 'VERIFY FAIL: % 个目标行未变为 true 或不存在', bad;");
   L.push("  END IF;");
-  L.push("  RAISE NOTICE 'VERIFY OK: 全部 5 个目标行 isImported=true';");
+  L.push("  RAISE NOTICE 'VERIFY OK: 全部 " + CONFIRMED.length + " 个目标行 isImported=true';");
   L.push("END $$;");
   L.push("");
   L.push("\\echo '=== V2. 目标行现状（逐个核对；全部应为 t）==='");
@@ -274,7 +291,10 @@ function buildVerify() {
   L.push("\\echo '=== V3. 残余「同名却 false」重复行（理想为 0；若非 0 属追加候选，人工复核）==='");
   L.push(discoveryQuery());
   L.push("");
-  L.push("\\echo '=== V4. 全表基线（与 dry 的 §4 对比：brand_total 必须相等、imported_true_total 应 +5）==='");
+  L.push(
+    "\\echo '=== V4. 全表基线（与 dry 的 §4 对比：brand_total 必须相等、imported_true_total 应 +" +
+      CONFIRMED.length + "）==='"
+  );
   L.push(baselineQuery());
   L.push("");
   L.push("\\echo '=== VERIFY 完成：只读，未改动任何数据 ==='");
@@ -285,7 +305,7 @@ function buildVerify() {
 function buildApply() {
   const L = [];
   L.push(header("APPLY（单事务；逐行断言；出错整体回滚）"));
-  L.push('\\echo \'>>> APPLY：即将修正 .cn 库 Brand.isImported（仅 5 行，单事务）\'');
+  L.push("\\echo '>>> APPLY：即将修正 .cn 库 Brand.isImported（仅 " + CONFIRMED.length + " 行，单事务）'");
   L.push("BEGIN;");
   L.push("");
   L.push("-- 事务内基线快照：用于「恰好 N 行翻转 / 0 行反向翻转 / 行数不变」的收尾断言");
