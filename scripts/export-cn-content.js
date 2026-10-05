@@ -107,14 +107,32 @@ async function exportArticles(dateStr, backfill) {
 }
 
 async function exportIntelligence(dateStr) {
-  const dayStart = new Date(`${dateStr}T00:00:00.000Z`);
+  // ── 2026-10-05 加固（与 .cn 导入端对称）──
+  // 事故：MarketIntel.date 是 `timestamp without time zone`，历史写入端会把它落成
+  // 「北京时间 00:00 的 UTC 表示」（如 2026-10-05 → 2026-10-04T16:00:00Z），
+  // 与这里的「文件名日期 00:00Z~23:59Z」天然错位 8 小时 ⇒ 查询可能命中 0 行，
+  // 于是把已有的 intelligence_YYYY-MM-DD.json 直接覆盖成空文件（曾把 33K 的
+  // intelligence_2026-09-29.json 写成 2 字节，导致 .cn 该期情报丢失）。
+  // 两层加固：
+  //   1) 命中 0 行时**不写文件**（宁可不更新，也绝不误清空既有内容）；
+  //   2) 输出 date 统一归一化为「文件名日期 00:00Z」，与 .cn 导入端写入口径一致。
+  const targetStart = new Date(`${dateStr}T00:00:00.000Z`);
+  const dayStart = targetStart;
   const dayEnd = new Date(`${dateStr}T23:59:59.999Z`);
   const rows = await prisma.marketIntel.findMany({
     where: { date: { gte: dayStart, lte: dayEnd } },
     orderBy: { sortOrder: 'asc' },
   });
-  const items = rows.map(r => pick(r, INTEL_FIELDS));
+  const items = rows.map(r => {
+    const o = pick(r, INTEL_FIELDS);
+    o.date = `${dateStr}T00:00:00.000Z`; // 归一化：期数日期恒等于文件名日期
+    return o;
+  });
   const out = path.join(REPORTS_DIR, `intelligence_${dateStr}.json`);
+  if (items.length === 0) {
+    console.warn(`WARN: 0 intelligence rows for ${dateStr}, keep existing file untouched: ${out}`);
+    return;
+  }
   fs.writeFileSync(out, JSON.stringify(items, null, 2));
   console.log(`Exported ${items.length} intelligence items -> ${out}`);
 }

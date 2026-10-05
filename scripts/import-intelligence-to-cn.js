@@ -78,15 +78,31 @@ async function main() {
     catch (e) { console.warn(`WARN: skip bad json ${file}: ${e.message}`); continue; }
     if (!Array.isArray(items) || items.length === 0) continue;
 
-    const dayStart = new Date(`${dateStr}T00:00:00.000Z`);
-    const dayEnd = new Date(`${dateStr}T23:59:59.999Z`);
-
-    // 幂等：删除该日全部情报再写入
-    await prisma.marketIntel.deleteMany({ where: { date: { gte: dayStart, lte: dayEnd } } });
+    // ── 幂等删除（2026-10-05 修复）──
+    // 历史 bug：原先按「文件名日期 00:00Z~23:59Z」删除，但文件内 date 字段实际是
+    // 北京时间 00:00 的 UTC 表示（2026-10-05 → 2026-10-04T16:00:00Z），两者错位 8 小时
+    // ⇒ deleteMany 命中 0 行 ⇒ 每次部署都重复追加。实测 main 当日 9 次部署后，
+    // 同一批 10 条情报被插 9 次（.com/Neon 与 .cn 双站均中招）。
+    // 现改为「本批 text 业务键 + 目标日 ±14 小时宽窗」删除：
+    //   - ±14h 覆盖一切可能的时区偏移植（地球上最大 UTC 偏移为 ±14h），
+    //     既能命中「本日但被时区错位写入」的历史行、并顺带清掉存量重复行，
+    //     又绝不会误伤相邻日期（相邻日与之相距 24h，落在窗口之外）；
+    //   - text 限定进一步保证不会误删其它日期的不同情报。
+    const targetStart = new Date(`${dateStr}T00:00:00.000Z`);
+    const winStart = new Date(targetStart.getTime() - 14 * 3600 * 1000);
+    const winEnd = new Date(targetStart.getTime() + 14 * 3600 * 1000);
+    const texts = items.map((i) => i.text).filter(Boolean);
+    const del = await prisma.marketIntel.deleteMany({
+      where: texts.length
+        ? { text: { in: texts }, date: { gte: winStart, lte: winEnd } }
+        : { date: { gte: winStart, lte: winEnd } },
+    });
+    if (del.count) console.log(`  [dedupe] ${dateStr} 清除旧行 ${del.count} 条`);
 
     for (const it of items) {
       try {
-        await prisma.marketIntel.create({ data: toData(it) });
+        // date 归一化到「文件名日期 00:00Z」，保证页面「最新更新」与实际期数一致
+        await prisma.marketIntel.create({ data: { ...toData(it), date: targetStart } });
         total++;
       } catch (e) {
         console.error(`ERROR import intel ${dateStr} #${it.sortOrder}: ${e.message}`);
