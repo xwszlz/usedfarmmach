@@ -4,7 +4,8 @@
  * 职责：
  * - 仅在 SITE=cn 生效（否则直接 404），防止 .com 侧误暴露 Neon 数据；
  * - 独立密钥 CN_SYNC_API_KEY 鉴权（请求头 x-sync-key），常量时间比较，fail-closed；
- * - 源头过滤：小程序（seller.email=miniprogram@shendiao.com）+ active + 国际品牌（brand.isImported）；
+ * - 源头过滤：active + 国际品牌（brand.isImported=true）——不再限定发布渠道（seller.email）；
+ *   .cn 现有小程序 / .cn 网站多个发布渠道，国产品牌仍由 brand.isImported 拦截；
  * - 两种模式：
  *   · 增量（默认）：keyset 复合游标 (updatedAt, id) 单调推进，无 since = 全量拉取，
  *     返回白名单裁剪后的产品数组 + nextSince/nextId；仅传 since 的老调用方行为不变；
@@ -22,6 +23,8 @@ import { pickProductWhitelist } from "@/lib/cn-sync/field-whitelist";
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
+// ⚠️ 保留以兼容历史语义：源头过滤已不再按 seller.email 限定发布渠道，
+// 该常量在本文件内暂无引用，仅保留历史判定键（如需再次按渠道过滤时复用）。
 const MINIAPP_SELLER_EMAIL = "miniprogram@shendiao.com";
 const LIMIT_DEFAULT = 100;
 const LIMIT_MAX = 500;
@@ -89,10 +92,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const cursor = sp.get("cursor"); // full 模式分页游标（Product.id）
   const sinceId = sp.get("sinceId"); // 增量模式 keyset 复合游标（与 since 配对，解决同毫秒漏项）
 
-  // ③ 源头过滤：小程序 + active + 国际品牌
+  // ③ 源头过滤：active + 国际品牌（不再限定 seller.email —— .cn 现有小程序 / 网站多个发布渠道）
   const baseWhere: Prisma.ProductWhereInput = {
     status: "active",
-    seller: { email: MINIAPP_SELLER_EMAIL },
     brand: { isImported: true },
   };
 
