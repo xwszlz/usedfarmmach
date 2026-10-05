@@ -581,6 +581,109 @@ async function main(): Promise<void> {
     }
   });
 
+  // ── 冲突抑制账本（Commit 2）──
+  await it("upsertProduct()：同一冲突项第二次出现（hash 未变）→ 抑制告警（conflictAlert=null）", async () => {
+    const item = sampleItem();
+    const store = new Map<string, any>();
+    const calls = { upsert: 0, update: 0 };
+    const fake = {
+      productSyncMap: { findUnique: async () => null, update: async () => ({}), upsert: async () => ({}) },
+      product: {
+        findUnique: async () => ({
+          id: item.id,
+          sellerId: "other-seller",
+          modelName: item.modelName,
+          year: item.year,
+        }),
+      },
+      user: { findUnique: async () => ({ id: "sys-seller" }) },
+      productSyncConflict: {
+        findUnique: async (a: any) => store.get(a.where.cnProductId) ?? null,
+        upsert: async (a: any) => {
+          calls.upsert++;
+          store.set(a.where.cnProductId, a.create);
+          return {};
+        },
+        update: async (a: any) => {
+          calls.update++;
+          store.set(a.where.cnProductId, { ...store.get(a.where.cnProductId), ...a.data });
+          return {};
+        },
+      },
+      cnSyncRunLog: { create: async () => ({}) },
+    } as unknown as PrismaClient;
+
+    const first = await upsertProduct(fake, item);
+    assert.equal(first.result, "conflict");
+    assert.ok(first.conflictAlert, "首次冲突应告警");
+    const second = await upsertProduct(fake, item);
+    assert.equal(second.result, "conflict");
+    assert.equal(second.conflictAlert, null, "同 hash 且近期已告警 → 不再告警");
+    assert.equal(calls.upsert, 1, "第二次不应再 upsert 账本（走快跳）");
+    assert.equal(calls.update, 1, "第二次应只刷 lastSeenAt（1 次 update）");
+  });
+
+  await it("runCnProductSync()：多台冲突 → 汇总告警每轮只推 1 条，stats.conflict 仍为总数", async () => {
+    const store = new Map<string, any>();
+    const alerts: GroupPushPayload[] = [];
+    const fake = {
+      productSyncMap: { findUnique: async () => null, update: async () => ({}), upsert: async () => ({}) },
+      product: {
+        findUnique: async (a: any) => ({ id: a.where.id, sellerId: "other-seller", modelName: "X", year: 2000 }),
+      },
+      user: { findUnique: async () => ({ id: "sys-seller" }) },
+      productSyncConflict: {
+        findUnique: async (a: any) => store.get(a.where.cnProductId) ?? null,
+        upsert: async (a: any) => {
+          store.set(a.where.cnProductId, a.create);
+          return {};
+        },
+        update: async (a: any) => {
+          store.set(a.where.cnProductId, a.update);
+          return {};
+        },
+      },
+      cnSyncRunLog: { create: async () => ({}) },
+    } as unknown as PrismaClient;
+
+    const res = await runCnProductSync({
+      client: fake,
+      limit: 10,
+      fetchPage: async () => ({
+        items: [{ id: "c1" }, { id: "c2" }, { id: "c3" }],
+        nextSince: null,
+        nextId: null,
+      }),
+      pushAlert: async (p) => {
+        alerts.push(p);
+      },
+    });
+    assert.equal(res.conflict, 3, "stats.conflict 为本轮遇见总数");
+    const conflictMsgs = alerts.filter((a) => a.title.includes("id 冲突已跳过"));
+    assert.equal(conflictMsgs.length, 1, "每轮冲突汇总只推 1 条（不再逐台 3 条）");
+    assert.ok(conflictMsgs[0].lines.some((l) => l.includes("c1")), "汇总应列出冲突 id");
+  });
+
+  await it("upsertProduct()：冲突表缺失（P2021）→ 退化为旧行为且不中断（不抛异常）", async () => {
+    const fake = {
+      productSyncMap: { findUnique: async () => null, update: async () => ({}), upsert: async () => ({}) },
+      product: {
+        findUnique: async () => ({ id: "x", sellerId: "other-seller", modelName: "X", year: 2000 }),
+      },
+      user: { findUnique: async () => ({ id: "sys-seller" }) },
+      productSyncConflict: {
+        findUnique: async () => {
+          throw new Error("P2021: The table `ProductSyncConflict` does not exist");
+        },
+      },
+      cnSyncRunLog: { create: async () => ({}) },
+    } as unknown as PrismaClient;
+
+    const res = await upsertProduct(fake, sampleItem());
+    assert.equal(res.result, "conflict", "表缺失也应正常判定为 conflict（不抛异常）");
+    assert.equal(res.conflictAlert, null, "退化路径不进入汇总告警集合");
+  });
+
   console.log(`\n结果：${passed} passed, ${failures.length} failed`);
   if (failures.length > 0) {
     console.error(`失败用例：\n  - ${failures.join("\n  - ")}`);

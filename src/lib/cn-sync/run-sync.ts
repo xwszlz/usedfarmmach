@@ -321,15 +321,100 @@ export interface UpsertOutcome {
    * 用于捕获「同一 cuid 被复用为另一台机器」这类静默冻结失败。
    */
   lineageWarning: string | null;
+  /**
+   * 本轮「应就 id 冲突告警」的条目（抑制账本裁决：首次 / hash 变化 / 距上次告警超阈值）。
+   * 由 runCnProductSync 汇总后**每轮只推一条**；被抑制的冲突返回 null。
+   */
+  conflictAlert: { cnProductId: string; neonProductId: string } | null;
+}
+
+/**
+ * 冲突抑制账本（ProductSyncConflict）：对「id 被 .com 非同步产品占用」的冲突做
+ * 「快跳 + 告警限流」，避免每轮重判 + 每台重复告警。
+ *
+ * 决策：
+ * - 命中且 sourceHash 相同 且 距上次告警未超阈值 → 仅刷 lastSeenAt，**不告警**（返回 false）；
+ * - 未命中 / hash 已变 / 距上次告警已超阈值 → 记/刷账本（含 lastAlertAt）→ **需告警**（返回 true）；
+ *
+ * 容错：账本读写失败（典型：新表尚未建，Prisma P2021）→ console.warn 并**退化为旧的
+ *       逐台告警**，绝不因此中断同步（便于灰度/回滚）。
+ *
+ * ⚠️ 本表刻意独立于 ProductSyncMap：后者 isActive=true 的行会被 reconcile 物理删除，
+ *    把冲突写进去会误伤 .com 自有的那批产品（破坏对账护栏③）。
+ */
+async function handleConflict(
+  client: PrismaClient,
+  input: { cnProductId: string; neonProductId: string; sourceHash: string; sellerId: string }
+): Promise<boolean> {
+  const now = new Date();
+  const hoursRaw = Number(process.env.CN_SYNC_CONFLICT_ALERT_HOURS ?? 24);
+  const alertHours = Number.isFinite(hoursRaw) && hoursRaw >= 0 ? hoursRaw : 24;
+  const alertWindowMs = alertHours * 3_600_000;
+
+  try {
+    const row = await client.productSyncConflict.findUnique({
+      where: { cnProductId: input.cnProductId },
+    });
+
+    if (row && row.sourceHash === input.sourceHash) {
+      const lastAlert = row.lastAlertAt ? row.lastAlertAt.getTime() : 0;
+      if (now.getTime() - lastAlert < alertWindowMs) {
+        // 快跳：同内容且近期已告警 → 仅刷新 lastSeenAt，不告警
+        await client.productSyncConflict.update({
+          where: { cnProductId: input.cnProductId },
+          data: { lastSeenAt: now },
+        });
+        return false;
+      }
+      // 同内容但告警已过期 → 刷新并再次告警
+      await client.productSyncConflict.update({
+        where: { cnProductId: input.cnProductId },
+        data: { lastSeenAt: now, lastAlertAt: now },
+      });
+      return true;
+    }
+
+    // 首次出现 / 内容已变 → 记账并告警
+    await client.productSyncConflict.upsert({
+      where: { cnProductId: input.cnProductId },
+      create: {
+        cnProductId: input.cnProductId,
+        neonProductId: input.neonProductId,
+        sourceHash: input.sourceHash,
+        reason: "id-owned-by-other-seller",
+        lastSeenAt: now,
+        lastAlertAt: now,
+      },
+      update: { sourceHash: input.sourceHash, lastSeenAt: now, lastAlertAt: now },
+    });
+    return true;
+  } catch (e) {
+    // 灰度兜底：表不存在（P2021）等 → 退化为旧的逐台告警，绝不中断同步
+    console.warn(
+      `[cn-sync] ProductSyncConflict 读写失败，退化为逐台告警：${
+        e instanceof Error ? e.message : String(e)
+      }`
+    );
+    await pushToGroup({
+      title: "⚠️ .cn→.com 同步 id 冲突",
+      lines: [
+        `id \`${input.cnProductId}\` 已被非同步产品占用（sellerId=${input.sellerId}），已跳过（绝不覆盖）`,
+        `处置：核对该 id 是否为 .cn 同名产品；若是历史独立创建，需人工决定是否迁移。`,
+      ],
+      level: "warn",
+    });
+    return false;
+  }
 }
 
 /**
  * 幂等 upsert 一条产品。
- * 返回 { result, brandMismatchBrand, lineageWarning }：
+ * 返回 { result, brandMismatchBrand, lineageWarning, conflictAlert }：
  * - result：created | updated | skipped（哈希未变）| adopted（同 id 且同属系统卖家 → 仅补账本）
  *           | conflict（id 被非同步产品占用，绝不覆盖）；
  * - brandMismatchBrand：命中 isImported 不一致的既有品牌时非空（仅上报，不覆盖）；
- * - lineageWarning：认领时「同 id 但机型/年份不符」时非空（仅上报，不阻断认领）。
+ * - lineageWarning：认领时「同 id 但机型/年份不符」时非空（仅上报，不阻断认领）；
+ * - conflictAlert：本轮应就 id 冲突告警的条目（抑制账本裁决），否则 null。
  */
 export async function upsertProduct(
   client: PrismaClient,
@@ -364,16 +449,21 @@ export async function upsertProduct(
             `.cn 侧为「${inModel} / ${inYear}」`;
         }
       } else {
-        // 真正的 id 冲突：被非同步产品占用 → 跳过 + 告警，绝不覆盖
-        await pushToGroup({
-          title: "⚠️ .cn→.com 同步 id 冲突",
-          lines: [
-            `id \`${neonId}\` 已被非同步产品占用（sellerId=${existing.sellerId}），已跳过（绝不覆盖）`,
-            `处置：核对该 id 是否为 .cn 同名产品；若是历史独立创建，需人工决定是否迁移。`,
-          ],
-          level: "warn",
+        // 真正的 id 冲突：被非同步产品占用 → 跳过（绝不覆盖）。
+        // 用抑制账本做「快跳 + 告警限流」，由上层每轮汇总一条告警（不再逐台推）。
+        const conflictHash = contentHash(item);
+        const shouldAlert = await handleConflict(client, {
+          cnProductId: neonId,
+          neonProductId: neonId,
+          sourceHash: conflictHash,
+          sellerId: existing.sellerId,
         });
-        return { result: "conflict", brandMismatchBrand: null, lineageWarning: null };
+        return {
+          result: "conflict",
+          brandMismatchBrand: null,
+          lineageWarning: null,
+          conflictAlert: shouldAlert ? { cnProductId: neonId, neonProductId: neonId } : null,
+        };
       }
     }
   }
@@ -400,7 +490,7 @@ export async function upsertProduct(
         lastSeenAt: new Date(),
       },
     });
-    return { result: "adopted", brandMismatchBrand: null, lineageWarning };
+    return { result: "adopted", brandMismatchBrand: null, lineageWarning, conflictAlert: null };
   }
 
   if (map && map.isActive && map.sourceHash === hash) {
@@ -409,7 +499,7 @@ export async function upsertProduct(
       where: { cnProductId: neonId },
       data: { lastSeenAt: new Date() },
     });
-    return { result: "skipped", brandMismatchBrand: null, lineageWarning: null };
+    return { result: "skipped", brandMismatchBrand: null, lineageWarning: null, conflictAlert: null };
   }
 
   const sellerId = await resolveSystemSeller(client);
@@ -481,7 +571,7 @@ export async function upsertProduct(
     });
   });
 
-  return { result: map ? "updated" : "created", brandMismatchBrand, lineageWarning: null };
+  return { result: map ? "updated" : "created", brandMismatchBrand, lineageWarning: null, conflictAlert: null };
 }
 
 // ────────────────────────── 主入口 ──────────────────────────
@@ -528,6 +618,7 @@ export async function runCnProductSync(
   const mismatchBrands = new Map<string, string>(); // brandId -> nameZh（跨产品去重）
   const lineageWarnings = new Set<string>(); // 血缘可疑告警（跨产品去重）
   const pushAlert = opts.pushAlert ?? pushToGroup; // 告警推送（单测可注入）
+  const conflictAlerts = new Set<string>(); // 本轮「需告警」的 id 冲突（抑制账本裁决，跨产品去重）
 
   try {
     client = await resolveCnSyncClient(opts.client);
@@ -548,6 +639,9 @@ export async function runCnProductSync(
           if (outcome.lineageWarning) {
             stats.lineageMismatch += 1;
             lineageWarnings.add(outcome.lineageWarning);
+          }
+          if (outcome.conflictAlert) {
+            conflictAlerts.add(outcome.conflictAlert.cnProductId);
           }
         } catch (e) {
           stats.errors += 1;
@@ -587,6 +681,20 @@ export async function runCnProductSync(
 
   if (client) {
     await writeCnSyncRunLog(client, "incremental", status, stats, Date.now() - t0, errorMessage);
+  }
+
+  // id 冲突（未覆盖）：由抑制账本裁决「本轮需告警」集合，每轮只推 1 条汇总（最多列 10 个 id）
+  if (conflictAlerts.size > 0) {
+    await pushAlert({
+      title: `⚠️ .cn→.com 同步：${conflictAlerts.size} 台 id 冲突已跳过（未覆盖）`,
+      lines: [
+        ...Array.from(conflictAlerts).slice(0, 10).map((id) => `- \`${id}\``),
+        `本轮共遇见 ${stats.conflict} 台冲突（含已抑制的重复项）；以上 ${conflictAlerts.size} 台为本轮需关注项。`,
+        "这些 id 在 .com 侧已被「非同步来源」产品占用，同步器按设计不覆盖。",
+        "处置：核对该 id 是否为 .cn 同名产品；若是历史独立创建，需人工决定是否迁移。",
+      ],
+      level: "warn",
+    });
   }
 
   // 品牌 isImported 不一致：每轮最多 1 条告警（按 brandId 去重，循环结束后统一推）

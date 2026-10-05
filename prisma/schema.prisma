@@ -2262,3 +2262,19 @@ model CnSyncRunLog {
   @@index([job, startedAt])
   @@index([status, startedAt])
 }
+
+/// .cn→.com 同步「id 冲突」抑制账本。
+/// 语义：导出项 id 已被 .com 侧「非同步系统卖家」的产品占用 → 同步器按设计永不覆盖，
+/// 但也不该每轮重判 + 每台重复告警。本表只做「快跳 + 告警限流」。
+/// 刻意不放进 ProductSyncMap：后者 isActive=true 的行会被 reconcile 物理删除，
+/// 写进去会误伤 .com 自有的那批产品（破坏护栏③）。
+model ProductSyncConflict {
+  cnProductId   String    @id
+  neonProductId String
+  sourceHash    String
+  reason        String    @default("id-owned-by-other-seller")
+  firstSeenAt   DateTime  @default(now())
+  lastSeenAt    DateTime  @default(now())
+  lastAlertAt   DateTime?
+  @@index([lastSeenAt])
+}
