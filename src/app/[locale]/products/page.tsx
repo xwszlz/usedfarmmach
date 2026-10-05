@@ -88,7 +88,8 @@ export default async function ProductsPage({
   // Fetch filter options server-side
   const brands = await prisma.brand.findMany({ select: { nameZh: true, nameEn: true, nameRu: true, nameEs: true, namePt: true, nameAr: true, nameFr: true, nameHi: true }, orderBy: { nameEn: "asc" } });
   const categories = await prisma.category.findMany({ select: { nameZh: true, nameEn: true, nameRu: true, nameEs: true, namePt: true, nameAr: true, nameFr: true, nameHi: true }, orderBy: { nameEn: "asc" } });
-  const locations = await prisma.product.findMany({ where: { status: "active" }, select: { location: true }, distinct: ["location"] });
+  // 地区下拉须与 findMany/count 共用同一可见性口径，否则下拉会列出不可见产品的地区
+  const locations = await prisma.product.findMany({ where: visibleWhere, select: { location: true }, distinct: ["location"] });
 
   const getLabel = (item: any) => {
     const langKey = `name${locale.charAt(0).toUpperCase()}${locale.slice(1)}` as keyof typeof item;

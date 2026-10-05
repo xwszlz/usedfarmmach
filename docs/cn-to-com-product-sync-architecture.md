@@ -48,12 +48,12 @@
 
 ### 1.3 可见性规则（读侧，已就绪，只差数据）
 
-`src/app/api/products/route.ts` L61-87（**本次不改动**）：
+`src/app/api/products/route.ts`（网站分支）与 `src/app/[locale]/products/page.tsx`（列表页）**已统一为共用 `src/lib/product-visibility.ts` 的 `buildWebsiteVisibleWhere()`**（单一事实来源；本次已统一口径，不再各自内联）：
 
 ```
-网站端可见 = OR[
-  status=active AND seller.email != 'miniprogram@shendiao.com',          -- 非小程序来源
-  status=active AND seller.email == 'miniprogram@shendiao.com' AND brand.isImported == true  -- 小程序·国际品牌
+网站端可见 = status=active AND OR[
+  sellerId != <小程序账号id>,        -- 非小程序来源（sellerId 为 NOT NULL 列，无 SQL 三值逻辑）
+  brand.isImported == true           -- 小程序·国际品牌
 ]
 ```
 
@@ -243,7 +243,7 @@ model ProductSyncMap {
 
 | 选项 | 说明 | 取舍 |
 | --- | --- | --- |
-| (a) 只同步「国际品牌 + active」 | `.cn` 导出接口侧预过滤：`source=miniprogram AND status=active AND brand.isImported=true` | ✅ **推荐**。跨境数据最小化（合规优先）；且与 `.com` 既有可见性规则**精确同集合**，零泄漏可能 |
+| (a) 只同步「国际品牌 + active」 | `.cn` 导出接口侧预过滤 `baseWhere = { status: "active", brand: { isImported: true } }`（**已放宽：不含 seller / source 条件**） | ✅ **推荐**。跨境数据最小化（合规优先）；且与 `.com` 既有可见性规则**精确同集合**，零泄漏可能 |
 | (b) 全量同步，交给 `.com` 规则过滤 | 同步所有小程序产品，让 `.com` 的 `OR[...]` 规则筛掉国产 | ❌ 跨境数据量更大（国产农机商业信息也出境），无收益 |
 
 **决策：采用 (a)。** 数据流里只让"本该在 `.com` 展示的那批"过境——这也是既有 `OR[...]` 规则允许的**唯一**子集，等价于"把规则的过滤前移到源头"。`.com` 侧规则仍保留（`.com` 仍是权威判定），形成"双保险"，而非替代。

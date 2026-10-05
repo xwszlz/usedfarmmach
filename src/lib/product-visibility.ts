@@ -48,3 +48,55 @@ export function buildWebsiteVisibleWhere(
     ],
   };
 }
+
+/**
+ * 万能搜索条件（型号 / 品牌名 / 品类名 / 描述 / 位置）。
+ *
+ * 抽为**纯函数**以便单测；字段集合与匹配语义与 `api/products/route.ts` 原实现完全一致。
+ */
+export function buildSearchOrConditions(
+  query: string
+): Prisma.ProductWhereInput[] {
+  return [
+    { modelName: { contains: query, mode: "insensitive" } },
+    { brand: { nameZh: { contains: query, mode: "insensitive" } } },
+    { brand: { nameEn: { contains: query, mode: "insensitive" } } },
+    { category: { nameZh: { contains: query, mode: "insensitive" } } },
+    { category: { nameEn: { contains: query, mode: "insensitive" } } },
+    { descriptionZh: { contains: query, mode: "insensitive" } },
+    { descriptionEn: { contains: query, mode: "insensitive" } },
+    { location: { contains: query, mode: "insensitive" } },
+  ];
+}
+
+/**
+ * 把「万能搜索」条件以 **AND** 语义叠加到既有 where 上（关键修复）。
+ *
+ * ⚠️ 旧实现 `where.OR = [...searchConditions]` 会**整体覆盖**可见性 where 的顶层 `OR`
+ * （来自 {@link buildWebsiteVisibleWhere}），导致带 `?q=` 搜索时可见性过滤失效 →
+ * 泄漏出本该隐藏的产品（如 .cn 小程序账号发布的国产品牌）。
+ *
+ * 现改为把搜索的 `OR` 作为**子条件** push 进顶层 `AND`，令「可见性」与「搜索」同时生效，
+ * 且不覆盖 / 不丢失调用方已写入的其它 `AND` 子条件（brand / category / province / ...）。
+ * AND 具交换律，子条件追加顺序不影响结果。
+ *
+ * @param where 既有 where（可能已含 status / 可见性 OR / 其它 AND 子条件）
+ * @param query 搜索关键字；空值（`""` / `null` / `undefined`）→ 原样返回，不做任何改动
+ * @returns 叠加搜索条件后的**新** where（不修改入参对象）
+ */
+export function applySearchQueryToWhere(
+  where: Prisma.ProductWhereInput,
+  query: string | null | undefined
+): Prisma.ProductWhereInput {
+  if (!query) return where;
+  const rawAnd = where.AND;
+  const existingAnd: Prisma.ProductWhereInput[] = Array.isArray(rawAnd)
+    ? rawAnd
+    : rawAnd
+      ? [rawAnd]
+      : [];
+  return {
+    ...where,
+    AND: [...existingAnd, { OR: buildSearchOrConditions(query) }],
+  };
+}
