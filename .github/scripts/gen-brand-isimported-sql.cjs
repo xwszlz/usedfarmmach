@@ -19,8 +19,11 @@
  *              并在事务内用「恰好 N 行 false→true」「0 行 true→false」「Brand 总行数不变」
  *              三重断言保证零误伤、零增删。任何断言失败 → 抛异常 → ON_ERROR_STOP 下整体回滚。
  *
- * 说明（v2）：apply 作用集 = CONFIRMED（当前 7 行：5 个同名重复行 + 2 个 Agronic 重复对）。
+ * 说明（v3）：apply 作用集 = CONFIRMED（当前 6 行：5 个同名重复行 + 1 个 AGRONIC 行）。
  *             行数全部由 `CONFIRMED.length` 推导，**不写死**；预期指标随之外同步。
+ *             v3 变更：移除原「Agronic（cmu1bgyf2000fp7snncnxvah）」一行 —— dry 实测该 id
+ *             在 .cn 库**不存在**（.com 库同样不存在），属任务清单带来的幽灵 id；它挂 0 个产品，
+ *             移除对同步结果零影响。若保留，apply 会在该行的 `IF m <> 1` 断言处抛异常并整体回滚。
  *
  * 硬性红线：
  *   - ⛔ 绝不删除任何 Brand 行（决策 #10：品牌归一 = B，只归一/映射，不删除既有 Brand 行）。
@@ -49,7 +52,8 @@ const APPLY_TOKEN = "FIX-BRAND-ISIMPORTED";
  * 判据：
  *   a) 与某个 isImported=true 的正牌品牌同名（nameEn 大小写/空格不敏感）；或
  *   b) 明显错别字重复行（麦塞福格森 vs 麦赛福格森）；或
- *   c) 已拍板的进口品牌重复行（Agronic / AGRONIC —— 无同名 true 正牌行，一并置 true）。
+ *   c) 已拍板的进口品牌行（AGRONIC —— 无同名 true 正牌行；与其互为重复的 TitleCase 行
+ *      「Agronic」已确认在 .cn 库不存在，v3 移除，见文件头说明）。
  * ------------------------------------------------------------------------- */
 const CONFIRMED = [
   {
@@ -82,17 +86,13 @@ const CONFIRMED = [
     nameEn: "麦塞福格森",
     note: "错别字重复行（「塞」vs「赛」）；正牌 massey-ferguson（麦赛福格森）已 isImported=true",
   },
-  {
-    id: "cmu1bgyf2000fp7snncnxvah",
-    nameZh: "Agronic",
-    nameEn: "Agronic",
-    note: "进口品牌（芬兰 Agronic Oy）；与下一行 AGRONIC 互为重复、均为 false，且**没有**同名 isImported=true 的正牌行 → 一并置 true",
-  },
+  // v3 移除：原「Agronic（cmu1bgyf2000fp7snncnxvah）」—— dry 实测该 id 在 .cn 库不存在，
+  //          .com 库同样不存在（幽灵 id），且挂 0 个产品。保留会让 apply 整体回滚。
   {
     id: "cmutjcl7c006hyjpcvv9sba7d",
     nameZh: "AGRONIC",
     nameEn: "AGRONIC",
-    note: "进口品牌（芬兰 Agronic Oy）；与上一行 Agronic 互为重复、均为 false → 一并置 true",
+    note: "进口品牌（芬兰 Agronic Oy）；.cn 唯一存在的 Agronic 品牌行（TitleCase 重复行已在 v3 移除）→ 置 true",
   },
 ];
 
