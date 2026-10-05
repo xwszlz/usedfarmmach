@@ -1,13 +1,37 @@
 {
-  "date": "2026-09-29",
+  "date": "2026-10-05",
   "eurCny": 7.91,
   "eurRub": "今日无数据",
   "usdCny": 7.25,
-  "agrolineCount": 239,
+  "agrolineCount": 241,
   "machineryPeteCount": 13,
-  "productCount": 6,
+  "productCount": 9,
   "totalCount": 101,
   "topArbitrage": [
+    {
+      "model": "科罗尼 1290(2014)",
+      "rate": "1351.4%",
+      "intlPrice": "50.8万",
+      "domPrice": "3.5万",
+      "spread": "47.3万",
+      "source": "Agroline"
+    },
+    {
+      "model": "科罗尼 F125xc(2017)",
+      "rate": "361.5%",
+      "intlPrice": "27.7万",
+      "domPrice": "6.0万",
+      "spread": "21.7万",
+      "source": "Agroline"
+    },
+    {
+      "model": "科罗尼 CF155XC(2014)",
+      "rate": "205.8%",
+      "intlPrice": "45.9万",
+      "domPrice": "15.0万",
+      "spread": "30.9万",
+      "source": "Mascus"
+    },
     {
       "model": "克拉斯 980(2016)",
       "rate": "155.2%",
@@ -42,10 +66,10 @@
     },
     {
       "model": "克拉斯 970(2021)",
-      "rate": "55.3%",
-      "intlPrice": "253.1万",
+      "rate": "45%",
+      "intlPrice": "236.3万",
       "domPrice": "163.0万",
-      "spread": "90.1万",
+      "spread": "73.3万",
       "source": "Agroline"
     },
     {
@@ -89,11 +113,11 @@
     "白俄罗斯"
   ],
   "keyEvents": [
-    "EUR/CNY 7.91（真实抓取 20260927），USD/CNY 7.25",
-    "Agroline CLAAS 在售 239 条（真实聚合，供给充足）",
+    "EUR/CNY 7.91（真实抓取 20261004），USD/CNY 7.25",
+    "Agroline CLAAS 在售 241 条（真实聚合，供给充足）",
     "MachineryPete 13 条（样本偏旧，不做趋势判断）",
-    "本期 6 台套利率>30%，理论总毛利 574.8 万元",
-    "国际价配对覆盖率仅 10/101 台（9.9%），缺比价基准",
+    "本期 9 台套利率>30%，理论总毛利 657.8 万元",
+    "国际价配对覆盖率仅 13/101 台（12.9%），缺比价基准",
     "ICP备案 冀ICP备2024053719号-4 已通过、长期有效（无到期日），公安备案审核中照常跟进"
   ]
 }
