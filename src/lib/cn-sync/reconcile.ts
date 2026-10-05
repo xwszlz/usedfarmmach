@@ -123,6 +123,10 @@ async function hardDeleteSyncedProduct(
  */
 export async function reconcile(opts: ReconcileOptions = {}): Promise<ReconcileStats> {
   const t0 = Date.now();
+  // 时间预算：与增量同步同源（默认 240s）——防止对账将来变大后重演「被平台静默杀轮」
+  const budgetMs = Number(process.env.CN_SYNC_RUN_BUDGET_MS ?? 240_000);
+  const effectiveBudgetMs = Number.isFinite(budgetMs) && budgetMs > 0 ? budgetMs : 240_000;
+  const deadlineAt = t0 + effectiveBudgetMs;
   const stats: ReconcileStats = {
     ok: true,
     checked: 0,
@@ -171,7 +175,13 @@ export async function reconcile(opts: ReconcileOptions = {}): Promise<ReconcileS
     // 护栏 ③：只动「曾同步」产品
     const maps = await client.productSyncMap.findMany({ where: { isActive: true } });
     const failures: string[] = [];
+    let budgetExceeded = false;
     for (const m of maps) {
+      // 时间预算守卫：超时则停止本轮（剩余项下一轮继续；不写 error，避免拖垮护栏②）
+      if (Date.now() >= deadlineAt) {
+        budgetExceeded = true;
+        break;
+      }
       stats.checked++;
       if (idSet.has(m.cnProductId)) continue; // 仍存在 → 保留
       try {
@@ -193,7 +203,24 @@ export async function reconcile(opts: ReconcileOptions = {}): Promise<ReconcileS
       });
     }
 
-    await writeCnSyncRunLog(client, "reconcile", "success", stats, Date.now() - t0);
+    if (budgetExceeded) {
+      await pushToGroup({
+        title: "⚠️ .cn→.com 对账未跑完（时间预算耗尽）",
+        lines: [
+          `本轮已检查 ${stats.checked} / ${maps.length} 台（deleted=${stats.deleted} archivedFallback=${stats.archivedFallback} skipped=${stats.skipped}）。`,
+          `预算 ${effectiveBudgetMs}ms 内未跑完；已安全停止，剩余项下一轮继续（幂等）。`,
+        ],
+        level: "warn",
+      });
+    }
+
+    await writeCnSyncRunLog(
+      client,
+      "reconcile",
+      budgetExceeded ? "partial" : "success",
+      stats,
+      Date.now() - t0
+    );
   } catch (e) {
     stats.ok = false;
     stats.error = e instanceof Error ? e.message : String(e);

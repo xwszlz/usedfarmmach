@@ -12,7 +12,7 @@
 import type { PrismaClient } from "@prisma/client";
 
 export type CnSyncJob = "incremental" | "reconcile";
-export type CnSyncStatus = "success" | "error" | "skipped";
+export type CnSyncStatus = "success" | "partial" | "error" | "skipped";
 
 /** 解析 Prisma 客户端：优先注入的 client，否则延迟加载真实单例 */
 export async function resolveCnSyncClient(injected?: PrismaClient): Promise<PrismaClient> {
@@ -21,7 +21,7 @@ export async function resolveCnSyncClient(injected?: PrismaClient): Promise<Pris
   return mod.prisma;
 }
 
-/** 写一条运行日志（success / error / skipped 都写）；写日志失败不阻断主流程 */
+/** 写一条运行日志（success / partial / error / skipped 都写）；写日志失败不阻断主流程 */
 export async function writeCnSyncRunLog(
   client: PrismaClient,
   job: CnSyncJob,

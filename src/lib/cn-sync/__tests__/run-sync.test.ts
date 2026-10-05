@@ -19,9 +19,11 @@ import {
   contentHash,
   mapProductScalars,
   upsertProduct,
+  runCnProductSync,
 } from "../run-sync";
 import { iterateIncremental, type FetchPageFn, type CnExportItem } from "../cn-export-client";
 import { reconcile } from "../reconcile";
+import type { GroupPushPayload } from "@/lib/wecom/group-webhook";
 
 let passed = 0;
 const failures: string[] = [];
@@ -519,6 +521,167 @@ async function main(): Promise<void> {
     assert.equal(res.deleted, 1);
     assert.equal(res.archivedFallback, 0);
     assert.equal(res.skipped, 1, "gone-fail 计 skipped；keep 属 continue 不计");
+  });
+
+  // ── 时间预算守卫（Commit 1）：deadlineAt 已过 → 立即停手且不处理任何项 ──
+  await it("iterateIncremental()：deadlineAt 已过 → time-budget-exceeded 且不处理任何项", async () => {
+    let handled = 0;
+    const res = await iterateIncremental(
+      async () => {
+        handled++;
+      },
+      {
+        fetchPage: async () => ({ items: [{ id: "a" }, { id: "b" }], nextSince: null, nextId: null }),
+        limit: 10,
+        deadlineAt: Date.now() - 1000,
+      }
+    );
+    assert.equal(res.error, "time-budget-exceeded");
+    assert.equal(res.processed, 0);
+    assert.equal(handled, 0, "超时后绝不处理任何一项（不半写）");
+  });
+
+  await it("runCnProductSync()：时间预算耗尽 → stats.partial=true、日志 status=partial、推独立告警且不误报 ❌", async () => {
+    process.env.CN_SYNC_RUN_BUDGET_MS = "5";
+    try {
+      const alerts: GroupPushPayload[] = [];
+      let logStatus: unknown;
+      const fake = {
+        user: { findUnique: async () => ({ id: "sys-seller" }) },
+        productSyncMap: { findUnique: async () => null, update: async () => ({}), upsert: async () => ({}) },
+        product: { findUnique: async () => null, upsert: async () => ({}) },
+        cnSyncRunLog: {
+          create: async (a: { data: { status: unknown } }) => {
+            logStatus = a.data.status;
+            return {};
+          },
+        },
+      } as unknown as PrismaClient;
+
+      const res = await runCnProductSync({
+        client: fake,
+        limit: 10,
+        fetchPage: async () => {
+          await new Promise((r) => setTimeout(r, 30)); // 故意慢于 5ms 预算
+          return { items: [{ id: "a" }, { id: "b" }], nextSince: null, nextId: null };
+        },
+        pushAlert: async (p) => {
+          alerts.push(p);
+        },
+      });
+      assert.equal(res.partial, true, "应标记 partial");
+      assert.equal(res.ok, false);
+      assert.equal(res.error, "time-budget-exceeded");
+      assert.equal(logStatus, "partial", "日志 status 必须是 partial（不得为 error，否则拖垮对账护栏②）");
+      assert.ok(alerts.some((a) => a.title.includes("未跑完（时间预算耗尽）")), "应推 partial 独立告警");
+      assert.ok(!alerts.some((a) => a.title.includes("❌")), "partial 不得复用 ❌ 失败分支");
+      assert.equal(res.processed, 0, "超时后不应处理任何项");
+    } finally {
+      delete process.env.CN_SYNC_RUN_BUDGET_MS;
+    }
+  });
+
+  // ── 冲突抑制账本（Commit 2）──
+  await it("upsertProduct()：同一冲突项第二次出现（hash 未变）→ 抑制告警（conflictAlert=null）", async () => {
+    const item = sampleItem();
+    const store = new Map<string, any>();
+    const calls = { upsert: 0, update: 0 };
+    const fake = {
+      productSyncMap: { findUnique: async () => null, update: async () => ({}), upsert: async () => ({}) },
+      product: {
+        findUnique: async () => ({
+          id: item.id,
+          sellerId: "other-seller",
+          modelName: item.modelName,
+          year: item.year,
+        }),
+      },
+      user: { findUnique: async () => ({ id: "sys-seller" }) },
+      productSyncConflict: {
+        findUnique: async (a: any) => store.get(a.where.cnProductId) ?? null,
+        upsert: async (a: any) => {
+          calls.upsert++;
+          store.set(a.where.cnProductId, a.create);
+          return {};
+        },
+        update: async (a: any) => {
+          calls.update++;
+          store.set(a.where.cnProductId, { ...store.get(a.where.cnProductId), ...a.data });
+          return {};
+        },
+      },
+      cnSyncRunLog: { create: async () => ({}) },
+    } as unknown as PrismaClient;
+
+    const first = await upsertProduct(fake, item);
+    assert.equal(first.result, "conflict");
+    assert.ok(first.conflictAlert, "首次冲突应告警");
+    const second = await upsertProduct(fake, item);
+    assert.equal(second.result, "conflict");
+    assert.equal(second.conflictAlert, null, "同 hash 且近期已告警 → 不再告警");
+    assert.equal(calls.upsert, 1, "第二次不应再 upsert 账本（走快跳）");
+    assert.equal(calls.update, 1, "第二次应只刷 lastSeenAt（1 次 update）");
+  });
+
+  await it("runCnProductSync()：多台冲突 → 汇总告警每轮只推 1 条，stats.conflict 仍为总数", async () => {
+    const store = new Map<string, any>();
+    const alerts: GroupPushPayload[] = [];
+    const fake = {
+      productSyncMap: { findUnique: async () => null, update: async () => ({}), upsert: async () => ({}) },
+      product: {
+        findUnique: async (a: any) => ({ id: a.where.id, sellerId: "other-seller", modelName: "X", year: 2000 }),
+      },
+      user: { findUnique: async () => ({ id: "sys-seller" }) },
+      productSyncConflict: {
+        findUnique: async (a: any) => store.get(a.where.cnProductId) ?? null,
+        upsert: async (a: any) => {
+          store.set(a.where.cnProductId, a.create);
+          return {};
+        },
+        update: async (a: any) => {
+          store.set(a.where.cnProductId, a.update);
+          return {};
+        },
+      },
+      cnSyncRunLog: { create: async () => ({}) },
+    } as unknown as PrismaClient;
+
+    const res = await runCnProductSync({
+      client: fake,
+      limit: 10,
+      fetchPage: async () => ({
+        items: [{ id: "c1" }, { id: "c2" }, { id: "c3" }],
+        nextSince: null,
+        nextId: null,
+      }),
+      pushAlert: async (p) => {
+        alerts.push(p);
+      },
+    });
+    assert.equal(res.conflict, 3, "stats.conflict 为本轮遇见总数");
+    const conflictMsgs = alerts.filter((a) => a.title.includes("id 冲突已跳过"));
+    assert.equal(conflictMsgs.length, 1, "每轮冲突汇总只推 1 条（不再逐台 3 条）");
+    assert.ok(conflictMsgs[0].lines.some((l) => l.includes("c1")), "汇总应列出冲突 id");
+  });
+
+  await it("upsertProduct()：冲突表缺失（P2021）→ 退化为旧行为且不中断（不抛异常）", async () => {
+    const fake = {
+      productSyncMap: { findUnique: async () => null, update: async () => ({}), upsert: async () => ({}) },
+      product: {
+        findUnique: async () => ({ id: "x", sellerId: "other-seller", modelName: "X", year: 2000 }),
+      },
+      user: { findUnique: async () => ({ id: "sys-seller" }) },
+      productSyncConflict: {
+        findUnique: async () => {
+          throw new Error("P2021: The table `ProductSyncConflict` does not exist");
+        },
+      },
+      cnSyncRunLog: { create: async () => ({}) },
+    } as unknown as PrismaClient;
+
+    const res = await upsertProduct(fake, sampleItem());
+    assert.equal(res.result, "conflict", "表缺失也应正常判定为 conflict（不抛异常）");
+    assert.equal(res.conflictAlert, null, "退化路径不进入汇总告警集合");
   });
 
   console.log(`\n结果：${passed} passed, ${failures.length} failed`);
