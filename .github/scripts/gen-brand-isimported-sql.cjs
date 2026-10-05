@@ -19,11 +19,18 @@
  *              并在事务内用「恰好 N 行 false→true」「0 行 true→false」「Brand 总行数不变」
  *              三重断言保证零误伤、零增删。任何断言失败 → 抛异常 → ON_ERROR_STOP 下整体回滚。
  *
- * 说明（v3）：apply 作用集 = CONFIRMED（当前 6 行：5 个同名重复行 + 1 个 AGRONIC 行）。
+ * 说明（v4）：apply 作用集 = CONFIRMED（当前 2 行：Agronic 与 道依茨法尔 两条残余同名重复行）。
  *             行数全部由 `CONFIRMED.length` 推导，**不写死**；预期指标随之外同步。
- *             v3 变更：移除原「Agronic（cmu1bgyf2000fp7snncnxvah）」一行 —— dry 实测该 id
- *             在 .cn 库**不存在**（.com 库同样不存在），属任务清单带来的幽灵 id；它挂 0 个产品，
- *             移除对同步结果零影响。若保留，apply 会在该行的 `IF m <> 1` 断言处抛异常并整体回滚。
+ *             第一批 6 行（CLAAS / NEW HOLLAND / John Deere / Krone / 麦塞福格森 / AGRONIC）
+ *             已于 workflow run 37307743810（v3 版）应用完毕，原样留档在 ALREADY_APPLIED ——
+ *             apply 非幂等（`UPDATE ... AND isImported=false` 断言恰好 1 行），把旧行留在
+ *             CONFIRMED 里重跑会命中 `期望 UPDATE 1 实得 0` 从而整体回滚，故必须移出。
+ *
+ * 勘误（v3 -> v4）：v3 判定「Agronic 的 id cmu1bgyf2000fp7snncnxvah 在 .cn 不存在」这一步是
+ *             对的，但由此得出的结论「幽灵 id，可删」是错的 —— 真实 id 是
+ *             cmu1bgyf2000fp7snncnxdvah，原稿**少写了一个 d**（转录错字）。
+ *             该行确实存在、挂 1 个 active 产品（Agronic Mr820），会挡住这台机器出口。
+ *             该 id 由 .cn 公开 API 反查产品上的 brandId 独立坐实，非日志肉眼抄录。
  *
  * 硬性红线：
  *   - ⛔ 绝不删除任何 Brand 行（决策 #10：品牌归一 = B，只归一/映射，不删除既有 Brand 行）。
@@ -52,47 +59,68 @@ const APPLY_TOKEN = "FIX-BRAND-ISIMPORTED";
  * 判据：
  *   a) 与某个 isImported=true 的正牌品牌同名（nameEn 大小写/空格不敏感）；或
  *   b) 明显错别字重复行（麦塞福格森 vs 麦赛福格森）；或
- *   c) 已拍板的进口品牌行（AGRONIC —— 无同名 true 正牌行；与其互为重复的 TitleCase 行
- *      「Agronic」已确认在 .cn 库不存在，v3 移除，见文件头说明）。
+ *   c) 已拍板的进口品牌行（Agronic / AGRONIC 互为重复、整对均为进口，一并置 true）；或
+ *      由 discoveryQuery 扫出的残余「同名却 false」重复行（道依茨法尔）。
  * ------------------------------------------------------------------------- */
 const CONFIRMED = [
+  {
+    id: "cmu1bgyf2000fp7snncnxdvah",
+    nameZh: "Agronic",
+    nameEn: "Agronic",
+    note: "进口品牌（芬兰 Agronic Oy）；TitleCase 行，挂 1 个 active 产品（Agronic Mr820）。"
+      + "v3 曾因 id 少写一个 d（写成 ...ncnxvah）被判「不存在」而误删，v4 校正 id 后纳入作用集",
+  },
+  {
+    id: "cmr94w56z0009cb9dg7s8lw78",
+    nameZh: "道依茨法尔",
+    nameEn: "Deutz-Fahr",
+    note: "重复行；同名正牌 cmr9i0des0005505addih9rv2（道依茨法尔 / Deutz-Fahr）已 isImported=true。"
+      + "挂 0 个产品，不影响同步结果，仅消除品牌筛选里的同名双选项",
+  },
+];
+
+/* ---------------------------------------------------------------------------
+ * 已应用留档（第一批 6 行）—— 只出现在 dry 报告里，**绝不**被 apply 触碰。
+ * 已于 workflow run 37307743810（2026-10-05T12:11Z，v3 版脚本）翻为 isImported=true，
+ * 使 .cn 导出命中集从 74 台升到 88 台。留档目的：① 可复核；② 防止有人再把它们
+ * 塞回 CONFIRMED 重跑（apply 非幂等，会整体回滚）。行数 = ALREADY_APPLIED.length。
+ * ------------------------------------------------------------------------- */
+const ALREADY_APPLIED = [
   {
     id: "cmut9ecre000kuy82z1gv1rxp",
     nameZh: "CLAAS",
     nameEn: "CLAAS",
-    note: "重复行；同名正牌 claas（克拉斯）已 isImported=true",
+    note: "已应用；同名正牌 claas（克拉斯）已 isImported=true；释放 4 台",
   },
   {
     id: "cmuticogi003jyjpc8xsuh3ds",
     nameZh: "NEW HOLLAND",
     nameEn: "NEW HOLLAND",
-    note: "重复行；同名正牌 new-holland（纽荷兰）已 isImported=true",
+    note: "已应用；同名正牌 new-holland（纽荷兰）已 isImported=true；释放 4 台",
   },
   {
     id: "cmrvbl1qk0000i9ud71mynv2b",
     nameZh: "John Deere",
     nameEn: "John Deere",
-    note: "重复行；同名正牌 john-deere（约翰迪尔）已 isImported=true",
+    note: "已应用；同名正牌 john-deere（约翰迪尔）已 isImported=true；释放 3 台",
   },
   {
     id: "cmuthrf930028yjpcd4ncifhn",
     nameZh: "Krone",
     nameEn: "Krone",
-    note: "重复行；同名正牌 krone（科罗尼）已 isImported=true",
+    note: "已应用；同名正牌 krone（科罗尼）已 isImported=true；释放 1 台",
   },
   {
     id: "cmr34lal3000058eh35hayu4e",
     nameZh: "麦塞福格森",
     nameEn: "麦塞福格森",
-    note: "错别字重复行（「塞」vs「赛」）；正牌 massey-ferguson（麦赛福格森）已 isImported=true",
+    note: "已应用；错别字重复行（「塞」vs「赛」）；正牌 massey-ferguson 已 true；释放 1 台",
   },
-  // v3 移除：原「Agronic（cmu1bgyf2000fp7snncnxvah）」—— dry 实测该 id 在 .cn 库不存在，
-  //          .com 库同样不存在（幽灵 id），且挂 0 个产品。保留会让 apply 整体回滚。
   {
     id: "cmutjcl7c006hyjpcvv9sba7d",
     nameZh: "AGRONIC",
     nameEn: "AGRONIC",
-    note: "进口品牌（芬兰 Agronic Oy）；.cn 唯一存在的 Agronic 品牌行（TitleCase 重复行已在 v3 移除）→ 置 true",
+    note: "已应用；进口品牌（芬兰 Agronic Oy）；释放 1 台",
   },
 ];
 
@@ -232,11 +260,15 @@ function buildDry() {
   L.push("");
   L.push(
     "\\echo '=== 1. 已知候选行（CONFIRMED=" + CONFIRMED.length +
-      ", PENDING=" + PENDING.length + "；found=false 表示 id 不存在）==='"
+      " 待应用, ALREADY_APPLIED=" + ALREADY_APPLIED.length +
+      " 已应用留档, PENDING=" + PENDING.length +
+      "；found=false 表示 id 不存在）==='"
   );
   L.push(knownCandidatesQuery(CONFIRMED, 1));
   L.push("");
   L.push(knownCandidatesQuery(PENDING, 100));
+  L.push("");
+  L.push(knownCandidatesQuery(ALREADY_APPLIED, 300));
   L.push("");
   L.push("\\echo '=== 2. 发现查询：同名却 isImported=false 的重复行（只读，未写死 id）==='");
   L.push("\\echo '    （命中即为「与某个 true 品牌同名、自身 false」的追加候选，需并入人工复核）'");
