@@ -4,6 +4,7 @@ import { productQuerySchema } from "@/lib/validators";
 import { getImageUrl } from "@/lib/image-url";
 import { sortByDailyRank } from "@/config/daily-report-ranking";
 import { cache, cacheKey } from "@/lib/cache";
+import { buildWebsiteVisibleWhere } from "@/lib/product-visibility";
 
 // 必须动态渲染（.cn 构建期连空库）；force-dynamic 优先级更高，revalidate 是无效配置，已移除
 export const dynamic = 'force-dynamic';
@@ -57,10 +58,12 @@ export async function GET(request: NextRequest) {
       sort,
     } = parsed.data;
 
-    // 展示策略（2026-06-29 更新）：
-    //   - 国际品牌的产品：通过小程序发布 → 手机+网站同时展示
+    // 展示策略（2026-06-29 更新；2026-10-05 修复网站端可见性）：
+    //   - 国际品牌的产品：通过小程序 / .cn 网站发布 → 手机+网站同时展示
     //   - 国产品牌的产品：通过小程序发布 → 仅在小程序展示，不在网站展示
-    //   - 网站端：排除 miniprogram 发布的国产品牌（seller=miniprogram + brand.isImported=false）
+    //   - 网站端：口径 = status='active' 且 非(小程序账号 ∧ 国产品牌)；
+    //     改用 sellerId 标量比较（不再用可空的 seller.email），规避 SQL 三值逻辑把 email IS NULL 的产品静默丢弃；
+    //     单一事实来源见 @/lib/product-visibility（与列表页 page.tsx 共用）
     //   - 小程序端：展示所有 active + miniprogram 的全部产品
     const MINIAPP_SELLER_EMAIL = "miniprogram@shendiao.com";
 
@@ -73,16 +76,15 @@ export async function GET(request: NextRequest) {
         ],
       };
     } else {
-      // 网站调用：显示 active 产品，但排除「miniprogram 发布的国产品牌」
-      // 即：允许 miniprogram 的国际品牌产品，禁止 miniprogram 的国产品牌产品
-      var where: Record<string, unknown> = {
-        OR: [
-          // 非 miniprogram 来源的所有 active 产品
-          { AND: [{ status: "active" }, { NOT: { seller: { email: MINIAPP_SELLER_EMAIL } } }] },
-          // miniprogram 来源的国际品牌产品（brand.isImported=true）
-          { AND: [{ status: "active" }, { seller: { email: MINIAPP_SELLER_EMAIL } }, { brand: { isImported: true } }] },
-        ],
-      };
+      // 网站调用：口径 = status='active' 且 非(小程序账号 ∧ 国产品牌)
+      // 先解析小程序账号 id，再用 sellerId 比较；查不到则安全退化为「不排除任何人」。
+      const miniappSeller = await prisma.user.findUnique({
+        where: { email: MINIAPP_SELLER_EMAIL },
+        select: { id: true },
+      });
+      var where: Record<string, unknown> = buildWebsiteVisibleWhere(
+        miniappSeller?.id ?? null
+      ) as unknown as Record<string, unknown>;
     }
 
     if (brand) {

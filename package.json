@@ -8,6 +8,7 @@
     "start": "next start",
     "test:cn-sync": "tsx src/lib/cn-sync/__tests__/field-whitelist.test.ts",
     "test:cn-sync-s1": "tsx src/lib/cn-sync/__tests__/run-sync.test.ts",
+    "test:cn-sync-scope": "tsx src/lib/cn-sync/__tests__/product-visibility.test.ts",
     "lint": "next lint",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",

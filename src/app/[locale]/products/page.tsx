@@ -6,6 +6,7 @@ import { getImageUrl } from "@/lib/image-url";
 import { toSlug } from "@/lib/slug";
 import ProductsClient from "./ProductsClient";
 import type { Product } from "@/types";
+import { MINIAPP_SELLER_EMAIL, buildWebsiteVisibleWhere } from "@/lib/product-visibility";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
 
@@ -27,10 +28,19 @@ export default async function ProductsPage({
 }) {
   const { locale } = await params;
 
+  // 网站端可见性口径（与 /api/products 网站分支完全一致；单一事实来源 @/lib/product-visibility）：
+  //   status='active' 且 非(小程序账号 ∧ 国产品牌)；用 sellerId 标量比较，规避 User.email 可空导致的 SQL 三值逻辑丢行；
+  //   查不到小程序账号则安全退化为「不排除任何人」。
+  const miniappSeller = await prisma.user.findUnique({
+    where: { email: MINIAPP_SELLER_EMAIL },
+    select: { id: true },
+  });
+  const visibleWhere = buildWebsiteVisibleWhere(miniappSeller?.id ?? null);
+
   // Server-side fetch: 搜索引擎可直接看到83台设备
   const [rawProducts, total] = await Promise.all([
     prisma.product.findMany({
-      where: { status: "active" },
+      where: visibleWhere,
       orderBy: { createdAt: "desc" },
       take: 12,
       include: {
@@ -47,7 +57,7 @@ export default async function ProductsPage({
         },
       },
     }),
-    prisma.product.count({ where: { status: "active" } }),
+    prisma.product.count({ where: visibleWhere }),
   ]);
 
   const totalPages = Math.ceil(total / 12);
