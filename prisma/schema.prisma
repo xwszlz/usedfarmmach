@@ -2246,3 +2246,19 @@ model ProductSyncTombstone {
   @@index([cnProductId])
   @@index([deletedAt])
 }
+
+/// .cn → .com 产品同步运行日志（Stage 1 — additive）
+/// 用途：对账护栏「连续 N 轮异常不删」的判定依据 + Stage 2 监控数据源
+model CnSyncRunLog {
+  id           String    @id @default(cuid())
+  job          String
+  status       String
+  stats        String?
+  errorMessage String?
+  startedAt    DateTime  @default(now())
+  completedAt  DateTime?
+  durationMs   Int?
+
+  @@index([job, startedAt])
+  @@index([status, startedAt])
+}
