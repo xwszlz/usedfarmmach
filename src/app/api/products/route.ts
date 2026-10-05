@@ -4,7 +4,11 @@ import { productQuerySchema } from "@/lib/validators";
 import { getImageUrl } from "@/lib/image-url";
 import { sortByDailyRank } from "@/config/daily-report-ranking";
 import { cache, cacheKey } from "@/lib/cache";
-import { buildWebsiteVisibleWhere } from "@/lib/product-visibility";
+import {
+  buildWebsiteVisibleWhere,
+  applySearchQueryToWhere,
+} from "@/lib/product-visibility";
+import type { Prisma } from "@prisma/client";
 
 // 必须动态渲染（.cn 构建期连空库）；force-dynamic 优先级更高，revalidate 是无效配置，已移除
 export const dynamic = 'force-dynamic';
@@ -146,17 +150,14 @@ export async function GET(request: NextRequest) {
     }
 
     // 万能搜索：匹配型号、品牌名、品类名、描述
+    // ⚠️ 修复：搜索条件必须与「可见性 where」以 AND 组合，绝不能整体覆盖 where.OR
+    //    （旧写法 `where.OR = [...]` 会顶掉 buildWebsiteVisibleWhere 的可见性 OR，
+    //     导致带 ?q= 搜索时泄漏出本该隐藏的产品）。组合逻辑见 @/lib/product-visibility。
     if (query) {
-      where.OR = [
-        { modelName: { contains: query, mode: "insensitive" } },
-        { brand: { nameZh: { contains: query, mode: "insensitive" } } },
-        { brand: { nameEn: { contains: query, mode: "insensitive" } } },
-        { category: { nameZh: { contains: query, mode: "insensitive" } } },
-        { category: { nameEn: { contains: query, mode: "insensitive" } } },
-        { descriptionZh: { contains: query, mode: "insensitive" } },
-        { descriptionEn: { contains: query, mode: "insensitive" } },
-        { location: { contains: query, mode: "insensitive" } },
-      ];
+      where = applySearchQueryToWhere(
+        where as unknown as Prisma.ProductWhereInput,
+        query
+      ) as unknown as Record<string, unknown>;
     }
 
     const orderBy: Record<string, string> = {};
