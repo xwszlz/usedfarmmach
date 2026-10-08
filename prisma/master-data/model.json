@@ -52,7 +52,7 @@
     { "model_code": "lemken_opal_160", "display_name": "Lemken Opal 160 铧式犁", "brand_code": "lemken", "category_code": "plow", "spec_note": "翻转犁", "model_popularity_factor": 1.05 },
     { "model_code": "lemken_karat_9", "display_name": "Lemken Karat 9 深松机", "brand_code": "lemken", "category_code": "subsoiler", "spec_note": "深松设备", "model_popularity_factor": 1.03 },
     { "model_code": "lemken_heliodor", "display_name": "Lemken Heliodor 圆盘耙", "brand_code": "lemken", "category_code": "disc_harrow", "spec_note": "圆盘耙", "model_popularity_factor": 1.01 },
-    { "model_code": "amazone_za_ts", "display_name": "Amazone ZA-TS 撒肥机", "brand_code": "amazone", "category_code": "spraying", "spec_note": "施肥喷雾设备", "model_popularity_factor": 1.00 },
+    { "model_code": "amazone_za_ts", "display_name": "Amazone ZA-TS 撒肥机", "brand_code": "amazone", "category_code": "sprayer", "spec_note": "施肥喷雾设备", "model_popularity_factor": 1.00 },
     { "model_code": "amazone_catros", "display_name": "Amazone Catros 圆盘耙", "brand_code": "amazone", "category_code": "disc_harrow", "spec_note": "整地圆盘耙", "model_popularity_factor": 0.99 },
     { "model_code": "amazone_centaya", "display_name": "Amazone Centaya 条播机", "brand_code": "amazone", "category_code": "seed_drill", "spec_note": "小麦条播机", "model_popularity_factor": 0.97 },
     { "model_code": "kubota_m7_172", "display_name": "Kubota M7-172 拖拉机", "brand_code": "kubota", "category_code": "tractor", "spec_note": "172马力中大型拖拉机", "model_popularity_factor": 0.90 },
