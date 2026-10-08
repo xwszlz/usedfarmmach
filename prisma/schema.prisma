@@ -175,6 +175,14 @@ model Brand {
   demands         Demand[]
   products        Product[]
   showcaseItems   ShowcaseItem[]
+  /// 主数据字典品牌 code（deere/fendt/claas/…）；未在主数据中则为 NULL（兼容别名层回退）
+  code              String?  @unique
+  /// 品牌保值系数（新字典权威值；覆盖旧 BRAND_COEFFICIENTS）
+  brandValueFactor  Float?
+  /// 规范化原产国 code（ISO 3166-1 alpha-2：US/DE/IT/GB/FR/JP/CN…）；原 originCountry 文本保留不动
+  originCountryCode String?
+  /// 是否在册标准品牌（13 真=true / 其余 false，供逐步归并）
+  isStandard        Boolean @default(false)
   valuations      Valuation[]
 }
 
@@ -191,6 +199,10 @@ model Category {
   nameHi    String     @default("")
   /// 栏目（Category）访问量统计（product_view_stats），additive
   viewCount Int        @default(0)
+  /// 主数据字典品类 code（tractor/round_baler/forage_harvester/…）；未在字典则为 NULL
+  code    String?  @unique
+  /// 是否叶子品类（跨国套利只允许 isLeaf=true 参与比较；父节点=false）
+  isLeaf  Boolean  @default(false)
   parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children  Category[] @relation("CategoryHierarchy")
   demands   Demand[]
@@ -621,6 +633,10 @@ model RawListing {
   currency       String?
   priceCny       Float?
   location       String
+  /// 货源地国别 code（ISO 3166-1 alpha-2：PL/UA/DE/CN…）；由 location 自由文本归一得到
+  locationCode         String?
+  /// 附属：仅 locationCode="CN" 且需省份级粒度时填（ISO 3166-2）
+  locationProvinceCode String?
   sellerName     String?
   sellerPhone    String?
   sellerWechat   String?
@@ -2277,4 +2293,23 @@ model ProductSyncConflict {
   lastSeenAt    DateTime  @default(now())
   lastAlertAt   DateTime?
   @@index([lastSeenAt])
+}
+
+// ─── 主数据字典：机型表（master-data/model.json；不碰任何现有表）─────────────
+model ModelDictionary {
+  id                    String   @id @default(cuid())
+  modelCode             String   @unique
+  displayName           String
+  brandCode             String
+  categoryCode          String
+  modelPopularityFactor Float    @default(1.0)
+  specNote              String?
+  isActive              Boolean  @default(true)
+  dictVersion           String   @default("1.0.0")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([brandCode])
+  @@index([categoryCode])
+  @@index([brandCode, categoryCode])
 }
