@@ -1,0 +1,176 @@
+{
+  "version": "1.1.0",
+  "generatedAt": "2026-10-07",
+  "source": "老板提供的《二手农机主数据字典》v1.0 + 老板 2026-10-07 拍板③④②（baler 挂 root / tractor 分档 / 补 corn_harvester）",
+  "note": "code 是程序唯一主键；display_name 仅前端展示；schema_comment 仅文档阅读。v1.1：baler 改挂 root；新增 tractor_compact/mid/high（<100/100–200/>200 hp）；新增 corn_harvester。is_leaf 由是否含子节点派生（无子节点=叶子）。",
+  "items": [
+    {
+      "code": "root",
+      "display_name": "农机设备总根",
+      "parent_code": null,
+      "schema_comment": "全部农机顶层根节点"
+    },
+    {
+      "code": "harvester",
+      "display_name": "收获机械大类",
+      "parent_code": "root",
+      "schema_comment": "收割类设备，谷物、青贮、棉花收获"
+    },
+    {
+      "code": "corn_harvester",
+      "display_name": "茎穗兼收机",
+      "parent_code": "harvester",
+      "schema_comment": "玉米茎穗兼收机；老板 2026-10-07 拍板②新增"
+    },
+    {
+      "code": "forage",
+      "display_name": "饲草设备大类",
+      "parent_code": "root",
+      "schema_comment": "牧草收割、摊晒、打捆全套饲草农机"
+    },
+    {
+      "code": "tillage",
+      "display_name": "耕地整地机械大类",
+      "parent_code": "root",
+      "schema_comment": "土地翻耕、深松、耙地"
+    },
+    {
+      "code": "seeding",
+      "display_name": "播种栽植机械大类",
+      "parent_code": "root",
+      "schema_comment": "播种、育苗移栽"
+    },
+    {
+      "code": "spraying",
+      "display_name": "植保喷雾机械大类",
+      "parent_code": "root",
+      "schema_comment": "农药喷洒、施肥"
+    },
+    {
+      "code": "transport",
+      "display_name": "农用运输机械大类",
+      "parent_code": "root",
+      "schema_comment": "农用拖车、运输车"
+    },
+    {
+      "code": "baler",
+      "display_name": "打捆机械大类",
+      "parent_code": "root",
+      "schema_comment": "饲草打包设备，归属饲草设备"
+    },
+    {
+      "code": "forage_harvester",
+      "display_name": "青贮饲料收获机",
+      "parent_code": "harvester",
+      "schema_comment": "青储收割机，收割玉米/牧草青贮"
+    },
+    {
+      "code": "combine",
+      "display_name": "谷物联合收割机",
+      "parent_code": "harvester",
+      "schema_comment": "谷物联合收割机，小麦、玉米籽粒收割"
+    },
+    {
+      "code": "cotton_harvester",
+      "display_name": "采棉机",
+      "parent_code": "harvester",
+      "schema_comment": "棉花采摘设备"
+    },
+    {
+      "code": "mower",
+      "display_name": "牧草割晒机",
+      "parent_code": "forage",
+      "schema_comment": "田间牧草割草、铺条"
+    },
+    {
+      "code": "tedder",
+      "display_name": "干草摊晒机/翻草机",
+      "parent_code": "forage",
+      "schema_comment": "割草后摊开牧草，加速晾晒"
+    },
+    {
+      "code": "rake",
+      "display_name": "搂草机",
+      "parent_code": "forage",
+      "schema_comment": "晾晒后收拢牧草成条"
+    },
+    {
+      "code": "round_baler",
+      "display_name": "圆捆打捆机",
+      "parent_code": "baler",
+      "schema_comment": "圆形草捆打包"
+    },
+    {
+      "code": "square_baler",
+      "display_name": "方捆打捆机",
+      "parent_code": "baler",
+      "schema_comment": "方形高密度草捆打包"
+    },
+    {
+      "code": "plow",
+      "display_name": "铧式犁",
+      "parent_code": "tillage",
+      "schema_comment": "翻耕土地"
+    },
+    {
+      "code": "subsoiler",
+      "display_name": "深松机",
+      "parent_code": "tillage",
+      "schema_comment": "深层松土，不翻土"
+    },
+    {
+      "code": "disc_harrow",
+      "display_name": "圆盘耙",
+      "parent_code": "tillage",
+      "schema_comment": "碎土、整地"
+    },
+    {
+      "code": "planter",
+      "display_name": "免耕播种机",
+      "parent_code": "seeding",
+      "schema_comment": "玉米大豆精密播种机"
+    },
+    {
+      "code": "seed_drill",
+      "display_name": "条播机",
+      "parent_code": "seeding",
+      "schema_comment": "小麦条播机"
+    },
+    {
+      "code": "sprayer",
+      "display_name": "牵引式喷药机",
+      "parent_code": "spraying",
+      "schema_comment": "大田喷雾打药"
+    },
+    {
+      "code": "tractor",
+      "display_name": "农用拖拉机",
+      "parent_code": "root",
+      "schema_comment": "动力主机，牵引各类农机具"
+    },
+    {
+      "code": "tractor_compact",
+      "display_name": "中小型拖拉机",
+      "parent_code": "tractor",
+      "schema_comment": "<100 hp 中小型拖拉机（如 Solis、东方红小拖、Kubota 低配）"
+    },
+    {
+      "code": "tractor_mid",
+      "display_name": "中型拖拉机",
+      "parent_code": "tractor",
+      "schema_comment": "100–200 hp 中型拖拉机（如 东方红 LX1804、雷沃 RG2204、Kubota M7-172）"
+    },
+    {
+      "code": "tractor_high",
+      "display_name": "大型大马力拖拉机",
+      "parent_code": "tractor",
+      "schema_comment": ">200 hp 大型大马力拖拉机（如 Deere 8R 370、Fendt 724/939/942、Claas Axion 870）"
+    },
+    {
+      "code": "trailer",
+      "display_name": "农用拖车",
+      "parent_code": "transport",
+      "schema_comment": "农机配套运输车斗"
+    }
+  ]
+}

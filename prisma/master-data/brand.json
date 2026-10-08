@@ -1,0 +1,820 @@
+{
+  "version": "1.1.0",
+  "generatedAt": "2026-10-07",
+  "source": "老板提供的《二手农机主数据字典》v1.0 + 老板 2026-10-07 拍板②（丙扩充：进口+国产全入，排除电控3+供应商全称9）",
+  "note": "code 是程序唯一主键；display_name 仅前端展示；brand_value_factor 品牌保值系数用于估价/套利；origin_country 参与套利计算但不作为聚合分组维度。v1.1 新增丙扩充真品牌；★凡 schema_comment 标『先验估计·待核』者，其 origin_country/brand_value_factor 为架构师先验值（非老板权威值），待人工/质检校准。",
+  "items": [
+    {
+      "code": "deere",
+      "display_name": "John Deere 约翰迪尔",
+      "origin_country": "美国",
+      "brand_value_factor": 1.2,
+      "schema_comment": "全球头部农机，二手保值高，出口中亚热门"
+    },
+    {
+      "code": "fendt",
+      "display_name": "芬特",
+      "origin_country": "德国",
+      "brand_value_factor": 1.3,
+      "schema_comment": "高端拖拉机，俗称“费铁”"
+    },
+    {
+      "code": "case",
+      "display_name": "Case IH 凯斯",
+      "origin_country": "美国",
+      "brand_value_factor": 1.1,
+      "schema_comment": "收获机、拖拉机主力品牌"
+    },
+    {
+      "code": "claas",
+      "display_name": "克拉斯",
+      "origin_country": "德国",
+      "brand_value_factor": 1.15,
+      "schema_comment": "青贮机、收割机、打捆机强项"
+    },
+    {
+      "code": "new_holland",
+      "display_name": "纽荷兰",
+      "origin_country": "意大利",
+      "brand_value_factor": 1.0,
+      "schema_comment": "饲草设备、拖拉机、联合收割机"
+    },
+    {
+      "code": "massey_ferguson",
+      "display_name": "麦赛福格森",
+      "origin_country": "英国",
+      "brand_value_factor": 0.95,
+      "schema_comment": "拖拉机、打捆机，存量巨大"
+    },
+    {
+      "code": "kuhn",
+      "display_name": "库恩",
+      "origin_country": "法国",
+      "brand_value_factor": 0.9,
+      "schema_comment": "饲草机械：割草机、搂草机、摊晒机"
+    },
+    {
+      "code": "krone",
+      "display_name": "科罗尼",
+      "origin_country": "德国",
+      "brand_value_factor": 1.15,
+      "schema_comment": "高端饲草全套设备，青贮、打捆机"
+    },
+    {
+      "code": "lemken",
+      "display_name": "雷肯",
+      "origin_country": "德国",
+      "brand_value_factor": 1.05,
+      "schema_comment": "耕地整地机械：犁、深松机"
+    },
+    {
+      "code": "amazone",
+      "display_name": "阿玛松",
+      "origin_country": "德国",
+      "brand_value_factor": 1.0,
+      "schema_comment": "整地、播种、植保喷雾设备"
+    },
+    {
+      "code": "kubota",
+      "display_name": "久保田",
+      "origin_country": "日本",
+      "brand_value_factor": 0.9,
+      "schema_comment": "中小型农机，水田机型"
+    },
+    {
+      "code": "yto",
+      "display_name": "东方红",
+      "origin_country": "中国",
+      "brand_value_factor": 0.7,
+      "schema_comment": "国产拖拉机，出口中亚性价比机型"
+    },
+    {
+      "code": "lovol",
+      "display_name": "雷沃",
+      "origin_country": "中国",
+      "brand_value_factor": 0.72,
+      "schema_comment": "国产收割机、拖拉机"
+    },
+    {
+      "code": "arcusin",
+      "display_name": "Arcusin",
+      "origin_country": "西班牙",
+      "brand_value_factor": 0.9,
+      "schema_comment": "丙扩充（进口）：打捆/饲草｜★原产国/系数=先验估计·待核"
+    },
+    {
+      "code": "champion",
+      "display_name": "Champion 冠军",
+      "origin_country": "中国",
+      "brand_value_factor": 0.7,
+      "schema_comment": "丙扩充（国产）：国产农机｜★原产国/系数=先验估计·待核"
+    },
+    {
+      "code": "meidi",
+      "display_name": "Meidi 美迪",
+      "origin_country": "中国",
+      "brand_value_factor": 0.72,
+      "schema_comment": "丙扩充（国产）：国产收获/农机；主行（原供应商全称行已排除）"
+    },
+    {
+      "code": "manitou",
+      "display_name": "Manitou 曼尼通",
+      "origin_country": "法国",
+      "brand_value_factor": 0.95,
+      "schema_comment": "丙扩充（进口）：伸缩臂叉装车｜★原产国/系数=先验估计·待核"
+    },
+    {
+      "code": "innoros",
+      "display_name": "Innoros 伊诺罗斯",
+      "origin_country": "意大利",
+      "brand_value_factor": 0.85,
+      "schema_comment": "丙扩充（进口）：农机（原产待核）｜★原产国/系数=先验估计·待核"
+    },
+    {
+      "code": "zoomlion",
+      "display_name": "Zoomlion 中联农机",
+      "origin_country": "中国",
+      "brand_value_factor": 0.78,
+      "schema_comment": "丙扩充（国产）：国产收获机/拖拉机"
+    },
+    {
+      "code": "dji_agriculture",
+      "display_name": "DJI Agriculture 大疆农业",
+      "origin_country": "中国",
+      "brand_value_factor": 0.75,
+      "schema_comment": "丙扩充（国产）：农业无人机/智慧农业"
+    },
+    {
+      "code": "changfa",
+      "display_name": "Changfa 常发农装",
+      "origin_country": "中国",
+      "brand_value_factor": 0.73,
+      "schema_comment": "丙扩充（国产）：国产拖拉机/收割机"
+    },
+    {
+      "code": "dfam",
+      "display_name": "DFAM 东风农机",
+      "origin_country": "中国",
+      "brand_value_factor": 0.72,
+      "schema_comment": "丙扩充（国产）：国产拖拉机"
+    },
+    {
+      "code": "wuzheng",
+      "display_name": "Wuzheng 五征",
+      "origin_country": "中国",
+      "brand_value_factor": 0.72,
+      "schema_comment": "丙扩充（国产）：国产运输/拖拉机"
+    },
+    {
+      "code": "xingguang",
+      "display_name": "Xingguang 星光农机",
+      "origin_country": "中国",
+      "brand_value_factor": 0.72,
+      "schema_comment": "丙扩充（国产）：国产收割机"
+    },
+    {
+      "code": "jindafeng",
+      "display_name": "Jindafeng 金大丰",
+      "origin_country": "中国",
+      "brand_value_factor": 0.72,
+      "schema_comment": "丙扩充（国产）：国产收割机"
+    },
+    {
+      "code": "shifeng",
+      "display_name": "Shifeng 时风",
+      "origin_country": "中国",
+      "brand_value_factor": 0.7,
+      "schema_comment": "丙扩充（国产）：国产拖拉机"
+    },
+    {
+      "code": "benye",
+      "display_name": "Benye 奔野",
+      "origin_country": "中国",
+      "brand_value_factor": 0.7,
+      "schema_comment": "丙扩充（国产）：国产拖拉机"
+    },
+    {
+      "code": "deutz_fahr",
+      "display_name": "Deutz-Fahr 道依茨法尔",
+      "origin_country": "德国",
+      "brand_value_factor": 0.95,
+      "schema_comment": "丙扩充（进口）：德国品牌（含中国生产）"
+    },
+    {
+      "code": "xcmg",
+      "display_name": "XCMG 徐工农机",
+      "origin_country": "中国",
+      "brand_value_factor": 0.75,
+      "schema_comment": "丙扩充（国产）：国产工程机械/农机"
+    },
+    {
+      "code": "shineray",
+      "display_name": "Shineray 鑫源农机",
+      "origin_country": "中国",
+      "brand_value_factor": 0.72,
+      "schema_comment": "丙扩充（国产）：国产拖拉机"
+    },
+    {
+      "code": "yongmeng",
+      "display_name": "Yongmeng 勇猛机械",
+      "origin_country": "中国",
+      "brand_value_factor": 0.75,
+      "schema_comment": "丙扩充（国产）：国产收获机"
+    },
+    {
+      "code": "huade",
+      "display_name": "Huade 华德牧机",
+      "origin_country": "中国",
+      "brand_value_factor": 0.72,
+      "schema_comment": "丙扩充（国产）：国产饲草机械"
+    },
+    {
+      "code": "mainuo",
+      "display_name": "Mainuo 美诺",
+      "origin_country": "中国",
+      "brand_value_factor": 0.72,
+      "schema_comment": "丙扩充（国产）：国产播种/整地（与中机美诺待判）"
+    },
+    {
+      "code": "xag",
+      "display_name": "XAG 极飞科技",
+      "origin_country": "中国",
+      "brand_value_factor": 0.75,
+      "schema_comment": "丙扩充（国产）：农业无人机/智慧农业"
+    },
+    {
+      "code": "hongzhu",
+      "display_name": "Hongzhu 洪珠",
+      "origin_country": "中国",
+      "brand_value_factor": 0.7,
+      "schema_comment": "丙扩充（国产）：国产农机"
+    },
+    {
+      "code": "juming",
+      "display_name": "Juming 巨明",
+      "origin_country": "中国",
+      "brand_value_factor": 0.75,
+      "schema_comment": "丙扩充（国产）：国产收获机"
+    },
+    {
+      "code": "yhmac",
+      "display_name": "YHMAC 英虎",
+      "origin_country": "中国",
+      "brand_value_factor": 0.72,
+      "schema_comment": "丙扩充（国产）：国产收获机"
+    },
+    {
+      "code": "liugong",
+      "display_name": "Liugong 柳工农机",
+      "origin_country": "中国",
+      "brand_value_factor": 0.75,
+      "schema_comment": "丙扩充（国产）：国产工程机械/农机"
+    },
+    {
+      "code": "taiwo",
+      "display_name": "Taiwo 泰沃",
+      "origin_country": "中国",
+      "brand_value_factor": 0.7,
+      "schema_comment": "丙扩充（国产）：国产农机"
+    },
+    {
+      "code": "weima",
+      "display_name": "Weima 威马农机",
+      "origin_country": "中国",
+      "brand_value_factor": 0.72,
+      "schema_comment": "丙扩充（国产）：国产农机"
+    },
+    {
+      "code": "huanghai_jinma",
+      "display_name": "Huanghai Jinma 黄海金马",
+      "origin_country": "中国",
+      "brand_value_factor": 0.72,
+      "schema_comment": "丙扩充（国产）：国产拖拉机"
+    },
+    {
+      "code": "nongahaha",
+      "display_name": "Nongahaha 农哈哈",
+      "origin_country": "中国",
+      "brand_value_factor": 0.7,
+      "schema_comment": "丙扩充（国产）：国产播种机"
+    },
+    {
+      "code": "bonong",
+      "display_name": "Bonong 勃农",
+      "origin_country": "中国",
+      "brand_value_factor": 0.7,
+      "schema_comment": "丙扩充（国产）：国产农机"
+    },
+    {
+      "code": "ensign",
+      "display_name": "Ensign 英轩重工",
+      "origin_country": "中国",
+      "brand_value_factor": 0.7,
+      "schema_comment": "丙扩充（国产）：国产农机"
+    },
+    {
+      "code": "hanwo",
+      "display_name": "Hanwo 悍沃",
+      "origin_country": "中国",
+      "brand_value_factor": 0.72,
+      "schema_comment": "丙扩充（国产）：国产拖拉机"
+    },
+    {
+      "code": "shuangying",
+      "display_name": "Shuangying 双鹰",
+      "origin_country": "中国",
+      "brand_value_factor": 0.7,
+      "schema_comment": "丙扩充（国产）：国产农机"
+    },
+    {
+      "code": "tianren",
+      "display_name": "Tianren 天人农机",
+      "origin_country": "中国",
+      "brand_value_factor": 0.7,
+      "schema_comment": "丙扩充（国产）：国产播种/农机"
+    },
+    {
+      "code": "liulin",
+      "display_name": "Liulin 柳林农机",
+      "origin_country": "中国",
+      "brand_value_factor": 0.7,
+      "schema_comment": "丙扩充（国产）：国产农机"
+    },
+    {
+      "code": "chunyu",
+      "display_name": "Chunyu 春雨",
+      "origin_country": "中国",
+      "brand_value_factor": 0.75,
+      "schema_comment": "丙扩充（国产）：国产收获机"
+    },
+    {
+      "code": "china_harvest",
+      "display_name": "China Harvest 中国收获",
+      "origin_country": "中国",
+      "brand_value_factor": 0.75,
+      "schema_comment": "丙扩充（国产）：国产收获机"
+    },
+    {
+      "code": "dafang",
+      "display_name": "Dafang 大方农机",
+      "origin_country": "中国",
+      "brand_value_factor": 0.72,
+      "schema_comment": "丙扩充（国产）：国产农机"
+    },
+    {
+      "code": "modern_agro",
+      "display_name": "Modern Agro 现代农装",
+      "origin_country": "中国",
+      "brand_value_factor": 0.7,
+      "schema_comment": "丙扩充（国产）：国产农机"
+    },
+    {
+      "code": "haofeng",
+      "display_name": "Haofeng 豪丰",
+      "origin_country": "中国",
+      "brand_value_factor": 0.72,
+      "schema_comment": "丙扩充（国产）：国产农机"
+    },
+    {
+      "code": "dima",
+      "display_name": "Dima 迪马",
+      "origin_country": "中国",
+      "brand_value_factor": 0.72,
+      "schema_comment": "丙扩充（国产）：国产收获机"
+    },
+    {
+      "code": "luzhong",
+      "display_name": "Luzhong 鲁中",
+      "origin_country": "中国",
+      "brand_value_factor": 0.7,
+      "schema_comment": "丙扩充（国产）：国产农机"
+    },
+    {
+      "code": "valtra",
+      "display_name": "Valtra 维美德",
+      "origin_country": "芬兰",
+      "brand_value_factor": 1.0,
+      "schema_comment": "丙扩充（进口）：高端拖拉机"
+    },
+    {
+      "code": "challenger",
+      "display_name": "Challenger 挑战者",
+      "origin_country": "美国",
+      "brand_value_factor": 1.05,
+      "schema_comment": "丙扩充（进口）：履带拖拉机"
+    },
+    {
+      "code": "lely",
+      "display_name": "Lely 乐力",
+      "origin_country": "荷兰",
+      "brand_value_factor": 1.0,
+      "schema_comment": "丙扩充（进口）：饲草/挤奶设备"
+    },
+    {
+      "code": "pottinger",
+      "display_name": "Poettinger 珀廷格",
+      "origin_country": "奥地利",
+      "brand_value_factor": 1.0,
+      "schema_comment": "丙扩充（进口）：饲草全套设备"
+    },
+    {
+      "code": "horsch",
+      "display_name": "Horsch 豪狮",
+      "origin_country": "德国",
+      "brand_value_factor": 1.0,
+      "schema_comment": "丙扩充（进口）：免耕播种/整地标杆"
+    },
+    {
+      "code": "vaderstad",
+      "display_name": "Vaderstad 维德斯特",
+      "origin_country": "瑞典",
+      "brand_value_factor": 1.0,
+      "schema_comment": "丙扩充（进口）：播种/整地"
+    },
+    {
+      "code": "hardi",
+      "display_name": "Hardi 哈迪",
+      "origin_country": "丹麦",
+      "brand_value_factor": 0.95,
+      "schema_comment": "丙扩充（进口）：植保喷雾"
+    },
+    {
+      "code": "maschio",
+      "display_name": "Maschio 马希奥",
+      "origin_country": "意大利",
+      "brand_value_factor": 0.95,
+      "schema_comment": "丙扩充（进口）：整地/播种"
+    },
+    {
+      "code": "sulky",
+      "display_name": "Sulky 苏尔基",
+      "origin_country": "法国",
+      "brand_value_factor": 0.95,
+      "schema_comment": "丙扩充（进口）：播种/施肥"
+    },
+    {
+      "code": "gregoire_besson",
+      "display_name": "Gregoire Besson 格雷瓜尔贝松",
+      "origin_country": "法国",
+      "brand_value_factor": 0.95,
+      "schema_comment": "丙扩充（进口）：犁/整地"
+    },
+    {
+      "code": "brevieri",
+      "display_name": "Brevieri 布雷维列里",
+      "origin_country": "意大利",
+      "brand_value_factor": 0.9,
+      "schema_comment": "丙扩充（进口）：整地/农机"
+    },
+    {
+      "code": "jacquet",
+      "display_name": "Jacquet 雅克托",
+      "origin_country": "法国",
+      "brand_value_factor": 0.9,
+      "schema_comment": "丙扩充（进口）：农机具"
+    },
+    {
+      "code": "stara",
+      "display_name": "Stara 斯塔拉",
+      "origin_country": "巴西",
+      "brand_value_factor": 0.85,
+      "schema_comment": "丙扩充（进口）：播种/喷雾"
+    },
+    {
+      "code": "mccormick",
+      "display_name": "McCormick 麦克米克",
+      "origin_country": "英国",
+      "brand_value_factor": 0.9,
+      "schema_comment": "丙扩充（进口）：拖拉机"
+    },
+    {
+      "code": "landini",
+      "display_name": "Landini 兰迪尼",
+      "origin_country": "意大利",
+      "brand_value_factor": 0.9,
+      "schema_comment": "丙扩充（进口）：拖拉机"
+    },
+    {
+      "code": "zetor",
+      "display_name": "Zetor 泽托尔",
+      "origin_country": "捷克",
+      "brand_value_factor": 0.85,
+      "schema_comment": "丙扩充（进口）：拖拉机"
+    },
+    {
+      "code": "ursus",
+      "display_name": "Ursus 乌尔苏斯",
+      "origin_country": "波兰",
+      "brand_value_factor": 0.85,
+      "schema_comment": "丙扩充（进口）：拖拉机"
+    },
+    {
+      "code": "ls",
+      "display_name": "LS Tractor",
+      "origin_country": "韩国",
+      "brand_value_factor": 0.85,
+      "schema_comment": "丙扩充（进口）：拖拉机"
+    },
+    {
+      "code": "tafe",
+      "display_name": "TAFE",
+      "origin_country": "印度",
+      "brand_value_factor": 0.8,
+      "schema_comment": "丙扩充（进口）：拖拉机"
+    },
+    {
+      "code": "mahindra",
+      "display_name": "Mahindra 马恒达",
+      "origin_country": "印度",
+      "brand_value_factor": 0.8,
+      "schema_comment": "丙扩充（进口）：拖拉机（全球产量第一）"
+    },
+    {
+      "code": "solis",
+      "display_name": "Solis",
+      "origin_country": "印度",
+      "brand_value_factor": 0.78,
+      "schema_comment": "丙扩充（进口）：拖拉机"
+    },
+    {
+      "code": "valpadana",
+      "display_name": "Valpadana",
+      "origin_country": "意大利",
+      "brand_value_factor": 0.88,
+      "schema_comment": "丙扩充（进口）：果园/窄型拖拉机"
+    },
+    {
+      "code": "goldoni",
+      "display_name": "Goldoni",
+      "origin_country": "意大利",
+      "brand_value_factor": 0.88,
+      "schema_comment": "丙扩充（进口）：果园/窄型拖拉机"
+    },
+    {
+      "code": "antonio_carraro",
+      "display_name": "Antonio Carraro",
+      "origin_country": "意大利",
+      "brand_value_factor": 0.88,
+      "schema_comment": "丙扩充（进口）：果园/特种拖拉机"
+    },
+    {
+      "code": "geringhoff",
+      "display_name": "Geringhoff",
+      "origin_country": "德国",
+      "brand_value_factor": 0.95,
+      "schema_comment": "丙扩充（进口）：玉米割台（全球龙头）"
+    },
+    {
+      "code": "macdon",
+      "display_name": "MacDon",
+      "origin_country": "加拿大",
+      "brand_value_factor": 0.95,
+      "schema_comment": "丙扩充（进口）：割台/收获机械"
+    },
+    {
+      "code": "honey_bee",
+      "display_name": "Honey Bee",
+      "origin_country": "澳大利亚",
+      "brand_value_factor": 0.9,
+      "schema_comment": "丙扩充（进口）：割台"
+    },
+    {
+      "code": "olimac",
+      "display_name": "Olimac",
+      "origin_country": "意大利",
+      "brand_value_factor": 0.9,
+      "schema_comment": "丙扩充（进口）：玉米割台"
+    },
+    {
+      "code": "ploeger",
+      "display_name": "Ploeger",
+      "origin_country": "荷兰",
+      "brand_value_factor": 0.9,
+      "schema_comment": "丙扩充（进口）：收获机械"
+    },
+    {
+      "code": "asa_lift",
+      "display_name": "ASA-Lift",
+      "origin_country": "丹麦",
+      "brand_value_factor": 0.9,
+      "schema_comment": "丙扩充（进口）：收获机械"
+    },
+    {
+      "code": "monosem",
+      "display_name": "Monosem",
+      "origin_country": "法国",
+      "brand_value_factor": 0.95,
+      "schema_comment": "丙扩充（进口）：精密播种机"
+    },
+    {
+      "code": "great_plains",
+      "display_name": "Great Plains",
+      "origin_country": "美国",
+      "brand_value_factor": 0.95,
+      "schema_comment": "丙扩充（进口）：免耕播种/整地"
+    },
+    {
+      "code": "salford",
+      "display_name": "Salford",
+      "origin_country": "加拿大",
+      "brand_value_factor": 0.95,
+      "schema_comment": "丙扩充（进口）：整地/播种"
+    },
+    {
+      "code": "matermacc",
+      "display_name": "MaterMacc",
+      "origin_country": "意大利",
+      "brand_value_factor": 0.9,
+      "schema_comment": "丙扩充（进口）：播种机"
+    },
+    {
+      "code": "nardi",
+      "display_name": "Nardi",
+      "origin_country": "意大利",
+      "brand_value_factor": 0.9,
+      "schema_comment": "丙扩充（进口）：犁/整地"
+    },
+    {
+      "code": "celli",
+      "display_name": "Celli",
+      "origin_country": "意大利",
+      "brand_value_factor": 0.9,
+      "schema_comment": "丙扩充（进口）：整地/农机具"
+    },
+    {
+      "code": "molon",
+      "display_name": "Molon",
+      "origin_country": "意大利",
+      "brand_value_factor": 0.88,
+      "schema_comment": "丙扩充（进口）：农机具"
+    },
+    {
+      "code": "quivogne",
+      "display_name": "Quivogne",
+      "origin_country": "法国",
+      "brand_value_factor": 0.9,
+      "schema_comment": "丙扩充（进口）：整地/犁"
+    },
+    {
+      "code": "treffler",
+      "display_name": "Treffler",
+      "origin_country": "德国",
+      "brand_value_factor": 0.9,
+      "schema_comment": "丙扩充（进口）：整地"
+    },
+    {
+      "code": "berthoud",
+      "display_name": "Berthoud",
+      "origin_country": "法国",
+      "brand_value_factor": 0.9,
+      "schema_comment": "丙扩充（进口）：植保喷雾"
+    },
+    {
+      "code": "tecnoma",
+      "display_name": "Tecnoma",
+      "origin_country": "法国",
+      "brand_value_factor": 0.9,
+      "schema_comment": "丙扩充（进口）：植保喷雾"
+    },
+    {
+      "code": "househam",
+      "display_name": "Househam",
+      "origin_country": "英国",
+      "brand_value_factor": 0.88,
+      "schema_comment": "丙扩充（进口）：植保喷雾"
+    },
+    {
+      "code": "bateman",
+      "display_name": "Bateman",
+      "origin_country": "英国",
+      "brand_value_factor": 0.88,
+      "schema_comment": "丙扩充（进口）：植保喷雾"
+    },
+    {
+      "code": "samasz",
+      "display_name": "SaMASZ",
+      "origin_country": "波兰",
+      "brand_value_factor": 0.9,
+      "schema_comment": "丙扩充（进口）：饲草机械"
+    },
+    {
+      "code": "amity",
+      "display_name": "Amity",
+      "origin_country": "美国",
+      "brand_value_factor": 0.85,
+      "schema_comment": "丙扩充（进口）：农机具"
+    },
+    {
+      "code": "dangkang",
+      "display_name": "Dangkang 当康",
+      "origin_country": "中国",
+      "brand_value_factor": 0.72,
+      "schema_comment": "丙扩充（国产）：国产农机；主行（原供应商全称行已排除）"
+    },
+    {
+      "code": "agronic",
+      "display_name": "Agronic",
+      "origin_country": "荷兰",
+      "brand_value_factor": 0.9,
+      "schema_comment": "丙扩充（进口）：饲草/打捆｜★原产国/系数=先验估计·待核"
+    },
+    {
+      "code": "dexiang",
+      "display_name": "Dexiang 德翔",
+      "origin_country": "中国",
+      "brand_value_factor": 0.7,
+      "schema_comment": "丙扩充（国产）：国产农机｜★原产国/系数=先验估计·待核"
+    },
+    {
+      "code": "dongfeng",
+      "display_name": "Dongfeng 东风",
+      "origin_country": "中国",
+      "brand_value_factor": 0.72,
+      "schema_comment": "丙扩充（国产）：国产农机｜★原产国/系数=先验估计·待核"
+    },
+    {
+      "code": "dorma",
+      "display_name": "Dorma 都麦",
+      "origin_country": "中国",
+      "brand_value_factor": 0.72,
+      "schema_comment": "丙扩充（国产）：国产农机（与 Dormoy 待并）｜★原产国/系数=先验估计·待核"
+    },
+    {
+      "code": "falaixin",
+      "display_name": "Falaxin 法兰信",
+      "origin_country": "中国",
+      "brand_value_factor": 0.7,
+      "schema_comment": "丙扩充（国产）：国产农机｜★原产国/系数=先验估计·待核"
+    },
+    {
+      "code": "grain",
+      "display_name": "Grain 格兰",
+      "origin_country": "中国",
+      "brand_value_factor": 0.72,
+      "schema_comment": "丙扩充（国产）：国产农机｜★原产国/系数=先验估计·待核"
+    },
+    {
+      "code": "grimme",
+      "display_name": "Grimme 格力莫",
+      "origin_country": "德国",
+      "brand_value_factor": 0.95,
+      "schema_comment": "丙扩充（进口）：马铃薯/根茎收获龙头｜★原产国/系数=先验估计·待核"
+    },
+    {
+      "code": "guwang",
+      "display_name": "Guwang 谷王",
+      "origin_country": "中国",
+      "brand_value_factor": 0.75,
+      "schema_comment": "丙扩充（国产）：国产收获机｜★原产国/系数=先验估计·待核"
+    },
+    {
+      "code": "kongskilde",
+      "display_name": "Kongskilde 康斯凯尔",
+      "origin_country": "丹麦",
+      "brand_value_factor": 0.9,
+      "schema_comment": "丙扩充（进口）：整地/饲草｜★原产国/系数=先验估计·待核"
+    },
+    {
+      "code": "maike",
+      "display_name": "Maike 迈科农机",
+      "origin_country": "中国",
+      "brand_value_factor": 0.7,
+      "schema_comment": "丙扩充（国产）：国产农机｜★原产国/系数=先验估计·待核"
+    },
+    {
+      "code": "mushen",
+      "display_name": "Mushen 牧神",
+      "origin_country": "中国",
+      "brand_value_factor": 0.75,
+      "schema_comment": "丙扩充（国产）：国产收获机｜★原产国/系数=先验估计·待核"
+    },
+    {
+      "code": "orke",
+      "display_name": "Orkel 奥库",
+      "origin_country": "挪威",
+      "brand_value_factor": 0.9,
+      "schema_comment": "丙扩充（进口）：打捆/包膜｜★原产国/系数=先验估计·待核"
+    },
+    {
+      "code": "toyonoki",
+      "display_name": "Toyonoki 东洋",
+      "origin_country": "日本",
+      "brand_value_factor": 0.85,
+      "schema_comment": "丙扩充（进口）：农机｜★原产国/系数=先验估计·待核"
+    },
+    {
+      "code": "world",
+      "display_name": "World 沃得",
+      "origin_country": "中国",
+      "brand_value_factor": 0.75,
+      "schema_comment": "丙扩充（国产）：国产收获机｜★原产国/系数=先验估计·待核"
+    },
+    {
+      "code": "yingjia",
+      "display_name": "Yingjia 盈嘉",
+      "origin_country": "中国",
+      "brand_value_factor": 0.7,
+      "schema_comment": "丙扩充（国产）：国产农机｜★原产国/系数=先验估计·待核"
+    }
+  ]
+}
