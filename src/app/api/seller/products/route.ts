@@ -8,7 +8,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyToken, getTokenFromHeaders } from "@/lib/auth";
-import { getQuotaUser, consumeQuota, quotaExceededResponse } from "@/lib/quota";
 import { uploadFileToOSS } from "@/lib/oss-upload";
 import { buildLocationText } from "@/lib/location-parser";
 import { checkContent, isBlocked } from "@/lib/wechat-sec-check";
@@ -18,7 +17,6 @@ import { checkDuplicateProduct, fireVideoModeration, MAX_VIDEOS_PER_PRODUCT, MAX
 export const dynamic = "force-dynamic"; // 防 .cn 构建期静态固化，详见 scripts/check-route-dynamic.mjs
 export const maxDuration = 120;
 
-const PUBLISH_COST = 1;
 
 function getSeller(req: NextRequest) {
   const token = getTokenFromHeaders(req.headers);
@@ -49,15 +47,6 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const seller = getSeller(request);
   if (!seller) return NextResponse.json({ success: false, error: "请先登录" }, { status: 401 });
-
-  // ── P1-a 额度闸门：发布前先校验月度发布额度（惰性重置 + 计数）──
-  const quotaUser = await getQuotaUser(seller.userId);
-  if (quotaUser) {
-    const q = await consumeQuota(quotaUser, "publish");
-    if (!q.ok) {
-      return quotaExceededResponse(q.resetAt);
-    }
-  }
 
   try {
     const formData = await request.formData();
@@ -153,12 +142,9 @@ export async function POST(request: NextRequest) {
     if (descOther) descParts.push(descOther);
     const descriptionZh = descParts.join("\n");
 
-    // === 检查积分 ===
+    // === 检查用户存在（保留防御性校验；发布不再消耗积分）===
     const user = await prisma.user.findUnique({ where: { id: seller.userId } });
     if (!user) return NextResponse.json({ success: false, error: "用户不存在" }, { status: 404 });
-    if (user.credits < PUBLISH_COST) {
-      return NextResponse.json({ success: false, error: `积分不足，当前 ${user.credits} 积分，发布需 ${PUBLISH_COST} 积分`, credits: user.credits, required: PUBLISH_COST }, { status: 403 });
-    }
 
     // === 重复产品检测 ===
     if (finalBrandId) {
@@ -394,13 +380,10 @@ export async function POST(request: NextRequest) {
       fireVideoModeration(savedVideoRecords);
     }
 
-    // === 扣除积分 ===
-    await prisma.user.update({ where: { id: seller.userId }, data: { credits: { decrement: PUBLISH_COST } } });
-
     return NextResponse.json({
       success: true,
       data: product,
-      creditsRemaining: user.credits - PUBLISH_COST,
+      creditsRemaining: user.credits,
     });
   } catch (error) {
     console.error("Publish error:", error);
