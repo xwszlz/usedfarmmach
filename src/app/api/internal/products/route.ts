@@ -791,19 +791,19 @@ export async function POST(request: NextRequest) {
             },
           });
 
-          // T04: 解析主数据 code（纯只读，失败降级为 null → 名匹配兜底）
-          const resolvedCodes = await resolveValuationCodes(
-            {
-              brandId: updatedProduct.brandId,
-              categoryId: updatedProduct.categoryId,
-              brandName: updatedProduct.brand?.nameZh || null,
-              categoryName: updatedProduct.category?.nameZh || null,
-              modelName: updatedProduct.modelName,
-            },
-            prisma
-          );
-
           if (updatedProduct) {
+            // T04: 解析主数据 code（纯只读，失败降级为 null → 名匹配兜底）
+            const resolvedCodes = await resolveValuationCodes(
+              {
+                brandId: updatedProduct.brandId,
+                categoryId: updatedProduct.categoryId,
+                brandName: updatedProduct.brand?.nameZh || null,
+                categoryName: updatedProduct.category?.nameZh || null,
+                modelName: updatedProduct.modelName,
+              },
+              prisma
+            );
+
             // 图片分析
             let visualResult = undefined;
             if (imageFullUrls.length > 0) {
