@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { isCnSite } from "@/config/site";
 
 interface RecruitmentBannerProps {
   locale: string;
@@ -8,6 +9,8 @@ interface RecruitmentBannerProps {
 
 export function RecruitmentBanner({ locale }: RecruitmentBannerProps) {
   const t = useTranslations("home");
+  const bannerMain = isCnSite() ? t("bannerMainCn") : t("bannerMain");
+  const bannerSub = isCnSite() ? t("bannerSubCn") : t("bannerSub");
 
   const isRTL = locale === "ar";
 
@@ -48,7 +51,7 @@ export function RecruitmentBanner({ locale }: RecruitmentBannerProps) {
               WebkitTextStroke: "0.5px rgba(0,100,200,0.5)",
             }}
           >
-            {t("bannerMain")}
+            {bannerMain}
           </span>
         </div>
         {/* Line 2: Subtitle (green) */}
@@ -62,7 +65,7 @@ export function RecruitmentBanner({ locale }: RecruitmentBannerProps) {
             WebkitTextStroke: "0.5px rgba(0,120,50,0.4)",
           }}
         >
-          {t("bannerSub")}
+          {bannerSub}
         </p>
       </div>
     </section>
