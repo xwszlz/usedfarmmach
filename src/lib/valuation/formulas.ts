@@ -172,22 +172,41 @@ function getCategoryBasePrice(category: string, modelName?: string, opts?: { bra
     return 100000; // 10万
   }
 
-  // T04: 主数据 code 优先（modelCode → categoryCode），命中即返回；否则回退下方名匹配（原样保留）
-  if (opts) {
-    if (opts.modelCode && MODEL_BASE_PRICES_BY_CODE[opts.modelCode]) {
-      return MODEL_BASE_PRICES_BY_CODE[opts.modelCode].basePrice * 10000;
-    }
-    if (opts.categoryCode != null && CATEGORY_BASE_PRICES_BY_CODE[opts.categoryCode] != null) {
-      return CATEGORY_BASE_PRICES_BY_CODE[opts.categoryCode] * 10000;
-    }
-  }
-
-  // 子品类别名映射
+  // 子品类别名映射（提取到函数顶部，供下方 T04 回退与名路径共用，避免 TDZ）
   const CATEGORY_ALIASES: Record<string, string[]> = {
     "打捆机": ["小方捆", "大方捆", "圆捆机", "打包机"],
     "收获机": ["茎穗兼收机", "茎穗双收", "单收"],
     "青储机": [],
   };
+
+  // T04: 主数据 code 优先（modelCode → categoryCode），命中即返回；否则回退下方名匹配（原样保留）
+  if (opts) {
+    if (opts.modelCode && MODEL_BASE_PRICES_BY_CODE[opts.modelCode]) {
+      return MODEL_BASE_PRICES_BY_CODE[opts.modelCode].basePrice * 10000;
+    }
+    // T04 回退：modelCode 未解析且 modelName 非空 → 复刻名路径对 MODEL_BASE_PRICES 的模糊匹配
+    // （长度降序→精确→子串且品类一致），命中即返回，保证 code 路径与名路径零回归
+    if (modelName) {
+      const sortedEntries = Object.entries(MODEL_BASE_PRICES).sort(
+        (a, b) => b[0].length - a[0].length
+      );
+      for (const [key, val] of sortedEntries) {
+        if (modelName === key) return val.basePrice * 10000;
+      }
+      const aliases = CATEGORY_ALIASES[category] || [];
+      for (const [key, val] of sortedEntries) {
+        if (modelName.includes(key) || key.includes(modelName)) {
+          if (category.includes(val.category) || val.category.includes(category) ||
+              aliases.includes(val.category)) {
+            return val.basePrice * 10000;
+          }
+        }
+      }
+    }
+    if (opts.categoryCode != null && CATEGORY_BASE_PRICES_BY_CODE[opts.categoryCode] != null) {
+      return CATEGORY_BASE_PRICES_BY_CODE[opts.categoryCode] * 10000;
+    }
+  }
 
   if (modelName) {
     // 按 key 长度降序排列，长键优先匹配
