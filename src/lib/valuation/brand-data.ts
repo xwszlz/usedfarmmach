@@ -623,3 +623,72 @@ export function getSubsidyPriceHistory(brand: string, category: string): Subsidy
   }
   return [];
 }
+
+// ============================================================
+// T04：主数据 code → 基准价映射（由 master-data 字典派生）
+// 生成规则：
+//   1) CATEGORY_BASE_PRICES_BY_CODE —— 对 category.json 的 display_name，复用与名路径
+//      完全相同的「首个可匹配键」逻辑（插入顺序，key⊆display_name 或反之）映射到现有
+//      CATEGORY_BASE_PRICES 数值。
+//   2) MODEL_BASE_PRICES_BY_CODE —— 对 model.json 的 display_name，复刻 formulas.ts 的
+//      型号匹配（长度降序→精确→子串+品类一致），命中则取该型号的基准价；否则用
+//      CATEGORY_BASE_PRICES_BY_CODE[categoryCode] 兜底。
+// 未映射到 code 的品类/机型在解析层返回 null，自动回退到名匹配路径，保证零回归。
+// ============================================================
+
+// 品类 code（category.json）→ 基准新机价（万元）
+export const CATEGORY_BASE_PRICES_BY_CODE: Record<string, number> = {
+  "baler": 40,
+  "corn_harvester": 30,
+  "forage_harvester": 40,
+  "harvester": 40,
+  "planter": 30,
+  "rake": 20,
+  "round_baler": 40,
+  "square_baler": 40,
+  "tractor": 50,
+  "tractor_compact": 50,
+  "tractor_high": 50,
+  "tractor_mid": 50,
+};
+
+// 机型 code（model.json）→ { 品类 code, 基准新机价（万元） }
+export const MODEL_BASE_PRICES_BY_CODE: Record<string, { categoryCode: string; basePrice: number }> = {
+  "case_380": { categoryCode: "tractor", basePrice: 50 },
+  "case_620": { categoryCode: "forage_harvester", basePrice: 40 },
+  "case_8540": { categoryCode: "round_baler", basePrice: 40 },
+  "case_9240": { categoryCode: "tractor", basePrice: 50 },
+  "claas_axion_870": { categoryCode: "tractor", basePrice: 50 },
+  "claas_jaguar_870": { categoryCode: "forage_harvester", basePrice: 40 },
+  "claas_jaguar_950": { categoryCode: "forage_harvester", basePrice: 40 },
+  "claas_quadrant_5300": { categoryCode: "square_baler", basePrice: 40 },
+  "claas_rollant_450": { categoryCode: "round_baler", basePrice: 40 },
+  "deere_1790": { categoryCode: "planter", basePrice: 30 },
+  "deere_3975": { categoryCode: "forage_harvester", basePrice: 40 },
+  "deere_560R": { categoryCode: "round_baler", basePrice: 40 },
+  "deere_8400": { categoryCode: "tractor", basePrice: 50 },
+  "deere_8520": { categoryCode: "tractor", basePrice: 50 },
+  "deere_8R_370": { categoryCode: "tractor", basePrice: 50 },
+  "fendt_724": { categoryCode: "tractor", basePrice: 50 },
+  "fendt_728": { categoryCode: "tractor", basePrice: 50 },
+  "fendt_939": { categoryCode: "tractor", basePrice: 50 },
+  "fendt_942": { categoryCode: "tractor", basePrice: 50 },
+  "krone_big_x_1180": { categoryCode: "forage_harvester", basePrice: 40 },
+  "krone_big_x_700": { categoryCode: "forage_harvester", basePrice: 40 },
+  "krone_comprima": { categoryCode: "round_baler", basePrice: 40 },
+  "krone_swadro_1400": { categoryCode: "rake", basePrice: 20 },
+  "kubota_m7_172": { categoryCode: "tractor", basePrice: 50 },
+  "kuhn_fb_2130": { categoryCode: "round_baler", basePrice: 40 },
+  "kuhn_ga_8731": { categoryCode: "rake", basePrice: 20 },
+  "lovol_baler_9yf": { categoryCode: "round_baler", basePrice: 40 },
+  "lovol_rg2204": { categoryCode: "tractor", basePrice: 50 },
+  "mf_1840": { categoryCode: "round_baler", basePrice: 40 },
+  "mf_2190": { categoryCode: "square_baler", basePrice: 40 },
+  "mf_7726": { categoryCode: "tractor", basePrice: 50 },
+  "mf_8737": { categoryCode: "tractor", basePrice: 50 },
+  "nh_bb900": { categoryCode: "square_baler", basePrice: 40 },
+  "nh_fr9000": { categoryCode: "forage_harvester", basePrice: 40 },
+  "nh_t8_410": { categoryCode: "tractor", basePrice: 50 },
+  "yto_lx1804": { categoryCode: "tractor", basePrice: 25 },
+  "yto_lx2204": { categoryCode: "tractor", basePrice: 50 },
+};

@@ -7,6 +7,7 @@ import {
   type ValuationInput,
   type ValuationResult,
 } from "@/lib/valuation/formulas";
+import { resolveValuationCodes } from "@/lib/valuation/resolve-codes";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +63,34 @@ async function recomputePrecise(valuationParams: Record<string, unknown>): Promi
     imageUrls: [],
     videoUrls: [],
   };
+  // T04: 若带 productId，解析主数据 code 以与 /api/valuation 保持一致（解析失败回退名匹配）
+  if (p.productId) {
+    try {
+      const prod = await prisma.product.findUnique({
+        where: { id: String(p.productId) },
+        include: { brand: true, category: true },
+      });
+      if (prod) {
+        const rc = await resolveValuationCodes(
+          {
+            brandId: prod.brandId,
+            categoryId: prod.categoryId,
+            brandName: prod.brand?.nameZh || null,
+            categoryName: prod.category?.nameZh || null,
+            modelName: prod.modelName,
+          },
+          prisma
+        );
+        input.brandCode = rc.brandCode ?? undefined;
+        input.categoryCode = rc.categoryCode ?? undefined;
+        input.modelCode = rc.modelCode ?? undefined;
+        input.brandValueFactor = rc.brandValueFactor;
+        input.modelPopularityFactor = rc.modelPopularityFactor;
+      }
+    } catch (e) {
+      console.warn("[ValuationUnlock] code 解析失败，回退名匹配:", e);
+    }
+  }
   return await calculateValuationV4(input, undefined);
 }
 
