@@ -14,6 +14,7 @@ import { uploadBufferToOSS } from "@/lib/oss-upload";
 import { hashPassword } from "@/lib/auth";
 import { matchPortByLocation } from "@/lib/port-matcher";
 import { calculateValuationV4, type ValuationInput } from "@/lib/valuation/formulas";
+import { resolveValuationCodes } from "@/lib/valuation/resolve-codes";
 import { analyzeProductImages } from "@/lib/valuation/image-analyzer";
 import { analyzeVideo, calculateVideoFactor } from "@/lib/valuation/video-analyzer";
 import { getDetailImageUrl, getVideoUrl } from "@/lib/image-url";
@@ -790,6 +791,18 @@ export async function POST(request: NextRequest) {
             },
           });
 
+          // T04: 解析主数据 code（纯只读，失败降级为 null → 名匹配兜底）
+          const resolvedCodes = await resolveValuationCodes(
+            {
+              brandId: updatedProduct.brandId,
+              categoryId: updatedProduct.categoryId,
+              brandName: updatedProduct.brand?.nameZh || null,
+              categoryName: updatedProduct.category?.nameZh || null,
+              modelName: updatedProduct.modelName,
+            },
+            prisma
+          );
+
           if (updatedProduct) {
             // 图片分析
             let visualResult = undefined;
@@ -825,6 +838,12 @@ export async function POST(request: NextRequest) {
               condition: updatedProduct.condition,
               priceCny: updatedProduct.priceCny,
               location: updatedProduct.location,
+              // T04: 主数据 code 维度（解析层结果，公式内优先使用）
+              brandCode: resolvedCodes.brandCode ?? undefined,
+              categoryCode: resolvedCodes.categoryCode ?? undefined,
+              modelCode: resolvedCodes.modelCode ?? undefined,
+              brandValueFactor: resolvedCodes.brandValueFactor,
+              modelPopularityFactor: resolvedCodes.modelPopularityFactor,
               imageUrls: imageFullUrls,
               videoUrls: updatedProduct.videos.map(v => v.url),
               enginePower: updatedProduct.enginePower ?? undefined,

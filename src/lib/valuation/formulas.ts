@@ -22,6 +22,8 @@ import {
   HOURS_PARAMS,
   MARKET_FACTOR_RANGE,
   MIN_RESIDUAL_RATIO,
+  CATEGORY_BASE_PRICES_BY_CODE,
+  MODEL_BASE_PRICES_BY_CODE,
   // 数据驱动参数（520万条补贴数据库）
   DOMESTIC_HP_REGRESSION,
   SUBSIDY_CATEGORY_PRICES,
@@ -72,6 +74,13 @@ export interface ValuationInput {
 
   // V4 新增：预分析的视频结果
   videoAnalysisResult?: VideoAnalysisResult;
+
+  // T04：主数据 code 维度（优先 code，回退名匹配，保证零回归）
+  brandCode?: string;
+  categoryCode?: string;
+  modelCode?: string;
+  brandValueFactor?: number | null;
+  modelPopularityFactor?: number | null;
 }
 
 export interface ValuationDetail {
@@ -137,7 +146,11 @@ export interface ValuationResult {
 /**
  * 获取品牌系数
  */
-function getBrandFactor(brand: string): number {
+function getBrandFactor(brand: string, opts?: { brandValueFactor?: number | null }): number {
+  // T04: 优先使用主数据权威品牌保值系数（Brand.brandValueFactor）
+  if (opts && typeof opts.brandValueFactor === "number") {
+    return opts.brandValueFactor;
+  }
   const cnBrand = BRAND_COEFFICIENTS[brand];
   if (cnBrand) return cnBrand;
   // 模糊匹配
@@ -151,12 +164,22 @@ function getBrandFactor(brand: string): number {
  * 获取品类基准价
  * 优先级：精确匹配 > 型号含子串匹配（按key长度降序，品类一致）> 品类名匹配 > 默认值
  */
-function getCategoryBasePrice(category: string, modelName?: string): number {
+function getCategoryBasePrice(category: string, modelName?: string, opts?: { brandCode?: string | null; categoryCode?: string | null; modelCode?: string | null }): number {
   // 0. 附件品类前置检查 — 捡拾台/割台/捡拾器等是附件，不是整机
   const ATTACHMENT_KEYWORDS = ["捡拾台", "割台", "捡拾器", "割草台", "捡拾头"];
   const isAttachment = ATTACHMENT_KEYWORDS.some((kw) => category.includes(kw));
   if (isAttachment) {
     return 100000; // 10万
+  }
+
+  // T04: 主数据 code 优先（modelCode → categoryCode），命中即返回；否则回退下方名匹配（原样保留）
+  if (opts) {
+    if (opts.modelCode && MODEL_BASE_PRICES_BY_CODE[opts.modelCode]) {
+      return MODEL_BASE_PRICES_BY_CODE[opts.modelCode].basePrice * 10000;
+    }
+    if (opts.categoryCode != null && CATEGORY_BASE_PRICES_BY_CODE[opts.categoryCode] != null) {
+      return CATEGORY_BASE_PRICES_BY_CODE[opts.categoryCode] * 10000;
+    }
   }
 
   // 子品类别名映射
@@ -210,7 +233,8 @@ function getDataDrivenBasePrice(
   brand: string,
   category: string,
   modelName?: string,
-  enginePower?: number
+  enginePower?: number,
+  opts?: { brandCode?: string | null; categoryCode?: string | null; modelCode?: string | null; brandValueFactor?: number | null }
 ): { basePrice: number; brandFactor: number; dataSource: string } {
   // 检查是否为有补贴数据支持的国产品牌
   const isDomestic = isDomesticBrandSupported(brand);
@@ -284,8 +308,8 @@ function getDataDrivenBasePrice(
   }
 
   // 轨道A：进口品牌或无补贴数据 → 现有逻辑
-  const categoryBasePrice = getCategoryBasePrice(category, modelName);
-  const brandFactor = getBrandFactor(brand);
+  const categoryBasePrice = getCategoryBasePrice(category, modelName, opts);
+  const brandFactor = getBrandFactor(brand, opts);
   return {
     basePrice: categoryBasePrice * brandFactor,
     brandFactor,
@@ -686,8 +710,14 @@ export async function calculateValuationV4(
   // === V2 基础计算 ===
   
   // 1. 基准价（双轨制：国产数据驱动 vs 进口传统）
+  const codeOpts: { brandCode?: string | null; categoryCode?: string | null; modelCode?: string | null; brandValueFactor?: number | null } = {
+    brandCode: input.brandCode ?? null,
+    categoryCode: input.categoryCode ?? null,
+    modelCode: input.modelCode ?? null,
+    brandValueFactor: input.brandValueFactor ?? null,
+  };
   const { basePrice, brandFactor, dataSource } = getDataDrivenBasePrice(
-    input.brand, input.category, input.modelName, input.enginePower
+    input.brand, input.category, input.modelName, input.enginePower, codeOpts
   );
 
   // 2. 年份因子
@@ -919,8 +949,14 @@ export function calculateValuation(input: ValuationInput): ValuationResult {
   const currentYear = new Date().getFullYear();
 
   // 1. 基准价（双轨制：国产数据驱动 vs 进口传统）
+  const codeOpts: { brandCode?: string | null; categoryCode?: string | null; modelCode?: string | null; brandValueFactor?: number | null } = {
+    brandCode: input.brandCode ?? null,
+    categoryCode: input.categoryCode ?? null,
+    modelCode: input.modelCode ?? null,
+    brandValueFactor: input.brandValueFactor ?? null,
+  };
   const { basePrice, brandFactor, dataSource } = getDataDrivenBasePrice(
-    input.brand, input.category, input.modelName, input.enginePower
+    input.brand, input.category, input.modelName, input.enginePower, codeOpts
   );
 
   // 2. 年份因子
