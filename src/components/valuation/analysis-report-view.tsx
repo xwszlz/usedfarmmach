@@ -13,7 +13,6 @@ interface AnalysisReportViewProps {
   locale?: string;
   locked?: boolean;
   onUnlock?: () => void;
-  valuationPrice?: number | null;
 }
 
 interface ReportSection {
@@ -46,16 +45,6 @@ function mdToHtml(md: string): string {
     .replace(/\n/g, "<br />");
 }
 
-function formatMoney(n: number): string {
-  if (n >= 10000) return `${(n / 10000).toFixed(1)}万`;
-  return n.toLocaleString();
-}
-
-function formatUsd(n: number): string {
-  if (n >= 1000) return `$${(n / 1000).toFixed(1)}k`;
-  return `$${n}`;
-}
-
 function genReportId(): string {
   const now = new Date();
   const ymd = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
@@ -72,7 +61,6 @@ export default function AnalysisReportView({
   locale = "zh",
   locked = false,
   onUnlock,
-  valuationPrice,
 }: AnalysisReportViewProps) {
   const [copied, setCopied] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
@@ -110,56 +98,11 @@ export default function AnalysisReportView({
       color: "text-purple-700 bg-purple-50",
     });
   }
-  if (isChineseBrand) {
-    if (structured?.newMachinePrice) {
-      metrics.push({
-        label: locale === "zh" ? "新机参考价" : "New Price",
-        value: `¥${formatMoney(structured.newMachinePrice)}`,
-        color: "text-green-700 bg-green-50",
-      });
-    }
-    if (structured?.estimatedPriceCny) {
-      metrics.push({
-        label: locale === "zh" ? "二手参考价" : "Used Price",
-        value: `¥${formatMoney(structured.estimatedPriceCny)}`,
-        color: "text-orange-700 bg-orange-50",
-      });
-    }
-    if (structured?.subsidyAmount) {
-      metrics.push({
-        label: locale === "zh" ? "购置补贴" : "Subsidy",
-        value: `¥${formatMoney(structured.subsidyAmount)}`,
-        color: "text-teal-700 bg-teal-50",
-      });
-    }
-  } else {
-    if (structured?.estimatedPriceUsd) {
-      metrics.push({
-        label: locale === "zh" ? "国际参考价" : "Intl Price",
-        value: formatUsd(structured.estimatedPriceUsd),
-        color: "text-green-700 bg-green-50",
-      });
-    }
-  }
-  if (structured?.fobPriceUsd) {
-    metrics.push({
-      label: locale === "zh" ? "FOB出口价" : "FOB Price",
-      value: formatUsd(structured.fobPriceUsd),
-      color: "text-indigo-700 bg-indigo-50",
-    });
-  }
   if (structured?.enginePower) {
     metrics.push({
       label: locale === "zh" ? "马力" : "Power",
       value: `${structured.enginePower} HP`,
       color: "text-red-700 bg-red-50",
-    });
-  }
-  if (valuationPrice) {
-    metrics.push({
-      label: locale === "zh" ? "AI估值引擎" : "AI Valuation",
-      value: `¥${formatMoney(valuationPrice)}`,
-      color: "text-purple-700 bg-purple-50",
     });
   }
 

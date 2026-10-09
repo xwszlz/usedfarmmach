@@ -2,8 +2,9 @@
  * POST /api/agents/seller-helper/deep-analysis
  * AI深度分析 — 双引擎版（国内农机/国际农机）
  *
+ * V2.2（2026-09-26）：移除全部价格/估值内容，价格口径统一到 /api/valuation
  * V2.1 升级（2026-07-12）：
- *   双引擎架构 — 国内农机走豆包(补贴参考价) / 国际农机走Gemini(FOB出口价)
+ *   双引擎架构 — 国内农机走豆包 / 国际农机走Gemini
  *   接受 isChineseBrand 参数，自动切换分析prompt
  *
  * Body: { imageUrls?: string[], imageDataUris?: string[], videoUrls?: string[], isChineseBrand?: boolean }
@@ -12,8 +13,6 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
-import { calculateValuationV4 } from "@/lib/valuation/formulas";
-import { CATEGORY_BASE_PRICES, MODEL_BASE_PRICES } from "@/lib/valuation/brand-data";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120; // 豆包深度分析需要更长时间
@@ -27,7 +26,7 @@ const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || "";
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
 
 /**
- * 国际农机深度分析 Prompt — FOB出口价、全球市场
+ * 国际农机深度分析 Prompt — 全球市场
  */
 const INTERNATIONAL_ANALYSIS_PROMPT = `你是一位拥有20年经验的资深二手农业机械专家和评估师，精通 John Deere、CLAAS、New Holland、Kubota、Massey Ferguson、Case IH 等全球主流品牌的拖拉机、收获机、打捆机、播种机等各类农机设备。
 
@@ -35,13 +34,13 @@ const INTERNATIONAL_ANALYSIS_PROMPT = `你是一位拥有20年经验的资深二
 
 报告必须包含以下部分（用 Markdown 格式输出）：
 
-## 一、设备识别
+## 设备识别
 - 品牌（英文标准名）
 - 具体型号
 - 生产年份（或年份范围）
 - 识别依据（从哪张照片/视频的什么特征判断的）
 
-## 二、技术参数解读
+## 技术参数解读
 基于你对该型号的专业知识，列出关键技术参数：
 - 发动机：型号、额定马力(HP)、排量、缸数
 - 传动系统：驱动方式(2WD/4WD)、变速箱档位数
@@ -50,7 +49,7 @@ const INTERNATIONAL_ANALYSIS_PROMPT = `你是一位拥有20年经验的资深二
 - 燃油箱容量、PTO功率等
 - 如果照片中有铭牌信息，以铭牌为准；否则根据你的专业知识补充
 
-## 三、设备现状评估（六维度评分）
+## 设备现状评估（六维度评分）
 从以下6个维度评估设备现状，每个维度打分（1-10分，10分为最佳）：
 - 外观漆面（喷漆完整性、褪色程度）— 评分及说明
 - 锈蚀程度（车身、底盘、关键部件锈蚀情况）— 评分及说明
@@ -60,7 +59,7 @@ const INTERNATIONAL_ANALYSIS_PROMPT = `你是一位拥有20年经验的资深二
 - 整体印象（保养水平、使用痕迹、维保记录）— 评分及说明
 最后给出综合评价和总体评分。
 
-## 四、操作与维修要点
+## 操作与维修要点
 基于你的专业知识，给出该型号农机的：
 - 日常操作注意事项
 - 定期保养项目及周期（工作小时数）
@@ -68,27 +67,20 @@ const INTERNATIONAL_ANALYSIS_PROMPT = `你是一位拥有20年经验的资深二
 - 易损件清单
 - 关键操作技巧
 
-## 五、市场参考价格
-- 国内二手市场参考价（人民币）
-- 国际二手市场参考价（美元）
-- FOB天津港出口参考价（美元）
-- 影响价格的关键因素分析
-- 该型号在当前市场的供需情况
-
-## 六、购买建议
+## 购买建议
 - 该设备的优缺点总结
 - 适合的作业场景
 - 选购时需要重点检查的部位
 - 询价空间分析
 
-## 七、资源与文档
+## 资源与文档
 - 官方使用说明书获取途径（官网链接或经销商联系方式）
 - 零件目录/Parts Manual 查询地址
 - 维修手册下载链接（如有）
 - 技术培训视频或资料推荐
 - 该品牌在中国的授权服务商信息（如有）
 
-## 八、结构化数据（JSON）
+## 结构化数据（JSON）
 最后附上一个JSON代码块，包含可被程序解析的结构化数据：
 \`\`\`json
 {
@@ -112,9 +104,6 @@ const INTERNATIONAL_ANALYSIS_PROMPT = `你是一位拥有20年经验的资深二
     "hydraulic": 1-10,
     "overall": 1-10
   },
-  "estimatedPriceCny": 估值人民币,
-  "estimatedPriceUsd": 估值美元,
-  "fobPriceUsd": FOB美元,
   "isChineseBrand": false,
   "confidence": 0.0-1.0
 }
@@ -122,40 +111,10 @@ const INTERNATIONAL_ANALYSIS_PROMPT = `你是一位拥有20年经验的资深二
 
 重要提示：
 1. **请充分利用你的专业知识**，不要仅依赖照片信息
-2. 报告内容要详实、专业、有深度，至少2000字
-3. **市场价格请严格以「估值引擎参考数据」为准**，在此基础上分析影响因素，不要自行编造价格
-4. FOB价格需考虑设备状况、年份和出口物流成本`;
+2. 报告内容要详实、专业、有深度，至少2000字`;
 
 /**
- * 根据型号名推断品类（用于前端未传 category 时的兜底）
- */
-function inferCategoryFromModelName(modelName: string): string | undefined {
-  if (!modelName) return undefined;
-
-  // 1. 精确/子串匹配 MODEL_BASE_PRICES，按 key 长度降序
-  const sortedEntries = Object.entries(MODEL_BASE_PRICES).sort(
-    (a, b) => b[0].length - a[0].length
-  );
-  for (const [key, val] of sortedEntries) {
-    if (modelName === key || modelName.includes(key)) {
-      return val.category;
-    }
-  }
-
-  // 2. 匹配 CATEGORY_BASE_PRICES 的 key
-  for (const [key] of Object.entries(CATEGORY_BASE_PRICES).sort(
-    (a, b) => b[0].length - a[0].length
-  )) {
-    if (modelName.includes(key)) {
-      return key;
-    }
-  }
-
-  return undefined;
-}
-
-/**
- * 国内农机深度分析 Prompt — 补贴参考价、国内市场行情
+ * 国内农机深度分析 Prompt — 车况评估、操作维修、国内市场
  */
 const DOMESTIC_ANALYSIS_PROMPT = `你是一位拥有20年经验的中国资深农业机械专家和评估师，精通东方红、雷沃、沃得、福田、久保田（国产）、洋马、井关、时风、五征、常发、星光、中联重科等国内主流品牌的拖拉机、收割机、插秧机、播种机、植保机、打捆机等各类农机设备。你对中国农机购置补贴政策、各省补贴额度、二手农机交易市场行情有深入了解。
 
@@ -163,13 +122,13 @@ const DOMESTIC_ANALYSIS_PROMPT = `你是一位拥有20年经验的中国资深�
 
 报告必须包含以下部分（用 Markdown 格式输出）：
 
-## 一、设备识别
+## 设备识别
 - 品牌（中文标准名）
 - 具体型号
 - 生产年份（或年份范围）
 - 识别依据（从哪张照片/视频的什么特征判断的）
 
-## 二、技术参数解读
+## 技术参数解读
 基于你对该型号的专业知识，列出关键技术参数：
 - 发动机：型号、额定马力(HP)、排量、缸数
 - 传动系统：驱动方式(两驱/四驱)、变速箱档位数
@@ -178,7 +137,7 @@ const DOMESTIC_ANALYSIS_PROMPT = `你是一位拥有20年经验的中国资深�
 - 燃油箱容量、PTO功率等
 - 如果照片中有铭牌信息，以铭牌为准；否则根据你的专业知识补充
 
-## 三、设备现状评估（六维度评分）
+## 设备现状评估（六维度评分）
 从以下6个维度评估设备现状，每个维度打分（1-10分，10分为最佳）：
 - 外观漆面（喷漆完整性、褪色程度）— 评分及说明
 - 锈蚀程度（车身、底盘、关键部件锈蚀情况）— 评分及说明
@@ -188,36 +147,28 @@ const DOMESTIC_ANALYSIS_PROMPT = `你是一位拥有20年经验的中国资深�
 - 整体印象（保养水平、使用痕迹、维保记录）— 评分及说明
 最后给出综合评价和总体评分。
 
-## 四、操作与维修要点
+## 操作与维修要点
 - 日常操作注意事项
 - 定期保养项目及周期（工作小时数）
 - 常见故障及排除方法
 - 易损件清单及参考价格
 - 关键操作技巧
 
-## 五、补贴与市场参考价格
-- 该型号新机购置补贴额度（中央补贴+地方补贴，如有）
-- 新机市场参考价（含补贴后价格）
-- 二手市场参考价（人民币）
-- 各地区价格差异分析（如山东、河南、东北等主产区）
-- 二手保值率分析（按年份折旧曲线）
-- 出口可行性评估（如有出口潜力，给出FOB参考价）
-
-## 六、购买建议
+## 购买建议
 - 该设备的优缺点总结
 - 适合的作业场景和地块规模
 - 选购时需要重点检查的部位
 - 询价空间分析
 - 售后服务与配件供应情况
 
-## 七、资源与文档
+## 资源与文档
 - 官方使用说明书获取途径（官网链接或经销商联系方式）
 - 零件目录/配件手册查询地址
 - 维修手册下载链接（如有）
 - 技术培训视频或资料推荐
 - 该品牌在中国的授权服务商信息
 
-## 八、结构化数据（JSON）
+## 结构化数据（JSON）
 最后附上一个JSON代码块，包含可被程序解析的结构化数据：
 \`\`\`json
 {
@@ -241,10 +192,6 @@ const DOMESTIC_ANALYSIS_PROMPT = `你是一位拥有20年经验的中国资深�
     "hydraulic": 1-10,
     "overall": 1-10
   },
-  "subsidyAmount": 补贴金额元,
-  "newMachinePrice": 新机价格元,
-  "estimatedPriceCny": 二手估值人民币,
-  "fobPriceUsd": FOB美元或null,
   "isChineseBrand": true,
   "confidence": 0.0-1.0
 }
@@ -252,10 +199,7 @@ const DOMESTIC_ANALYSIS_PROMPT = `你是一位拥有20年经验的中国资深�
 
 重要提示：
 1. **请充分利用你的专业知识**，不要仅依赖照片信息
-2. 报告内容要详实、专业、有深度，至少2000字
-3. 补贴金额请根据你的知识给出合理估算，并注明是中央补贴还是含地方补贴
-4. **市场价格请严格以「估值引擎参考数据」为准**，在此基础上分析影响因素，不要自行编造价格
-5. 如果该型号有出口潜力（如沃得、雷沃在东南亚、中亚有市场），请给出出口参考价`;
+2. 报告内容要详实、专业、有深度，至少2000字`;
 
 /**
  * 构建豆包API的多模态消息内容
@@ -505,34 +449,6 @@ export async function POST(request: NextRequest) {
     if (knownParams.length > 0) {
       activePrompt += `\n\n⚠️ 已知信息（请以此为准，照片作为辅助验证）：\n${knownParams.join("\n")}`;
     }
-    // 调用估值引擎获取真实参考价（价格统一核心逻辑）
-    let valuationContext = "";
-    let valuationPrice: number | null = null;
-    try {
-      const enginePowerNum = enginePower ? parseInt(String(enginePower).replace(/[^0-9]/g, "")) : undefined;
-
-      // 修复：category 与 modelName 分离。优先用前端传入的 category，否则从型号推断。
-      const modelName = productName || "";
-      const category = categoryName || inferCategoryFromModelName(modelName) || "青储机";
-
-      const valuationInput: any = {
-        brand: brandName || "未知品牌",
-        modelName,
-        category,
-        year: year || 2020,
-        enginePower: enginePowerNum,
-        condition: "good",
-      };
-      const valuationResult = await calculateValuationV4(valuationInput);
-      valuationPrice = valuationResult.estimatedValue;
-      valuationContext = `\n\n⚠️ 估值引擎参考数据（请严格以此为基础撰写价格分析，不要自行编造价格）：\n- AI二手参考估值：¥${valuationResult.estimatedValue.toLocaleString()}\n- 估值区间：¥${valuationResult.priceRange.low.toLocaleString()} - ¥${valuationResult.priceRange.high.toLocaleString()}\n- 新机基准价：¥${valuationResult.basePrice.toLocaleString()}\n- 品牌系数：${valuationResult.brandFactor.toFixed(2)}\n- 年份折旧：${Math.round((1 - valuationResult.yearFactor) * 100)}%\n- 规格因子：${(valuationResult.specFactor ?? 1.0).toFixed(2)}\n- 估值引擎版本：${valuationResult.version}`;
-      const dataSourceDesc = valuationResult.details.find((d: any) => d.label === "基准价来源")?.description || "估值引擎";
-      valuationContext += `\n- 数据来源：${dataSourceDesc}`;
-      console.log(`[DeepAnalysis] 估值引擎成功: ¥${valuationResult.estimatedValue.toLocaleString()} (category=${category}, model=${modelName})`);
-    } catch (e) {
-      console.warn("[DeepAnalysis] 估值引擎调用失败:", e);
-    }
-    activePrompt += valuationContext;
 
     const engineLabel = isChineseBrand ? "国内(DOMESTIC)" : "国际(INTERNATIONAL)";
 
@@ -638,7 +554,6 @@ export async function POST(request: NextRequest) {
         analysis: analysisText,
         structured: structured || {},
         model: modelUsed,
-        valuationPrice,
         mediaCount: { images: images.length, videos: videoUrls.length },
       },
     });
