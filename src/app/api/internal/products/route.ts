@@ -27,8 +27,6 @@ import { checkDuplicateProduct, fireVideoModeration, MAX_VIDEOS_PER_PRODUCT, MAX
 // 小程序可能同时上传多张大图+视频，60秒不够用
 export const maxDuration = 300;
 
-const PUBLISH_COST = 1;
-
 // 小程序通过 oss-token 直传到该 OSS bucket，URL 形如
 // https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/uploads/products/xxx.jpg
 // 已经是最终地址，后端无需再下载重传
@@ -329,10 +327,13 @@ export async function POST(request: NextRequest) {
     const finalMainConfig = mainConfig ?? descHeader ?? null;
     const finalNetWeight = netWeight ?? null;
 
+    // 年份可选（新机可能没有年份）：缺省取当前年份
+    const finalYear = year ? Number(year) : new Date().getFullYear();
+
     // ── 校验 ──
-    if (!modelName || !year || !priceCny || !location) {
+    if (!modelName || !priceCny || !location) {
       return NextResponse.json(
-        { success: false, error: "请填写完整信息（型号、年份、价格、位置为必填）", code: "VALIDATION_ERROR" },
+        { success: false, error: "请填写完整信息（型号、价格、位置为必填）", code: "VALIDATION_ERROR" },
         { status: 400 }
       );
     }
@@ -414,18 +415,12 @@ export async function POST(request: NextRequest) {
     // ── 确定卖家 ──
     const finalSellerId = sellerId || (await getOrCreateDefaultSeller());
 
-    // ── 检查积分 ──
+    // ── 校验卖家存在（发布不再消耗积分）──
     const user = await prisma.user.findUnique({ where: { id: finalSellerId } });
     if (!user) {
       return NextResponse.json(
         { success: false, error: "卖家不存在", code: "SELLER_NOT_FOUND" },
         { status: 404 }
-      );
-    }
-    if (user.credits < PUBLISH_COST) {
-      return NextResponse.json(
-        { success: false, error: "积分不足", credits: user.credits, required: PUBLISH_COST, code: "INSUFFICIENT_CREDITS" },
-        { status: 403 }
       );
     }
 
@@ -444,7 +439,7 @@ export async function POST(request: NextRequest) {
       finalSellerId,
       finalBrandId,
       modelName,
-      Number(year),
+      finalYear,
       undefined,
       {
         // 可区分特征：只要有任一不同即为另一台设备，放行发布
@@ -498,7 +493,7 @@ export async function POST(request: NextRequest) {
         brandId: finalBrandId,
         categoryId: finalCategoryId,
         modelName,
-        year: Number(year),
+        year: finalYear,
         workingHours: null,
         condition,
         priceCny: Number(priceCny),
@@ -671,14 +666,6 @@ export async function POST(request: NextRequest) {
       fireVideoModeration(savedVideoRecords);
       console.log(`[internal/products] step-5 fired async moderation for ${savedVideoRecords.length} videos`);
     }
-
-    // ── Step 6: 扣除积分 ──
-    const t6 = Date.now();
-    await prisma.user.update({
-      where: { id: finalSellerId },
-      data: { credits: { decrement: PUBLISH_COST } },
-    });
-    console.log(`[internal/products] step-6 credits deducted in ${Date.now() - t6}ms`);
 
     // ── Step 7: autoAI 处理（小程序提交时触发）──
     let aiEnhanced = false;
@@ -918,7 +905,7 @@ export async function POST(request: NextRequest) {
       data: {
         id: product.id,
         sellerId: finalSellerId,
-        creditsRemaining: user.credits - PUBLISH_COST,
+        creditsRemaining: user.credits,
         status: productStatus,
         isImported,
         aiEnhanced,
