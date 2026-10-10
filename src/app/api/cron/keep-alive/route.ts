@@ -36,13 +36,14 @@ export const maxDuration = 30;
  * 与 /api/cron/update-prices、/api/cron/benchmark 保持一致的鉴权逻辑
  */
 function isValidToken(token: string | null | undefined): boolean {
+  // ⚠️ 安全约定（务必保留）：这里【绝不】为密钥设置默认值兜底。
+  // env 缺失即不可比对（fail-closed）。与 /api/cron/update-prices、/api/cron/benchmark、/api/cron/daily-report 的约定保持一致。
   if (!token) return false;
-  const cronApiKey = process.env.CRON_API_KEY || "dev-secret-key";
+  const cronApiKey = process.env.CRON_API_KEY;
   const internalApiKey = process.env.INTERNAL_API_KEY;
-  if (token === cronApiKey) return true;
+  if (cronApiKey && token === cronApiKey) return true;
   if (internalApiKey && token === internalApiKey) return true;
-  if (process.env.NODE_ENV === "production") return false;
-  return token === "dev-secret-key";
+  return false;
 }
 
 /**
