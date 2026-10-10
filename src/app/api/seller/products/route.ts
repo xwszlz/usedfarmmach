@@ -101,9 +101,11 @@ export async function POST(request: NextRequest) {
       finalLocation = buildLocationText(country, province, city);
     }
 
+    // 年份可选（新机可能没有年份）：缺省取当前年份
+    const finalYear = yearStr ? Number(yearStr) : new Date().getFullYear();
     // 校验
-    if (!modelName || !yearStr || !priceCnyStr || !finalLocation) {
-      return NextResponse.json({ success: false, error: "请填写完整信息（型号、年份、价格、位置为必填）" }, { status: 400 });
+    if (!modelName || !priceCnyStr || !finalLocation) {
+      return NextResponse.json({ success: false, error: "请填写完整信息（型号、价格、位置为必填）" }, { status: 400 });
     }
     if (!brandId && !brandName) return NextResponse.json({ success: false, error: "请选择或输入品牌" }, { status: 400 });
     if (!categoryId && !categoryName) return NextResponse.json({ success: false, error: "请选择或输入品类" }, { status: 400 });
@@ -152,7 +154,7 @@ export async function POST(request: NextRequest) {
         seller.userId,
         finalBrandId,
         modelName,
-        Number(yearStr),
+        finalYear,
         undefined,
         {
           // 可区分特征：只要有任一不同即为另一台设备，放行发布
@@ -224,7 +226,7 @@ export async function POST(request: NextRequest) {
         brandId: finalBrandId!,
         categoryId: finalCategoryId!,
         modelName,
-        year: Number(yearStr),
+        year: finalYear,
         workingHours: workingHoursStr ? Number(workingHoursStr) : null,
         condition,
         priceCny: Number(priceCnyStr),

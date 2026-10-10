@@ -329,10 +329,13 @@ export async function POST(request: NextRequest) {
     const finalMainConfig = mainConfig ?? descHeader ?? null;
     const finalNetWeight = netWeight ?? null;
 
+    // 年份可选（新机可能没有年份）：缺省取当前年份
+    const finalYear = year ? Number(year) : new Date().getFullYear();
+
     // ── 校验 ──
-    if (!modelName || !year || !priceCny || !location) {
+    if (!modelName || !priceCny || !location) {
       return NextResponse.json(
-        { success: false, error: "请填写完整信息（型号、年份、价格、位置为必填）", code: "VALIDATION_ERROR" },
+        { success: false, error: "请填写完整信息（型号、价格、位置为必填）", code: "VALIDATION_ERROR" },
         { status: 400 }
       );
     }
@@ -444,7 +447,7 @@ export async function POST(request: NextRequest) {
       finalSellerId,
       finalBrandId,
       modelName,
-      Number(year),
+      finalYear,
       undefined,
       {
         // 可区分特征：只要有任一不同即为另一台设备，放行发布
@@ -498,7 +501,7 @@ export async function POST(request: NextRequest) {
         brandId: finalBrandId,
         categoryId: finalCategoryId,
         modelName,
-        year: Number(year),
+        year: finalYear,
         workingHours: null,
         condition,
         priceCny: Number(priceCny),
