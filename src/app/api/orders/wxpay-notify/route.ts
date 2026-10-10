@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { decryptCallbackResource } from "@/lib/wechat-pay";
 import { handlePaymentSuccess } from "@/lib/escrow";
+import { isCnSite } from "@/config/site";
 
 /**
  * POST /api/orders/wxpay-notify
@@ -16,6 +17,9 @@ import { handlePaymentSuccess } from "@/lib/escrow";
  */
 export async function POST(request: NextRequest) {
   try {
+    if (!isCnSite()) {
+      return NextResponse.json({ error: "SITE_NOT_SUPPORTED" }, { status: 404 });
+    }
     const body = await request.json();
 
     // 微信 V3 回调结构校验

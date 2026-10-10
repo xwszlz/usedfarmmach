@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getUserFromRequest } from "@/lib/auth";
+import { isCnSite } from "@/config/site";
 
 /**
  * GET /api/orders/[id]
@@ -11,6 +12,9 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    if (!isCnSite()) {
+      return NextResponse.json({ error: "SITE_NOT_SUPPORTED" }, { status: 404 });
+    }
     const user = await getUserFromRequest(request);
     if (!user) {
       return NextResponse.json({ success: false, error: "未登录" }, { status: 401 });

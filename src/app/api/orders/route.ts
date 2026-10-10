@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { getUserFromRequest } from "@/lib/auth";
 import { generateOrderNo, calculateFee, calculateDeposit, ESCROW_STATUS, DEPOSIT_TIMEOUT_DAYS } from "@/lib/escrow";
 import { createMiniOrder, buildMiniPaySign, isConfigured } from "@/lib/wechat-pay";
-import { siteConfig } from "@/config/site";
+import { isCnSite, siteConfig } from "@/config/site";
 
 /**
  * POST /api/orders
@@ -21,6 +21,9 @@ import { siteConfig } from "@/config/site";
 export const dynamic = "force-dynamic"; // 防 .cn 构建期静态固化，详见 scripts/check-route-dynamic.mjs
 export async function POST(request: NextRequest) {
   try {
+    if (!isCnSite()) {
+      return NextResponse.json({ error: "SITE_NOT_SUPPORTED" }, { status: 404 });
+    }
     const user = await getUserFromRequest(request);
     if (!user) {
       return NextResponse.json({ success: false, error: "未登录" }, { status: 401 });
@@ -181,6 +184,9 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
+    if (!isCnSite()) {
+      return NextResponse.json({ error: "SITE_NOT_SUPPORTED" }, { status: 404 });
+    }
     const user = await getUserFromRequest(request);
     if (!user) {
       return NextResponse.json({ success: false, error: "未登录" }, { status: 401 });

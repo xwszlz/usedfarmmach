@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/auth";
 import { buyerConfirmReceipt } from "@/lib/escrow";
+import { isCnSite } from "@/config/site";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,9 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
+    if (!isCnSite()) {
+      return NextResponse.json({ error: "SITE_NOT_SUPPORTED" }, { status: 404 });
+    }
     const user = await getUserFromRequest(request);
     if (!user) {
       return NextResponse.json({ success: false, error: "请先登录" }, { status: 401 });
