@@ -10,6 +10,7 @@ import { prisma } from "@/lib/db";
 export interface PiiAuditInput {
   actorId: string;
   targetUserId?: string | null;
+  targetListingId?: string | null;
   field: string;
   action: string;
   purpose?: string | null;
