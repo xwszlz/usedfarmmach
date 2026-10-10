@@ -204,7 +204,7 @@ export const RAW_SELECT = {
   productId: true, convertedAt: true,
 } satisfies Prisma.RawListingSelect;
 
-type RawListingRow = {
+export type RawListingRow = {
   id: string; source: string; sourceUrl: string; status: string; brandName: string; modelName: string;
   year: number | null; workingHours: number | null; condition: string | null; priceRaw: number | null;
   currency: string | null; priceCny: number | null; location: string; sellerName: string | null;
@@ -647,4 +647,51 @@ export async function applyBatchAction(input: BatchActionInput): Promise<BatchAc
   }
 
   return { results, summary: { total: ids.length, ok, converted, skipped, failed } };
+}
+
+export interface LeadListResult {
+  items: RawListingRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export async function listLeads(q: {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+}): Promise<LeadListResult> {
+  const page = Math.max(1, Number(q.page) || 1);
+  const pageSize = Math.min(100, Math.max(1, Number(q.pageSize) || 30));
+  const query = q.q ? q.q.trim() : "";
+
+  const where: Prisma.RawListingWhereInput = query
+    ? {
+        OR: [
+          { sellerName: { contains: query } },
+          { brandName: { contains: query } },
+          { modelName: { contains: query } },
+        ],
+      }
+    : {};
+
+  const [rows, total] = await Promise.all([
+    prisma.rawListing.findMany({
+      where,
+      orderBy: { scrapedAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      select: RAW_SELECT,
+    }),
+    prisma.rawListing.count({ where }),
+  ]);
+
+  return {
+    items: rows as RawListingRow[],
+    total,
+    page,
+    pageSize,
+    totalPages: Math.max(1, Math.ceil(total / pageSize)),
+  };
 }
