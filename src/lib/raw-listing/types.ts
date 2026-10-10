@@ -147,6 +147,7 @@ export interface RawListingLike {
   sellerPhone: string | null;
   sellerWechat: string | null;
   sellerWhatsapp: string | null;
+  sellerEmail: string | null;
 }
 
 /** 转换成功结果 */

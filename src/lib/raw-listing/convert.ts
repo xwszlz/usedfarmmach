@@ -328,6 +328,7 @@ export async function convertListing(
       contactName: listing.sellerName?.trim() || null,
       contactPhone: listing.sellerPhone?.trim() || null,
       contactWechat: listing.sellerWechat?.trim() || null,
+      contactEmail: listing.sellerEmail?.trim() || null,
     },
   });
 

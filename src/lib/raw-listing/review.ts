@@ -195,19 +195,21 @@ const CONVERTING_STALE_MINUTES = 10;
 // 行投影工具
 // ───────────────────────────────────────────────
 
-const RAW_SELECT = {
+export const RAW_SELECT = {
   id: true, source: true, sourceUrl: true, status: true, brandName: true, modelName: true,
   year: true, workingHours: true, condition: true, priceRaw: true, currency: true, priceCny: true,
   location: true, sellerName: true, sellerPhone: true, sellerWechat: true, sellerWhatsapp: true,
+  sellerEmail: true,
   images: true, scrapedAt: true, reviewedAt: true, reviewedBy: true, notes: true,
   productId: true, convertedAt: true,
 } satisfies Prisma.RawListingSelect;
 
-type RawListingRow = {
+export type RawListingRow = {
   id: string; source: string; sourceUrl: string; status: string; brandName: string; modelName: string;
   year: number | null; workingHours: number | null; condition: string | null; priceRaw: number | null;
   currency: string | null; priceCny: number | null; location: string; sellerName: string | null;
   sellerPhone: string | null; sellerWechat: string | null; sellerWhatsapp: string | null;
+  sellerEmail: string | null;
   images: string | null; scrapedAt: Date; reviewedAt: Date | null; reviewedBy: string | null;
   notes: string | null; productId: string | null; convertedAt: Date | null;
 };
@@ -218,6 +220,7 @@ function toListingLike(r: RawListingRow): RawListingLike {
     year: r.year, workingHours: r.workingHours, condition: r.condition, priceRaw: r.priceRaw,
     currency: r.currency, priceCny: r.priceCny, location: r.location, sellerName: r.sellerName,
     sellerPhone: r.sellerPhone, sellerWechat: r.sellerWechat, sellerWhatsapp: r.sellerWhatsapp,
+    sellerEmail: r.sellerEmail,
   };
 }
 
@@ -318,6 +321,59 @@ export async function listRawListings(q: ListQuery): Promise<ListResult> {
     totalPages: Math.max(1, Math.ceil(total / pageSize)),
     statusCounts,
     lookups: { sources: distinctSources.map((s) => s.source) },
+  };
+}
+
+// ───────────────────────────────────────────────
+// 线索池列表（内部线索池 / Seller Leads）
+// 与 listRawListings 同口径分页，但不过滤 status，按 scrapedAt 倒序，
+// 搜索覆盖卖家名 / 品牌 / 型号，供运营补全联系方式。
+// ───────────────────────────────────────────────
+
+export interface LeadListResult {
+  items: RawListingRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export async function listLeads(q: {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+}): Promise<LeadListResult> {
+  const page = Math.max(1, Number(q.page) || 1);
+  const pageSize = Math.min(100, Math.max(1, Number(q.pageSize) || 30));
+  const query = q.q ? q.q.trim() : "";
+
+  const where: Prisma.RawListingWhereInput = query
+    ? {
+        OR: [
+          { sellerName: { contains: query } },
+          { brandName: { contains: query } },
+          { modelName: { contains: query } },
+        ],
+      }
+    : {};
+
+  const [rows, total] = await Promise.all([
+    prisma.rawListing.findMany({
+      where,
+      orderBy: { scrapedAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      select: RAW_SELECT,
+    }),
+    prisma.rawListing.count({ where }),
+  ]);
+
+  return {
+    items: rows as RawListingRow[],
+    total,
+    page,
+    pageSize,
+    totalPages: Math.max(1, Math.ceil(total / pageSize)),
   };
 }
 

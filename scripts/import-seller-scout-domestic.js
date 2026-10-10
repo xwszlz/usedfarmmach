@@ -95,6 +95,7 @@ async function importFromJson(jsonPath) {
       sellerPhone: l.item.sellerPhone || null,
       sellerWechat: null,
       sellerWhatsapp: null,
+        sellerEmail: l.item.sellerEmail || null,
       images: null,
       contentHash: l.hash,
       scrapedAt: new Date(l.item.sourceDate || data.scrapedAt),
