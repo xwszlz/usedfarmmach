@@ -4,19 +4,43 @@
 // ============================================
 
 const API_BASE = "https://usedfarmmach.com/api/miniapp";
-const API_KEY = "shennong_miniapp_2026_key_x8k2mP9vLqR7wT3y";
+/**
+ * 小程序接口鉴权 key —— 只从环境变量 MINIAPP_API_KEY 读取。
+ *
+ * 🔒 安全红线（fail-closed）：
+ *  - 源码里不得出现任何明文凭据（历史遗留的硬编码常量已移除）；
+ *  - 环境变量缺失时**不放行**，也**绝不回退**到任何默认值 / 历史字符串，
+ *    一律走 failClosed()：打 error 日志并以 500 结束本次调用。
+ */
+function resolveApiKey() {
+  const env = typeof process !== "undefined" ? process.env : undefined;
+  return (env && env.MINIAPP_API_KEY) || "";
+}
+
+/** 凭据缺失时的统一出口：error 日志 + 500（fail-closed，绝不静默放行） */
+function failClosed() {
+  console.error(
+    "[miniapp/api] MINIAPP_API_KEY 未配置 → fail-closed：拒绝发出 x-miniapp-key 请求（HTTP 500）"
+  );
+  return { statusCode: 500, data: { success: false, error: "MINIAPP_API_KEY 未配置" } };
+}
+
 
 /**
  * 通用请求方法
  */
 function request(url, options = {}) {
+  const apiKey = resolveApiKey();
+  if (!apiKey) {
+    return Promise.reject(failClosed());
+  }
   return new Promise((resolve, reject) => {
     wx.request({
       url: API_BASE + url,
       method: options.method || "GET",
       header: {
         "Content-Type": "application/json",
-        "x-miniapp-key": API_KEY,
+        "x-miniapp-key": apiKey,
         ...(options.header || {}),
       },
       data: options.data,
@@ -42,12 +66,16 @@ function request(url, options = {}) {
  * @returns {Promise<{url, key, type}>}
  */
 function uploadFile(filePath, folder = "miniapp") {
+  const apiKey = resolveApiKey();
+  if (!apiKey) {
+    return Promise.reject(failClosed());
+  }
   return new Promise((resolve, reject) => {
     wx.uploadFile({
       url: API_BASE + "/upload",
       filePath: filePath,
       name: "file",
-      header: { "x-miniapp-key": API_KEY },
+      header: { "x-miniapp-key": apiKey },
       formData: { folder },
       timeout: 60000, // 60s for large files
       success(res) {
