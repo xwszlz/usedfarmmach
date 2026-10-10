@@ -98,6 +98,13 @@ export interface RawListingListItem {
   notes: string | null;
   productId: string | null;
   convertedAt: string | null;
+  /** Option D：是否已对外展示（/overseas 栏目可见性） */
+  isPublic: boolean;
+  publishedAt: string | null;
+  /** Option D：人工修正展示标题 / 归一品牌键 / 自由品类标签 */
+  displayTitle: string | null;
+  brandKey: string | null;
+  categorySlug: string | null;
   /** 由 notes 解析出的命中规则名（供前端 chips） */
   reasons: string[];
 }
@@ -124,7 +131,15 @@ export interface ListResult {
   lookups: { sources: string[] };
 }
 
-export type SingleAction = "approve" | "reject" | "reevaluate" | "publish" | "unpublish";
+export type SingleAction =
+  | "approve"
+  | "reject"
+  | "reevaluate"
+  | "publish"
+  | "unpublish"
+  /** Option D：设为/取消「去交易化只读栏目」对外展示（直接操作 RawListing.isPublic，不转 Product） */
+  | "publish-to-sourced"
+  | "unpublish-sourced";
 
 export interface SingleActionInput {
   action: SingleAction;
@@ -139,6 +154,8 @@ export interface SingleActionInput {
 export interface SingleActionResult {
   action: SingleAction;
   status: string;
+  /** Option D: isPublic switch result (publish-to-sourced / unpublish-sourced) */
+  isPublic?: boolean;
   productId?: string | null;
   productStatus?: string | null;
   skippedReason?: string;
@@ -160,7 +177,15 @@ export interface BatchActionResult {
   summary: Record<string, number>;
 }
 
-export const SINGLE_ACTIONS: readonly SingleAction[] = ["approve", "reject", "reevaluate", "publish", "unpublish"];
+export const SINGLE_ACTIONS: readonly SingleAction[] = [
+  "approve",
+  "reject",
+  "reevaluate",
+  "publish",
+  "unpublish",
+  "publish-to-sourced",
+  "unpublish-sourced",
+];
 const ALL_STATUSES = [
   "pending",
   "auto_rejected",
@@ -201,6 +226,8 @@ const RAW_SELECT = {
   location: true, sellerName: true, sellerPhone: true, sellerWechat: true, sellerWhatsapp: true,
   images: true, scrapedAt: true, reviewedAt: true, reviewedBy: true, notes: true,
   productId: true, convertedAt: true,
+  // Option D additive 可见性字段
+  isPublic: true, publishedAt: true, displayTitle: true, brandKey: true, categorySlug: true,
 } satisfies Prisma.RawListingSelect;
 
 type RawListingRow = {
@@ -210,6 +237,8 @@ type RawListingRow = {
   sellerPhone: string | null; sellerWechat: string | null; sellerWhatsapp: string | null;
   images: string | null; scrapedAt: Date; reviewedAt: Date | null; reviewedBy: string | null;
   notes: string | null; productId: string | null; convertedAt: Date | null;
+  isPublic: boolean; publishedAt: Date | null; displayTitle: string | null;
+  brandKey: string | null; categorySlug: string | null;
 };
 
 function toListingLike(r: RawListingRow): RawListingLike {
@@ -260,6 +289,11 @@ function mapItem(r: RawListingRow): RawListingListItem {
     reviewedAt: r.reviewedAt ? r.reviewedAt.toISOString() : null,
     reviewedBy: r.reviewedBy, notes: r.notes,
     productId: r.productId, convertedAt: r.convertedAt ? r.convertedAt.toISOString() : null,
+    isPublic: r.isPublic,
+    publishedAt: r.publishedAt ? r.publishedAt.toISOString() : null,
+    displayTitle: r.displayTitle,
+    brandKey: r.brandKey,
+    categorySlug: r.categorySlug,
     reasons: parseReasons(r.notes),
   };
 }
@@ -435,9 +469,45 @@ export async function applySingleAction(id: string, input: SingleActionInput): P
       return setPublishState(id, input, true);
     case "unpublish":
       return setPublishState(id, input, false);
+    case "publish-to-sourced":
+      return setSourcedPublic(id, input, true);
+    case "unpublish-sourced":
+      return setSourcedPublic(id, input, false);
     default:
       throw new ReviewError(400, "VALIDATION_ERROR", `未知动作：${String(input.action)}`);
   }
+}
+
+/**
+ * Option D —— 设置 / 取消「去交易化只读栏目」对外展示。
+ *
+ * 直接操作 `RawListing.isPublic` / `publishedAt`，**不生成 Product、不触碰 status 转换链路**。
+ * 与既有 `publish/unpublish`（Product 路径）完全解耦：采集数据从此分两路——
+ *   - 转 Product（自营货架 /products，既有链路，保持不变）；
+ *   - 仅对外展示（只读 /overseas，本动作，新增）。
+ */
+async function setSourcedPublic(id: string, input: SingleActionInput, makePublic: boolean): Promise<SingleActionResult> {
+  const existing = (await prisma.rawListing.findUnique({ where: { id }, select: RAW_SELECT })) as RawListingRow | null;
+  if (!existing) throw new ReviewError(404, "NOT_FOUND", "采集记录不存在");
+  const now = new Date();
+  await prisma.rawListing.update({
+    where: { id },
+    data: {
+      isPublic: makePublic,
+      publishedAt: makePublic ? now : null,
+      reviewedBy: input.actorId,
+      reviewedAt: now,
+      notes: appendNotes(
+        existing.notes,
+        `[sourced] ${makePublic ? "published" : "unpublished"} by ${input.actorId}${input.note ? `: ${input.note}` : ""}`
+      ),
+    },
+  });
+  return {
+    action: makePublic ? "publish-to-sourced" : "unpublish-sourced",
+    status: makePublic ? "sourced_published" : "sourced_unpublished",
+    isPublic: makePublic,
+  };
 }
 
 async function approveOne(id: string, input: SingleActionInput): Promise<SingleActionResult> {
@@ -632,7 +702,7 @@ export async function applyBatchAction(input: BatchActionInput): Promise<BatchAc
         brandId: overrides.brandId,
         categoryId: overrides.categoryId,
       });
-      const isOk = r.status === "converted" || r.status === "published" || r.status === "rejected";
+      const isOk = r.status === "converted" || r.status === "published" || r.status === "rejected" || r.status === "sourced_published" || r.status === "sourced_unpublished";
       if (isOk) ok++;
       if (r.status === "converted") converted++;
       if (r.skippedReason) skipped++;

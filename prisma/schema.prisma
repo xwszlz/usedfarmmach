@@ -651,12 +651,26 @@ model RawListing {
   productId      String?
   /// 转换时间（additive，nullable）
   convertedAt    DateTime?
+  /// ───────────────────────────────────────────────
+  /// Option D（去交易化只读栏目「海外车源 / 急需车源」）additive 可见性字段
+  /// ───────────────────────────────────────────────
+  /// 对外展示开关：true ⇒ 进入 /overseas 只读栏目（替代"转 Product→active"的错配链路）
+  isPublic        Boolean    @default(false)
+  /// 对外展示时间（排序/时效）
+  publishedAt     DateTime?
+  /// 人工修正的展示标题（避免"配件"类污染）
+  displayTitle    String?
+  /// 归一品牌键（筛选用，可空）
+  brandKey        String?
+  /// 展示用自由品类标签（非 FK，可为空；如「克拉斯AXION」「纽荷兰大方捆」）
+  categorySlug    String?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
   @@index([status, scrapedAt])
   @@index([source, scrapedAt])
   @@index([contentHash])
+  @@index([isPublic, scrapedAt])
 }
 
 model ChatMessage {

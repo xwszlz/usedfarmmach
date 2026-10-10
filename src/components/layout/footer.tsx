@@ -73,6 +73,14 @@ export function Footer({ locale }: FooterProps) {
                   {t("quickLinkAgriaffaires")}
                 </a>
               </li>
+              <li>
+                <a
+                  href={`/${locale}/overseas`}
+                  className="text-sm text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400"
+                >
+                  {t("quickLinkOverseas")}
+                </a>
+              </li>
             </ul>
           </div>
 

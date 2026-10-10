@@ -31,7 +31,7 @@ interface Props {
   locale: string;
 }
 
-type Action = "approve" | "reject" | "reevaluate" | "publish" | "unpublish";
+type Action = "approve" | "reject" | "reevaluate" | "publish" | "unpublish" | "publish-to-sourced" | "unpublish-sourced";
 
 const STATUS_STYLE: Record<string, string> = {
   needs_review: "bg-amber-100 text-amber-700",
@@ -218,6 +218,12 @@ export function RawListingReviewTable({ items, brands, categories, locale }: Pro
           <button disabled={busy} onClick={() => batchAct("unpublish")} className="rounded border px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50">
             批量下线
           </button>
+          <button disabled={busy} onClick={() => batchAct("publish-to-sourced")} className="rounded bg-indigo-600 px-3 py-1 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-50">
+            批量对外展示
+          </button>
+          <button disabled={busy} onClick={() => batchAct("unpublish-sourced")} className="rounded border px-3 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-50 disabled:opacity-50">
+            批量取消展示
+          </button>
           <span className="mx-1 h-5 w-px bg-gray-300" />
           <input
             value={modelName}
@@ -262,6 +268,11 @@ export function RawListingReviewTable({ items, brands, categories, locale }: Pro
                   </td>
                   <td className="px-3 py-2.5">
                     <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${badge}`}>{it.status}</span>
+                    {it.isPublic && (
+                      <span className="ml-1 inline-block rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-medium text-indigo-700">
+                        对外
+                      </span>
+                    )}
                   </td>
                   <td className="px-3 py-2.5 text-xs text-gray-500">
                     <div>{it.source}</div>
@@ -329,6 +340,15 @@ export function RawListingReviewTable({ items, brands, categories, locale }: Pro
                   <td className="px-3 py-2.5">
                     <div className="flex flex-col gap-1.5">
                       <a href={`/${locale}/admin/raw-listings/${it.id}`} className="text-[11px] text-primary-600 hover:underline">详情</a>
+                      {it.isPublic ? (
+                        <button disabled={busy} onClick={() => singleAct(it.id, "unpublish-sourced")} className="rounded border px-2 py-0.5 text-[11px] font-medium text-indigo-700 hover:bg-indigo-50 disabled:opacity-50">
+                          取消对外展示
+                        </button>
+                      ) : (
+                        <button disabled={busy} onClick={() => singleAct(it.id, "publish-to-sourced")} className="rounded bg-indigo-600 px-2 py-0.5 text-[11px] font-medium text-white hover:bg-indigo-700 disabled:opacity-50">
+                          对外展示
+                        </button>
+                      )}
                       {(it.status === "needs_review" || it.status === "pending" || it.status === "approved") && (
                         <>
                           <div className="flex gap-1">

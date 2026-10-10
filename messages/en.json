@@ -197,6 +197,29 @@
       "cn": "Vice President Unit, Used Farm Machinery Circulation Branch of China Association of Agricultural Machinery Circulation"
     }
   },
+  "overseas": {
+    "title": "Overseas Stock",
+    "subtitle": "Third-party listings on external marketplaces (read-only, de-transactionalized — not our inventory), including urgently-needed models.",
+    "urgentTitle": "Urgently Needed",
+    "urgentSubtitle": "High-demand models — priority matching",
+    "disclaimer": "Third-party listings, not our inventory. Prices & condition per original site; platform makes no ownership/warranty/fulfillment promises.",
+    "source": "Source",
+    "scrapedAt": "Scraped",
+    "viewOriginal": "View original",
+    "noResults": "No sourced listings available yet",
+    "noUrgent": "No urgent models available yet",
+    "searchPlaceholder": "Search model / brand / region…",
+    "filterAllSources": "All sources",
+    "filter": "Filter",
+    "retry": "Retry",
+    "showing": "{count} listings",
+    "priceLabel": "Listing price",
+    "brand": "Brand",
+    "model": "Model",
+    "year": "Year",
+    "location": "Region",
+    "thirdPartyPriceNote": "Third-party listing price · for reference only"
+  },
   "nav": {
     "membership": "Membership",
     "home": "Home",
@@ -244,7 +267,8 @@
     "services": "Services",
     "research": "Research",
     "credits": "Credits Center",
-    "machineryExpo": "Machinery Expo"
+    "machineryExpo": "Machinery Expo",
+    "overseas": "Overseas Stock"
   },
   "hero": {
     "arenaTitle": "Can You Command Farm Machines with AI?",
@@ -835,6 +859,7 @@
     "quickLinkCamda": "China Agricultural Machinery Distribution Association",
     "quickLinkTractorHouse": "TractorHouse",
     "quickLinkAgriaffaires": "Agriaffaires",
+    "quickLinkOverseas": "Overseas Stock",
     "contactUs": "Contact Us",
     "legal": "Legal",
     "privacy": "Privacy Policy",

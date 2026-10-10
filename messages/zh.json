@@ -197,6 +197,29 @@
       "cn": "中国农业机械流通协会二手农机流通分会 副会长单位"
     }
   },
+  "overseas": {
+    "title": "海外车源",
+    "subtitle": "第三方平台在售农机挂牌（去交易化只读展示，非本平台库存），含客户急需车型。",
+    "urgentTitle": "客户急需车源",
+    "urgentSubtitle": "以下机型为当前重点求购，优先对接",
+    "disclaimer": "第三方在售信息，非本平台库存。价格与车况以原站为准，平台不承诺货权、质保与履约。",
+    "source": "来源",
+    "scrapedAt": "抓取",
+    "viewOriginal": "查看原站",
+    "noResults": "暂无对外展示的车源",
+    "noUrgent": "暂无急需车型",
+    "searchPlaceholder": "搜索型号 / 品牌 / 地区…",
+    "filterAllSources": "全部来源",
+    "filter": "筛选",
+    "retry": "重试",
+    "showing": "共 {count} 条",
+    "priceLabel": "第三方挂牌价",
+    "brand": "品牌",
+    "model": "机型",
+    "year": "年份",
+    "location": "地区",
+    "thirdPartyPriceNote": "第三方挂牌价 · 仅供参考"
+  },
   "nav": {
     "membership": "会员",
     "home": "首页",
@@ -244,7 +267,8 @@
     "services": "增值服务",
     "research": "研究Hub",
     "credits": "积分中心",
-    "machineryExpo": "农机博览会"
+    "machineryExpo": "农机博览会",
+    "overseas": "海外车源"
   },
   "hero": {
     "arenaTitle": "你会用AI指挥农机吗？",
@@ -835,6 +859,7 @@
     "quickLinkCamda": "中国农业机械流通协会",
     "quickLinkTractorHouse": "拖拉机之家",
     "quickLinkAgriaffaires": "Agriaffaires",
+    "quickLinkOverseas": "海外车源",
     "contactUs": "联系我们",
     "legal": "法律信息",
     "privacy": "隐私政策",
