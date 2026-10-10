@@ -108,7 +108,8 @@ model User {
 model PiiAuditLog {
   id           String   @id @default(cuid())
   actorId      String // 操作人（admin/super_admin）userId
-  targetUserId String // 被查看的用户
+  targetUserId String? // 被查看的用户
+  targetListingId String? // 被查看的 RawListing id（线索池场景）
   field        String // 如 "email" | "phone"
   action       String   @default("view_full") // view_full | export
   purpose      String? // 用途备注（可选）
@@ -116,6 +117,7 @@ model PiiAuditLog {
 
   @@index([actorId, createdAt])
   @@index([targetUserId, createdAt])
+  @@index([targetListingId, createdAt])
 }
 
 /// 邮件发送日志（阶段 1 新增，additive 不影响任何现有表）
@@ -641,6 +643,7 @@ model RawListing {
   sellerPhone    String?
   sellerWechat   String?
   sellerWhatsapp String?
+  sellerEmail    String?  // 增补：卖家邮箱（采集可自动落，人工可补）
   images         String?
   contentHash    String    @unique
   scrapedAt      DateTime  @default(now())

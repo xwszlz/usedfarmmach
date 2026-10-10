@@ -91,6 +91,7 @@ export interface RawListingListItem {
   sellerPhone: string | null;
   sellerWechat: string | null;
   sellerWhatsapp: string | null;
+  sellerEmail: string | null;
   images: string | null;
   scrapedAt: string;
   reviewedAt: string | null;
@@ -195,10 +196,10 @@ const CONVERTING_STALE_MINUTES = 10;
 // 行投影工具
 // ───────────────────────────────────────────────
 
-const RAW_SELECT = {
+export const RAW_SELECT = {
   id: true, source: true, sourceUrl: true, status: true, brandName: true, modelName: true,
   year: true, workingHours: true, condition: true, priceRaw: true, currency: true, priceCny: true,
-  location: true, sellerName: true, sellerPhone: true, sellerWechat: true, sellerWhatsapp: true,
+  location: true, sellerName: true, sellerPhone: true, sellerWechat: true, sellerWhatsapp: true, sellerEmail: true,
   images: true, scrapedAt: true, reviewedAt: true, reviewedBy: true, notes: true,
   productId: true, convertedAt: true,
 } satisfies Prisma.RawListingSelect;
@@ -218,6 +219,7 @@ function toListingLike(r: RawListingRow): RawListingLike {
     year: r.year, workingHours: r.workingHours, condition: r.condition, priceRaw: r.priceRaw,
     currency: r.currency, priceCny: r.priceCny, location: r.location, sellerName: r.sellerName,
     sellerPhone: r.sellerPhone, sellerWechat: r.sellerWechat, sellerWhatsapp: r.sellerWhatsapp,
+    sellerEmail: r.sellerEmail,
   };
 }
 

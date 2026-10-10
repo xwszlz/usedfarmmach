@@ -43,6 +43,7 @@ interface DomesticListing {
   location: string;
   sellerName?: string;
   sellerPhone?: string;
+  sellerEmail?: string;
   source: string;
   sourceDate: string;
   sourceUrl?: string;
@@ -113,6 +114,7 @@ async function importFromJson(jsonPath: string) {
       sellerPhone: l.item.sellerPhone || null,
       sellerWechat: null,
       sellerWhatsapp: null,
+        sellerEmail: l.item.sellerEmail || null,
       images: null,
       contentHash: l.hash,
       scrapedAt: new Date(l.item.sourceDate || data.scrapedAt),

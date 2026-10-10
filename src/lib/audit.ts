@@ -9,7 +9,7 @@ import { prisma } from "@/lib/db";
 
 export interface PiiAuditInput {
   actorId: string;
-  targetUserId: string;
+  targetUserId?: string | null;
   field: string;
   action: string;
   purpose?: string | null;
@@ -21,7 +21,8 @@ export async function writePiiAuditLog(input: PiiAuditInput): Promise<void> {
     await prisma.piiAuditLog.create({
       data: {
         actorId: input.actorId,
-        targetUserId: input.targetUserId,
+        targetUserId: input.targetUserId ?? null,
+        targetListingId: input.targetListingId ?? null,
         field: input.field,
         action: input.action,
         purpose: input.purpose ?? null,

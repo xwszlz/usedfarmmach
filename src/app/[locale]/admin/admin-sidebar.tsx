@@ -26,6 +26,7 @@ export function AdminSidebar({ role }: { role: string }) {
     { href: `/${locale}/admin/users`, label: "用户管理", icon: Users, hideForEditor: true },
     { href: `/${locale}/admin/products`, label: "产品管理", icon: Package, hideForEditor: false },
     { href: `/${locale}/admin/raw-listings`, label: "采集审核", icon: Inbox, hideForEditor: true },
+    { href: `/${locale}/admin/leads`, label: "线索池", icon: Inbox, hideForEditor: true },
     { href: `/${locale}/admin/auction-bookings`, label: "询价报名管理", icon: Gavel, hideForEditor: false },
     { href: `/${locale}/admin/auctioneers`, label: "拍卖师挂靠", icon: BadgeCheck, hideForEditor: true },
     { href: `/${locale}/admin/auction-agencies`, label: "合作持牌机构", icon: Award, hideForEditor: true },
