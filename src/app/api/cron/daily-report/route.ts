@@ -1,5 +1,5 @@
 /**
- * GET /api/cron/daily-report?token=INTERNAL_API_KEY
+ * GET /api/cron/daily-report （Vercel Cron 自动带 Authorization: Bearer <CRON_SECRET> 头）
  *
  * Vercel Cron 入口（每天 07:45 北京 = 前一天 23:45 UTC）。
  * 聚合当日数据并生成《跨境套利日报》写入 public/daily-reports/。
@@ -19,7 +19,7 @@ export const maxDuration = 300;
  * 因此这里在两个环境变量都未配置时返回 null，由调用方 fail-closed（拒绝所有请求）。
  */
 function resolveExpectedKey(): string | null {
-  return process.env.INTERNAL_API_KEY || process.env.CRON_API_KEY || null;
+  return process.env.INTERNAL_API_KEY || process.env.CRON_API_KEY || process.env.CRON_SECRET || null;
 }
 
 /** 从 query(?token=) 或 Authorization: Bearer 头中提取调用方凭证。 */

@@ -23,8 +23,8 @@
  *   · 按需：需要时手动 GET 本接口立刻唤醒 —— 推广活动、展会当天、
  *     发版后冒烟测试等场景。
  *
- * 鉴权沿用项目既有约定：?token=INTERNAL_API_KEY
- * （Vercel Cron 不支持自定义请求头，故走 URL query）
+ * 鉴权沿用项目既有约定：Vercel Cron 自动带 Authorization: Bearer <CRON_SECRET> 头，
+ * 不再在 vercel.json 的 cron path 写 ?token= 明文（2026-10-10 起）。
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
@@ -41,17 +41,19 @@ function isValidToken(token: string | null | undefined): boolean {
   if (!token) return false;
   const cronApiKey = process.env.CRON_API_KEY;
   const internalApiKey = process.env.INTERNAL_API_KEY;
+  const cronSecret = process.env.CRON_SECRET;
   if (cronApiKey && token === cronApiKey) return true;
   if (internalApiKey && token === internalApiKey) return true;
+  if (cronSecret && token === cronSecret) return true;
   return false;
 }
 
 /**
- * GET /api/cron/keep-alive?token=xxx
+ * GET /api/cron/keep-alive （Vercel Cron 自动带 Authorization: Bearer <CRON_SECRET> 头）
  * 真实打一次库，唤醒 Neon 计算节点。返回耗时，便于判断是否发生了冷启动。
  */
 export async function GET(request: NextRequest) {
-  const token = request.nextUrl.searchParams.get("token");
+  const token = request.nextUrl.searchParams.get("token") || request.headers.get("Authorization")?.replace("Bearer ", "") || null;
 
   if (!isValidToken(token)) {
     return NextResponse.json(

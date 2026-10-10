@@ -1,11 +1,11 @@
 /**
- * GET /api/cron/benchmark  — Vercel Cron 自动调用（URL query token 验证）
+ * GET /api/cron/benchmark  — Vercel Cron 自动调用（Authorization: Bearer <CRON_SECRET> 头验证）
  * POST /api/cron/benchmark — 手动调用（Authorization Bearer 头验证）
  *
  * 多品牌国际基准价 — 每日实时刷新（方案 A：跑在 Vercel 境外，出网自由）
  * 逻辑见 src/lib/benchmark-engine.js（并发抓取 18 品牌 × 机型 × 7 源）。
  *
- * 鉴权沿用项目既有约定：vercel.json 的 cron path 带 ?token=INTERNAL_API_KEY，
+ * 鉴权沿用项目既有约定：Vercel Cron 自动带 Authorization: Bearer <CRON_SECRET> 头，
  * 同时支持 CRON_API_KEY（手动 Bearer）。
  */
 import { NextRequest, NextResponse } from "next/server";
@@ -24,8 +24,10 @@ function isValidToken(token: string | null | undefined): boolean {
   // 与 src/app/api/cron/daily-report/route.ts 的约定保持一致。
   const cronApiKey = process.env.CRON_API_KEY;
   const internalApiKey = process.env.INTERNAL_API_KEY;
+  const cronSecret = process.env.CRON_SECRET;
   if (cronApiKey && token === cronApiKey) return true;
   if (internalApiKey && token === internalApiKey) return true;
+  if (cronSecret && token === cronSecret) return true;
   return false;
 }
 
@@ -49,9 +51,9 @@ async function executeRefresh() {
   };
 }
 
-// GET — Vercel Cron（token 通过 ?token= 传递）
+// GET — Vercel Cron（Vercel 自动带 Authorization: Bearer <CRON_SECRET> 头）
 export async function GET(request: NextRequest) {
-  const token = request.nextUrl.searchParams.get("token");
+  const token = request.nextUrl.searchParams.get("token") || request.headers.get("Authorization")?.replace("Bearer ", "") || null;
   if (!isValidToken(token)) {
     return NextResponse.json(
       { success: false, error: "缺少或无效的授权信息" },
