@@ -27,6 +27,7 @@ import {
   retrieveStripeSubscription,
   recordBillingOrder,
 } from "@/lib/payments/stripe";
+import { grantRecharge } from "@/lib/credits/grant";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -107,6 +108,38 @@ async function handleCheckoutSessionCompleted(session: any): Promise<void> {
   const subscriptionId = session?.subscription as string | null | undefined;
   const paymentIntentId =
     typeof session?.payment_intent === "string" ? session.payment_intent : null;
+
+  // —— 积分充值（plan=credit_recharge，非会员 SKU）：一次性支付 -> 加积分，不走会员逻辑 ——
+  if (planRaw === "credit_recharge") {
+    const credits = Number((session?.metadata?.credits as string) || 0);
+    const paid = typeof session?.amount_total === "number" ? session.amount_total : 0;
+    if (userId && credits > 0) {
+      const dup = await prisma.creditTransaction.findFirst({
+        where: { type: "recharge", relatedId: session.id },
+      });
+      if (!dup) {
+        await grantRecharge(userId, credits, "stripe_recharge", session.id);
+      }
+      try {
+        await recordBillingOrder({
+          userId,
+          plan: "credit_recharge" as any,
+          sku: "credit_recharge",
+          currency: (((session?.currency as string) || "usd").toUpperCase()),
+          amount: paid,
+          sessionId: session.id,
+          paymentIntentId,
+          status: "completed",
+        });
+      } catch (e) {
+        console.error("[Webhook/Stripe] credit recharge recordBillingOrder 失败:", e);
+      }
+      console.log(`[Webhook/Stripe] 积分充值成功 user=${userId} credits=${credits} session=${session.id}`);
+    } else {
+      console.error(`[需人工补单][Webhook/Stripe] credit_recharge 缺少 userId/credits session=${session.id}`);
+    }
+    return;
+  }
 
   if (!userId || !customerId || !isStripePlan(planRaw)) return;
   const plan = planRaw as any;
