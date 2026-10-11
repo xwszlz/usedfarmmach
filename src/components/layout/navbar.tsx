@@ -67,8 +67,8 @@ export function Navbar({ locale }: NavbarProps) {
   const tierLabel: Record<string, string> = {
     free: "免费",
     basic: "普通会员",
-    premium: "高级会员",
-    enterprise: "企业会员",
+    premium: "Pro",
+    enterprise: "高级会员",
   };
 
   const tierColor: Record<string, string> = {
