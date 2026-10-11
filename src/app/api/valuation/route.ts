@@ -6,7 +6,8 @@ import { prisma } from "@/lib/db";
 
 import { getTokenFromHeaders, verifyToken } from "@/lib/auth";
 
-import { computeAiCost, deductCredits } from "@/lib/credits/spend";
+import { computeAiCost, deductCredits, type AiCostBreakdown } from "@/lib/credits/spend";
+import { drainUsage } from "@/lib/credits/usage-collector";
 
 import { calculateValuation, calculateValuationV4, type ValuationInput, type ValuationResult } from "@/lib/valuation/formulas";
 
@@ -43,8 +44,8 @@ const GUEST_WINDOW_MS = 24 * 60 * 60 * 1000; // 滚动 24 小时窗口
 
 const guestValuationCounters = new Map<string, { count: number; resetAt: number }>();
 
-/** 估值固定名义输入 token 数（含图像/视频分析综合估算），按 token×2 反算积分 */
-const VALUATION_NOMINAL_INPUT_TOKENS = 2000;
+/** 估值放行的最低积分门槛：预检只看够不够门槛，实际扣多少由算完后的真实 token 用量决定 */
+const VALUATION_MIN_CREDITS = 1;
 
 /** 从 referer / 路径推断 locale（与 quota guard / 各 AI 路由保持一致） */
 function getLocaleFromRequest(request: NextRequest): string {
@@ -212,12 +213,14 @@ export async function POST(request: NextRequest) {
 
 
 
-    // ── 积分计费闸门：登录用户按积分计费（替代原 aiValuation 额度，先于昂贵计算防绕过）──
+    // ── 积分计费 ①：预检（本步不扣分）——登录 + 余额 ≥ VALUATION_MIN_CREDITS 才放行 ──
+    // 真正的扣分在估值算完之后，按本请求内 LLM 的【真实 token 用量】执行（见下方 ②）。
     // 游客逻辑不变（保留 IP 限流 + 区间化模糊结果）。
 
     const token = getTokenFromHeaders(request.headers);
 
     let isAuthenticated = false;
+    let authUserId: string | null = null;
 
     if (token) {
 
@@ -226,20 +229,15 @@ export async function POST(request: NextRequest) {
       if (payload) {
 
         isAuthenticated = true;
+        authUserId = payload.userId;
 
-        // 固定名义 token 成本（估值含图像/视频分析），按 token×2 反算积分
-        const cost = computeAiCost({
-          model: "doubao-seed-2-1-pro-260915",
-          inputTokens: VALUATION_NOMINAL_INPUT_TOKENS,
-          outputTokens: 0,
+        const creditRow = await prisma.user.findUnique({
+          where: { id: payload.userId },
+          select: { credits: true },
         });
-        const deduction = await deductCredits(
-          payload.userId,
-          cost.points,
-          "AI估值",
-          cost as unknown as Record<string, unknown>
-        );
-        if (!deduction.ok) {
+        const balanceNow = creditRow?.credits ?? 0;
+
+        if (balanceNow < VALUATION_MIN_CREDITS) {
           const locale = getLocaleFromRequest(request);
           return NextResponse.json(
             {
@@ -247,8 +245,8 @@ export async function POST(request: NextRequest) {
               error: "积分不足，请先充值",
               code: "INSUFFICIENT_CREDITS",
               rechargeUrl: `/${locale}/credits`,
-              required: deduction.required,
-              balance: deduction.credits,
+              required: VALUATION_MIN_CREDITS,
+              balance: balanceNow,
             },
             { status: 402 }
           );
@@ -620,7 +618,49 @@ export async function POST(request: NextRequest) {
       // V2 引擎：传统估值
 
       result = calculateValuation(input);
+    }
 
+
+
+    // ── 积分计费 ②：估值算完后，按本请求内 LLM 的【真实 token 用量】扣分 ──
+    // 用量由 image-analyzer / video-analyzer 在拿到 provider usage 后经 usage-collector 归集。
+    // 只扣一次：把全部记录按模型分组算成本后求和，再一次 deductCredits。
+    // 无论如何都要 drain：模块级数组是本进程的，游客/异常分支不 drain 会跨请求串账。
+    const usage = drainUsage();
+    if (authUserId) {
+      const perModel: AiCostBreakdown[] = usage.map((u) =>
+        computeAiCost({
+          model: u.model,
+          inputTokens: u.inputTokens,
+          outputTokens: u.outputTokens,
+        })
+      );
+      const totalPoints = perModel.reduce((sum, c) => sum + c.points, 0);
+
+      const billingBreakdown = {
+        models: perModel.map((c, i) => ({
+          ...c,
+          // provider 没给 usage 时为 true —— breakdown 里能看出这笔是估的还是实测的
+          estimated: usage[i]?.estimated === true,
+        })),
+        totalPoints,
+        usageCount: usage.length,
+      };
+
+      const deduction = await deductCredits(
+        authUserId,
+        totalPoints,
+        "AI估值",
+        billingBreakdown as unknown as Record<string, unknown>
+      );
+
+      // 扣分失败（多为并发下余额被别处扣掉）：仍然返回结果，但带上计费失败标记，
+      // 不阻断用户已算出来的结果（LLM 已消耗，结果已产出）。
+      if (!deduction.ok) {
+        console.error(
+          `[Valuation] 计费失败 user=${authUserId} required=${deduction.required} balance=${deduction.credits}`
+        );
+      }
     }
 
 
@@ -939,6 +979,12 @@ export async function GET(request: NextRequest) {
       result = calculateValuation(input);
 
     }
+
+
+
+    // GET 分支不计费（无登录态 / 小程序只读查询），但必须 drain：
+    // usage-collector 是模块级数组，不清会串到下一个请求。
+    drainUsage();
 
 
 
