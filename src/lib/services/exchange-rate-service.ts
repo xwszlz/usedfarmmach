@@ -563,6 +563,7 @@ export class ExchangeRateService {
             currencyPair: d.currencyPair,
             source: d.source ?? fetched.source,
             success: true,
+            cached: false,
           })),
         },
       };
