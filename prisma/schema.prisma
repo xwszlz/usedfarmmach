@@ -98,6 +98,7 @@ model User {
   // 分站新增关联
   stripeCustomer           StripeCustomer?
   stripeSubscriptions      StripeSubscription[]
+  billingOrders            BillingOrder[]
   guaranteeIntentsAsBuyer  GuaranteeIntent[]     @relation("GuaranteeBuyer")
   guaranteeIntentsAsSeller GuaranteeIntent[]     @relation("GuaranteeSeller")
   accountLinksAsCom        AccountLink[]         @relation("AccountLinkCom")
@@ -2008,10 +2009,11 @@ model StripeCustomer {
 
 /// .com 专属：Stripe 增值服务订阅（仅外币）
 model StripeSubscription {
-  id               String          @id @default(cuid())
-  userId           String
-  stripeCustomerId String
-  plan             String // valuation_pack|intel_pack|premium|enterprise
+  id                    String          @id @default(cuid())
+  userId                String
+  stripeCustomerId      String
+  stripeSubscriptionId  String?         @unique // Stripe 订阅 ID，用于订阅生命周期事件幂等映射（一次性支付可为 null）
+  plan                  String // valuation_pack|intel_pack|premium|enterprise
   currency         String // USD|EUR|GBP
   status           String          @default("active") // active|canceled|past_due
   currentPeriodEnd DateTime
@@ -2041,6 +2043,32 @@ model StripeInvoice {
 
   @@index([subscriptionId])
   @@index([stripeInvoiceId])
+}
+
+/// .com 专属：Stripe 收银台订单（每笔 .com + Stripe 下单留痕，便于站点/通道归因与对账）
+model BillingOrder {
+  id                    String    @id @default(cuid())
+  userId                String
+  site                  String    @default("com") // com | cn（本模型仅 .com 写入）
+  provider              String    @default("stripe") // stripe | wechat | alipay
+  plan                  String? // valuation_pack|intel_pack|premium|enterprise
+  sku                   String?
+  amount                Float? // 单位：分
+  currency              String? // USD|EUR|GBP
+  status                String    @default("created") // created|completed|refunded|failed
+  stripeSessionId       String?   @unique
+  stripePaymentIntentId String?
+  stripeSubscriptionId  String?
+  stripeChargeId        String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([site, provider])
+  @@index([stripePaymentIntentId])
+  @@index([stripeSubscriptionId])
+  @@index([stripeChargeId])
 }
 
 /// .cn 专属：担保交易意向（资金在微信小程序收付通闭环）
