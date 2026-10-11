@@ -87,7 +87,7 @@ async function chargeAiRequest(
       { status: 402 }
     );
   }
-  return { userId: payload.userId, credits: deduction.credits };
+  return { userId: payload.userId, credits: deduction.credits ?? 0 };
 }
 
 // ===== 类型定义 =====
