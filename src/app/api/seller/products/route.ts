@@ -6,6 +6,7 @@
  * 审核流程：重复检测 → 上传图片 → 微信内容安全 → AI农机图片审核 → 创建产品
  */
 import { NextRequest, NextResponse } from "next/server";
+import { cnyToUsd, getUsdPerCny } from "@/lib/exchange-rate";
 import { prisma } from "@/lib/db";
 import { verifyToken, getTokenFromHeaders } from "@/lib/auth";
 import { uploadFileToOSS } from "@/lib/oss-upload";
@@ -230,7 +231,7 @@ export async function POST(request: NextRequest) {
         workingHours: workingHoursStr ? Number(workingHoursStr) : null,
         condition,
         priceCny: Number(priceCnyStr),
-        priceUsd: Math.round(Number(priceCnyStr) / 7.25),
+        priceUsd: cnyToUsd(Number(priceCnyStr), await getUsdPerCny()),
         location: finalLocation || "",
         country,
         province,
