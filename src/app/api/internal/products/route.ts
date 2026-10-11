@@ -46,6 +46,7 @@ import crypto from "crypto";
 import { checkContent, isBlocked } from "@/lib/wechat-sec-check";
 
 import { checkDuplicateProduct, fireVideoModeration, MAX_VIDEOS_PER_PRODUCT, MAX_VIDEO_DURATION_SECONDS, MAX_VIDEO_FILE_SIZE_BYTES } from "@/lib/content-moderation";
+import { translateProductOnPublish } from "@/lib/services/product-translation";
 
 
 
@@ -1786,6 +1787,13 @@ export async function POST(request: NextRequest) {
     }
 
 
+
+    // ── 自动 8 语翻译（非阻塞，失败降级，绝不影响发布）──
+    try {
+      await translateProductOnPublish(product.id);
+    } catch (trErr) {
+      console.error("[internal/products] 自动翻译异常（非阻塞）:", trErr instanceof Error ? trErr.message : String(trErr));
+    }
 
     // ── 完成 ──
 
