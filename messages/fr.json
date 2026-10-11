@@ -1,1152 +1,2314 @@
 {
+
   "valuationGate": {
+
     "membershipUpsell": "Passez à l'abonnement pour débloquer le rapport complet",
+
     "membershipUpsellDesc": "Évaluations illimitées, détail complet et conseils d'achat",
+
     "membershipCta": "Voir les offres",
+
     "_todoTranslate": "",
+
     "rangeLabel": "AI Valuation Range (for reference only)",
+
     "midHint": "Midpoint reference",
+
     "confidenceLabel": "Confidence",
+
     "blurredNotice": "Detailed breakdown is locked — leave your email to unlock",
+
     "unlockTitle": "Unlock the precise valuation",
+
     "unlockDesc": "Enter your email to instantly get the AI precise valuation, formula breakdown and buying advice",
+
     "emailPlaceholder": "Enter your email",
+
     "unlockButton": "Unlock precise valuation",
+
     "unlocking": "Unlocking...",
+
     "emailInvalid": "Please enter a valid email address",
+
     "unlockFailed": "Unlock failed, please try again later",
+
     "limitReached": "Daily free valuations used up",
+
     "limitReachedDesc": "Leave your email to unlock this precise valuation; sign up or log in for more daily valuations.",
+
     "privacyNote": "We respect your privacy — no spam, ever"
+
   },
+
   "adminSystem": {
+
     "roles": "Gestion des rôles",
+
     "rolesDesc": "Gérer les rôles et les affectations d'autorisations des utilisateurs",
+
     "audit": "Journaux d'audit",
+
     "auditDesc": "Afficher les enregistrements d'accès aux informations personnelles et de livraison d'e-mails",
+
     "config": "Configuration du système",
+
     "configDesc": "Afficher les variables d'environnement et le statut du fournisseur d'e-mail",
+
     "compliance": "Tableau de bord de conformité",
+
     "complianceDesc": "Surveillance de la conformité à l'exportation de données transfrontalières",
+
     "systemGovernance": "Gouvernance du système",
+
     "rolesUpdated": "Rôle mis à jour",
+
     "reason": "Raison du changement",
+
     "apply": "Appliquer",
+
     "piiAudit": "Audit des informations personnelles",
+
     "emailSend": "Envoi d'e-mail",
+
     "actor": "Acteur",
+
     "target": "Utilisateur cible",
+
     "field": "Champ",
+
     "action": "Action",
+
     "purpose": "Objectif",
+
     "createdAt": "Heure",
+
     "provider": "Fournisseur",
+
     "recipient": "Hash du destinataire",
+
     "status": "État",
+
     "loading": "Chargement...",
+
     "total": "Total",
+
     "prev": "Précédent",
+
     "next": "Suivant",
+
     "configEnv": "Variables d'environnement",
+
     "configProviders": "Fournisseurs d'e-mail",
+
     "configured": "Configuré",
+
     "notConfigured": "Non configuré",
+
     "crossBorderRecipients": "Destinataires transfrontaliers",
+
     "thresholdExceeded": "Seuil de conformité dépassé, veuillez enquêter immédiatement",
+
     "ratio": "Ratio",
+
     "providers": "Distribution des fournisseurs"
+
   },
+
   "quota": {
+
     "title": "Quota mensuel",
+
     "resetAt": "Réinitialise le",
+
     "unlimited": "Illimité",
+
     "used": "Utilisé",
+
     "remaining": "Restant",
+
     "exhausted": "Quota mensuel épuisé. Mettez à niveau pour débloquer plus.",
+
     "upgrade": "Mettre à niveau l'adhésion",
+
     "actions": {
+
       "publish": "Publier un produit",
+
       "inquiry": "Envoyer une demande",
+
       "aiValuation": "Évaluation par IA",
+
       "viewContact": "Afficher le contact"
+
     }
+
   },
+
   "common": {
+
     "appName": "Shennong AgriTrade",
+
     "appSlogan": "Plateforme Mondiale de Machines Agricoles d'Occasion",
+
     "loading": "Chargement...",
+
     "error": "Une erreur est survenue",
+
     "retry": "Réessayer",
+
     "save": "Enregistrer",
+
     "cancel": "Annuler",
+
     "confirm": "Confirmer",
+
     "delete": "Supprimer",
+
     "edit": "Modifier",
+
     "search": "Rechercher",
+
     "filter": "Filtrer",
+
     "reset": "Réinitialiser",
+
     "more": "Plus",
+
     "back": "Retour",
+
     "next": "Suivant",
+
     "previous": "Précédent",
+
     "viewDetails": "Voir détails",
+
     "submit": "Envoyer",
+
     "close": "Fermer",
+
     "required": "Obligatoire",
+
     "optional": "Optionnel",
+
     "currency": {
+
       "cny": "Yuan (RMB)",
+
       "usd": "Dollar (USD)"
+
     }
+
   },
+
   "credits": {
+
     "customAmount": "Montant personnalisé",
+
     "amountPlaceholder": "Saisissez le nombre de crédits",
+
     "creditUnit": "pts",
+
     "upgradeNow": "Upgrade Now",
+
     "title": "Espace adhérent",
+
     "membershipStatus": "Statut d'adhésion",
+
     "creditsBalance": "Solde de points",
+
     "validUntil": "Valable jusqu'au",
+
     "upgrade": "Améliorer l'adhésion",
+
     "alreadyHighest": "Déjà au niveau maximum",
+
     "upgradeComingSoon": "Amélioration de l'adhésion bientôt",
+
     "recharge": "Acheter des points",
+
     "rechargeComingSoon": "L'achat de points arrive bientôt.",
+
     "transactions": "Historique des points",
+
     "refresh": "Actualiser",
+
     "noRecords": "Aucun enregistrement pour l'instant",
+
     "pleaseLogin": "Veuillez vous connecter pour voir",
+
     "transactionTypes": {
+
       "recharge": "Recharger",
+
       "consume": "Consommation",
+
       "reward": "Récompense",
+
       "expire": "Expiré",
+
       "register_gift": "Cadeau d'inscription",
+
       "email_verified_gift": "Cadeau de vérification e-mail",
+
       "cert_gift": "Cadeau de certification",
+
       "invite_reward": "Récompense parrainage",
+
       "checkin": "Enregistrement",
+
       "admin_adjust": "Ajustement admin",
+
       "gift": "Cadeau"
+
     }
+
   },
+
   "membership": {
+
     "_todo": "TODO: translate membership section from English (zh/en are source of truth)",
+
     "title": "Choose the Plan That Fits You",
+
     "subtitle": "AI Valuation · Unlimited Listings · Cross-border Arbitrage Data · Data Export",
+
     "loading": "Loading...",
+
     "billing": {
+
       "monthly": "Monthly",
+
       "yearly": "Yearly"
+
     },
+
     "saveBadge": "10% Off Limited",
+
     "perMonth": "/mo",
+
     "perYear": "/yr",
+
     "currentPlan": "Current Plan",
+
     "popular": "Most Popular",
+
     "checkoutError": "Failed to start checkout. Please try again later.",
+
     "tiers": {
+
       "free": "Free",
+
       "basic": "Basic",
+
       "premium": "Premium",
+
       "enterprise": "Enterprise"
+
     },
+
     "cta": {
+
       "startFree": "Start for Free",
+
       "upgrade": "Upgrade Now",
+
       "wechatPending": "WeChat Pay (Coming Soon)",
+
       "stripePay": "Pay Securely with Stripe"
+
     },
+
     "benefits": {
+
       "free": [
+
         "5 AI valuations per month",
+
         "5 product listings per month",
+
         "View seller contact info",
+
         "20 bonus credits on sign-up"
+
       ],
+
       "basic": [
+
         "50 AI valuations per month",
+
         "50 product listings per month",
+
         "Cross-border arbitrage data",
+
         "10 photos / 3 videos per listing"
+
       ],
+
       "premium": [
+
         "Unlimited AI valuations",
+
         "Unlimited product listings",
+
         "Unlimited inquiries & contacts",
+
         "Data export + product topping",
+
         "20 photos / 5 videos per listing"
+
       ],
+
       "enterprise": [
+
         "Everything in Premium",
+
         "50 photos / 10 videos per listing",
+
         "Dedicated key-account support",
+
         "Priority access to industry events"
+
       ]
+
     },
+
     "waitlist": {
+
       "title": "Payment Channel Opening Soon",
+
       "desc": "Leave your email and we'll notify you the moment it goes live — plus 7 days of free Premium trial for early sign-ups.",
+
       "placeholder": "Enter your email",
+
       "submit": "Notify Me",
+
       "successTitle": "Subscribed!",
+
       "successDesc": "We'll notify you as soon as the payment channel opens, and reserve your 7-day Premium trial.",
+
       "error": "Submission failed. Please try again later."
+
     },
+
     "trust": {
+
       "cn": "Vice President Unit, Used Farm Machinery Circulation Branch of China Association of Agricultural Machinery Circulation"
+
     }
+
   },
+
   "nav": {
+
     "membership": "Abonnement",
+
     "home": "Accueil",
+
     "products": "Équipements",
+
     "logistics": "Logistique",
+
     "about": "À propos",
+
     "arbitrageCalculator": "Calculateur d'Arbitrage",
+
     "arbitrageTop": "Classement Arbitrage",
+
     "login": "Connexion",
+
     "register": "Inscription",
+
     "logout": "Déconnexion",
+
     "dashboard": "Tableau de bord",
+
     "myProducts": "Mes équipements",
+
     "myInquiries": "Mes demandes",
+
     "sellEquipment": "Publier un équipement",
+
     "intelligence": "Veille de Marché",
+
     "blog": "Actualités",
+
     "brands": "Marques",
+
     "categories": "Catégories",
+
     "buyMachinery": "Acheter",
+
     "sellMachinery": "Vendre",
+
     "marketInsights": "Analyses",
+
     "serviceSupport": "Services",
+
     "browseEquipment": "Parcourir",
+
     "publishProduct": "Publier",
+
     "publishGuide": "Guide",
+
     "sellerCenter": "Espace vendeur",
+
     "inquiryManagement": "Demandes",
+
     "buyerRequest": "Demandes d'achat",
+
     "dailyReport": "Rapport quotidien",
+
     "bargain": "Négocier le prix",
+
     "industryReport": "Rapport secteur",
+
     "inspectionService": "Inspection",
+
     "parts": "Pièces",
+
     "solutions": "Solutions",
+
     "standards": "Normes",
+
     "serviceNetwork": "Réseau de service",
+
     "certification": "Certification",
+
     "myFavorites": "Favoris",
+
     "contactUs": "Contact",
+
     "machinery": "Matériel",
+
     "arena": "Arène IA",
+
     "engineer": "Certification IA",
+
     "expo": "Exposition",
+
     "services": "Services",
+
     "research": "Recherche",
+
     "credits": "Centre de points",
+
     "arbitrageAnalysis": "Analyse arbitrage",
+
     "machineryExpo": "Expo de machinerie"
+
   },
+
   "hero": {
+
     "arenaTitle": "AI Machinery Arena",
+
     "arenaSubtitle": "Pick your crop, machine type and budget — let AI find the best machinery deal",
+
     "crop": "Type de culture",
+
     "cropWheat": "Blé",
+
     "cropCorn": "Maïs",
+
     "cropRice": "Riz",
+
     "cropSoybean": "Soja",
+
     "cropCotton": "Coton",
+
     "cropOther": "Autre",
+
     "machineType": "Type de machine",
+
     "machineTractor": "Tracteur",
+
     "machineHarvester": "Moissonneuse",
+
     "machineBaler": "Enrubanneuse",
+
     "machineWrapper": "Enveloppeuse de balles",
+
     "machineOther": "Autre",
+
     "budget": "Budget",
+
     "engineerLevel": "Niveau de certification",
+
     "engineerNone": "Non certifié",
+
     "engineerL1": "L1 Apprenti IA",
+
     "engineerL2": "L2 Opérateur",
+
     "engineerL3": "L3 Ingénieur",
+
     "engineerL4": "L4 Ingénieur senior",
+
     "engineerL5": "L5 Ingénieur en chef",
+
     "startArena": "Lancer l'arène",
+
     "learnCert": "En savoir plus sur la certification d'ingénieur IA →"
+
   },
+
   "engineer": {
+
     "heroBadge": "Premier système mondial de certification AI pour machines agricoles",
+
     "title": "Certification d'Ingénieur AI en Machines Agricoles",
+
     "subtitle": "Vous n'êtes plus un simple opérateur, mais un Ingénieur AI en Machines Agricoles. Maîtrisez 8 compétences, obtenez 5 niveaux de certification, pilotez des flottes de machines avec l'IA.",
+
     "heroCTA": "Évaluez votre niveau d'opérateur",
+
     "learnMore": "Découvrez le système de certification",
+
     "whyTitle": "Pourquoi obtenir la certification AI ?",
+
     "whySubtitle": "L'industrie mondiale des machines agricoles passe de « l'humain qui conduit la machine » à « l'humain qui pilote des flottes AI »",
+
     "why1Title": "Évolution de carrière",
+
     "why1Desc": "Passez d'opérateur traditionnel à Ingénieur AI, avec une augmentation salariale de 30-80%. Une nouvelle norme professionnelle mondiale est en train d'émerger.",
+
     "why2Title": "Avantage dans l'Arène",
+
     "why2Desc": "Le niveau de certification impacte directement le classement dans l'Arène — l'Opérateur en Chef L5 gagne +20% d'efficacité dans la comparaison à 14 dimensions.",
+
     "why3Title": "Opportunités sur la plateforme",
+
     "why3Desc": "À partir du L3, débloquez des services : inspection de machines, démonstrations sur le terrain, représentation de marque. Monétisez vos compétences.",
+
     "skillsTitle": "Système d'évaluation à 8 compétences",
+
     "skillsSubtitle": "Compétences AI (55%) + Compétences traditionnelles (45%) = Profil complet de l'Ingénieur AI",
+
     "coreSkills": "Compétences AI",
+
     "tradSkills": "Compétences traditionnelles",
+
     "skill1Name": "Programmation AI et planification de trajectoires",
+
     "skill1Desc": "Planification de trajectoires autonomes, création de cartes de prescription, optimisation des paramètres AI, cartographie des limites, programmation à taux variable",
+
     "skill1Weight": "Poids 20%",
+
     "skill2Name": "Décision collaborative humain-AI",
+
     "skill2Desc": "Évaluation du moment d'intervention AI, contrôle à distance, gestion des situations anormales, compréhension des limites autonomes",
+
     "skill2Weight": "Poids 15%",
+
     "skill3Name": "Commandement de flottes multiples",
+
     "skill3Desc": "Planification des opérations en flotte, allocation des tâches, coordination anticollision, surveillance à distance, maximisation de l'efficacité",
+
     "skill3Weight": "Poids 12%",
+
     "skill4Name": "Interprétation des données et décision",
+
     "skill4Desc": "Analyse des cartes de rendement, interprétation des données du sol, NDVI satellitaire, calcul du ROI, génération de rapports",
+
     "skill4Weight": "Poids 8%",
+
     "skill5Name": "Optimisation de l'efficacité opérationnelle",
+
     "skill5Desc": "Contrôle de la vitesse, optimisation de la couverture, réduction des bourrages, efficacité des virages, maximisation de la largeur de coupe",
+
     "skill5Weight": "Poids 15%",
+
     "skill6Name": "Sécurité et conformité",
+
     "skill6Desc": "Réponse aux urgences, opérations de protection, prévention des risques, conformité pour systèmes sans pilote, gestion des émissions carbone",
+
     "skill6Weight": "Poids 10%",
+
     "skill7Name": "Maintenance prédictive",
+
     "skill7Desc": "Analyse des données de capteurs, alertes d'usure, diagnostic par arbre de défaillances, maintenance par jumeau numérique, prédiction AI des pannes",
+
     "skill7Weight": "Poids 10%",
+
     "skill8Name": "Efficacité énergétique et faibles émissions",
+
     "skill8Desc": "Contrôle de la consommation de carburant, gestion du carbone, optimisation du ralenti, modes éco, gestion des crédits carbone",
+
     "skill8Weight": "Poids 10%",
+
     "certTitle": "Système de certification à 5 niveaux",
+
     "certSubtitle": "D'Apprenti AI à Opérateur en Chef — progression avec des exigences claires et des bonus dans l'Arène",
+
     "certL1Name": "L1 — Apprenti AI",
+
     "certL1Badge": "Débutant",
+
     "certL1Req": "Compléter 4 modules vidéo de base + examen ≥70 points, score total 8 compétences ≥50",
+
     "certL1Score": "Score total ≥50",
+
     "certL1Bonus": "Bonus Arène : base",
+
     "certL1Price": "¥99",
+
     "certL1Perks": "Certificat numérique|Accès à la communauté d'apprentissage",
+
     "certL2Name": "L2 — Opérateur",
+
     "certL2Badge": "Basique",
+
     "certL2Req": "L1 + simulateur ≥75 + certification sur 1 modèle, score total ≥65",
+
     "certL2Score": "Score total ≥65",
+
     "certL2Bonus": "Bonus Arène +5%",
+
     "certL2Price": "¥299",
+
     "certL2Perks": "Certificat|Commandes prioritaires",
+
     "certL3Name": "L3 — Ingénieur Opérateur",
+
     "certL3Badge": "Professionnel",
+
     "certL3Req": "L2 + simulateur ≥85 + examen pratique + test de flotte, score total ≥80",
+
     "certL3Score": "Score total ≥80",
+
     "certL3Bonus": "Bonus Arène +10%",
+
     "certL3Price": "¥599",
+
     "certL3Perks": "Certificat|Accès aux commandes plateforme|Représentation de marque",
+
     "certL4Name": "L4 — Opérateur Senior",
+
     "certL4Badge": "Avancé",
+
     "certL4Req": "L3 + test de données + projet AI + Top-5 Arène ×3 fois, score total ≥90",
+
     "certL4Score": "Score total ≥90",
+
     "certL4Bonus": "Bonus Arène +15%",
+
     "certL4Price": "¥999",
+
     "certL4Perks": "Badge avancé|Commandes d'inspection|Démonstrations sur le terrain",
+
     "certL5Name": "L5 — Opérateur en Chef",
+
     "certL5Badge": "Chef",
+
     "certL5Req": "L4 + Top-1 Arène ×5 fois + article technique + revue d'experts, score total ≥95",
+
     "certL5Score": "Score total ≥95",
+
     "certL5Bonus": "Bonus Arène +20%",
+
     "certL5Price": "¥1,999",
+
     "certL5Perks": "Badge de Chef|Certification mondiale|Qualification d'instructeur|Partage des revenus",
+
     "certTop": "Sommet",
+
     "processTitle": "Processus de certification",
+
     "processSubtitle": "Quatre étapes de zéro au certificat",
+
     "processStep": "Étape",
+
     "process1Title": "Apprentissage en ligne",
+
     "process1Desc": "Vidéos pédagogiques par modèle (16 modules), couvrant 8 compétences, avec sous-titres en 8 langues",
+
     "process2Title": "Entraînement sur simulateur",
+
     "process2Desc": "Simulation 3D dans le navigateur, évaluation AI en temps réel, couvre moissonneuses/tracteurs/ensileuses/presses",
+
     "process3Title": "Examen de connaissances",
+
     "process3Desc": "200 questions, génération AI et correction automatique, questions situationnelles + QCM + analyse de cas",
+
     "process4Title": "Examen de certification",
+
     "process4Desc": "À partir du L3, examen pratique en présentiel requis, lors des salons de terrain ou sur sites partenaires, évaluation experte + assistance AI",
+
     "ctaTitle": "Prêt à commencer ?",
+
     "ctaSubtitle": "Entrez dans l'Arène AI, indiquez les besoins de votre exploitation — l'IA évaluera votre niveau d'opérateur et vous indiquera les compétences à améliorer.",
+
     "ctaButton": "Entrer dans l'Arène AI →"
+
   },
+
   "pillar": {
+
     "tradeTitle": "Commerce de machines d'occasion",
+
     "tradeDesc": "200+ machines d'occasion certifiées, commerce mondial",
+
     "expoTitle": "Expo virtuelle",
+
     "expoDesc": "105 marques dans une exposition en ligne immersive",
+
     "partsTitle": "Pièces",
+
     "partsDesc": "500+ SKU de pièces OEM et compatibles",
+
     "servicesTitle": "Services à valeur ajoutée",
+
     "servicesDesc": "Inspection, logistique transfrontalière, financement",
+
     "arenaTitle": "Arène IA",
+
     "arenaDesc": "Appariement intelligent pour un investissement optimal dans les machines",
+
     "researchTitle": "Centre de recherche",
+
     "researchDesc": "Rapports de l'industrie, analyse des politiques, tendances du marché"
+
   },
+
   "expoHome": {
+
     "chinaHall": "Global Leaders Pavilion",
+
     "chinaHallDesc": "John Deere, CLAAS, Fendt — world top machinery leaders flagship models",
+
     "intlHall": "Industry Pillars Pavilion",
+
     "intlHallDesc": "YTO, Lovol, World, Zoomlion — regional powerhouses bridging global markets",
+
     "compareHall": "Rising & Specialty Pavilion",
+
     "compareHallDesc": "DJI, XAG, specialty brands & niche players — curated by category",
+
     "enterHall": "Entrer dans le hall",
+
     "globalLeadersHall": "Salle des leaders mondiaux",
+
     "globalLeadersHallDesc": "John Deere, CLAAS, Fendt — leaders mondiaux de l'industrie des machines, modèles phares en exposition",
+
     "industryPillarsHall": "Salle de la colonne vertébrale chinoise",
+
     "industryPillarsHallDesc": "YTO, Lovol, World, Zoomlion — fournisseurs chinois éprouvés, partie d'un mélange d'approvisionnement mondial",
+
     "risingSpecialtyHall": "Salle des innovateurs émergents",
+
     "risingSpecialtyHallDesc": "DJI, XAG, marques spécialisées et joueurs de niche — sélectionnés sur leur mérite"
+
   },
+
   "research": {
+
     "title": "AI Frontier Research",
+
     "subtitle": "Rapports · Technologie · Politique · Entreprises",
+
     "description": "Analyses approfondies des tendances mondiales du machinisme agricole, décisions fondées sur les données",
+
     "categories": {
+
       "all": "Tout",
+
       "research-industry-report": "Rapports sectoriels",
+
       "research-tech-frontier": "Pointe technologique",
+
       "research-policy-tracking": "Suivi des politiques",
+
       "research-company-map": "Cartographie des entreprises"
+
     },
+
     "viewCount": "{count} lectures",
+
     "publishedOn": "Publié le {date}",
+
     "relatedReports": "Rapports connexes",
+
     "backToHub": "← Retour au centre de recherche",
+
     "tryArena": "Besoin d'une sélection de machines par IA ? Essayez AI Arena →",
+
     "noReports": "Aucun rapport pour le moment",
+
     "readMore": "Lire la suite",
+
     "reportCount": "{count} rapports",
+
     "viewAll": "Voir tout"
+
   },
+
   "trust": {
+
     "camda": "Vice President Unit, Used Farm Machinery Circulation Branch of China Association of Agricultural Machinery Circulation",
+
     "globalCdn": "Réseau de diffusion de contenu global Vercel",
+
     "oss": "Alibaba Cloud OSS",
+
     "languages": "Service de langues 8"
+
   },
+
   "cta": {
+
     "title": "Start Your AI Machinery Arena",
+
     "subtitle": "Match the best machinery deal and discover cross-border investment opportunities",
+
     "button": "Commencer"
+
   },
+
   "home": {
+
     "bannerBrand": "Shendiao",
+
     "bannerMain": "Connecter le commerce mondial de machines agricoles d'occasion",
+
     "bannerSub": "Construire l'écosystème IA de machines agricoles avec les agriculteurs du monde",
+
     "heroTitle": "Machines agricoles mondiales, une seule plateforme",
+
     "heroSubtitle": "Nous connectons la Chine au marché mondial. Estimation IA, logistique transfrontalière, transactions sécurisées",
+
     "heroCta": "Explorer les équipements",
+
     "heroSecondaryCta": "Opportunités d'arbitrage",
+
     "heroVideoCta": "Voir la vidéo",
+
     "arbitrageCardTitle": "Opportunités d'arbitrage",
+
     "arbitrageCardDesc": "Écart de prix jusqu'à 40% entre la Chine et l'étranger",
+
     "arbitrageCardCta": "Voir détails",
+
     "hotEquipment": "Équipements en vedette",
+
     "hotEquipmentDesc": "Machines agricoles d'occasion de vendeurs vérifiés dans le monde entier",
+
     "hotEquipmentSubtitle": "De vendeurs vérifiés dans le monde entier, contrôlés qualité",
+
     "viewAll": "Tout voir",
+
     "features": "Avantages",
+
     "feature1Title": "Estimation IA",
+
     "feature1Desc": "Tarification précise basée sur la marque, l'année et les heures de travail",
+
     "feature2Title": "Arbitrage transfrontalier",
+
     "feature2Desc": "Comparaison des prix Chine vs étranger en temps réel",
+
     "feature3Title": "Transactions sécurisées",
+
     "feature3Desc": "Dépôt de garantie tiers, protection totale",
+
     "feature4Title": "Logistique mondiale",
+
     "feature4Desc": "Transport maritime et aérien, service porte-à-porte",
+
     "testimonialsTitle": "Clients réels",
+
     "testimonialsDesc": "Machines agricoles en utilisation réelle dans le monde entier",
+
     "recruitment": {
+
       "badge": "Plateforme mondiale de machines d'occasion",
+
       "title": "Shendiao Nongji — commerce mondial de machines agricoles d'occasion",
+
       "subtitle": "Chaque machine · plus de valeur",
+
       "sellers": "Vendeurs de machines",
+
       "partsDealers": "Distributeurs de pièces",
+
       "serviceProviders": "Prestataires de services",
+
       "ctaApply": "Demander à rejoindre",
+
       "ctaContact": "Contactez-nous"
+
     },
+
     "parts": {
+
       "title": "Pièces de machines",
+
       "subtitle": "Couverture complète · compatibilité universelle",
+
       "viewAll": "Voir tout",
+
       "feature1Title": "Pièces d'origine",
+
       "feature1Desc": "Pièces d'origine certifiées par la marque avec garantie de qualité",
+
       "feature2Title": "Pièces compatibles",
+
       "feature2Desc": "Pièces compatibles économiques, prise en charge multimarque",
+
       "feature3Title": "Recherche rapide",
+
       "feature3Desc": "Système de correspondance intelligent pour trouver vite les pièces"
+
     },
+
     "services": {
+
       "title": "Services à valeur ajoutée · solution transfrontalière tout-en-un",
+
       "subtitle": "Inspection · financement · centres",
+
       "learnMore": "En savoir plus",
+
       "service1Title": "Inspection professionnelle",
+
       "service1Desc": "Rapports qualité tiers pour des transactions sûres",
+
       "service2Title": "Financement et assurance",
+
       "service2Desc": "Financement d'équipement et assurance transport",
+
       "service3Title": "Centres de service",
+
       "service3Desc": "Couverture nationale, inspection et entretien au même endroit",
+
       "serviceAiValuationTitle": "Évaluation par IA",
+
       "serviceAiValuationDesc": "Estimation précise selon la marque, l'année, les heures, etc.",
+
       "serviceArbitrageTitle": "Arbitrage intelligent",
+
       "serviceArbitrageDesc": "Comparaison des prix transfrontalière en temps réel"
+
     },
+
     "engineerCert": {
+
       "title": "Certification d'ingénieur IA · cinq niveaux",
+
       "subtitle": "D'apprenti à opérateur en chef",
+
       "level1": "Apprenti IA",
+
       "level3": "Opérateur",
+
       "level5": "Opérateur en chef",
+
       "cta": "Découvrir la certification"
+
     }
+
   },
+
   "brandPage": {
+
     "home": "Accueil",
+
     "products": "Équipements",
+
     "notFound": "Marque introuvable",
+
     "backToProducts": "Retour aux équipements",
+
     "originCountry": "Pays d'origine",
+
     "productCount": "{count} équipements disponibles",
+
     "importedBrand": "Marque importée",
+
     "noProducts": "Aucun équipement de cette marque"
+
   },
+
   "categoryPage": {
+
     "home": "Accueil",
+
     "products": "Équipements",
+
     "notFound": "Catégorie introuvable",
+
     "backToProducts": "Retour aux équipements",
+
     "productCount": "{count} équipements disponibles",
+
     "subCategories": "Sous-catégories",
+
     "noProducts": "Aucun équipement dans cette catégorie"
+
   },
+
   "products": {
+
     "title": "Équipements",
+
     "subtitle": "Parcourez les équipements agricoles d'occasion du monde entier",
+
     "total": "{count} équipements au total",
+
     "noResults": "Aucun équipement trouvé",
+
     "filters": {
+
       "brand": "Marque",
+
       "category": "Type",
+
       "year": "Année",
+
       "yearRange": "Période",
+
       "price": "Prix",
+
       "priceRange": "Fourchette de prix",
+
       "location": "Lieu",
+
       "condition": "État",
+
       "allBrands": "Toutes les marques",
+
       "allCategories": "Toutes les catégories",
+
       "allLocations": "Tous les lieux",
+
       "allConditions": "Tous les états",
+
       "sortBy": "Trier",
+
       "sortNewest": "Plus récent",
+
       "sortPriceLow": "Prix croissant",
+
       "sortPriceHigh": "Prix décroissant",
+
       "sortYearNew": "Année récente",
+
       "sortHoursLow": "Moins d'heures",
+
       "filter": "Filtrer",
+
       "reset": "Réinitialiser"
+
     },
+
     "card": {
+
       "year": "{year}",
+
       "hours": "{hours} heures",
+
       "location": "Lieu",
+
       "arbitrage": "Marge d'arbitrage",
+
       "arbitragePercent": "Écart {percent}%",
+
       "priceCny": "¥{price}",
+
       "priceUsd": "${price}",
+
       "chinaPrice": "Prix Chine",
+
       "usPrice": "Prix étranger"
+
     },
+
     "detail": {
+
       "specs": "Spécifications",
+
       "brand": "Marque",
+
       "model": "Modèle",
+
       "year": "Année",
+
       "workingHours": "Heures travaillées",
+
       "condition": "État",
+
       "location": "Lieu",
+
       "priceComparison": "Comparaison des prix",
+
       "chinaMarketPrice": "Prix marché chinois",
+
       "usMarketPrice": "Prix marché étranger",
+
       "priceDifference": "Différence",
+
       "arbitrageOpportunity": "Opportunité d'arbitrage",
+
       "description": "Description",
+
       "contactSeller": "Contacter le vendeur",
+
       "inquiry": "Envoyer une demande",
+
       "share": "Partager",
+
       "conditionExcellent": "Excellent",
+
       "conditionGood": "Bon",
+
       "conditionFair": "Moyen",
+
       "conditionPoor": "Mauvais"
+
     }
+
   },
+
   "inquiry": {
+
     "title": "Envoyer une demande",
+
     "subtitle": "Remplissez les informations, le vendeur vous contactera rapidement",
+
     "name": "Nom",
+
     "namePlaceholder": "Entrez votre nom",
+
     "email": "E-mail",
+
     "emailPlaceholder": "Entrez votre e-mail",
+
     "phone": "Téléphone",
+
     "phonePlaceholder": "Entrez votre numéro",
+
     "company": "Entreprise",
+
     "companyPlaceholder": "Nom de l'entreprise (optionnel)",
+
     "message": "Message",
+
     "messagePlaceholder": "Quelles informations souhaitez-vous ?",
+
     "submit": "Envoyer la demande",
+
     "success": "Demande envoyée. Le vendeur vous contactera bientôt !",
+
     "error": "Échec de l'envoi. Veuillez réessayer."
+
   },
+
   "auth": {
+
     "login": {
+
       "title": "Connexion",
+
       "subtitle": "Accédez à votre compte",
+
       "identifier": "Nom d'utilisateur ou e-mail",
+
       "identifierPlaceholder": "Entrez votre identifiant",
+
       "password": "Mot de passe",
+
       "passwordPlaceholder": "Entrez votre mot de passe",
+
       "submit": "Se connecter",
+
       "noAccount": "Pas encore de compte ?",
+
       "registerLink": "S'inscrire maintenant",
+
       "forgotPassword": "Mot de passe oublié ?",
+
       "error": "Identifiant ou mot de passe incorrect",
+
       "success": "Connexion réussie",
+
       "email": "Courriel",
+
       "emailPlaceholder": "Entrez votre courriel"
+
     },
+
     "register": {
+
       "title": "Inscription",
+
       "subtitle": "Créez votre compte",
+
       "username": "Nom d'utilisateur",
+
       "usernamePlaceholder": "Min. 3 caractères",
+
       "usernameTooShort": "Minimum 3 caractères",
+
       "email": "E-mail (optionnel)",
+
       "emailPlaceholder": "Optionnel, pour récupérer le mot de passe",
+
       "password": "Mot de passe",
+
       "passwordPlaceholder": "Min. 8 caractères, maj+min+chiffres",
+
       "passwordTooShort": "Minimum 8 caractères",
+
       "confirmPassword": "Confirmer le mot de passe",
+
       "confirmPasswordPlaceholder": "Répétez le mot de passe",
+
       "phone": "Téléphone",
+
       "phonePlaceholder": "Entrez votre numéro",
+
       "companyName": "Entreprise",
+
       "companyNamePlaceholder": "Nom de l'entreprise (optionnel)",
+
       "country": "Pays",
+
       "countryPlaceholder": "Sélectionnez le pays",
+
       "role": "Rôle",
+
       "roleBuyer": "Acheteur",
+
       "roleSeller": "Vendeur",
+
       "submit": "S'inscrire",
+
       "hasAccount": "Déjà un compte ?",
+
       "loginLink": "Se connecter",
+
       "error": "Échec de l'inscription",
+
       "success": "Inscription réussie",
+
       "passwordMismatch": "Les mots de passe ne correspondent pas",
+
       "crossBorderConsent": "J'ai lu et j'accepte le consentement distinct au transfert transfrontalier de données",
+
       "crossBorderConsentRequired": "Veuillez cocher et accepter le consentement distinct au transfert transfrontalier de données",
+
       "crossBorderConsentLink": "Consentement au transfert transfrontalière de données"
+
     },
+
     "forgotPassword": {
+
       "title": "Mot de passe oublié",
+
       "subtitle": "Entrez votre nom d'utilisateur ou e-mail pour recevoir un lien de réinitialisation",
+
       "identifier": "Nom d'utilisateur ou e-mail",
+
       "identifierPlaceholder": "Entrez votre nom d'utilisateur ou e-mail enregistré",
+
       "hint": "Nous enverrons un lien de réinitialisation à votre e-mail enregistré",
+
       "submit": "Envoyer le lien",
+
       "errorEmpty": "Veuillez entrer votre nom d'utilisateur ou e-mail",
+
       "sentMessage": "Si le compte existe avec un e-mail, un lien de réinitialisation a été envoyé. Vérifiez votre boîte de réception (et dossier spam).",
+
       "backToLogin": "Retour à la connexion",
+
       "error": "Échec de l'opération, veuillez réessayer plus tard",
+
       "contactAdmin": "Si vous n'avez pas associé d'e-mail lors de l'inscription, vous ne recevrez pas d'e-mail de réinitialisation. Contactez le service client ou un administrateur pour réinitialiser votre mot de passe."
+
     },
+
     "resetPassword": {
+
       "title": "Réinitialiser le mot de passe",
+
       "subtitle": "Entrez votre nouveau mot de passe",
+
       "newPassword": "Nouveau mot de passe",
+
       "passwordPlaceholder": "Au moins 6 caractères",
+
       "confirmPassword": "Confirmer le nouveau mot de passe",
+
       "confirmPlaceholder": "Entrez à nouveau le mot de passe",
+
       "submit": "Réinitialiser",
+
       "tooShort": "Le mot de passe doit comporter au moins 6 caractères",
+
       "mismatch": "Les mots de passe ne correspondent pas",
+
       "successMessage": "Mot de passe réinitialisé ! Redirection vers la connexion...",
+
       "noToken": "Jeton de réinitialisation manquant. Accédez à cette page via le lien dans votre e-mail.",
+
       "requestNew": "Demander un nouveau lien",
+
       "error": "Échec de la réinitialisation, réessayez plus tard"
+
     },
+
     "verifyEmail": {
+
       "successTitle": "Courriel vérifié",
+
       "successMessage": "Votre courriel a été vérifié. Vous pouvez maintenant utiliser des fonctionnalités comme la récupération de mot de passe.",
+
       "successMessageWithGift": "Votre courriel est vérifié et vous avez gagné {amount} crédits de récompense !",
+
       "expiredTitle": "Lien expiré",
+
       "expiredMessage": "Ce lien de vérification a expiré ou est invalide. Veuillez demander un nouveau courriel de vérification.",
+
       "invalidTitle": "Lien invalide",
+
       "invalidMessage": "Le lien de vérification est invalide ou déjà utilisé. Veuillez demander un nouveau courriel de vérification.",
+
       "gotoAccount": "Aller au compte",
+
       "backHome": "Retour à l'accueil"
+
     }
+
   },
+
   "account": {
+
     "completeProfile": {
+
       "title": "Compléter le profil",
+
       "subtitle": "Complétez votre profil pour profiter de tous les services (facultatif)",
+
       "email": "E-mail (facultatif)",
+
       "emailPlaceholder": "Pour récupérer le mot de passe",
+
       "emailInvalid": "Format d'e-mail invalide",
+
       "companyName": "Nom de l'entreprise (facultatif)",
+
       "companyNamePlaceholder": "Facultatif",
+
       "country": "Pays/région (facultatif)",
+
       "countryPlaceholder": "Sélectionnez le pays/la région",
+
       "password": "Définir le mot de passe (facultatif)",
+
       "passwordPlaceholder": "Au moins 6 caractères ; laissez vide pour ne pas modifier",
+
       "passwordTooShort": "Le mot de passe doit comporter au moins 6 caractères",
+
       "crossBorderConsent": "J'ai lu et j'accepte le consentement distinct au transfert transfrontalier de données",
+
       "consentRequired": "Veuillez cocher et accepter le consentement distinct au transfert transfrontalier de données",
+
       "submit": "Envoyer",
+
       "successMessage": "Profil complété. Crédits accordés le cas échéant.",
+
       "successMessageWithGift": "Profil complété. Les crédits ont été accordés.",
+
       "currentCredits": "Crédits actuels : {credits}",
+
       "notLoggedIn": "Veuillez vous connecter avant de compléter votre profil",
+
       "backToAccount": "Retour au compte",
+
       "error": "Échec de la complétion du profil. Réessayez."
+
     }
+
   },
+
   "logistics": {
+
     "title": "Logistique internationale",
+
     "subtitle": "Multiples modes de transport, livraison sécurisée dans le monde entier",
+
     "timeline": {
+
       "title": "Processus de transport",
+
       "step1": "Inspection",
+
       "step1Desc": "Équipe technique vérifie sur site",
+
       "step2": "Emballage",
+
       "step2Desc": "Emballage professionnel anti-dommages",
+
       "step3": "Dédouanement export",
+
       "step3Desc": "Gestion des formalités douanières",
+
       "step4": "Transport international",
+
       "step4Desc": "Maritime/aérien vers le port de destination",
+
       "step5": "Livraison",
+
       "step5Desc": "Dédouanement import + livraison porte-à-porte"
+
     },
+
     "fcl": {
+
       "title": "Conteneur complet FCL",
+
       "desc": "Pour grands volumes, plus économique par unité",
+
       "price": "À partir de $2 500-4 000/conteneur",
+
       "time": "25-35 jours",
+
       "features": "Grands volumes|Coût réduit|Conteneur dédié|Suivi complet"
+
     },
+
     "lcl": {
+
       "title": "Groupage LCL",
+
       "desc": "Pour volumes moyens, flexible et pratique",
+
       "price": "À partir de $800-1 500/m³",
+
       "time": "30-45 jours",
+
       "features": "Flexible|Facturation au volume|Idéal test|Porte-à-porte"
+
     },
+
     "air": {
+
       "title": "Fret aérien",
+
       "desc": "Pour besoins urgents, livraison rapide mondiale",
+
       "price": "À partir de $3-8/kg",
+
       "time": "5-10 jours",
+
       "features": "Ultra rapide|Urgences|Sécurisé|Assurance incluse"
+
     }
+
   },
+
   "about": {
+
     "title": "À propos de Shennong AgriTrade",
+
     "subtitle": "Le pont vers le marché mondial des machines agricoles",
+
     "mission": "Notre mission",
+
     "missionText": "Rendre le commerce mondial des machines agricoles d'occasion plus transparent, efficace et sécurisé. Grâce à l'estimation IA, l'analyse d'arbitrage et la logistique intégrée, nous maximisons la valeur pour acheteurs et vendeurs.",
+
     "values": "Nos valeurs",
+
     "value1Title": "Transparence",
+
     "value1Desc": "Estimation précise par IA, éliminant l'asymétrie d'information",
+
     "value2Title": "Sécurité",
+
     "value2Desc": "Dépôt de garantie, protection totale des transactions",
+
     "value3Title": "Efficacité",
+
     "value3Desc": "Service intégré, simplifiant le commerce transfrontalier",
+
     "value4Title": "Gagnant-gagnant",
+
     "value4Desc": "Opportunités d'arbitrage au bénéfice de tous",
+
     "team": "Notre équipe",
+
     "teamText": "Une équipe avec une vaste expérience en machines agricoles et commerce international. Membres de Chine, États-Unis, Japon et plus, dédiés à construire la plateforme leader de machines agricoles d'occasion."
+
   },
+
   "arbitrageCalculator": {
+
     "title": "Calculateur d'arbitrage",
+
     "description": "Calculez les opportunités d'arbitrage en tenant compte des coûts de transport, droits de douane et assurance. Notre calculateur intelligent extrait automatiquement les données et fournit une analyse détaillée des profits et risques.",
+
     "howToUseTitle": "Comment utiliser le calculateur",
+
     "step1": "Sélectionnez un produit dans la liste",
+
     "step2": "Le système remplit automatiquement les prix",
+
     "step3": "Ajustez les coûts de transport, droits et assurance",
+
     "step4": "Cliquez sur Calculer pour voir l'analyse détaillée"
+
   },
+
   "arbitrageTop": {
+
     "title": "Classement d'arbitrage",
+
     "description": "Découvrez les meilleures opportunités d'arbitrage en machines agricoles. Classement basé sur l'écart de prix, les coûts et les droits.",
+
     "liveRanking": "Classement en direct",
+
     "dataUpdatedAt": "Dernière mise à jour",
+
     "showCount": "Nombre affiché",
+
     "refreshing": "Actualisation...",
+
     "refresh": "Actualiser",
+
     "reload": "Recharger",
+
     "noData": "Aucune donnée d'arbitrage",
+
     "noDataHint": "Réessayez plus tard ou vérifiez les données internationales",
+
     "loadError": "Erreur de chargement. Actualisez la page.",
+
     "loading": "Chargement du classement...",
+
     "rankingExplanationTitle": "Explication",
+
     "explanation1": "Classement mis à jour toutes les semaines",
+
     "explanation2": "Score basé sur l'écart, la marge, le risque et les politiques",
+
     "explanation3": "Opportunité élevée : marge >30%, risque maîtrisé",
+
     "explanation4": "Opportunité moyenne : marge 15-30%, analyse requise",
+
     "explanation5": "Opportunité faible : marge <15% ou risque élevé",
+
     "table": {
+
       "rank": "Rang",
+
       "productInfo": "Produit",
+
       "priceInfo": "Prix",
+
       "arbitrageEval": "Évaluation",
+
       "action": "Action",
+
       "domesticPrice": "Prix national",
+
       "foreignPrice": "Prix étranger (CNY)",
+
       "priceDiff": "Écart",
+
       "profitMargin": "Marge",
+
       "viewDetail": "Détail",
+
       "score": "{score} pts",
+
       "year": "{year}"
+
     },
+
     "filters": {
+
       "all": "Tous",
+
       "high": "Opportunité élevée",
+
       "medium": "Opportunité moyenne",
+
       "low": "Opportunité faible"
+
     },
+
     "levels": {
+
       "high": "Élevée",
+
       "medium": "Moyenne",
+
       "low": "Faible",
+
       "unknown": "Inconnu"
+
     },
+
     "stats": {
+
       "totalProducts": "Total produits",
+
       "highOpportunity": "Haute opportunité",
+
       "profitMargin": "Marge moyenne",
+
       "totalProfit": "Profit total estimé",
+
       "avgArbitrage": "Arbitrage moyen"
+
     },
+
     "priceTrend": "Tendance des prix",
+
     "priceTrendDesc": "Évolution des prix nationaux vs étrangers de {productName}",
+
     "note": "Note : Données calculées avec les prix internationaux et le taux de change en temps réel. Référence uniquement. Tenez compte des coûts réels de transport, droits et assurance."
+
   },
+
   "footer": {
+
     "description": "Plateforme mondiale de machines agricoles d'occasion, connectant la Chine au monde",
+
     "quickLinks": "Partenaires de l'industrie",
+
     "quickLinkRb": "Ritchie Bros Auctioneers",
+
     "quickLinkCamda": "Association chinoise de distribution de machines agricoles",
+
     "quickLinkTractorHouse": "TractorHouse",
+
     "quickLinkAgriaffaires": "Agriaffaires",
+
     "contactUs": "Contact",
+
     "legal": "Mentions légales",
+
     "privacy": "Confidentialité",
+
     "terms": "Conditions d'utilisation",
+
     "company": "Société",
+
     "companyName": "Shijiazhuang Shendiao Agricultural Machinery Technology Co., Ltd.",
+
     "companyAddress": "Village Liao, Commune Macun, Comté Yuanshi, Shijiazhuang, Hebei, Chine",
+
     "email": "E-mail",
+
     "phone": "Téléphone",
+
     "address": "Adresse",
+
     "copyright": "© 2024 Shijiazhuang Shendiao Agricultural Machinery Technology Co., Ltd. Tous droits réservés."
+
   },
+
   "intelligence": {
+
     "title": "Veille de marché",
+
     "subtitle": "Dynamique mondiale, opportunités d'arbitrage et tendances du secteur",
+
     "latest": "Dernière mise à jour",
+
     "items": "actualités",
+
     "arbitrageHighlights": "Points forts arbitrage",
+
     "loading": "Chargement...",
+
     "empty": "Aucune actualité",
+
     "count": "{count} actualités",
+
     "actionTips": "Recommandation"
+
   },
+
   "blog": {
+
     "title": "Actualités",
+
     "subtitle": "Marché mondial, analyse des prix, revues de marques et guides d'achat",
+
     "readMore": "Lire la suite",
+
     "publishedOn": "Publié le {date}",
+
     "viewCount": "{count} lectures",
+
     "categories": {
+
       "all": "Tous",
+
       "market-analysis": "Analyse de marché",
+
       "price-guide": "Guide des prix",
+
       "brand-review": "Revue de marque",
+
       "industry-news": "Actualités du secteur",
+
       "buying-guide": "Guide d'achat"
+
     },
+
     "recentPosts": "Articles récents",
+
     "relatedPosts": "Articles connexes",
+
     "noPosts": "Aucun article",
+
     "backToList": "Retour à la liste",
+
     "shareArticle": "Partager",
+
     "tags": "Mots-clés",
+
     "source": "Source",
+
     "searchPlaceholder": "Rechercher..."
+
   },
+
   "arena": {
+
     "title": "AI Arena Machinery",
+
     "subtitle": "Entrez vos besoins, AI trouve la meilleure machinery",
+
     "fieldSize": "Taille du champ (mu)",
+
     "targetRegion": "Région cible",
+
     "regionCentralAsia": "Asie centrale",
+
     "regionAfrica": "Afrique",
+
     "regionSouthAmerica": "Amérique du Sud",
+
     "regionMiddleEast": "Moyen-Orient",
+
     "regionAny": "Toutes",
+
     "maxAge": "Âge maximum",
+
     "age5": "Moins de 5 ans",
+
     "age8": "Moins de 8 ans",
+
     "age10": "Moins de 10 ans",
+
     "ageAny": "Toutes",
+
     "startMatch": "Commencer",
+
     "matching": "AI recherche...",
+
     "foundCandidates": "{count} candidats trouvés",
+
     "showingTop": "Top {count} affichés",
+
     "noMatch": "Aucune machine trouvée, ajustez les critères",
+
     "rank": "Rang {rank}",
+
     "totalScore": "Score total",
+
     "dimCost": "Coût",
+
     "dimPerformance": "Performances",
+
     "dimBrand": "Marque",
+
     "dimParts": "Pièces",
+
     "dimResidual": "Valeur résiduelle",
+
     "dimCrossBorder": "Export",
+
     "viewDetail": "Voir détails",
+
     "contactSeller": "Contacter vendeur",
+
     "champion": "Champion",
+
     "compareTitle": "Comparaison 6 dimensions",
+
     "sourceUsed": "Occasion",
+
     "sourceNew": "Neuf",
+
     "sourceShowcase": "Présentation"
+
   },
+
   "cn": {
+
     "common": {
+
       "serviceFee": "Frais de service d'information à valeur ajoutée",
+
       "notTransactionFee": "Pas de commission de transaction",
+
       "icpDisplay": "N° d'enregistrement ICP : {icp}",
+
       "dataLocalized": "Données stockées localement",
+
       "complianceNote": "Toutes les transactions garanties sont effectuées exclusivement via le Mini Programme WeChat.",
+
       "trustSeller": "Vendeur de confiance",
+
       "verified": "Vérifié"
+
     },
+
     "publish": {
+
       "title": "Publier une annonce",
+
       "subtitle": "Remplissez les informations de la machine pour atteindre les acheteurs nationaux",
+
       "basicInfo": "Informations de base",
+
       "brand": "Marque",
+
       "selectBrand": "Sélectionner une marque",
+
       "category": "Catégorie",
+
       "selectCategory": "Sélectionner une catégorie",
+
       "modelName": "Modèle",
+
       "year": "Année",
+
       "workingHours": "Heures de travail",
+
       "priceCny": "Prix (CNY)",
+
       "location": "Emplacement",
+
       "description": "Description",
+
       "conditionCard": "Fiche d'état du véhicule",
+
       "required": "Requis",
+
       "conditionCardDesc": "Fournir 8 données d'état",
+
       "feeNote": "À propos des frais",
+
       "feeDetail": "Cette plateforme ne facture que des services d'information à valeur ajoutée (ni frais de transaction ni commissions). La publication est gratuite ; les services à valeur ajoutée sont facultatifs. Les services d'enchères sont assurés par notre partenaire, une institution d'enchères agréée, qui perçoit les commissions conformément à la loi ; la plateforme ne perçoit aucune commission de transaction et ne gère pas les fonds.",
+
       "submit": "Publier",
+
       "tips": "Conseils",
+
       "tip1": "Assurez-vous que les informations d'état sont précises",
+
       "complianceTitle": "Avis de conformité",
+
       "complianceDesc": "Tous les fonds transitent uniquement par le Mini Programme WeChat.",
+
       "tip2": "Télécharger des photos sous plusieurs angles",
+
       "tip3": "Obtenir un badge de vérification",
+
       "tip4": "Le mode d'enquête aveugle protège la vie privée"
+
     },
+
     "verify": {
+
       "title": "Vérification de propriété",
+
       "subtitle": "Téléchargez des documents pour examen",
+
       "step1Title": "Télécharger des documents",
+
       "step2Title": "Examen par la plateforme",
+
       "step3Title": "Obtenir un badge",
+
       "applyForm": "Soumettre une demande de vérification",
+
       "certType": "Type de vérification",
+
       "ownership": "Vérification de propriété",
+
       "identity": "Vérification d'identité",
+
       "full": "Vérification complète",
+
       "submit": "Envoyer la demande",
+
       "step1Desc": "Télécharger les factures d'achat, les certificats, les documents d'enregistrement",
+
       "step2Desc": "Examen terminé dans les 1-3 jours ouvrables",
+
       "step3Desc": "L'équipement reçoit le badge 'Vérifié' après approbation",
+
       "productLink": "Équipements liés",
+
       "selectProduct": "Sélectionner l'équipement",
+
       "documents": "Documents",
+
       "uploadHint": "Cliquez ou faites glisser les fichiers ici",
+
       "uploadFormats": "Prend en charge JPG, PNG, PDF, max 10Mo",
+
       "notes": "Notes",
+
       "notesPlaceholder": "Notes supplémentaires",
+
       "privacyNote": "Avis de confidentialité",
+
       "privacyDetail": "Les documents sont utilisés uniquement pour la vérification, stockés de manière anonyme après examen."
+
     },
+
     "inquiry": {
+
       "title": "Centre de demandes",
+
       "subtitle": "Découvrez → Envoyez une demande",
+
       "seller": "Vendeur",
+
       "price": "Prix",
+
       "location": "Emplacement",
+
       "sendInquiry": "Envoyer une demande",
+
       "recentInquiries": "Mes demandes d'information",
+
       "postedAt": "Publié",
+
       "statusQuoted": "Devis",
+
       "statusPending": "En attente",
+
       "viewQuote": "Voir le devis",
+
       "createGuarantee": "Créer une garantie",
+
       "askSeller": "Négociable",
+
       "loadMore": "Charger plus...",
+
       "miniProgramTitle": "Paiement du programme mini",
+
       "miniProgramDesc": "Numérisez le code QR pour effectuer une transaction garantie via le programme WeChat Mini",
+
       "howItWorks": "Comment ça marche",
+
       "step1": "Parcourez les annonces, cliquez sur 'Envoyer une demande'",
+
       "step2": "Le vendeur fournit un devis anonyme",
+
       "step3": "Accord → Intention de garantie créée",
+
       "step4": "L'acheteur paie via le programme Mini",
+
       "step5": "Les fonds vont directement au vendeur",
+
       "complianceTitle": "Avis de conformité",
+
       "complianceDesc": "Mode d'enquête anonyme (pas d'enchère). Règlement des fonds uniquement via le programme WeChat Mini"
+
     },
+
     "intel": {
+
       "title": "Indice des prix et intelligence marché",
+
       "subtitle": "Analyse de marché",
+
       "priceIndexTitle": "Indice des prix",
+
       "marketAnalysis": "Analyse de marché",
+
       "filter": "Filtres",
+
       "premiumFeature": "Premium · Certains rapports nécessitent un abonnement",
+
       "currentIndex": "Indice actuel",
+
       "monthOverMonth": "MoM",
+
       "yearOverYear": "YoY",
+
       "avgPrice": "Prix moyen",
+
       "industryReports": "Rapports",
+
       "viewReport": "Afficher",
+
       "category": "Catégorie",
+
       "region": "Région",
+
       "period": "Période",
+
       "all": "Tous",
+
       "last3Months": "Les 3 derniers mois",
+
       "last6Months": "Les 6 derniers mois",
+
       "lastYear": "L'année dernière",
+
       "premiumTitle": "Service premium",
+
       "premiumDesc": "Abonnez-vous pour des rapports et des prévisions détaillés.",
+
       "premiumFee": "* Frais de service à valeur ajoutée",
+
       "subscribe": "Abonnez-vous",
+
       "disclaimer": "Avertissement",
+
       "disclaimerDesc": "À titre de référence uniquement, et non de conseil en investissement."
+
     },
+
     "expo": {
+
       "title": "Salons et événements terrain",
+
       "subtitle": "Événements nationaux",
+
       "all": "Tous",
+
       "viewDetails": "Détails",
+
       "register": "S'inscrire",
+
       "fieldExpo": "Expo de terrain",
+
       "indoorExpo": "Expo en salle",
+
       "online": "En ligne",
+
       "note": "Note",
-      "noteDesc": "Les événements sont organisés par l'organisateur de l'expo ; les modalités sont celles annoncées officiellement par l'organisateur."
+
+      "noteDesc": "Les événements sont organisés par l'organisateur de l'expo ; les modalités sont celles annoncées officiellement par l'organisateur.",
+      "selfPublishCta": "Publiez votre matériel d'occasion — gratuit et en ligne",
+      "selfPublishDesc": "Sans crédits : publiez et c'est en ligne. Présentez votre matériel d'occasion aux acheteurs du monde entier.",
+      "selfPublishBtn": "Publier du matériel d'occasion gratuitement",
+      "videoShowcase": "Vidéos d'opération réelle WingShow",
+      "showroomShowcase": "Showroom numérique — nouveautés",
+      "viewAll": "Tout voir",
+      "loading": "Chargement…",
+      "noData": "Aucun contenu pour le moment",
+      "playsUnit": "lectures",
+      "contactAdvisor": "Ou contactez un conseiller : "
+
     },
+
     "govDashboard": {
+
       "title": "Tableau de bord gouvernemental",
+
       "subtitle": "Aperçu des données de circulation",
+
       "totalListings": "Total des annonces",
+
       "verifiedCount": "Vérifiés",
+
       "inquiryCount": "Demandes",
+
       "status": "Statut",
+
       "verified": "Vérifié",
+
       "pending": "En attente",
+
       "restricted": "Accès autorisé uniquement",
+
       "verificationRate": "Évaluation",
+
       "guaranteeCount": "Garanties",
+
       "monthOverMonth": "MoM",
+
       "verificationTrend": "Tendance de vérification",
+
       "regionalDistribution": "Répartition régionale",
+
       "chartPlaceholder": "Zone du graphique",
+
       "recentVerifications": "Vérifications récentes",
+
       "productName": "Équipement",
+
       "sellerName": "Vendeur",
+
       "date": "Date",
+
       "dataNote": "Avis",
+
       "dataNoteDesc": "Données CN uniquement, stockées dans Alibaba Cloud RDS Beijing."
+
     }
+
   },
+
   "buyerMatch": {
+
     "title": "Appariement d'acheteur",
+
     "subtitle": "Entrez culture, taille et budget pour obtenir des recommandations de machines intelligentes",
+
     "cropType": "Type de culture *",
+
     "farmSize": "Taille de la ferme *",
+
     "machineType": "Type de machine",
+
     "budget": "Budget (10 000 CNY)",
+
     "select": "Sélectionner",
+
     "any": "N'importe quel",
+
     "min": "Min",
+
     "max": "Max",
+
     "match": "Appariement",
+
     "reset": "Réinitialiser",
+
     "errCrop": "Veuillez sélectionner le type de culture",
+
     "errFarmSize": "Veuillez sélectionner la taille de la ferme",
+
     "errNetwork": "Erreur de réseau, veuillez réessayer",
+
     "errMatchFailed": "Échec de la correspondance",
+
     "purchaseAdvice": "Conseil d'achat",
+
     "avgPrice": "Prix moyen",
+
     "minPrice": "Min",
+
     "maxPrice": "Max",
+
     "available": "Disponible",
+
     "unitWan": "0k",
+
     "unitTai": "u",
+
     "priceUnit": "0k CNY",
+
     "hasVideo": "Vidéo",
+
     "matchLabel": "Correspondance",
+
     "noMatch": "Aucune correspondance trouvée, essayez d'ajuster les filtres",
+
     "matchesFound": "{count} Correspondances trouvées",
+
     "yearSuffix": ""
+
   },
+
   "crops": {
+
     "wheat": "Blé",
+
     "corn": "Maïs",
+
     "rice": "Riz",
+
     "forageGrass": "Herbe de prairie",
+
     "sugarcane": "Canne à sucre",
+
     "soybean": "Soja",
+
     "potato": "Pomme de terre",
+
     "sugarbeet": "Betterave sucrière",
+
     "cotton": "Coton",
+
     "rape": "Colza",
+
     "oat": "Avoine",
+
     "alfalfa": "Luzerne",
+
     "sorghum": "Sorgho",
+
     "silageCorn": "Maïs ensilage"
+
   },
+
   "farmSizes": {
+
     "small": "Petit (<100 mu)",
+
     "medium": "Moyen (100-500 mu)",
+
     "large": "Grand (500-2000 mu)",
+
     "xlarge": "Très grand (>2000 mu)"
+
   },
+
   "machineTypes": {
+
     "forage": "Moissonneuse à fourrage",
+
     "harvester": "Moissonneuse-batteuse",
+
     "baler": "Enrubanneuse",
+
     "tractor": "Tracteur",
+
     "mower": "Faucheuse",
+
     "rake": "Andaineur",
+
     "wrapper": "Enrouleuse",
+
     "seeder": "Semeuse",
+
     "reaper": "Moissonneuse",
+
     "picker": "Ramasseuse de tête de récolte"
+
   },
+
   "sellerPublish": {
+
     "prefillBanner": "We've pre-filled your AI valuation info — confirm and publish",
+
     "prefillClear": "Clear",
+
     "moreInfoTitle": "More info (optional — the more complete, the more exposure)",
+
     "optionalTag": "Optional",
+
     "workingHours": "Working hours",
+
     "workingHoursPlaceholder": "e.g. 1200",
+
     "_todo": "TODO: translate sellerPublish keys to fr; values temporarily copied from en (P0 2026-09-06)"
+
   }
+
 }
+
