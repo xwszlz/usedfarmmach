@@ -13,6 +13,19 @@ import {
 import { ExpoInquiryForm } from "@/components/expo/ExpoInquiryForm";
 import { TJ_FAQS, pickFaqs } from "@/components/expo/expo-faqs";
 
+const SHOWCASE_MACHINE = {
+  zh: "CLAAS JAGUAR 930 青贮机",
+  en: "CLAAS JAGUAR 930 Forage Harvester",
+};
+
+// 8 语展示行（语言自称，固定不变）
+const SHOWCASE_LANGS = [
+  "中文", "English", "Русский", "Español", "Português", "العربية", "Français", "हिन्दी",
+];
+
+// 示例数据（示例展示用）
+const SHOWCASE_SAMPLE = { date: "2026-10-26 09:12", views: "1,284", countries: "23" };
+
 /**
  * 2026 中国国际农业机械展览会（天津）· 神雕农机展™ 参展服务专题
  *
@@ -20,6 +33,21 @@ import { TJ_FAQS, pickFaqs } from "@/components/expo/expo-faqs";
  * 页面内一律写「待核实」；官网与展位申报期已由官方《申报说明》核实，按官方口径写实。
  * 页面同样不出现四档价格、不出现"招展"等主办方行为动词；不宣称参展企业身份。
  */
+
+interface TianjinShowcase {
+  title: string;
+  lead: string;
+  badge: string;
+  photoLabel: string;
+  specs: { label: string; value: string }[];
+  chips: string[];
+  publishedLabel: string;
+  viewsLabel: string;
+  fromLabel: string;
+  countriesLabel: string;
+  cta: string;
+  note: string;
+}
 
 interface TianjinTexts {
   badge: string;
@@ -41,6 +69,7 @@ interface TianjinTexts {
   ctaTitle: string;
   ctaSub: string;
   secondaryCta: string;
+  showcase: TianjinShowcase;
   sourceTitle: string;
   sourceNote: string;
 }
@@ -105,6 +134,27 @@ const TEXTS: Record<string, TianjinTexts> = {
     ctaTitle: "现场展位 3 天，线上展台常年展示",
     ctaSub: "无需申请审批：注册后即可自主发布，机器立即常年在线。需要我们协助？填写以下信息，顾问帮你操作。",
     secondaryCta: "先看看线上展厅",
+    showcase: {
+      title: "自主发布后 · 惊艳展示示例",
+      lead: "下方是一台由参展商自主发布的机器在云展中的展示效果（示例数据，可换成你的真实展品）。",
+      badge: "刚刚由展商自主发布 · 2 分钟前上线",
+      photoLabel: "机型实拍",
+      specs: [
+        { label: "品牌", value: "CLAAS" },
+        { label: "型号", value: "JAGUAR 930" },
+        { label: "类型", value: "自走式青贮机" },
+        { label: "保修", value: "2 年 / 2000h" },
+        { label: "产地", value: "德国" },
+        { label: "动力", value: "462 kW" },
+      ],
+      chips: ["地头验机", "全球交易", "双语", "八语展示", "常年在线"],
+      publishedLabel: "发布时间",
+      viewsLabel: "浏览",
+      fromLabel: "来自",
+      countriesLabel: "个国家",
+      cta: "我也要发布这台 / 我的机器",
+      note: "同一台机器以 8 种语言向全球买家展示——这正是「自主发布 + 全球交易」的价值。本模板专用于新机发布，提交即上线、常年在线。",
+    },
     sourceTitle: "信息来源与免责声明",
     sourceNote:
       "本页展会信息来自神雕农机 2026 秋季展会战役方案的记载。标注「待核实」的字段（展馆 / 承办 / 规模 / 主办单位第三家中文全称）尚未取得官方来源，正式对外前须以主办方公告为准。神雕农机独立运营线上展台服务，与展会主办方无隶属关系，亦不代表主办方。",
@@ -169,6 +219,27 @@ const TEXTS: Record<string, TianjinTexts> = {
     ctaTitle: "An on-site booth lasts 3 days. Your online booth stays up year-round.",
     ctaSub: "No application or approval needed — register and publish yourself; your machine goes live year-round. Need a hand? Fill in the form and an advisor will help.",
     secondaryCta: "Browse the online showroom first",
+    showcase: {
+      title: "Self-published · a stunning showcase",
+      lead: "Below is how a machine self-published by an exhibitor appears in the Cloud Expo (sample data — replaced by your real listing).",
+      badge: "Just self-published by an exhibitor · live 2 minutes ago",
+      photoLabel: "Machine photo",
+      specs: [
+        { label: "Brand", value: "CLAAS" },
+        { label: "Model", value: "JAGUAR 930" },
+        { label: "Type", value: "Self-propelled forage harvester" },
+        { label: "Warranty", value: "2 yr / 2000 h" },
+        { label: "Origin", value: "Germany" },
+        { label: "Power", value: "462 kW" },
+      ],
+      chips: ["Field inspection", "Global trade", "Bilingual", "8 languages", "Year-round"],
+      publishedLabel: "Published",
+      viewsLabel: "views",
+      fromLabel: "from",
+      countriesLabel: "countries",
+      cta: "Publish this / my machine too",
+      note: "The same machine shown to global buyers in 8 languages — the value of “self-publish + global trade”. Built for new-machine listings: submit and it goes live, year-round.",
+    },
     sourceTitle: "Sources & Disclaimer",
     sourceNote:
       "Expo facts on this page come from Shendiao's internal 2026 autumn expo campaign records. Fields marked \"To be verified\" (venue / executor / scale / full Chinese name of the third organizer) have no official source yet and must be confirmed against the organizer's announcements before external use. Shendiao operates its online booth service independently and has no affiliation with, and does not represent, the expo organizer.",
@@ -233,6 +304,27 @@ const TEXTS: Record<string, TianjinTexts> = {
     ctaTitle: "Офлайн-стенд — 3 дня. Онлайн-стенд — круглый год.",
     ctaSub: "Без заявок и согласований: зарегистрируйтесь и опубликуйте технику сами — она сразу в сети круглый год. Нужна помощь? Заполните форму, и консультант всё сделает с вами.",
     secondaryCta: "Сначала посмотреть онлайн-шоурум",
+    showcase: {
+      title: "После самостоятельной публикации · эффектный пример",
+      lead: "Ниже показано, как машина, самостоятельно опубликованная экспонентом, выглядит в Cloud Expo (примерные данные — заменяются вашим реальным объявлением).",
+      badge: "Только что опубликовано экспонентом · в сети 2 минуты назад",
+      photoLabel: "Фото техники",
+      specs: [
+        { label: "Бренд", value: "CLAAS" },
+        { label: "Модель", value: "JAGUAR 930" },
+        { label: "Тип", value: "Самоходный кормоуборочный комбайн" },
+        { label: "Гарантия", value: "2 года / 2000 ч" },
+        { label: "Страна", value: "Германия" },
+        { label: "Мощность", value: "462 кВт" },
+      ],
+      chips: ["Осмотр в поле", "Мировая торговля", "Два языка", "8 языков", "Круглый год"],
+      publishedLabel: "Опубликовано",
+      viewsLabel: "просмотров",
+      fromLabel: "из",
+      countriesLabel: "стран",
+      cta: "Опубликовать эту / мою машину",
+      note: "Одна и та же машина показана покупателям по всему миру на 8 языках — в этом ценность «самостоятельной публикации + мировой торговли». Создано для новых машин: опубликовали — сразу в сети, круглый год.",
+    },
     sourceTitle: "Источники и оговорка",
     sourceNote:
       "Сведения о выставке взяты из внутренних материалов кампании Shendiao «Осенняя выставка 2026». Поля, помеченные «уточняется» (павильон / исполнитель / масштаб / полное китайское название третьего организатора), пока не подтверждены официальным источником и должны быть сверены с объявлениями организатора перед внешним использованием. Shendiao самостоятельно управляет сервисом онлайн-стенда и не связана с организатором выставки, а также не представляет его.",
@@ -297,6 +389,27 @@ const TEXTS: Record<string, TianjinTexts> = {
     ctaTitle: "Un stand presencial dura 3 días. Tu stand online, todo el año.",
     ctaSub: "Sin solicitudes ni aprobaciones: regístrate y publica tú mismo; tu máquina queda en línea todo el año. ¿Necesitas ayuda? Rellena el formulario y un asesor te asistirá.",
     secondaryCta: "Ver primero la sala de exposiciones online",
+    showcase: {
+      title: "Publicado por ti mismo · un ejemplo espectacular",
+      lead: "Abajo se muestra cómo aparece en la Cloud Expo una máquina publicada por el propio expositor (datos de ejemplo; se sustituirán por tu anuncio real).",
+      badge: "Recién publicado por un expositor · en línea hace 2 minutos",
+      photoLabel: "Foto de la máquina",
+      specs: [
+        { label: "Marca", value: "CLAAS" },
+        { label: "Modelo", value: "JAGUAR 930" },
+        { label: "Tipo", value: "Picadora autopropulsada" },
+        { label: "Garantía", value: "2 años / 2000 h" },
+        { label: "Origen", value: "Alemania" },
+        { label: "Potencia", value: "462 kW" },
+      ],
+      chips: ["Inspección en campo", "Comercio global", "Bilingüe", "8 idiomas", "Todo el año"],
+      publishedLabel: "Publicado",
+      viewsLabel: "visitas",
+      fromLabel: "desde",
+      countriesLabel: "países",
+      cta: "Publicar esta / mi máquina",
+      note: "La misma máquina mostrada a compradores de todo el mundo en 8 idiomas: ese es el valor de «publicar tú mismo + comercio global». Pensado para máquinas nuevas: publicas y queda en línea todo el año.",
+    },
     sourceTitle: "Fuentes y exención de responsabilidad",
     sourceNote:
       "Los datos de la feria en esta página proceden de los registros internos de la campaña «Feria de otoño 2026» de Shendiao. Los campos marcados como «Por verificar» (recinto / entidad ejecutora / escala / nombre chino completo del tercer organizador) aún no cuentan con fuente oficial y deben confirmarse con los anuncios del organizador antes de cualquier uso externo. Shendiao gestiona su servicio de stand online de forma independiente y no tiene vínculo de subordinación con el organizador de la feria, ni lo representa.",
@@ -361,6 +474,27 @@ const TEXTS: Record<string, TianjinTexts> = {
     ctaTitle: "Um estande presencial dura 3 dias. O seu estande online, o ano inteiro.",
     ctaSub: "Sem solicitação nem aprovação: cadastre-se e publique você mesmo; sua máquina fica online o ano inteiro. Precisa de ajuda? Preencha o formulário e um consultor irá auxiliá-lo.",
     secondaryCta: "Ver primeiro o showroom online",
+    showcase: {
+      title: "Publicado por você · um exemplo impressionante",
+      lead: "Abaixo está como uma máquina publicada pelo próprio expositor aparece na Cloud Expo (dados de exemplo; serão substituídos pelo seu anúncio real).",
+      badge: "Acabou de ser publicado por um expositor · no ar há 2 minutos",
+      photoLabel: "Foto da máquina",
+      specs: [
+        { label: "Marca", value: "CLAAS" },
+        { label: "Modelo", value: "JAGUAR 930" },
+        { label: "Tipo", value: "Forrageira autopropelida" },
+        { label: "Garantia", value: "2 anos / 2000 h" },
+        { label: "Origem", value: "Alemanha" },
+        { label: "Potência", value: "462 kW" },
+      ],
+      chips: ["Inspeção em campo", "Comércio global", "Bilíngue", "8 idiomas", "O ano todo"],
+      publishedLabel: "Publicado",
+      viewsLabel: "visualizações",
+      fromLabel: "de",
+      countriesLabel: "países",
+      cta: "Publicar esta / minha máquina",
+      note: "A mesma máquina exibida a compradores do mundo todo em 8 idiomas — é o valor de «publicar você mesmo + comércio global». Feito para máquinas novas: publica e entra no ar o ano inteiro.",
+    },
     sourceTitle: "Fontes e aviso legal",
     sourceNote:
       "Os dados da feira nesta página vêm dos registros internos da campanha «Feira de outono 2026» da Shendiao. Os campos marcados como «A verificar» (recinto / executante / escala / nome chinês completo do terceiro organizador) ainda não têm fonte oficial e devem ser confirmados com os anúncios do organizador antes de qualquer uso externo. A Shendiao opera seu serviço de estande online de forma independente e não tem vínculo de subordinação com o organizador da feira, nem o representa.",
@@ -425,6 +559,27 @@ const TEXTS: Record<string, TianjinTexts> = {
     ctaTitle: "الجناح الحضوري يدوم 3 أيام. جناحك الإلكتروني يدوم طوال العام.",
     ctaSub: "دون طلب أو موافقة: سجّل وانشر بنفسك، وستبقى آلاتك على الإنترنت طوال العام. تحتاج مساعدة؟ املأ النموذج وسيتواصل معك مستشار.",
     secondaryCta: "تصفّح صالة العرض الإلكترونية أولًا",
+    showcase: {
+      title: "بعد النشر الذاتي · مثال مبهر",
+      lead: "فيما يلي كيفية ظهور ماكينة نشرها العارض بنفسه في Cloud Expo (بيانات تجريبية — تُستبدل بإدراجك الحقيقي).",
+      badge: "نُشرت للتو بواسطة عارض · مُتاحة منذ دقيقتين",
+      photoLabel: "صورة الماكينة",
+      specs: [
+        { label: "العلامة", value: "CLAAS" },
+        { label: "الموديل", value: "JAGUAR 930" },
+        { label: "النوع", value: "حصّادة علف ذاتية الحركة" },
+        { label: "الضمان", value: "سنتان / 2000 ساعة" },
+        { label: "المنشأ", value: "ألمانيا" },
+        { label: "القدرة", value: "462 كيلوواط" },
+      ],
+      chips: ["فحص ميداني", "تجارة عالمية", "بلغتين", "ثماني لغات", "على مدار العام"],
+      publishedLabel: "نُشر في",
+      viewsLabel: "مشاهدة",
+      fromLabel: "من",
+      countriesLabel: "دولة",
+      cta: "انشر هذه الماكينة / ماكينتي أيضًا",
+      note: "الماكينة نفسها تُعرض على المشترين حول العالم بثماني لغات — وهذه قيمة «النشر الذاتي + التجارة العالمية». مُصمّم للآلات الجديدة: انشر فتُتاح فورًا على مدار العام.",
+    },
     sourceTitle: "المصادر وإخلاء المسؤولية",
     sourceNote:
       "مصدر بيانات المعرض في هذه الصفحة هو السجلات الداخلية لحملة Shendiao «معرض خريف 2026». الحقول المعلّمة بـ«قيد التحقق» (المقر / الجهة المنفّذة / الحجم / الاسم الصيني الكامل للمنظّم الثالث) لا تملك بعد مصدرًا رسميًا، ويجب تأكيدها مقابل إعلانات المنظّم قبل أي استخدام خارجي. تدير Shendiao خدمة الأجنحة الإلكترونية بشكل مستقل ولا تربطها علاقة تبعية بمنظّم المعرض ولا تمثله.",
@@ -489,6 +644,27 @@ const TEXTS: Record<string, TianjinTexts> = {
     ctaTitle: "Un stand physique dure 3 jours. Votre stand en ligne, toute l'année.",
     ctaSub: "Sans dossier ni validation : inscrivez-vous et publiez vous-même ; votre machine reste en ligne toute l'année. Besoin d'aide ? Remplissez le formulaire, un conseiller vous accompagne.",
     secondaryCta: "D'abord parcourir le showroom en ligne",
+    showcase: {
+      title: "Publié par vous-même · un aperçu saisissant",
+      lead: "Ci-dessous, l'aperçu dans le Cloud Expo d'une machine publiée par l'exposant lui-même (données d'exemple ; remplacées par votre annonce réelle).",
+      badge: "Tout juste publié par un exposant · en ligne depuis 2 minutes",
+      photoLabel: "Photo machine",
+      specs: [
+        { label: "Marque", value: "CLAAS" },
+        { label: "Modèle", value: "JAGUAR 930" },
+        { label: "Type", value: "Ensileuse automotrice" },
+        { label: "Garantie", value: "2 ans / 2000 h" },
+        { label: "Origine", value: "Allemagne" },
+        { label: "Puissance", value: "462 kW" },
+      ],
+      chips: ["Inspection au champ", "Commerce mondial", "Bilingue", "8 langues", "Toute l'année"],
+      publishedLabel: "Publié le",
+      viewsLabel: "vues",
+      fromLabel: "depuis",
+      countriesLabel: "pays",
+      cta: "Publier cette / ma machine",
+      note: "La même machine présentée à des acheteurs du monde entier en 8 langues — c'est la valeur de « publier soi-même + commerce mondial ». Conçu pour les machines neuves : publiez, c'est en ligne toute l'année.",
+    },
     sourceTitle: "Sources et clause de non-responsabilité",
     sourceNote:
       "Les informations sur le salon figurant sur cette page proviennent des archives internes de la campagne « Salon d'automne 2026 » de Shendiao. Les champs marqués « À vérifier » (lieu / entité exécutante / envergure / nom chinois complet du troisième organisateur) n'ont pas encore de source officielle et doivent être confirmés auprès des annonces de l'organisateur avant tout usage externe. Shendiao gère son service de stand en ligne de manière indépendante et n'a aucun lien de subordination avec l'organisateur du salon, ni ne le représente.",
@@ -553,6 +729,27 @@ const TEXTS: Record<string, TianjinTexts> = {
     ctaTitle: "स्थल पर स्टॉल 3 दिन। आपका ऑनलाइन स्टॉल पूरा साल।",
     ctaSub: "बिना आवेदन या मंज़ूरी: पंजीकरण करें और स्वयं प्रकाशित करें — आपकी मशीन पूरे साल ऑनलाइन रहेगी। मदद चाहिए? फ़ॉर्म भरें, सलाहकार आपकी सहायता करेगा।",
     secondaryCta: "पहले ऑनलाइन शोरूम देखें",
+    showcase: {
+      title: "स्वयं प्रकाशित · एक शानदार उदाहरण",
+      lead: "नीचे दिखाया गया है कि प्रदर्शक द्वारा स्वयं प्रकाशित मशीन Cloud Expo में कैसी दिखती है (नमूना डेटा — आपकी वास्तविक लिस्टिंग से बदल जाएगा)।",
+      badge: "अभी-अभी प्रदर्शक द्वारा प्रकाशित · 2 मिनट पहले लाइव",
+      photoLabel: "मशीन की तस्वीर",
+      specs: [
+        { label: "ब्रांड", value: "CLAAS" },
+        { label: "मॉडल", value: "JAGUAR 930" },
+        { label: "प्रकार", value: "स्व-चालित चारा कटाई मशीन" },
+        { label: "वारंटी", value: "2 वर्ष / 2000 घंटे" },
+        { label: "मूल देश", value: "जर्मनी" },
+        { label: "शक्ति", value: "462 kW" },
+      ],
+      chips: ["खेत पर निरीक्षण", "वैश्विक व्यापार", "द्विभाषी", "8 भाषाएँ", "पूरे साल"],
+      publishedLabel: "प्रकाशित",
+      viewsLabel: "व्यू",
+      fromLabel: "से",
+      countriesLabel: "देश",
+      cta: "यह / मेरी मशीन भी प्रकाशित करें",
+      note: "वही मशीन दुनिया भर के खरीदारों को 8 भाषाओं में दिखाई जाती है — यही «स्वयं प्रकाशन + वैश्विक व्यापार» का मूल्य है। नई मशीनों के लिए बनाया गया: प्रकाशित करें और यह पूरे साल लाइव रहती है.",
+    },
     sourceTitle: "स्रोत एवं अस्वीकरण",
     sourceNote:
       "इस पृष्ठ पर प्रदर्शनी की जानकारी शेंडियाओ के आंतरिक «2026 शरदकालीन प्रदर्शनी» अभियान अभिलेखों से ली गई है। «सत्यापन बाकी» के रूप में चिह्नित फ़ील्ड (स्थल / कार्यान्वयन संस्था / पैमाना / तीसरे आयोजक का पूरा चीनी नाम) का अभी कोई आधिकारिक स्रोत नहीं है और किसी भी बाहरी उपयोग से पहले आयोजक की घोषणाओं से पुष्टि की जानी चाहिए। शेंडियाओ अपनी ऑनलाइन स्टॉल सेवा स्वतंत्र रूप से संचालित करती है और प्रदर्शनी के आयोजक के साथ इसका कोई अधीनता संबंध नहीं है, न ही वह उसका प्रतिनिधित्व करती है।",
@@ -569,8 +766,14 @@ export function TianjinLanding({ locale }: { locale: string }) {
   // FAQ 与页面 FAQPage 结构化数据共用一份数据源
   const faqs = pickFaqs(TJ_FAQS, locale);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  // 示例卡：点击机型名在中/英标题间切换（演示「双语 / 八语」）
+  const [showNameAlt, setShowNameAlt] = useState(false);
   // 阿拉伯语右起排版（与 dual-expo-banner / recruitment-banner 的既有做法一致）
   const isRTL = locale === "ar";
+  const primaryName = locale === "zh" ? SHOWCASE_MACHINE.zh : SHOWCASE_MACHINE.en;
+  const altName = locale === "zh" ? SHOWCASE_MACHINE.en : SHOWCASE_MACHINE.zh;
+  const shownName = showNameAlt ? altName : primaryName;
+  const shownSub = showNameAlt ? primaryName : altName;
 
   return (
     <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-white dark:bg-gray-950">
@@ -700,6 +903,101 @@ export function TianjinLanding({ locale }: { locale: string }) {
             </li>
           ))}
         </ol>
+      </section>
+
+      {/* 自主发布后 · 惊艳展示示例（示例数据） */}
+      <section className="mx-auto max-w-5xl px-4 py-14 sm:px-6 lg:px-8">
+        <h2 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">{t.showcase.title}</h2>
+        <p className="mb-8 text-gray-600 dark:text-gray-400">{t.showcase.lead}</p>
+
+        <div className="rounded-3xl bg-[#0f1b14] p-6 shadow-xl sm:p-8">
+          <span className="mb-6 inline-flex items-center gap-2 rounded-full border border-amber-400/40 bg-amber-400/15 px-4 py-1.5 text-xs font-bold text-amber-300">
+            <span className="h-2 w-2 rounded-full bg-amber-300" />
+            {t.showcase.badge}
+          </span>
+
+          <div className="grid items-center gap-7 md:grid-cols-[1.1fr_1fr]">
+            <div>
+              <div className="relative flex h-64 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-[#16352a] to-[#0c241b]">
+                <span className="text-2xl font-black tracking-[0.35em] text-white/10">
+                  {t.showcase.photoLabel}
+                </span>
+              </div>
+              <div className="mt-3 flex gap-2">
+                {[0, 1, 2, 3].map((k) => (
+                  <span
+                    key={k}
+                    className="h-12 flex-1 rounded-lg bg-gradient-to-br from-[#1d4233] to-[#11281e]"
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h3
+                onClick={() => setShowNameAlt((v) => !v)}
+                className="cursor-pointer text-2xl font-bold text-white transition hover:text-amber-300"
+                title={shownSub}
+              >
+                {shownName}
+              </h3>
+              <div className="mb-4 text-sm text-emerald-200/80">{shownSub}</div>
+
+              <div className="mb-4 grid grid-cols-2 gap-x-4 gap-y-2.5">
+                {t.showcase.specs.map((s) => (
+                  <div key={s.label} className="text-sm text-emerald-100/80">
+                    {s.label}：<b className="font-bold text-white">{s.value}</b>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mb-4 flex flex-wrap gap-2">
+                {t.showcase.chips.map((c, i) => (
+                  <span
+                    key={c}
+                    className={
+                      i < 2
+                        ? "rounded-lg border border-amber-400/50 bg-amber-400/15 px-3 py-1 text-xs font-semibold text-amber-300"
+                        : "rounded-lg border border-emerald-600/60 bg-emerald-700/25 px-3 py-1 text-xs font-semibold text-emerald-300"
+                    }
+                  >
+                    {c}
+                  </span>
+                ))}
+              </div>
+
+              <div className="mb-4 text-xs text-emerald-300/70">
+                {t.showcase.publishedLabel}：<b className="font-bold text-amber-300">{SHOWCASE_SAMPLE.date}</b>{" "}
+                · {t.showcase.viewsLabel} <b className="font-bold text-amber-300">{SHOWCASE_SAMPLE.views}</b>{" "}
+                · {t.showcase.fromLabel} <b className="font-bold text-amber-300">{SHOWCASE_SAMPLE.countries}</b>{" "}
+                {t.showcase.countriesLabel}
+              </div>
+
+              <a
+                href={`/${locale}/seller/products/new`}
+                className="inline-flex items-center gap-2 rounded-xl bg-amber-400 px-6 py-3 text-sm font-bold text-amber-900 transition hover:bg-amber-300"
+              >
+                {t.showcase.cta}
+                <ArrowRight className="h-4 w-4" />
+              </a>
+            </div>
+          </div>
+
+          <div className="mt-6 flex flex-wrap gap-2.5">
+            {SHOWCASE_LANGS.map((l) => (
+              <span
+                key={l}
+                className="rounded-lg border border-white/10 bg-white/5 px-3.5 py-2 text-xs font-semibold text-emerald-100/70"
+              >
+                {l}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <p className="mx-auto mt-6 max-w-3xl text-center text-xs leading-relaxed text-gray-500 dark:text-gray-400">
+          {t.showcase.note}
+        </p>
       </section>
 
       {/* FAQ */}
