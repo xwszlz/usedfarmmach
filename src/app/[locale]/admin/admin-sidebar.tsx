@@ -43,9 +43,11 @@ export function AdminSidebar({ role }: { role: string }) {
   ];
 
   const visibleLinks = links.filter((l) => {
+    const showForSite = (l as { showForSite?: "cn" | "com" | "all" }).showForSite;
     const siteOk =
-      (l as { showForSite?: "cn" | "com" | "all" }).showForSite === "all" ||
-      (l as { showForSite?: "cn" | "com" | "all" }).showForSite === SITE;
+      !showForSite ||
+      showForSite === "all" ||
+      showForSite === SITE;
     const editorOk = !(isEditor && l.hideForEditor);
     return siteOk && editorOk;
   });
