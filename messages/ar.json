@@ -129,7 +129,31 @@
       "checkin": "تسجيل الحضور",
       "admin_adjust": "تعديل الإدارة",
       "gift": "هدية"
-    }
+    },
+    "rechargeComRate": "١ دولار = ١ رصيد، أي مبلغ (دفع آمن عبر Stripe)",
+
+    "rechargeCnRate": "١ يوان = ١ رصيد، أي مبلغ",
+
+    "payWechat": "WeChat Pay",
+
+    "payAlipay": "Alipay",
+
+    "invalidAmount": "يرجى إدخال مبلغ صحيح",
+
+    "processing": "جارٍ المعالجة…",
+
+    "networkError": "خطأ في الشبكة، يرجى المحاولة مرة أخرى",
+
+    "scanToPay": "امسح رمز الاستجابة السريعة للدفع؛ سيُضاف {credits} رصيد تلقائياً",
+
+    "orderFailed": "تعذّر إنشاء طلب الشحن، يرجى المحاولة لاحقاً",
+
+    "paymentQrAlt": "رمز الاستجابة السريعة للدفع",
+
+    "freeFeaturesTitle": "ميزات مجانية",
+
+    "freeFeaturesBody": "نشر المنتجات وإرسال الاستفسارات وعرض بيانات التواصل مجانية تماماً ولا تستهلك أي رصيد"
+
   },
   "membership": {
     "_todo": "TODO: translate membership section from English (zh/en are source of truth)",
