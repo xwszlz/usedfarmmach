@@ -157,8 +157,8 @@ export function Navbar({ locale }: NavbarProps) {
             <div className="flex gap-2 pt-2">
               {user ? (
                 <>
-                  <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", tierColor[user.membershipTier] || tierColor.free)}>
-                    {tierLabel[user.membershipTier] || "免费"}
+                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
+                    {user.credits} 积分
                   </span>
                   <Link href={`/${locale}/seller/products`} className="flex-1" onClick={() => setMobileOpen(false)}>
                     <Button size="sm" className="w-full">{locale === "en" ? "Seller" : "卖家中心"}</Button>
