@@ -12,6 +12,7 @@ import { uploadFileToOSS } from "@/lib/oss-upload";
 import { buildLocationText } from "@/lib/location-parser";
 import { checkContent, isBlocked } from "@/lib/wechat-sec-check";
 import { checkDuplicateProduct, fireVideoModeration, MAX_VIDEOS_PER_PRODUCT, MAX_VIDEO_DURATION_SECONDS, MAX_VIDEO_FILE_SIZE_BYTES } from "@/lib/content-moderation";
+import { translateProductOnPublish } from "@/lib/services/product-translation";
 
 // 图片上传 + AI审核需要较长时间
 export const dynamic = "force-dynamic"; // 防 .cn 构建期静态固化，详见 scripts/check-route-dynamic.mjs
@@ -380,6 +381,13 @@ export async function POST(request: NextRequest) {
     // 异步触发视频内容审核（fire-and-forget）
     if (savedVideoRecords.length > 0) {
       fireVideoModeration(savedVideoRecords);
+    }
+
+    // === 自动 8 语翻译（非阻塞，失败降级，绝不影响发布）===
+    try {
+      await translateProductOnPublish(product.id);
+    } catch (trErr) {
+      console.error("[seller/products] 自动翻译异常（非阻塞）:", trErr instanceof Error ? trErr.message : String(trErr));
     }
 
     return NextResponse.json({

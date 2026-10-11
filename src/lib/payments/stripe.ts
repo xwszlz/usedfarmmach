@@ -16,7 +16,7 @@
  */
 
 import Stripe from "stripe";
-import { isComSite } from "@/config/site";
+import { isComSite, SITE } from "@/config/site";
 import { prisma } from "@/lib/db";
 
 /** 支持的计划（SKU） */
@@ -99,6 +99,87 @@ export function mapPlanToMembershipTier(plan: StripePlan): "basic" | "premium" |
 /** 计划 → UsageLog action */
 export function mapPlanToUsageAction(plan: StripePlan): "aiValuation" | "intel" | "membership" {
   return PLAN_TO_ACTION[plan];
+}
+
+/**
+ * 写入/更新 BillingOrder（.com + Stripe 下单留痕，含 site / provider 归因）。
+ * 幂等：按 stripeSessionId upsert。供 createCheckoutSession 与 webhook 共用，
+ * 确保无论下单还是支付回调，都能定位到「这是一笔 .com 站、走 Stripe 的订单」。
+ *
+ * 红线：site 取运行期 SITE（.com 站恒为 "com"），provider 固定 "stripe"；
+ *       本文件不涉及 wechat/alipay——那些是 .cn 站的合法通道，与此模型无关。
+ */
+export async function recordBillingOrder(input: {
+  userId: string;
+  plan: StripePlan;
+  sku?: string;
+  currency: string;
+  amount: number;
+  sessionId: string;
+  paymentIntentId?: string | null;
+  subscriptionId?: string | null;
+  status?: "created" | "completed" | "refunded" | "failed";
+}): Promise<void> {
+  const site = SITE; // 由构建期/运行期 SITE 决定；.com 站恒为 "com"
+  await prisma.billingOrder.upsert({
+    where: { stripeSessionId: input.sessionId },
+    update: {
+      status: input.status ?? "created",
+      stripePaymentIntentId: input.paymentIntentId ?? undefined,
+      stripeSubscriptionId: input.subscriptionId ?? undefined,
+    },
+    create: {
+      userId: input.userId,
+      site,
+      provider: "stripe",
+      plan: input.plan,
+      sku: input.sku ?? input.plan,
+      amount: input.amount,
+      currency: input.currency,
+      status: input.status ?? "created",
+      stripeSessionId: input.sessionId,
+      stripePaymentIntentId: input.paymentIntentId ?? null,
+      stripeSubscriptionId: input.subscriptionId ?? null,
+    },
+  });
+}
+
+export interface RefundResult {
+  refundId: string;
+  status: string;
+  amount: number | null;
+}
+
+/**
+ * 发起 Stripe 退款（部分或全额）。
+ *
+ * 红线（Fail-closed）：未配置 STRIPE_SECRET_KEY 一律抛错，绝不静默继续；
+ * 需要提供 paymentIntentId 或 chargeId 之一，二者皆缺则抛错。
+ */
+export async function refundStripeCharge(input: {
+  paymentIntentId?: string;
+  chargeId?: string;
+  amount?: number; // 单位：分，缺省为全额退款
+  reason?: "duplicate" | "fraudulent" | "requested_by_customer";
+}): Promise<RefundResult> {
+  if (!isConfigured()) {
+    throw new Error("Stripe 未配置，无法发起退款");
+  }
+  if (!input.paymentIntentId && !input.chargeId) {
+    throw new Error("退款需要提供 paymentIntentId 或 chargeId");
+  }
+  const refund = await getStripe().refunds.create({
+    ...(input.paymentIntentId
+      ? { payment_intent: input.paymentIntentId }
+      : { charge: input.chargeId as string }),
+    ...(input.amount != null ? { amount: input.amount } : {}),
+    ...(input.reason ? { reason: input.reason } : {}),
+  });
+  return {
+    refundId: refund.id,
+    status: refund.status ?? "pending",
+    amount: refund.amount,
+  };
 }
 
 /** 域名（成功/取消回跳用） */
@@ -193,6 +274,26 @@ export async function createCheckoutSession(
   };
 
   const session = await getStripe().checkout.sessions.create(params);
+
+  // 一次性支付：session.payment_intent 立即可见；订阅：session.subscription 立即可见。
+  const paymentIntentId =
+    typeof session.payment_intent === "string" ? session.payment_intent : null;
+  const subscriptionId =
+    typeof session.subscription === "string" ? session.subscription : null;
+
+  // 留痕：.com + Stripe 下单记录（幂等；webhook 后续会更新为 completed/refunded）
+  await recordBillingOrder({
+    userId,
+    plan,
+    sku,
+    currency,
+    amount,
+    sessionId: session.id,
+    paymentIntentId,
+    subscriptionId,
+    status: "created",
+  });
+
   return {
     sessionId: session.id,
     sessionUrl: session.url,

@@ -5,12 +5,15 @@
  * 关键点：
  *  - 必须用 `await request.text()` 取原始 body（不能 json()），否则验签失败。
  *  - 取 `stripe-signature` 头做验签；验签失败返回 400。
- *  - 仅处理 checkout.session.completed 与 invoice.paid。
- *  - 幂等：按 subscriptionId / stripeInvoiceId 去重，避免重复写入。
+ *  - 处理 checkout.session.completed / invoice.paid / 订阅生命周期 /
+ *    charge.refunded。
+ *  - 幂等：按 stripeSubscriptionId / stripeInvoiceId / stripeSessionId 去重。
  *  - Stripe 要求 2xx，成功统一返回 { received: true }。
  *
  * 红线：
- *  - 真实资金在 Stripe 闭环，此处只写订阅/发票/会员/UsageLog，绝不写 CreditTransaction。
+ *  - 真实资金在 Stripe 闭环，此处只写订阅/发票/会员/UsageLog/BillingOrder，
+ *    绝不写 CreditTransaction。
+ *  - 本路由仅 .com 国际站启用；.cn 的微信/支付宝通道与此路由无关，不得在此处理。
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -22,6 +25,7 @@ import {
   mapPlanToUsageAction,
   isStripePlan,
   retrieveStripeSubscription,
+  recordBillingOrder,
 } from "@/lib/payments/stripe";
 
 export const dynamic = "force-dynamic";
@@ -35,7 +39,7 @@ function currentPeriodStart(): Date {
 }
 
 export async function POST(request: NextRequest) {
-  // 红线 #5：仅 .com 国际站接收 Stripe Webhook
+  // 红线：仅 .com 国际站接收 Stripe Webhook
   if (!isComSite()) {
     return NextResponse.json(
       { success: false, error: "Not found", code: "SITE_NOT_SUPPORTED" },
@@ -68,8 +72,23 @@ export async function POST(request: NextRequest) {
         await handleInvoicePaid(event.data.object);
         break;
       }
+      // —— 订阅生命周期（新增）——
+      case "customer.subscription.created":
+      case "customer.subscription.updated": {
+        await handleSubscriptionEvent(event.data.object, false);
+        break;
+      }
+      case "customer.subscription.deleted": {
+        await handleSubscriptionEvent(event.data.object, true);
+        break;
+      }
+      // —— 退款对账（新增）——
+      case "charge.refunded": {
+        await handleChargeRefunded(event.data.object);
+        break;
+      }
       default:
-        // 忽略其它事件类型
+        // 忽略其它事件类型（如 payment_intent.*、customer.* 等）
         break;
     }
   } catch (err) {
@@ -80,18 +99,21 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({ received: true });
 }
 
-/** checkout.session.completed：写/更新订阅、升级会员、记 UsageLog */
+/** checkout.session.completed：写/更新订阅、升级会员、记 UsageLog、落 BillingOrder */
 async function handleCheckoutSessionCompleted(session: any): Promise<void> {
   const userId = session?.client_reference_id as string | undefined;
   const planRaw = session?.metadata?.plan as string | undefined;
   const customerId = session?.customer as string | undefined;
   const subscriptionId = session?.subscription as string | null | undefined;
+  const paymentIntentId =
+    typeof session?.payment_intent === "string" ? session.payment_intent : null;
 
   if (!userId || !customerId || !isStripePlan(planRaw)) return;
   const plan = planRaw as any;
   const currency = ((session?.currency as string) || "usd").toUpperCase();
   const tier = mapPlanToMembershipTier(plan);
   const action = mapPlanToUsageAction(plan);
+  const amountTotal = typeof session?.amount_total === "number" ? session.amount_total : 0;
 
   // 幂等：确保 StripeCustomer 关联存在
   const existingCustomer = await prisma.stripeCustomer.findUnique({
@@ -115,27 +137,42 @@ async function handleCheckoutSessionCompleted(session: any): Promise<void> {
     }
   }
 
-  // 幂等：按 (userId, plan) 去重
-  const existingSub = await prisma.stripeSubscription.findFirst({
-    where: { userId, plan },
-  });
-
-  if (existingSub) {
-    await prisma.stripeSubscription.update({
-      where: { id: existingSub.id },
-      data: { status: "active", currentPeriodEnd, currency },
-    });
-  } else {
-    await prisma.stripeSubscription.create({
-      data: {
+  // 订阅记录：优先按 stripeSubscriptionId 幂等 upsert；一次性支付兜底 userId+plan
+  if (subscriptionId) {
+    await prisma.stripeSubscription.upsert({
+      where: { stripeSubscriptionId: subscriptionId },
+      update: { status: "active", currentPeriodEnd, currency },
+      create: {
         userId,
         stripeCustomerId: customerId,
+        stripeSubscriptionId: subscriptionId,
         plan,
         currency,
         status: "active",
         currentPeriodEnd,
       },
     });
+  } else {
+    const existingSub = await prisma.stripeSubscription.findFirst({
+      where: { userId, plan },
+    });
+    if (existingSub) {
+      await prisma.stripeSubscription.update({
+        where: { id: existingSub.id },
+        data: { status: "active", currentPeriodEnd, currency },
+      });
+    } else {
+      await prisma.stripeSubscription.create({
+        data: {
+          userId,
+          stripeCustomerId: customerId,
+          plan,
+          currency,
+          status: "active",
+          currentPeriodEnd,
+        },
+      });
+    }
   }
 
   // 会员等级升级
@@ -155,6 +192,18 @@ async function handleCheckoutSessionCompleted(session: any): Promise<void> {
       tier,
       periodStart: currentPeriodStart(),
     },
+  });
+
+  // 落 BillingOrder（.com + Stripe 下单 → completed 对账）
+  await recordBillingOrder({
+    userId,
+    plan,
+    currency,
+    amount: amountTotal,
+    sessionId: session.id,
+    paymentIntentId,
+    subscriptionId,
+    status: "completed",
   });
 }
 
@@ -198,4 +247,77 @@ async function handleInvoicePaid(invoice: any): Promise<void> {
       periodEnd: invoice?.period_end ? new Date((invoice.period_end as number) * 1000) : null,
     },
   });
+}
+
+/**
+ * 订阅生命周期事件（created / updated / deleted）。
+ * canceled=true 表示 deleted 事件：仅标记订阅为 canceled，不立即降级会员
+ * （会员保留至 currentPeriodEnd，由到期逻辑处理）。
+ */
+async function handleSubscriptionEvent(sub: any, canceled: boolean): Promise<void> {
+  const subscriptionId = sub?.id as string | undefined;
+  const customerId = sub?.customer as string | undefined;
+  if (!subscriptionId || !customerId) return;
+
+  const planRaw =
+    (sub?.metadata?.plan as string | undefined) ??
+    (sub?.items?.data?.[0]?.price?.metadata?.plan as string | undefined);
+  if (!isStripePlan(planRaw)) return; // 无法归因到已知 SKU，跳过避免脏数据
+  const plan = planRaw as any;
+  const status: string = canceled ? "canceled" : (sub?.status as string) ?? "active";
+
+  // 周期结束时间（stripe-node v22 起下放到 items[].current_period_end）
+  let currentPeriodEnd = new Date(Date.now() + 365 * 24 * 3600 * 1000);
+  const periodEnd = sub?.items?.data?.[0]?.current_period_end ?? sub?.current_period_end;
+  if (periodEnd) currentPeriodEnd = new Date(periodEnd * 1000);
+
+  const currency = ((sub?.currency as string) || "usd").toUpperCase();
+  const tier = mapPlanToMembershipTier(plan);
+
+  const customer = await prisma.stripeCustomer.findUnique({
+    where: { stripeCustomerId: customerId },
+  });
+  if (!customer) return;
+  const userId = customer.userId;
+
+  await prisma.stripeSubscription.upsert({
+    where: { stripeSubscriptionId: subscriptionId },
+    update: { status, currentPeriodEnd, currency },
+    create: {
+      userId,
+      stripeCustomerId: customerId,
+      stripeSubscriptionId: subscriptionId,
+      plan,
+      currency,
+      status,
+      currentPeriodEnd,
+    },
+  });
+
+  // active / trialing：升级会员；canceled / past_due：保留至周期结束，不立即降级
+  if (status === "active" || status === "trialing") {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { membershipTier: tier, membershipExpiresAt: currentPeriodEnd },
+    });
+  }
+}
+
+/** charge.refunded：把对应 BillingOrder 标记为 refunded（对账） */
+async function handleChargeRefunded(charge: any): Promise<void> {
+  const chargeId = charge?.id as string | undefined;
+  const paymentIntentId =
+    typeof charge?.payment_intent === "string" ? charge.payment_intent : null;
+  if (!chargeId && !paymentIntentId) return;
+
+  const existing = paymentIntentId
+    ? await prisma.billingOrder.findFirst({ where: { stripePaymentIntentId: paymentIntentId } })
+    : await prisma.billingOrder.findFirst({ where: { stripeChargeId: chargeId! } });
+
+  if (existing) {
+    await prisma.billingOrder.update({
+      where: { id: existing.id },
+      data: { status: "refunded", stripeChargeId: chargeId ?? existing.stripeChargeId },
+    });
+  }
 }

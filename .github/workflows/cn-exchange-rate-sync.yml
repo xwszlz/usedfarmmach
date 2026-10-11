@@ -1,0 +1,64 @@
+# .cn 每日汇率刷新定时任务
+#
+# 背景：.cn 部署在阿里云 ECS（101.200.125.199），无 Vercel Cron。
+#       汇率切片（fix/exchange-rate-wiring）已在两侧上线 /api/cron/update-exchange-rates
+#       端点（GET ?token= 触发 refreshAllRates 实时抓取并落库），但 .cn 缺少定时触发器，
+#       只能靠静态兜底（值已真实），无法每日翻 db-live。
+#       本工作流补足 .cn 的定时刷新，与 .com Vercel Cron（vercel.json: "0 2 * * *"）
+#       对齐同一 UTC 时刻，避免两侧汇率漂移。
+#
+# 鉴权：端点接受 CRON_API_KEY 或 INTERNAL_API_KEY（fail-closed，env 缺失即 401）。
+#       此处复用 GitHub secret INTERNAL_API_KEY（与 .com vercel.json 同源），
+#       其值须与 ECS /opt/cn/.env.cn 内的 INTERNAL_API_KEY 一致。
+#
+# ⚠️ 安全：token 以 GitHub secret 引用注入，绝不硬编码明文。
+
+name: CN Exchange Rate Daily Sync
+
+on:
+  schedule:
+    # 每日 UTC 02:00 = 北京时间 10:00，与 .com Vercel Cron 对齐
+    - cron: "0 2 * * *"
+  workflow_dispatch: # 支持手动触发（验证用）
+
+jobs:
+  trigger-cn-exchange-rate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger .cn exchange rate refresh endpoint
+        env:
+          CN_FX_URL: "https://www.usedfarmmach.cn/api/cron/update-exchange-rates"
+          INTERNAL_API_KEY: ${{ secrets.INTERNAL_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "$INTERNAL_API_KEY" ]; then
+            echo "❌ GitHub secret INTERNAL_API_KEY 未配置，无法触发 .cn 汇率刷新"
+            exit 1
+          fi
+          FULL_URL="${CN_FX_URL}?token=${INTERNAL_API_KEY}"
+          echo "触发 .cn 汇率刷新端点：${CN_FX_URL}?token=***"
+          ATTEMPT=0
+          MAX=3
+          while [ "$ATTEMPT" -lt "$MAX" ]; do
+            ATTEMPT=$((ATTEMPT + 1))
+            echo "── 第 ${ATTEMPT}/${MAX} 次尝试 ──"
+            HTTP_CODE=$(curl -s -o /tmp/cn_fx_resp.json -w "%{http_code}" -m 120 "$FULL_URL" || echo "000")
+            echo "HTTP 状态码: ${HTTP_CODE}"
+            BODY="$(cat /tmp/cn_fx_resp.json 2>/dev/null || echo '')"
+            echo "响应体: ${BODY}"
+            if [ "$HTTP_CODE" = "200" ]; then
+              # 进一步确认业务成功（防止端点返回 200 但 success=false 的假绿）
+              SUCCESS=$(echo "$BODY" | python3 -c "import sys,json;d=json.load(sys.stdin);print('true' if d.get('success') is True else 'false')" 2>/dev/null || echo "unknown")
+              if [ "$SUCCESS" = "true" ]; then
+                echo "✅ .cn 汇率刷新成功（HTTP=200, success=true）"
+                exit 0
+              fi
+              echo "⚠️ HTTP=200 但 success!=true，重试"
+            else
+              echo "⚠️ HTTP=${HTTP_CODE}（非 200），重试"
+            fi
+            sleep 10
+          done
+          echo "❌ .cn 汇率刷新在 ${MAX} 次尝试后仍失败"
+          exit 1
