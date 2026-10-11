@@ -10,6 +10,12 @@
  *
  * 恢复方式：接入真实支付网关、校验支付回调成功后再启用本端点（见阶段2方案）。
  *   通过下方 CREDITS_ISSUANCE_ENABLED 总开关控制；真实支付 PR 中置为 true 并补全校验逻辑。
+ *
+ * 站点 / 通道约束（与本次 .com-Stripe-Only 改造一致）：
+ *  - 积分充值属国际站(.com)能力（stripeAddons），启用时必须走 Stripe，且只走 Stripe；
+ *    绝不可在 .com 回退到微信/支付宝（那是 .cn 的合法通道，互不越界）。
+ *  - 支付成功后必须落 BillingOrder（provider="stripe", site=SITE），
+ *    以便统一归因"这是一笔 .com 站、走 Stripe 的充值订单"，与 /api/(com)/billing/checkout 一致。
  */
 
 import { NextRequest, NextResponse } from "next/server";
