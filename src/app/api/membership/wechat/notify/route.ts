@@ -17,6 +17,8 @@ import { isConfigured as wechatConfigured, decryptCallbackResource } from "@/lib
 import { parseOutTradeNo } from "@/lib/membership/order";
 import { getMembershipCnyCents, CYCLE_DAYS } from "@/lib/membership/pricing";
 import type { MembershipTier } from "@/lib/permissions";
+import { isCreditOutTradeNo, parseCreditOutTradeNo } from "@/lib/credits/recharge-order";
+import { grantRecharge } from "@/lib/credits/grant";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -79,6 +81,40 @@ export async function POST(request: NextRequest) {
 
   if (data.trade_state !== "SUCCESS") {
     return ok("ignored");
+  }
+
+  // —— 积分充值订单（R 前缀）：1 元 = 1 积分，直接加积分，不走会员逻辑 ——
+  if (isCreditOutTradeNo(data.out_trade_no)) {
+    const pc = parseCreditOutTradeNo(data.out_trade_no);
+    if (!pc) {
+      console.error("[Recharge/WechatNotify] 无法解析积分订单号:", data.out_trade_no);
+      return ok("bad credit order");
+    }
+    const uid = typeof data.attach === "string" ? data.attach : "";
+    if (!uid) {
+      console.error(`[需人工补单][Recharge/WechatNotify] 缺少 attach，无法定位用户。order=${data.out_trade_no} credits=${pc.credits}`);
+      return ok("missing attach");
+    }
+    if (data.amount) {
+      const paidCents = Number(data.amount.total);
+      if (!Number.isFinite(paidCents) || paidCents !== pc.credits * 100) {
+        console.error(`[Recharge/WechatNotify] 金额不符 order=${data.out_trade_no} paid=${data.amount.total} expected=${pc.credits * 100}`);
+        return fail("amount mismatch");
+      }
+    }
+    try {
+      const txId = data.transaction_id || data.out_trade_no;
+      const dup = await prisma.creditTransaction.findFirst({
+        where: { type: "recharge", relatedId: txId },
+      });
+      if (dup) return ok("duplicate");
+      await grantRecharge(uid, pc.credits, "wechat_recharge", txId);
+      console.log(`[Recharge/WechatNotify] 充值成功 user=${uid} credits=${pc.credits} order=${data.out_trade_no}`);
+      return ok();
+    } catch (err) {
+      console.error("[Recharge/WechatNotify] 写库失败:", err);
+      return fail("db error");
+    }
   }
 
   const parsed = parseOutTradeNo(data.out_trade_no);
