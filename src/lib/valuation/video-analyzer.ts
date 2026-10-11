@@ -10,6 +10,7 @@
 
 import axios from "axios";
 import { isOverseasAiAllowed } from "@/config/site";
+import { recordUsage, ESTIMATED_TOKENS } from "@/lib/credits/usage-collector";
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
 const OPENROUTER_BASE = "https://openrouter.ai/api/v1";
@@ -111,6 +112,15 @@ export async function analyzeVideo(
         },
         timeout: 60000, // 视频分析可能需要更长时间
       }
+    );
+
+    // ── 计费归集：OpenRouter（OpenAI 兼容 usage 字段）──
+    const videoUsage = (response.data as any).usage;
+    recordUsage(
+      MODEL,
+      videoUsage?.prompt_tokens ?? ESTIMATED_TOKENS.input,
+      videoUsage?.completion_tokens ?? ESTIMATED_TOKENS.output,
+      { estimated: !videoUsage }
     );
 
     const aiText = (response.data as any).choices?.[0]?.message?.content || "";
