@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
+import { isComSite } from "@/config/site";
 import { MEMBERSHIP_TIERS } from "@/lib/permissions";
 import { CreditTransactionList } from "./credit-transactions";
 import { MembershipCard } from "./membership-card";
@@ -30,8 +31,8 @@ export default async function CreditsPage({ params }: PageProps) {
         {/* 会员状态卡片 */}
         <MembershipCard locale={locale} />
 
-        {/* 积分余额 & 充值 */}
-        <RechargeForm locale={locale} />
+        {/* 积分余额 & 充值：isCom 决定通道（.com 只走 Stripe，不显示微信/支付宝） */}
+        <RechargeForm locale={locale} isCom={isComSite()} />
 
         {/* 积分明细 */}
         <div className="md:col-span-2">
