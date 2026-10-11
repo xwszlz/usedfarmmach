@@ -39,6 +39,9 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       );
     }
+    // ⚠️ 无 LLM 调用：本路由是纯数据库/规则计算（跨境价差对比），没有任何 provider usage 可计量。
+    //    因此这里走【名义 token 计费】——用固定名义 token 数反算积分，仅供计费链路占位。
+    //    真实定价待老板拍板；一旦认定应免费，直接把下面的 bill 分支删掉即可，不影响其它链路。
     const cost = computeAiCost({
       model: "doubao-seed-2-1-pro-260915",
       inputTokens: ARBITRAGE_NOMINAL_INPUT_TOKENS,
@@ -48,7 +51,12 @@ export async function POST(request: NextRequest) {
       payload.userId,
       cost.points,
       "跨境套利分析",
-      cost as unknown as Record<string, unknown>
+      // nominal=true 便于事后从 breakdown 里筛出"没有真实 LLM 用量、按名义计费"的流水
+      {
+        ...(cost as unknown as Record<string, unknown>),
+        nominal: true,
+        note: "no LLM call, nominal token billing",
+      }
     );
     if (!deduction.ok) {
       return NextResponse.json(
