@@ -33,6 +33,11 @@ interface BulkRates {
   source: string;
 }
 
+interface BulkFxResponse {
+  rates?: Record<string, number>;
+  conversion_rates?: Record<string, number>;
+}
+
 export class ExchangeRateService {
   private cache: Map<string, CacheItem> = new Map();
   private updateInProgress: boolean = false;
@@ -584,7 +589,7 @@ export class ExchangeRateService {
     // 1) Frankfurter（免 key，base=CNY）
     try {
       const url = `${EXCHANGE_RATE_API.fallback.baseUrl}${EXCHANGE_RATE_API.fallback.endpoints.latest}`;
-      const res = await axios.get(url, {
+      const res = await axios.get<BulkFxResponse>(url, {
         headers: EXCHANGE_RATE_API.fallback.headers,
         timeout: EXCHANGE_RATE_API.fallback.timeout,
       });
@@ -606,7 +611,7 @@ export class ExchangeRateService {
       const key = EXCHANGE_RATE_API.primary.apiKey;
       if (key) {
         const url = `${EXCHANGE_RATE_API.primary.baseUrl}/${key}${EXCHANGE_RATE_API.primary.endpoints.latest}`;
-        const res = await axios.get(url, {
+        const res = await axios.get<BulkFxResponse>(url, {
           headers: EXCHANGE_RATE_API.primary.headers,
           timeout: EXCHANGE_RATE_API.primary.timeout,
         });
@@ -636,7 +641,7 @@ export class ExchangeRateService {
     if (!key) return;
     try {
       const url = `${EXCHANGE_RATE_API.primary.baseUrl}/${key}${EXCHANGE_RATE_API.primary.endpoints.latest}`;
-      const res = await axios.get(url, {
+      const res = await axios.get<BulkFxResponse>(url, {
         headers: EXCHANGE_RATE_API.primary.headers,
         timeout: EXCHANGE_RATE_API.primary.timeout,
       });
