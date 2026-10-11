@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { CNY_PER_USD_STATIC } from "@/lib/exchange-rate-constants";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -15,7 +16,7 @@ export function formatPrice(price: number, currency: "cny" | "usd"): string {
 export function calculateArbitragePercent(
   priceCny: number,
   priceUsd: number | null,
-  exchangeRate: number = 7.25
+  exchangeRate: number = CNY_PER_USD_STATIC
 ): number | null {
   if (!priceUsd || priceUsd <= 0) return null;
   const priceUsdInCny = priceUsd * exchangeRate;
