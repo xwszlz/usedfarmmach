@@ -1,20 +1,31 @@
 /**
  * 额度引擎常量（T01 基础层）
  *
- * 复用并扩展 MEMBERSHIP_TIERS：
- *   - 每个会员等级已有 publishesPerMonth / valuationsPerMonth
- *   - P1 新增 inquiriesPerMonth / contactsPerMonth，并统一 4 动作映射
- *   - -1 表示无限额度
+ * 2026-10 重构：取消 4 档会员，改为「积分中心 + 积分充值」。
+ *   - 额度闸门不再按会员等级区分（原 MEMBERSHIP_TIERS 退役）；
+ *     所有用户统一走 UNIFIED_QUOTA_LIMITS（见下），消除付费档位优势。
+ *   - AI 估值（aiValuation）不再占用月度额度，改为按 token 实际消耗 ×2 扣积分
+ *     （见 src/lib/credits/spend.ts 的 computeAiCost / deductCredits）；
+ *     因此 aiValuation 从 QUOTA_ACTIONS 中移除。
  *
- * 红线：额度与积分解耦——本模块只决定「某动作本月在否超额」，
+ * 红线：额度与积分解耦——本模块只决定「某动作本月是否超额」，
  *       绝不引用 CreditTransaction / credits。
  */
 import { prisma } from "@/lib/db";
-import { MEMBERSHIP_TIERS } from "@/lib/permissions";
 
-/** P1 受额度守卫的 4 个核心动作 */
-export const QUOTA_ACTIONS = ["publish", "inquiry", "aiValuation", "viewContact"] as const;
+/** 受额度守卫的动作（已移除 aiValuation，改走积分计费） */
+export const QUOTA_ACTIONS = ["publish", "inquiry", "viewContact"] as const;
 export type QuotaAction = (typeof QUOTA_ACTIONS)[number];
+
+/**
+ * 统一月度额度上限（取消会员分档后，所有用户一致）。
+ * -1 表示无限额度。publish/inquiry/viewContact 统一为 50/月，避免免费档被刷。
+ */
+export const UNIFIED_QUOTA_LIMITS: Record<QuotaAction, number> = {
+  publish: 50,
+  inquiry: 50,
+  viewContact: 50,
+};
 
 /** 超级管理员数量上限（多超管治理基线） */
 export const SUPER_ADMIN_MAX = 3;
@@ -37,26 +48,26 @@ export interface QuotaUser {
   usagePeriodStart: Date | null;
   usagePublish: number;
   usageInquiry: number;
-  usageAiValuation: number;
   usageViewContact: number;
 }
 
-/** 动作 → MEMBERSHIP_TIERS 字段映射 */
+/** 动作 → 月度计数器字段映射 */
 const ACTION_FIELD: Record<
   QuotaAction,
-  "publishesPerMonth" | "valuationsPerMonth" | "inquiriesPerMonth" | "contactsPerMonth"
+  "publishesPerMonth" | "inquiriesPerMonth" | "contactsPerMonth"
 > = {
   publish: "publishesPerMonth",
-  aiValuation: "valuationsPerMonth",
   inquiry: "inquiriesPerMonth",
   viewContact: "contactsPerMonth",
 };
 
-/** 取某会员等级某动作的月度上限；-1 表示无限；未知等级回退 free */
-export function getQuotaLimit(tier: string, action: QuotaAction): number {
-  const t = (MEMBERSHIP_TIERS as Record<string, Record<string, unknown>>)[tier] ||
-    MEMBERSHIP_TIERS.free;
-  const v = t[ACTION_FIELD[action]];
+/**
+ * 取某动作的月度上限。
+ * 2026-10 重构后忽略会员等级（tier 形参保留兼容旧调用方），统一返回 UNIFIED_QUOTA_LIMITS。
+ * -1 表示无限；未知动作回退 0。
+ */
+export function getQuotaLimit(_tier: string, action: QuotaAction): number {
+  const v = UNIFIED_QUOTA_LIMITS[action];
   return typeof v === "number" ? v : 0;
 }
 
@@ -67,7 +78,6 @@ export const QUOTA_USER_SELECT = {
   usagePeriodStart: true,
   usagePublish: true,
   usageInquiry: true,
-  usageAiValuation: true,
   usageViewContact: true,
 } as const;
 
