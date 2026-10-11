@@ -9,10 +9,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyCallback } from "@/lib/alipay";
 import { handlePaymentSuccess } from "@/lib/escrow";
+import { isCnSite } from "@/config/site";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
+  if (!isCnSite()) {
+    return NextResponse.json({ success: false, error: "SITE_NOT_SUPPORTED" }, { status: 404 });
+  }
   try {
     // 支付宝回调是 application/x-www-form-urlencoded
     const formData = await request.formData();

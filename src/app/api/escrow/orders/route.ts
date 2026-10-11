@@ -8,10 +8,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/auth";
 import { prisma } from "@/lib/escrow";
+import { isCnSite } from "@/config/site";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  if (!isCnSite()) {
+    return NextResponse.json({ success: false, error: "SITE_NOT_SUPPORTED" }, { status: 404 });
+  }
   try {
     const user = await getUserFromRequest(request);
     if (!user) {

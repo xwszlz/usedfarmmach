@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { getUserFromRequest } from "@/lib/auth";
 import { generateOrderNo, calculateFee, calculateDeposit, ESCROW_STATUS, DEPOSIT_TIMEOUT_DAYS } from "@/lib/escrow";
 import { createMiniOrder, buildMiniPaySign, isConfigured } from "@/lib/wechat-pay";
-import { siteConfig } from "@/config/site";
+import {siteConfig, isCnSite } from "@/config/site";
 
 /**
  * POST /api/orders
@@ -20,6 +20,9 @@ import { siteConfig } from "@/config/site";
  */
 export const dynamic = "force-dynamic"; // 防 .cn 构建期静态固化，详见 scripts/check-route-dynamic.mjs
 export async function POST(request: NextRequest) {
+  if (!isCnSite()) {
+    return NextResponse.json({ success: false, error: "SITE_NOT_SUPPORTED" }, { status: 404 });
+  }
   try {
     const user = await getUserFromRequest(request);
     if (!user) {
@@ -180,6 +183,9 @@ export async function POST(request: NextRequest) {
  * 当前用户的订单列表（买家视角为主，含卖家视角可扩展）
  */
 export async function GET(request: NextRequest) {
+  if (!isCnSite()) {
+    return NextResponse.json({ success: false, error: "SITE_NOT_SUPPORTED" }, { status: 404 });
+  }
   try {
     const user = await getUserFromRequest(request);
     if (!user) {
