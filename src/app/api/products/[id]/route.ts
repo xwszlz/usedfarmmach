@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cnyToUsd, getUsdPerCny } from "@/lib/exchange-rate";
 import { prisma } from "@/lib/db";
 import { verifyToken, getTokenFromHeaders } from "@/lib/auth";
 import { ArbitrageCalculator } from "@/lib/services/arbitrage-calculator";
@@ -267,7 +268,7 @@ export async function PATCH(
     if (body.priceCny !== undefined) {
       const priceCny = Number(body.priceCny);
       updateData.priceCny = priceCny;
-      updateData.priceUsd = Math.round(priceCny / 7.25);
+      updateData.priceUsd = cnyToUsd(priceCny, await getUsdPerCny());
     }
     if (body.location !== undefined) updateData.location = String(body.location);
     if (body.descriptionZh !== undefined) updateData.descriptionZh = body.descriptionZh === null ? null : String(body.descriptionZh);
