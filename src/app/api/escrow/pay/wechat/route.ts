@@ -9,12 +9,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/auth";
 import { prisma } from "@/lib/escrow";
 import { createNativeOrder, isConfigured as wechatConfigured, APP_ID } from "@/lib/wechat-pay";
-import { siteConfig } from "@/config/site";
+import {siteConfig, isCnSite } from "@/config/site";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 export async function POST(request: NextRequest) {
+  if (!isCnSite()) {
+    return NextResponse.json({ success: false, error: "SITE_NOT_SUPPORTED" }, { status: 404 });
+  }
   try {
     const user = await getUserFromRequest(request);
     if (!user) {
