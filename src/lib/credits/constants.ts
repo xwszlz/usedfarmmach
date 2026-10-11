@@ -67,7 +67,7 @@ export type RewardValues = {
 };
 
 // ─── 消费数值 ─────────────────────────────────────────────────
-export const PUBLISH_COST = 1; // 发布产品扣积分
+// 注：原孤立常量 PUBLISH_COST(=1) 已删除；发布产品扣积分现以字面量 1 体现于发布链路。
 
 /** 商城商品定价（积分） */
 export const MALL_PRICES = {
