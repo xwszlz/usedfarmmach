@@ -1,15 +1,20 @@
 /**
  * 积分扣减（AI 功能计费核心）
  *
- * 老板铁律：四大 AI 功能按大模型 token 实际消耗成本 × 2 收费，反算积分消耗。
+ * 积分统一以 ¥ 计价（老板口径 2026-10-12）：
+ *   - 积分 = ¥ 计价单位（不再是"1 积分 = ¥1"的并列关系，而是积分本身就是钱的计价口径）；
+ *   - 充值：.cn 站 1 元 = 1 积分，.com 站 $1 = 1 积分；
+ *   - AI 消耗：实际模型成本（$ 计价模型按固定汇率 7.2 折算成 ¥）× 2。
+ *
+ * 计费链路：四大 AI 功能按大模型 token 实际消耗成本 × 2 收费，反算积分消耗。
  *   1) 从 LLM provider 返回里取 usage（prompt_tokens / completion_tokens）与所用 model id；
- *   2) 用模型价格表（¥/1K tokens，input/output 分开）算 actualCostCny；
+ *   2) 用模型价格表算 actualCostCny（统一归集到 ¥）：
  *      - ¥ 计价模型：actualCostCny = input/1000*inPrice + output/1000*outPrice；
  *      - $ 计价模型：先算 actualCostUsd，再 × 固定汇率（7.2）转 actualCostCny；
  *      - 价格表见下方 MODEL_PRICING；未知模型用兜底 ¥0.004/1K 混合价（标注"兜底，待校准"）。
  *   3) chargedCny = actualCostCny * 2；
- *   4) 积分扣减：points = round(chargedCny)（因为 1 元 = 1 积分）；
- *      $ 模型则 points = round(actualCostUsd * 10 * 2)（因为 $1 = 10 积分）。
+ *   4) 积分扣减：points = round(chargedCny)——【统一公式】，$ 模型不再走独立分支，
+ *      因为 actualCostCny 已含汇率折算，积分本身按 ¥ 计价；
  *   5) 在 CreditTransaction.breakdown JSON 记录全部计量字段。
  *
  * 与 grant.ts 保持一致的写法：事务内读 User.credits → 不足整体拒绝（E7 红线：绝不产生负余额）→
@@ -75,12 +80,9 @@ export const DEFAULT_USD_TO_CNY = 7.2;
 /** AI 计费倍率（实际支出 × 2） */
 export const AI_COST_MULTIPLIER = 2;
 
-/** 美元模型：$1 = 10 积分 */
-export const USD_TO_CREDITS = 10;
-
 /**
  * 依据模型单价与 token 用量计算实际成本与应扣积分。
- * 所有货币先归集到 ¥（actualCostCny），再按对应汇率反算积分。
+ * 所有货币先按汇率归集到 ¥（actualCostCny），再统一用 points = round(actualCostCny × 2)。
  */
 export function computeAiCost(params: {
   model: string;
@@ -96,10 +98,9 @@ export function computeAiCost(params: {
   const actualCostCny =
     p.currency === "usd" ? actualCostUsd * DEFAULT_USD_TO_CNY : actualCostUsd;
 
-  const points =
-    p.currency === "usd"
-      ? Math.round(actualCostUsd * USD_TO_CREDITS * AI_COST_MULTIPLIER)
-      : Math.round(actualCostCny * AI_COST_MULTIPLIER);
+  // 统一公式：points = round(actualCostCny × 2)。
+  // $ 计价模型的 actualCostCny 已按 DEFAULT_USD_TO_CNY 折算，故不再单独分支。
+  const points = Math.round(actualCostCny * AI_COST_MULTIPLIER);
 
   return {
     model: params.model,
