@@ -187,6 +187,51 @@ function getSiteDomain(): string {
   return process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
 }
 
+/**
+ * 创建「积分充值」Stripe Checkout Session（一次性支付，仅 .com）。
+ * 口径：$1 = 10 积分 => 1 积分 = $0.10 = 10 分（cent）。EUR/GBP 暂同额占位。
+ * metadata.plan = "credit_recharge" 供 webhook 识别后加积分。
+ */
+export async function createCreditRechargeSession(input: {
+  userId: string;
+  credits: number;
+  currency: StripeCurrency;
+  stripeCustomerId?: string | null;
+}): Promise<{ url: string; sessionId: string }> {
+  if (!isComSite()) {
+    throw new Error("Stripe 仅在国际站(.com)启用");
+  }
+  if (!isConfigured()) {
+    throw new Error("Stripe 未配置");
+  }
+  const { userId, credits, currency, stripeCustomerId } = input;
+  const c = Math.max(1, Math.floor(credits));
+  const unitAmount = c * 10; // $1=10 积分 -> 1 积分 = 10 分
+  const domain = getSiteDomain();
+  const session = await getStripe().checkout.sessions.create({
+    mode: "payment",
+    client_reference_id: userId,
+    line_items: [
+      {
+        quantity: 1,
+        price_data: {
+          currency: currency.toLowerCase(),
+          unit_amount: unitAmount,
+          product_data: {
+            name: `积分充值 ${c} 积分`,
+            metadata: { plan: "credit_recharge", site: "com", credits: String(c) },
+          },
+        },
+      },
+    ],
+    success_url: `${domain}/credits?recharge=success&session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${domain}/credits?recharge=cancel`,
+    metadata: { plan: "credit_recharge", site: "com", credits: String(c) },
+    ...(stripeCustomerId ? { customer: stripeCustomerId } : {}),
+  });
+  return { url: session.url as string, sessionId: session.id };
+}
+
 /** Stripe 是否已配置（STRIPE_SECRET_KEY 存在） */
 export function isConfigured(): boolean {
   return !!process.env.STRIPE_SECRET_KEY;
