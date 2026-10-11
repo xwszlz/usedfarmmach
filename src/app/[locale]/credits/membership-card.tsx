@@ -13,30 +13,15 @@ interface MeUser {
   credits: number;
 }
 
-interface QuotaItem {
-  action: string;
-  used: number;
-  limit: number;
-  remaining: number;
-}
-
-interface QuotaState {
-  periodStart: string;
-  resetAt: string;
-  items: QuotaItem[];
-}
-
 interface MembershipCardProps {
   locale: string;
 }
 
 export function MembershipCard({ locale }: MembershipCardProps) {
   const t = useTranslations("credits");
-  const tq = useTranslations("quota");
   const [user, setUser] = useState<MeUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [authed, setAuthed] = useState(true);
-  const [quota, setQuota] = useState<QuotaState | null>(null);
 
   useEffect(() => {
     // 走 cookie 会话鉴权：浏览器对同源请求自动附带 httpOnly cookie
@@ -55,16 +40,6 @@ export function MembershipCard({ locale }: MembershipCardProps) {
       })
       .catch(() => setLoading(false));
   }, []);
-
-  useEffect(() => {
-    if (!authed) return;
-    fetch("/api/user/quota", { method: "GET" })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((result) => {
-        if (result && result.success) setQuota(result.data);
-      })
-      .catch(() => {});
-  }, [authed]);
 
   if (loading) {
     return (
@@ -110,53 +85,13 @@ export function MembershipCard({ locale }: MembershipCardProps) {
         )}
       </div>
 
-      {quota && (
-        <div className="space-y-3 border-t border-gray-100 pt-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-800">{tq("title")}</span>
-            <span className="text-xs text-gray-400">
-              {tq("resetAt")}:{" "}
-              {new Date(quota.resetAt).toLocaleDateString(locale === "zh" ? "zh-CN" : locale)}
-            </span>
-          </div>
-          <div className="space-y-3">
-            {quota.items.map((it) => {
-              const isUnlimited = it.limit === -1;
-              const exhausted = !isUnlimited && it.remaining <= 0;
-              const pct = !isUnlimited ? Math.min(100, Math.round((it.used / it.limit) * 100)) : 0;
-              return (
-                <div key={it.action} className="space-y-1">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">{tq(`actions.${it.action}`)}</span>
-                    <span className={exhausted ? "font-semibold text-red-600" : "text-gray-900"}>
-                      {tq("used")} {it.used}
-                      {isUnlimited
-                        ? ` (${tq("unlimited")})`
-                        : ` / ${tq("remaining")} ${it.remaining} (${it.limit})`}
-                    </span>
-                  </div>
-                  {!isUnlimited && (
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
-                      <div
-                        className={`h-full ${exhausted ? "bg-red-500" : "bg-blue-500"}`}
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-          {quota.items.some((it) => it.limit !== -1 && it.remaining <= 0) && (
-            <p className="text-xs text-red-600">
-              {tq("exhausted")}{" "}
-              <Link href={`/${locale}/credits`} className="underline">
-                {tq("upgrade")}
-              </Link>
-            </p>
-          )}
-        </div>
-      )}
+      {/* 免费功能说明：发布产品 / 发送询盘 / 查看联系方式 不再以「月度额度」形式展示，
+          这三个动作本身完全免费、不消耗积分。
+          （后端仍保留统一的月度防滥用上限，那是另一套机制，与积分无关） */}
+      <div className="space-y-2 border-t border-gray-100 pt-4">
+        <span className="text-sm font-medium text-gray-800">{t("freeFeaturesTitle")}</span>
+        <p className="text-sm text-gray-600">{t("freeFeaturesBody")}</p>
+      </div>
 
       {/* 充值入口：跳转 /credits 积分中心充值（取消会员档位后统一走积分） */}
       <Link href={`/${locale}/credits`} className="block">
