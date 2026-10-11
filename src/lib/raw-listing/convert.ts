@@ -21,6 +21,7 @@ import { resolveBrand } from "@/lib/agents/seller-helper/resolve-brand";
 import { resolveCategory } from "@/lib/agents/seller-helper/resolve-category";
 import { checkDuplicateProduct } from "@/lib/content-moderation";
 import { resolveEffectivePriceCny } from "./sanity";
+import { cnyToUsd, getUsdPerCny } from "@/lib/exchange-rate";
 import {
   CONVERTED_PRODUCT_STATUS,
   PRICE_MAX_CNY,
@@ -45,8 +46,7 @@ export const SCOUT_SELLER_EMAIL = "scout@shendiao.com";
 export const SCOUT_SELLER_USERNAME = "scout";
 export const SCOUT_SELLER_COMPANY = "采集导入";
 
-/** priceUsd 折算汇率（对齐 internal/products/route.ts:494） */
-export const USD_PER_CNY_DIVISOR = 7.25;
+// priceUsd 折算已改为动态（convertListing 内 await getUsdPerCny()），静态兜底见 @/lib/exchange-rate-constants
 
 /** 品类兜底候选（决策 #6：回退「农机配件」+强制人工；DB 实际存在「配件」，故按序尝试） */
 export const CATEGORY_FALLBACK_CANDIDATES: readonly string[] = ["农机配件", "配件"];
@@ -320,7 +320,7 @@ export async function convertListing(
       workingHours: listing.workingHours ?? null,
       condition: listing.condition?.trim() || "used",
       priceCny: price,
-      priceUsd: Math.round(price / USD_PER_CNY_DIVISOR),
+      priceUsd: cnyToUsd(price, await getUsdPerCny()),
       location: listing.location?.trim() || "",
       descriptionZh,
       status: CONVERTED_PRODUCT_STATUS, // #2 一律 draft
