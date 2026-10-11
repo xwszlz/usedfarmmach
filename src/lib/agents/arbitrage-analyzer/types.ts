@@ -6,6 +6,8 @@ export const ArbitrageInputSchema = z.object({
   targetCountries: z.array(z.string()).optional(),
   minMarginPct: z.number().default(10),
   limit: z.number().int().min(1).max(100).default(20),
+  // 计费开关：仅带 bill:true 的真人请求才扣积分；系统 cron / 编排器自动化不传此字段，不扣。
+  bill: z.boolean().optional(),
 });
 export type ArbitrageInput = z.infer<typeof ArbitrageInputSchema>;
 
