@@ -12,10 +12,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { decryptCallbackResource } from "@/lib/wechat-pay";
 import { handlePaymentSuccess } from "@/lib/escrow";
+import { isCnSite } from "@/config/site";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
+  if (!isCnSite()) {
+    return NextResponse.json({ success: false, error: "SITE_NOT_SUPPORTED" }, { status: 404 });
+  }
   try {
     const body = await request.json();
     console.log("[WechatNotify] 收到回调:", JSON.stringify(body).substring(0, 200));
