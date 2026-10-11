@@ -79,7 +79,7 @@ DEFAULT_CATEGORIES = [
 ]
 
 MAX_PAGES = int(os.environ.get("AGROLINE_MAX_PAGES", "2") or "2")
-MAX_DETAIL = int(os.environ.get("AGROLINE_MAX_DETAIL", "12") or "12")
+MAX_DETAIL = int(os.environ.get("AGROLINE_MAX_DETAIL", "100") or "100")
 
 # 与国内导入脚本 / scrape_agriaffaires.py 保持一致（用于从 ¥ 反推 € 的展示值）
 EUR_CNY_RATE = 7.91

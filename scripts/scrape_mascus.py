@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-#1 卖方采集 Agent — Mascus (mascus.co.uk) 爬虫
+#1 卖方采集 Agent — Mascus 多子站爬虫（uk/de/ua/pl，换源重采）
 =================================================
 替代已上 DataDome 商业反爬、首页/sitemap/详情页全部 403 的 Agriaffaires。
 
@@ -25,14 +25,17 @@ Mascus 为 Next.js 服务端渲染，列表页 HTML 内直接含品牌型号、�
     sourceDate, sourceUrl} ] }
 
 ## 币种
-  站点报价为 GBP（不含税）。价格换算：priceCny = GBP × GBP_CNY_RATE。
+  各子站报价币种不同（uk=GBP / de=EUR / ua=UAH / pl=PLN），按 MASCUS_SITES 内的
+  rate_to_cny 换算 priceCny，并按 EUR_CNY_RATE 同步给出 priceEur（便于统一对账）。
 
 用法:
   python scripts/scrape_mascus.py
 环境变量（可选）:
   HTTPS_PROXY       代理地址（默认直连）
   MASCUS_MAX_PAGES  最多抓取页数（默认 2）
-  MASCUS_CATEGORY   自定义类别 URL（默认 https://www.mascus.co.uk/agriculture/tractors）
+  MASCUS_CATEGORY   自定义类别 URL（默认覆盖当前子站类别；多子站时仅作用于被 MASCUS_SITE 选定的站）
+  MASCUS_SITE       限定单站（uk/de/ua/pl 之一）；不设置则全跑
+  MASCUS_ENRICH     详情页补全电话开关（默认 1；设 0 关闭，仅跑列表）
 """
 
 import json
@@ -48,9 +51,9 @@ import requests
 
 # ── 配置 ──
 
-# ⚠️ GBP→CNY 汇率：按 2026-10 市场价约 9.2 取值（1 GBP ≈ 9.2 CNY）。
-#    该值为可调常量；如需精确对账，请以成交当日中国人民银行的英镑中间价替换。
-GBP_CNY_RATE = 9.2
+# 汇率按 2026-10 市场近似值（均为可调常量；精确对账请以央行中间价替换）。
+#   rate_to_cny = 1 单位该币种 ≈ 多少人民币
+EUR_CNY_RATE = 7.85
 
 PROXY = os.environ.get("HTTPS_PROXY") or os.environ.get("https_proxy") or ""
 UA = (
@@ -64,9 +67,20 @@ HEADERS = {
     "Referer": "https://www.mascus.co.uk/",
 }
 
-BASE_URL = "https://www.mascus.co.uk"
+# Mascus 各区域子站：DOM 结构完全一致，仅域名 / 币种 / 区域不同。
+# 老板确认「换源重采」主力切到欧洲子站；原 mascus.co.uk 仅是其中之一。
+# 汇率按 2026-10 市场近似值，均为可调常量。rate_to_cny = 1 单位该币种 ≈ 多少人民币。
+MASCUS_SITES = [
+    {"key": "uk", "base": "https://www.mascus.co.uk",  "ccy": "GBP", "rate_to_cny": 9.2,  "cat": "https://www.mascus.co.uk/agriculture/tractors"},
+    {"key": "de", "base": "https://www.mascus.de",     "ccy": "EUR", "rate_to_cny": EUR_CNY_RATE, "cat": "https://www.mascus.de/agriculture/tractors"},
+    {"key": "ua", "base": "https://www.mascus.com.ua", "ccy": "UAH", "rate_to_cny": 0.17, "cat": "https://www.mascus.com.ua/agriculture/tractors"},
+    {"key": "pl", "base": "https://www.mascus.pl",     "ccy": "PLN", "rate_to_cny": 1.8,  "cat": "https://www.mascus.pl/agriculture/tractors"},
+]
+# 兼容旧单站环境变量：MASCUS_CATEGORY 可覆盖类别；MASCUS_SITE 可限定只跑某子站（uk/de/ua/pl）
 DEFAULT_CATEGORY = "https://www.mascus.co.uk/agriculture/tractors"
 MAX_PAGES = int(os.environ.get("MASCUS_MAX_PAGES", "2") or "2")
+# 详情页补全卖家电话（默认开；设 MASCUS_ENRICH=0 关闭，仅跑列表页）
+ENRICH_DETAIL = os.environ.get("MASCUS_ENRICH", "1") not in ("0", "false", "False")
 
 # 9 大国际品牌（沿用国内爬虫定义）→ 中文名 + 英文名 + 别名
 BRANDS = [
@@ -95,22 +109,25 @@ def clean_text(fragment: str) -> str:
     return re.sub(r"\s+", " ", txt).strip()
 
 
-def parse_gbp(text: str):
-    """从含 GBP 的片段解析价格；POA / 议价返回 None。"""
+def parse_price(text: str, ccy: str, rate_to_cny: float):
+    """从价格片段解析金额，按子站币种换算人民币 / 欧元。POA / 议价返回 (None, None, None)。
+
+    返回 (price_cny, price_eur, raw_num)。raw_num 为该币种原始数值（用于审计）。
+    """
     if not text:
-        return None
+        return None, None, None
     if re.search(r"\bPOA\b|price on application|on request|call for price", text, re.IGNORECASE):
-        return None
-    m = re.search(r"([\d][\d,\.]*)\s*(?:GBP|£|Pounds?)", text, re.IGNORECASE)
+        return None, None, None
+    m = re.search(r"([\d][\d,\.]*)\s*(?:GBP|£|€|EUR|₴|UAH|zł|PLN)", text, re.IGNORECASE)
     if not m:
-        m = re.search(r"(?:GBP|£)\s*([\d][\d,\.]*)", text, re.IGNORECASE)
-    if not m:
-        return None
-    num = m.group(1).replace(",", "")
+        return None, None, None
     try:
-        return round(float(num), 2)
+        num = float(m.group(1).replace(",", ""))
     except ValueError:
-        return None
+        return None, None, None
+    price_cny = round(num * rate_to_cny, 2)
+    price_eur = round(num * rate_to_cny / EUR_CNY_RATE, 2)
+    return price_cny, price_eur, num
 
 
 def split_brand_model(title: str) -> tuple[str, str]:
@@ -205,13 +222,15 @@ RE_PRICE = r'class="SearchResultItem_priceWrapper__[^"]*".*?<div class="heading5
 RE_COMPANY = r'class="SearchResultItem_companyLink__[^"]*"><a[^>]*>(.*?)</a>'
 
 
-def parse_list_page(html: str) -> list[dict]:
-    """解析 Mascus 列表页，返回原始条目列表。"""
+def parse_list_page(html: str, site: dict) -> list[dict]:
+    """解析 Mascus 列表页，返回原始条目列表。site = MASCUS_SITES 中的一项。"""
     items: list[dict] = []
     # 剔除 Next.js 水合注释，避免污染文本
     html = html.replace("<!-- -->", "")
     blocks = html.split(RE_WRAPPER)
     today = datetime.now().strftime("%Y%m%d")
+    base = site["base"]
+    src = f"mascus_{site['key']}"
 
     for blk in blocks[1:]:
         try:
@@ -229,35 +248,62 @@ def parse_list_page(html: str) -> list[dict]:
 
             m_price = re.search(RE_PRICE, blk, re.DOTALL)
             price_block = clean_text(m_price.group(1)) if m_price else ""
-            price_gbp = parse_gbp(price_block)
+            price_cny, price_eur, _ = parse_price(price_block, site["ccy"], site["rate_to_cny"])
 
             m_company = re.search(RE_COMPANY, blk, re.DOTALL)
             seller = clean_text(m_company.group(1)) if m_company else ""
 
             brand_zh, model = split_brand_model(title)
-            price_cny = round(price_gbp * GBP_CNY_RATE, 2) if price_gbp is not None else None
 
             items.append({
                 "brand": brand_zh,
                 "modelName": (model or title)[:80],
                 "year": year,
                 "engineHours": hours,
-                # priceCny 由 GBP 按 GBP_CNY_RATE 换算；priceEur 无欧元报价，留空
                 "priceCny": price_cny,
-                "priceEur": None,
+                "priceEur": price_eur,
                 "country": country_from_location(location),
                 "location": location,
                 "sellerName": seller,
+                # 列表页无电话；若 ENRICH_DETAIL 开启，main() 会进详情页补全
                 "sellerPhone": "",
-                "source": "mascus",
+                "source": src,
                 "sourceDate": today,
-                "sourceUrl": (BASE_URL + m_href.group(1)) if m_href else "",
+                "sourceUrl": (base + m_href.group(1)) if m_href else "",
             })
         except Exception as e:
             print(f"    ⚠️ 条目解析跳过: {e}")
             continue
 
     return items
+
+
+# ── 详情页补全卖家电话 ──
+RE_TEL = re.compile(r'href="tel:([^"]+)"')
+RE_PHONE = re.compile(r"(\+?\d[\d\s\-()\.]{7,}\d)")
+
+
+def enrich_mascus_detail(sess: "requests.Session", item: dict) -> None:
+    """进详情页补全 sellerPhone；抓不到则保持空串，绝不抛出。"""
+    if not item.get("sourceUrl"):
+        return
+    status, html = fetch_html(sess, item["sourceUrl"])
+    if status != 200 or not html:
+        return
+    html = html.replace("<!-- -->", "")
+    m = RE_TEL.search(html)
+    if m:
+        item["sellerPhone"] = m.group(1).strip()
+        return
+    # 退化：抓含 Phone/Tel 关键词附近的号码
+    for kw in ("Phone", "Tel", "Telephone", "Mobil", "Contact"):
+        idx = html.find(kw)
+        if idx != -1:
+            seg = clean_text(html[idx:idx + 160])
+            mm = RE_PHONE.search(seg)
+            if mm:
+                item["sellerPhone"] = mm.group(0).strip()
+                return
 
 
 def dedupe(items: list[dict]) -> list[dict]:
@@ -282,38 +328,58 @@ def dedupe(items: list[dict]) -> list[dict]:
 
 
 def main() -> int:
-    category = os.environ.get("MASCUS_CATEGORY", DEFAULT_CATEGORY).strip() or DEFAULT_CATEGORY
+    # 选定要跑的子站：MASCUS_SITE 限定单个；否则全跑
+    env_site = os.environ.get("MASCUS_SITE", "").strip().lower()
+    sites = [s for s in MASCUS_SITES if s["key"] == env_site] if env_site else MASCUS_SITES
+    if not sites:
+        print(f"❌ 未知 MASCUS_SITE={env_site!r}，可选: {','.join(s['key'] for s in MASCUS_SITES)}")
+        return 2
+
     print("=" * 60)
-    print("🚜 #1 卖方采集 — Mascus (mascus.co.uk)")
+    print("🚜 #1 卖方采集 — Mascus 多子站（换源重采）")
     print(f"📅 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"🔧 代理: {'已配置' if PROXY else '未配置（直连）'}")
-    print(f"🔧 类别: {category}｜最多页数: {MAX_PAGES}｜汇率 GBP→CNY={GBP_CNY_RATE}")
+    print(f"🔧 代理: {'已配置' if PROXY else '未配置（直连）'}｜详情补电话: {'开' if ENRICH_DETAIL else '关'}")
+    print(f"🔧 子站: {', '.join(s['key'] for s in sites)}｜每站最多页数: {MAX_PAGES}")
     print("=" * 60)
 
     sess = get_session()
     all_items: list[dict] = []
     fail_reasons: list[str] = []
 
-    for page in range(1, MAX_PAGES + 1):
-        url = page_url(category, page)
-        status, html = fetch_html(sess, url)
-        print(f"  page {page}: HTTP {status}, {len(html)} bytes")
-        if status != 200 or not html:
-            fail_reasons.append(f"page {page} HTTP {status}")
-            continue
-        page_items = parse_list_page(html)
-        print(f"  page {page}: 命中 {len(page_items)} 条")
-        if not page_items:
-            # 空页说明已到末页，停止翻页
-            break
-        all_items.extend(page_items)
-        if page < MAX_PAGES:
-            time.sleep(1.0)
+    for site in sites:
+        category = os.environ.get("MASCUS_CATEGORY", site["cat"]).strip() or site["cat"]
+        print(f"\n── 子站 {site['key']} ({site['base']}) ｜ 币种 {site['ccy']} ｜ 类别 {category}")
+        for page in range(1, MAX_PAGES + 1):
+            url = page_url(category, page)
+            status, html = fetch_html(sess, url)
+            print(f"  page {page}: HTTP {status}, {len(html)} bytes")
+            if status != 200 or not html:
+                fail_reasons.append(f"{site['key']} page {page} HTTP {status}")
+                continue
+            page_items = parse_list_page(html, site)
+            print(f"  page {page}: 命中 {len(page_items)} 条")
+            if not page_items:
+                break
+            all_items.extend(page_items)
+            if page < MAX_PAGES:
+                time.sleep(1.0)
+
+    # 详情页补全卖家电话（mascus 列表页无电话）
+    if ENRICH_DETAIL:
+        todo = [it for it in all_items if not it.get("sellerPhone")]
+        print(f"\n▶ 详情补全电话（{len(todo)} 条）...")
+        ok = 0
+        for it in todo:
+            enrich_mascus_detail(sess, it)
+            if it.get("sellerPhone"):
+                ok += 1
+        print(f"  补全成功: {ok}/{len(todo)}")
 
     unique = dedupe(all_items)
 
     with_price = sum(1 for x in unique if x.get("priceCny"))
     on_request = sum(1 for x in unique if not x.get("priceCny"))
+    with_phone = sum(1 for x in unique if x.get("sellerPhone"))
 
     output = {
         "scrapedAt": datetime.now().isoformat(),
@@ -321,7 +387,8 @@ def main() -> int:
         "totalListings": len(unique),
         "withPrice": with_price,
         "priceOnRequest": on_request,
-        "platformStats": {"mascus": len(unique)},
+        "withPhone": with_phone,
+        "platformStats": {s["key"]: sum(1 for x in unique if x.get("source") == f"mascus_{s['key']}") for s in MASCUS_SITES},
         "listings": unique,
     }
 
@@ -330,9 +397,9 @@ def main() -> int:
         json.dump(output, f, ensure_ascii=False, indent=2)
 
     print("\n" + "=" * 60)
-    print("✅ 采集完成（Mascus）")
-    print(f"📊 总条数: {output['totalListings']}")
-    print(f"💷 有价(GBP): {with_price} ｜ 待询(POA): {on_request}")
+    print("✅ 采集完成（Mascus 多子站）")
+    print(f"📊 总条数: {output['totalListings']}｜有价: {with_price}｜待询: {on_request}｜有电话: {with_phone}")
+    print(f"📊 各子站: {output['platformStats']}")
     if output["totalListings"] == 0:
         print("⚠️  0 条：可能触发反爬、结构变更或网络不可达。原因：")
         if fail_reasons:
