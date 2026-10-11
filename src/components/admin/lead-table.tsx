@@ -27,6 +27,7 @@ interface Props {
 }
 
 type ApiResp = { success: boolean; data?: RawListingRow; error?: string; code?: string };
+type RevealAllResp = { success: boolean; revealed?: number; error?: string; code?: string };
 
 async function apiJson<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, init);
@@ -43,6 +44,31 @@ export function LeadTable({ items, locale: _locale }: Props) {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<ContactDraft>({ sellerWechat: "", sellerWhatsapp: "", sellerEmail: "" });
+  const [revealAllBusy, setRevealAllBusy] = useState(false);
+
+  const allRevealed = items.length > 0 && items.every((i) => revealed.has(i.id));
+
+  async function revealAll() {
+    if (allRevealed || revealAllBusy) return;
+    setRevealAllBusy(true);
+    try {
+      const data = await apiJson<RevealAllResp>("/api/admin/leads/reveal-all", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: items.map((i) => i.id) }),
+      });
+      if (data.success) {
+        setRevealed(new Set(items.map((i) => i.id)));
+        router.refresh();
+      } else {
+        alert(`显示全部失败：${data.error || "未知错误"}${data.code ? ` (${data.code})` : ""}`);
+      }
+    } catch {
+      alert("网络错误，请重试");
+    } finally {
+      setRevealAllBusy(false);
+    }
+  }
 
   async function reveal(id: string) {
     setBusyId(id);
@@ -96,6 +122,26 @@ export function LeadTable({ items, locale: _locale }: Props) {
 
   return (
     <div className="rounded-xl border bg-white shadow-sm">
+      {/* 批量工具条：一次点亮本页全部联系方式（同样逐条写 PII 审计） */}
+      {items.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 border-b bg-gray-50 px-4 py-3">
+          <span className="text-xs text-gray-500">本页共 {items.length} 条线索</span>
+          {allRevealed ? (
+            <span className="rounded bg-gray-200 px-3 py-1 text-xs font-medium text-gray-600">
+              已全部显示
+            </span>
+          ) : (
+            <button
+              disabled={revealAllBusy}
+              onClick={revealAll}
+              className="rounded bg-primary-600 px-3 py-1 text-xs font-medium text-white hover:bg-primary-700 disabled:opacity-50"
+            >
+              {revealAllBusy ? "处理中…" : `显示全部（本页 ${items.length} 条）`}
+            </button>
+          )}
+          <span className="text-[11px] text-gray-400">查看联系方式会逐条写入 PII 审计日志</span>
+        </div>
+      )}
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
