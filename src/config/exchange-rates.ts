@@ -133,11 +133,23 @@ export const UPDATE_STRATEGY = {
     enableCacheFallback: true, // 启用缓存回退
     enableStaticFallback: true, // 启用静态值回退
     staticRates: {
+      // 1 CNY = X 外币；快照基准 2026-10-09（Frankfurter，RUB 由 USD/RUB≈85.16 与 USD/CNY≈6.69 推算≈12.73）
+      // 仅作离线兜底；每日 cron（fix/exchange-rate-wiring）从实时源刷新并落库后覆盖此处。
       CNY: 1,
-      USD: 0.138, // 1 CNY = 0.138 USD (约7.25 CNY/USD)
-      EUR: 0.127, // 1 CNY = 0.127 EUR (约7.87 CNY/EUR)
-      GBP: 0.109, // 1 CNY = 0.109 GBP (约9.17 CNY/GBP)
-      RUB: 12.5,  // 1 CNY = 12.5 RUB (约0.08 CNY/RUB)
+      USD: 0.14943,
+      EUR: 0.13335,
+      GBP: 0.11303,
+      JPY: 23.648,
+      AUD: 0.21405,
+      CAD: 0.21258,
+      CHF: 0.12419,
+      RUB: 12.73,
+      INR: 14.4549,
+      BRL: 0.74789,
+      MXN: 2.7196,
+      KRW: 200.46,
+      TRY: 7.3479,
+      ZAR: 2.4705,
     },
   },
 };
