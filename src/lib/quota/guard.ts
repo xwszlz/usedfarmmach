@@ -22,14 +22,13 @@ function nextMonthStart(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth() + 1, 1, 0, 0, 0, 0);
 }
 
-/** 动作 → 计数器字段映射（用于读取已用量与增量） */
+/** 动作 → 计数器字段映射（用于读取已用量与增量；aiValuation 已移除，改走积分计费） */
 const COUNTER_FIELD: Record<
   QuotaAction,
-  "usagePublish" | "usageInquiry" | "usageAiValuation" | "usageViewContact"
+  "usagePublish" | "usageInquiry" | "usageViewContact"
 > = {
   publish: "usagePublish",
   inquiry: "usageInquiry",
-  aiValuation: "usageAiValuation",
   viewContact: "usageViewContact",
 };
 
@@ -123,9 +122,6 @@ export async function consumeQuota(
     case "inquiry":
       updateData = { usageInquiry: { increment: 1 } };
       break;
-    case "aiValuation":
-      updateData = { usageAiValuation: { increment: 1 } };
-      break;
     case "viewContact":
       updateData = { usageViewContact: { increment: 1 } };
       break;
@@ -171,7 +167,7 @@ export async function getQuotaState(user: QuotaUser): Promise<QuotaState> {
 
   const effectivePeriodStart = inWindow ? period! : monthStart;
 
-  const actions: QuotaAction[] = ["publish", "inquiry", "aiValuation", "viewContact"];
+  const actions: QuotaAction[] = ["publish", "inquiry", "viewContact"];
   const items: QuotaItem[] = actions.map((action) => {
     const limit = getQuotaLimit(user.membershipTier, action);
     const used = inWindow ? (user[COUNTER_FIELD[action]] as number) : 0;
@@ -196,7 +192,7 @@ export function quotaExceededResponse(resetAt: string, locale = "zh") {
       success: false,
       code: "QUOTA_EXCEEDED",
       error: "本月额度已用尽",
-      data: { remaining: 0, resetAt, upgradeUrl: `/${locale}/membership` },
+      data: { remaining: 0, resetAt, upgradeUrl: `/${locale}/credits` },
     },
     { status: 403 },
   );
