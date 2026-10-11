@@ -28,6 +28,16 @@ interface CacheItem {
 /**
  * 汇率服务类
  */
+interface BulkRates {
+  rates: Record<string, number>;
+  source: string;
+}
+
+interface BulkFxResponse {
+  rates?: Record<string, number>;
+  conversion_rates?: Record<string, number>;
+}
+
 export class ExchangeRateService {
   private cache: Map<string, CacheItem> = new Map();
   private updateInProgress: boolean = false;
@@ -253,7 +263,7 @@ export class ExchangeRateService {
         },
       });
 
-      return rate as ExchangeRate | null;
+      return rate as unknown as ExchangeRate | null;
     } catch (error) {
       console.error('从数据库获取汇率失败:', error);
       return null;
@@ -401,19 +411,33 @@ export class ExchangeRateService {
   }
 
   /**
-   * 获取降级汇率
+   * 获取降级汇率（静态兜底）
+   * 同币或其中之一为 CNY：直接读静态表；交叉盘：经 CNY 三角换算。
+   * 静态表未覆盖的极端情况记录告警，仍以 1 占位（不再沉默吞没）。
    */
   private getFallbackRate(
     baseCurrency: CurrencyCode,
     targetCurrency: CurrencyCode
   ): ExchangeRate {
     const staticRates = UPDATE_STRATEGY.fallbackStrategy.staticRates;
-    let rateValue = 1;
-    
+    let rateValue: number | null = null;
+
     if (baseCurrency === 'CNY' && targetCurrency in staticRates) {
       rateValue = staticRates[targetCurrency as keyof typeof staticRates];
     } else if (targetCurrency === 'CNY' && baseCurrency in staticRates) {
       rateValue = 1 / staticRates[baseCurrency as keyof typeof staticRates];
+    } else if (baseCurrency in staticRates && targetCurrency in staticRates) {
+      // 交叉盘：经 CNY 三角换算，避免沉默返回 1:1
+      const b = staticRates[baseCurrency as keyof typeof staticRates];
+      const t = staticRates[targetCurrency as keyof typeof staticRates];
+      rateValue = t / b;
+    }
+
+    if (rateValue === null) {
+      console.error(
+        `[exchange-rate] 静态兜底缺失 ${baseCurrency}->${targetCurrency}，暂以 1:1 占位`
+      );
+      rateValue = 1;
     }
 
     return {
@@ -430,6 +454,206 @@ export class ExchangeRateService {
       isHistorical: false,
       isInterpolated: false,
     };
+  }
+
+  /**
+   * 批量读取库内所有 CNY 基准的最新汇率（单次查询，避免逐币 14 次往返）
+   */
+  private async getAllLatestRatesFromDb(): Promise<Map<string, ExchangeRate>> {
+    const map = new Map<string, ExchangeRate>();
+    try {
+      const rows = await prisma.exchangeRate.findMany({
+        where: { baseCurrency: 'CNY' },
+        orderBy: { effectiveDate: 'desc' },
+        take: 1000,
+      });
+      for (const r of rows as unknown as ExchangeRate[]) {
+        if (!map.has(r.targetCurrency)) map.set(r.targetCurrency, r);
+      }
+    } catch (error) {
+      console.error('批量读取汇率失败:', error);
+    }
+    return map;
+  }
+
+  /**
+   * 获取全部支持货币相对 CNY 的汇率（GET /api/exchange-rates 用）
+   * 优先读库内最新实时值；缺失或过期的币种回退静态表；CNY 恒为 1。
+   * 不触发任何外部网络请求 —— 保证读取路径快且稳。
+   */
+  async getAllRates(): Promise<{
+    base: CurrencyCode;
+    rates: Record<string, number>;
+    source: string;
+    fetchedAt: string;
+  }> {
+    const base: CurrencyCode = 'CNY';
+    const rates: Record<string, number> = { CNY: 1 };
+    const staticRates = UPDATE_STRATEGY.fallbackStrategy.staticRates;
+    const dbMap = await this.getAllLatestRatesFromDb();
+    let liveCount = 0;
+
+    for (const currency of SUPPORTED_CURRENCIES) {
+      if (currency === 'CNY') continue;
+      const dbRate = dbMap.get(currency);
+      if (dbRate && !this.isRateStale(dbRate)) {
+        rates[currency] = dbRate.rate;
+        liveCount++;
+      } else if (currency in staticRates) {
+        rates[currency] = staticRates[currency as keyof typeof staticRates];
+      } else {
+        console.warn(
+          `[exchange-rate] ${currency} 既无库内实时值也无静态兜底，暂以 1:1 占位`
+        );
+        rates[currency] = 1;
+      }
+    }
+
+    const source = liveCount > 0 ? 'db-live' : 'static-fallback';
+    return { base, rates, source, fetchedAt: new Date().toISOString() };
+  }
+
+  /**
+   * 从实时源批量刷新全部 CNY 货币对并落库（cron / POST 触发用）
+   * 单次批量拉取（Frankfurter 免 key 优先，主源 exchangerate-api.com 补全缺失币种），
+   * 避免原 updateRates 默认生成 210 个货币对逐对请求。
+   */
+  async refreshAllRates(): Promise<ExchangeRateUpdateResponse> {
+    if (this.updateInProgress) {
+      return { success: false, error: '汇率更新已在进行中' };
+    }
+    this.updateInProgress = true;
+    const startTime = Date.now();
+    try {
+      const fetched = await this.fetchAllFromApi();
+      if (!fetched) {
+        return { success: false, error: '无法从汇率源获取实时数据，维持既有数据/静态兜底' };
+      }
+      const staticRates = UPDATE_STRATEGY.fallbackStrategy.staticRates;
+      const details: Array<{ currencyPair: string; success: boolean; source?: string }> = [];
+      for (const currency of SUPPORTED_CURRENCIES) {
+        if (currency === 'CNY') continue;
+        const fallback =
+          (currency in staticRates
+            ? staticRates[currency as keyof typeof staticRates]
+            : 1);
+        const rate = fetched.rates[currency] ?? fallback;
+        const rec: ExchangeRate = {
+          id: `api-${Date.now()}-${currency}`,
+          baseCurrency: 'CNY',
+          targetCurrency: currency as CurrencyCode,
+          rate,
+          inverseRate: 1 / rate,
+          source: fetched.source,
+          lastUpdated: new Date().toISOString(),
+          effectiveDate: new Date().toISOString(),
+          confidence: 0.9,
+          isLive: true,
+          isHistorical: false,
+          isInterpolated: false,
+        };
+        await this.saveRateToDb(rec);
+        details.push({ currencyPair: `CNY-${currency}`, success: true, source: fetched.source });
+      }
+      return {
+        success: true,
+        data: {
+          updatedCount: details.length,
+          failedCount: 0,
+          sourcesUsed: [fetched.source],
+          startTime: new Date(startTime).toISOString(),
+          endTime: new Date().toISOString(),
+          duration: Date.now() - startTime,
+          details: details.map(d => ({
+            currencyPair: d.currencyPair,
+            source: d.source ?? fetched.source,
+            success: true,
+            cached: false,
+          })),
+        },
+      };
+    } catch (error) {
+      console.error('汇率全量刷新失败:', error);
+      this.lastUpdateError = error as Error;
+      return { success: false, error: error instanceof Error ? error.message : '未知错误' };
+    } finally {
+      this.updateInProgress = false;
+    }
+  }
+
+  /**
+   * 单次批量拉取全部 CNY 货币对（基础货币 CNY）。
+   * Frankfurter 免 key 优先；若其缺失部分币种（如 RUB）且主源配置了 key，再用主源补全。
+   */
+  private async fetchAllFromApi(): Promise<BulkRates | null> {
+    // 1) Frankfurter（免 key，base=CNY）
+    try {
+      const url = `${EXCHANGE_RATE_API.fallback.baseUrl}${EXCHANGE_RATE_API.fallback.endpoints.latest}`;
+      const res = await axios.get<BulkFxResponse>(url, {
+        headers: EXCHANGE_RATE_API.fallback.headers,
+        timeout: EXCHANGE_RATE_API.fallback.timeout,
+      });
+      if (res.data && res.data.rates) {
+        const out: BulkRates = { rates: { CNY: 1 }, source: EXCHANGE_RATE_API.fallback.name };
+        for (const c of SUPPORTED_CURRENCIES) {
+          if (c === 'CNY') continue;
+          if (typeof res.data.rates[c] === 'number') out.rates[c] = res.data.rates[c];
+        }
+        await this.fillMissingFromPrimary(out);
+        return out;
+      }
+    } catch (e) {
+      console.error('Frankfurter 批量汇率拉取失败:', e);
+    }
+
+    // 2) 主源（需 EXCHANGE_RATE_API_KEY）
+    try {
+      const key = EXCHANGE_RATE_API.primary.apiKey;
+      if (key) {
+        const url = `${EXCHANGE_RATE_API.primary.baseUrl}/${key}${EXCHANGE_RATE_API.primary.endpoints.latest}`;
+        const res = await axios.get<BulkFxResponse>(url, {
+          headers: EXCHANGE_RATE_API.primary.headers,
+          timeout: EXCHANGE_RATE_API.primary.timeout,
+        });
+        const rates = res.data?.conversion_rates ?? res.data?.rates;
+        if (rates) {
+          const out: BulkRates = { rates: { CNY: 1 }, source: EXCHANGE_RATE_API.primary.name };
+          for (const c of SUPPORTED_CURRENCIES) {
+            if (c === 'CNY') continue;
+            if (typeof rates[c] === 'number') out.rates[c] = rates[c];
+          }
+          return out;
+        }
+      }
+    } catch (e) {
+      console.error('主源批量汇率拉取失败:', e);
+    }
+    return null;
+  }
+
+  /**
+   * 用主源补全 Frankfurter 缺失的币种（如 RUB）；无 key 时跳过。
+   */
+  private async fillMissingFromPrimary(out: BulkRates): Promise<void> {
+    const missing = SUPPORTED_CURRENCIES.filter(c => c !== 'CNY' && !(c in out.rates));
+    if (missing.length === 0) return;
+    const key = EXCHANGE_RATE_API.primary.apiKey;
+    if (!key) return;
+    try {
+      const url = `${EXCHANGE_RATE_API.primary.baseUrl}/${key}${EXCHANGE_RATE_API.primary.endpoints.latest}`;
+      const res = await axios.get<BulkFxResponse>(url, {
+        headers: EXCHANGE_RATE_API.primary.headers,
+        timeout: EXCHANGE_RATE_API.primary.timeout,
+      });
+      const rates = res.data?.conversion_rates ?? res.data?.rates;
+      if (rates) {
+        for (const c of missing) {
+          if (typeof rates[c] === 'number') out.rates[c] = rates[c];
+        }
+      }
+    } catch (e) {
+      console.error('主源补全失败:', e);
+    }
   }
 
   /**
