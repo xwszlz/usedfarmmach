@@ -18,6 +18,7 @@ type Userinfo = {
   role: string;
   email: string;
   membershipTier: string;
+  credits: number;
 } | null;
 
 export function Navbar({ locale }: NavbarProps) {
@@ -38,6 +39,7 @@ export function Navbar({ locale }: NavbarProps) {
               role: json.data.user.role,
               email: json.data.user.email,
               membershipTier: json.data.user.membershipTier || "free",
+              credits: json.data.user.credits || 0,
             });
             return;
           }
@@ -62,20 +64,6 @@ export function Navbar({ locale }: NavbarProps) {
     localStorage.removeItem("user");
     setUser(null);
     window.location.href = `/${locale}`;
-  };
-
-  const tierLabel: Record<string, string> = {
-    free: "免费",
-    basic: "普通会员",
-    premium: "Pro",
-    enterprise: "高级会员",
-  };
-
-  const tierColor: Record<string, string> = {
-    free: "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400",
-    basic: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
-    premium: "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300",
-    enterprise: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300",
   };
 
   return (
@@ -110,8 +98,8 @@ export function Navbar({ locale }: NavbarProps) {
           <div className="hidden items-center gap-2 md:flex">
             {user ? (
               <>
-                <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", tierColor[user.membershipTier] || tierColor.free)}>
-                  {tierLabel[user.membershipTier] || "免费"}
+                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
+                  {user.credits} 积分
                 </span>
                 <Link href={`/${locale}/seller/products`}>
                   <Button variant="ghost" size="sm" className="flex items-center gap-1.5">
@@ -169,8 +157,8 @@ export function Navbar({ locale }: NavbarProps) {
             <div className="flex gap-2 pt-2">
               {user ? (
                 <>
-                  <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", tierColor[user.membershipTier] || tierColor.free)}>
-                    {tierLabel[user.membershipTier] || "免费"}
+                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
+                    {user.credits} 积分
                   </span>
                   <Link href={`/${locale}/seller/products`} className="flex-1" onClick={() => setMobileOpen(false)}>
                     <Button size="sm" className="w-full">{locale === "en" ? "Seller" : "卖家中心"}</Button>

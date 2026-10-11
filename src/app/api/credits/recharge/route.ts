@@ -1,47 +1,146 @@
 /**
- * POST /api/credits/recharge —— 积分充值 / 会员升级（P0 I-5 止血）
+ * POST /api/credits/recharge —— 积分充值下单入口（双站）
  *
- * ⚠️ 安全红线（2026-07-24）：真实支付接入前，本端点【禁止】任何形式的"免支付增发积分"。
- * 原实现为"模拟支付直接改库"（prisma.user.update credits 自增 + 写 CreditTransaction，
- * 无任何支付校验），属财务 + 合规双雷，违反《统一方案》红线③"积分不可免费增发"。
+ * 老板口径：取消 4 档会员，改为「积分中心 + 积分充值」。
+ *   - .cn（境内）：1 元 = 1 积分；走微信 Native / 支付宝 预下单（普通商户直收增值服务费，
+ *     红线：绝不走收付通/服务商/资金托管，不碰分账/二清）。
+ *   - .com（国际）：1 美元 = 10 积分；走 Stripe Checkout（一次性支付）。
  *
- * 处置：在真实支付（微信支付 / Stripe，需 ICP 备案或走已备案小程序通道）接入并校验
- * 支付结果之前，本端点一律返回 503，且【绝不对】User.credits / CreditTransaction 做任何写操作。
+ * 注意：本端点只负责【创建支付订单】，真正的【加积分】在支付回调里做：
+ *   - .cn → /api/membership/wechat/notify、/api/membership/alipay/notify
+ *   - .com → /api/webhooks/stripe
+ * 因此本端点绝不直接改 User.credits / CreditTransaction（沿用 P0 I-5 止血红线）。
  *
- * 恢复方式：接入真实支付网关、校验支付回调成功后再启用本端点（见阶段2方案）。
- *   通过下方 CREDITS_ISSUANCE_ENABLED 总开关控制；真实支付 PR 中置为 true 并补全校验逻辑。
- *
- * 站点 / 通道约束（与本次 .com-Stripe-Only 改造一致）：
- *  - 积分充值属国际站(.com)能力（stripeAddons），启用时必须走 Stripe，且只走 Stripe；
- *    绝不可在 .com 回退到微信/支付宝（那是 .cn 的合法通道，互不越界）。
- *  - 支付成功后必须落 BillingOrder（provider="stripe", site=SITE），
- *    以便统一归因"这是一笔 .com 站、走 Stripe 的充值订单"，与 /api/(com)/billing/checkout 一致。
+ * 幂等：支付回调按 支付流水号 / 订单号 去重（见各回调实现）。
  */
-
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { getUserFromRequest } from "@/lib/auth";
+import { isComSite } from "@/config/site";
+import { isConfigured as wechatConfigured, createNativeOrder } from "@/lib/wechat-pay";
+import { isConfigured as alipayConfigured, createPrecreateOrder } from "@/lib/alipay";
+import {
+  isConfigured as stripeConfigured,
+  isStripeCurrency,
+  getOrCreateStripeCustomer,
+  createCreditRechargeSession,
+} from "@/lib/payments/stripe";
+import { buildCreditOutTradeNo } from "@/lib/credits/recharge-order";
 
-// 充值 / 增发总开关：真实支付接入前保持 false（禁用）。
-const CREDITS_ISSUANCE_ENABLED = false;
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+export const maxDuration = 30;
+
+const MAX_CREDITS = 100_000;
+
+const bodySchema = z.object({
+  /** .cn：人民币元；.com：美元 */
+  amount: z.number().positive(),
+  /** .cn 用：wechat | alipay（缺省 wechat） */
+  channel: z.enum(["wechat", "alipay"]).optional(),
+  /** .com 用：USD | EUR | GBP（缺省 USD） */
+  currency: z.string().optional(),
+});
 
 export async function POST(request: NextRequest) {
-  if (!CREDITS_ISSUANCE_ENABLED) {
+  try {
+    const user = await getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ success: false, error: "请先登录" }, { status: 401 });
+    }
+
+    const json = await request.json().catch(() => null);
+    const parsed = bodySchema.safeParse(json);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { success: false, error: "参数错误", code: "INVALID_PARAMS" },
+        { status: 400 }
+      );
+    }
+    const { amount, channel, currency } = parsed.data;
+
+    if (isComSite()) {
+      // $1 = 10 积分
+      const credits = Math.floor(amount * 10);
+      if (credits < 1 || credits > MAX_CREDITS) {
+        return NextResponse.json({ success: false, error: "金额超出范围" }, { status: 400 });
+      }
+      if (!stripeConfigured()) {
+        return NextResponse.json(
+          { success: false, error: "支付未配置", code: "PAYMENT_NOT_CONFIGURED" },
+          { status: 503 }
+        );
+      }
+      const cur = (currency || "USD").toUpperCase();
+      if (!isStripeCurrency(cur)) {
+        return NextResponse.json(
+          { success: false, error: "不支持的币种", code: "INVALID_CURRENCY" },
+          { status: 400 }
+        );
+      }
+      const customerId = await getOrCreateStripeCustomer(user.id, user.email);
+      const { url } = await createCreditRechargeSession({
+        userId: user.id,
+        credits,
+        currency: cur,
+        stripeCustomerId: customerId,
+      });
+      return NextResponse.json({ success: true, data: { type: "stripe", url, credits } });
+    }
+
+    // .cn：1 元 = 1 积分
+    const credits = Math.floor(amount);
+    if (credits < 1 || credits > MAX_CREDITS) {
+      return NextResponse.json({ success: false, error: "金额超出范围" }, { status: 400 });
+    }
+    const ch = channel || "wechat";
+    const outTradeNo = buildCreditOutTradeNo(credits);
+    const base = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.cn";
+    const description = `神雕农机积分充值 ${credits} 积分`;
+
+    if (ch === "wechat") {
+      if (!wechatConfigured()) {
+        return NextResponse.json(
+          { success: false, error: "微信支付未配置", code: "PAYMENT_NOT_CONFIGURED" },
+          { status: 503 }
+        );
+      }
+      const { code_url } = await createNativeOrder(
+        outTradeNo,
+        credits * 100, // 单位：分
+        description,
+        `${base}/api/membership/wechat/notify`,
+        user.id // attach：回调原样返回，用于定位用户
+      );
+      return NextResponse.json({
+        success: true,
+        data: { type: "wechat", codeUrl: code_url, outTradeNo, credits },
+      });
+    }
+
+    // 支付宝：未配置按 503 降级
+    if (!alipayConfigured()) {
+      return NextResponse.json(
+        { success: false, error: "支付宝未配置", code: "PAYMENT_NOT_CONFIGURED" },
+        { status: 503 }
+      );
+    }
+    const { qr_code } = await createPrecreateOrder(
+      outTradeNo,
+      credits, // 单位：元
+      description,
+      `${base}/api/membership/alipay/notify`,
+      user.id // passback_params：异步通知原样返回
+    );
+    return NextResponse.json({
+      success: true,
+      data: { type: "alipay", codeUrl: qr_code, outTradeNo, credits },
+    });
+  } catch (error: any) {
+    console.error("[Credits/Recharge] 错误:", error);
     return NextResponse.json(
-      {
-        success: false,
-        code: "SERVICE_UNAVAILABLE",
-        error: "积分充值服务即将上线，当前暂不可用",
-      },
-      { status: 503 }
+      { success: false, error: error?.message || "创建充值订单失败" },
+      { status: 500 }
     );
   }
-
-  // —— 以下步骤（支付校验 + 改库增发）仅在真实支付接入后启用 ——
-  // 1) 解析并校验支付网关回调 / 预下单结果；
-  // 2) 校验通过后才对 User.credits 自增并写 CreditTransaction（带 operatorId 审计）；
-  // 3) 会员升级同理，需先完成支付。
-  // 当前阶段不执行任何写操作，直接返回禁用态。
-  return NextResponse.json(
-    { success: false, error: "积分充值未启用" },
-    { status: 503 }
-  );
 }

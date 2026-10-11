@@ -14,6 +14,8 @@ import { isConfigured as alipayConfigured, verifyCallback } from "@/lib/alipay";
 import { parseOutTradeNo } from "@/lib/membership/order";
 import { getMembershipCny, CYCLE_DAYS } from "@/lib/membership/pricing";
 import type { MembershipTier } from "@/lib/permissions";
+import { isCreditOutTradeNo, parseCreditOutTradeNo } from "@/lib/credits/recharge-order";
+import { grantRecharge } from "@/lib/credits/grant";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -57,6 +59,44 @@ export async function POST(request: NextRequest) {
   const tradeStatus = params.trade_status;
   if (tradeStatus !== "TRADE_SUCCESS" && tradeStatus !== "TRADE_FINISHED") {
     return okText();
+  }
+
+  // —— 积分充值订单（R 前缀）：1 元 = 1 积分，直接加积分，不走会员逻辑 ——
+  if (isCreditOutTradeNo(params.out_trade_no)) {
+    const pc = parseCreditOutTradeNo(params.out_trade_no);
+    if (!pc) {
+      console.error("[Recharge/AlipayNotify] 无法解析积分订单号:", params.out_trade_no);
+      return okText();
+    }
+    const rawPb = typeof params.passback_params === "string" ? params.passback_params : "";
+    let uid = "";
+    try {
+      uid = rawPb ? decodeURIComponent(rawPb) : "";
+    } catch {
+      uid = rawPb;
+    }
+    if (!uid) {
+      console.error(`[需人工补单][Recharge/AlipayNotify] 缺少 passback_params。order=${params.out_trade_no} credits=${pc.credits}`);
+      return okText();
+    }
+    const paid = Number(params.total_amount);
+    if (!Number.isFinite(paid) || paid !== pc.credits) {
+      console.error(`[Recharge/AlipayNotify] 金额不符 order=${params.out_trade_no} paid=${params.total_amount} expected=${pc.credits}`);
+      return failText(400);
+    }
+    try {
+      const txId = params.trade_no || params.out_trade_no;
+      const dup = await prisma.creditTransaction.findFirst({
+        where: { type: "recharge", relatedId: txId },
+      });
+      if (dup) return okText();
+      await grantRecharge(uid, pc.credits, "alipay_recharge", txId);
+      console.log(`[Recharge/AlipayNotify] 充值成功 user=${uid} credits=${pc.credits} order=${params.out_trade_no}`);
+      return okText();
+    } catch (err) {
+      console.error("[Recharge/AlipayNotify] 写库失败:", err);
+      return failText();
+    }
   }
 
   const parsed = parseOutTradeNo(params.out_trade_no);

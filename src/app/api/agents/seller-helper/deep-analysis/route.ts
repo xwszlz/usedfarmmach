@@ -14,7 +14,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
 
+import { getTokenFromHeaders, verifyToken } from "@/lib/auth";
+import { computeAiCost, deductCredits, type AiCostBreakdown } from "@/lib/credits/spend";
+
 export const dynamic = "force-dynamic";
+
+/** LLM 调用结果：文本 + token 用量（用于积分计费） */
+interface LlmCallResult {
+  text: string;
+  usage: { inputTokens: number; outputTokens: number };
+}
+
+/** 从 referer / 路径推断 locale（与 quota guard 的 rechargeUrl 保持一致） */
+function getLocaleFromRequest(request: NextRequest): string {
+  const referer = request.headers.get("referer") || "";
+  const m = referer.match(/\/([a-z]{2})\b/) || referer.match(/\/([a-z]{2})$/);
+  if (m && ["zh", "en", "ru", "es", "pt", "fr", "hi", "ar"].includes(m[1])) {
+    return m[1];
+  }
+  return "zh";
+}
 export const maxDuration = 120; // 豆包深度分析需要更长时间
 
 const ARK_API_KEY = process.env.ARK_API_KEY || "";
@@ -258,7 +277,7 @@ async function buildDoubaoContent(
  */
 async function callDoubao(
   content: Array<Record<string, unknown>>
-): Promise<string> {
+): Promise<LlmCallResult> {
   console.log(
     `[DeepAnalysis] 豆包调用: model=${ARK_MODEL_ID}, ` +
     `图片数=${content.filter((c) => c.type === "image_url").length}, ` +
@@ -291,7 +310,12 @@ async function callDoubao(
     throw new Error("豆包返回空响应或响应过短");
   }
 
-  return text;
+  const usage = {
+    inputTokens: result.usage?.prompt_tokens ?? 0,
+    outputTokens: result.usage?.completion_tokens ?? 0,
+  };
+
+  return { text, usage };
 }
 
 // ── 下载图片并转为 base64 ──
@@ -312,7 +336,7 @@ async function callGeminiDeep(
   images: string[],
   videos: string[],
   prompt: string
-): Promise<string> {
+): Promise<LlmCallResult> {
   const parts: Array<Record<string, unknown>> = [{ text: prompt }];
 
   for (const url of images) {
@@ -367,7 +391,47 @@ async function callGeminiDeep(
   const text = candidate.content?.parts?.[0]?.text || "";
   if (!text || text.trim().length < 50) throw new Error("Gemini 返回空响应");
 
-  return text;
+  // Gemini 用量在 usageMetadata 中（promptTokenCount / candidatesTokenCount）
+  const um = (result as any).usageMetadata || {};
+  const usage = {
+    inputTokens: um.promptTokenCount ?? 0,
+    outputTokens: um.candidatesTokenCount ?? 0,
+  };
+
+  return { text, usage };
+}
+
+/**
+ * 备用：调用 OpenRouter（Gemini Flash 免费模型）
+ */
+async function callOpenRouter(
+  content: Array<Record<string, unknown>>
+): Promise<LlmCallResult> {
+  const response = await axios.post(
+    "https://openrouter.ai/api/v1/chat/completions",
+    {
+      model: "google/gemini-2.0-flash-001:free",
+      messages: [{ role: "user", content }],
+      max_tokens: 4096,
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://usedfarmmach.com",
+        "X-Title": "Seller Helper Deep Analysis",
+      },
+      timeout: 90000,
+    }
+  );
+  const result = response.data as any;
+  const text = result?.choices?.[0]?.message?.content || "";
+  if (!text || text.trim().length < 50) throw new Error("OpenRouter 返回空响应");
+  const usage = {
+    inputTokens: result.usage?.prompt_tokens ?? 0,
+    outputTokens: result.usage?.completion_tokens ?? 0,
+  };
+  return { text, usage };
 }
 
 /**
@@ -407,6 +471,22 @@ function extractStructured(analysisText: string): Record<string, any> | null {
 
 export async function POST(request: NextRequest) {
   try {
+    // ── 登录校验：AI 深度分析需登录并按积分计费（游客不可用）──
+    const locale = getLocaleFromRequest(request);
+    const token = getTokenFromHeaders(request.headers);
+    const payload = token ? verifyToken(token) : null;
+    if (!payload) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "请登录后使用 AI 深度分析",
+          code: "AUTH_REQUIRED",
+          rechargeUrl: `/${locale}/credits`,
+        },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     console.log(`[DeepAnalysis] 收到请求: ${JSON.stringify({
       imageUrls: (body.imageUrls || []).length,
@@ -462,6 +542,8 @@ export async function POST(request: NextRequest) {
 
     let analysisText = "";
     let modelUsed = "";
+    let billingModel = "";
+    let lastUsage = { inputTokens: 0, outputTokens: 0 };
     const errors: string[] = [];
 
     // ===== 模型选择：国内站强制走豆包；国际站保持原策略 =====
@@ -473,7 +555,10 @@ export async function POST(request: NextRequest) {
         try {
           console.log(`[DeepAnalysis] 首选豆包: ${ARK_MODEL_ID}, 引擎: ${engineLabel}, 图片数: ${images.length}, 视频数: ${videoUrls.length}`);
           const content = await buildDoubaoContent(images, videoUrls, activePrompt);
-          analysisText = await callDoubao(content);
+          const res = await callDoubao(content);
+          analysisText = res.text;
+          lastUsage = res.usage;
+          billingModel = ARK_MODEL_ID;
           modelUsed = `豆包 ${ARK_MODEL_ID} [${engineLabel}]`;
         } catch (error: any) {
           const msg = `[豆包] ${error.message || ""}`.substring(0, 150);
@@ -491,7 +576,10 @@ export async function POST(request: NextRequest) {
       try {
         const geminiRole = isCnSite ? "国内站降级" : (isChineseBrand === false ? "国际首选" : "降级备用");
         console.log(`[DeepAnalysis] Gemini ${geminiRole}, 引擎: ${engineLabel}`);
-        analysisText = await callGeminiDeep(images, videoUrls, activePrompt);
+        const res = await callGeminiDeep(images, videoUrls, activePrompt);
+        analysisText = res.text;
+        lastUsage = res.usage;
+        billingModel = "gemini-2.5-flash";
         modelUsed = `Gemini 2.5 Flash [${engineLabel}]`;
       } catch (error: any) {
         const msg = `[Gemini] ${error.message || ""}`.substring(0, 150);
@@ -507,24 +595,10 @@ export async function POST(request: NextRequest) {
       try {
         console.log(`[DeepAnalysis] 降级到 OpenRouter, 引擎: ${engineLabel}`);
         const content = await buildDoubaoContent(images, [], activePrompt); // OpenRouter 不支持 video_url
-        const response = await axios.post(
-          "https://openrouter.ai/api/v1/chat/completions",
-          {
-            model: "google/gemini-2.0-flash-001:free",
-            messages: [{ role: "user", content }],
-            max_tokens: 4096,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-              "Content-Type": "application/json",
-              "HTTP-Referer": "https://usedfarmmach.com",
-              "X-Title": "Seller Helper Deep Analysis",
-            },
-            timeout: 90000,
-          }
-        );
-        analysisText = (response.data as any)?.choices?.[0]?.message?.content || "";
+        const res = await callOpenRouter(content);
+        analysisText = res.text;
+        lastUsage = res.usage;
+        billingModel = "google/gemini-2.0-flash-001:free";
         modelUsed = `OpenRouter Gemini Flash [${engineLabel}]`;
       } catch (error: any) {
         const msg = `[OpenRouter] ${error.message || ""}`.substring(0, 150);
@@ -548,6 +622,32 @@ export async function POST(request: NextRequest) {
     // 提取结构化数据
     const structured = extractStructured(analysisText);
 
+    // ── 积分扣减（按 LLM token 实际消耗成本 × 2，反算积分）──
+    const cost: AiCostBreakdown = computeAiCost({
+      model: billingModel || ARK_MODEL_ID,
+      inputTokens: lastUsage.inputTokens,
+      outputTokens: lastUsage.outputTokens,
+    });
+    const deduction = await deductCredits(
+      payload.userId,
+      cost.points,
+      "AI深度分析",
+      cost as unknown as Record<string, unknown>
+    );
+    if (!deduction.ok) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "积分不足，请先充值后再使用 AI 深度分析",
+          code: "INSUFFICIENT_CREDITS",
+          rechargeUrl: `/${locale}/credits`,
+          required: deduction.required,
+          balance: deduction.credits,
+        },
+        { status: 402 }
+      );
+    }
+
     return NextResponse.json({
       success: true,
       data: {
@@ -555,6 +655,8 @@ export async function POST(request: NextRequest) {
         structured: structured || {},
         model: modelUsed,
         mediaCount: { images: images.length, videos: videoUrls.length },
+        pointsCharged: cost.points,
+        creditsBalance: deduction.credits,
       },
     });
 

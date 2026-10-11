@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
-import { MEMBERSHIP_TIERS, type MembershipTier } from "@/lib/permissions";
+
 
 interface MeUser {
   membershipTier: string;
@@ -84,27 +84,12 @@ export function MembershipCard({ locale }: MembershipCardProps) {
     );
   }
 
-  const tier = (user?.membershipTier || "free") as MembershipTier;
-  const tierConfig = MEMBERSHIP_TIERS[tier] || MEMBERSHIP_TIERS.free;
-  // label 仅含 zh/en/ru，其他 locale 回退到 zh
-  const tierLabel =
-    (tierConfig.label as Record<string, string>)[locale] ||
-    tierConfig.label.zh ||
-    tier;
-
-  const tierColors: Record<string, string> = {
-    free: "bg-gray-100 text-gray-600",
-    basic: "bg-blue-100 text-blue-700",
-    premium: "bg-amber-100 text-amber-700",
-    enterprise: "bg-purple-100 text-purple-700",
-  };
-
   return (
     <Card className="space-y-4 p-6">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">{t("membershipStatus")}</h2>
-        <span className={`rounded-full px-3 py-1 text-sm font-medium ${tierColors[tier]}`}>
-          {tierLabel}
+        <span className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-medium text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
+          {user?.credits || 0} {t("creditUnit")}
         </span>
       </div>
 
@@ -165,7 +150,7 @@ export function MembershipCard({ locale }: MembershipCardProps) {
           {quota.items.some((it) => it.limit !== -1 && it.remaining <= 0) && (
             <p className="text-xs text-red-600">
               {tq("exhausted")}{" "}
-              <Link href={`/${locale}/membership`} className="underline">
+              <Link href={`/${locale}/credits`} className="underline">
                 {tq("upgrade")}
               </Link>
             </p>
@@ -173,16 +158,10 @@ export function MembershipCard({ locale }: MembershipCardProps) {
         </div>
       )}
 
-      {/* 升级入口：跳转 /membership 定价页（收银台），消除"即将上线"死链 */}
-      {tier === "enterprise" ? (
-        <Button className="w-full border border-gray-300 bg-white text-gray-900 hover:bg-gray-50">
-          {t("alreadyHighest")}
-        </Button>
-      ) : (
-        <Link href={`/${locale}/membership`} className="block">
-          <Button className="w-full">{t("upgradeNow")}</Button>
-        </Link>
-      )}
+      {/* 充值入口：跳转 /credits 积分中心充值（取消会员档位后统一走积分） */}
+      <Link href={`/${locale}/credits`} className="block">
+        <Button className="w-full">{t("upgradeNow")}</Button>
+      </Link>
     </Card>
   );
 }

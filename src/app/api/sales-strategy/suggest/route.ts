@@ -22,8 +22,73 @@ import fs from "fs";
 import path from "path";
 import { getDailyReportData, type IntlPriceEntry, type UpcomingEvent } from "@/lib/daily-report-parser";
 import { matchPortByLocation } from "@/lib/port-matcher";
+import { getTokenFromHeaders, verifyToken } from "@/lib/auth";
+import { computeAiCost, deductCredits } from "@/lib/credits/spend";
 
 export const dynamic = "force-dynamic";
+
+/** 销售策略固定名义输入 token 数（无 LLM，按老板要求等效 2000 tokens），token×2 反算积分 */
+const SALES_STRATEGY_NOMINAL_INPUT_TOKENS = 2000;
+
+/** 从 referer / 路径推断 locale（与 quota guard / 各 AI 路由保持一致） */
+function getLocaleFromRequest(request: NextRequest): string {
+  const referer = request.headers.get("referer") || "";
+  const m = referer.match(/\/([a-z]{2})\b/) || referer.match(/\/([a-z]{2})$/);
+  if (m && ["zh", "en", "ru", "es", "pt", "fr", "hi", "ar"].includes(m[1])) {
+    return m[1];
+  }
+  return "zh";
+}
+
+/**
+ * 统一的「登录 + 积分计费」前置闸门（销售策略/无 LLM 类 AI 复用）。
+ * 返回 userId+credits 表示通过；返回 NextResponse 表示应直接返回该错误响应。
+ */
+async function chargeAiRequest(
+  request: NextRequest,
+  reason: string,
+  nominalInputTokens: number
+): Promise<{ userId: string; credits: number } | NextResponse> {
+  const locale = getLocaleFromRequest(request);
+  const token = getTokenFromHeaders(request.headers);
+  const payload = token ? verifyToken(token) : null;
+  if (!payload) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "请登录后使用",
+        code: "AUTH_REQUIRED",
+        rechargeUrl: `/${locale}/credits`,
+      },
+      { status: 401 }
+    );
+  }
+  const cost = computeAiCost({
+    model: "doubao-seed-2-1-pro-260915",
+    inputTokens: nominalInputTokens,
+    outputTokens: 0,
+  });
+  const deduction = await deductCredits(
+    payload.userId,
+    cost.points,
+    reason,
+    cost as unknown as Record<string, unknown>
+  );
+  if (!deduction.ok) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "积分不足，请先充值",
+        code: "INSUFFICIENT_CREDITS",
+        rechargeUrl: `/${locale}/credits`,
+        required: deduction.required,
+        balance: deduction.credits,
+      },
+      { status: 402 }
+    );
+  }
+  return { userId: payload.userId, credits: deduction.credits ?? 0 };
+}
 
 // ===== 类型定义 =====
 
@@ -177,6 +242,10 @@ function isRelevantToIntel(
  */
 export async function POST(request: NextRequest) {
   try {
+    // ── 登录 + 积分计费（销售策略，固定名义 token 成本）──
+    const auth = await chargeAiRequest(request, "销售策略建议", SALES_STRATEGY_NOMINAL_INPUT_TOKENS);
+    if (auth instanceof NextResponse) return auth;
+
     const body = await request.json();
     const {
       brand,
@@ -430,6 +499,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: responseData,
+      creditsBalance: auth.credits,
     });
   } catch (error: any) {
     console.error("[SalesStrategy] 错误:", error);
@@ -448,6 +518,10 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
+    // ── 登录 + 积分计费（销售策略，固定名义 token 成本）──
+    const auth = await chargeAiRequest(request, "销售策略建议", SALES_STRATEGY_NOMINAL_INPUT_TOKENS);
+    if (auth instanceof NextResponse) return auth;
+
     const { searchParams } = new URL(request.url);
     const brand = searchParams.get("brand") || "";
     const category = searchParams.get("category") || "";
@@ -687,6 +761,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: responseData,
+      creditsBalance: auth.credits,
     });
   } catch (error: any) {
     console.error("[SalesStrategy GET] 错误:", error);
