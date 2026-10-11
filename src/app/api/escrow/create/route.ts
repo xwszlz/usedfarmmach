@@ -9,11 +9,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/auth";
 import { prisma, createEscrowOrder } from "@/lib/escrow";
+import { isCnSite } from "@/config/site";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 export async function POST(request: NextRequest) {
+  if (!isCnSite()) {
+    return NextResponse.json({ success: false, error: "SITE_NOT_SUPPORTED" }, { status: 404 });
+  }
   try {
     const user = await getUserFromRequest(request);
     if (!user) {
