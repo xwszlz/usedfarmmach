@@ -258,7 +258,7 @@ export class ExchangeRateService {
         },
       });
 
-      return rate as ExchangeRate | null;
+      return rate as unknown as ExchangeRate | null;
     } catch (error) {
       console.error('从数据库获取汇率失败:', error);
       return null;
@@ -462,7 +462,7 @@ export class ExchangeRateService {
         orderBy: { effectiveDate: 'desc' },
         take: 1000,
       });
-      for (const r of rows as ExchangeRate[]) {
+      for (const r of rows as unknown as ExchangeRate[]) {
         if (!map.has(r.targetCurrency)) map.set(r.targetCurrency, r);
       }
     } catch (error) {
