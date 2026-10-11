@@ -128,7 +128,7 @@
 
     "exhausted": "本月额度已用尽，升级后解锁更多",
 
-    "upgrade": "升级会员",
+    "upgrade": "去充值",
 
     "actions": {
 
@@ -208,17 +208,17 @@
 
     "creditUnit": "分",
 
-    "upgradeNow": "立即升级",
+    "upgradeNow": "去充值",
 
-    "title": "会员中心",
+    "title": "积分中心",
 
-    "membershipStatus": "会员状态",
+    "membershipStatus": "账户状态",
 
     "creditsBalance": "积分余额",
 
     "validUntil": "有效期至",
 
-    "upgrade": "升级会员",
+    "upgrade": "去充值",
 
     "alreadyHighest": "已是最高等级",
 
@@ -397,6 +397,8 @@
   },
 
   "nav": {
+
+    "credits": "积分中心",
 
     "membership": "会员",
 
