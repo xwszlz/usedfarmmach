@@ -260,7 +260,31 @@
 
       "gift": "Gift"
 
-    }
+    },
+
+    "rechargeComRate": "$1 = 1 credit, any amount (secure payment via Stripe)",
+
+    "rechargeCnRate": "¥1 = 1 credit, any amount",
+
+    "payWechat": "WeChat Pay",
+
+    "payAlipay": "Alipay",
+
+    "invalidAmount": "Please enter a valid amount",
+
+    "processing": "Processing…",
+
+    "networkError": "Network error, please try again",
+
+    "scanToPay": "Scan the QR code to pay; {credits} credits will be credited automatically",
+
+    "orderFailed": "Failed to create the top-up order, please try again later",
+
+    "paymentQrAlt": "Payment QR code",
+
+    "freeFeaturesTitle": "Free features",
+
+    "freeFeaturesBody": "Publishing products, sending inquiries and viewing contacts are completely free — no credits required"
 
   },
 
