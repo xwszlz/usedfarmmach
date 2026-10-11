@@ -3,7 +3,8 @@
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Package, Settings, FileText, Tent, Boxes, Shield, Bot, Gavel, FileSignature, ShieldCheck, ScrollText, SlidersHorizontal, Activity, BarChart3, BadgeCheck, Award, Inbox } from "lucide-react";
+import { LayoutDashboard, Users, Package, Settings, FileText, Tent, Boxes, Shield, Bot, Gavel, FileSignature, ShieldCheck, ScrollText, SlidersHorizontal, Activity, BarChart3, BadgeCheck, Award, Inbox, Phone, Upload } from "lucide-react";
+import { SITE } from "@/config/site";
 
 export function AdminSidebar({ role }: { role: string }) {
   const t = useTranslations("nav");
@@ -26,7 +27,9 @@ export function AdminSidebar({ role }: { role: string }) {
     { href: `/${locale}/admin/users`, label: "用户管理", icon: Users, hideForEditor: true },
     { href: `/${locale}/admin/products`, label: "产品管理", icon: Package, hideForEditor: false },
     { href: `/${locale}/admin/raw-listings`, label: "采集审核", icon: Inbox, hideForEditor: true },
-    { href: `/${locale}/admin/leads`, label: "线索池", icon: Inbox, hideForEditor: true },
+    { href: `/${locale}/admin/leads`, label: "线索池", icon: Phone, hideForEditor: true },
+    // 境内线索录入：仅 .cn 站点显示（数据不出境红线），editor 不可见
+    { href: `/${locale}/admin/leads/import`, label: "境内线索录入", icon: Upload, hideForEditor: true, showForSite: "cn" },
     { href: `/${locale}/admin/auction-bookings`, label: "询价报名管理", icon: Gavel, hideForEditor: false },
     { href: `/${locale}/admin/auctioneers`, label: "拍卖师挂靠", icon: BadgeCheck, hideForEditor: true },
     { href: `/${locale}/admin/auction-agencies`, label: "合作持牌机构", icon: Award, hideForEditor: true },
@@ -39,7 +42,13 @@ export function AdminSidebar({ role }: { role: string }) {
     { href: `/${locale}/admin/analytics/views`, label: "浏览量看板", icon: BarChart3, hideForEditor: true },
   ];
 
-  const visibleLinks = links.filter((l) => !(isEditor && l.hideForEditor));
+  const visibleLinks = links.filter((l) => {
+    const siteOk =
+      (l as { showForSite?: "cn" | "com" | "all" }).showForSite === "all" ||
+      (l as { showForSite?: "cn" | "com" | "all" }).showForSite === SITE;
+    const editorOk = !(isEditor && l.hideForEditor);
+    return siteOk && editorOk;
+  });
 
   return (
     <aside className="w-60 border-r bg-gray-50 p-4">

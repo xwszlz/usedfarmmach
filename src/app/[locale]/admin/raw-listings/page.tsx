@@ -34,7 +34,7 @@ export default async function RawListingsPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ status?: string; source?: string; rule?: string; q?: string; page?: string }>;
+  searchParams: Promise<{ status?: string; source?: string; rule?: string; q?: string; model?: string; page?: string }>;
 }) {
   const { locale } = await params;
   const sp = await searchParams;
@@ -54,10 +54,11 @@ export default async function RawListingsPage({
   const source = sp.source || "";
   const rule = sp.rule || "";
   const query = sp.q || "";
+  const model = sp.model || "";
   const page = parseInt(sp.page || "1", 10) || 1;
 
   const [list, brands, categories] = await Promise.all([
-    listRawListings({ status, source: source || undefined, rule: rule || undefined, q: query || undefined, page, pageSize: 30 }),
+    listRawListings({ status, source: source || undefined, rule: rule || undefined, q: query || undefined, model: model || undefined, page, pageSize: 30 }),
     prisma.brand.findMany({ select: { id: true, nameZh: true, nameEn: true }, orderBy: { nameZh: "asc" } }),
     prisma.category.findMany({ select: { id: true, nameZh: true, nameEn: true, parentId: true }, orderBy: { nameZh: "asc" } }),
   ]);
@@ -68,6 +69,7 @@ export default async function RawListingsPage({
     if (source) p.set("source", source);
     if (rule) p.set("rule", rule);
     if (query) p.set("q", query);
+    if (model) p.set("model", model);
     const qs = p.toString();
     return qs ? `?${qs}` : "?";
   };
@@ -111,6 +113,13 @@ export default async function RawListingsPage({
           placeholder="搜索型号/品牌/位置/链接..."
           className="w-64 rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
         />
+        <input
+          name="model"
+          type="text"
+          defaultValue={model}
+          placeholder="机型（俗称/官方，如 2504）..."
+          className="w-56 rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+        />
         <select name="source" defaultValue={source} className="rounded-lg border px-3 py-2 text-sm">
           <option value="">全部来源</option>
           {list.lookups.sources.map((s) => (
@@ -126,8 +135,11 @@ export default async function RawListingsPage({
         <button type="submit" className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700">
           筛选
         </button>
-        {(query || source || rule) && (
-          <Link href={`?status=${status}`} className="rounded-lg border px-3 py-2 text-sm text-gray-500 hover:bg-gray-50">
+        {(query || source || rule || model) && (
+          <Link
+            href={`?status=${status}${model ? `&model=${encodeURIComponent(model)}` : ""}`}
+            className="rounded-lg border px-3 py-2 text-sm text-gray-500 hover:bg-gray-50"
+          >
             清除过滤
           </Link>
         )}
@@ -148,6 +160,7 @@ export default async function RawListingsPage({
             if (source) params2.set("source", source);
             if (rule) params2.set("rule", rule);
             if (query) params2.set("q", query);
+            if (model) params2.set("model", model);
             params2.set("page", String(p));
             return (
               <Link
