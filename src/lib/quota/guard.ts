@@ -60,7 +60,6 @@ export async function ensureQuotaWindow(user: QuotaUser): Promise<QuotaUser> {
       ...user,
       usagePublish: 0,
       usageInquiry: 0,
-      usageAiValuation: 0,
       usageViewContact: 0,
       usagePeriodStart: monthStart,
     };
