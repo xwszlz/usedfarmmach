@@ -235,6 +235,8 @@ model Product {
   descriptionAr         String?
   descriptionFr         String?
   descriptionHi         String?
+  /// 8 语自动翻译元数据：per-locale title/description 译文 + 人工覆盖标记。覆盖式 JSON；需 prisma db push 后生效（勿用 migrate）。
+  translationMeta       Json?
   driveSystem           String?
   enginePower           Int?
   engineType            String?
