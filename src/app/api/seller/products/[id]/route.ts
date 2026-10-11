@@ -6,6 +6,7 @@
  * 权限：仅产品 owner（sellerId === userId）可操作
  */
 import { NextRequest, NextResponse } from "next/server";
+import { cnyToUsd, getUsdPerCny } from "@/lib/exchange-rate";
 import { prisma } from "@/lib/db";
 import { verifyToken, getTokenFromHeaders } from "@/lib/auth";
 import { buildLocationText } from "@/lib/location-parser";
@@ -182,14 +183,12 @@ export async function PUT(
           netWeight: netWeight ? Number(netWeight) : null,
         }),
         ...(condition !== undefined && { condition }),
-        ...(priceCny !== undefined && { priceCny: Number(priceCny) }),
+        ...(priceCny !== undefined && { priceCny: Number(priceCny), priceUsd: cnyToUsd(Number(priceCny), await getUsdPerCny()) }),
         ...(country !== undefined && { country }),
         ...(province !== undefined && { province }),
         ...(city !== undefined && { city }),
         ...(finalLocation !== undefined && { location: finalLocation }),
-        ...(priceCny !== undefined && {
-          priceUsd: Math.round(Number(priceCny) / 7.25),
-        }),
+
         updatedAt: new Date(),
       },
     });
