@@ -1049,7 +1049,17 @@
       "indoorExpo": "Expo Indoor",
       "online": "Online",
       "note": "Nota",
-      "noteDesc": "Os eventos são organizados pelo organizador da expo; os detalhes seguem os anúncios oficiais do organizador."
+      "noteDesc": "Os eventos são organizados pelo organizador da expo; os detalhes seguem os anúncios oficiais do organizador.",
+      "selfPublishCta": "Anuncie sua máquina usada — grátis e online",
+      "selfPublishDesc": "Sem créditos: anuncie e apareça na hora. Mostre sua máquina usada a compradores do mundo todo.",
+      "selfPublishBtn": "Anunciar máquina usada grátis",
+      "videoShowcase": "Vídeos de operação real da WingShow",
+      "showroomShowcase": "Showroom digital — novidades",
+      "viewAll": "Ver tudo",
+      "loading": "Carregando…",
+      "noData": "Sem conteúdo ainda",
+      "playsUnit": "reproduções",
+      "contactAdvisor": "Ou fale com um consultor: "
     },
     "govDashboard": {
       "title": "Painel governamental",

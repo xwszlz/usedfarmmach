@@ -2088,7 +2088,17 @@
 
       "note": "Note",
 
-      "noteDesc": "Events are organized by the event organizer; details are subject to the organizer's official announcements."
+      "noteDesc": "Events are organized by the event organizer; details are subject to the organizer's official announcements.",
+      "selfPublishCta": "List Your Used Machinery — Free & Live",
+      "selfPublishDesc": "No credits required — submit and go live. Show your used machinery to global buyers directly.",
+      "selfPublishBtn": "Publish Used Machinery Free",
+      "videoShowcase": "WingShow Field Operation Videos",
+      "showroomShowcase": "Digital Showroom — New Arrivals",
+      "viewAll": "View All",
+      "loading": "Loading…",
+      "noData": "No content yet",
+      "playsUnit": "plays",
+      "contactAdvisor": "Or contact an advisor: "
 
     },
 

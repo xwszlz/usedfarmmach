@@ -1049,7 +1049,17 @@
       "indoorExpo": "Expo en Interiores",
       "online": "En línea",
       "note": "Nota",
-      "noteDesc": "Los eventos son organizados por el organizador de la expo; los detalles se rigen por los anuncios oficiales del organizador."
+      "noteDesc": "Los eventos son organizados por el organizador de la expo; los detalles se rigen por los anuncios oficiales del organizador.",
+      "selfPublishCta": "Publica tu maquinaria usada — gratis y en línea",
+      "selfPublishDesc": "Sin créditos: publica y aparece al instante. Muestra tu maquinaria usada a compradores de todo el mundo.",
+      "selfPublishBtn": "Publicar maquinaria usada gratis",
+      "videoShowcase": "Vídeos de operación real de WingShow",
+      "showroomShowcase": "Showroom digital — novedades",
+      "viewAll": "Ver todo",
+      "loading": "Cargando…",
+      "noData": "Aún no hay contenido",
+      "playsUnit": "reproducciones",
+      "contactAdvisor": "O contacta a un asesor: "
     },
     "govDashboard": {
       "title": "Panel gubernamental",

@@ -1,14 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   CheckCircle2,
   ArrowRight,
-  Send,
-  Loader2,
+  Play,
 } from "lucide-react";
 import { isCnSite } from "@/config/site";
 
@@ -46,6 +44,16 @@ const TEXTS: Record<string, {
   success: string;
   error: string;
   selectPlaceholder: string;
+  selfPublishCta?: string;
+  selfPublishDesc?: string;
+  selfPublishBtn?: string;
+  videoShowcase?: string;
+  showroomShowcase?: string;
+  viewAll?: string;
+  loading?: string;
+  noData?: string;
+  playsUnit?: string;
+  contactAdvisor?: string;
 }> = {
   zh: {
     badge: "中国农机 · 走向世界",
@@ -133,6 +141,16 @@ const TEXTS: Record<string, {
     success: "提交成功！我们将在24小时内与您联系。",
     error: "提交失败，请稍后重试或直接联系 WhatsApp: +86 15511395016",
     selectPlaceholder: "请选择",
+    selfPublishCta: "二手农机自主发布 · 免费上线",
+    selfPublishDesc: "无需积分，提交即上线。把您的二手农机直接展示给全球买家。",
+    selfPublishBtn: "免费发布二手农机",
+    videoShowcase: "WingShow 真实作业视频精选",
+    showroomShowcase: "数字展厅 · 新品精选",
+    viewAll: "查看全部",
+    loading: "加载中…",
+    noData: "暂无内容",
+    playsUnit: "次播放",
+    contactAdvisor: "或联系顾问：",
   },
   en: {
     badge: "Chinese Machinery · Global Stage",
@@ -220,6 +238,16 @@ const TEXTS: Record<string, {
     success: "Submitted successfully! We'll contact you within 24 hours.",
     error: "Submission failed. Please try again or contact Email: jiusei0319@gmail.com",
     selectPlaceholder: "Please select",
+    selfPublishCta: "List Your Used Machinery — Free & Live",
+    selfPublishDesc: "No credits required — submit and go live. Show your used machinery to global buyers directly.",
+    selfPublishBtn: "Publish Used Machinery Free",
+    videoShowcase: "WingShow Field Operation Videos",
+    showroomShowcase: "Digital Showroom — New Arrivals",
+    viewAll: "View All",
+    loading: "Loading…",
+    noData: "No content yet",
+    playsUnit: "plays",
+    contactAdvisor: "Or contact an advisor: ",
   },
   ru: {
     badge: "Китайская техника · Мировая сцена",
@@ -307,6 +335,16 @@ const TEXTS: Record<string, {
     success: "Заявка отправлена! Мы свяжемся с вами в течение 24 часов.",
     error: "Ошибка отправки. Повторите или напишите WhatsApp: +86 15511395016",
     selectPlaceholder: "Выберите",
+    selfPublishCta: "Самостоятельная публикация б/у техники — бесплатно и сразу в эфире",
+    selfPublishDesc: "Без баллов — опубликовали и сразу в сети. Покажите свою б/у технику покупателям по всему миру.",
+    selfPublishBtn: "Опубликовать б/у технику бесплатно",
+    videoShowcase: "Видео реальной работы WingShow",
+    showroomShowcase: "Цифровой шоурум — новинки",
+    viewAll: "Смотреть всё",
+    loading: "Загрузка…",
+    noData: "Пока нет материалов",
+    playsUnit: "просмотров",
+    contactAdvisor: "Или свяжитесь с консультантом: ",
   },
   es: {
     badge: "Maquinaria China · Escenario Global",
@@ -370,6 +408,16 @@ const TEXTS: Record<string, {
     success: "¡Enviado con éxito! Le contactaremos en 24 horas.",
     error: "Error. Intente de nuevo o contacte Email: jiusei0319@gmail.com",
     selectPlaceholder: "Seleccione",
+    selfPublishCta: "Publica tu maquinaria usada — gratis y en línea",
+    selfPublishDesc: "Sin créditos: publica y aparece al instante. Muestra tu maquinaria usada a compradores de todo el mundo.",
+    selfPublishBtn: "Publicar maquinaria usada gratis",
+    videoShowcase: "Vídeos de operación real de WingShow",
+    showroomShowcase: "Showroom digital — novedades",
+    viewAll: "Ver todo",
+    loading: "Cargando…",
+    noData: "Aún no hay contenido",
+    playsUnit: "reproducciones",
+    contactAdvisor: "O contacta a un asesor: ",
   },
   pt: {
     badge: "Máquinas Chinesas · Palco Global",
@@ -433,6 +481,16 @@ const TEXTS: Record<string, {
     success: "Enviado com sucesso! Entraremos em contato em 24 horas.",
     error: "Erro. Tente novamente ou contate WhatsApp: +86 15511395016",
     selectPlaceholder: "Selecione",
+    selfPublishCta: "Anuncie sua máquina usada — grátis e online",
+    selfPublishDesc: "Sem créditos: anuncie e apareça na hora. Mostre sua máquina usada a compradores do mundo todo.",
+    selfPublishBtn: "Anunciar máquina usada grátis",
+    videoShowcase: "Vídeos de operação real da WingShow",
+    showroomShowcase: "Showroom digital — novidades",
+    viewAll: "Ver tudo",
+    loading: "Carregando…",
+    noData: "Sem conteúdo ainda",
+    playsUnit: "reproduções",
+    contactAdvisor: "Ou fale com um consultor: ",
   },
   ar: {
     badge: "الآلات الصينية · منصة عالمية",
@@ -496,6 +554,16 @@ const TEXTS: Record<string, {
     success: "تم الإرسال بنجاح! سنتواصل معك خلال 24 ساعة.",
     error: "فشل الإرسال. حاول مرة أخرى أو تواصل عبر WhatsApp: +86 15511395016",
     selectPlaceholder: "اختر",
+    selfPublishCta: "انشر معداتك المستعملة — مجاناً ومباشرة",
+    selfPublishDesc: "بدون نقاط: انشر لتظهر فوراً. اعرض معداتك المستعملة على المشترين حول العالم.",
+    selfPublishBtn: "انشر معدات مستعملة مجاناً",
+    videoShowcase: "فيديوهات التشغيل الحقيقي من WingShow",
+    showroomShowcase: "الصالة الرقمية — أحدث الوافدين",
+    viewAll: "عرض الكل",
+    loading: "جارٍ التحميل…",
+    noData: "لا يوجد محتوى بعد",
+    playsUnit: "مشاهدة",
+    contactAdvisor: "أو تواصل مع مستشار: ",
   },
   fr: {
     badge: "Machinerie Chinoise · Scène Mondiale",
@@ -559,6 +627,16 @@ const TEXTS: Record<string, {
     success: "Envoyé avec succès! Nous vous contacterons sous 24 heures.",
     error: "Échec de l'envoi. Réessayez ou contactez Email: jiusei0319@gmail.com",
     selectPlaceholder: "Sélectionner",
+    selfPublishCta: "Publiez votre matériel d'occasion — gratuit et en ligne",
+    selfPublishDesc: "Sans crédits : publiez et c'est en ligne. Présentez votre matériel d'occasion aux acheteurs du monde entier.",
+    selfPublishBtn: "Publier du matériel d'occasion gratuitement",
+    videoShowcase: "Vidéos d'opération réelle WingShow",
+    showroomShowcase: "Showroom numérique — nouveautés",
+    viewAll: "Tout voir",
+    loading: "Chargement…",
+    noData: "Aucun contenu pour le moment",
+    playsUnit: "lectures",
+    contactAdvisor: "Ou contactez un conseiller : ",
   },
   hi: {
     badge: "चीनी मशीनरी · वैश्विक मंच",
@@ -622,6 +700,16 @@ const TEXTS: Record<string, {
     success: "सफलतापूर्वक भेजा गया! हम 24 घंटे में संपर्क करेंगे।",
     error: "भेजना विफल। पुनः प्रयास करें या WhatsApp: +86 15511395016 पर संपर्क करें",
     selectPlaceholder: "चुनें",
+    selfPublishCta: "अपनी इस्तेमाल की गई मशीन स्वयं प्रकाशित करें — मुफ़्त और लाइव",
+    selfPublishDesc: "क्रेडिट की ज़रूरत नहीं — प्रकाशित करें और तुरंत लाइव। अपनी इस्तेमाल की गई मशीन विश्वभर के खरीदारों को दिखाएँ।",
+    selfPublishBtn: "मुफ़्त में इस्तेमाल की गई मशीन प्रकाशित करें",
+    videoShowcase: "WingShow वास्तविक कार्य वीडियो",
+    showroomShowcase: "डिजिटल शोरूम — नई आमद",
+    viewAll: "सभी देखें",
+    loading: "लोड हो रहा है…",
+    noData: "अभी कोई सामग्री नहीं",
+    playsUnit: "बार देखा गया",
+    contactAdvisor: "या सलाहकार से संपर्क करें: ",
   },
 };
 
@@ -657,50 +745,34 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
   const narrative = cn ? null : GLOBAL_NARRATIVE[locale] || GLOBAL_NARRATIVE.en;
   const t = narrative ? { ...base, ...narrative } : base;
   const expoTitle = cn && locale === "zh" ? "神雕农机展™——中国农机的世界舞台" : t.title;
-  const [formData, setFormData] = useState({
-    company: "",
-    contact: "",
-    phone: "",
-    email: "",
-    country: "",
-    category: "",
-    boothType: "",
-    message: "",
-  });
-  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-  ) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setStatus("submitting");
-    try {
-      const res = await fetch("/api/expo/inquiry", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, locale }),
+  const [videos, setVideos] = useState<{ id: string; brandName: string; machineType: string; playCount: number }[]>([]);
+  const [videosLoading, setVideosLoading] = useState(true);
+  const [items, setItems] = useState<any[]>([]);
+  const [itemsLoading, setItemsLoading] = useState(true);
+  useEffect(() => {
+    let active = true;
+    fetch("/api/field-videos/list")
+      .then((r) => r.json())
+      .then((d) => {
+        if (active && d?.success) setVideos(d.videos || []);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (active) setVideosLoading(false);
       });
-      if (!res.ok) throw new Error("submit failed");
-      setStatus("success");
-      setFormData({
-        company: "",
-        contact: "",
-        phone: "",
-        email: "",
-        country: "",
-        category: "",
-        boothType: "",
-        message: "",
+    fetch("/api/expo/showroom?itemType=new&limit=8")
+      .then((r) => r.json())
+      .then((d) => {
+        if (active && Array.isArray(d?.items)) setItems(d.items);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (active) setItemsLoading(false);
       });
-    } catch {
-      setStatus("error");
-    }
-  };
-
+    return () => {
+      active = false;
+    };
+  }, []);
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -721,7 +793,7 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
             {t.subtitle}
           </p>
           <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-            <a href="#inquiry-form">
+            <a href={`/${locale}/seller/products/new`}>
               <Button size="lg" className="w-full bg-red-600 hover:bg-red-700 sm:w-auto">
                 {t.cta}
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -934,176 +1006,95 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
         </section>
       )}
 
-      {/* Inquiry Form */}
-      <section id="inquiry-form" className="mx-auto max-w-2xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="text-center">
-          <h2 className="mb-3 text-3xl font-bold text-gray-900">{t.formTitle}</h2>
-          <p className="mb-8 text-gray-600">{t.formSubtitle}</p>
+      {/* Self-Publish Showcase */}
+      <section id="showcase" className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
+        {/* CTA card */}
+        <div className="mb-12 overflow-hidden rounded-3xl bg-gradient-to-br from-red-600 via-red-600 to-amber-600 p-8 text-center shadow-xl sm:p-12">
+          <h2 className="mb-3 text-3xl font-bold text-white sm:text-4xl">{t.selfPublishCta}</h2>
+          <p className="mx-auto mb-8 max-w-2xl text-red-50">{t.selfPublishDesc}</p>
+          <Link href={`/${locale}/seller/products/new`}>
+            <Button size="lg" className="w-full bg-white text-red-700 hover:bg-red-50 sm:w-auto">
+              {t.selfPublishBtn}
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </Link>
         </div>
 
-        {status === "success" ? (
-          <Card className="border-green-200 bg-green-50">
-            <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
-              <CheckCircle2 className="h-12 w-12 text-green-500" />
-              <p className="text-lg font-medium text-green-800">{t.success}</p>
-              <Button
-                variant="outline"
-                onClick={() => setStatus("idle")}
-              >
-                {locale === "zh" ? "再次提交" : "Submit Another"}
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card>
-            <CardContent className="p-6 sm:p-8">
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">
-                      {t.fields.company} <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="company"
-                      required
-                      value={formData.company}
-                      onChange={handleChange}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-200"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">
-                      {t.fields.contact} <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="contact"
-                      required
-                      value={formData.contact}
-                      onChange={handleChange}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-200"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">
-                      {t.fields.phone} <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      required
-                      value={formData.phone}
-                      onChange={handleChange}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-200"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">
-                      {t.fields.email}
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-200"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">
-                      {t.fields.country} <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="country"
-                      required
-                      value={formData.country}
-                      onChange={handleChange}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-200"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">
-                      {t.fields.category}
-                    </label>
-                    <select
-                      name="category"
-                      value={formData.category}
-                      onChange={handleChange}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-200"
-                    >
-                      <option value="">{t.selectPlaceholder}</option>
-                      {t.categoryOptions.map((opt) => (
-                        <option key={opt} value={opt}>{opt}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    {t.fields.boothType}
-                  </label>
-                  <select
-                    name="boothType"
-                    value={formData.boothType}
-                    onChange={handleChange}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-200"
-                  >
-                    <option value="">{t.selectPlaceholder}</option>
-                    {t.boothOptions.map((opt) => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    {t.fields.message}
-                  </label>
-                  <textarea
-                    name="message"
-                    rows={3}
-                    value={formData.message}
-                    onChange={handleChange}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-200"
-                  />
-                </div>
-
-                {status === "error" && (
-                  <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
-                    {t.error}
-                  </div>
-                )}
-
-                <Button
-                  type="submit"
-                  size="lg"
-                  disabled={status === "submitting"}
-                  className="w-full bg-red-600 hover:bg-red-700"
+        {/* A. WingShow field-operation video showcase */}
+        <div className="mb-12">
+          <div className="mb-6 flex items-end justify-between">
+            <h3 className="text-2xl font-bold text-gray-900">{t.videoShowcase}</h3>
+            <Link href={`/${locale}/expo/field-videos`} className="text-sm font-medium text-red-600 hover:underline">
+              {t.viewAll} <ArrowRight className="ml-1 inline h-4 w-4" />
+            </Link>
+          </div>
+          {videosLoading ? (
+            <p className="text-gray-500">{t.loading}</p>
+          ) : videos.length === 0 ? (
+            <p className="text-gray-500">{t.noData}</p>
+          ) : (
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {videos.slice(0, 6).map((v) => (
+                <Link
+                  key={v.id}
+                  href={`/${locale}/expo/field-videos`}
+                  className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:shadow-lg"
                 >
-                  {status === "submitting" ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {t.submitting}
-                    </>
-                  ) : (
-                    <>
-                      <Send className="mr-2 h-4 w-4" />
-                      {t.submit}
-                    </>
-                  )}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Contact info */}
+                  <div className="relative flex aspect-video items-center justify-center bg-gradient-to-br from-green-600 to-emerald-700">
+                    <Play className="h-12 w-12 text-white/90" />
+                    <span className="absolute bottom-2 right-2 rounded-full bg-black/60 px-2 py-0.5 text-xs text-white">
+                      {v.playCount ?? 0} {t.playsUnit}
+                    </span>
+                  </div>
+                  <div className="p-4">
+                    <p className="line-clamp-2 font-medium text-gray-900">{v.brandName}</p>
+                    <p className="mt-1 text-sm text-gray-500">{v.machineType}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+        {/* B. Digital showroom showcase */}
+        <div className="mb-12">
+          <div className="mb-6 flex items-end justify-between">
+            <h3 className="text-2xl font-bold text-gray-900">{t.showroomShowcase}</h3>
+            <Link href={`/${locale}/expo/showroom`} className="text-sm font-medium text-red-600 hover:underline">
+              {t.viewAll} <ArrowRight className="ml-1 inline h-4 w-4" />
+            </Link>
+          </div>
+          {itemsLoading ? (
+            <p className="text-gray-500">{t.loading}</p>
+          ) : items.length === 0 ? (
+            <p className="text-gray-500">{t.noData}</p>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+              {items.slice(0, 8).map((it) => (
+                <Link
+                  key={it.id}
+                  href={`/${locale}/expo/showroom/${it.id}`}
+                  className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:shadow-lg"
+                >
+                  <div className="flex aspect-square items-center justify-center bg-gray-100">
+                    {it.coverImage ? (
+                      <img src={it.coverImage} alt={`${it.brand || ""} ${it.model || ""}`.trim() || it.deviceType || ""} className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="text-4xl">🚜</span>
+                    )}
+                  </div>
+                  <div className="p-3">
+                    <p className="line-clamp-1 font-medium text-gray-900">{`${it.brand || ""} ${it.model || ""}`.trim() || it.deviceType}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+        {/* Contact line */}
         <div className="mt-8 text-center text-sm text-gray-500">
           <p>
-            Email: jiusei0319@gmail.com
+            {t.contactAdvisor}
+            <a href="mailto:jiusei0319@gmail.com" className="text-red-600 hover:underline">jiusei0319@gmail.com</a>
           </p>
         </div>
       </section>

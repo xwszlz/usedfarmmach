@@ -1049,7 +1049,17 @@
       "indoorExpo": "Expo en salle",
       "online": "En ligne",
       "note": "Note",
-      "noteDesc": "Les événements sont organisés par l'organisateur de l'expo ; les modalités sont celles annoncées officiellement par l'organisateur."
+      "noteDesc": "Les événements sont organisés par l'organisateur de l'expo ; les modalités sont celles annoncées officiellement par l'organisateur.",
+      "selfPublishCta": "Publiez votre matériel d'occasion — gratuit et en ligne",
+      "selfPublishDesc": "Sans crédits : publiez et c'est en ligne. Présentez votre matériel d'occasion aux acheteurs du monde entier.",
+      "selfPublishBtn": "Publier du matériel d'occasion gratuitement",
+      "videoShowcase": "Vidéos d'opération réelle WingShow",
+      "showroomShowcase": "Showroom numérique — nouveautés",
+      "viewAll": "Tout voir",
+      "loading": "Chargement…",
+      "noData": "Aucun contenu pour le moment",
+      "playsUnit": "lectures",
+      "contactAdvisor": "Ou contactez un conseiller : "
     },
     "govDashboard": {
       "title": "Tableau de bord gouvernemental",
