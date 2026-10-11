@@ -7,10 +7,15 @@
 
 import axios from "axios";
 import { isOverseasAiAllowed } from "@/config/site";
+import { recordUsage, ESTIMATED_TOKENS } from "@/lib/credits/usage-collector";
 
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || "";
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
 const OPENROUTER_BASE = "https://openrouter.ai/api/v1";
+
+// 模型标识：必须与 src/lib/credits/spend.ts 的 MODEL_PRICING 键一致（改模型要同步改两边）
+const GEMINI_MODEL = "gemini-1.5-flash";
+const OPENROUTER_VISION_MODEL = "meta-llama/llama-3.2-11b-vision-instruct";
 
 // 🔴 合规：.cn 站数据不出境 —— Gemini / OpenRouter 均为境外服务，一律禁用。
 // 模块级常量：站点在进程生命周期内不变，可安全提升到模块作用域。
@@ -162,6 +167,15 @@ JSON字段说明：
   console.log(`[ImageAnalyzer] Gemini API 调用成功！`);
   console.log(`[ImageAnalyzer] 响应状态:`, response.status);
 
+  // ── 计费归集：HTTP 一成功就记账（token 已被消耗，与后续 JSON 解析是否成功无关）──
+  const geminiUsage = (response.data as any).usageMetadata;
+  recordUsage(
+    GEMINI_MODEL,
+    geminiUsage?.promptTokenCount ?? ESTIMATED_TOKENS.input,
+    geminiUsage?.candidatesTokenCount ?? ESTIMATED_TOKENS.output,
+    { estimated: !geminiUsage }
+  );
+
   const candidates = (response.data as any).candidates || [];
   if (candidates.length === 0) {
     throw new Error('Gemini API 返回空结果');
@@ -278,6 +292,15 @@ JSON字段说明：
 
   console.log(`[ImageAnalyzer] API 调用成功！`);
   console.log(`[ImageAnalyzer] 响应状态:`, response.status);
+
+  // ── 计费归集：OpenRouter 走 OpenAI 兼容 usage 字段 ──
+  const routerUsage = (response.data as any).usage;
+  recordUsage(
+    OPENROUTER_VISION_MODEL,
+    routerUsage?.prompt_tokens ?? ESTIMATED_TOKENS.input,
+    routerUsage?.completion_tokens ?? ESTIMATED_TOKENS.output,
+    { estimated: !routerUsage }
+  );
 
   const aiText = (response.data as any).choices?.[0]?.message?.content || "";
   console.log(`[ImageAnalyzer] AI 返回文本长度: ${aiText.length}`);
