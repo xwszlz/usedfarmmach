@@ -36,7 +36,7 @@ export const TJ_FAQS: Record<string, ExpoFaqItem[]> = {
     },
     {
       q: "线上展台（神雕云展）包含哪些内容？",
-      a: "包含 365 天在线的线上展台、图片与视频上传、8 语种产品页、浏览量与询价数据查看。展台可免费开通，展品数量与配套服务按你选择的档位确定。",
+      a: "包含常年在线的线上展台、图片与视频上传、8 语种产品页、浏览量与询价数据查看。展台可免费开通，展品数量与配套服务按你选择的档位确定。",
     },
     {
       q: "我想申报线下展位，应该找谁？",
@@ -58,7 +58,7 @@ export const TJ_FAQS: Record<string, ExpoFaqItem[]> = {
     },
     {
       q: "What is included in the online booth (Shendiao Cloud Expo)?",
-      a: "A 365-day online booth, photo and video upload, 8-language product pages, and access to view and inquiry statistics. The booth can be opened for free; listing volume and services depend on the tier you choose.",
+      a: "A year-round online booth, photo and video upload, 8-language product pages, and access to view and inquiry statistics. The booth can be opened for free; listing volume and services depend on the tier you choose.",
     },
     {
       q: "I want to apply for an on-site booth — who should I contact?",
@@ -80,7 +80,7 @@ export const TJ_FAQS: Record<string, ExpoFaqItem[]> = {
     },
     {
       q: "Что входит в онлайн-стенд Shendiao Cloud Expo?",
-      a: "Онлайн-стенд на 365 дней, загрузка фото и видео, карточки товаров на 8 языках, статистика просмотров и запросов. Стенд открывается бесплатно; объём размещения и сервисы зависят от выбранного тарифа.",
+      a: "Онлайн-стенд, доступный круглый год, загрузка фото и видео, карточки товаров на 8 языках, статистика просмотров и запросов. Стенд открывается бесплатно; объём размещения и сервисы зависят от выбранного тарифа.",
     },
     {
       q: "Хочу оформить офлайн-стенд — к кому обращаться?",
@@ -102,7 +102,7 @@ export const TJ_FAQS: Record<string, ExpoFaqItem[]> = {
     },
     {
       q: "¿Qué incluye el stand online (Shendiao Cloud Expo)?",
-      a: "Un stand online de 365 días, carga de fotos y vídeo, páginas de producto en 8 idiomas y acceso a las estadísticas de visitas y consultas. El stand puede abrirse gratis; el volumen de publicaciones y los servicios dependen del plan que elija.",
+      a: "Un stand online permanente, carga de fotos y vídeo, páginas de producto en 8 idiomas y acceso a las estadísticas de visitas y consultas. El stand puede abrirse gratis; el volumen de publicaciones y los servicios dependen del plan que elija.",
     },
     {
       q: "Quiero solicitar un stand presencial, ¿con quién debo contactar?",
@@ -124,7 +124,7 @@ export const TJ_FAQS: Record<string, ExpoFaqItem[]> = {
     },
     {
       q: "O que está incluído no estande online (Shendiao Cloud Expo)?",
-      a: "Um estande online de 365 dias, upload de fotos e vídeos, páginas de produto em 8 idiomas e acesso às estatísticas de visualizações e consultas. O estande pode ser aberto gratuitamente; o volume de anúncios e os serviços dependem do plano escolhido.",
+      a: "Um estande online permanente, upload de fotos e vídeos, páginas de produto em 8 idiomas e acesso às estatísticas de visualizações e consultas. O estande pode ser aberto gratuitamente; o volume de anúncios e os serviços dependem do plano escolhido.",
     },
     {
       q: "Quero solicitar um estande presencial — com quem devo falar?",
@@ -146,7 +146,7 @@ export const TJ_FAQS: Record<string, ExpoFaqItem[]> = {
     },
     {
       q: "ماذا يشمل الجناح الإلكتروني (Shendiao Cloud Expo)؟",
-      a: "جناح إلكتروني لمدة 365 يومًا، ورفع الصور والفيديو، وصفحات منتجات بثماني لغات، والاطلاع على إحصاءات المشاهدات والاستفسارات. يمكن فتح الجناح مجانًا؛ ويعتمد حجم الإدراج والخدمات على الباقة التي تختارها.",
+      a: "جناح إلكتروني دائم على مدار العام، ورفع الصور والفيديو، وصفحات منتجات بثماني لغات، والاطلاع على إحصاءات المشاهدات والاستفسارات. يمكن فتح الجناح مجانًا؛ ويعتمد حجم الإدراج والخدمات على الباقة التي تختارها.",
     },
     {
       q: "أرغب في التقديم على جناح حضوري — بمن أتواصل؟",
@@ -168,7 +168,7 @@ export const TJ_FAQS: Record<string, ExpoFaqItem[]> = {
     },
     {
       q: "Que comprend le stand en ligne (Shendiao Cloud Expo) ?",
-      a: "Un stand en ligne de 365 jours, l'envoi de photos et de vidéos, des pages produits en 8 langues et l'accès aux statistiques de vues et de demandes. Le stand peut être ouvert gratuitement ; le volume de publications et les services dépendent de la formule choisie.",
+      a: "Un stand en ligne permanent, l'envoi de photos et de vidéos, des pages produits en 8 langues et l'accès aux statistiques de vues et de demandes. Le stand peut être ouvert gratuitement ; le volume de publications et les services dépendent de la formule choisie.",
     },
     {
       q: "Je souhaite demander un stand physique — à qui m'adresser ?",
@@ -190,7 +190,7 @@ export const TJ_FAQS: Record<string, ExpoFaqItem[]> = {
     },
     {
       q: "ऑनलाइन स्टॉल (शेंडियाओ क्लाउड एक्सपो) में क्या शामिल है?",
-      a: "365 दिन का ऑनलाइन स्टॉल, फोटो और वीडियो अपलोड, 8 भाषाओं वाले उत्पाद पृष्ठ, तथा व्यू और पूछताछ के आँकड़े देखने की सुविधा। स्टॉल निःशुल्क खोला जा सकता है; लिस्टिंग की संख्या और सेवाएँ आपके चुने हुए प्लान पर निर्भर करती हैं।",
+      a: "पूरे साल उपलब्ध ऑनलाइन स्टॉल, फोटो और वीडियो अपलोड, 8 भाषाओं वाले उत्पाद पृष्ठ, तथा व्यू और पूछताछ के आँकड़े देखने की सुविधा। स्टॉल निःशुल्क खोला जा सकता है; लिस्टिंग की संख्या और सेवाएँ आपके चुने हुए प्लान पर निर्भर करती हैं।",
     },
     {
       q: "मैं स्थल पर स्टॉल हेतु आवेदन करना चाहता हूँ — किससे संपर्क करूँ?",

@@ -49,7 +49,7 @@ const TEXTS: Record<string, TianjinTexts> = {
   zh: {
     badge: "2026 展会季 · 天津站",
     h1: "2026 中国国际农业机械展览会（10月26–28日 · 天津）｜ 神雕农机展™ 参展服务专题",
-    sub: "现场展位 3 天，线上展台 365 天。神雕农机为参展企业开通 8 语种线上展台（神雕云展），把展会三天的曝光延长到一整年。",
+    sub: "现场展位 3 天，线上展台常年展示。神雕农机为参展企业开通 8 语种线上展台（神雕云展），把展会三天的曝光变成常年在线的全球窗口。",
     disclaimer: "本页为神雕农机自有服务，非本届展会官方网站；展会信息以主办方公告为准。",
     factsTitle: "展会基本信息",
     facts: [
@@ -71,7 +71,7 @@ const TEXTS: Record<string, TianjinTexts> = {
     whyTitle: "为什么还需要一个线上第二展位",
     why: [
       {
-        title: "线下 3 天，线上 365 天",
+        title: "线下 3 天，线上常年展示",
         desc: "展位在 10 月 28 日撤展，询盘在 11 月才陆续到来。神雕云展线上展台全年在线，展期流量带走，展后流量还在。",
       },
       {
@@ -85,7 +85,7 @@ const TEXTS: Record<string, TianjinTexts> = {
     ],
     offerTitle: "神雕农机在现场提供什么",
     offers: [
-      "开通神雕云展线上展台，365 天在线，可传图片与视频",
+      "开通神雕云展线上展台，常年在线展示，可传图片与视频",
       "8 语种产品页同步展示，覆盖俄语区、中亚、东南亚买家",
       "展台后台可查看浏览量与询价记录",
       "神雕展翼™ 真实作业视频，为展机提供可核验的工况佐证",
@@ -94,16 +94,16 @@ const TEXTS: Record<string, TianjinTexts> = {
     ],
     crossTitle: "天津场：面向全国展商的 8 语种出海窗口",
     crossBody:
-      "本届展会是全国性农机展，参展企业覆盖整机、配件与服务商。神雕农机在其中承担一件事：把你在展台上的机器，翻译进 8 个语种、推给海外买家，并且在展会结束后继续在线。现场登记即可开通，展后内容由我们协助完善。",
-    stepsTitle: "三步入驻",
+      "本届展会是全国性农机展，参展企业覆盖整机、配件与服务商。神雕农机在其中承担一件事：把你在展台上的机器，翻译进 8 个语种、推给海外买家，并且在展会结束后继续在线。注册后即可自主发布，展后内容由我们协助完善。",
+    stepsTitle: "三步自主发布 · 无需申请审批",
     steps: [
-      { title: "登记", desc: "现场扫码或在本页填写信息，30 秒完成建档" },
-      { title: "传机器", desc: "拍照上传，AI 识别机型与年份，补 3 个字段即可" },
-      { title: "上线", desc: "线上展台自动开通，8 语种页面同步上线，有人询价会通知你" },
+      { title: "注册/登录", desc: "统一登录后进入「发布机器」页，发布免积分" },
+      { title: "发布机器", desc: "拍照上传，AI 识别机型与年份，补 3 个字段即可，提交即生效" },
+      { title: "常年展示", desc: "无需审批，发布即常年在线，8 语种页面同步上线，有人询价会通知你" },
     ],
     faqTitle: "常见问题",
-    ctaTitle: "现场展位 3 天，线上展台 365 天",
-    ctaSub: "填写以下信息，我们在展前与你确认线上展台开通事宜。",
+    ctaTitle: "现场展位 3 天，线上展台常年展示",
+    ctaSub: "无需申请审批：注册后即可自主发布，机器立即常年在线。需要我们协助？填写以下信息，顾问帮你操作。",
     secondaryCta: "先看看线上展厅",
     sourceTitle: "信息来源与免责声明",
     sourceNote:
@@ -112,7 +112,7 @@ const TEXTS: Record<string, TianjinTexts> = {
   en: {
     badge: "2026 Expo Season · Tianjin",
     h1: "2026 China International Agricultural Machinery Exhibition (Oct 26–28 · Tianjin) | Shendiao Agri-Machinery Expo™ On-Site Service",
-    sub: "An on-site booth lasts 3 days. An online booth lasts 365. Shendiao opens an 8-language online booth (Shendiao Cloud Expo) for exhibitors, extending three days of exposure across a full year.",
+    sub: "An on-site booth lasts 3 days. Your online booth stays up year-round. Shendiao opens an 8-language online booth (Shendiao Cloud Expo) for exhibitors, turning three days of exposure into a permanent global storefront.",
     disclaimer:
       "This page is a Shendiao Agri-Machinery service page, not the official expo website. Expo details are subject to the organizer's announcements.",
     factsTitle: "Expo Facts",
@@ -135,7 +135,7 @@ const TEXTS: Record<string, TianjinTexts> = {
     whyTitle: "Why you need a second, online booth",
     why: [
       {
-        title: "3 days on site, 365 days online",
+        title: "3 days on site, year-round online",
         desc: "Your booth comes down on Oct 28; inquiries keep arriving in November. A Shendiao Cloud Expo booth keeps working long after the halls close.",
       },
       {
@@ -149,7 +149,7 @@ const TEXTS: Record<string, TianjinTexts> = {
     ],
     offerTitle: "What Shendiao offers on site",
     offers: [
-      "Shendiao Cloud Expo online booth — 365 days online, photos and video supported",
+      "Shendiao Cloud Expo online booth — displayed year-round, photos and video supported",
       "8-language product pages reaching Russian-speaking, Central Asian and Southeast Asian buyers",
       "Booth dashboard with view counts and inquiry records",
       "Shendiao WingShow™ field-operation video as verifiable proof of working condition",
@@ -158,16 +158,16 @@ const TEXTS: Record<string, TianjinTexts> = {
     ],
     crossTitle: "Tianjin: an 8-language export window for exhibitors nationwide",
     crossBody:
-      "This is a national-level show covering complete machines, parts and service providers. Shendiao does one thing here: translate the machines on your stand into 8 languages, push them to overseas buyers, and keep them online after the show closes. Register on site to get started; we help you complete the listing afterwards.",
-    stepsTitle: "Three steps to get listed",
+      "This is a national-level show covering complete machines, parts and service providers. Shendiao does one thing here: translate the machines on your stand into 8 languages, push them to overseas buyers, and keep them online after the show closes. Register online to publish it yourself; we help you complete the listing afterwards.",
+    stepsTitle: "Publish it yourself in 3 steps — no application, no approval",
     steps: [
-      { title: "Register", desc: "Scan the QR code at our booth or fill in this form — done in 30 seconds" },
-      { title: "Add machines", desc: "Upload a photo, AI detects brand and year, fill in 3 fields" },
-      { title: "Go live", desc: "Your online booth opens automatically in 8 languages; inquiries reach you directly" },
+      { title: "Register / Log in", desc: "Unified login takes you to the 'Publish machine' page — publishing is free, no credits needed" },
+      { title: "Publish your machine", desc: "Upload a photo, AI detects brand and year, fill in 3 fields — it goes live instantly" },
+      { title: "Year-round display", desc: "No approval queue: live and searchable year-round in 8 languages; inquiries reach you directly" },
     ],
     faqTitle: "FAQ",
-    ctaTitle: "An on-site booth lasts 3 days. An online booth lasts 365.",
-    ctaSub: "Fill in the form and we will confirm your online booth before the expo opens.",
+    ctaTitle: "An on-site booth lasts 3 days. Your online booth stays up year-round.",
+    ctaSub: "No application or approval needed — register and publish yourself; your machine goes live year-round. Need a hand? Fill in the form and an advisor will help.",
     secondaryCta: "Browse the online showroom first",
     sourceTitle: "Sources & Disclaimer",
     sourceNote:
@@ -176,7 +176,7 @@ const TEXTS: Record<string, TianjinTexts> = {
   ru: {
     badge: "Сезон выставок 2026 · Тяньцзинь",
     h1: "Китайская международная выставка сельхозтехники 2026 (26–28 октября · Тяньцзинь) | Shendiao Agri-Machinery Expo™ — сервисная страница",
-    sub: "Офлайн-стенд работает 3 дня, онлайн-стенд — 365. Shendiao открывает онлайн-стенд Shendiao Cloud Expo на 8 языках для экспонентов, продлевая три выставочных дня на целый год.",
+    sub: "Офлайн-стенд работает 3 дня, онлайн-стенд доступен круглый год. Shendiao открывает онлайн-стенд Shendiao Cloud Expo на 8 языках для экспонентов, превращая три дня выставки в постоянную витрину для зарубежных покупателей.",
     disclaimer:
       "Это сервисная страница Shendiao, а не официальный сайт выставки. Сведения о выставке уточняйте в объявлениях организатора.",
     factsTitle: "Основные сведения",
@@ -199,7 +199,7 @@ const TEXTS: Record<string, TianjinTexts> = {
     whyTitle: "Зачем нужен второй, онлайн-стенд",
     why: [
       {
-        title: "3 дня офлайн, 365 дней онлайн",
+        title: "3 дня офлайн, онлайн — круглый год",
         desc: "Стенд разбирают 28 октября, а запросы продолжают приходить в ноябре. Онлайн-стенд Shendiao Cloud Expo работает и после закрытия павильонов.",
       },
       {
@@ -213,7 +213,7 @@ const TEXTS: Record<string, TianjinTexts> = {
     ],
     offerTitle: "Что Shendiao предлагает на выставке",
     offers: [
-      "Онлайн-стенд Shendiao Cloud Expo — 365 дней, фото и видео",
+      "Онлайн-стенд Shendiao Cloud Expo — постоянный показ, фото и видео",
       "Карточки товаров на 8 языках для покупателей из России, Центральной и Юго-Восточной Азии",
       "Личный кабинет стенда: просмотры и запросы",
       "Видео реальной работы Shendiao WingShow™ — подтверждаемое состояние машины",
@@ -222,16 +222,16 @@ const TEXTS: Record<string, TianjinTexts> = {
     ],
     crossTitle: "Тяньцзинь: окно экспорта на 8 языках для экспонентов со всей страны",
     crossBody:
-      "Это выставка национального уровня: машины в сборе, запчасти и сервисные компании. Задача Shendiao здесь одна — перевести технику на вашем стенде на 8 языков, показать её зарубежным покупателям и оставить онлайн после закрытия. Зарегистрируйтесь на стенде, заполнение карточек поможем завершить после выставки.",
-    stepsTitle: "Три шага к размещению",
+      "Это выставка национального уровня: машины в сборе, запчасти и сервисные компании. Задача Shendiao здесь одна — перевести технику на вашем стенде на 8 языков, показать её зарубежным покупателям и оставить онлайн после закрытия. Опубликуйте технику сами на сайте, заполнение карточек поможем завершить после выставки.",
+    stepsTitle: "Три шага к самостоятельной публикации — без заявок и согласований",
     steps: [
-      { title: "Регистрация", desc: "Отсканируйте код на стенде или заполните форму — около 30 секунд" },
-      { title: "Машина", desc: "Загрузите фото — ИИ определит бренд и год, останется 3 поля" },
-      { title: "Публикация", desc: "Стенд открывается автоматически на 8 языках, запросы приходят вам" },
+      { title: "Регистрация / вход", desc: "Единый вход ведёт на страницу «Публикация техники» — бесплатно, без списаний" },
+      { title: "Публикация машины", desc: "Загрузите фото — ИИ определит бренд и год, останется 3 поля; публикация мгновенная" },
+      { title: "Круглогодичный показ", desc: "Без согласований: сразу онлайн на 8 языках, запросы приходят вам" },
     ],
     faqTitle: "Вопросы и ответы",
-    ctaTitle: "Офлайн-стенд — 3 дня. Онлайн-стенд — 365 дней.",
-    ctaSub: "Заполните форму, и мы подтвердим открытие онлайн-стенда до начала выставки.",
+    ctaTitle: "Офлайн-стенд — 3 дня. Онлайн-стенд — круглый год.",
+    ctaSub: "Без заявок и согласований: зарегистрируйтесь и опубликуйте технику сами — она сразу в сети круглый год. Нужна помощь? Заполните форму, и консультант всё сделает с вами.",
     secondaryCta: "Сначала посмотреть онлайн-шоурум",
     sourceTitle: "Источники и оговорка",
     sourceNote:
@@ -240,7 +240,7 @@ const TEXTS: Record<string, TianjinTexts> = {
   es: {
     badge: "Temporada de ferias 2026 · Tianjin",
     h1: "Exposición Internacional de Maquinaria Agrícola de China 2026 (26–28 de octubre · Tianjin) | Servicio en feria Shendiao Agri-Machinery Expo™",
-    sub: "Un stand presencial dura 3 días; un stand online, 365. Shendiao abre un stand online en 8 idiomas (Shendiao Cloud Expo) para los expositores y prolonga tres días de exposición a todo un año.",
+    sub: "Un stand presencial dura 3 días; tu stand online permanece todo el año. Shendiao abre un stand online en 8 idiomas (Shendiao Cloud Expo) para los expositores y convierte tres días de exposición en una vitrina global permanente.",
     disclaimer:
       "Esta página es un servicio propio de Shendiao Agri-Machinery, no la web oficial de la feria. Los datos de la feria están sujetos a los anuncios del organizador.",
     factsTitle: "Datos básicos de la feria",
@@ -263,7 +263,7 @@ const TEXTS: Record<string, TianjinTexts> = {
     whyTitle: "Por qué necesitas un segundo stand, online",
     why: [
       {
-        title: "3 días presenciales, 365 días online",
+        title: "3 días presenciales, online todo el año",
         desc: "Tu stand se desmonta el 28 de octubre, pero las consultas siguen llegando en noviembre. Un stand online de Shendiao Cloud Expo sigue trabajando cuando las salas ya están cerradas.",
       },
       {
@@ -277,7 +277,7 @@ const TEXTS: Record<string, TianjinTexts> = {
     ],
     offerTitle: "Qué ofrece Shendiao en la feria",
     offers: [
-      "Stand online de Shendiao Cloud Expo: 365 días en línea, con fotos y vídeo",
+      "Stand online de Shendiao Cloud Expo: exposición permanente, con fotos y vídeo",
       "Páginas de producto en 8 idiomas que llegan a compradores de Rusia, Asia Central y el Sudeste Asiático",
       "Panel del stand con visitas y registros de consulta",
       "Vídeo real de trabajo de Shendiao WingShow™ como prueba verificable del estado de la máquina",
@@ -286,16 +286,16 @@ const TEXTS: Record<string, TianjinTexts> = {
     ],
     crossTitle: "Tianjin: una ventana de exportación en 8 idiomas para expositores de todo el país",
     crossBody:
-      "Esta es una feria de ámbito nacional que abarca máquinas completas, repuestos y proveedores de servicios. Shendiao hace aquí una sola cosa: traducir las máquinas de tu stand a 8 idiomas, mostrarlas a compradores extranjeros y mantenerlas en línea tras la feria. Regístrate en el stand para empezar; te ayudamos a completar la ficha después.",
-    stepsTitle: "Tres pasos para publicar",
+      "Esta es una feria de ámbito nacional que abarca máquinas completas, repuestos y proveedores de servicios. Shendiao hace aquí una sola cosa: traducir las máquinas de tu stand a 8 idiomas, mostrarlas a compradores extranjeros y mantenerlas en línea tras la feria. Regístrate en la web y publícalo tú mismo para empezar; te ayudamos a completar la ficha después.",
+    stepsTitle: "Publícalo tú mismo en 3 pasos — sin solicitudes ni aprobaciones",
     steps: [
-      { title: "Regístrate", desc: "Escanea el código QR en el stand o rellena este formulario: listo en 30 segundos" },
-      { title: "Sube tus máquinas", desc: "Sube una foto; la IA detecta marca y año, solo rellenas 3 campos" },
-      { title: "Publica", desc: "Tu stand online se abre automáticamente en 8 idiomas; las consultas te llegan directamente" },
+      { title: "Regístrate / inicia sesión", desc: "El acceso unificado te lleva a la página «Publicar máquina»; publicar es gratis" },
+      { title: "Publica tu máquina", desc: "Sube una foto; la IA detecta marca y año, rellenas 3 campos y queda publicada al instante" },
+      { title: "Exposición permanente", desc: "Sin aprobaciones: en línea todo el año en 8 idiomas; las consultas te llegan directamente" },
     ],
     faqTitle: "Preguntas frecuentes",
-    ctaTitle: "Un stand presencial dura 3 días. Un stand online, 365.",
-    ctaSub: "Rellena el formulario y confirmaremos la apertura de tu stand online antes de la feria.",
+    ctaTitle: "Un stand presencial dura 3 días. Tu stand online, todo el año.",
+    ctaSub: "Sin solicitudes ni aprobaciones: regístrate y publica tú mismo; tu máquina queda en línea todo el año. ¿Necesitas ayuda? Rellena el formulario y un asesor te asistirá.",
     secondaryCta: "Ver primero la sala de exposiciones online",
     sourceTitle: "Fuentes y exención de responsabilidad",
     sourceNote:
@@ -304,7 +304,7 @@ const TEXTS: Record<string, TianjinTexts> = {
   pt: {
     badge: "Temporada de feiras 2026 · Tianjin",
     h1: "Exposição Internacional de Máquinas Agrícolas da China 2026 (26–28 de outubro · Tianjin) | Serviço em feira Shendiao Agri-Machinery Expo™",
-    sub: "Um estande presencial dura 3 dias; um estande online, 365. A Shendiao abre um estande online em 8 idiomas (Shendiao Cloud Expo) para os expositores e prolonga três dias de exposição por um ano inteiro.",
+    sub: "Um estande presencial dura 3 dias; o seu estande online fica no ar o ano inteiro. A Shendiao abre um estande online em 8 idiomas (Shendiao Cloud Expo) para os expositores e transforma três dias de exposição em uma vitrine global permanente.",
     disclaimer:
       "Esta página é um serviço próprio da Shendiao Agri-Machinery, não o site oficial da feira. Os dados da feira estão sujeitos aos anúncios do organizador.",
     factsTitle: "Dados básicos da feira",
@@ -327,7 +327,7 @@ const TEXTS: Record<string, TianjinTexts> = {
     whyTitle: "Por que você precisa de um segundo estande, online",
     why: [
       {
-        title: "3 dias presenciais, 365 dias online",
+        title: "3 dias presenciais, online o ano todo",
         desc: "Seu estande é desmontado em 28 de outubro, mas as consultas continuam chegando em novembro. Um estande online Shendiao Cloud Expo continua funcionando depois que os pavilhões fecham.",
       },
       {
@@ -341,7 +341,7 @@ const TEXTS: Record<string, TianjinTexts> = {
     ],
     offerTitle: "O que a Shendiao oferece na feira",
     offers: [
-      "Estande online Shendiao Cloud Expo — 365 dias no ar, com fotos e vídeo",
+      "Estande online Shendiao Cloud Expo — exposição permanente, com fotos e vídeo",
       "Páginas de produto em 8 idiomas alcançando compradores da Rússia, Ásia Central e Sudeste Asiático",
       "Painel do estande com visualizações e registros de consulta",
       "Vídeo real de operação Shendiao WingShow™ como comprovação verificável do estado da máquina",
@@ -350,16 +350,16 @@ const TEXTS: Record<string, TianjinTexts> = {
     ],
     crossTitle: "Tianjin: uma janela de exportação em 8 idiomas para expositores de todo o país",
     crossBody:
-      "Esta é uma feira de âmbito nacional que abrange máquinas completas, peças e prestadores de serviços. A Shendiao faz aqui uma única coisa: traduzir as máquinas do seu estande para 8 idiomas, mostrá-las a compradores estrangeiros e mantê-las online após a feira. Cadastre-se no estande para começar; ajudamos você a completar o anúncio depois.",
-    stepsTitle: "Três passos para publicar",
+      "Esta é uma feira de âmbito nacional que abrange máquinas completas, peças e prestadores de serviços. A Shendiao faz aqui uma única coisa: traduzir as máquinas do seu estande para 8 idiomas, mostrá-las a compradores estrangeiros e mantê-las online após a feira. Cadastre-se no site e publique você mesmo para começar; ajudamos você a completar o anúncio depois.",
+    stepsTitle: "Publique você mesmo em 3 passos — sem solicitação nem aprovação",
     steps: [
-      { title: "Cadastre-se", desc: "Escaneie o QR code no estande ou preencha este formulário — pronto em 30 segundos" },
-      { title: "Adicione máquinas", desc: "Envie uma foto; a IA detecta marca e ano, você preenche apenas 3 campos" },
-      { title: "Publique", desc: "Seu estande online abre automaticamente em 8 idiomas; as consultas chegam direto a você" },
+      { title: "Cadastre-se / entre", desc: "O login unificado leva à página «Publicar máquina»; publicar é grátis" },
+      { title: "Publique sua máquina", desc: "Envie uma foto; a IA detecta marca e ano, preencha 3 campos e ela entra no ar na hora" },
+      { title: "Exposição permanente", desc: "Sem aprovação: online o ano inteiro em 8 idiomas; as consultas chegam direto a você" },
     ],
     faqTitle: "Perguntas frequentes",
-    ctaTitle: "Um estande presencial dura 3 dias. Um estande online, 365.",
-    ctaSub: "Preencha o formulário e confirmaremos a abertura do seu estande online antes da feira.",
+    ctaTitle: "Um estande presencial dura 3 dias. O seu estande online, o ano inteiro.",
+    ctaSub: "Sem solicitação nem aprovação: cadastre-se e publique você mesmo; sua máquina fica online o ano inteiro. Precisa de ajuda? Preencha o formulário e um consultor irá auxiliá-lo.",
     secondaryCta: "Ver primeiro o showroom online",
     sourceTitle: "Fontes e aviso legal",
     sourceNote:
@@ -368,7 +368,7 @@ const TEXTS: Record<string, TianjinTexts> = {
   ar: {
     badge: "موسم المعارض 2026 · تيانجين",
     h1: "المعرض الدولي الصيني للآلات الزراعية 2026 (26–28 أكتوبر · تيانجين) | خدمة المعرض Shendiao Agri-Machinery Expo™",
-    sub: "الجناح الحضوري يدوم 3 أيام، أما الجناح الإلكتروني فيدوم 365 يومًا. تفتح Shendiao جناحًا إلكترونيًا بثماني لغات (Shendiao Cloud Expo) للعارضين، لتمديد ثلاثة أيام من العرض إلى عام كامل.",
+    sub: "الجناح الحضوري يدوم 3 أيام، أما جناحك الإلكتروني فيبقى متاحًا على مدار العام. تفتح Shendiao جناحًا إلكترونيًا بثماني لغات (Shendiao Cloud Expo) للعارضين، فتحوّل ثلاثة أيام من العرض إلى واجهة دائمة أمام المشترين حول العالم.",
     disclaimer:
       "هذه الصفحة خدمة خاصة بـ Shendiao Agri-Machinery وليست الموقع الرسمي للمعرض. تخضع بيانات المعرض لإعلانات المنظّم.",
     factsTitle: "البيانات الأساسية للمعرض",
@@ -391,7 +391,7 @@ const TEXTS: Record<string, TianjinTexts> = {
     whyTitle: "لماذا تحتاج إلى جناح ثانٍ إلكتروني",
     why: [
       {
-        title: "3 أيام حضوريًا، 365 يومًا عبر الإنترنت",
+        title: "3 أيام حضوريًا، وعلى الإنترنت طوال العام",
         desc: "يُفكّ جناحك في 28 أكتوبر، لكن الاستفسارات تستمر في الوصول خلال نوفمبر. يظل جناح Shendiao Cloud Expo الإلكتروني يعمل بعد إغلاق القاعات.",
       },
       {
@@ -405,7 +405,7 @@ const TEXTS: Record<string, TianjinTexts> = {
     ],
     offerTitle: "ما تقدمه Shendiao في المعرض",
     offers: [
-      "جناح إلكتروني Shendiao Cloud Expo — 365 يومًا عبر الإنترنت، مع دعم الصور والفيديو",
+      "جناح إلكتروني Shendiao Cloud Expo — عرض دائم، مع دعم الصور والفيديو",
       "صفحات منتجات بثماني لغات تصل إلى مشتري روسيا وآسيا الوسطى وجنوب شرق آسيا",
       "لوحة تحكم الجناح مع المشاهدات وسجلات الاستفسار",
       "فيديو تشغيل حقيقي Shendiao WingShow™ كإثبات قابل للتحقق على حالة الماكينة",
@@ -414,16 +414,16 @@ const TEXTS: Record<string, TianjinTexts> = {
     ],
     crossTitle: "تيانجين: نافذة تصدير بثماني لغات للعارضين من جميع أنحاء البلاد",
     crossBody:
-      "هذا معرض على المستوى الوطني يشمل الآلات الكاملة وقطع الغيار ومقدمي الخدمات. تؤدي Shendiao هنا مهمة واحدة: ترجمة الآلات المعروضة في جناحك إلى ثماني لغات، وعرضها على المشترين الأجانب، وإبقاءها على الإنترنت بعد انتهاء المعرض. سجّل في الجناح للبدء؛ ونساعدك في استكمال القائمة لاحقًا.",
-    stepsTitle: "ثلاث خطوات للنشر",
+      "هذا معرض على المستوى الوطني يشمل الآلات الكاملة وقطع الغيار ومقدمي الخدمات. تؤدي Shendiao هنا مهمة واحدة: ترجمة الآلات المعروضة في جناحك إلى ثماني لغات، وعرضها على المشترين الأجانب، وإبقاءها على الإنترنت بعد انتهاء المعرض. سجّل على الموقع وانشر بنفسك للبدء؛ ونساعدك في استكمال القائمة لاحقًا.",
+    stepsTitle: "انشر بنفسك في ثلاث خطوات — دون طلب أو موافقة",
     steps: [
-      { title: "التسجيل", desc: "امسح رمز الاستجابة السريعة في الجناح أو املأ هذا النموذج — خلال 30 ثانية" },
-      { title: "إضافة الآلات", desc: "ارفع صورة، يتعرّف الذكاء الاصطناعي على العلامة والسنة، وتبقى 3 حقول فقط" },
-      { title: "النشر", desc: "يُفتح جناحك الإلكتروني تلقائيًا بثماني لغات، وتصلك الاستفسارات مباشرة" },
+      { title: "التسجيل / الدخول", desc: "يأخذك الدخول الموحّد إلى صفحة «نشر آلة» — النشر مجاني" },
+      { title: "انشر آلاتك", desc: "ارفع صورة، يتعرّف الذكاء الاصطناعي على العلامة والسنة، وتبقى 3 حقول — وتُنشر فورًا" },
+      { title: "عرض دائم", desc: "دون موافقة: متاح على مدار العام بثماني لغات، وتصلك الاستفسارات مباشرة" },
     ],
     faqTitle: "الأسئلة الشائعة",
-    ctaTitle: "الجناح الحضوري يدوم 3 أيام. الجناح الإلكتروني يدوم 365.",
-    ctaSub: "املأ النموذج وسنؤكد افتتاح جناحك الإلكتروني قبل بدء المعرض.",
+    ctaTitle: "الجناح الحضوري يدوم 3 أيام. جناحك الإلكتروني يدوم طوال العام.",
+    ctaSub: "دون طلب أو موافقة: سجّل وانشر بنفسك، وستبقى آلاتك على الإنترنت طوال العام. تحتاج مساعدة؟ املأ النموذج وسيتواصل معك مستشار.",
     secondaryCta: "تصفّح صالة العرض الإلكترونية أولًا",
     sourceTitle: "المصادر وإخلاء المسؤولية",
     sourceNote:
@@ -432,7 +432,7 @@ const TEXTS: Record<string, TianjinTexts> = {
   fr: {
     badge: "Saison des salons 2026 · Tianjin",
     h1: "Salon international chinois de la machinerie agricole 2026 (26–28 octobre · Tianjin) | Service sur site Shendiao Agri-Machinery Expo™",
-    sub: "Un stand physique dure 3 jours, un stand en ligne 365. Shendiao ouvre un stand en ligne en 8 langues (Shendiao Cloud Expo) pour les exposants et prolonge trois jours de salon sur toute une année.",
+    sub: "Un stand physique dure 3 jours ; votre stand en ligne reste en ligne toute l'année. Shendiao ouvre un stand en ligne en 8 langues (Shendiao Cloud Expo) pour les exposants, transformant trois jours de salon en une vitrine mondiale permanente.",
     disclaimer:
       "Cette page est un service propre à Shendiao Agri-Machinery, et non le site officiel du salon. Les informations sur le salon sont soumises aux annonces de l'organisateur.",
     factsTitle: "Informations essentielles",
@@ -455,7 +455,7 @@ const TEXTS: Record<string, TianjinTexts> = {
     whyTitle: "Pourquoi vous avez besoin d'un second stand, en ligne",
     why: [
       {
-        title: "3 jours sur place, 365 jours en ligne",
+        title: "3 jours sur place, en ligne toute l'année",
         desc: "Votre stand est démonté le 28 octobre, mais les demandes continuent d'arriver en novembre. Un stand en ligne Shendiao Cloud Expo continue de fonctionner après la fermeture des halls.",
       },
       {
@@ -469,7 +469,7 @@ const TEXTS: Record<string, TianjinTexts> = {
     ],
     offerTitle: "Ce que Shendiao propose sur place",
     offers: [
-      "Stand en ligne Shendiao Cloud Expo — 365 jours en ligne, photos et vidéo prises en charge",
+      "Stand en ligne Shendiao Cloud Expo — exposition permanente, photos et vidéos prises en charge",
       "Pages produits en 8 langues touchant les acheteurs de Russie, d'Asie centrale et d'Asie du Sud-Est",
       "Tableau de bord du stand avec vues et demandes",
       "Vidéo de travail réelle Shendiao WingShow™, preuve vérifiable de l'état de la machine",
@@ -478,16 +478,16 @@ const TEXTS: Record<string, TianjinTexts> = {
     ],
     crossTitle: "Tianjin : une fenêtre d'export en 8 langues pour les exposants de tout le pays",
     crossBody:
-      "Il s'agit d'un salon national couvrant les machines complètes, les pièces et les prestataires de services. Shendiao y fait une seule chose : traduire les machines de votre stand en 8 langues, les présenter aux acheteurs étrangers et les maintenir en ligne après le salon. Inscrivez-vous sur place pour commencer ; nous vous aidons à compléter la fiche ensuite.",
-    stepsTitle: "Trois étapes pour publier",
+      "Il s'agit d'un salon national couvrant les machines complètes, les pièces et les prestataires de services. Shendiao y fait une seule chose : traduire les machines de votre stand en 8 langues, les présenter aux acheteurs étrangers et les maintenir en ligne après le salon. Inscrivez-vous en ligne et publiez vous-même pour commencer ; nous vous aidons à compléter la fiche ensuite.",
+    stepsTitle: "Publiez vous-même en 3 étapes — sans dossier ni validation",
     steps: [
-      { title: "Inscrivez-vous", desc: "Scannez le QR code sur le stand ou remplissez ce formulaire — 30 secondes" },
-      { title: "Ajoutez vos machines", desc: "Téléchargez une photo ; l'IA détecte la marque et l'année, il ne reste que 3 champs" },
-      { title: "Publiez", desc: "Votre stand en ligne s'ouvre automatiquement en 8 langues ; les demandes vous parviennent directement" },
+      { title: "Inscrivez-vous / connectez-vous", desc: "La connexion unifiée mène à la page « Publier une machine » — la publication est gratuite" },
+      { title: "Publiez votre machine", desc: "Téléchargez une photo ; l'IA détecte la marque et l'année, il ne reste que 3 champs — en ligne immédiatement" },
+      { title: "Exposition permanente", desc: "Sans validation : en ligne toute l'année en 8 langues ; les demandes vous parviennent directement" },
     ],
     faqTitle: "Questions fréquentes",
-    ctaTitle: "Un stand physique dure 3 jours. Un stand en ligne, 365.",
-    ctaSub: "Remplissez le formulaire et nous confirmerons l'ouverture de votre stand en ligne avant le salon.",
+    ctaTitle: "Un stand physique dure 3 jours. Votre stand en ligne, toute l'année.",
+    ctaSub: "Sans dossier ni validation : inscrivez-vous et publiez vous-même ; votre machine reste en ligne toute l'année. Besoin d'aide ? Remplissez le formulaire, un conseiller vous accompagne.",
     secondaryCta: "D'abord parcourir le showroom en ligne",
     sourceTitle: "Sources et clause de non-responsabilité",
     sourceNote:
@@ -496,7 +496,7 @@ const TEXTS: Record<string, TianjinTexts> = {
   hi: {
     badge: "2026 प्रदर्शनी सीज़न · तियानजिन",
     h1: "2026 चीन अंतर्राष्ट्रीय कृषि मशीनरी प्रदर्शनी (26–28 अक्टूबर · तियानजिन) | शेंडियाओ एग्री-मशीनरी एक्सपो™ स्थल सेवा",
-    sub: "स्थल पर स्टॉल 3 दिन चलता है, ऑनलाइन स्टॉल 365। शेंडियाओ प्रदर्शकों के लिए 8 भाषाओं वाला ऑनलाइन स्टॉल (शेंडियाओ क्लाउड एक्सपो) खोलती है और तीन दिन के प्रदर्शन को पूरे वर्ष तक बढ़ा देती है।",
+    sub: "स्थल पर स्टॉल 3 दिन चलता है, लेकिन आपका ऑनलाइन स्टॉल पूरे साल रहता है। शेंडियाओ प्रदर्शकों के लिए 8 भाषाओं वाला ऑनलाइन स्टॉल (शेंडियाओ क्लाउड एक्सपो) खोलती है और तीन दिन के प्रदर्शन को स्थायी वैश्विक खिड़की बना देती है।",
     disclaimer:
       "यह पृष्ठ शेंडियाओ एग्री-मशीनरी की अपनी सेवा है, प्रदर्शनी की आधिकारिक वेबसाइट नहीं। प्रदर्शनी की जानकारी आयोजक की घोषणाओं के अधीन है।",
     factsTitle: "प्रदर्शनी की मूल जानकारी",
@@ -519,7 +519,7 @@ const TEXTS: Record<string, TianjinTexts> = {
     whyTitle: "आपको दूसरे, ऑनलाइन स्टॉल की आवश्यकता क्यों है",
     why: [
       {
-        title: "3 दिन स्थल पर, 365 दिन ऑनलाइन",
+        title: "3 दिन स्थल पर, ऑनलाइन पूरे साल",
         desc: "आपका स्टॉल 28 अक्टूबर को हट जाता है, पर पूछताछ नवंबर में भी आती रहती है। शेंडियाओ क्लाउड एक्सपो का ऑनलाइन स्टॉल हॉल बंद होने के बाद भी काम करता रहता है।",
       },
       {
@@ -533,7 +533,7 @@ const TEXTS: Record<string, TianjinTexts> = {
     ],
     offerTitle: "शेंडियाओ स्थल पर क्या प्रदान करती है",
     offers: [
-      "शेंडियाओ क्लाउड एक्सपो ऑनलाइन स्टॉल — 365 दिन ऑनलाइन, फोटो और वीडियो सहित",
+      "शेंडियाओ क्लाउड एक्सपो ऑनलाइन स्टॉल — स्थायी प्रदर्शन, फोटो और वीडियो सहित",
       "8 भाषाओं वाले उत्पाद पृष्ठ, जो रूस, मध्य एशिया और दक्षिण-पूर्व एशिया के खरीदारों तक पहुँचते हैं",
       "स्टॉल डैशबोर्ड में व्यू और पूछताछ रिकॉर्ड",
       "शेंडियाओ विंगशो™ वास्तविक संचालन वीडियो — मशीन की स्थिति का सत्यापन योग्य प्रमाण",
@@ -542,16 +542,16 @@ const TEXTS: Record<string, TianjinTexts> = {
     ],
     crossTitle: "तियानजिन: देश भर के प्रदर्शकों के लिए 8 भाषाओं वाली निर्यात खिड़की",
     crossBody:
-      "यह राष्ट्रीय स्तर की प्रदर्शनी है जिसमें पूरी मशीनें, पुर्ज़े और सेवा प्रदाता शामिल हैं। शेंडियाओ यहाँ एक ही काम करती है: आपके स्टॉल की मशीनों को 8 भाषाओं में अनूदित करना, उन्हें विदेशी खरीदारों तक पहुँचाना और प्रदर्शनी के बाद भी ऑनलाइन बनाए रखना। शुरू करने के लिए स्टॉल पर पंजीकरण करें; लिस्टिंग पूरी करने में हम बाद में सहायता करते हैं।",
-    stepsTitle: "लिस्टिंग के तीन चरण",
+      "यह राष्ट्रीय स्तर की प्रदर्शनी है जिसमें पूरी मशीनें, पुर्ज़े और सेवा प्रदाता शामिल हैं। शेंडियाओ यहाँ एक ही काम करती है: आपके स्टॉल की मशीनों को 8 भाषाओं में अनूदित करना, उन्हें विदेशी खरीदारों तक पहुँचाना और प्रदर्शनी के बाद भी ऑनलाइन बनाए रखना। शुरू करने के लिए वेबसाइट पर पंजीकरण करें और स्वयं प्रकाशित करें; लिस्टिंग पूरी करने में हम बाद में सहायता करते हैं।",
+    stepsTitle: "बिना आवेदन, बिना मंज़ूरी — 3 चरणों में स्वयं प्रकाशित करें",
     steps: [
-      { title: "पंजीकरण", desc: "स्टॉल पर QR कोड स्कैन करें या यह फ़ॉर्म भरें — 30 सेकंड में तैयार" },
-      { title: "मशीनें जोड़ें", desc: "फोटो अपलोड करें; AI ब्रांड और वर्ष पहचान लेता है, केवल 3 फ़ील्ड भरने हैं" },
-      { title: "प्रकाशित करें", desc: "आपका ऑनलाइन स्टॉल स्वतः 8 भाषाओं में खुल जाता है; पूछताछ सीधे आपको मिलती है" },
+      { title: "पंजीकरण / लॉगिन", desc: "यूनिफ़ाइड लॉगिन «मशीन प्रकाशित करें» पृष्ठ पर ले जाता है — प्रकाशन निःशुल्क" },
+      { title: "अपनी मशीन प्रकाशित करें", desc: "फोटो अपलोड करें; AI ब्रांड और वर्ष पहचान लेता है, केवल 3 फ़ील्ड भरें — तुरंत लाइव" },
+      { title: "स्थायी प्रदर्शन", desc: "मंज़ूरी की प्रतीक्षा नहीं: पूरे साल 8 भाषाओं में ऑनलाइन; पूछताछ सीधे आपको मिलती है" },
     ],
     faqTitle: "सामान्य प्रश्न",
-    ctaTitle: "स्थल पर स्टॉल 3 दिन चलता है। ऑनलाइन स्टॉल 365 दिन।",
-    ctaSub: "फ़ॉर्म भरें और हम प्रदर्शनी शुरू होने से पहले आपके ऑनलाइन स्टॉल की पुष्टि करेंगे।",
+    ctaTitle: "स्थल पर स्टॉल 3 दिन। आपका ऑनलाइन स्टॉल पूरा साल।",
+    ctaSub: "बिना आवेदन या मंज़ूरी: पंजीकरण करें और स्वयं प्रकाशित करें — आपकी मशीन पूरे साल ऑनलाइन रहेगी। मदद चाहिए? फ़ॉर्म भरें, सलाहकार आपकी सहायता करेगा।",
     secondaryCta: "पहले ऑनलाइन शोरूम देखें",
     sourceTitle: "स्रोत एवं अस्वीकरण",
     sourceNote:
@@ -588,10 +588,10 @@ export function TianjinLanding({ locale }: { locale: string }) {
           <p className="mt-3 text-sm text-blue-200">{t.disclaimer}</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <a
-              href="#expo-inquiry-form"
+              href={`/${locale}/seller/products/new`}
               className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-400 px-6 py-3 font-semibold text-amber-900 shadow-lg transition hover:bg-amber-300"
             >
-              {locale === "zh" ? "申请开通线上展台" : locale === "ru" ? "Открыть онлайн-стенд" : "Open my online booth"}
+              {locale === "zh" ? "自主发布 · 免费上线" : locale === "ru" ? "Разместить технику бесплатно" : "Publish your machine — free"}
               <ArrowRight className="h-4 w-4" />
             </a>
             <Link
