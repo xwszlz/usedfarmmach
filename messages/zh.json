@@ -2088,7 +2088,17 @@
 
       "note": "说明",
 
-      "noteDesc": "展会活动由展会主办方组织，具体安排以主办方公告为准。地头展为线下实地看机活动，报名后将有专员联系。"
+      "noteDesc": "展会活动由展会主办方组织，具体安排以主办方公告为准。地头展为线下实地看机活动，报名后将有专员联系。",
+      "selfPublishCta": "二手农机自主发布 · 免费上线",
+      "selfPublishDesc": "无需积分，提交即上线。把您的二手农机直接展示给全球买家。",
+      "selfPublishBtn": "免费发布二手农机",
+      "videoShowcase": "WingShow 真实作业视频精选",
+      "showroomShowcase": "数字展厅 · 新品精选",
+      "viewAll": "查看全部",
+      "loading": "加载中…",
+      "noData": "暂无内容",
+      "playsUnit": "次播放",
+      "contactAdvisor": "或联系顾问："
 
     },
 
