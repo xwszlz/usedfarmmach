@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db";
 
 import { getTokenFromHeaders, verifyToken } from "@/lib/auth";
 
-import { getQuotaUser, consumeQuota, quotaExceededResponse } from "@/lib/quota";
+import { computeAiCost, deductCredits } from "@/lib/credits/spend";
 
 import { calculateValuation, calculateValuationV4, type ValuationInput, type ValuationResult } from "@/lib/valuation/formulas";
 
@@ -42,6 +42,19 @@ const GUEST_DAILY_LIMIT = 3;
 const GUEST_WINDOW_MS = 24 * 60 * 60 * 1000; // 滚动 24 小时窗口
 
 const guestValuationCounters = new Map<string, { count: number; resetAt: number }>();
+
+/** 估值固定名义输入 token 数（含图像/视频分析综合估算），按 token×2 反算积分 */
+const VALUATION_NOMINAL_INPUT_TOKENS = 2000;
+
+/** 从 referer / 路径推断 locale（与 quota guard / 各 AI 路由保持一致） */
+function getLocaleFromRequest(request: NextRequest): string {
+  const referer = request.headers.get("referer") || "";
+  const m = referer.match(/\/([a-z]{2})\b/) || referer.match(/\/([a-z]{2})$/);
+  if (m && ["zh", "en", "ru", "es", "pt", "fr", "hi", "ar"].includes(m[1])) {
+    return m[1];
+  }
+  return "zh";
+}
 
 
 
@@ -199,7 +212,8 @@ export async function POST(request: NextRequest) {
 
 
 
-    // ── P1-a 额度闸门：仅登录用户计月度 AI 估值额度（先于昂贵计算，防绕过）──
+    // ── 积分计费闸门：登录用户按积分计费（替代原 aiValuation 额度，先于昂贵计算防绕过）──
+    // 游客逻辑不变（保留 IP 限流 + 区间化模糊结果）。
 
     const token = getTokenFromHeaders(request.headers);
 
@@ -213,14 +227,31 @@ export async function POST(request: NextRequest) {
 
         isAuthenticated = true;
 
-        const qUser = await getQuotaUser(payload.userId);
-
-        if (qUser) {
-
-          const q = await consumeQuota(qUser, "aiValuation");
-
-          if (!q.ok) return quotaExceededResponse(q.resetAt);
-
+        // 固定名义 token 成本（估值含图像/视频分析），按 token×2 反算积分
+        const cost = computeAiCost({
+          model: "doubao-seed-2-1-pro-260915",
+          inputTokens: VALUATION_NOMINAL_INPUT_TOKENS,
+          outputTokens: 0,
+        });
+        const deduction = await deductCredits(
+          payload.userId,
+          cost.points,
+          "AI估值",
+          cost as unknown as Record<string, unknown>
+        );
+        if (!deduction.ok) {
+          const locale = getLocaleFromRequest(request);
+          return NextResponse.json(
+            {
+              success: false,
+              error: "积分不足，请先充值",
+              code: "INSUFFICIENT_CREDITS",
+              rechargeUrl: `/${locale}/credits`,
+              required: deduction.required,
+              balance: deduction.credits,
+            },
+            { status: 402 }
+          );
         }
 
       }
