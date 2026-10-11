@@ -260,7 +260,31 @@
 
       "gift": "礼包"
 
-    }
+    },
+
+    "rechargeComRate": "$1 = 1 积分，金额随意充（Stripe 安全支付）",
+
+    "rechargeCnRate": "1 元 = 1 积分，金额随意充",
+
+    "payWechat": "微信支付",
+
+    "payAlipay": "支付宝",
+
+    "invalidAmount": "请输入有效金额",
+
+    "processing": "处理中…",
+
+    "networkError": "网络错误，请重试",
+
+    "scanToPay": "请扫码支付，到账后自动获得 {credits} 积分",
+
+    "orderFailed": "充值下单失败，请稍后重试",
+
+    "paymentQrAlt": "支付二维码",
+
+    "freeFeaturesTitle": "免费功能",
+
+    "freeFeaturesBody": "发布产品 / 发送询盘 / 查看联系方式 完全免费、不消耗积分"
 
   },
 
