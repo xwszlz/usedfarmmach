@@ -161,7 +161,7 @@ const TEXTS: Record<string, TianjinTexts> = {
       "This is a national-level show covering complete machines, parts and service providers. Shendiao does one thing here: translate the machines on your stand into 8 languages, push them to overseas buyers, and keep them online after the show closes. Register online to publish it yourself; we help you complete the listing afterwards.",
     stepsTitle: "Publish it yourself in 3 steps — no application, no approval",
     steps: [
-      { title: "Register / Log in", desc: "Unified login takes you to the "Publish machine" page — publishing is free, no credits needed" },
+      { title: "Register / Log in", desc: "Unified login takes you to the 'Publish machine' page — publishing is free, no credits needed" },
       { title: "Publish your machine", desc: "Upload a photo, AI detects brand and year, fill in 3 fields — it goes live instantly" },
       { title: "Year-round display", desc: "No approval queue: live and searchable year-round in 8 languages; inquiries reach you directly" },
     ],
