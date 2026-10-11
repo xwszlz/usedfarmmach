@@ -8,7 +8,7 @@
  * 写入 CreditLot（gift 批次）+ CreditTransaction（流水）+ 用户 credits 自增。
  */
 import { prisma } from "@/lib/db";
-import { GIFT_TTL_DAYS, type RewardValues } from "./constants";
+import { GIFT_TTL_DAYS, RECHARGE_TTL_DAYS, type RewardValues } from "./constants";
 import { getRewardValues } from "./config";
 
 /** 注册礼包发放结果 */
@@ -162,4 +162,70 @@ export async function grantEmailVerifiedGiftIfNeeded(
     }
     throw error;
   }
+}
+
+/**
+ * 充值发放积分（积分中心 / 支付回调统一入口）。
+ *
+ * 与注册礼包保持一致的写法：事务内建 CreditLot（account=recharge，+365 天有效期）
+ * + CreditTransaction（type=recharge）+ User.credits 自增。
+ *
+ * @param userId   目标用户
+ * @param amount   发放积分（恒为正）
+ * @param reason   流水原因（如 "充值:pack60" / "微信支付充值"）
+ * @param sourceId 关联单据号（BillingOrder / 微信 transaction_id / Stripe session id），用于幂等去重
+ * @returns 已发放积分（amount <= 0 时返回 0，不写库）
+ */
+export async function grantRecharge(
+  userId: string,
+  amount: number,
+  reason: string,
+  sourceId?: string
+): Promise<number> {
+  const amt = Math.max(0, Math.floor(amount));
+  if (amt <= 0) return 0;
+
+  await prisma.$transaction(async (tx) => {
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + RECHARGE_TTL_DAYS);
+
+    const lot = await tx.creditLot.create({
+      data: {
+        userId,
+        account: "recharge",
+        sourceType: "recharge",
+        sourceId: sourceId ?? null,
+        initialAmount: amt,
+        remainingAmount: amt,
+        expiresAt,
+      },
+      select: { id: true },
+    });
+
+    const user = await tx.user.findUnique({
+      where: { id: userId },
+      select: { credits: true },
+    });
+
+    await tx.creditTransaction.create({
+      data: {
+        userId,
+        type: "recharge",
+        amount: amt,
+        balance: (user?.credits ?? 0) + amt,
+        reason,
+        account: "recharge",
+        lotId: lot.id,
+        expiresAt,
+        relatedId: sourceId ?? null,
+      },
+    });
+
+    await tx.user.update({
+      where: { id: userId },
+      data: { credits: { increment: amt } },
+    });
+  });
+
+  return amt;
 }
