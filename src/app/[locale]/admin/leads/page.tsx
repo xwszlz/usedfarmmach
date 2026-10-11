@@ -23,7 +23,7 @@ export default async function LeadsPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ q?: string; page?: string; pageSize?: string }>;
+  searchParams: Promise<{ q?: string; model?: string; page?: string; pageSize?: string }>;
 }) {
   const { locale } = await params;
   const sp = await searchParams;
@@ -40,14 +40,16 @@ export default async function LeadsPage({
   }
 
   const query = sp.q || "";
+  const model = sp.model || "";
   const page = parseInt(sp.page || "1", 10) || 1;
   const pageSize = Math.min(100, Math.max(1, parseInt(sp.pageSize || "30", 10) || 30));
 
-  const list = await listLeads({ page, pageSize, q: query || undefined });
+  const list = await listLeads({ page, pageSize, q: query || undefined, model: model || undefined });
 
   const buildPageHref = (p: number) => {
     const params2 = new URLSearchParams();
     if (query) params2.set("q", query);
+    if (model) params2.set("model", model);
     params2.set("page", String(p));
     return `?${params2.toString()}`;
   };
@@ -69,10 +71,17 @@ export default async function LeadsPage({
           placeholder="搜索卖家名 / 品牌 / 型号..."
           className="w-64 rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
         />
+        <input
+          name="model"
+          type="text"
+          defaultValue={model}
+          placeholder="机型（俗称/官方，如 2504）..."
+          className="w-56 rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+        />
         <button type="submit" className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700">
           搜索
         </button>
-        {query && (
+        {(query || model) && (
           <Link href="?" className="rounded-lg border px-3 py-2 text-sm text-gray-500 hover:bg-gray-50">
             清除
           </Link>

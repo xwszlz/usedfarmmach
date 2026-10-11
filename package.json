@@ -7,9 +7,6 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "test:cn-sync": "tsx src/lib/cn-sync/__tests__/field-whitelist.test.ts",
-    "test:cn-sync-s1": "tsx src/lib/cn-sync/__tests__/run-sync.test.ts",
-    "test:cn-sync-scope": "tsx src/lib/cn-sync/__tests__/product-visibility.test.ts && tsx src/lib/cn-sync/__tests__/product-visibility-query.test.ts",
-    "test:product-visibility-query": "tsx src/lib/cn-sync/__tests__/product-visibility-query.test.ts",
     "lint": "next lint",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
@@ -17,8 +14,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "import:data": "tsx scripts/import-data.ts",
     "import:images": "tsx scripts/import-images.ts",
-    "import:real": "tsx scripts/import-real-data.ts",
-    "convert:raw": "tsx scripts/convert-raw-to-product.ts"
+    "import:real": "tsx scripts/import-real-data.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.14.0",
@@ -33,6 +29,7 @@
     "docx": "^9.7.1",
     "dotenv": "^17.4.2",
     "embla-carousel-react": "^8.1.0",
+    "exceljs": "^4.4.0",
     "geist": "^1.7.2",
     "geoip-lite": "^1.4.10",
     "https-proxy-agent": "^7.0.6",

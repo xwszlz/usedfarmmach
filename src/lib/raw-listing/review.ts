@@ -24,6 +24,7 @@ import {
   findScoutSellerId,
 } from "./convert";
 import type { SanityAction, SanityContext, SanityInput, RawListingLike, PreResolvedFks } from "./types";
+import { expandModelQuery } from "./model-aliases";
 
 // ───────────────────────────────────────────────
 // 领域错误（供路由映射为 HTTP 错误码）
@@ -66,6 +67,8 @@ export interface ListQuery {
   source?: string;
   rule?: string;
   q?: string;
+  /** 机型筛选（俗称/官方均可，展开后 insensitive 匹配 modelName） */
+  model?: string;
   orderBy?: string;
   order?: "asc" | "desc";
 }
@@ -170,6 +173,8 @@ const ALL_STATUSES = [
   "converted",
   "published",
   "converting",
+  // 手动境内线索录入状态（R3：追加以保证 allTotal 计数正确，不新增 Tab）
+  "imported",
 ] as const;
 const RULE_IDS = new Set([
   "domain_blacklist",
@@ -280,14 +285,22 @@ export async function listRawListings(q: ListQuery): Promise<ListResult> {
   if (status && status !== "all") where.status = status;
   if (q.source) where.source = q.source;
   if (q.rule) where.notes = { contains: q.rule };
+  const orTerms: Prisma.RawListingWhereInput[] = [];
   if (q.q) {
-    where.OR = [
+    orTerms.push(
       { modelName: { contains: q.q } },
       { brandName: { contains: q.q } },
       { location: { contains: q.q } },
       { sourceUrl: { contains: q.q } },
-    ];
+    );
   }
+  if (q.model) {
+    // 机型筛选：俗称/官方双向展开，insensitive 命中（与 q 取并集 OR）
+    for (const term of expandModelQuery(q.model)) {
+      orTerms.push({ modelName: { contains: term, mode: "insensitive" } });
+    }
+  }
+  if (orTerms.length > 0) where.OR = orTerms;
 
   const orderField = ["scrapedAt", "createdAt", "priceCny"].includes(q.orderBy ?? "") ? (q.orderBy as string) : "scrapedAt";
   const order = q.order === "asc" ? "asc" : "desc";
@@ -342,20 +355,28 @@ export async function listLeads(q: {
   page?: number;
   pageSize?: number;
   q?: string;
+  /** 机型筛选（俗称/官方均可，展开后 insensitive 匹配 modelName） */
+  model?: string;
 }): Promise<LeadListResult> {
   const page = Math.max(1, Number(q.page) || 1);
   const pageSize = Math.min(100, Math.max(1, Number(q.pageSize) || 30));
   const query = q.q ? q.q.trim() : "";
 
-  const where: Prisma.RawListingWhereInput = query
-    ? {
-        OR: [
-          { sellerName: { contains: query } },
-          { brandName: { contains: query } },
-          { modelName: { contains: query } },
-        ],
-      }
-    : {};
+  const orTerms: Prisma.RawListingWhereInput[] = [];
+  if (query) {
+    orTerms.push(
+      { sellerName: { contains: query } },
+      { brandName: { contains: query } },
+      { modelName: { contains: query } },
+    );
+  }
+  if (q.model) {
+    // 机型筛选：俗称/官方双向展开，insensitive 命中（与 q 取并集 OR）
+    for (const term of expandModelQuery(q.model)) {
+      orTerms.push({ modelName: { contains: term, mode: "insensitive" } });
+    }
+  }
+  const where: Prisma.RawListingWhereInput = orTerms.length > 0 ? { OR: orTerms } : {};
 
   const [rows, total] = await Promise.all([
     prisma.rawListing.findMany({
