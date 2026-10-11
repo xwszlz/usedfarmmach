@@ -19,6 +19,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { cnyToUsd, getUsdPerCny } from "@/lib/exchange-rate";
 
 import { prisma } from "@/lib/db";
 
@@ -997,7 +998,7 @@ export async function POST(request: NextRequest) {
 
         priceCny: Number(priceCny),
 
-        priceUsd: Math.round(Number(priceCny) / 7.25),
+        priceUsd: cnyToUsd(Number(priceCny), await getUsdPerCny()),
 
         location: location || "",
 
@@ -1731,7 +1732,7 @@ export async function POST(request: NextRequest) {
 
                 estimatedPriceCny: valuationResult.estimatedValue,
 
-                estimatedPriceUsd: Math.round(valuationResult.estimatedValue / 7.25),
+                estimatedPriceUsd: cnyToUsd(valuationResult.estimatedValue, await getUsdPerCny()),
 
                 confidenceScore: valuationResult.confidenceScore,
 
