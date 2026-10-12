@@ -26,6 +26,8 @@
  *   - `850` 为 2504 旧称，历史数据若存为 "850"，导入时归一到 "2504" 即可被 "2504" 搜出。
  */
 
+import type { Prisma } from "@prisma/client";
+
 // ───────────────────────────────────────────────
 // 1. 档位（tier）定义
 // ───────────────────────────────────────────────
@@ -335,7 +337,6 @@ export function expandModelQuery(input: string): string[] {
   return out;
 }
 
-// ───────────────────────────────────────────────
 // 7. 对外：model/brand → Prisma where 块（双通道）
 // ───────────────────────────────────────────────
 
@@ -376,4 +377,3 @@ export function buildModelBrandWhere(
   if (blocks.length === 0) return null;
   return blocks.length === 1 ? blocks[0] : { AND: blocks };
 }
-
