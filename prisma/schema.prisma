@@ -647,6 +647,8 @@ model RawListing {
   sellerWechat   String?
   sellerWhatsapp String?
   sellerEmail    String?  // 增补：卖家邮箱（采集可自动落，人工可补）
+  /// 货物（机器）实际所在地归属：cn | intl | unknown；人工可覆写；unknown 不得入库
+  goodsRegion String?
   images         String?
   contentHash    String    @unique
   scrapedAt      DateTime  @default(now())
@@ -663,6 +665,7 @@ model RawListing {
   @@index([status, scrapedAt])
   @@index([source, scrapedAt])
   @@index([contentHash])
+  @@index([goodsRegion])
 }
 
 model ChatMessage {
