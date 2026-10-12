@@ -262,7 +262,7 @@
 
     },
 
-    "rechargeComRate": "$1 = 1 credit, any amount (secure payment via Stripe)",
+    "rechargeComRate": "$1 = 1 credit, any amount (secure online payment)",
 
     "rechargeCnRate": "¥1 = 1 credit, any amount",
 
