@@ -1,26 +1,28 @@
 /**
  * 积分扣减（AI 功能计费核心）
  *
- * 积分统一以 ¥ 计价（老板口径 2026-10-12）：
- *   - 积分 = ¥ 计价单位（不再是"1 积分 = ¥1"的并列关系，而是积分本身就是钱的计价口径）；
- *   - 充值：.cn 站 1 元 = 1 积分，.com 站 $1 = 1 积分；
- *   - AI 消耗：实际模型成本（$ 计价模型按固定汇率 7.2 折算成 ¥）× 2。
+ * 积分按各站本位币计价（老板口径 2026-10-12，修订 2026-10-12-E）：
+ *   - 充值：.cn 站 1 元 = 1 积分；.com 站 $1 = 1 积分；
+ *   - AI 消耗 = 实际模型成本 × 2 反算积分，且**站点感知本位币**：
+ *       · .com 站：USD 计价模型直接按 $ 计费（不折 ¥），与"$1=1 积分"充值口径对齐；
+ *       · .cn 站 / CNY 计价模型：按 ¥ 计费（USD 模型仍按固定汇率 7.2 折 ¥）。
  *
  * 计费链路：四大 AI 功能按大模型 token 实际消耗成本 × 2 收费，反算积分消耗。
  *   1) 从 LLM provider 返回里取 usage（prompt_tokens / completion_tokens）与所用 model id；
- *   2) 用模型价格表算 actualCostCny（统一归集到 ¥）：
- *      - ¥ 计价模型：actualCostCny = input/1000*inPrice + output/1000*outPrice；
- *      - $ 计价模型：先算 actualCostUsd，再 × 固定汇率（7.2）转 actualCostCny；
+ *   2) 用模型价格表算实际成本 actualCost（站点感知本位币）：
+ *      - $ 计价模型 + .com 站：actualCost = actualCostUsd（直接以 $ 计，不做 ¥ 折算）；
+ *      - $ 计价模型 + .cn 站：actualCost = actualCostUsd × 7.2 折 ¥；
+ *      - ¥ 计价模型：actualCost = actualCostCny；
  *      - 价格表见下方 MODEL_PRICING；未知模型用兜底 ¥0.004/1K 混合价（标注"兜底，待校准"）。
- *   3) chargedCny = actualCostCny * 2；
- *   4) 积分扣减：points = round(chargedCny)——【统一公式】，$ 模型不再走独立分支，
- *      因为 actualCostCny 已含汇率折算，积分本身按 ¥ 计价；
- *   5) 在 CreditTransaction.breakdown JSON 记录全部计量字段。
+ *   3) points = round(actualCost × 2)；
+ *   4) 在 CreditTransaction.breakdown JSON 记录 currency + 全部计量字段
+ *      （actualCostCny 字段存"计费货币下的成本"，配合 currency 区分 cny/usd）。
  *
  * 与 grant.ts 保持一致的写法：事务内读 User.credits → 不足整体拒绝（E7 红线：绝不产生负余额）→
  * FIFO 减 CreditLot → 写 CreditTransaction(type=ai_deduct) → 扣 User.credits。
  */
 import { prisma } from "@/lib/db";
+import { isComSite } from "@/config/site";
 
 export interface DeductResult {
   ok: boolean;
@@ -36,6 +38,9 @@ export interface AiCostBreakdown {
   outputTokens: number;
   inPrice: number;
   outPrice: number;
+  /** 计费货币：cny 或 usd（.com 站 USD 模型直接以 $ 计） */
+  currency?: "cny" | "usd";
+  /** 计费货币下的实际成本（cny 或 usd，配合 currency 字段） */
   actualCostCny: number;
   multiplier: number;
   points: number;
@@ -82,7 +87,10 @@ export const AI_COST_MULTIPLIER = 2;
 
 /**
  * 依据模型单价与 token 用量计算实际成本与应扣积分。
- * 所有货币先按汇率归集到 ¥（actualCostCny），再统一用 points = round(actualCostCny × 2)。
+ * 站点感知本位币（老板口径 2026-10-12-E）：
+ *   - .com 站 + USD 计价模型：actualCost 直接取 $ 值（不折 ¥），与"$1=1 积分"充值对齐；
+ *   - 其余（.cn 站 / CNY 计价模型）：USD 模型仍按 7.2 折 ¥，CNY 模型直接按 ¥。
+ * 最终 points = round(actualCost × 2)。
  */
 export function computeAiCost(params: {
   model: string;
@@ -93,14 +101,20 @@ export function computeAiCost(params: {
   const inputTokens = Math.max(0, Math.floor(params.inputTokens || 0));
   const outputTokens = Math.max(0, Math.floor(params.outputTokens || 0));
 
-  const actualCostUsd =
+  const rawCost =
     (inputTokens / 1000) * p.inPrice + (outputTokens / 1000) * p.outPrice;
-  const actualCostCny =
-    p.currency === "usd" ? actualCostUsd * DEFAULT_USD_TO_CNY : actualCostUsd;
 
-  // 统一公式：points = round(actualCostCny × 2)。
-  // $ 计价模型的 actualCostCny 已按 DEFAULT_USD_TO_CNY 折算，故不再单独分支。
-  const points = Math.round(actualCostCny * AI_COST_MULTIPLIER);
+  // 站点感知本位币：
+  //   comUsd = 在 .com 站且模型以 USD 计价 → 直接以 $ 计费，不折 ¥。
+  const comUsd = isComSite() && p.currency === "usd";
+  const actualCost = comUsd
+    ? rawCost
+    : p.currency === "usd"
+      ? rawCost * DEFAULT_USD_TO_CNY
+      : rawCost;
+  const currency: "cny" | "usd" = comUsd ? "usd" : "cny";
+
+  const points = Math.round(actualCost * AI_COST_MULTIPLIER);
 
   return {
     model: params.model,
@@ -108,7 +122,8 @@ export function computeAiCost(params: {
     outputTokens,
     inPrice: p.inPrice,
     outPrice: p.outPrice,
-    actualCostCny: Math.round(actualCostCny * 1000) / 1000,
+    currency,
+    actualCostCny: Math.round(actualCost * 1000) / 1000,
     multiplier: AI_COST_MULTIPLIER,
     points,
   };
