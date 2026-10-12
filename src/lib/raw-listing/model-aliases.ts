@@ -26,6 +26,8 @@
  *   - `850` 为 2504 旧称，历史数据若存为 "850"，导入时归一到 "2504" 即可被 "2504" 搜出。
  */
 
+import type { Prisma } from "@prisma/client";
+
 // ───────────────────────────────────────────────
 // 1. 档位（tier）定义
 // ───────────────────────────────────────────────
@@ -333,4 +335,45 @@ export function expandModelQuery(input: string): string[] {
   pushUnique(out, tier.slang);
   pushUnique(out, flattenOfficials(tier));
   return out;
+}
+
+// 7. 对外：model/brand → Prisma where 块（双通道）
+// ───────────────────────────────────────────────
+
+/**
+ * 由机型/品牌构建 Prisma `RawListing` 筛选块（供 listLeads / listUnifiedLeads 等复用）：
+ *   - `modelTerms`：仅当 `model` 有值时，对 `modelName` 做 insensitive `contains`（词项之间 OR）；
+ *   - `brandTerms`：仅当 `brand` 有值时，**双通道**（同时对 `brandName` 与 `modelName` 做
+ *     insensitive `contains`，二者之间 OR），所有词项之间再 OR。
+ *     （理由：实测 `brandName` 常为 "CLAAS/New Holland" 合并串，真实品牌藏在 `modelName`
+ *      的 AXION/BB9080/NH 里，单走 brandName 会丢失 2/3 行。）
+ *   - `modelTerms` 与 `brandTerms` 之间 **AND** 组合（两者都有值时）。
+ *
+ * 返回 `null` 表示 `model`/`brand` 均未传，调用方无需追加该筛选（向后兼容）。
+ */
+export function buildModelBrandWhere(
+  model?: string,
+  brand?: string
+): Prisma.RawListingWhereInput | null {
+  const { modelTerms, brandTerms } = resolveModelFilter(model, brand);
+  const blocks: Prisma.RawListingWhereInput[] = [];
+
+  if (modelTerms.length > 0) {
+    blocks.push({
+      OR: modelTerms.map((t) => ({ modelName: { contains: t, mode: "insensitive" } })),
+    });
+  }
+  if (brandTerms.length > 0) {
+    blocks.push({
+      OR: brandTerms.map((t) => ({
+        OR: [
+          { brandName: { contains: t, mode: "insensitive" } },
+          { modelName: { contains: t, mode: "insensitive" } },
+        ],
+      })),
+    });
+  }
+
+  if (blocks.length === 0) return null;
+  return blocks.length === 1 ? blocks[0] : { AND: blocks };
 }

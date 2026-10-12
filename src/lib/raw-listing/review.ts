@@ -24,7 +24,7 @@ import {
   findScoutSellerId,
 } from "./convert";
 import type { SanityAction, SanityContext, SanityInput, RawListingLike, PreResolvedFks } from "./types";
-import { expandModelQuery } from "./model-aliases";
+import { buildModelBrandWhere } from "./model-aliases";
 
 // ───────────────────────────────────────────────
 // 领域错误（供路由映射为 HTTP 错误码）
@@ -69,6 +69,8 @@ export interface ListQuery {
   q?: string;
   /** 机型筛选（俗称/官方均可，展开后 insensitive 匹配 modelName） */
   model?: string;
+  /** 品牌筛选（中英均可、可为合并串；双通道：brandName ∪ modelName insensitive 命中） */
+  brand?: string;
   orderBy?: string;
   order?: "asc" | "desc";
 }
@@ -294,12 +296,9 @@ export async function listRawListings(q: ListQuery): Promise<ListResult> {
       { sourceUrl: { contains: q.q } },
     );
   }
-  if (q.model) {
-    // 机型筛选：俗称/官方双向展开，insensitive 命中（与 q 取并集 OR）
-    for (const term of expandModelQuery(q.model)) {
-      orTerms.push({ modelName: { contains: term, mode: "insensitive" } });
-    }
-  }
+  // 机型/品牌双通道筛选（仅当传入时追加；未传 brand 时维持既有行为）
+  const modelBrandWhere = buildModelBrandWhere(q.model, q.brand);
+  if (modelBrandWhere) orTerms.push(modelBrandWhere);
   if (orTerms.length > 0) where.OR = orTerms;
 
   const orderField = ["scrapedAt", "createdAt", "priceCny"].includes(q.orderBy ?? "") ? (q.orderBy as string) : "scrapedAt";
@@ -357,6 +356,8 @@ export async function listLeads(q: {
   q?: string;
   /** 机型筛选（俗称/官方均可，展开后 insensitive 匹配 modelName） */
   model?: string;
+  /** 品牌筛选（中英均可、可为合并串；双通道：brandName ∪ modelName insensitive 命中） */
+  brand?: string;
 }): Promise<LeadListResult> {
   const page = Math.max(1, Number(q.page) || 1);
   const pageSize = Math.min(100, Math.max(1, Number(q.pageSize) || 30));
@@ -370,12 +371,9 @@ export async function listLeads(q: {
       { modelName: { contains: query } },
     );
   }
-  if (q.model) {
-    // 机型筛选：俗称/官方双向展开，insensitive 命中（与 q 取并集 OR）
-    for (const term of expandModelQuery(q.model)) {
-      orTerms.push({ modelName: { contains: term, mode: "insensitive" } });
-    }
-  }
+  // 机型/品牌双通道筛选（仅当传入时追加；未传 brand 时维持既有行为）
+  const modelBrandWhere = buildModelBrandWhere(q.model, q.brand);
+  if (modelBrandWhere) orTerms.push(modelBrandWhere);
   const where: Prisma.RawListingWhereInput = orTerms.length > 0 ? { OR: orTerms } : {};
 
   const [rows, total] = await Promise.all([
