@@ -27,7 +27,7 @@ import { computeAiCost, deductCredits } from "@/lib/credits/spend";
 
 export const dynamic = "force-dynamic";
 
-/** 销售策略固定名义输入 token 数（无 LLM，按老板要求等效 2000 tokens），token×2 反算积分 */
+/** 销售策略固定名义输入 token 数（本路由无 LLM 调用，等效 2000 tokens），token×2 反算积分 */
 const SALES_STRATEGY_NOMINAL_INPUT_TOKENS = 2000;
 
 /** 从 referer / 路径推断 locale（与 quota guard / 各 AI 路由保持一致） */
@@ -63,6 +63,9 @@ async function chargeAiRequest(
       { status: 401 }
     );
   }
+  // ⚠️ 无 LLM 调用：本路由只读 public/daily-reports/ 下的静态 JSON 做规则计算，
+  //    没有任何 provider usage 可计量，因此走【名义 token 计费】占位。
+  //    真实定价待老板拍板；一旦认定应免费，删掉 chargeAiRequest 调用即可，不影响其它链路。
   const cost = computeAiCost({
     model: "doubao-seed-2-1-pro-260915",
     inputTokens: nominalInputTokens,
@@ -72,7 +75,12 @@ async function chargeAiRequest(
     payload.userId,
     cost.points,
     reason,
-    cost as unknown as Record<string, unknown>
+    // nominal=true 便于事后从 breakdown 里筛出"没有真实 LLM 用量、按名义计费"的流水
+    {
+      ...(cost as unknown as Record<string, unknown>),
+      nominal: true,
+      note: "no LLM call, nominal token billing",
+    }
   );
   if (!deduction.ok) {
     return NextResponse.json(

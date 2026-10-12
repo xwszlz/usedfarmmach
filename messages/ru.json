@@ -129,7 +129,31 @@
       "checkin": "Отметка",
       "admin_adjust": "Корректировка админа",
       "gift": "Подарок"
-    }
+    },
+    "rechargeComRate": "$1 = 1 кредит, любая сумма (безопасная оплата через Stripe)",
+
+    "rechargeCnRate": "1 юань = 1 кредит, любая сумма",
+
+    "payWechat": "WeChat Pay",
+
+    "payAlipay": "Alipay",
+
+    "invalidAmount": "Введите корректную сумму",
+
+    "processing": "Обработка…",
+
+    "networkError": "Ошибка сети, попробуйте снова",
+
+    "scanToPay": "Отсканируйте QR-код для оплаты; после поступления вам будет начислено {credits} кредитов",
+
+    "orderFailed": "Не удалось создать заказ пополнения, попробуйте позже",
+
+    "paymentQrAlt": "QR-код оплаты",
+
+    "freeFeaturesTitle": "Бесплатные функции",
+
+    "freeFeaturesBody": "Публикация товаров, отправка запросов и просмотр контактов полностью бесплатны — кредиты не требуются"
+
   },
   "membership": {
     "_todo": "TODO: translate membership section from English (zh/en are source of truth)",

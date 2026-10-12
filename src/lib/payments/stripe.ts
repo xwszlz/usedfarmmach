@@ -189,7 +189,7 @@ function getSiteDomain(): string {
 
 /**
  * 创建「积分充值」Stripe Checkout Session（一次性支付，仅 .com）。
- * 口径：$1 = 10 积分 => 1 积分 = $0.10 = 10 分（cent）。EUR/GBP 暂同额占位。
+ * 口径：$1 = 1 积分 => 1 积分 = $1.00 = 100 分（cent）。EUR/GBP 暂同额占位。
  * metadata.plan = "credit_recharge" 供 webhook 识别后加积分。
  */
 export async function createCreditRechargeSession(input: {
@@ -206,7 +206,7 @@ export async function createCreditRechargeSession(input: {
   }
   const { userId, credits, currency, stripeCustomerId } = input;
   const c = Math.max(1, Math.floor(credits));
-  const unitAmount = c * 10; // $1=10 积分 -> 1 积分 = 10 分
+  const unitAmount = c * 100; // $1=1 积分 -> 1 积分 = 100 分
   const domain = getSiteDomain();
   const session = await getStripe().checkout.sessions.create({
     mode: "payment",

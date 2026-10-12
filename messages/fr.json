@@ -129,7 +129,31 @@
       "checkin": "Enregistrement",
       "admin_adjust": "Ajustement admin",
       "gift": "Cadeau"
-    }
+    },
+    "rechargeComRate": "1 $ = 1 crédit, montant libre (paiement sécurisé via Stripe)",
+
+    "rechargeCnRate": "1 ¥ = 1 crédit, montant libre",
+
+    "payWechat": "WeChat Pay",
+
+    "payAlipay": "Alipay",
+
+    "invalidAmount": "Veuillez saisir un montant valide",
+
+    "processing": "Traitement…",
+
+    "networkError": "Erreur réseau, veuillez réessayer",
+
+    "scanToPay": "Scannez le QR code pour payer ; {credits} crédits seront crédités automatiquement",
+
+    "orderFailed": "Échec de la création de la commande de recharge, réessayez plus tard",
+
+    "paymentQrAlt": "QR code de paiement",
+
+    "freeFeaturesTitle": "Fonctionnalités gratuites",
+
+    "freeFeaturesBody": "Publier des produits, envoyer des demandes et consulter les coordonnées est entièrement gratuit — aucun crédit requis"
+
   },
   "membership": {
     "_todo": "TODO: translate membership section from English (zh/en are source of truth)",

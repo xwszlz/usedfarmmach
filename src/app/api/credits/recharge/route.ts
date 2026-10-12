@@ -4,7 +4,7 @@
  * 老板口径：取消 4 档会员，改为「积分中心 + 积分充值」。
  *   - .cn（境内）：1 元 = 1 积分；走微信 Native / 支付宝 预下单（普通商户直收增值服务费，
  *     红线：绝不走收付通/服务商/资金托管，不碰分账/二清）。
- *   - .com（国际）：1 美元 = 10 积分；走 Stripe Checkout（一次性支付）。
+ *   - .com（国际）：1 美元 = 1 积分；走 Stripe Checkout（一次性支付）。
  *
  * 注意：本端点只负责【创建支付订单】，真正的【加积分】在支付回调里做：
  *   - .cn → /api/membership/wechat/notify、/api/membership/alipay/notify
@@ -60,8 +60,8 @@ export async function POST(request: NextRequest) {
     const { amount, channel, currency } = parsed.data;
 
     if (isComSite()) {
-      // $1 = 10 积分
-      const credits = Math.floor(amount * 10);
+      // $1 = 1 积分
+      const credits = Math.floor(amount);
       if (credits < 1 || credits > MAX_CREDITS) {
         return NextResponse.json({ success: false, error: "金额超出范围" }, { status: 400 });
       }

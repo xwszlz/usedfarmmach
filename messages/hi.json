@@ -129,7 +129,31 @@
       "checkin": "चेक-इन",
       "admin_adjust": "एडमिन समायोजन",
       "gift": "उपहार"
-    }
+    },
+    "rechargeComRate": "$1 = 1 क्रेडिट, कोई भी राशि (Stripe सुरक्षित भुगतान)",
+
+    "rechargeCnRate": "1 युआन = 1 क्रेडिट, कोई भी राशि",
+
+    "payWechat": "WeChat Pay",
+
+    "payAlipay": "Alipay",
+
+    "invalidAmount": "कृपया मान्य राशि दर्ज करें",
+
+    "processing": "प्रसंस्करण…",
+
+    "networkError": "नेटवर्क त्रुटि, कृपया पुनः प्रयास करें",
+
+    "scanToPay": "भुगतान करने के लिए QR कोड स्कैन करें; {credits} क्रेडिट स्वतः जुड़ जाएँगे",
+
+    "orderFailed": "टॉप-अप ऑर्डर बनाने में विफल, कृपया बाद में पुनः प्रयास करें",
+
+    "paymentQrAlt": "भुगतान QR कोड",
+
+    "freeFeaturesTitle": "निःशुल्क सुविधाएँ",
+
+    "freeFeaturesBody": "उत्पाद प्रकाशित करना, पूछताछ भेजना और संपर्क देखना पूरी तरह निःशुल्क है — कोई क्रेडिट नहीं लगता"
+
   },
   "membership": {
     "_todo": "TODO: translate membership section from English (zh/en are source of truth)",
