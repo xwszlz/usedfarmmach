@@ -45,6 +45,22 @@ function mdToHtml(md: string): string {
     .replace(/\n/g, "<br />");
 }
 
+/** Escape HTML special chars for standalone export */
+function esc(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/** Standalone Markdown→HTML (inline styles, safe lists) for the downloadable report */
+function mdToHtmlStandalone(md: string): string {
+  const html = esc(md)
+    .replace(/### (.*)/g, "<h4>$1</h4>")
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+    .replace(/^- (.*)/gm, "<li>$1</li>")
+    .replace(/^(\d+)\. (.*)/gm, "<li>$2</li>");
+  // Wrap consecutive <li> groups in <ul>（<li> 裸露在 <p> 里会被浏览器拆散）
+  return html.replace(/((?:<li>[\s\S]*?<\/li>\s*)+)/g, "<ul>$1</ul>");
+}
+
 function genReportId(): string {
   const now = new Date();
   const ymd = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
@@ -118,6 +134,75 @@ export default function AnalysisReportView({
   };
 
   const handleDownloadHtml = () => {
+    // 数据驱动重建独立 HTML（不再拷贝带 Tailwind 的 innerHTML —— 拷贝会导致
+    // ①模板表头+组件表头重复 ②柱状图/加粗/列表全部丢样式）。样式全部内联。
+    const secHtml = (s: string) => esc(s);
+
+    const metricsHtml = metrics
+      .map(
+        (m) =>
+          `<div class="metric-card"><div class="label">${secHtml(m.label)}</div><div class="value">${secHtml(m.value)}</div></div>`
+      )
+      .join("");
+
+    const chartHtml =
+      isChineseBrand && subsidyData.length > 0
+        ? `<div class="card"><h3>${zh ? "补贴数据价格走势（真实历史数据）" : "Subsidy Price History"}</h3>
+<div class="bars">${subsidyData
+            .map((d) => {
+              const ph = Math.round((d.avgPrice / maxPrice) * 100);
+              const sh = Math.round((d.avgSubsidy / maxPrice) * 100);
+              return `<div class="bar-group"><div class="bar-pair"><div class="bar price" style="height:${ph}%"></div><div class="bar subsidy" style="height:${sh}%"></div></div><div class="bar-label">${esc(String(d.year))}</div></div>`;
+            })
+            .join("")}</div>
+<div class="legend"><span><i class="dot" style="background:#7c3aed"></i>${zh ? "平均售价" : "Avg Price"}</span><span><i class="dot" style="background:#10b981"></i>${zh ? "平均补贴" : "Avg Subsidy"}</span></div>
+<div class="source">${zh ? "数据来源" : "Source"}: ${subsidyData.reduce((s, d) => s + d.count, 0).toLocaleString()} ${zh ? "条真实交易记录" : "records"}</div></div>`
+        : "";
+
+    const techRows: [string, string][] = [];
+    if (structured?.engineType) techRows.push([zh ? "发动机型号" : "Engine", String(structured.engineType)]);
+    if (structured?.driveSystem) techRows.push([zh ? "驱动方式" : "Drive", String(structured.driveSystem)]);
+    if (structured?.netWeight) techRows.push([zh ? "整机重量" : "Weight", `${structured.netWeight} kg`]);
+    if (structured?.mainConfig) techRows.push([zh ? "主要配置" : "Config", String(structured.mainConfig)]);
+    if (structured?.overallLength && structured?.overallWidth)
+      techRows.push([
+        zh ? "外形尺寸" : "Dimensions",
+        `${structured.overallLength}x${structured.overallWidth}${structured.overallHeight ? `x${structured.overallHeight}` : ""} mm`,
+      ]);
+    const techHtml = techRows.length
+      ? `<div class="card"><h3>${zh ? "技术参数" : "Technical Specs"}</h3><table>${techRows
+          .map(([k, v]) => `<tr><td class="k">${secHtml(k)}</td><td>${secHtml(v)}</td></tr>`)
+          .join("")}</table></div>`
+      : "";
+
+    const condDef: [string, string][] = [
+      ["exterior", zh ? "外观漆面" : "Exterior"],
+      ["rust", zh ? "锈蚀程度" : "Rust"],
+      ["tires", zh ? "轮胎/履带" : "Tires"],
+      ["cabin", zh ? "驾驶室/操作台" : "Cabin"],
+      ["hydraulic", zh ? "液压渗漏" : "Hydraulic"],
+      ["overall", zh ? "整体印象" : "Overall"],
+    ];
+    const condHtml =
+      structured?.conditionScores
+        ? `<div class="card"><h3>${zh ? "设备现状评估（六维度）" : "Condition Assessment"}</h3>${condDef
+            .map(([key, label]) => {
+              const score = structured.conditionScores[key];
+              if (score === undefined || score === null) return "";
+              const pct = (Number(score) / 10) * 100;
+              const color = Number(score) >= 8 ? "#10b981" : Number(score) >= 6 ? "#f59e0b" : "#ef4444";
+              return `<div class="cond-row"><span class="cond-label">${secHtml(label)}</span><div class="cond-track"><div class="cond-fill" style="width:${pct}%;background:${color}"></div></div><span class="cond-score" style="color:${color}">${score}/10</span></div>`;
+            })
+            .join("")}</div>`
+        : "";
+
+    const sectionsHtml = sections
+      .map(
+        (s, i) =>
+          `<div class="card"><h3>§${i + 1} ${secHtml(s.title)}</h3><div class="md">${mdToHtmlStandalone(s.content)}</div></div>`
+      )
+      .join("");
+
     const html = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -125,36 +210,55 @@ export default function AnalysisReportView({
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>深度分析报告 ${reportId}</title>
 <style>
-body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; color: #333; }
-.report-header { background: linear-gradient(135deg, #7c3aed, #5b21b6); color: white; padding: 24px; border-radius: 12px; margin-bottom: 20px; }
-.report-header h1 { margin: 0 0 8px; font-size: 20px; }
-.report-header .meta { font-size: 12px; opacity: 0.8; }
-.metrics { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
-.metric-card { padding: 12px; border-radius: 8px; border: 1px solid #e5e7eb; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; max-width: 800px; margin: 0 auto; padding: 24px 20px; color: #1f2937; background: #f9fafb; }
+.report-header { background: linear-gradient(135deg, #7c3aed, #5b21b6); color: white; padding: 22px 24px; border-radius: 12px; }
+.report-header h1 { font-size: 20px; margin-bottom: 6px; }
+.report-header .meta { font-size: 12px; opacity: .85; }
+.metrics { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-top: 14px; }
+.metric-card { padding: 12px; border-radius: 8px; border: 1px solid #e5e7eb; background: white; }
 .metric-card .label { font-size: 11px; color: #6b7280; }
-.metric-card .value { font-size: 16px; font-weight: 600; margin-top: 4px; }
-.section { margin-bottom: 16px; padding: 16px; border: 1px solid #e5e7eb; border-radius: 8px; }
-.section h2 { font-size: 15px; font-weight: 700; margin: 0 0 8px; color: #1f2937; }
-.section h4 { font-size: 13px; font-weight: 600; margin: 8px 0 4px; color: #374151; }
-.section p { font-size: 13px; line-height: 1.6; color: #4b5563; margin: 4px 0; }
-.section li { font-size: 13px; line-height: 1.8; color: #4b5563; }
-.section ul { padding-left: 20px; }
-.chart { margin: 16px 0; }
-.chart-bars { display: flex; align-items: flex-end; gap: 12px; height: 120px; padding: 8px 0; border-bottom: 1px solid #e5e7eb; }
-.chart-bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-.chart-bar { width: 100%; max-width: 48px; border-radius: 4px 4px 0 0; transition: height 0.3s; }
-.chart-labels { display: flex; gap: 12px; margin-top: 4px; }
-.chart-label { flex: 1; text-align: center; font-size: 11px; color: #6b7280; }
-.footer { margin-top: 24px; padding-top: 16px; border-top: 1px solid #e5e7eb; font-size: 11px; color: #9ca3af; text-align: center; }
-@media print { .no-print { display: none !important; } }
+.metric-card .value { font-size: 16px; font-weight: 700; margin-top: 4px; color: #1f2937; }
+.card { background: white; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px 18px; margin-top: 14px; }
+.card h3 { font-size: 14px; font-weight: 700; color: #374151; margin-bottom: 10px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+td { padding: 7px 6px; border-bottom: 1px solid #f3f4f6; }
+tr:last-child td { border-bottom: none; }
+td.k { color: #6b7280; width: 40%; }
+.bars { display: flex; align-items: flex-end; gap: 14px; height: 130px; padding: 6px 0; border-bottom: 1px solid #e5e7eb; }
+.bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; }
+.bar-pair { display: flex; align-items: flex-end; gap: 4px; height: 100%; }
+.bar { width: 26px; border-radius: 4px 4px 0 0; }
+.bar.price { background: linear-gradient(180deg, #8b5cf6, #7c3aed); }
+.bar.subsidy { background: linear-gradient(180deg, #34d399, #10b981); }
+.bar-label { font-size: 11px; color: #6b7280; margin-top: 4px; }
+.legend { display: flex; justify-content: center; gap: 18px; font-size: 11px; color: #6b7280; margin-top: 8px; }
+.legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
+.source { text-align: center; font-size: 10px; color: #9ca3af; margin-top: 6px; }
+.cond-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.cond-label { width: 96px; font-size: 12px; color: #4b5563; }
+.cond-track { flex: 1; height: 8px; border-radius: 999px; background: #f3f4f6; }
+.cond-fill { height: 100%; border-radius: 999px; }
+.cond-score { width: 40px; text-align: right; font-size: 12px; font-weight: 700; }
+.md { font-size: 13px; line-height: 1.8; color: #4b5563; }
+.md h4 { font-size: 13px; font-weight: 600; color: #374151; margin: 10px 0 4px; }
+.md strong { color: #1f2937; }
+.md ul { padding-left: 20px; margin: 4px 0; }
+.md p { margin: 6px 0; }
+.footer { margin-top: 20px; padding-top: 14px; border-top: 1px solid #e5e7eb; font-size: 11px; color: #9ca3af; text-align: center; }
+@media print { body { background: white; padding: 0; } }
 </style>
 </head>
 <body>
 <div class="report-header">
   <h1>AI 深度分析报告</h1>
-  <div class="meta">报告编号：${reportId} | 生成时间：${reportTime} | ${structured?.brand || ""} ${structured?.modelName || ""}</div>
+  <div class="meta">报告编号：${reportId} | 生成时间：${reportTime} | ${esc(structured?.brand || "")} ${esc(structured?.modelName || "")}</div>
 </div>
-${reportRef.current?.innerHTML || ""}
+${metrics.length > 0 ? `<div class="metrics">${metricsHtml}</div>` : ""}
+${chartHtml}
+${techHtml}
+${condHtml}
+${sectionsHtml}
 <div class="footer">
   神雕农机 usedfarmmach.com | 本报告由AI生成，仅供参考 | 报告编号：${reportId}
 </div>
