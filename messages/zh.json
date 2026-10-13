@@ -206,7 +206,7 @@
 
     "amountPlaceholder": "输入积分数量",
 
-    "creditUnit": "分",
+    "creditUnit": "积分",
 
     "upgradeNow": "去充值",
 
@@ -262,9 +262,9 @@
 
     },
 
-    "rechargeComRate": "$1 = 1 积分，金额随意充（安全在线支付）",
+    "rechargeComRate": "$1 = 100 积分，金额随意充（安全在线支付）",
 
-    "rechargeCnRate": "1 元 = 1 积分，金额随意充",
+    "rechargeCnRate": "1 元 = 100 积分，金额随意充",
 
     "payWechat": "微信支付",
 

@@ -36,6 +36,7 @@ import { resolveValuationCodes } from "@/lib/valuation/resolve-codes";
 import { analyzeProductImages } from "@/lib/valuation/image-analyzer";
 
 import { analyzeVideo, calculateVideoFactor } from "@/lib/valuation/video-analyzer";
+import { drainUsage } from "@/lib/credits/usage-collector";
 
 import { getDetailImageUrl, getVideoUrl } from "@/lib/image-url";
 
@@ -1631,6 +1632,14 @@ export async function POST(request: NextRequest) {
               }
 
             }
+
+            // ── 用量归集收口 ──
+            // analyzeProductImages / analyzeVideo 内部已 recordUsage（image-analyzer / video-analyzer），
+            // 但本文件是内部批量管线：暂不计费（系统账号批量处理，计费口径待定），
+            // 然而**必须 drain** —— usage-collector 是模块级数组，不 drain 会一直堆着，
+            // 被下一个任意请求（recognize / valuation）drain 走 → 跨请求串账，
+            // A 用户的 token 消耗算到 B 用户头上。参照 valuation/route.ts L985-988 GET 分支写法。
+            drainUsage();
 
 
 

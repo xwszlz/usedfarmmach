@@ -262,9 +262,9 @@
 
     },
 
-    "rechargeComRate": "$1 = 1 credit, any amount (secure online payment)",
+    "rechargeComRate": "$1 = 100 credits, any amount (secure online payment)",
 
-    "rechargeCnRate": "¥1 = 1 credit, any amount",
+    "rechargeCnRate": "¥1 = 100 credits, any amount",
 
     "payWechat": "WeChat Pay",
 

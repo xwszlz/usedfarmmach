@@ -130,9 +130,9 @@
       "admin_adjust": "Ajuste de administrador",
       "gift": "Regalo"
     },
-    "rechargeComRate": "1 $ = 1 crédito, cualquier importe (pago seguro en línea)",
+    "rechargeComRate": "1 $ = 100 créditos, cualquier importe (pago seguro en línea)",
 
-    "rechargeCnRate": "1 ¥ = 1 crédito, cualquier importe",
+    "rechargeCnRate": "1 ¥ = 100 créditos, cualquier importe",
 
     "payWechat": "WeChat Pay",
 

@@ -7,7 +7,7 @@
 //
 // 与会员订单号（lib/membership/order.ts）互不冲突：会员单以 M 开头，积分单以 R 开头。
 
-const MAX_CREDITS = 1_000_000;
+const MAX_CREDITS = 100_000_000;
 
 function random4(): string {
   return Math.random().toString(36).slice(2, 6).toUpperCase().padEnd(4, "0");
@@ -32,7 +32,8 @@ export function parseCreditOutTradeNo(
   s: string | null | undefined
 ): { credits: number; orderTs: number } | null {
   if (!s) return null;
-  const m = /^R(\d{13})_(\d{1,7})_([A-Z0-9]{4})$/.exec(s);
+  // 积分数最多 8 位（¥100,000 × 100 = 10,000,000）
+  const m = /^R(\d{13})_(\d{1,8})_([A-Z0-9]{4})$/.exec(s);
   if (!m) return null;
   const orderTs = Number(m[1]);
   const credits = Number(m[2]);

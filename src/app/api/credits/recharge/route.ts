@@ -2,9 +2,9 @@
  * POST /api/credits/recharge —— 积分充值下单入口（双站）
  *
  * 老板口径：取消 4 档会员，改为「积分中心 + 积分充值」。
- *   - .cn（境内）：1 元 = 1 积分；走微信 Native / 支付宝 预下单（普通商户直收增值服务费，
+ *   - .cn（境内）：1 元 = 100 积分；走微信 Native / 支付宝 预下单（普通商户直收增值服务费，
  *     红线：绝不走收付通/服务商/资金托管，不碰分账/二清）。
- *   - .com（国际）：1 美元 = 1 积分；走 Paddle Checkout（一次性支付，Paddle 为 MoR）。
+ *   - .com（国际）：1 美元 = 100 积分；走 Paddle Checkout（一次性支付，Paddle 为 MoR）。
  *
  * 注意：本端点只负责【创建支付订单】，真正的【加积分】在支付回调里做：
  *   - .cn → /api/membership/wechat/notify、/api/membership/alipay/notify
@@ -29,7 +29,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
-const MAX_CREDITS = 100_000;
+const MAX_CREDITS = 10_000_000; // = ¥100,000 × 100 积分/元
 
 const bodySchema = z.object({
   /** .cn：人民币元；.com：美元 */
@@ -58,8 +58,8 @@ export async function POST(request: NextRequest) {
     const { amount, channel, currency } = parsed.data;
 
     if (isComSite()) {
-      // $1 = 1 积分
-      const credits = Math.floor(amount);
+      // $1 = 100 积分
+      const credits = Math.floor(amount * 100);
       if (credits < 1 || credits > MAX_CREDITS) {
         return NextResponse.json({ success: false, error: "金额超出范围" }, { status: 400 });
       }
@@ -85,8 +85,8 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // .cn：1 元 = 1 积分
-    const credits = Math.floor(amount);
+    // .cn：1 元 = 100 积分
+    const credits = Math.floor(amount * 100);
     if (credits < 1 || credits > MAX_CREDITS) {
       return NextResponse.json({ success: false, error: "金额超出范围" }, { status: 400 });
     }
@@ -102,9 +102,11 @@ export async function POST(request: NextRequest) {
           { status: 503 }
         );
       }
+      // 微信要「分」：credits 数值上已等于分（1 元 = 100 积分 = 100 分），
+      // 但为免 floor 与浮点误差，直接用真实金额取分，不可再乘 100。
       const { code_url } = await createNativeOrder(
         outTradeNo,
-        credits * 100, // 单位：分
+        Math.round(amount * 100), // 单位：分
         description,
         `${base}/api/membership/wechat/notify`,
         user.id // attach：回调原样返回，用于定位用户
@@ -122,9 +124,10 @@ export async function POST(request: NextRequest) {
         { status: 503 }
       );
     }
+    // 支付宝要「元」：credits 数值上已等于分，必须传真实金额 amount（元）
     const { qr_code } = await createPrecreateOrder(
       outTradeNo,
-      credits, // 单位：元
+      amount, // 单位：元
       description,
       `${base}/api/membership/alipay/notify`,
       user.id // passback_params：异步通知原样返回

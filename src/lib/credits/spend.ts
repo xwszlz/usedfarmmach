@@ -1,10 +1,10 @@
 /**
  * 积分扣减（AI 功能计费核心）
  *
- * 积分按各站本位币计价（老板口径 2026-10-12，修订 2026-10-12-E）：
- *   - 充值：.cn 站 1 元 = 1 积分；.com 站 $1 = 1 积分；
+ * 积分按各站本位币计价（老板口径 2026-10-12，修订 2026-10-12-E；2026-10-13 单位细化）：
+ *   - 充值：.cn 站 1 元 = 100 积分；.com 站 $1 = 100 积分；
  *   - AI 消耗 = 实际模型成本 × 2 反算积分，且**站点感知本位币**：
- *       · .com 站：USD 计价模型直接按 $ 计费（不折 ¥），与"$1=1 积分"充值口径对齐；
+ *       · .com 站：USD 计价模型直接按 $ 计费（不折 ¥），与"$1=100 积分"充值口径对齐；
  *       · .cn 站 / CNY 计价模型：按 ¥ 计费（USD 模型仍按固定汇率 7.2 折 ¥）。
  *
  * 计费链路：四大 AI 功能按大模型 token 实际消耗成本 × 2 收费，反算积分消耗。
@@ -14,7 +14,7 @@
  *      - $ 计价模型 + .cn 站：actualCost = actualCostUsd × 7.2 折 ¥；
  *      - ¥ 计价模型：actualCost = actualCostCny；
  *      - 价格表见下方 MODEL_PRICING；未知模型用兜底 ¥0.004/1K 混合价（标注"兜底，待校准"）。
- *   3) points = round(actualCost × 2)；
+ *   3) points = round(actualCost × 100 × 2)（×100 即 CREDITS_PER_UNIT：1 元/1 美元 = 100 积分）；
  *   4) 在 CreditTransaction.breakdown JSON 记录 currency + 全部计量字段
  *      （actualCostCny 字段存"计费货币下的成本"，配合 currency 区分 cny/usd）。
  *
@@ -44,13 +44,16 @@ export interface AiCostBreakdown {
   actualCostCny: number;
   multiplier: number;
   points: number;
+  /** 当时的积分单位换算（1 元/1 美元 = pointsPerUnit 积分），用于区分新旧单位时代的账本 */
+  pointsPerUnit?: number;
 }
 
 /**
- * 模型价格表（¥/1K tokens，input/output 分开）。
- * ⚠️ 单价均为"保守估计值"，实际以各厂商账单为准；未知模型用兜底混合价。
- *    当前主流模型单价极低，单次调用 actualCostCny 多为小数，round 后常为 0/1 积分——
- *    若希望 AI 调用有实在收费，需上调单价或设最低消费（见 spend.ts 报告）。
+ * 模型价格表（元或美元 / 1K tokens，input/output 分开，见各条 currency）。
+ * ⚠️ 单价以各厂商官方公示价为准，未核实的保留"待校准"标注；未知模型用兜底混合价。
+ *    当前主流模型单价极低，单次调用 actualCost 多为小数——过去"1 元 = 1 积分"时
+ *    round 后常为 0/1 积分，几乎收不到钱；现已通过细化计费单位解决：
+ *    1 元 = 100 积分（CREDITS_PER_UNIT），单次调用即可扣出实在的积分，无需最低消费。
  */
 interface ModelPrice {
   inPrice: number;
@@ -60,13 +63,15 @@ interface ModelPrice {
 }
 
 export const MODEL_PRICING: Record<string, ModelPrice> = {
-  // 豆包（.cn 主用 / .com 国际品牌降级）：seed 2.1 pro 保守估
-  "doubao-seed-2-1-pro-260915": { inPrice: 0.012, outPrice: 0.036, currency: "cny", note: "豆包 seed-2.1-pro 保守估，待校准" },
+  // 豆包（.cn 主用 / .com 国际品牌降级）：火山方舟官方价（推理输入 6 元/百万、输出 30 元/百万）
+  "doubao-seed-2-1-pro-260915": { inPrice: 0.006, outPrice: 0.03, currency: "cny", note: "火山方舟官方：推理输入 6 元/百万 tokens、输出 30 元/百万 tokens" },
   // Gemini（估值/深度分析境外链路）
-  "gemini-1.5-flash": { inPrice: 0.0003, outPrice: 0.0006, currency: "usd", note: "Gemini 1.5 Flash 保守估，待校准" },
-  "gemini-2.5-flash": { inPrice: 0.0003, outPrice: 0.0025, currency: "usd", note: "Gemini 2.5 Flash 保守估，待校准" },
+  "gemini-1.5-flash": { inPrice: 0.0003, outPrice: 0.0006, currency: "usd", note: "待校准（官方 $0.075/$0.30 每百万，未核实档位）" },
+  "gemini-2.5-flash": { inPrice: 0.0003, outPrice: 0.0025, currency: "usd", note: "官方 $0.30/$2.50 每百万" },
   // OpenRouter（深度分析 / 视频分析降级）
-  "openai/gpt-4o": { inPrice: 0.0025, outPrice: 0.01, currency: "usd", note: "GPT-4o via OpenRouter 保守估，待校准" },
+  "openai/gpt-4o": { inPrice: 0.0025, outPrice: 0.01, currency: "usd", note: "官方 $2.50/$10.00 每百万" },
+  "openai/gpt-4o-mini": { inPrice: 0.00015, outPrice: 0.0006, currency: "usd", note: "官方 $0.15/$0.60 每百万" },
+  "anthropic/claude-haiku": { inPrice: 0.0008, outPrice: 0.004, currency: "usd", note: "Claude 3.5 Haiku 保守估，待校准" },
   "meta-llama/llama-3.2-11b-vision-instruct": { inPrice: 0.0001, outPrice: 0.0002, currency: "usd", note: "Llama 3.2 vision via OpenRouter，待校准" },
   "google/gemini-2.0-flash-001:free": { inPrice: 0, outPrice: 0, currency: "usd", note: "免费模型，0 成本" },
 };
@@ -82,15 +87,21 @@ export const FALLBACK_PRICING: ModelPrice = {
 /** 固定美元→人民币汇率（仅用于把 $ 计价模型的 USD 成本折算成 ¥） */
 export const DEFAULT_USD_TO_CNY = 7.2;
 
+/**
+ * 计费单位换算：1 元人民币 = 100 积分，1 美元 = 100 积分。
+ * 即 1 积分 = 1 分钱（0.01 元）/ 1 美分（$0.01）。
+ */
+export const CREDITS_PER_UNIT = 100;
+
 /** AI 计费倍率（实际支出 × 2） */
 export const AI_COST_MULTIPLIER = 2;
 
 /**
  * 依据模型单价与 token 用量计算实际成本与应扣积分。
  * 站点感知本位币（老板口径 2026-10-12-E）：
- *   - .com 站 + USD 计价模型：actualCost 直接取 $ 值（不折 ¥），与"$1=1 积分"充值对齐；
+ *   - .com 站 + USD 计价模型：actualCost 直接取 $ 值（不折 ¥），与"$1=100 积分"充值对齐；
  *   - 其余（.cn 站 / CNY 计价模型）：USD 模型仍按 7.2 折 ¥，CNY 模型直接按 ¥。
- * 最终 points = round(actualCost × 2)。
+ * 最终 points = round(actualCost × 100 × 2)。
  */
 export function computeAiCost(params: {
   model: string;
@@ -114,7 +125,8 @@ export function computeAiCost(params: {
       : rawCost;
   const currency: "cny" | "usd" = comUsd ? "usd" : "cny";
 
-  const points = Math.round(actualCost * AI_COST_MULTIPLIER);
+  // 1 元/1 美元 = 100 积分：actualCost 先换算成积分，再乘倍率 2
+  const points = Math.round(actualCost * CREDITS_PER_UNIT * AI_COST_MULTIPLIER);
 
   return {
     model: params.model,
@@ -126,6 +138,7 @@ export function computeAiCost(params: {
     actualCostCny: Math.round(actualCost * 1000) / 1000,
     multiplier: AI_COST_MULTIPLIER,
     points,
+    pointsPerUnit: CREDITS_PER_UNIT,
   };
 }
 

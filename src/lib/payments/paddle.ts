@@ -53,7 +53,8 @@ function getSiteDomain(): string {
 
 /**
  * 创建「积分充值」Paddle Transaction（一次性支付，仅 .com）。
- * 口径：$1 = 1 积分 => 1 积分 = $1.00 = 100 分（最小货币单位）。
+ * 口径：$1 = 100 积分 => 1 积分 = $0.01 = 1 分，故「积分充值 c 积分」= c 美分
+ *      （c = floor(美元金额 × 100)，数值上就是最小货币单位「分」，无需再乘 100）。
  * custom_data.plan = "credit_recharge" 供 webhook 识别后加积分。
  *
  * 价格模式二选一（防御性）：
@@ -76,7 +77,8 @@ export async function createCreditRechargeTransaction(input: {
 
   const { userId, credits, currency } = input;
   const c = Math.max(1, Math.floor(credits));
-  const unitAmount = c * 100; // $1 = 1 积分 -> 1 积分 = 100 分
+  // $1 = 100 积分 -> 1 积分 = 1 分：c 本身已是「分」（最小货币单位）
+  const unitAmount = c;
   const domain = getSiteDomain();
 
   const priceId = process.env.PADDLE_PRICE_ID_CREDITS_USD;
@@ -87,7 +89,7 @@ export async function createCreditRechargeTransaction(input: {
           quantity: 1,
           price: {
             name: `积分充值 ${c} 积分`,
-            description: `Credit recharge ${c} credits ($1 = 1 credit)`,
+            description: `Credit recharge ${c} credits ($1 = 100 credits)`,
             // Paddle 要求 amount 为字符串形式的最小货币单位整数
             unit_price: { amount: String(unitAmount), currency_code: currency },
             // non-catalog product：与 price 同级嵌套在 price 内（Paddle API v1）

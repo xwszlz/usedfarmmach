@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
     return ok("ignored");
   }
 
-  // —— 积分充值订单（R 前缀）：1 元 = 1 积分，直接加积分，不走会员逻辑 ——
+  // —— 积分充值订单（R 前缀）：1 元 = 100 积分，直接加积分，不走会员逻辑 ——
   if (isCreditOutTradeNo(data.out_trade_no)) {
     const pc = parseCreditOutTradeNo(data.out_trade_no);
     if (!pc) {
@@ -96,9 +96,10 @@ export async function POST(request: NextRequest) {
       return ok("missing attach");
     }
     if (data.amount) {
+      // 单位变更后：订单号里的 credits 数值上就等于「分」，与微信 amount.total 同单位直接比
       const paidCents = Number(data.amount.total);
-      if (!Number.isFinite(paidCents) || paidCents !== pc.credits * 100) {
-        console.error(`[Recharge/WechatNotify] 金额不符 order=${data.out_trade_no} paid=${data.amount.total} expected=${pc.credits * 100}`);
+      if (!Number.isFinite(paidCents) || paidCents !== pc.credits) {
+        console.error(`[Recharge/WechatNotify] 金额不符 order=${data.out_trade_no} paid=${data.amount.total} expected=${pc.credits}`);
         return fail("amount mismatch");
       }
     }

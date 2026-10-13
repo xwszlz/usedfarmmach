@@ -28,7 +28,7 @@ export const MEMBERSHIP_TIERS = {
 
     contactsPerMonth: 5,       // 每月查看联系方式次数（P1 新增）
 
-    credits: 20,               // P0 增长方案 2026-09-06：赠分 5→20，消解"发第6台卡死"，配合月额度 publishesPerMonth（与 DEFAULT_REWARD_VALUES.registerGift 保持一致）
+    credits: 2000,             // P0 增长方案 2026-09-06：赠分 5→20，消解"发第6台卡死"，配合月额度 publishesPerMonth（与 DEFAULT_REWARD_VALUES.registerGift 保持一致；2026-10-13 积分单位细化：1 元 = 100 积分，20 → 2000）
 
     freeValuationsPerMonth: 5,
 

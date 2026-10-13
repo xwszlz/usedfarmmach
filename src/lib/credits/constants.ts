@@ -1,6 +1,10 @@
 /**
  * 积分体系常量定义（共享知识 §8.3/§8.4/§8.6/§8.7/§8.11/§8.13）
  * 数值默认值以 PRD 为准；运营可调项存 SystemConfig，代码只兜底默认值。
+ *
+ * ⚠️ 积分单位（2026-10-13 起）：1 元 = 100 积分，1 美元 = 100 积分。
+ *    本文件中所有「积分数」常量均已按新单位 ×100；priceCny、天数、次数、名额、周期、比例
+ *    等非积分数值保持不变。充值/扣费口径必须同一版本上线，详见 prisma/migrate-credits-x100.ts。
  */
 
 // ─── 流水类型枚举（CreditTransaction.type）─────────────────────
@@ -44,23 +48,25 @@ export type MilestoneEvent = (typeof MILESTONE_EVENTS)[number];
 
 // ─── 奖励数值默认值（可被 SystemConfig reward_values 覆盖）────
 export const DEFAULT_REWARD_VALUES = {
-  registerGift: 20, // P0 增长方案 2026-09-06：赠分 5→20，消解"发第6台卡死"，配合月额度 publishesPerMonth
-  certPersonal: 5, // 实名认证（certType=personnel/personal）
-  certEnterprise: 10, // 企业认证（certType=institution/enterprise）
-  inviteCertInviter: 10, // 被邀请人认证通过 → 邀请人
-  inviteCertInvitee: 5, // 被邀请人认证通过 → 被邀请人（不占邀请人月额度）
-  inviteFirstPublish: 5, // 被邀请人首次发布 → 邀请人
-  inviteFirstPayCap: 50, // 被邀请人首次付费 → 邀请人封顶
-  inviteFirstPayRate: 0.1, // 实付金额 × 10%（floor 取整）
-  inviteMonthCap: 200, // 邀请人每月 invite_reward 入账上限
-  checkinDaily: 1, // 每日签到
-  checkinStreakBonus: 3, // 连击第 7 天额外（计入月上限）
-  checkinStreakCycle: 7, // 连击周期
-  checkinMonthCap: 10, // 每月签到积分上限（含连击）
-  firstPublish: 2, // 首次发布
-  firstInquiry: 5, // 首次收到询价（卖家）
-  firstDeal: 20, // 首次标记成交
-  emailVerifiedGift: 5, // 邮箱验证成功（与注册礼包一致）
+  registerGift: 2000, // P0 增长方案 2026-09-06：赠分 5→20，消解"发第6台卡死"，配合月额度 publishesPerMonth（×100 后 2000 分）
+  certPersonal: 500, // 实名认证（certType=personnel/personal）
+  certEnterprise: 1000, // 企业认证（certType=institution/enterprise）
+  inviteCertInviter: 1000, // 被邀请人认证通过 → 邀请人
+  inviteCertInvitee: 500, // 被邀请人认证通过 → 被邀请人（不占邀请人月额度）
+  inviteFirstPublish: 500, // 被邀请人首次发布 → 邀请人
+  inviteFirstPayCap: 5000, // 被邀请人首次付费 → 邀请人封顶
+  /** 比例系数：实付金额(元) × 10% × 100 = 积分。100 即「1 元 = 100 积分」的单位换算，
+   *  故原 0.1 在新单位下写作 0.1 × 100 = 10（floor 取整）。⚠️ 非积分数值，勿再 ×100。 */
+  inviteFirstPayRate: 10,
+  inviteMonthCap: 20000, // 邀请人每月 invite_reward 入账上限
+  checkinDaily: 100, // 每日签到
+  checkinStreakBonus: 300, // 连击第 7 天额外（计入月上限）
+  checkinStreakCycle: 7, // 连击周期（天数，非积分，不受 ×100 影响）
+  checkinMonthCap: 1000, // 每月签到积分上限（含连击）
+  firstPublish: 200, // 首次发布
+  firstInquiry: 500, // 首次收到询价（卖家）
+  firstDeal: 2000, // 首次标记成交
+  emailVerifiedGift: 500, // 邮箱验证成功（与注册礼包一致）
 } as const;
 export type RewardValues = {
   [K in keyof typeof DEFAULT_REWARD_VALUES]: number;
@@ -71,18 +77,18 @@ export type RewardValues = {
 
 /** 商城商品定价（积分） */
 export const MALL_PRICES = {
-  topPerDay: 5, // 置顶卡 /天/台
-  refresh: 2, // 刷新卡 /次/台
-  aiReport: 10, // AI 报告抵扣（仅 standard/19.9 档）
-  homeFeaturePerDay: 20, // 首页推荐位 /天/台
+  topPerDay: 500, // 置顶卡 /天/台
+  refresh: 200, // 刷新卡 /次/台
+  aiReport: 1000, // AI 报告抵扣（仅 standard/19.9 档）
+  homeFeaturePerDay: 2000, // 首页推荐位 /天/台
 } as const;
 
-/** 首页推荐位每日名额 */
+/** 首页推荐位每日名额（名额上限，非积分，不受 ×100 影响） */
 export const HOME_FEATURE_DAILY_CAP = 10;
 /** AI 报告积分抵扣仅开放的标准档 */
 export const AI_REPORT_CREDITS_TIER = "standard";
-/** AI 报告积分抵扣价（分） */
-export const AI_REPORT_CREDITS_COST = 10;
+/** AI 报告积分抵扣价（积分；新单位 1 元 = 100 积分） */
+export const AI_REPORT_CREDITS_COST = 1000;
 
 // ─── SKU 定义（价格/分值以 SystemConfig 为准，此处为兜底默认）─
 export const ORDER_TYPES = ["credit_pack", "membership"] as const;
@@ -97,22 +103,22 @@ export interface CreditPackSku {
 }
 
 export const DEFAULT_CREDIT_PACKS: CreditPackSku[] = [
-  { sku: "pack10", credits: 10, priceCny: 20, audienceZh: "偶尔卖一两台的个人卖家", audienceEn: "Individual sellers listing occasionally" },
-  { sku: "pack30", credits: 30, priceCny: 54, audienceZh: "月发 10 台以内的小经销商", audienceEn: "Small dealers posting up to 10/mo" },
-  { sku: "pack60", credits: 60, priceCny: 96, audienceZh: "中等车商", audienceEn: "Mid-size dealers" },
-  { sku: "pack150", credits: 150, priceCny: 199, audienceZh: "大经销商", audienceEn: "Large dealers" },
+  { sku: "pack10", credits: 1000, priceCny: 20, audienceZh: "偶尔卖一两台的个人卖家", audienceEn: "Individual sellers listing occasionally" },
+  { sku: "pack30", credits: 3000, priceCny: 54, audienceZh: "月发 10 台以内的小经销商", audienceEn: "Small dealers posting up to 10/mo" },
+  { sku: "pack60", credits: 6000, priceCny: 96, audienceZh: "中等车商", audienceEn: "Mid-size dealers" },
+  { sku: "pack150", credits: 15000, priceCny: 199, audienceZh: "大经销商", audienceEn: "Large dealers" },
 ];
 
 export interface PlanSku {
   sku: string;
   tier: string;
   priceCny: number;
-  credits: number; // 开通发放的充值积分（基础版 50，其余 0）
+  credits: number; // 开通发放的充值积分（基础版 5000，其余 0）
   popular?: boolean;
 }
 
 export const DEFAULT_PLANS: PlanSku[] = [
-  { sku: "plan_basic", tier: "basic", priceCny: 88, credits: 50 },
+  { sku: "plan_basic", tier: "basic", priceCny: 88, credits: 5000 },
   { sku: "plan_premium", tier: "premium", priceCny: 158, credits: 0, popular: true },
   { sku: "plan_enterprise", tier: "enterprise", priceCny: 288, credits: 0 },
 ];

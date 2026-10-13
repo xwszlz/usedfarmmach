@@ -23,7 +23,7 @@ export default async function PublishGuidePage({
             { step: "1", icon: FileText, title: "注册并登录", desc: "点击右上角「注册」创建卖家账号，或直接登录已有账号。登录后导航栏会出现「卖家中心」入口。" },
             { step: "2", icon: CheckCircle, title: "进入卖家中心", desc: "点击导航栏「卖家中心」进入产品管理页面，点击「发布新产品」按钮开始填写产品信息。" },
             { step: "3", icon: Camera, title: "填写产品信息", desc: "准确填写品牌、型号、年份、工时、成色、价格、位置等信息。越详细越容易成交。也可以使用AI拍照识别功能，上传照片后自动填充规格字段。小程序用户可拍8张定向照片+1个运转视频，系统自动识别并估值。" },
-            { step: "4", icon: DollarSign, title: "消耗积分发布", desc: "每发布一台产品消耗 1 积分。首次注册赠送 1 积分，积分不足时联系管理员充值。" },
+            { step: "4", icon: DollarSign, title: "发布产品", desc: "发布产品免费，AI 功能按实际用量计费，积分不足时可在积分中心充值。" },
             { step: "5", icon: MessageCircle, title: "等待买家询盘", desc: "产品上线后买家将能看到并联系您。您可以在卖家中心查看收到的询盘信息。" },
           ].map((item) => (
             <div key={item.step} className="flex gap-4 rounded-xl border bg-white p-5 shadow-sm">
@@ -111,7 +111,7 @@ export default async function PublishGuidePage({
         >
           立即发布产品
         </Link>
-        <p className="mt-2 text-xs text-gray-400">发布消耗 1 积分</p>
+        <p className="mt-2 text-xs text-gray-400">发布免费</p>
       </div>
     </div>
   );
