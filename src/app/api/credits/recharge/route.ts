@@ -71,14 +71,17 @@ export async function POST(request: NextRequest) {
       }
       // 本版 .com 固定 USD（前端从不传 currency）；currency 保留在 zod schema 里
       // 仅为兼容已发出的请求体，此处不再消费。
-      const { checkoutUrl, transactionId } = await createCreditRechargeTransaction({
+      // 只把 transactionId 交给前端（Paddle.js 用它打开结账浮层）。
+      // 不返回 checkout.url：那是「本站域名 + _ptxn=<id>」的支付链接而非收银台，
+      // 交给前端跳转会让用户回到本站而付不了款。
+      const { transactionId } = await createCreditRechargeTransaction({
         userId: user.id,
         credits,
         currency: "USD",
       });
       return NextResponse.json({
         success: true,
-        data: { type: "paddle", url: checkoutUrl, credits, transactionId },
+        data: { type: "paddle", credits, transactionId },
       });
     }
 

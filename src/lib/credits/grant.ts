@@ -191,54 +191,17 @@ export async function grantRecharge(
   if (amt <= 0) return 0;
 
   // 调用方已提供事务客户端（如 Paddle webhook 需在同一个事务内完成「查重 + 入账」）：
-  // 禁止再嵌套 prisma.$transaction（嵌套事务会报错），改为顺序执行三步写，
-  // 原子性由外层事务保证。
+  // 禁止再嵌套 prisma.$transaction（嵌套事务会报错），原子性由外层事务保证。
   if (tx) {
     await writeRechargeEntries(tx, userId, amt, reason, sourceId);
     return amt;
   }
 
-  await prisma.$transaction(async (tx) => {
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + RECHARGE_TTL_DAYS);
-
-    const lot = await tx.creditLot.create({
-      data: {
-        userId,
-        account: "recharge",
-        sourceType: "recharge",
-        sourceId: sourceId ?? null,
-        initialAmount: amt,
-        remainingAmount: amt,
-        expiresAt,
-      },
-      select: { id: true },
-    });
-
-    const user = await tx.user.findUnique({
-      where: { id: userId },
-      select: { credits: true },
-    });
-
-    await tx.creditTransaction.create({
-      data: {
-        userId,
-        type: "recharge",
-        amount: amt,
-        balance: (user?.credits ?? 0) + amt,
-        reason,
-        account: "recharge",
-        lotId: lot.id,
-        expiresAt,
-        relatedId: sourceId ?? null,
-      },
-    });
-
-    await tx.user.update({
-      where: { id: userId },
-      data: { credits: { increment: amt } },
-    });
-  });
+  // 无外层事务时自行包裹一层交互式事务。三写逻辑统一收敛到 writeRechargeEntries，
+  // 全仓只有一份写入实现，避免「改一处漏一处」的静默 bug。
+  await prisma.$transaction((txc) =>
+    writeRechargeEntries(txc, userId, amt, reason, sourceId)
+  );
 
   return amt;
 }
@@ -247,9 +210,6 @@ export async function grantRecharge(
  * 充值三步写：CreditLot → CreditTransaction → User.credits.increment。
  * 供 grantRecharge 在「外层已提供事务客户端」时复用，避免嵌套事务。
  *
- * ⚠️ 维护注意：此处与 grantRecharge 内部默认事务分支是同一套写法的两份实现
- * （为了不改动现有调用方的任何一行行为而刻意保留原分支）。
- * 修改写入字段时，两处必须同步修改。
  */
 async function writeRechargeEntries(
   db: Prisma.TransactionClient,
