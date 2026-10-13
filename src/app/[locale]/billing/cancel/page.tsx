@@ -30,12 +30,12 @@ export default async function BillingCancelPage({
         </h1>
         <p className="mb-6 text-sm text-gray-500">
           {zh
-            ? "您取消了支付或未完成付款，未产生任何扣费。可重新前往会员页发起支付。"
-            : "You cancelled or did not complete the payment. No charge was made. You can return to the membership page to try again."}
+            ? "您取消了支付或未完成付款，未产生任何扣费。可重新前往积分中心发起充值。"
+            : "You cancelled or did not complete the payment. No charge was made. You can return to the credits page to try again."}
         </p>
         <div className="flex flex-col gap-2">
           <Link
-            href={"/" + locale + "/membership"}
+            href={"/" + locale + "/credits"}
             className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
           >
             {zh ? "重新支付" : "Try Again"}

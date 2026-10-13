@@ -3,9 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 import { isComSite } from "@/config/site";
-import { MEMBERSHIP_TIERS } from "@/lib/permissions";
 import { CreditTransactionList } from "./credit-transactions";
-import { MembershipCard } from "./membership-card";
 import { RechargeForm } from "./recharge-form";
 
 interface PageProps {
@@ -24,13 +22,10 @@ export default async function CreditsPage({ params }: PageProps) {
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
       <h1 className="mb-6 text-2xl font-bold text-gray-900">
-        {t("title") || "会员中心"}
+        {t("title") || "积分中心"}
       </h1>
 
       <div className="grid gap-6 md:grid-cols-2">
-        {/* 会员状态卡片 */}
-        <MembershipCard locale={locale} />
-
         {/* 积分余额 & 充值：isCom 决定通道（.com 只走 Paddle，不显示微信/支付宝） */}
         <RechargeForm locale={locale} isCom={isComSite()} />
 

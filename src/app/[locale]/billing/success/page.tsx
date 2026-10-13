@@ -30,15 +30,15 @@ export default async function BillingSuccessPage({
         </h1>
         <p className="mb-6 text-sm text-gray-500">
           {zh
-            ? "您的付款已收到，会员权益将在系统确认后生效（以银行/渠道到账为准）。"
-            : "Your payment was received. Your membership will activate once the payment is confirmed by the channel."}
+            ? "您的付款已收到，积分将在系统确认后到账。"
+            : "Your payment was received. Credits will be added once the payment is confirmed by the channel."}
         </p>
         <div className="flex flex-col gap-2">
           <Link
-            href={"/" + locale + "/membership"}
+            href={"/" + locale + "/credits"}
             className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
           >
-            {zh ? "查看会员权益" : "View Membership"}
+            {zh ? "查看积分中心" : "View Credits"}
           </Link>
           <Link
             href={"/" + locale}
