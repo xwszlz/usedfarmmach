@@ -47,12 +47,37 @@
  *   · SystemConfig 运营配置里的积数字段 ×100（credit_packs[].credits /
  *                                      plans[].credits / reward_values.*）
  *
+ * ── 迁移之外的一件事（第 8 步，不乘任何数）─────────────────────────────
+ *   · 为「无批次支撑的余额」补 CreditLot（补的是 ×100 后的 gap，详见文件头第 8 节）
+ *
  * ── 为什么 ServiceOrder 改成全状态 ×100（与原实现不同）───────────────────
  *   原实现只改 pending/paid。但 `credits` 是一个**带单位的列**，单位必须全局一致：
  *   closed/rejected/refunded 订单若维持旧单位，后台订单列表里会出现
  *   "¥199 → 150 积分" 与 "¥199 → 15000 积分" 并列，运营人工确认时极易按错；
  *   且若存在"closed 订单被重新确认并发分"的补救路径，漏改就是实打实的资损。
  *   历史订单不影响任何余额，统一 ×100 只是让单位一致，风险低于不一致。
+ *
+ * ── 第 8 步：为什么还要补 CreditLot ────────────────────────────────────
+ *   src/app/api/admin/credits/route.ts:27-31：后台手工加积分时**只 increment
+ *   User.credits**，既不建批次也不写流水；而 src/lib/credits/spend.ts:177-193
+ *   的 FIFO 扣减**只从 CreditLot 里扣**（且只取 expiresAt > now() 的批次），
+ *   spend.ts:207-209 却按 need **全额 decrement User.credits**。
+ *   → User.credits 里存在一部分「没有任何批次支撑」的余额，×100 后缺口同步放大 100 倍，
+ *     账目不变式 User.credits = SUM(未过期 lot.remainingAmount) 不成立。
+ *
+ *   第 8 步放在全部 ×100 **之后**（此时 User.credits / lot 金额都已是新单位，
+ *   gap 也是新单位，直接补，无需二次换算）：
+ *     gap = User.credits − SUM(CreditLot.remainingAmount
+ *                              WHERE remainingAmount > 0 AND expiresAt > now())
+ *   只对 User.credits > 0 且 gap > 0 的用户建一个 lot：
+ *     account = "recharge"      sourceType = "migration"
+ *     sourceId = "credits-x100-backfill"（幂等判据 + 事后可识别）
+ *     initialAmount = remainingAmount = gap        expiresAt = now + 365 天
+ *   ⚠️ 绝不同时改动 User.credits —— 它已经是对的，改了就是重复加钱。
+ *
+ *   ⚠️ 已知副作用（需人工定夺，脚本只负责把数字打出来）：
+ *   gap 里可能包含「早已过期、却从未被定时任务从 User.credits 扣掉」的积分，
+ *   补 lot 等于把这部分**复活成 1 年有效**。脚本会统计疑似来自过期批次的用户数与积分量。
  *
  * ── 运行方式 ────────────────────────────────────────────────────────────
  *   # 0) 体检（只读，不写库）—— 强烈建议先跑这一遍
@@ -107,6 +132,17 @@ const FORCE_MIXED_ENV = "CREDITS_X100_ALLOW_MIXED_UNIT";
 const INT32_MAX = 2147483647;
 const MAX_SAFE_BEFORE_MULTIPLY = Math.floor(INT32_MAX / MULTIPLIER); // 21474836
 
+/** 第 8 步补出来的批次的账户（与 seed-credit-migration.ts 的存量余额口径一致） */
+const BACKFILL_LOT_ACCOUNT = "recharge";
+/** 第 8 步补出来的批次的来源类型（schema 注释里 sourceType 枚举含 migration） */
+const BACKFILL_LOT_SOURCE_TYPE = "migration";
+/** 第 8 步补出来的批次的来源 id：既是事后可识别标记，也是**幂等判据** */
+const BACKFILL_LOT_SOURCE_ID = "credits-x100-backfill";
+/** 第 8 步补出来的批次有效期（与 recharge 批次惯例一致） */
+const BACKFILL_LOT_TTL_DAYS = 365;
+/** 缺口报告里打印的 TOP N 用户 */
+const TOP_GAP_USERS = 10;
+
 /** SystemConfig 里需要同步 ×100 的运营配置键 */
 const CREDIT_CONFIG_KEYS = {
   creditPacks: "credit_packs",
@@ -147,6 +183,7 @@ const STEP_KEYS = {
   checkins: "CheckIn.credits",
   promotions: "Promotion.creditsCost",
   configs: "SystemConfig.creditConfigs",
+  backfillLots: "CreditLot.backfillMissing(gap)",
 } as const;
 
 /** 读取进度；内容损坏时返回 corrupt=true，由调用方决定是否中止 */
@@ -800,6 +837,361 @@ async function migrateSystemConfigCreditValues(): Promise<void> {
   console.log(`  · ${STEP_KEYS.configs} 完成，改动 ${changed} 个配置项`);
 }
 
+// ─── 第 8 步：为「无批次支撑的余额」补 CreditLot ────────────────────────
+
+/** 单个用户的「无批次支撑余额」盘点结果 */
+interface GapRow {
+  id: string;
+  credits: number;
+  /** 未过期批次的剩余之和（口径与 spend.ts:177-184 的 FIFO 取数完全一致） */
+  lotRemaining: number;
+  /** 已过期但 remainingAmount 仍 > 0 的批次剩余之和 */
+  expiredRemaining: number;
+  /** 已过期且 remainingAmount > 0 的批次数 */
+  expiredLotCount: number;
+  /** 该用户的全部批次数（含已过期 / 已用完） */
+  lotCount: number;
+}
+
+interface GapStats {
+  /** 已盘点用户数（credits > 0） */
+  scanned: number;
+  /** gap > 0 的用户数 */
+  withGap: number;
+  /** gap > 0 的缺口积分总和 */
+  totalGap: number;
+  /** gap < 0 的用户数（余额小于未过期批次，异常脏数据，不动） */
+  negativeGap: number;
+  /** gap > 0 且存在「已过期但未清零」批次的用户数（疑似来自过期积分） */
+  expiredSuspectedUsers: number;
+  /** 上述用户的缺口总和（上界，实际来自过期的部分可能更少） */
+  expiredSuspectedGap: number;
+  /** 全库已过期但 remainingAmount > 0 的批次剩余总量 */
+  expiredTotalRemaining: number;
+  /** gap > 0 且从未有过任何 lot 的用户数（更保守口径的作用面） */
+  noLotAtAllUsers: number;
+  noLotAtAllGap: number;
+  /** 缺口最大的若干用户 */
+  top: Array<{
+    id: string;
+    credits: number;
+    lotRemaining: number;
+    gap: number;
+    expiredLotCount: number;
+  }>;
+}
+
+function addDays(date: Date, days: number): Date {
+  const d = new Date(date.getTime());
+  d.setUTCDate(d.getUTCDate() + days);
+  return d;
+}
+
+/** 脱敏：只保留 userId 前缀 */
+function maskId(id: string): string {
+  return id.length > 8 ? `${id.slice(0, 8)}…` : `${id.slice(0, 4)}…`;
+}
+
+/**
+ * 取一批用户的「余额 vs 未过期批次支撑」对照。
+ * 口径刻意与 spend.ts 的 FIFO 取数一致：`remainingAmount > 0 AND expiresAt > now()`，
+ * 过期批次不算支撑（因为 spend.ts 扣不到它们）。
+ */
+async function fetchGapBatch(take: number, cursor?: string): Promise<GapRow[]> {
+  const where = cursor
+    ? Prisma.sql`WHERE u."credits" > 0 AND u."id" > ${cursor}`
+    : Prisma.sql`WHERE u."credits" > 0`;
+
+  const rows = await prisma.$queryRaw<
+    Array<{
+      id: string;
+      credits: bigint;
+      lot_remaining: bigint;
+      expired_remaining: bigint;
+      expired_lot_count: bigint;
+      lot_count: bigint;
+    }>
+  >`
+    SELECT u."id"                          AS id,
+           u."credits"::bigint             AS credits,
+           COALESCE((SELECT SUM(l."remainingAmount") FROM "CreditLot" l
+                      WHERE l."userId" = u."id"
+                        AND l."remainingAmount" > 0
+                        AND l."expiresAt" > now()), 0)::bigint  AS lot_remaining,
+           COALESCE((SELECT SUM(l."remainingAmount") FROM "CreditLot" l
+                      WHERE l."userId" = u."id"
+                        AND l."remainingAmount" > 0
+                        AND l."expiresAt" <= now()), 0)::bigint AS expired_remaining,
+           (SELECT COUNT(*) FROM "CreditLot" l
+              WHERE l."userId" = u."id"
+                AND l."remainingAmount" > 0
+                AND l."expiresAt" <= now())::bigint             AS expired_lot_count,
+           (SELECT COUNT(*) FROM "CreditLot" l
+              WHERE l."userId" = u."id")::bigint                AS lot_count
+    FROM "User" u
+    ${where}
+    ORDER BY u."id" ASC
+    LIMIT ${take}
+  `;
+
+  return rows.map((r) => ({
+    id: r.id,
+    credits: Number(r.credits),
+    lotRemaining: Number(r.lot_remaining),
+    expiredRemaining: Number(r.expired_remaining),
+    expiredLotCount: Number(r.expired_lot_count),
+    lotCount: Number(r.lot_count),
+  }));
+}
+
+/**
+ * 按 id 游标全表扫描「无批次支撑的余额」，累积统计并返回。
+ * `onBatch` 用于在第 8 步里就地建 lot（批次级事务 + 进度落库）。
+ */
+async function scanCreditLotGaps(params: {
+  startCursor?: string;
+  onBatch?: (rows: GapRow[], cursor: string) => Promise<void>;
+} = {}): Promise<GapStats> {
+  const stats: GapStats = {
+    scanned: 0,
+    withGap: 0,
+    totalGap: 0,
+    negativeGap: 0,
+    expiredSuspectedUsers: 0,
+    expiredSuspectedGap: 0,
+    expiredTotalRemaining: 0,
+    noLotAtAllUsers: 0,
+    noLotAtAllGap: 0,
+    top: [],
+  };
+
+  let cursor = params.startCursor;
+  for (;;) {
+    const rows = await fetchGapBatch(BATCH_SIZE, cursor);
+    if (rows.length === 0) break;
+    cursor = rows[rows.length - 1].id;
+
+    for (const r of rows) {
+      stats.scanned += 1;
+      stats.expiredTotalRemaining += r.expiredRemaining;
+      const gap = r.credits - r.lotRemaining;
+      if (gap > 0) {
+        stats.withGap += 1;
+        stats.totalGap += gap;
+        stats.top.push({
+          id: r.id,
+          credits: r.credits,
+          lotRemaining: r.lotRemaining,
+          gap,
+          expiredLotCount: r.expiredLotCount,
+        });
+        if (r.expiredLotCount > 0) {
+          stats.expiredSuspectedUsers += 1;
+          stats.expiredSuspectedGap += gap;
+        }
+        if (r.lotCount === 0) {
+          stats.noLotAtAllUsers += 1;
+          stats.noLotAtAllGap += gap;
+        }
+      } else if (gap < 0) {
+        // 余额小于未过期批次支撑：属于既有脏数据，不补也不改，只计数
+        stats.negativeGap += 1;
+      }
+    }
+
+    if (params.onBatch) await params.onBatch(rows, cursor);
+    console.log(`    · 已盘点 ${stats.scanned} 个用户（credits>0）...`);
+
+    if (rows.length < BATCH_SIZE) break;
+  }
+
+  stats.top.sort((a, b) => b.gap - a.gap);
+  stats.top = stats.top.slice(0, TOP_GAP_USERS);
+  return stats;
+}
+
+/**
+ * 打印缺口报告。
+ * `projectMultiplier` 传 true 时额外打印「×100 之后」的预估值 —— DRY_RUN 跑在
+ * ×100 之前，库里还是旧单位，必须同时给出两列，否则老板会看错量级。
+ */
+function printGapReport(stats: GapStats, projectMultiplier: boolean): void {
+  console.log(`  已盘点用户（credits > 0）      ：${stats.scanned}`);
+  console.log(`  存在缺口的用户数              ：${stats.withGap}`);
+  console.log(`  缺口总积分                    ：${stats.totalGap}`);
+  if (projectMultiplier) {
+    console.log("  ── ×100 之后（正式执行时实际会补的量级）──");
+    console.log(`  存在缺口的用户数              ：${stats.withGap}（用户数不变）`);
+    console.log(`  缺口总积分                    ：${stats.totalGap * MULTIPLIER}`);
+  }
+  console.log(
+    `  ⚠️ 缺口为负（余额 < 未过期批次，既有脏数据，不补不改）：${stats.negativeGap} 个用户`
+  );
+  console.log(
+    `  ⚠️ 疑似含已过期积分：${stats.expiredSuspectedUsers} 个用户，涉及缺口 ${stats.expiredSuspectedGap}`
+  );
+  console.log(
+    `     全库已过期但 remainingAmount > 0 的批次剩余总量：${stats.expiredTotalRemaining}`
+  );
+  console.log(
+    `  从未有过任何 lot 的用户（更保守口径的作用面）：${stats.noLotAtAllUsers} 个，` +
+      `涉及缺口 ${stats.noLotAtAllGap}`
+  );
+  console.log(`  TOP ${TOP_GAP_USERS} 缺口最大（userId 已脱敏）：`);
+  if (stats.top.length === 0) {
+    console.log("    （无缺口用户）");
+    return;
+  }
+  stats.top.forEach((t, i) => {
+    const expired = t.expiredLotCount > 0 ? `  ⚠️含 ${t.expiredLotCount} 个已过期批次` : "";
+    console.log(
+      `    ${String(i + 1).padStart(2)}. ${maskId(t.id)}  credits=${t.credits}  ` +
+        `未过期批次=${t.lotRemaining}  缺口=${t.gap}${expired}`
+    );
+  });
+}
+
+/**
+ * 8. 为「无批次支撑的余额」补 CreditLot（放在全部 ×100 之后）。
+ *
+ * · 幂等 ①：纳入进度游标（STEP_KEYS.backfillLots），崩溃续跑不会重跑已处理的批；
+ * · 幂等 ②：建 lot 前先查该用户是否已有 sourceType=migration + sourceId=credits-x100-backfill
+ *           的批次，有则跳过 —— 防重跑时重复补；
+ * · 绝不改动 User.credits（它已经是对的）。
+ */
+async function backfillMissingCreditLots(): Promise<void> {
+  const { progress } = await readProgress();
+  const store = progress as Progress;
+  const key = STEP_KEYS.backfillLots;
+  const st: StepState = store.steps[key] ?? { rows: 0, cursor: null, done: false };
+  store.steps[key] = st;
+
+  if (st.done) {
+    console.log(`  · ${key} 上一轮已完成（补了 ${st.rows} 个 lot），跳过`);
+    return;
+  }
+
+  console.log(
+    `  · ${key} 开始${st.cursor ? `（从游标 ${st.cursor} 续跑）` : ""} ...`
+  );
+
+  let created = 0;
+  let filledGap = 0;
+  let skippedExisting = 0;
+  let skippedNoGap = 0;
+
+  const stats = await scanCreditLotGaps({
+    startCursor: st.cursor ?? undefined,
+    onBatch: async (rows, cursor) => {
+      const candidates = rows
+        .map((r) => ({ id: r.id, gap: r.credits - r.lotRemaining }))
+        .filter((r) => r.gap > 0);
+      skippedNoGap += rows.length - candidates.length;
+
+      let toCreate = candidates;
+      if (candidates.length > 0) {
+        // 幂等第二道闸：已补过的用户不再补
+        const existing = await prisma.$queryRaw<Array<{ userId: string }>>`
+          SELECT DISTINCT "userId"
+          FROM "CreditLot"
+          WHERE "sourceType" = ${BACKFILL_LOT_SOURCE_TYPE}
+            AND "sourceId" = ${BACKFILL_LOT_SOURCE_ID}
+            AND "userId" IN (${Prisma.join(candidates.map((c) => c.id))})
+        `;
+        const already = new Set(existing.map((e) => e.userId));
+        skippedExisting += already.size;
+        toCreate = candidates.filter((c) => !already.has(c.id));
+      }
+
+      const batchFilled = toCreate.reduce((s, c) => s + c.gap, 0);
+      const expiresAt = addDays(new Date(), BACKFILL_LOT_TTL_DAYS);
+
+      await prisma.$transaction(async (tx) => {
+        for (const c of toCreate) {
+          await tx.creditLot.create({
+            data: {
+              userId: c.id,
+              account: BACKFILL_LOT_ACCOUNT,
+              sourceType: BACKFILL_LOT_SOURCE_TYPE,
+              sourceId: BACKFILL_LOT_SOURCE_ID,
+              initialAmount: c.gap,
+              remainingAmount: c.gap,
+              expiresAt,
+            },
+          });
+        }
+        created += toCreate.length;
+        filledGap += batchFilled;
+        st.rows = created;
+        st.cursor = cursor;
+        await persistProgress(tx, store);
+      });
+
+      if (toCreate.length > 0) {
+        console.log(
+          `    · 本批补 ${toCreate.length} 个 lot，共 ${batchFilled} 积分（累计 ${created} 个 / ${filledGap} 积分）`
+        );
+      }
+    },
+  });
+
+  st.done = true;
+  st.cursor = null;
+  st.finishedAt = new Date().toISOString();
+  await persistProgress(prisma, store);
+
+  console.log(`  · ${key} 完成：`);
+  printGapReport(stats, false);
+  console.log(
+    `  实际新建 lot ${created} 个，补进批次支撑 ${filledGap} 积分；` +
+      `跳过（已有补 lot 标记）${skippedExisting} 个，跳过（无缺口）${skippedNoGap} 个`
+  );
+}
+
+/** DRY_RUN 专属：只读盘点「无批次支撑的余额」，打印报告，不写库 */
+async function surveyMissingLots(): Promise<void> {
+  console.log("\n── [体检] 无批次支撑余额盘点（第 8 步预演，只读，不写库）──────");
+  const stats = await scanCreditLotGaps();
+  printGapReport(stats, true);
+  console.log(
+    "  说明：DRY_RUN 跑在 ×100 之前，库里仍是旧单位，上面第一组是旧单位值，\n" +
+      "        「×100 之后」那一组才是正式执行时第 8 步会补的量级。"
+  );
+  console.log("── 盘点结束（未写库）──────\n");
+}
+
+/**
+ * 收尾核对：User.credits 是否等于未过期批次剩余之和（只读）。
+ * 第 8 步跑完后，正向缺口（credits > 批次支撑）应当被清零；
+ * 仍不符的行只可能是 gap < 0 的既有脏数据（余额小于批次支撑）。
+ */
+async function checkBalanceInvariant(): Promise<void> {
+  const rows = await prisma.$queryRaw<
+    Array<{ n: bigint; n_positive: bigint }>
+  >`
+    SELECT COUNT(*)::bigint AS n,
+           COUNT(*) FILTER (WHERE u."credits" >
+             COALESCE((SELECT SUM(l."remainingAmount") FROM "CreditLot" l
+                        WHERE l."userId" = u."id"
+                          AND l."remainingAmount" > 0
+                          AND l."expiresAt" > now()), 0))::bigint AS n_positive
+    FROM "User" u
+    WHERE u."credits" <> COALESCE((SELECT SUM(l."remainingAmount") FROM "CreditLot" l
+                                     WHERE l."userId" = u."id"
+                                       AND l."remainingAmount" > 0
+                                       AND l."expiresAt" > now()), 0)
+  `;
+  const mismatch = Number(rows[0]?.n ?? 0);
+  const positive = Number(rows[0]?.n_positive ?? 0);
+  console.log(
+    `  · 不变式核对 User.credits = SUM(未过期 lot.remainingAmount)：` +
+      `不符 ${mismatch} 个用户，其中「余额 > 批次支撑」（本应被第 8 步补掉）${positive} 个`
+  );
+  if (positive > 0) {
+    console.log("    ⚠️ 仍有正向缺口，请人工核对（可能是并发写入、或补 lot 被跳过的用户）");
+  }
+}
+
 // ─── 主流程 ────────────────────────────────────────────────────────────
 
 async function main() {
@@ -816,7 +1208,11 @@ async function main() {
   }
 
   await preflight();
-  if (DRY_RUN) return;
+  if (DRY_RUN) {
+    // 体检模式只做只读盘点（×100 各步需要进度行才能跑，DRY_RUN 不建进度行）
+    await surveyMissingLots();
+    return;
+  }
 
   // ── 幂等 / 续跑判定 ──
   const { progress: existing, corrupt } = await readProgress();
@@ -868,26 +1264,32 @@ async function main() {
     await persistProgress(prisma, progress);
   }
 
-  console.log("[1/7] User.credits ×100 ...");
+  console.log("[1/8] User.credits ×100 ...");
   await migrateUsers();
 
-  console.log("[2/7] CreditLot.initialAmount / remainingAmount ×100 ...");
+  console.log("[2/8] CreditLot.initialAmount / remainingAmount ×100 ...");
   await migrateCreditLots();
 
-  console.log("[3/7] CreditTransaction.amount / balance ×100 + breakdown 补标记 ...");
+  console.log("[3/8] CreditTransaction.amount / balance ×100 + breakdown 补标记 ...");
   await migrateCreditTransactions();
 
-  console.log("[4/7] ServiceOrder.credits ×100（全部状态）...");
+  console.log("[4/8] ServiceOrder.credits ×100（全部状态）...");
   await migrateServiceOrders();
 
-  console.log("[5/7] CheckIn.credits ×100 ...");
+  console.log("[5/8] CheckIn.credits ×100 ...");
   await migrateCheckIns();
 
-  console.log("[6/7] Promotion.creditsCost ×100 ...");
+  console.log("[6/8] Promotion.creditsCost ×100 ...");
   await migratePromotions();
 
-  console.log("[7/7] SystemConfig 运营配置积数字段 ×100 ...");
+  console.log("[7/8] SystemConfig 运营配置积数字段 ×100 ...");
   await migrateSystemConfigCreditValues();
+
+  console.log("[8/8] 为「无批次支撑的余额」补 CreditLot（不改动 User.credits）...");
+  await backfillMissingCreditLots();
+
+  console.log("── 收尾不变式核对 ──");
+  await checkBalanceInvariant();
 
   // 收尾：标记完成
   const { progress: latest } = await readProgress();

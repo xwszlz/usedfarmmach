@@ -251,14 +251,18 @@ npx tsx prisma/migrate-credits-x100.ts 2>&1 | tee migration-cn.log
 脚本会依次跑 7 步并打印每步行数：
 
 ```
-[1/7] User.credits
-[2/7] CreditLot.initialAmount / remainingAmount
-[3/7] CreditTransaction.amount / balance + breakdown
-[4/7] ServiceOrder.credits（全部状态）
-[5/7] CheckIn.credits
-[6/7] Promotion.creditsCost
-[7/7] SystemConfig 运营配置积数字段
+[1/8] User.credits
+[2/8] CreditLot.initialAmount / remainingAmount
+[3/8] CreditTransaction.amount / balance + breakdown
+[4/8] ServiceOrder.credits（全部状态）
+[5/8] CheckIn.credits
+[6/8] Promotion.creditsCost
+[7/8] SystemConfig 运营配置积数字段
+[8/8] 为「无批次支撑的余额」补 CreditLot（不改动 User.credits）  ← 见 §6.5
 ```
+
+第 8 步不是 ×100，是**补批次支撑**。它跑在全部 ×100 之后，此时 `User.credits` 与 lot
+金额都已是新单位，gap 也是新单位，直接补、无需二次换算。规则与复核方式见 §6.5。
 
 **中途崩溃了怎么办**（网络断、Neon 挂起、超时）：
 
@@ -333,8 +337,14 @@ HAVING SUM(l."remainingAmount") <> s.lot_remaining_before * 100;
 
 `spend.ts` 的 FIFO 扣减依赖它（`src/lib/credits/spend.ts:177-193`）。
 
+> ✅ **第 8 步（补 lot）跑完后，本条不变式应当【完全成立】、返回 0 行。**
+> 注意条件必须带 `expiresAt > now()` —— 过期批次不提供支撑（`spend.ts` 扣不到它们），
+> 所以补 lot 的口径也是"未过期批次"，两边必须一致。
+> 迁移**之前**本条是不成立的（会返回一堆有缺口的用户），那是 §6.5 描述的既有脏数据。
+
 ```sql
 -- 逐用户核对（只看"未过期且还有余额"的批次，与 spend.ts 的取数条件一致）
+-- 期望：第 8 步跑完后返回 0 行
 SELECT u.id,
        u.credits,
        COALESCE(SUM(l."remainingAmount"), 0) AS lot_remaining,
@@ -350,12 +360,19 @@ ORDER BY ABS(u.credits - COALESCE(SUM(l."remainingAmount"), 0)) DESC
 LIMIT 50;
 ```
 
-**怎么读这条结果：**
+**验证清单里请明确记录这一条：**
 
-- 期望：`gap` 与迁移前 `gap_before` 的比值恰好是 **100**（脏数据等比放大，说明没改坏）。
-- 对照快照表确认：
+| 时点 | 期望 |
+|---|---|
+| 迁移前（建快照表时） | 有缺口的用户若干（既有脏数据） |
+| 第 8 步之后 | **0 行**；若非 0，逐条查（见 §6.5 复核 SQL） |
+
+**怎么读这条结果（对照迁移前）：**
+
+- 若要在迁移后与迁移前对照，用快照表：`gap_after` 应等于 `gap_before × 100`（脏数据等比放大，
+  说明没改坏）——但**这是第 8 步之前**的对照口径；第 8 步之后 gap 被补平，该对照不再适用。
   ```sql
-  -- 期望 0 行：缺口只是等比放大，没有新增缺口
+  -- 第 8 步【之前】的对照：期望 0 行（缺口只是等比放大，没有新增缺口）
   SELECT s.user_id, s.gap_before,
          u.credits - COALESCE(t.lot_remaining,0) AS gap_after
   FROM credits_x100_snapshot s
@@ -367,12 +384,11 @@ LIMIT 50;
   ) t ON t."userId" = s.user_id
   WHERE (u.credits - COALESCE(t.lot_remaining,0)) <> s.gap_before * 100;
   ```
-- ⚠️ **已知脏数据**：`src/app/api/admin/credits/route.ts:27-31` 后台手工加积分时
+- 背景（本节存在的原因）：`src/app/api/admin/credits/route.ts:27-31` 后台手工加积分时
   **只 `increment` `User.credits`，既不建 lot 也不写流水**。这部分余额没有批次支撑，
-  迁移后缺口被同比放大 100 倍。`spend.ts` 扣减时只从 lot 里扣
+  ×100 后缺口被同比放大 100 倍。`spend.ts` 扣减时只从 lot 里扣
   （`spend.ts:187`），却按 `need` 全额 decrement `User.credits`（`spend.ts:207-209`），
-  结果是无批次支撑的部分被"凭空扣掉"。**这是迁移前就存在的问题，但 ×100 后绝对金额
-  放大 100 倍**，建议迁移后按 §6.5 补 lot。
+  结果是无批次支撑的部分被"凭空扣掉"。第 8 步就是为这部分补上批次支撑，规则见 §6.5。
 
 ### V4. 流水 `balance` 是否连续
 
@@ -411,7 +427,7 @@ FROM "CreditTransaction";
 
 ```sql
 SELECT key, value, "updatedAt" FROM "SystemConfig" WHERE key = 'credits_x100_migration';
--- 期望：status = "done"，steps 里 7 个步骤全部 done
+-- 期望：status = "done"，steps 里 8 个步骤全部 done（含 CreditLot.backfillMissing(gap)）
 
 SELECT key, value FROM "SystemConfig"
 WHERE key IN ('credit_packs','plans','reward_values');
@@ -440,7 +456,75 @@ DATABASE_URL="..." CREDITS_X100_TARGET=com CREDITS_X100_MIGRATION_CONFIRM=1 \
 # 期望输出：✓ 检测到已完成的迁移标记 credits_x100_migration，本次跳过
 ```
 
-**8 项全绿才能进 §5。任何一项不绿 → 转 §8 回滚。**
+### V9. 补 lot 有没有重复补 / 漏补（第 8 步专项）
+
+**① 没重复补：每个用户最多只能有 1 条"本次补出来的"批次。**
+
+```sql
+-- 期望返回 0 行
+SELECT "userId", COUNT(*) AS cnt, SUM("remainingAmount") AS total
+FROM "CreditLot"
+WHERE "sourceType" = 'migration'
+  AND "sourceId" = 'credits-x100-backfill'
+GROUP BY "userId"
+HAVING COUNT(*) > 1;
+```
+
+**② 补出来的批次自身合法：初始额 = 剩余额（没被扣过）、有效期 = 1 年后、账户 = recharge。**
+
+```sql
+-- 期望返回 0 行
+SELECT id, "userId", "initialAmount", "remainingAmount", "expiresAt", account, "sourceType"
+FROM "CreditLot"
+WHERE "sourceId" = 'credits-x100-backfill'
+  AND ( "initialAmount" <> "remainingAmount"
+     OR "remainingAmount" <= 0
+     OR account <> 'recharge'
+     OR "sourceType" <> 'migration'
+     OR "expiresAt" <= now() );
+```
+
+**③ 没漏补：全库不应再有"余额 > 未过期批次支撑"的用户。**
+
+```sql
+-- 期望返回 0 行（与 V3 同源，这里只筛正向缺口）
+SELECT u.id, u.credits,
+       COALESCE(t.lot_remaining, 0) AS lot_remaining,
+       u.credits - COALESCE(t.lot_remaining, 0) AS gap
+FROM "User" u
+LEFT JOIN (
+  SELECT "userId", SUM("remainingAmount") AS lot_remaining
+  FROM "CreditLot" WHERE "remainingAmount" > 0 AND "expiresAt" > now()
+  GROUP BY "userId"
+) t ON t."userId" = u.id
+WHERE u.credits > COALESCE(t.lot_remaining, 0)
+ORDER BY gap DESC
+LIMIT 50;
+```
+
+**④ 补的总量对得上：脚本日志里的「实际新建 lot N 个 / 补进 X 积分」应与库一致。**
+
+```sql
+SELECT COUNT(*) AS 补的批次数,
+       SUM("remainingAmount")::bigint AS 补的积分总量,
+       MIN("expiresAt") AS 最早到期, MAX("expiresAt") AS 最晚到期
+FROM "CreditLot"
+WHERE "sourceId" = 'credits-x100-backfill';
+```
+
+**⑤ 没动到 User.credits（第 8 步只允许建 lot）。**
+
+```sql
+-- 期望 0 行：credits 仍等于快照的 100 倍（第 8 步不该改这列）
+SELECT s.user_id, s.credits_before, u.credits
+FROM credits_x100_snapshot s
+JOIN "User" u ON u.id = s.user_id
+WHERE u.credits <> s.credits_before * 100;
+```
+
+> ⚠️ 若 ⑤ 返回行：说明第 8 步误改了 `User.credits`（重复加钱），**立即停手并转 §8**。
+
+**9 项全绿才能进 §5。任何一项不绿 → 转 §8 回滚。**
 
 ---
 
@@ -523,25 +607,118 @@ if (!Number.isFinite(paidCents) || paidCents !== pc.credits) {
 - 若显示成 10 / 150 → `SystemConfig.credit_packs` 没乘到，回 §3.4。
 - 多语文案里写死的"1 元 = X 积分"是否已改（本次 commit 已含，抽查一下）。
 
-### 6.5 后台手工加积分的脏数据（建议尽快治理）
+### 6.5 后台手工加积分的脏数据 —— **脚本第 8 步已自动处理，本节说明规则与复核方式**
 
-上线后统计一次缺口，按 `seed-credit-migration.ts:48-81` 的做法给缺口补
-`sourceType='migration'` 的 lot：
+> ✅ **不要再手工补 lot。** 迁移脚本的第 8 步（`[8/8]`）已经自动完成补 lot，
+> 上线后无需人工执行本节旧版里的"手工补 lot"动作。本节只说明**它补了什么**、
+> **怎么复核**、以及**需要老板知悉的一个副作用**。
+
+#### 6.5.1 根因（为什么会有"无批次支撑的余额"）
+
+- `src/app/api/admin/credits/route.ts:27-31`：后台手工加积分时**只 `increment`
+  `User.credits`**，既不建 `CreditLot` 也不写流水。
+- `src/lib/credits/spend.ts:177-193`：FIFO 扣减**只在 lot 上扣**，且只取
+  `remainingAmount > 0 AND expiresAt > now()` 的批次。
+- `src/lib/credits/spend.ts:207-209`：但 `User.credits` 是按 `need` **全额 decrement**。
+
+→ `User.credits` 里存在一部分没有任何 lot 支撑的余额，扣减时这部分被"凭空扣掉"。
+×100 之后该缺口同步放大 100 倍，不变式 `User.credits = SUM(未过期 lot.remainingAmount)`
+不成立。
+
+#### 6.5.2 第 8 步的补 lot 规则
+
+执行位置：全部 ×100 步骤**之后**（此时 `User.credits` 与 lot 金额都已是新单位，
+gap 也是新单位，直接补，无需二次换算）。
+
+```
+gap = User.credits − SUM(CreditLot.remainingAmount
+                         WHERE remainingAmount > 0 AND expiresAt > now())
+```
+
+| 条件 | 行为 |
+|---|---|
+| `User.credits > 0` 且 `gap > 0` | 建 1 个 lot，金额 = gap |
+| `gap <= 0` | **不动**（含 `credits` 为负的异常用户，只计数告警） |
+| `User.credits <= 0` | **不动**，不在扫描范围内 |
+
+建出来的 lot 字段（参考 `prisma/seed-credit-migration.ts:48-81` 的写法）：
+
+| 字段 | 值 |
+|---|---|
+| `account` | `recharge` |
+| `sourceType` | `migration` |
+| `sourceId` | `credits-x100-backfill`（便于日后识别，同时是幂等判据） |
+| `initialAmount` / `remainingAmount` | 都 = `gap` |
+| `expiresAt` | `now + 365 天`（与 recharge 批次惯例一致） |
+
+> ⚠️ **第 8 步绝不同时改动 `User.credits`** —— 它已经是对的，改了就是重复加钱。
+> 验证 SQL V9-⑤ 专门守这一条。
+
+#### 6.5.3 幂等（两道闸，重跑不会重复补）
+
+1. **进度游标**：作为新 step key `CreditLot.backfillMissing(gap)` 纳入
+   `SystemConfig.credits_x100_migration` 的 `steps`，崩溃续跑不会重跑已处理的批；
+2. **批次标记**：建 lot 前先查该用户是否已有 `sourceType='migration' AND
+   sourceId='credits-x100-backfill'` 的 lot，有则跳过。
+
+所以 §4 的 V8（再跑一次脚本确认幂等）对第 8 步同样成立。
+
+#### 6.5.4 DRY_RUN 会打印什么
+
+```bash
+DATABASE_URL="..." CREDITS_X100_TARGET=com CREDITS_X100_DRY_RUN=1 \
+  npx tsx prisma/migrate-credits-x100.ts
+```
+
+体检模式（只读，不写库）会额外打印一段「无批次支撑余额盘点」：
+
+- 已盘点用户数（`credits > 0`）
+- 存在缺口的用户数、缺口总积分，以及 **×100 之后**的预估值
+  （DRY_RUN 跑在 ×100 之前，库里还是旧单位，所以两组数都给）
+- 缺口为负的用户数（既有脏数据，不补不改）
+- **疑似含已过期积分**的用户数与积分量
+- **从未有过任何 lot** 的用户数与积分量（更保守口径的作用面）
+- TOP 10 缺口最大的用户（userId 只显示前 8 位 + `…`，金额全显示）
+
+#### 6.5.5 ⚠️ 已知副作用：可能把"早已过期的积分"复活成 1 年有效
+
+平台目前**没有**定时把过期积分从 `User.credits` 扣掉的机制。因此 gap 里可能混着
+「批次的 `expiresAt` 已过、`remainingAmount` 却还 > 0、但余额从未被扣减」的积分。
+按完整 gap 补 lot，等于把这部分**复活成 1 年有效**。
+
+脚本不会自作主张改口径，只把数字打出来供定夺。判据与三种口径的利弊：
+
+| 口径 | 判定 | 利 | 弊 |
+|---|---|---|---|
+| **A. 完整 gap**（当前实现） | `gap = credits − SUM(未过期批次)` | 不变式 100% 成立；用户账面余额全部可花，不产生"看得见花不掉"的客诉 | 可能复活已过期积分（量级见 DRY_RUN 的"疑似含已过期积分"）；极端情况下相当于给过期资产续期 1 年 |
+| **B. 只补"从未有过任何 lot"的用户** | `gap > 0 AND 该用户 lotCount = 0` | 只覆盖"纯后台手工加积分"这一类，几乎不复活过期积分 | 不变式**仍不成立**：有过 lot 的用户里，手工加的那部分仍无支撑；漏补面 = `withGap − noLotAtAllUsers` |
+| **C. 减去过期批次剩余** | `gap − SUM(过期批次 remainingAmount)`，`<= 0` 则不补 | 最保守，一定不复活过期积分 | 会把"该过期但用户一直在用"的余额判成负 gap 而**不补**，不变式仍不成立；且过期批次剩余往往与 gap 无对应关系，容易算出负数 |
+
+> 需要老板在 DRY_RUN 出数后定夺：若"疑似含已过期积分"的量很小（例如 < 缺口总量 5%），
+> 走 A（完整 gap）最简单、收益最大；若量很大，建议走 B 并接受不变式部分不成立，
+> 或先上一道"过期积分扣减"定时任务再补。
+> **改口径只需动 `backfillMissingCreditLots()` 里 `candidates` 的过滤条件。**
+
+#### 6.5.6 复核 SQL
+
+见 §4 的 **V9**（没重复补 / 没漏补 / 补出来批次自身合法 / 没动 `User.credits`）
+和 **V3**（不变式在补 lot 后应当完全成立、返回 0 行）。
+
+需要人工再看一眼"被复活"的明细时：
 
 ```sql
--- 需要补 lot 的用户清单（按缺口降序）
-SELECT u.id, u.credits, COALESCE(t.lot_remaining,0) AS lot_remaining,
-       u.credits - COALESCE(t.lot_remaining,0) AS 待补
-FROM "User" u
-LEFT JOIN (
-  SELECT "userId", SUM("remainingAmount") AS lot_remaining
-  FROM "CreditLot" WHERE "remainingAmount" > 0 AND "expiresAt" > now()
-  GROUP BY "userId"
-) t ON t."userId" = u.id
-WHERE u.credits > COALESCE(t.lot_remaining,0)
-ORDER BY 待补 DESC
+-- 本次补出来的 lot，按金额降序（核对是否都是你认可的量级）
+SELECT "userId", "initialAmount", "remainingAmount", "expiresAt"
+FROM "CreditLot"
+WHERE "sourceId" = 'credits-x100-backfill'
+ORDER BY "initialAmount" DESC
 LIMIT 50;
 ```
+
+> ⚠️ **窗口期补发会产生新的缺口**：§2.3 里用后台 `POST /api/admin/credits` 补的积分
+> 仍然只加 `User.credits`、不建 lot。若补发发生在第 8 步**之后**，第 8 步跑不到它们，
+> 需要用 V9-③ 再捞一次并单独处理。建议：窗口期补发尽量安排在第 8 步之前，
+> 或补发后重跑一次第 8 步（有幂等两道闸，重跑安全）。
 
 ### 6.6 观察窗口
 
