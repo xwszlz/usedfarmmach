@@ -289,9 +289,11 @@ interface RecognizeResult {
 
 function AIRecognizeSection({
   onRecognized,
+  onImagesChange,
   channel,
 }: {
   onRecognized: (data: RecognizeResult) => void;
+  onImagesChange?: (images: string[]) => void;
   channel: Channel;
 }) {
   const MAX_IMAGES = 5;
@@ -342,6 +344,7 @@ function AIRecognizeSection({
     }
     const next = [...imagePreviews, ...compressed].slice(0, MAX_IMAGES);
     setImagePreviews(next);
+    onImagesChange?.(next); // 同步给父级（深度报告复用同一批图片）
     // 自动识别当前全部图片
     doRecognize(next);
   }, [imagePreviews]);
@@ -349,6 +352,7 @@ function AIRecognizeSection({
   const removeImage = (idx: number) => {
     const next = imagePreviews.filter((_, i) => i !== idx);
     setImagePreviews(next);
+    onImagesChange?.(next);
     if (next.length > 0) doRecognize(next);
     else { setResult(null); setError(""); }
   };
@@ -491,8 +495,10 @@ function AIRecognizeSection({
 
 function DeepAnalysisSection({
   prefillData,
+  images = [],
 }: {
   prefillData: { brand?: string; category?: string; year?: number; horsepower?: number };
+  images?: string[];
 }) {
   const [loading, setLoading] = useState(false);
   const [report, setReport] = useState<string | null>(null);
@@ -517,6 +523,8 @@ function DeepAnalysisSection({
           year: prefillData.year,
           enginePower: prefillData.horsepower ? String(prefillData.horsepower) : undefined,
           isChineseBrand: true,
+          // 复用上方 AI 识别区已上传的图片（压缩后的 dataURI），报告可结合照片分析
+          imageDataUris: images.slice(0, 3),
         }),
       });
       const data = await res.json();
@@ -547,13 +555,25 @@ function DeepAnalysisSection({
       </p>
 
       {!report && !loading && (
-        <button
-          onClick={runDeepAnalysis}
-          className="w-full rounded-lg bg-gradient-to-r from-purple-600 to-purple-500 py-3 text-sm font-medium text-white transition-all hover:from-purple-700 hover:to-purple-600"
-        >
-          <Sparkles className="mr-1 inline h-4 w-4" />
-          生成专业估值报告
-        </button>
+        <>
+          <button
+            onClick={runDeepAnalysis}
+            disabled={images.length === 0}
+            className="w-full rounded-lg bg-gradient-to-r from-purple-600 to-purple-500 py-3 text-sm font-medium text-white transition-all hover:from-purple-700 hover:to-purple-600 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Sparkles className="mr-1 inline h-4 w-4" />
+            生成专业估值报告
+          </button>
+          {images.length === 0 ? (
+            <p className="mt-2 text-xs text-amber-600">
+              请先在上方「AI智能识别」上传至少一张机器照片——报告会直接复用这批照片，无需重复上传
+            </p>
+          ) : (
+            <p className="mt-2 text-xs text-gray-400">
+              将结合你上传的 {Math.min(images.length, 3)} 张照片生成报告
+            </p>
+          )}
+        </>
       )}
 
       {loading && (
@@ -614,6 +634,8 @@ export default function ValuationPage() {
 
   // 识别填入成功提示
   const [prefillTip, setPrefillTip] = useState("");
+  // AI 识别区已上传的图片（压缩 dataURI），深度报告复用
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
 
   // 国际参数
   const [iBrand, setIBrand] = useState("John Deere");
@@ -879,12 +901,14 @@ export default function ValuationPage() {
   const handleRecognized = (data: RecognizeResult) => {
     setHasImage(true);
     let filled = 0;
+    let brandSkipped = "";
 
     if (data.brand) {
       const brand = String(data.brand).trim();
+      let brandSet = false;
       if (data.isChineseBrand === false) {
         // 国际：先精确匹配，再查中文别名（克拉斯→CLAAS 等）
-        if (INTL_BRAND_LIST.includes(brand)) { setIBrand(brand); filled++; }
+        if (INTL_BRAND_LIST.includes(brand)) { setIBrand(brand); filled++; brandSet = true; }
         else {
           const aliasEntry = Object.entries(BRAND_COEFFICIENTS).find(
             ([zh]) => zh === brand
@@ -898,12 +922,13 @@ export default function ValuationPage() {
               "麦赛弗格森": "Massey Ferguson", "久保田": "Kubota",
             };
             const mapped = zh2en[enKey] ?? zh2en[brand];
-            if (mapped && INTL_BRAND_LIST.includes(mapped)) { setIBrand(mapped); filled++; }
+            if (mapped && INTL_BRAND_LIST.includes(mapped)) { setIBrand(mapped); filled++; brandSet = true; }
           }
         }
       } else if (DOMESTIC_BRAND_LIST.includes(brand)) {
-        setDBrand(brand); filled++;
+        setDBrand(brand); filled++; brandSet = true;
       }
+      if (!brandSet) brandSkipped = brand;
     }
 
     if (data.modelName) {
@@ -941,9 +966,13 @@ export default function ValuationPage() {
       setChannel(data.isChineseBrand ? "domestic" : "international");
     }
 
-    if (filled > 0) {
-      setPrefillTip(`✅ 已自动填入下方表单（${filled} 项：${["品牌", "型号", "马力", "年份", "品类"].filter((_, i) => i < filled).join("/")}）`);
-      setTimeout(() => setPrefillTip(""), 6000);
+    if (filled > 0 || brandSkipped) {
+      const okPart = filled > 0 ? `✅ 已自动填入下方表单（${filled} 项）` : "";
+      const warnPart = brandSkipped
+        ? `⚠️ 识别品牌「${brandSkipped}」暂不在估值品牌库，表单保持当前品牌，请手动核对`
+        : "";
+      setPrefillTip([okPart, warnPart].filter(Boolean).join("；"));
+      setTimeout(() => setPrefillTip(""), 8000);
     }
   };
 
@@ -1000,7 +1029,7 @@ export default function ValuationPage() {
 
       {/* AI Recognition (shared) */}
       <div className="mb-6">
-        <AIRecognizeSection onRecognized={handleRecognized} channel={channel} />
+        <AIRecognizeSection onRecognized={handleRecognized} onImagesChange={setUploadedImages} channel={channel} />
       </div>
 
       {prefillTip && (
@@ -1520,6 +1549,7 @@ export default function ValuationPage() {
             year: channel === "domestic" ? dYear - dYears : iYear,
             horsepower: channel === "domestic" ? dHP : iHP,
           }}
+          images={uploadedImages}
         />
       )}
 
