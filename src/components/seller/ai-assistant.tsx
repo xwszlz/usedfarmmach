@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Sparkles, Wand2, CheckCircle, AlertCircle, Loader2, Upload, Globe, Flag } from "lucide-react";
+import Link from "next/link";
+import { useLocale } from "next-intl";
 
 /**
  * AI 识别结果数据结构（与后端 /api/agents/seller-helper/recognize 返回的 data 一致）
@@ -238,7 +240,9 @@ export default function SellerAiAssistant({
   const [recognizing, setRecognizing] = useState(false);
   const [recognized, setRecognized] = useState<AiRecognizedData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loginUrl, setLoginUrl] = useState<string | null>(null);
   const [phase, setPhase] = useState<string>("");
+  const locale = useLocale();
   const [engineMode, setEngineMode] = useState<"auto" | "domestic" | "international">("auto");
   const [autoRecognizing, setAutoRecognizing] = useState(false);
   const [selectedFields, setSelectedFields] = useState<Set<string>>(new Set());
@@ -258,6 +262,7 @@ export default function SellerAiAssistant({
 
     setRecognizing(true);
     setError(null);
+    setLoginUrl(null);
     setRecognized(null);
     setSelectedFields(new Set());
 
@@ -342,6 +347,13 @@ export default function SellerAiAssistant({
         } catch {
           throw new Error(text?.substring(0, 200) || "服务器响应异常");
         }
+      }
+
+      // 强制登录：会话失效/未登录 → 明确提示 + 登录入口（不会白屏）
+      if (res.status === 401 || data?.code === "LOGIN_REQUIRED") {
+        setError("请先登录后再使用 AI 智能识别");
+        setLoginUrl(data?.loginUrl || `/${locale}/auth/login`);
+        return;
       }
 
       if (!data.success) {
@@ -642,9 +654,19 @@ export default function SellerAiAssistant({
 
       {/* 错误提示 */}
       {error && (
-        <div className="mt-3 flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600">
-          <AlertCircle className="h-4 w-4 flex-shrink-0" />
-          {error}
+        <div className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 flex-shrink-0" />
+            {error}
+          </div>
+          {loginUrl && (
+            <Link
+              href={loginUrl}
+              className="mt-2 inline-block rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700"
+            >
+              立即登录
+            </Link>
+          )}
         </div>
       )}
 

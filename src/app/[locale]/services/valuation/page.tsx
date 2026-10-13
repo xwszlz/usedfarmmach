@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useLocale } from "next-intl";
 import {
   Brain, Loader2, Calculator, ArrowLeft, Upload, Camera,
@@ -297,11 +297,30 @@ function AIRecognizeSection({
   channel: Channel;
 }) {
   const MAX_IMAGES = 5;
+  const locale = useLocale();
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<RecognizeResult | null>(null);
+  // AI 智能识别已强制登录：needLogin = 静默探测到游客；loginUrl = 登录引导入口
+  const [needLogin, setNeedLogin] = useState(false);
+  const [loginUrl, setLoginUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const LOGIN_TIP = "请先登录后再使用 AI 智能识别";
+
+  // 静默探测登录态：只有服务端明确返回「未登录」才拦截，
+  // 网络异常/未知响应一律放行（仍会由 401 兜底引导），避免误伤已登录用户。
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/auth/me", { credentials: "include" })
+      .then((res) => {
+        if (!cancelled && res.status === 401) setNeedLogin(true);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // 前端压缩：手机原图 base64 后易超 Vercel 4.5MB 请求体上限，压到长边1280px JPEG
   const compressImage = (file: File): Promise<string> =>
@@ -329,6 +348,12 @@ function AIRecognizeSection({
     const list = Array.from(files).filter((f) => f.type.startsWith("image/"));
     if (list.length === 0) return;
     setError("");
+    // 游客：上传前就给登录引导，不必等压缩+识别跑完才报错
+    if (needLogin) {
+      setError(LOGIN_TIP);
+      setLoginUrl(`/${locale}/auth/login?redirect=${encodeURIComponent(`/${locale}/services/valuation`)}`);
+      return;
+    }
     const compressed: string[] = [];
     for (const file of list) {
       if (imagePreviews.length + compressed.length >= MAX_IMAGES) break;
@@ -347,14 +372,14 @@ function AIRecognizeSection({
     onImagesChange?.(next); // 同步给父级（深度报告复用同一批图片）
     // 自动识别当前全部图片
     doRecognize(next);
-  }, [imagePreviews]);
+  }, [imagePreviews, needLogin, locale]);
 
   const removeImage = (idx: number) => {
     const next = imagePreviews.filter((_, i) => i !== idx);
     setImagePreviews(next);
     onImagesChange?.(next);
-    if (next.length > 0) doRecognize(next);
-    else { setResult(null); setError(""); }
+    if (next.length > 0 && !needLogin) doRecognize(next);
+    else if (next.length === 0) { setResult(null); setError(""); }
   };
 
   const doRecognize = async (dataUris: string[]) => {
@@ -372,6 +397,13 @@ function AIRecognizeSection({
         }),
       });
       const data = await res.json();
+      // 强制登录：后端未登录返回 401 / LOGIN_REQUIRED → 明确提示 + 登录入口
+      if (res.status === 401 || data.code === "LOGIN_REQUIRED") {
+        setNeedLogin(true);
+        setError(LOGIN_TIP);
+        setLoginUrl(data.loginUrl || `/${locale}/auth/login?redirect=${encodeURIComponent(`/${locale}/services/valuation`)}`);
+        return;
+      }
       if (data.success) {
         const recognized = data.data || data.recognized;
         setResult(recognized);
@@ -393,6 +425,22 @@ function AIRecognizeSection({
         <h3 className="text-sm font-semibold text-gray-800">AI智能识别</h3>
         <span className="text-xs text-gray-400">上传3-5张照片自动填写参数</span>
       </div>
+
+      {needLogin && !result && (
+        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-blue-200 bg-white p-3 text-xs text-gray-700">
+          <span>AI智能识别需登录后使用（按实际消耗计费）。</span>
+          <Link
+            href={`/${locale}/auth/login?redirect=${encodeURIComponent(`/${locale}/services/valuation`)}`}
+            className="rounded bg-blue-600 px-3 py-1 font-medium text-white hover:bg-blue-700"
+          >
+            登录后使用
+          </Link>
+          <Link href={`/${locale}/auth/register`} className="text-blue-600 underline hover:text-blue-700">
+            还没有账号？免费注册
+          </Link>
+          <span className="text-gray-400">未登录也可手动填写下方参数估值。</span>
+        </div>
+      )}
 
       {imagePreviews.length > 0 && (
         <div className="mb-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
@@ -455,6 +503,14 @@ function AIRecognizeSection({
         <div className="mt-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-700">
           <AlertTriangle className="mr-1 inline h-3 w-3" />
           {error}
+          {loginUrl && (
+            <Link
+              href={loginUrl}
+              className="ml-2 inline-block rounded bg-blue-600 px-3 py-1 font-medium text-white hover:bg-blue-700"
+            >
+              立即登录
+            </Link>
+          )}
         </div>
       )}
 

@@ -797,12 +797,23 @@ export async function POST(request: NextRequest) {
   // 详见文件末尾 finally 里的论证。
   let usageConsumed = false;
   try {
-    // ── 登录态：AI 智能识别按真实 token 计费，必须知道扣谁的积分 ──
-    // 注意：本接口**当前没有 401 拦截**（公开估值页 valuation/page.tsx 也会调它，游客可达），
-    // 游客拿不到 userId → 跳过扣费（usage 仍由 finally drain，绝不外泄到下一个请求）。
-    // 是否强制登录由业务方决定，此处保持原有放行行为，不擅自改产品逻辑。
+    // ── 登录校验（强制）：AI 智能识别按真实 token 计费，必须知道扣谁的积分 ──
+    // 游客没有 userId → 无法扣费 → 直接 401，由前端（公开估值页等）引导登录。
+    // 注：本 return 位于 try 内，退出前必经 finally 的 drainUsage() 兜底，
+    // 因此 401 分支不会把 usage 残留串到下一个请求。
     const locale = getLocaleFromRequest(request);
     const user = await getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "请先登录后再使用 AI 智能识别",
+          code: "LOGIN_REQUIRED",
+          loginUrl: `/${locale}/auth/login`,
+        },
+        { status: 401 }
+      );
+    }
 
     const body = await request.json();
     const imageUrls: string[] = body.imageUrls || [];
@@ -965,26 +976,34 @@ export async function POST(request: NextRequest) {
     );
     const totalPoints = perModel.reduce((sum, c) => sum + c.points, 0);
 
-    if (user) {
-      const deduction = await deductCredits(
-        user.id,
-        totalPoints,
-        "AI智能识别",
-        { models: perModel, totalPoints, usageCount: usage.length } as unknown as Record<string, unknown>
-      );
-      if (!deduction.ok) {
-        return NextResponse.json({
+    // 前置登录校验（POST 入口）已保证 user 非空；此处再判一次用于类型收窄与纵深防御 ——
+    // 正常路径不可达，万一可达也只是退回 401，绝不会出现「user 为 null 还继续扣费」的路径。
+    if (!user) {
+      return NextResponse.json(
+        {
           success: false,
-          error: "积分不足，请先充值后再使用 AI 智能识别",
-          code: "INSUFFICIENT_CREDITS",
-          rechargeUrl: `/${locale}/credits`,
-          required: deduction.required,
-          balance: deduction.credits,
-        }, { status: 402 });
-      }
-    } else {
-      // 游客：无 userId 无法计费（是否强制登录待定），但 usage 已在上面 drain，不会污染其他请求
-      console.warn(`[SellerHelper] 游客识别，跳过计费 usageCount=${usage.length} totalPoints=${totalPoints}`);
+          error: "请先登录后再使用 AI 智能识别",
+          code: "LOGIN_REQUIRED",
+          loginUrl: `/${locale}/auth/login`,
+        },
+        { status: 401 }
+      );
+    }
+    const deduction = await deductCredits(
+      user.id,
+      totalPoints,
+      "AI智能识别",
+      { models: perModel, totalPoints, usageCount: usage.length } as unknown as Record<string, unknown>
+    );
+    if (!deduction.ok) {
+      return NextResponse.json({
+        success: false,
+        error: "积分不足，请先充值后再使用 AI 智能识别",
+        code: "INSUFFICIENT_CREDITS",
+        rechargeUrl: `/${locale}/credits`,
+        required: deduction.required,
+        balance: deduction.credits,
+      }, { status: 402 });
     }
 
     return await buildSuccessResponse(finalRecognized);
