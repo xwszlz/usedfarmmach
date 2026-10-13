@@ -2065,6 +2065,8 @@ model BillingOrder {
   stripePaymentIntentId String?
   stripeSubscriptionId  String?
   stripeChargeId        String?
+  paddleTransactionId  String?   @unique // Paddle transaction ID（provider=paddle 时的对账主键）
+  paddleSubscriptionId String?   // Paddle subscription ID（订阅类订单）
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)

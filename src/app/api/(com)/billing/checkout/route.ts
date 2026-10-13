@@ -1,13 +1,16 @@
 /**
  * POST /api/billing/checkout  （实际路径：src/app/api/(com)/billing/checkout）
- * 创建 Stripe Checkout Session（增值服务费 / 会员订阅，仅外币）
+ * 创建 Paddle Transaction（会员订阅 / 增值包，仅 .com 国际站，只收 USD）
  *
  * 守卫：
  *  - 必须登录（getUserFromRequest）
  *  - 仅 .com 站（非 .com 返回 404）
- *  - Stripe 未配置返回 503 { code: "PAYMENT_NOT_CONFIGURED" }
+ *  - Paddle 未配置（PADDLE_API_KEY 缺失）返回 503 { code: "PAYMENT_NOT_CONFIGURED" }
  *
  * 响应信封：{ success, data } / { success:false, error, code }
+ *
+ * 口径：Paddle 是 Merchant of Record（MoR），本路由只负责「创建结账」，
+ * 真实资金流在 Paddle 闭环，网站永不直接收单；仅 .com 站启用。
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -15,20 +18,17 @@ import { z } from "zod";
 import { getUserFromRequest } from "@/lib/auth";
 import { isComSite } from "@/config/site";
 import {
-  createCheckoutSession,
-  getOrCreateStripeCustomer,
+  createMembershipTransaction,
   isConfigured,
-  isStripeCurrency,
-  isStripePlan,
-} from "@/lib/payments/stripe";
+  isPaddlePlan,
+} from "@/lib/payments/paddle";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 const bodySchema = z.object({
   plan: z.string(),
-  currency: z.string(),
-  sku: z.string().optional(),
+  cycle: z.enum(["monthly", "yearly"]),
 });
 
 export async function POST(request: NextRequest) {
@@ -62,34 +62,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { plan, currency, sku } = parsed.data;
-    if (!isStripePlan(plan)) {
+    const { plan, cycle } = parsed.data;
+    if (!isPaddlePlan(plan)) {
       return NextResponse.json(
         { success: false, error: "不支持的套餐", code: "INVALID_PLAN" },
         { status: 400 }
       );
     }
-    if (!isStripeCurrency(currency)) {
-      return NextResponse.json(
-        { success: false, error: "不支持的币种", code: "INVALID_CURRENCY" },
-        { status: 400 }
-      );
-    }
 
-    // 获取/创建 Stripe Customer（幂等）
-    const stripeCustomerId = await getOrCreateStripeCustomer(user.id, user.email);
-
-    const result = await createCheckoutSession({
+    const result = await createMembershipTransaction({
       userId: user.id,
       plan,
-      currency,
-      stripeCustomerId,
-      sku,
+      cycle,
     });
 
     return NextResponse.json({
       success: true,
-      data: { sessionId: result.sessionId, sessionUrl: result.sessionUrl },
+      data: { checkoutUrl: result.checkoutUrl, transactionId: result.transactionId },
     });
   } catch (error: any) {
     console.error("[Billing/Checkout] 错误:", error);

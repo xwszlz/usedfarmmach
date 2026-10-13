@@ -6,7 +6,7 @@
  * - 四档定价卡片（免费版列示作对比）
  * - 价格统一取自 @/lib/membership/pricing（唯一价格来源，杜绝「页面显示 A 价、实际扣 B 价」）
  * - 月付/年付切换；年付划线价 = 月付 × 12，直观体现年付优惠
- * - .com 已登录 → POST /api/billing/checkout（Stripe，既有链路，未改动）
+ * - .com 已登录 → POST /api/billing/checkout（Paddle，MoR 收银台）
  * - .cn  已登录 → POST /api/membership/checkout（微信 Native 扫码，普通商户直收增值费）
  *   503（支付未配置）→ 降级邮箱收集（/api/subscribe, source=membership_waitlist）
  */
@@ -24,8 +24,8 @@ import { MEMBERSHIP_PRICING, type BillingCycle } from "@/lib/membership/pricing"
 type PaidTier = "basic" | "premium" | "enterprise";
 type Tier = "free" | PaidTier;
 
-/** .com 会员档 → 现有 Stripe SKU（basic 无订阅 SKU，暂走增值包通道，实收以 SKU 中心表为准） */
-const STRIPE_PLAN: Record<PaidTier, string> = {
+/** .com 会员档 → Paddle 计划（basic 无订阅档，暂走增值包通道） */
+const PADDLE_PLAN: Record<PaidTier, string> = {
   basic: "valuation_pack",
   premium: "premium",
   enterprise: "enterprise",
@@ -89,23 +89,23 @@ export function MembershipPricing({ locale }: { locale: string }) {
 
   const currentTier = (user?.membershipTier || "free") as Tier;
 
-  // ---------- .com：Stripe（既有链路，未改动） ----------
-  async function handleStripeCheckout(tier: PaidTier) {
+  // ---------- .com：Paddle Checkout ----------
+  async function handlePaddleCheckout(tier: PaidTier) {
     setCheckoutTier(tier);
     setCheckoutError(null);
     try {
       const res = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: STRIPE_PLAN[tier], currency: "USD" }),
+        body: JSON.stringify({ plan: PADDLE_PLAN[tier], cycle }),
       });
       if (res.status === 503) {
         setShowWaitlist(true);
         return;
       }
       const result = await res.json();
-      if (result?.success && result?.data?.sessionUrl) {
-        window.location.href = result.data.sessionUrl as string;
+      if (result?.success && result?.data?.checkoutUrl) {
+        window.location.href = result.data.checkoutUrl as string;
         return;
       }
       setCheckoutError(tier);
@@ -254,7 +254,7 @@ export function MembershipPricing({ locale }: { locale: string }) {
           {checkoutTier === tier ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : null}
-          {isCn ? "微信支付" : t("cta.stripePay")}
+          {isCn ? "微信支付" : t("cta.payOnline")}
         </Button>
         {checkoutError === tier && (
           <p className="break-all text-xs text-red-600">
@@ -269,7 +269,7 @@ export function MembershipPricing({ locale }: { locale: string }) {
     if (isCn) {
       void handleWechatCheckout(tier);
     } else {
-      void handleStripeCheckout(tier);
+      void handlePaddleCheckout(tier);
     }
   }
 

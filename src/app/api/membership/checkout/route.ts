@@ -5,7 +5,7 @@
  * 守卫：
  *  - 必须登录
  *  - 仅付费档（排除 free）
- *  - 仅 .cn（.com 国际站走既有的 /api/(com)/billing/checkout → Stripe，本路由不介入）
+ *  - 仅 .cn（.com 国际站走既有的 /api/(com)/billing/checkout → Paddle，本路由不介入）
  *  - 通道未配置 → 503 PAYMENT_NOT_CONFIGURED（前端据此降级为邮箱收集）
  *
  * 红线：会员费 = 增值信息服务费，走普通商户直收；
@@ -31,7 +31,7 @@ const bodySchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    // .com 国际站：会员走既有 Stripe 通道，本路由不介入（避免两套价格/两条链路打架）
+    // .com 国际站：会员走既有 Paddle 通道，本路由不介入（避免两套价格/两条链路打架）
     if (isComSite()) {
       return NextResponse.json(
         {
