@@ -14,6 +14,7 @@ import ValuationResultGate, { type BlurredValuation } from "@/components/valuati
 import {
   DOMESTIC_HP_REGRESSION,
   DOMESTIC_BRAND_PREMIUM,
+  BRAND_COEFFICIENTS,
   REGIONAL_FACTORS,
   SUBSIDY_TREND_FACTOR,
   isDomesticBrandSupported,
@@ -36,19 +37,23 @@ const DOMESTIC_CATEGORIES = [
   "田园管理机", "饲料粉碎机", "辅助驾驶系统设备",
 ];
 
-// 国产品牌列表
-const DOMESTIC_BRAND_LIST = [
+// 国产品牌列表：手写常用17个 + 估值引擎支持的全部品牌(DOMESTIC_BRAND_PREMIUM 键)合并去重
+const DOMESTIC_BRAND_LIST = Array.from(new Set([
   "东方红", "雷沃", "潍柴雷沃", "中联", "道依茨法尔",
   "东风", "常发", "英轩", "沃得", "时风",
   "悍沃", "悦达", "五征", "萨丁", "泰山",
   "华夏", "其他国产",
-];
+  ...Object.keys(DOMESTIC_BRAND_PREMIUM),
+]));
 
-// 国际品牌
-const INTL_BRAND_LIST = [
+// 国际品牌列表：手写常用9个 + 估值引擎 BRAND_COEFFICIENTS 的英文键（过滤中文键和通用标签）
+const INTL_BRAND_LIST = Array.from(new Set([
   "John Deere", "Kubota", "Case IH", "New Holland",
   "CLAAS", "Fendt", "Massey Ferguson", "Valtra", "其他国际",
-];
+  ...Object.keys(BRAND_COEFFICIENTS).filter(
+    (b) => !/[\u4e00-\u9fa5]/.test(b) && b !== "进口" && b !== "Imported"
+  ),
+]));
 
 const INTL_BRAND_COEFFICIENTS: Record<string, number> = {
   "John Deere": 1.15, "Kubota": 1.10, "Fendt": 1.085, "CLAAS": 1.08,
@@ -74,6 +79,14 @@ const INTL_HOURS_DEPRECIATION = [
 const INTL_CONDITIONS: Record<string, number> = {
   Excellent: 1.175, Good: 1.0, Fair: 0.825, Poor: 0.625,
 };
+
+// 国产品况系数（与 brand-data.ts 的 CONDITION_FACTORS 对齐：excellent/good/fair/poor）
+const DOMESTIC_CONDITIONS: { key: string; label: string }[] = [
+  { key: "excellent", label: "优秀" },
+  { key: "good", label: "良好" },
+  { key: "fair", label: "一般" },
+  { key: "poor", label: "较差" },
+];
 
 const EMISSION_DEVELOPED: Record<string, number> = {
   "Tier 4": 1.0, "Tier 4i": 1.0, "Tier 3": 0.85, "Tier 2": 0.70, "Tier 1": 0.55,
@@ -458,10 +471,13 @@ function AIRecognizeSection({
             )}
           </div>
           <button
-            onClick={() => { if (result) onRecognized(result); }}
+            onClick={() => {
+              if (result) onRecognized(result);
+              document.getElementById("valuation-form-anchor")?.scrollIntoView({ behavior: "smooth" });
+            }}
             className="mt-2 w-full rounded-lg bg-blue-600 py-2 text-xs font-medium text-white hover:bg-blue-700"
           >
-            一键填入估值参数
+            参数已自动填入 · 点击查看下方表单 ↓
           </button>
         </div>
       )}
@@ -587,14 +603,21 @@ export default function ValuationPage() {
   // 国产参数
   const [dCategory, setDCategory] = useState("轮式拖拉机");
   const [dBrand, setDBrand] = useState("东方红");
+  const [dModel, setDModel] = useState("");
   const [dHP, setDHP] = useState(120);
   const [dYears, setDYears] = useState(3);
+  const [dHours, setDHours] = useState(1500);
+  const [dCondition, setDCondition] = useState("good");
   const [dRegion, setDRegion] = useState("山东");
   const [dYear, setDYear] = useState(2024);
   const [dSellerPrice, setDSellerPrice] = useState("");
 
+  // 识别填入成功提示
+  const [prefillTip, setPrefillTip] = useState("");
+
   // 国际参数
   const [iBrand, setIBrand] = useState("John Deere");
+  const [iModel, setIModel] = useState("");
   const [iHP, setIHP] = useState(150);
   const [iHours, setIHours] = useState(1000);
   const [iNewPrice, setINewPrice] = useState(300000);
@@ -651,8 +674,8 @@ export default function ValuationPage() {
             brand: dBrand,
             category: dCategory,
             year: dYear - dYears,
-            workingHours: dYears * 500,
-            condition: "good",
+            workingHours: dHours || dYears * 500,
+            condition: dCondition,
             enginePower: dHP,
             priceCny: dSellerPrice ? Number(dSellerPrice) : undefined,
             useV4: true,
@@ -820,38 +843,107 @@ export default function ValuationPage() {
     setUnlocked(true);
   };
 
+  // 品类别名：AI 识别结果 → 表单标准名
+  const CATEGORY_ALIASES: Record<string, string> = {
+    "大型大马力拖拉机": "轮式拖拉机", "大马力拖拉机": "轮式拖拉机",
+    "拖拉机": "轮式拖拉机", "轮拖": "轮式拖拉机",
+    "收割机": "谷物联合收割机", "谷物收割机": "谷物联合收割机",
+    "小麦收割机": "谷物联合收割机", "水稻收割机": "谷物联合收割机",
+    "玉米机": "玉米收获机", "玉米收割机": "玉米收获机",
+    "青储机": "青储机", "青饲料收获机": "青储机", "青贮收获机": "青储机",
+    "播种机": "单粒精密播种机", "免耕播种机": "单粒精密播种机",
+    "打捆机": "打捆机", "旋耕播种机": "旋耕机",
+    "微耕机": "微型耕耘机", "秸秆还田机": "秸秆粉碎还田机",
+  };
+
+  // 从型号推断马力：国产拖拉机型号惯例(如 TTQ2004/LX2204/RD1804)→ 数字÷10
+  const inferHPFromModel = (modelName: string): number | null => {
+    if (!modelName) return null;
+    const m = modelName.replace(/\s/g, "").match(/(\d{3,4})/);
+    if (!m) return null;
+    const hp = Math.round(parseInt(m[1], 10) / 10);
+    return hp >= 20 && hp <= 500 ? hp : null;
+  };
+
   // ── P0 留资引擎：当前表单的估值参数（unlock 接口用于服务端重算精确值）──
   const getValuationParams = (): Record<string, unknown> => ({
     brand: dBrand,
     category: dCategory,
     year: dYear - dYears,
-    workingHours: dYears * 500,
-    condition: "good",
+    workingHours: dHours || dYears * 500,
+    condition: dCondition,
     enginePower: dHP,
     priceCny: dSellerPrice ? Number(dSellerPrice) : undefined,
   });
 
-  const handleRecognized = (data: RecognizeResult) => {    setHasImage(true);
+  const handleRecognized = (data: RecognizeResult) => {
+    setHasImage(true);
+    let filled = 0;
+
     if (data.brand) {
-      if (data.isChineseBrand) {
-        if (DOMESTIC_BRAND_LIST.includes(data.brand)) setDBrand(data.brand);
-      } else {
-        if (INTL_BRAND_LIST.includes(data.brand)) setIBrand(data.brand);
+      const brand = String(data.brand).trim();
+      if (data.isChineseBrand === false) {
+        // 国际：先精确匹配，再查中文别名（克拉斯→CLAAS 等）
+        if (INTL_BRAND_LIST.includes(brand)) { setIBrand(brand); filled++; }
+        else {
+          const aliasEntry = Object.entries(BRAND_COEFFICIENTS).find(
+            ([zh]) => zh === brand
+          );
+          if (aliasEntry) {
+            const enKey = aliasEntry[0];
+            // 中文键对应的英文键（同系数里找英文名），或直接放英文别名表
+            const zh2en: Record<string, string> = {
+              "克拉斯": "CLAAS", "约翰迪尔": "John Deere", "芬特": "Fendt",
+              "纽荷兰": "New Holland", "凯斯": "Case IH", "库恩": "Kuhn",
+              "麦赛弗格森": "Massey Ferguson", "久保田": "Kubota",
+            };
+            const mapped = zh2en[enKey] ?? zh2en[brand];
+            if (mapped && INTL_BRAND_LIST.includes(mapped)) { setIBrand(mapped); filled++; }
+          }
+        }
+      } else if (DOMESTIC_BRAND_LIST.includes(brand)) {
+        setDBrand(brand); filled++;
       }
     }
-    if (data.horsepower) {
-      setDHP(data.horsepower);
-      setIHP(data.horsepower);
+
+    if (data.modelName) {
+      const model = String(data.modelName).trim();
+      setDModel(model);
+      setIModel(model);
+      filled++;
     }
-    if (data.year) {
+
+    // 马力：优先识别结果，否则从型号推断（TTQ2004→200HP）
+    const hp = data.horsepower
+      ? Number(data.horsepower)
+      : inferHPFromModel(String(data.modelName || ""));
+    if (hp && hp >= 20 && hp <= 500) {
+      setDHP(hp);
+      setIHP(hp);
+      filled++;
+    }
+
+    if (data.year && data.year >= 2000 && data.year <= 2026) {
       setDYear(data.year);
       setIYear(data.year);
+      // 使用年限联动：今年 - 购机年份
+      setDYears(Math.min(30, Math.max(0, 2026 - data.year)));
+      filled++;
     }
+
     if (data.category) {
-      if (DOMESTIC_CATEGORIES.includes(data.category)) setDCategory(data.category);
+      const cat = String(data.category).trim();
+      const mapped = CATEGORY_ALIASES[cat] ?? cat;
+      if (DOMESTIC_CATEGORIES.includes(mapped)) { setDCategory(mapped); filled++; }
     }
+
     if (data.isChineseBrand !== undefined) {
       setChannel(data.isChineseBrand ? "domestic" : "international");
+    }
+
+    if (filled > 0) {
+      setPrefillTip(`✅ 已自动填入下方表单（${filled} 项：${["品牌", "型号", "马力", "年份", "品类"].filter((_, i) => i < filled).join("/")}）`);
+      setTimeout(() => setPrefillTip(""), 6000);
     }
   };
 
@@ -911,6 +1003,13 @@ export default function ValuationPage() {
         <AIRecognizeSection onRecognized={handleRecognized} channel={channel} />
       </div>
 
+      {prefillTip && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-700">
+          <CheckCircle2 className="h-4 w-4 shrink-0" />
+          {prefillTip}
+        </div>
+      )}
+
       {mode === "quick" && (
         <>
           {/* Channel Tabs */}
@@ -936,7 +1035,7 @@ export default function ValuationPage() {
 
           {/* Domestic Form */}
           {channel === "domestic" && (
-            <div className="space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+            <div id="valuation-form-anchor" className="space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
               <h3 className="border-b border-gray-100 pb-3 text-base font-semibold text-gray-800">
                 国产农机参数
               </h3>
@@ -958,6 +1057,14 @@ export default function ValuationPage() {
                   >
                     {DOMESTIC_BRAND_LIST.map((b) => <option key={b} value={b}>{b}</option>)}
                   </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-600">型号 (可选)</label>
+                  <input
+                    type="text" value={dModel} placeholder="如 TTQ2004 / LX1604"
+                    onChange={(e) => setDModel(e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+                  />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium text-gray-600">马力 (HP)</label>
@@ -1002,6 +1109,36 @@ export default function ValuationPage() {
                   >
                     {[2022, 2023, 2024, 2025].map((y) => <option key={y} value={y}>{y}</option>)}
                   </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-600">使用小时数</label>
+                  <input
+                    type="number" value={dHours} min={0} max={20000} step={50}
+                    onChange={(e) => setDHours(Number(e.target.value))}
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+                  />
+                  <input
+                    type="range" value={dHours} min={0} max={20000} step={50}
+                    onChange={(e) => setDHours(Number(e.target.value))}
+                    className="mt-1 w-full"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-600">车况</label>
+                  <div className="flex gap-1">
+                    {DOMESTIC_CONDITIONS.map((c) => (
+                      <button
+                        key={c.key}
+                        type="button"
+                        onClick={() => setDCondition(c.key)}
+                        className={`flex-1 rounded-md py-2 text-xs font-medium ${
+                          dCondition === c.key ? "bg-primary-600 text-white" : "bg-gray-100 text-gray-600"
+                        }`}
+                      >
+                        {c.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium text-gray-600">卖家报价 (可选)</label>
@@ -1049,6 +1186,14 @@ export default function ValuationPage() {
                   >
                     {INTL_BRAND_LIST.map((b) => <option key={b} value={b}>{b}</option>)}
                   </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-600">型号 (可选)</label>
+                  <input
+                    type="text" value={iModel} placeholder="如 8R 410 / CX 8.90"
+                    onChange={(e) => setIModel(e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+                  />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium text-gray-600">马力 (HP)</label>
