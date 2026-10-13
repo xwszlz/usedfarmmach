@@ -10,6 +10,7 @@
 import { prisma } from "@/lib/db";
 import { GIFT_TTL_DAYS, RECHARGE_TTL_DAYS, type RewardValues } from "./constants";
 import { getRewardValues } from "./config";
+import type { Prisma } from "@prisma/client";
 
 /** 注册礼包发放结果 */
 export interface GrantResult {
@@ -173,59 +174,87 @@ export async function grantEmailVerifiedGiftIfNeeded(
  * @param userId   目标用户
  * @param amount   发放积分（恒为正）
  * @param reason   流水原因（如 "充值:pack60" / "微信支付充值"）
- * @param sourceId 关联单据号（BillingOrder / 微信 transaction_id / Stripe session id），用于幂等去重
+ * @param sourceId 关联单据号（BillingOrder / 微信 transaction_id / Paddle transaction id），用于幂等去重
+ * @param tx      可选的事务客户端（Prisma.TransactionClient）。传入时本函数不再自建事务，
+ *                由调用方保证原子性（如 Paddle webhook 需要在同一事务内「查重 + 入账」）；
+ *                不传则保持原有行为（内部 prisma.$transaction）。
  * @returns 已发放积分（amount <= 0 时返回 0，不写库）
  */
 export async function grantRecharge(
   userId: string,
   amount: number,
   reason: string,
-  sourceId?: string
+  sourceId?: string,
+  tx?: Prisma.TransactionClient
 ): Promise<number> {
   const amt = Math.max(0, Math.floor(amount));
   if (amt <= 0) return 0;
 
-  await prisma.$transaction(async (tx) => {
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + RECHARGE_TTL_DAYS);
+  // 调用方已提供事务客户端（如 Paddle webhook 需在同一个事务内完成「查重 + 入账」）：
+  // 禁止再嵌套 prisma.$transaction（嵌套事务会报错），原子性由外层事务保证。
+  if (tx) {
+    await writeRechargeEntries(tx, userId, amt, reason, sourceId);
+    return amt;
+  }
 
-    const lot = await tx.creditLot.create({
-      data: {
-        userId,
-        account: "recharge",
-        sourceType: "recharge",
-        sourceId: sourceId ?? null,
-        initialAmount: amt,
-        remainingAmount: amt,
-        expiresAt,
-      },
-      select: { id: true },
-    });
-
-    const user = await tx.user.findUnique({
-      where: { id: userId },
-      select: { credits: true },
-    });
-
-    await tx.creditTransaction.create({
-      data: {
-        userId,
-        type: "recharge",
-        amount: amt,
-        balance: (user?.credits ?? 0) + amt,
-        reason,
-        account: "recharge",
-        lotId: lot.id,
-        expiresAt,
-        relatedId: sourceId ?? null,
-      },
-    });
-
-    await tx.user.update({
-      where: { id: userId },
-      data: { credits: { increment: amt } },
-    });
-  });
+  // 无外层事务时自行包裹一层交互式事务。三写逻辑统一收敛到 writeRechargeEntries，
+  // 全仓只有一份写入实现，避免「改一处漏一处」的静默 bug。
+  await prisma.$transaction((txc) =>
+    writeRechargeEntries(txc, userId, amt, reason, sourceId)
+  );
 
   return amt;
+}
+
+/**
+ * 充值三步写：CreditLot → CreditTransaction → User.credits.increment。
+ * 供 grantRecharge 在「外层已提供事务客户端」时复用，避免嵌套事务。
+ *
+ */
+async function writeRechargeEntries(
+  db: Prisma.TransactionClient,
+  userId: string,
+  amt: number,
+  reason: string,
+  sourceId?: string
+): Promise<void> {
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + RECHARGE_TTL_DAYS);
+
+  const lot = await db.creditLot.create({
+    data: {
+      userId,
+      account: "recharge",
+      sourceType: "recharge",
+      sourceId: sourceId ?? null,
+      initialAmount: amt,
+      remainingAmount: amt,
+      expiresAt,
+    },
+    select: { id: true },
+  });
+
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { credits: true },
+  });
+
+  await db.creditTransaction.create({
+    data: {
+      userId,
+      type: "recharge",
+      amount: amt,
+      balance: (user?.credits ?? 0) + amt,
+      reason,
+      account: "recharge",
+      lotId: lot.id,
+      expiresAt,
+      relatedId: sourceId ?? null,
+    },
+  });
+
+  await db.user.update({
+    where: { id: userId },
+    data: { credits: { increment: amt } },
+  });
 }

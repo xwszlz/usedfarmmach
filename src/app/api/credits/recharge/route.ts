@@ -4,11 +4,11 @@
  * 老板口径：取消 4 档会员，改为「积分中心 + 积分充值」。
  *   - .cn（境内）：1 元 = 1 积分；走微信 Native / 支付宝 预下单（普通商户直收增值服务费，
  *     红线：绝不走收付通/服务商/资金托管，不碰分账/二清）。
- *   - .com（国际）：1 美元 = 1 积分；走 Stripe Checkout（一次性支付）。
+ *   - .com（国际）：1 美元 = 1 积分；走 Paddle Checkout（一次性支付，Paddle 为 MoR）。
  *
  * 注意：本端点只负责【创建支付订单】，真正的【加积分】在支付回调里做：
  *   - .cn → /api/membership/wechat/notify、/api/membership/alipay/notify
- *   - .com → /api/webhooks/stripe
+ *   - .com → /api/webhooks/paddle
  * 因此本端点绝不直接改 User.credits / CreditTransaction（沿用 P0 I-5 止血红线）。
  *
  * 幂等：支付回调按 支付流水号 / 订单号 去重（见各回调实现）。
@@ -20,11 +20,9 @@ import { isComSite } from "@/config/site";
 import { isConfigured as wechatConfigured, createNativeOrder } from "@/lib/wechat-pay";
 import { isConfigured as alipayConfigured, createPrecreateOrder } from "@/lib/alipay";
 import {
-  isConfigured as stripeConfigured,
-  isStripeCurrency,
-  getOrCreateStripeCustomer,
-  createCreditRechargeSession,
-} from "@/lib/payments/stripe";
+  isConfigured as paddleConfigured,
+  createCreditRechargeTransaction,
+} from "@/lib/payments/paddle";
 import { buildCreditOutTradeNo } from "@/lib/credits/recharge-order";
 
 export const dynamic = "force-dynamic";
@@ -38,7 +36,7 @@ const bodySchema = z.object({
   amount: z.number().positive(),
   /** .cn 用：wechat | alipay（缺省 wechat） */
   channel: z.enum(["wechat", "alipay"]).optional(),
-  /** .com 用：USD | EUR | GBP（缺省 USD） */
+  /** .com 用：本版固定 USD；保留入参仅为兼容已发出的请求体 */
   currency: z.string().optional(),
 });
 
@@ -65,27 +63,26 @@ export async function POST(request: NextRequest) {
       if (credits < 1 || credits > MAX_CREDITS) {
         return NextResponse.json({ success: false, error: "金额超出范围" }, { status: 400 });
       }
-      if (!stripeConfigured()) {
+      if (!paddleConfigured()) {
         return NextResponse.json(
           { success: false, error: "支付未配置", code: "PAYMENT_NOT_CONFIGURED" },
           { status: 503 }
         );
       }
-      const cur = (currency || "USD").toUpperCase();
-      if (!isStripeCurrency(cur)) {
-        return NextResponse.json(
-          { success: false, error: "不支持的币种", code: "INVALID_CURRENCY" },
-          { status: 400 }
-        );
-      }
-      const customerId = await getOrCreateStripeCustomer(user.id, user.email);
-      const { url } = await createCreditRechargeSession({
+      // 本版 .com 固定 USD（前端从不传 currency）；currency 保留在 zod schema 里
+      // 仅为兼容已发出的请求体，此处不再消费。
+      // 只把 transactionId 交给前端（Paddle.js 用它打开结账浮层）。
+      // 不返回 checkout.url：那是「本站域名 + _ptxn=<id>」的支付链接而非收银台，
+      // 交给前端跳转会让用户回到本站而付不了款。
+      const { transactionId } = await createCreditRechargeTransaction({
         userId: user.id,
         credits,
-        currency: cur,
-        stripeCustomerId: customerId,
+        currency: "USD",
       });
-      return NextResponse.json({ success: true, data: { type: "stripe", url, credits } });
+      return NextResponse.json({
+        success: true,
+        data: { type: "paddle", credits, transactionId },
+      });
     }
 
     // .cn：1 元 = 1 积分
