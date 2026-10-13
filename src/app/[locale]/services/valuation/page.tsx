@@ -628,7 +628,7 @@ export default function ValuationPage() {
   const [dYears, setDYears] = useState(3);
   const [dHours, setDHours] = useState(1500);
   const [dCondition, setDCondition] = useState("good");
-  const [dRegion, setDRegion] = useState("山东");
+  const [dRegion, setDRegion] = useState("");
   const [dYear, setDYear] = useState(2024);
   const [dSellerPrice, setDSellerPrice] = useState("");
 
@@ -643,7 +643,7 @@ export default function ValuationPage() {
   const [iHP, setIHP] = useState(150);
   const [iHours, setIHours] = useState(1000);
   const [iNewPrice, setINewPrice] = useState(300000);
-  const [iRegion, setIRegion] = useState("欧洲");
+  const [iRegion, setIRegion] = useState("");
   const [iYear, setIYear] = useState(2024);
   const [iCondition, setICondition] = useState("Good");
   const [iEmission, setIEmission] = useState("Tier 4");
@@ -1122,11 +1122,15 @@ export default function ValuationPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-600">区域</label>
+                  <label className="mb-1 block text-xs font-medium text-gray-600">
+                    区域
+                    <span className="ml-1 font-normal text-gray-400">（AI 无法识别，请手动选择）</span>
+                  </label>
                   <select
                     value={dRegion} onChange={(e) => setDRegion(e.target.value)}
                     className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
                   >
+                    <option value="" disabled>请选择地区</option>
                     {DOMESTIC_REGIONS_LIST.map((r) => <option key={r} value={r}>{r}</option>)}
                   </select>
                 </div>
@@ -1249,9 +1253,13 @@ export default function ValuationPage() {
                     className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none" />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-600">区域</label>
+                  <label className="mb-1 block text-xs font-medium text-gray-600">
+                    区域
+                    <span className="ml-1 font-normal text-gray-400">（AI 无法识别，请手动选择）</span>
+                  </label>
                   <select value={iRegion} onChange={(e) => setIRegion(e.target.value)}
                     className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none">
+                    <option value="" disabled>请选择地区</option>
                     {Object.keys(INTL_REGIONS).map((r) => <option key={r} value={r}>{r}</option>)}
                   </select>
                 </div>
