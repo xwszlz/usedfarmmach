@@ -10,6 +10,7 @@ import {
 import Link from "next/link";
 import { PublishCta } from "@/components/valuation/publish-cta";
 import AnalysisReportView from "@/components/valuation/analysis-report-view";
+import ValuationReportSection from "@/components/valuation/valuation-report-section";
 import ValuationResultGate, { type BlurredValuation } from "@/components/valuation/valuation-result-gate";
 import {
   DOMESTIC_HP_REGRESSION,
@@ -505,6 +506,8 @@ function DeepAnalysisSection({
   const [structured, setStructured] = useState<Record<string, any> | null>(null);
   const [error, setError] = useState("");
   const [locked, setLocked] = useState(false);
+  const [insufficientCredits, setInsufficientCredits] = useState(false);
+  const locale = useLocale();
 
   const runDeepAnalysis = async () => {
     setLoading(true);
@@ -512,6 +515,7 @@ function DeepAnalysisSection({
     setReport(null);
     setStructured(null);
     setLocked(false);
+    setInsufficientCredits(false);
     try {
       const res = await fetch("/api/agents/seller-helper/deep-analysis", {
         method: "POST",
@@ -533,6 +537,7 @@ function DeepAnalysisSection({
         setStructured(data.data?.structured || null);
         setLocked(true);
       } else {
+        if (data.code === "INSUFFICIENT_CREDITS") setInsufficientCredits(true);
         setError(data.error || "深度分析失败");
       }
     } catch {
@@ -547,11 +552,11 @@ function DeepAnalysisSection({
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <FileText className="h-5 w-5 text-purple-600" />
-          <h3 className="text-sm font-semibold text-gray-800">深度估值报告</h3>
+          <h3 className="text-sm font-semibold text-gray-800">AI 深度分析报告</h3>
         </div>
       </div>
       <p className="mb-3 text-xs text-gray-500">
-        包含：六维度现状评估 · 技术参数 · 操作维修 · 车况评估 · 购买建议 · 资源文档
+        包含：六维度现状评估 · 技术参数 · 操作维修 · 车况评估 · 购买建议 · 资源文档（按大模型 token 消耗 ×2 计费）
       </p>
 
       {!report && !loading && (
@@ -562,7 +567,7 @@ function DeepAnalysisSection({
             className="w-full rounded-lg bg-gradient-to-r from-purple-600 to-purple-500 py-3 text-sm font-medium text-white transition-all hover:from-purple-700 hover:to-purple-600 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Sparkles className="mr-1 inline h-4 w-4" />
-            生成专业估值报告
+            AI深度分析
           </button>
           {images.length === 0 ? (
             <p className="mt-2 text-xs text-amber-600">
@@ -579,12 +584,22 @@ function DeepAnalysisSection({
       {loading && (
         <div className="flex flex-col items-center py-8">
           <Loader2 className="mb-3 h-8 w-8 animate-spin text-purple-600" />
-          <p className="text-sm text-gray-500">AI正在生成专业报告（约30-60秒）...</p>
+          <p className="text-sm text-gray-500">AI正在生成深度分析报告（约30-60秒）...</p>
         </div>
       )}
 
       {error && (
-        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>
+        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
+          {error}
+          {(insufficientCredits || error.includes("积分不足")) && (
+            <a
+              href={`/${locale}/credits`}
+              className="ml-2 inline-block rounded-md bg-purple-600 px-3 py-1 text-xs font-medium text-white hover:bg-purple-700"
+            >
+              去充值
+            </a>
+          )}
+        </div>
       )}
 
       {report && (
@@ -1029,7 +1044,7 @@ export default function ValuationPage() {
         >
           <Zap className="mr-1 inline h-4 w-4" />
           快速估价
-          <span className="ml-1 text-xs opacity-70">本地模型 · 秒级</span>
+          <span className="ml-1 text-xs opacity-70">AI估值 · 按量计费</span>
         </button>
         <button
           onClick={() => setMode("deep")}
@@ -1039,7 +1054,7 @@ export default function ValuationPage() {
         >
           <FileText className="mr-1 inline h-4 w-4" />
           深度报告
-          <span className="ml-1 text-xs opacity-70">AI 深度分析 · 免费</span>
+          <span className="ml-1 text-xs opacity-70">AI深度分析 · 按量计费</span>
         </button>
       </div>
 
@@ -1508,6 +1523,26 @@ export default function ValuationPage() {
                   </div>
                 </div>
               </div>
+
+              {/* ── AI 估值报告：随本次估值自动生成（估值 API 已按大模型 token ×2 计费）── */}
+              <ValuationReportSection
+                channel={channel}
+                meta={{
+                  brand: channel === "domestic" ? dBrand : iBrand,
+                  category: dCategory,
+                  modelYear: channel === "domestic" ? dYear - dYears : iYear,
+                  ageYears: channel === "domestic" ? dYears : undefined,
+                  horsepower: channel === "domestic" ? dHP : iHP,
+                  hours: channel === "domestic" ? dYears * 500 : iHours,
+                  region: channel === "domestic" ? dRegion : iRegion,
+                  condition: channel === "domestic" ? "良好" : iCondition,
+                  emission: channel !== "domestic" ? iEmission : undefined,
+                  newBasePrice: previewBasePrice,
+                  sellerPrice: channel === "domestic" && dSellerPrice ? Number(dSellerPrice) : null,
+                  isChineseBrand: channel === "domestic",
+                }}
+                result={result}
+              />
 
               {/* Export Arbitrage */}
               {arbitrage && (
