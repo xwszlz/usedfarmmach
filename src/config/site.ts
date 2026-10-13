@@ -13,7 +13,7 @@ export type SiteVariant = "com" | "cn";
 export const SITE: SiteVariant = (process.env.SITE ?? "com") as SiteVariant;
 
 export interface SitePayments {
-  stripe: boolean;
+  paddle: boolean;
   wechatPay: boolean;
 }
 
@@ -28,8 +28,8 @@ export interface SiteFeatures {
   machineryIdentity: boolean;
   /** 展会模块 */
   expo: boolean;
-  /** Stripe 增值包 */
-  stripeAddons: boolean;
+  /** Paddle 增值包 */
+  paddleAddons: boolean;
   /** 权属核验 */
   certificate: boolean;
   /** 小程序码 */
@@ -84,14 +84,14 @@ export const siteConfigMap: SiteConfigMap = {
       canonical: "www.usedfarmmach.com",
       aliases: ["usedfarmmach.com", "www.usedfarmmach.com"],
     },
-    payments: { stripe: true, wechatPay: false },
+    payments: { paddle: true, wechatPay: false },
     features: {
       valuation: true,
       priceIndex: false,
       govDashboard: false,
       machineryIdentity: false,
       expo: true,
-      stripeAddons: true,
+      paddleAddons: true,
       certificate: false,
       miniAppQr: false,
     },
@@ -115,14 +115,14 @@ export const siteConfigMap: SiteConfigMap = {
       canonical: "usedfarmmach.cn",
       aliases: ["usedfarmmach.cn", "www.usedfarmmach.cn"],
     },
-    payments: { stripe: false, wechatPay: true },
+    payments: { paddle: false, wechatPay: true },
     features: {
       valuation: true,
       priceIndex: true,
       govDashboard: true,
       machineryIdentity: true,
       expo: true,
-      stripeAddons: false,
+      paddleAddons: false,
       certificate: true,
       miniAppQr: true,
     },

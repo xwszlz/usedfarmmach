@@ -5,7 +5,7 @@
  *
  * 合规门禁：担保交易（escrow）为 .cn 国内站专属能力，
  * .com 海外站一律 404，避免涉资金类页面在境外站暴露
- * （海外站将另行提供 Stripe 版本担保交易）。
+ * （海外站将另行提供担保交易）。
  */
 
 import type { ReactNode } from "react";
@@ -14,7 +14,7 @@ import { isCnSite } from "@/config/site";
 
 export default function EscrowLayout({ children }: { children: ReactNode }) {
   // 合规门禁：担保交易（escrow）为 .cn 国内站专属能力，
-  // .com 海外站一律 404（海外站将另行提供 Stripe 版本担保交易）。
+  // .com 海外站一律 404（海外站将另行提供担保交易）。
   if (!isCnSite()) {
     notFound();
   }

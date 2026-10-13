@@ -1,17 +1,19 @@
 /**
  * POST /api/billing/refund （实际路径：src/app/api/(com)/billing/refund）
- * 发起 Stripe 退款（仅 .com 国际站，需 super_admin）。
+ * 发起 Paddle 退款（仅 .com 国际站，需 super_admin；全额退款）。
  *
  * 红线：
- *  - 仅 .com 站；STRIPE_SECRET_KEY 缺失一律 401，绝不静默继续（Fail-closed）。
- *  - 仅处理 Stripe 退款；.cn 的微信/支付宝退款走各自通道，与此路由无关。
+ *  - 仅 .com 站；PADDLE_API_KEY 缺失一律 401，绝不静默继续（Fail-closed）。
+ *  - 仅处理 Paddle 退款；.cn 的微信/支付宝退款走各自通道，与此路由无关。
+ *  - Paddle 部分退款需逐 item 指定 item_id + amount，形状不简单，
+ *    本路由只做全额退款；部分退款请到 Paddle 后台操作。
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { isComSite } from "@/config/site";
 import { verifyToken, getTokenFromHeaders } from "@/lib/auth";
-import { isConfigured, refundStripeCharge } from "@/lib/payments/stripe";
+import { isConfigured, refundPaddleTransaction } from "@/lib/payments/paddle";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -38,7 +40,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Fail-closed：Stripe 未配置直接 401（绝不静默继续）
+  // Fail-closed：Paddle 未配置直接 401（绝不静默继续）
   if (!isConfigured()) {
     return NextResponse.json(
       { success: false, error: "支付未配置", code: "PAYMENT_NOT_CONFIGURED" },
@@ -53,37 +55,27 @@ export async function POST(request: NextRequest) {
 
   try {
     const json = await request.json();
-    const paymentIntentId =
-      typeof json?.paymentIntentId === "string" ? json.paymentIntentId : undefined;
-    const chargeId = typeof json?.chargeId === "string" ? json.chargeId : undefined;
-    const amount = typeof json?.amount === "number" ? json.amount : undefined;
-    const reason =
-      json?.reason === "duplicate" ||
-      json?.reason === "fraudulent" ||
-      json?.reason === "requested_by_customer"
-        ? json.reason
-        : undefined;
+    const transactionId =
+      typeof json?.transactionId === "string" ? json.transactionId : undefined;
+    const reason = typeof json?.reason === "string" ? json.reason : undefined;
 
-    if (!paymentIntentId && !chargeId) {
+    if (!transactionId) {
       return NextResponse.json(
-        { success: false, error: "需要提供 paymentIntentId 或 chargeId", code: "INVALID_PARAMS" },
+        { success: false, error: "需要提供 transactionId", code: "INVALID_PARAMS" },
         { status: 400 }
       );
     }
 
-    const result = await refundStripeCharge({ paymentIntentId, chargeId, amount, reason });
+    const result = await refundPaddleTransaction({ transactionId, reason });
 
-    // 即时对账：把对应 BillingOrder 标记为 refunded（webhook charge.refunded 会再确认）
-    const existing = paymentIntentId
-      ? await prisma.billingOrder.findFirst({ where: { stripePaymentIntentId: paymentIntentId } })
-      : await prisma.billingOrder.findFirst({ where: { stripeChargeId: chargeId! } });
+    // 即时对账：把对应 BillingOrder 标记为 refunded（webhook adjustment.created 会再确认）
+    const existing = await prisma.billingOrder.findFirst({
+      where: { paddleTransactionId: transactionId },
+    });
     if (existing) {
       await prisma.billingOrder.update({
         where: { id: existing.id },
-        data: {
-          status: "refunded",
-          stripeChargeId: chargeId ?? existing.stripeChargeId,
-        },
+        data: { status: "refunded" },
       });
     }
 

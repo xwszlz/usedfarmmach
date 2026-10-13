@@ -2,7 +2,7 @@
  * Paddle 支付集成（仅 .com 国际站使用；本版仅 USD）
  *
  * 职责：
- *  - 创建 Paddle Billing Transaction（积分充值，一次性支付）
+ *  - 创建 Paddle Billing Transaction（积分充值 / 会员订阅 / 增值包）
  *  - 提供 Webhook 验签入口（供 /api/webhooks/paddle 使用）
  *
  * 红线：
@@ -29,6 +29,7 @@
 
 import crypto from "crypto";
 import { isComSite } from "@/config/site";
+import { getMembershipUsdCents } from "@/lib/membership/pricing";
 
 /** 支持的币种（本版 .com 只支持 USD） */
 export type PaddleCurrency = "USD";
@@ -45,7 +46,7 @@ function getApiBase(): string {
     : "https://api.paddle.com";
 }
 
-/** 域名（结账回跳用）；与 stripe.ts 的 getSiteDomain() 保持同一口径 */
+/** 域名（结账回跳用）；与支付模块 getSiteDomain() 保持同一口径 */
 function getSiteDomain(): string {
   return process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
 }
@@ -186,4 +187,250 @@ export function verifyWebhookSignature(
   }
 
   return { ts, h1 };
+}
+
+// ============================================================
+// 会员订阅 / 增值包（.com 支付链路迁移至 Paddle；计划名与旧支付 SKU 同名，前端无感）
+// ============================================================
+
+/** 会员/增值包计划（与旧支付 SKU 同名，前端无感） */
+export type PaddlePlan =
+  | "valuation_pack"
+  | "intel_pack"
+  | "premium"
+  | "enterprise";
+
+/** 计划元信息：收费模式 / 会员等级 / UsageLog action */
+export const PADDLE_SKU: Record<
+  PaddlePlan,
+  {
+    /** subscription = 订阅续费；payment = 一次性支付 */
+    mode: "payment" | "subscription";
+    tier: "basic" | "premium" | "enterprise";
+    action: "aiValuation" | "intel" | "membership";
+  }
+> = {
+  valuation_pack: { mode: "payment", tier: "basic", action: "aiValuation" },
+  intel_pack: { mode: "payment", tier: "basic", action: "intel" },
+  premium: { mode: "subscription", tier: "premium", action: "membership" },
+  enterprise: { mode: "subscription", tier: "enterprise", action: "membership" },
+};
+
+/** 计划展示名（Paddle 收银台 / 账单展示） */
+const PADDLE_PLAN_NAME: Record<PaddlePlan, string> = {
+  valuation_pack: "AI 估值增值包",
+  intel_pack: "市场情报增值包",
+  premium: "Premium 会员订阅",
+  enterprise: "Enterprise 会员订阅",
+};
+
+/** 计划 → 会员等级映射（webhook 升级用） */
+export function mapPlanToMembershipTier(
+  plan: PaddlePlan
+): "basic" | "premium" | "enterprise" {
+  return PADDLE_SKU[plan].tier;
+}
+
+/** 计划 → UsageLog action 映射（webhook 记用量用） */
+export function mapPlanToUsageAction(
+  plan: PaddlePlan
+): "aiValuation" | "intel" | "membership" {
+  return PADDLE_SKU[plan].action;
+}
+
+export function isPaddlePlan(value: unknown): value is PaddlePlan {
+  return typeof value === "string" && value in PADDLE_SKU;
+}
+
+/**
+ * 创建「会员订阅 / 增值包」Paddle Transaction（仅 .com）。
+ *
+ * 金额必须取自唯一价格源 @/lib/membership/pricing 的 getMembershipUsdCents（美元价），
+ * 再换算为最小货币单位（分）：unitAmount = getMembershipUsdCents(tier, cycle) * 100。
+ * ⚠️ 这修正了一个现存 bug：旧支付 SKU 表 premium=$19 / enterprise=$99，
+ *    而页面展示的是 pricing.ts 的 $29 / $79 / $299（页面显示价与实扣价不一致）；
+ *    迁移后以 pricing.ts（页面同源）为准，杜绝「显示 A 价、扣 B 价」。
+ *
+ * 价格模式二选一（防御性，与积分充值一致）：
+ *  - 订阅档：配了 PADDLE_PRICE_ID_MEMBERSHIP_<TIER>_<CYCLE> 走目录价格
+ *    （如 PADDLE_PRICE_ID_MEMBERSHIP_PREMIUM_MONTHLY / ..._PREMIUM_YEARLY）；
+ *  - 未配 → 走内联价格（non-catalog）。订阅内联价带 billing_cycle
+ *    （interval: month|year, frequency: 1），一次性档不带。
+ *
+ * custom_data: { plan, site: "com", userId, tier, cycle } 供 webhook 履约识别。
+ */
+export async function createMembershipTransaction(input: {
+  userId: string;
+  plan: PaddlePlan;
+  cycle: "monthly" | "yearly";
+}): Promise<{ checkoutUrl: string; transactionId: string }> {
+  if (!isComSite()) {
+    throw new Error("Paddle 仅在国际站(.com)启用");
+  }
+  if (!isConfigured()) {
+    throw new Error("Paddle 未配置");
+  }
+
+  const { userId, plan, cycle } = input;
+  const meta = PADDLE_SKU[plan];
+  const domain = getSiteDomain();
+  // 唯一价格源：pricing.ts 的美元价（元）→ 分（最小货币单位）
+  const unitAmount = getMembershipUsdCents(meta.tier, cycle) * 100;
+
+  // 订阅档 env 价格 ID（未配则内联）；一次性档无目录价概念，恒定内联
+  const priceId =
+    meta.mode === "subscription"
+      ? process.env[
+          `PADDLE_PRICE_ID_MEMBERSHIP_${meta.tier.toUpperCase()}_${cycle.toUpperCase()}`
+        ]
+      : undefined;
+
+  const items = [
+    priceId
+      ? { quantity: 1, price_id: priceId }
+      : {
+          quantity: 1,
+          price: {
+            name: PADDLE_PLAN_NAME[plan],
+            description: `神雕农机 ${PADDLE_PLAN_NAME[plan]}（${cycle === "yearly" ? "年付" : "月付"}）`,
+            // Paddle 要求 amount 为字符串形式的最小货币单位整数
+            unit_price: { amount: String(unitAmount), currency_code: "USD" },
+            // 订阅档：内联 recurring 价需显式声明计费周期（Paddle API v1 形状）
+            ...(meta.mode === "subscription"
+              ? {
+                  billing_cycle: {
+                    interval: cycle === "yearly" ? "year" : "month",
+                    frequency: 1,
+                  },
+                }
+              : {}),
+            // non-catalog product：与 price 同级嵌套在 price 内（Paddle API v1）
+            product: {
+              name: "神雕农机会员与增值服务",
+              description:
+                "AI 估值 / 套利日报 / 销售策略等信息服务的会员订阅与增值包（信息服务费，非实物、非交易佣金）",
+              tax_category: "digital-goods",
+            },
+          },
+        },
+  ];
+
+  const res = await fetch(`${getApiBase()}/transactions`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.PADDLE_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      items,
+      currency_code: "USD",
+      custom_data: {
+        plan,
+        site: "com",
+        userId,
+        tier: meta.tier,
+        cycle,
+      },
+      checkout: { url: `${domain}/billing/success` },
+    }),
+  });
+
+  const text = await res.text();
+  let data: any = null;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    data = null;
+  }
+
+  if (!res.ok) {
+    const detail = data?.error?.detail ?? text.slice(0, 500);
+    throw new Error(`Paddle 创建交易失败 status=${res.status} body=${detail}`);
+  }
+
+  const checkoutUrl: string | undefined = data?.data?.checkout?.url;
+  const transactionId: string | undefined = data?.data?.id;
+  if (!checkoutUrl || !transactionId) {
+    throw new Error(
+      `Paddle 创建交易响应缺少 checkout.url / id：${text.slice(0, 500)}`
+    );
+  }
+
+  return { checkoutUrl, transactionId };
+}
+
+/**
+ * 发起 Paddle 退款（全额）。
+ *
+ * POST {apiBase}/adjustments，body: { action: "refund", transaction_id, reason }。
+ *
+ * 注意：Paddle 的部分退款需要逐 item 指定 item_id + amount（adjustments 的
+ * items[] 数组），形状并不简单；本函数只做全额退款，部分退款请到 Paddle 后台操作。
+ * reason 缺省 "requested_by_customer"。
+ */
+export async function refundPaddleTransaction(input: {
+  transactionId: string;
+  reason?: string;
+}): Promise<{ refundId: string; status: string }> {
+  if (!isConfigured()) {
+    throw new Error("Paddle 未配置，无法发起退款");
+  }
+
+  const res = await fetch(`${getApiBase()}/adjustments`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.PADDLE_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      action: "refund",
+      transaction_id: input.transactionId,
+      reason: input.reason ?? "requested_by_customer",
+    }),
+  });
+
+  const text = await res.text();
+  let data: any = null;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    data = null;
+  }
+
+  if (!res.ok) {
+    const detail = data?.error?.detail ?? text.slice(0, 500);
+    throw new Error(`Paddle 创建退款失败 status=${res.status} body=${detail}`);
+  }
+
+  const refundId: string | undefined = data?.data?.id;
+  const status: string = data?.data?.status ?? "pending_approval";
+  if (!refundId) {
+    throw new Error(`Paddle 退款响应缺少 id：${text.slice(0, 500)}`);
+  }
+
+  return { refundId, status };
+}
+
+/**
+ * 查询 Paddle 订阅（webhook 取 current_billing_period.ends_at 用）。
+ * 返回 ISO 字符串或 null；失败返回 null 不抛（webhook 有 CYCLE_DAYS 兜底）。
+ */
+export async function getPaddleSubscription(
+  subscriptionId: string
+): Promise<string | null> {
+  if (!isConfigured()) return null;
+  try {
+    const res = await fetch(`${getApiBase()}/subscriptions/${subscriptionId}`, {
+      headers: {
+        Authorization: `Bearer ${process.env.PADDLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+    });
+    if (!res.ok) return null;
+    const data: any = await res.json().catch(() => null);
+    const endsAt: string | undefined = data?.data?.current_billing_period?.ends_at;
+    return endsAt ?? null;
+  } catch {
+    return null;
+  }
 }

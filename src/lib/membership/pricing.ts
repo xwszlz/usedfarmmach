@@ -67,7 +67,7 @@ export function getMembershipCnyCents(tier: MembershipTier, cycle: BillingCycle)
   return getMembershipCny(tier, cycle) * 100;
 }
 
-/** .com 价格（单位：分），供 Stripe 使用 */
+/** .com 价格（单位：分），供 Paddle 使用 */
 export function getMembershipUsdCents(tier: MembershipTier, cycle: BillingCycle): number {
   return getMembershipUsd(tier, cycle) * 100;
 }

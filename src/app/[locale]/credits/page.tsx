@@ -31,7 +31,7 @@ export default async function CreditsPage({ params }: PageProps) {
         {/* 会员状态卡片 */}
         <MembershipCard locale={locale} />
 
-        {/* 积分余额 & 充值：isCom 决定通道（.com 只走 Stripe，不显示微信/支付宝） */}
+        {/* 积分余额 & 充值：isCom 决定通道（.com 只走 Paddle，不显示微信/支付宝） */}
         <RechargeForm locale={locale} isCom={isComSite()} />
 
         {/* 积分明细 */}
