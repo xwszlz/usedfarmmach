@@ -1,8 +1,8 @@
 {
   "valuationGate": {
-    "membershipUpsell": "Mejora tu plan para desbloquear el informe completo",
+    "membershipUpsell": "Usa puntos para desbloquear el informe completo",
     "membershipUpsellDesc": "Valoraciones ilimitadas, desglose completo y consejos de compra",
-    "membershipCta": "Ver planes",
+    "membershipCta": "Recargar puntos",
     "_todoTranslate": "",
     "rangeLabel": "AI Valuation Range (for reference only)",
     "midHint": "Midpoint reference",
@@ -63,7 +63,7 @@
     "used": "Usado",
     "remaining": "Restante",
     "exhausted": "Cuota mensual agotada. Actualice para desbloquear más.",
-    "upgrade": "Actualización de membresía",
+    "upgrade": "Recargar",
     "actions": {
       "publish": "Publicar producto",
       "inquiry": "Enviar consulta",
@@ -104,13 +104,13 @@
     "amountPlaceholder": "Introduce la cantidad de créditos",
     "creditUnit": "pts",
     "upgradeNow": "Upgrade Now",
-    "title": "Centro de miembros",
-    "membershipStatus": "Estado de membresía",
+    "title": "Centro de puntos",
+    "membershipStatus": "Estado de la cuenta",
     "creditsBalance": "Saldo de puntos",
     "validUntil": "Válido hasta",
-    "upgrade": "Mejorar membresía",
+    "upgrade": "Recargar",
     "alreadyHighest": "Ya es el nivel máximo",
-    "upgradeComingSoon": "Mejora de membresía próximamente",
+    "upgradeComingSoon": "Más paquetes de recarga próximamente",
     "recharge": "Comprar puntos",
     "rechargeComingSoon": "La compra de puntos estará disponible pronto.",
     "transactions": "Historial de puntos",
@@ -155,75 +155,7 @@
     "freeFeaturesBody": "Publicar productos, enviar consultas y ver datos de contacto es totalmente gratis: no consume créditos"
 
   },
-  "membership": {
-    "_todo": "TODO: translate membership section from English (zh/en are source of truth)",
-    "title": "Choose the Plan That Fits You",
-    "subtitle": "AI Valuation · Unlimited Listings · Cross-border Arbitrage Data · Data Export",
-    "loading": "Loading...",
-    "billing": {
-      "monthly": "Monthly",
-      "yearly": "Yearly"
-    },
-    "saveBadge": "10% Off Limited",
-    "perMonth": "/mo",
-    "perYear": "/yr",
-    "currentPlan": "Current Plan",
-    "popular": "Most Popular",
-    "checkoutError": "Failed to start checkout. Please try again later.",
-    "tiers": {
-      "free": "Free",
-      "basic": "Basic",
-      "premium": "Premium",
-      "enterprise": "Enterprise"
-    },
-    "cta": {
-      "startFree": "Start for Free",
-      "upgrade": "Upgrade Now",
-      "wechatPending": "WeChat Pay (Coming Soon)",
-      "payOnline": "Pago seguro en línea"
-    },
-    "benefits": {
-      "free": [
-        "5 AI valuations per month",
-        "5 product listings per month",
-        "View seller contact info",
-        "20 bonus credits on sign-up"
-      ],
-      "basic": [
-        "50 AI valuations per month",
-        "50 product listings per month",
-        "Cross-border arbitrage data",
-        "10 photos / 3 videos per listing"
-      ],
-      "premium": [
-        "Unlimited AI valuations",
-        "Unlimited product listings",
-        "Unlimited inquiries & contacts",
-        "Data export + product topping",
-        "20 photos / 5 videos per listing"
-      ],
-      "enterprise": [
-        "Everything in Premium",
-        "50 photos / 10 videos per listing",
-        "Dedicated key-account support",
-        "Priority access to industry events"
-      ]
-    },
-    "waitlist": {
-      "title": "Payment Channel Opening Soon",
-      "desc": "Leave your email and we'll notify you the moment it goes live — plus 7 days of free Premium trial for early sign-ups.",
-      "placeholder": "Enter your email",
-      "submit": "Notify Me",
-      "successTitle": "Subscribed!",
-      "successDesc": "We'll notify you as soon as the payment channel opens, and reserve your 7-day Premium trial.",
-      "error": "Submission failed. Please try again later."
-    },
-    "trust": {
-      "cn": "Vice President Unit, Used Farm Machinery Circulation Branch of China Association of Agricultural Machinery Circulation"
-    }
-  },
   "nav": {
-    "membership": "Membresía",
     "home": "Inicio",
     "products": "Maquinaria",
     "logistics": "Logística",
@@ -1042,7 +974,7 @@
       "priceIndexTitle": "Índice de precios",
       "marketAnalysis": "Análisis de mercado",
       "filter": "Filtros",
-      "premiumFeature": "Premium · Algunos informes requieren membresía",
+      "premiumFeature": "Premium · Algunos informes requieren puntos",
       "currentIndex": "Índice actual",
       "monthOverMonth": "Variación mensual",
       "yearOverYear": "Variación interanual",

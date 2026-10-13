@@ -1,8 +1,8 @@
 {
   "valuationGate": {
-    "membershipUpsell": "Оформите подписку, чтобы открыть полный отчёт",
+    "membershipUpsell": "Используйте баллы, чтобы открыть полный отчёт",
     "membershipUpsellDesc": "Безлимитные оценки, полная разбивка и советы по покупке",
-    "membershipCta": "Тарифы",
+    "membershipCta": "Пополнить баллы",
     "_todoTranslate": "",
     "rangeLabel": "AI Valuation Range (for reference only)",
     "midHint": "Midpoint reference",
@@ -62,8 +62,8 @@
     "unlimited": "Неограниченный",
     "used": "Использованный",
     "remaining": "Оставшийся",
-    "exhausted": "Месячный лимит исчерпан. Обновите подписку, чтобы разблокировать больше.",
-    "upgrade": "Обновить подписку",
+    "exhausted": "Месячный лимит исчерпан. Пополните баллы, чтобы разблокировать больше.",
+    "upgrade": "Пополнить",
     "actions": {
       "publish": "Опубликовать продукт",
       "inquiry": "Отправить запрос",
@@ -104,13 +104,13 @@
     "amountPlaceholder": "Введите количество баллов",
     "creditUnit": "баллов",
     "upgradeNow": "Upgrade Now",
-    "title": "Центр участника",
-    "membershipStatus": "Статус участника",
+    "title": "Центр баллов",
+    "membershipStatus": "Статус аккаунта",
     "creditsBalance": "Баланс баллов",
     "validUntil": "Действительно до",
-    "upgrade": "Повысить уровень",
+    "upgrade": "Пополнить",
     "alreadyHighest": "Уже максимальный уровень",
-    "upgradeComingSoon": "Повышение уровня скоро",
+    "upgradeComingSoon": "Дополнительные пакеты пополнения скоро",
     "recharge": "Купить баллы",
     "rechargeComingSoon": "Покупка баллов скоро появится.",
     "transactions": "История баллов",
@@ -155,75 +155,7 @@
     "freeFeaturesBody": "Публикация товаров, отправка запросов и просмотр контактов полностью бесплатны — кредиты не требуются"
 
   },
-  "membership": {
-    "_todo": "TODO: translate membership section from English (zh/en are source of truth)",
-    "title": "Choose the Plan That Fits You",
-    "subtitle": "AI Valuation · Unlimited Listings · Cross-border Arbitrage Data · Data Export",
-    "loading": "Loading...",
-    "billing": {
-      "monthly": "Monthly",
-      "yearly": "Yearly"
-    },
-    "saveBadge": "10% Off Limited",
-    "perMonth": "/mo",
-    "perYear": "/yr",
-    "currentPlan": "Current Plan",
-    "popular": "Most Popular",
-    "checkoutError": "Failed to start checkout. Please try again later.",
-    "tiers": {
-      "free": "Free",
-      "basic": "Basic",
-      "premium": "Premium",
-      "enterprise": "Enterprise"
-    },
-    "cta": {
-      "startFree": "Start for Free",
-      "upgrade": "Upgrade Now",
-      "wechatPending": "WeChat Pay (Coming Soon)",
-      "payOnline": "Безопасная онлайн-оплата"
-    },
-    "benefits": {
-      "free": [
-        "5 AI valuations per month",
-        "5 product listings per month",
-        "View seller contact info",
-        "20 bonus credits on sign-up"
-      ],
-      "basic": [
-        "50 AI valuations per month",
-        "50 product listings per month",
-        "Cross-border arbitrage data",
-        "10 photos / 3 videos per listing"
-      ],
-      "premium": [
-        "Unlimited AI valuations",
-        "Unlimited product listings",
-        "Unlimited inquiries & contacts",
-        "Data export + product topping",
-        "20 photos / 5 videos per listing"
-      ],
-      "enterprise": [
-        "Everything in Premium",
-        "50 photos / 10 videos per listing",
-        "Dedicated key-account support",
-        "Priority access to industry events"
-      ]
-    },
-    "waitlist": {
-      "title": "Payment Channel Opening Soon",
-      "desc": "Leave your email and we'll notify you the moment it goes live — plus 7 days of free Premium trial for early sign-ups.",
-      "placeholder": "Enter your email",
-      "submit": "Notify Me",
-      "successTitle": "Subscribed!",
-      "successDesc": "We'll notify you as soon as the payment channel opens, and reserve your 7-day Premium trial.",
-      "error": "Submission failed. Please try again later."
-    },
-    "trust": {
-      "cn": "Vice President Unit, Used Farm Machinery Circulation Branch of China Association of Agricultural Machinery Circulation"
-    }
-  },
   "nav": {
-    "membership": "Подписка",
     "home": "Главная",
     "products": "Оборудование",
     "logistics": "Логистика",
@@ -1042,7 +974,7 @@
       "priceIndexTitle": "Индекс цен",
       "marketAnalysis": "Анализ рынка",
       "filter": "Фильтры",
-      "premiumFeature": "Премиум · Некоторые отчеты требуют членства",
+      "premiumFeature": "Премиум · Некоторые отчеты требуют баллы",
       "currentIndex": "Текущий индекс",
       "monthOverMonth": "Месяц к месяцу",
       "yearOverYear": "Год к году",
