@@ -2,11 +2,11 @@
 
   "valuationGate": {
 
-    "membershipUpsell": "Upgrade to unlock the full valuation report",
+    "membershipUpsell": "Use credits to unlock the full valuation report",
 
     "membershipUpsellDesc": "Unlimited valuations, full breakdown & buying advice",
 
-    "membershipCta": "View plans",
+    "membershipCta": "Top up credits",
 
     "_todoTranslate": "",
 
@@ -128,7 +128,7 @@
 
     "exhausted": "Monthly quota exhausted. Upgrade to unlock more.",
 
-    "upgrade": "Upgrade Membership",
+    "upgrade": "Top Up",
 
     "actions": {
 
@@ -210,19 +210,19 @@
 
     "upgradeNow": "Upgrade Now",
 
-    "title": "Membership Center",
+    "title": "Credits Center",
 
-    "membershipStatus": "Membership Status",
+    "membershipStatus": "Account Status",
 
     "creditsBalance": "Credit Balance",
 
     "validUntil": "Valid until",
 
-    "upgrade": "Upgrade Membership",
+    "upgrade": "Top Up",
 
     "alreadyHighest": "Already at highest tier",
 
-    "upgradeComingSoon": "Membership upgrade coming soon",
+    "upgradeComingSoon": "More top-up packages coming soon",
 
     "recharge": "Buy Credits",
 
@@ -288,141 +288,7 @@
 
   },
 
-  "membership": {
-
-    "title": "Choose the Plan That Fits You",
-
-    "subtitle": "AI Valuation · Unlimited Listings · Cross-border Arbitrage Data · Data Export",
-
-    "loading": "Loading...",
-
-    "billing": {
-
-      "monthly": "Monthly",
-
-      "yearly": "Yearly"
-
-    },
-
-    "saveBadge": "10% Off Limited",
-
-    "perMonth": "/mo",
-
-    "perYear": "/yr",
-
-    "currentPlan": "Current Plan",
-
-    "popular": "Most Popular",
-
-    "checkoutError": "Failed to start checkout. Please try again later.",
-
-    "tiers": {
-
-      "free": "Free",
-
-      "basic": "Standard",
-
-      "premium": "Pro",
-
-      "enterprise": "Premium"
-
-    },
-
-    "cta": {
-
-      "startFree": "Start for Free",
-
-      "upgrade": "Upgrade Now",
-
-      "wechatPending": "WeChat Pay (Coming Soon)",
-
-      "payOnline": "Pay Securely Online"
-
-    },
-
-    "benefits": {
-
-      "free": [
-
-        "5 AI valuations per month",
-
-        "5 product listings per month",
-
-        "View seller contact info",
-
-        "20 bonus credits on sign-up"
-
-      ],
-
-      "basic": [
-
-        "50 AI valuations per month",
-
-        "50 product listings per month",
-
-        "Cross-border arbitrage data",
-
-        "10 photos / 3 videos per listing"
-
-      ],
-
-      "premium": [
-
-        "Unlimited AI valuations",
-
-        "Unlimited product listings",
-
-        "Unlimited inquiries & contacts",
-
-        "Data export + product topping",
-
-        "20 photos / 5 videos per listing"
-
-      ],
-
-      "enterprise": [
-
-        "Everything in Premium",
-
-        "50 photos / 10 videos per listing",
-
-        "Dedicated key-account support",
-
-        "Priority access to industry events"
-
-      ]
-
-    },
-
-    "waitlist": {
-
-      "title": "Payment Channel Opening Soon",
-
-      "desc": "Leave your email and we'll notify you the moment it goes live — plus 7 days of free Premium trial for early sign-ups.",
-
-      "placeholder": "Enter your email",
-
-      "submit": "Notify Me",
-
-      "successTitle": "Subscribed!",
-
-      "successDesc": "We'll notify you as soon as the payment channel opens, and reserve your 7-day Premium trial.",
-
-      "error": "Submission failed. Please try again later."
-
-    },
-
-    "trust": {
-
-      "cn": "Vice President Unit, Used Farm Machinery Circulation Branch of China Association of Agricultural Machinery Circulation"
-
-    }
-
-  },
-
   "nav": {
-
-    "membership": "Membership",
 
     "home": "Home",
 
@@ -2044,7 +1910,7 @@
 
       "subtitle": "Market analysis based on national transaction data",
 
-      "premiumFeature": "Premium · Some reports require membership",
+      "premiumFeature": "Premium · Some reports require credits",
 
       "priceIndexTitle": "Price Index",
 

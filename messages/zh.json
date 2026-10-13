@@ -2,11 +2,11 @@
 
   "valuationGate": {
 
-    "membershipUpsell": "升级会员，解锁完整估值报告",
+    "membershipUpsell": "使用积分解锁完整估值报告",
 
     "membershipUpsellDesc": "无限次 AI 估值 + 完整公式拆解 + 购买建议",
 
-    "membershipCta": "查看会员方案",
+    "membershipCta": "去充值积分",
 
     "_todoTranslate": "",
 
@@ -222,7 +222,7 @@
 
     "alreadyHighest": "已是最高等级",
 
-    "upgradeComingSoon": "会员升级即将上线",
+    "upgradeComingSoon": "更多充值套餐即将上线",
 
     "recharge": "积分充值",
 
@@ -288,143 +288,9 @@
 
   },
 
-  "membership": {
-
-    "title": "选择适合你的会员方案",
-
-    "subtitle": "AI 估价 · 无限发布 · 跨境套利数据 · 数据导出",
-
-    "loading": "加载中...",
-
-    "billing": {
-
-      "monthly": "按月付费",
-
-      "yearly": "按年付费"
-
-    },
-
-    "saveBadge": "限时 9 折",
-
-    "perMonth": "/月",
-
-    "perYear": "/年",
-
-    "currentPlan": "当前方案",
-
-    "popular": "最受欢迎",
-
-    "checkoutError": "支付发起失败，请稍后重试",
-
-    "tiers": {
-
-      "free": "免费版",
-
-      "basic": "普通",
-
-      "premium": "Pro",
-
-      "enterprise": "高级"
-
-    },
-
-    "cta": {
-
-      "startFree": "免费开始",
-
-      "upgrade": "立即升级",
-
-      "wechatPending": "微信支付（即将开通）",
-
-      "payOnline": "安全在线支付"
-
-    },
-
-    "benefits": {
-
-      "free": [
-
-        "每月 5 次 AI 估价",
-
-        "每月发布 5 个产品",
-
-        "查看卖家联系方式",
-
-        "注册赠送 20 积分"
-
-      ],
-
-      "basic": [
-
-        "每月 50 次 AI 估价",
-
-        "每月发布 50 个产品",
-
-        "跨境套利数据",
-
-        "每产品 10 图 / 3 视频"
-
-      ],
-
-      "premium": [
-
-        "AI 估价不限次",
-
-        "发布产品不限量",
-
-        "询盘与联系方式不限",
-
-        "数据导出 + 产品置顶",
-
-        "每产品 20 图 / 5 视频"
-
-      ],
-
-      "enterprise": [
-
-        "尊享旗舰版全部权益",
-
-        "每产品 50 图 / 10 视频",
-
-        "专属大客户支持",
-
-        "优先参与行业活动"
-
-      ]
-
-    },
-
-    "waitlist": {
-
-      "title": "支付通道即将开放",
-
-      "desc": "留下邮箱，开通时第一时间通知你，建档赠送 7 天旗舰版体验。",
-
-      "placeholder": "输入邮箱地址",
-
-      "submit": "通知我",
-
-      "successTitle": "订阅成功！",
-
-      "successDesc": "我们会第一时间通知你，并为你预留 7 天旗舰版体验资格。",
-
-      "error": "提交失败，请稍后重试"
-
-    },
-
-    "trust": {
-
-      "cn": "中国农业机械流通协会二手农机流通分会 副会长单位"
-
-    }
-
-  },
-
   "nav": {
 
     "credits": "积分中心",
-
-    "membership": "会员",
 
     "home": "首页",
 
@@ -2046,7 +1912,7 @@
 
       "subtitle": "基于全国交易数据生成的国产二手农机价格指数与市场分析",
 
-      "premiumFeature": "增值服务 · 部分报告需会员订阅",
+      "premiumFeature": "增值服务 · 部分报告需使用积分",
 
       "priceIndexTitle": "国产二手农机价格指数",
 

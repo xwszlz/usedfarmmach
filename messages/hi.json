@@ -1,8 +1,8 @@
 {
   "valuationGate": {
-    "membershipUpsell": "सदस्यता अपग्रेड करें, पूरी मूल्यांकन रिपोर्ट अनलॉक करें",
+    "membershipUpsell": "पॉइंट का उपयोग करके पूरी मूल्यांकन रिपोर्ट अनलॉक करें",
     "membershipUpsellDesc": "असीमित मूल्यांकन, पूरा विवरण और खरीद सलाह",
-    "membershipCta": "योजनाएँ देखें",
+    "membershipCta": "पॉइंट रीचार्ज करें",
     "_todoTranslate": "",
     "rangeLabel": "AI Valuation Range (for reference only)",
     "midHint": "Midpoint reference",
@@ -63,7 +63,7 @@
     "used": "प्रयोग किया गया",
     "remaining": "शेष",
     "exhausted": "मासिक कोटा समाप्त हो गया। अधिक अनलॉक करने के लिए अपग्रेड करें",
-    "upgrade": "सदस्यता अपग्रेड करें",
+    "upgrade": "रीचार्ज करें",
     "actions": {
       "publish": "उत्पाद प्रकाशित करें",
       "inquiry": "पूछताछ भेजें",
@@ -104,13 +104,13 @@
     "amountPlaceholder": "क्रेडिट संख्या दर्ज करें",
     "creditUnit": "अंक",
     "upgradeNow": "Upgrade Now",
-    "title": "सदस्य केंद्र",
-    "membershipStatus": "सदस्यता स्थिति",
+    "title": "पॉइंट सेंटर",
+    "membershipStatus": "खाता स्थिति",
     "creditsBalance": "पॉइंट बैलेंस",
     "validUntil": "तक वैध",
-    "upgrade": "सदस्यता अपग्रेड करें",
+    "upgrade": "रीचार्ज करें",
     "alreadyHighest": "पहले से ही उच्चतम स्तर",
-    "upgradeComingSoon": "सदस्यता अपग्रेड जल्द आ रहा है",
+    "upgradeComingSoon": "और रीचार्ज पैकेज जल्द आ रहे हैं",
     "recharge": "पॉइंट खरीदें",
     "rechargeComingSoon": "पॉइंट खरीदना जल्द उपलब्ध होगा।",
     "transactions": "पॉइंट इतिहास",
@@ -155,75 +155,7 @@
     "freeFeaturesBody": "उत्पाद प्रकाशित करना, पूछताछ भेजना और संपर्क देखना पूरी तरह निःशुल्क है — कोई क्रेडिट नहीं लगता"
 
   },
-  "membership": {
-    "_todo": "TODO: translate membership section from English (zh/en are source of truth)",
-    "title": "Choose the Plan That Fits You",
-    "subtitle": "AI Valuation · Unlimited Listings · Cross-border Arbitrage Data · Data Export",
-    "loading": "Loading...",
-    "billing": {
-      "monthly": "Monthly",
-      "yearly": "Yearly"
-    },
-    "saveBadge": "10% Off Limited",
-    "perMonth": "/mo",
-    "perYear": "/yr",
-    "currentPlan": "Current Plan",
-    "popular": "Most Popular",
-    "checkoutError": "Failed to start checkout. Please try again later.",
-    "tiers": {
-      "free": "Free",
-      "basic": "Basic",
-      "premium": "Premium",
-      "enterprise": "Enterprise"
-    },
-    "cta": {
-      "startFree": "Start for Free",
-      "upgrade": "Upgrade Now",
-      "wechatPending": "WeChat Pay (Coming Soon)",
-      "payOnline": "सुरक्षित ऑनलाइन भुगतान"
-    },
-    "benefits": {
-      "free": [
-        "5 AI valuations per month",
-        "5 product listings per month",
-        "View seller contact info",
-        "20 bonus credits on sign-up"
-      ],
-      "basic": [
-        "50 AI valuations per month",
-        "50 product listings per month",
-        "Cross-border arbitrage data",
-        "10 photos / 3 videos per listing"
-      ],
-      "premium": [
-        "Unlimited AI valuations",
-        "Unlimited product listings",
-        "Unlimited inquiries & contacts",
-        "Data export + product topping",
-        "20 photos / 5 videos per listing"
-      ],
-      "enterprise": [
-        "Everything in Premium",
-        "50 photos / 10 videos per listing",
-        "Dedicated key-account support",
-        "Priority access to industry events"
-      ]
-    },
-    "waitlist": {
-      "title": "Payment Channel Opening Soon",
-      "desc": "Leave your email and we'll notify you the moment it goes live — plus 7 days of free Premium trial for early sign-ups.",
-      "placeholder": "Enter your email",
-      "submit": "Notify Me",
-      "successTitle": "Subscribed!",
-      "successDesc": "We'll notify you as soon as the payment channel opens, and reserve your 7-day Premium trial.",
-      "error": "Submission failed. Please try again later."
-    },
-    "trust": {
-      "cn": "Vice President Unit, Used Farm Machinery Circulation Branch of China Association of Agricultural Machinery Circulation"
-    }
-  },
   "nav": {
-    "membership": "सदस्यता",
     "home": "होम",
     "products": "उपकरण",
     "logistics": "लॉजिस्टिक्स",
@@ -1042,7 +974,7 @@
       "priceIndexTitle": "मूल्य सूचकांक",
       "marketAnalysis": "बाजार विश्लेषण",
       "filter": "फ़िल्टर",
-      "premiumFeature": "प्रीमियम · कुछ रिपोर्ट सदस्यता की आवश्यकता होती है",
+      "premiumFeature": "प्रीमियम · कुछ रिपोर्ट के लिए पॉइंट आवश्यक हैं",
       "currentIndex": "वर्तमान सूचकांक",
       "monthOverMonth": "माह-दर-माह",
       "yearOverYear": "वर्ष-दर-वर्ष",
@@ -1057,9 +989,9 @@
       "last6Months": "पिछले 6 महीने",
       "lastYear": "पिछला वर्ष",
       "premiumTitle": "प्रीमियम सेवा",
-      "premiumDesc": "गहराई से रिपोर्ट और पूर्वानुमान के लिए सदस्यता लें।",
+      "premiumDesc": "गहन रिपोर्ट और पूर्वानुमान के लिए पॉइंट का उपयोग करें।",
       "premiumFee": "* मूल्य वर्धित सेवा शुल्क",
-      "subscribe": "सदस्यता लें",
+      "subscribe": "पॉइंट से अनलॉक करें",
       "disclaimer": "अस्वीकरण",
       "disclaimerDesc": "केवल संदर्भ के लिए, निवेश सलाह नहीं।"
     },
