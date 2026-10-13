@@ -281,24 +281,67 @@ function AIRecognizeSection({
   onRecognized: (data: RecognizeResult) => void;
   channel: Channel;
 }) {
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const MAX_IMAGES = 5;
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<RecognizeResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = useCallback(async (file: File) => {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataUri = e.target?.result as string;
-      setImagePreview(dataUri);
-      doRecognize(dataUri);
-    };
-    reader.readAsDataURL(file);
-  }, []);
+  // 前端压缩：手机原图 base64 后易超 Vercel 4.5MB 请求体上限，压到长边1280px JPEG
+  const compressImage = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const MAX_EDGE = 1280;
+          const scale = Math.min(1, MAX_EDGE / Math.max(img.width, img.height));
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          canvas.getContext("2d")?.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL("image/jpeg", 0.82));
+        };
+        img.onerror = reject;
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
 
-  const doRecognize = async (dataUri: string) => {
+  const handleFiles = useCallback(async (files: FileList | File[]) => {
+    const list = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    if (list.length === 0) return;
+    setError("");
+    const compressed: string[] = [];
+    for (const file of list) {
+      if (imagePreviews.length + compressed.length >= MAX_IMAGES) break;
+      try {
+        compressed.push(await compressImage(file));
+      } catch {
+        // 单张压缩失败跳过，不阻塞其他图
+      }
+    }
+    if (compressed.length === 0) {
+      setError("图片处理失败，请换一张试试");
+      return;
+    }
+    const next = [...imagePreviews, ...compressed].slice(0, MAX_IMAGES);
+    setImagePreviews(next);
+    // 自动识别当前全部图片
+    doRecognize(next);
+  }, [imagePreviews]);
+
+  const removeImage = (idx: number) => {
+    const next = imagePreviews.filter((_, i) => i !== idx);
+    setImagePreviews(next);
+    if (next.length > 0) doRecognize(next);
+    else { setResult(null); setError(""); }
+  };
+
+  const doRecognize = async (dataUris: string[]) => {
+    if (dataUris.length === 0) return;
     setLoading(true);
     setError("");
     setResult(null);
@@ -307,7 +350,7 @@ function AIRecognizeSection({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          imageDataUris: [dataUri],
+          imageDataUris: dataUris,
           isChineseBrand: channel === "domestic",
         }),
       });
@@ -331,38 +374,63 @@ function AIRecognizeSection({
       <div className="mb-3 flex items-center gap-2">
         <Sparkles className="h-5 w-5 text-blue-600" />
         <h3 className="text-sm font-semibold text-gray-800">AI智能识别</h3>
-        <span className="text-xs text-gray-400">上传照片自动填写参数</span>
+        <span className="text-xs text-gray-400">上传3-5张照片自动填写参数</span>
       </div>
+
+      {imagePreviews.length > 0 && (
+        <div className="mb-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
+          {imagePreviews.map((src, idx) => (
+            <div key={idx} className="group relative">
+              <img src={src} alt={`照片${idx + 1}`} className="h-20 w-full rounded-lg object-cover" />
+              <button
+                type="button"
+                onClick={() => removeImage(idx)}
+                className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-gray-800/80 text-xs text-white hover:bg-red-600"
+                aria-label="删除图片"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div
         className="cursor-pointer rounded-lg border-2 border-dashed border-gray-300 p-6 text-center transition-colors hover:border-blue-400 hover:bg-blue-50"
         onClick={() => fileInputRef.current?.click()}
         onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => { e.preventDefault(); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); }}
+        onDrop={(e) => { e.preventDefault(); if (e.dataTransfer.files.length > 0) handleFiles(e.dataTransfer.files); }}
       >
-        {imagePreview ? (
-          <img src={imagePreview} alt="预览" className="mx-auto max-h-40 rounded-lg" />
-        ) : (
+        {imagePreviews.length === 0 && (
           <>
             <Camera className="mx-auto mb-2 h-10 w-10 text-gray-400" />
-            <p className="text-sm text-gray-500">点击拍照或拖拽图片到此处</p>
-            <p className="mt-1 text-xs text-gray-400">AI将自动识别品类、品牌和参数</p>
+            <p className="text-sm text-gray-500">点击拍照或拖拽图片到此处（可多选）</p>
+            <p className="mt-1 text-xs text-gray-400">建议3-5张：铭牌、整机、驾驶室、轮胎底盘，AI识别更准</p>
           </>
+        )}
+        {imagePreviews.length > 0 && imagePreviews.length < MAX_IMAGES && (
+          <p className="text-xs text-blue-500">继续点击可追加照片（{imagePreviews.length}/{MAX_IMAGES}）</p>
+        )}
+        {imagePreviews.length >= MAX_IMAGES && (
+          <p className="text-xs text-gray-400">已达{MAX_IMAGES}张上限，删除后可再添加</p>
         )}
         <input
           ref={fileInputRef}
           type="file"
           accept="image/*"
-          capture="environment"
+          multiple
           className="hidden"
-          onChange={(e) => { if (e.target.files?.[0]) handleFile(e.target.files[0]); }}
+          onChange={(e) => {
+            if (e.target.files?.length) handleFiles(e.target.files);
+            e.target.value = ""; // 允许重复选择同一文件
+          }}
         />
       </div>
 
       {loading && (
         <div className="mt-3 flex items-center justify-center gap-2 py-4">
           <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
-          <span className="text-sm text-gray-500">AI识别中...</span>
+          <span className="text-sm text-gray-500">AI识别中（{imagePreviews.length}张照片，约10-20秒）...</span>
         </div>
       )}
 
