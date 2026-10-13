@@ -636,6 +636,9 @@ export default function ValuationPage() {
   const [prefillTip, setPrefillTip] = useState("");
   // AI 识别区已上传的图片（压缩 dataURI），深度报告复用
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  // 识别到品牌库未收录品牌（如"铁牛"）时动态加入下拉选项；估值走通用兜底模型
+  const [extraDBrands, setExtraDBrands] = useState<string[]>([]);
+  const [extraIBrands, setExtraIBrands] = useState<string[]>([]);
 
   // 国际参数
   const [iBrand, setIBrand] = useState("John Deere");
@@ -905,10 +908,9 @@ export default function ValuationPage() {
 
     if (data.brand) {
       const brand = String(data.brand).trim();
-      let brandSet = false;
       if (data.isChineseBrand === false) {
         // 国际：先精确匹配，再查中文别名（克拉斯→CLAAS 等）
-        if (INTL_BRAND_LIST.includes(brand)) { setIBrand(brand); filled++; brandSet = true; }
+        if (INTL_BRAND_LIST.includes(brand)) { setIBrand(brand); filled++; }
         else {
           const aliasEntry = Object.entries(BRAND_COEFFICIENTS).find(
             ([zh]) => zh === brand
@@ -922,13 +924,27 @@ export default function ValuationPage() {
               "麦赛弗格森": "Massey Ferguson", "久保田": "Kubota",
             };
             const mapped = zh2en[enKey] ?? zh2en[brand];
-            if (mapped && INTL_BRAND_LIST.includes(mapped)) { setIBrand(mapped); filled++; brandSet = true; }
+            if (mapped && INTL_BRAND_LIST.includes(mapped)) { setIBrand(mapped); filled++; }
+            else {
+              // 品牌库未收录：仍按识别结果显示（动态加入下拉），估值走通用兜底模型
+              setExtraIBrands((prev) => (prev.includes(brand) ? prev : [...prev, brand]));
+              setIBrand(brand); filled++;
+              brandSkipped = brand;
+            }
+          } else {
+            setExtraIBrands((prev) => (prev.includes(brand) ? prev : [...prev, brand]));
+            setIBrand(brand); filled++;
+            brandSkipped = brand;
           }
         }
       } else if (DOMESTIC_BRAND_LIST.includes(brand)) {
-        setDBrand(brand); filled++; brandSet = true;
+        setDBrand(brand); filled++;
+      } else {
+        // 品牌库未收录（如"铁牛"）：仍按识别结果显示，估值走通用兜底模型
+        setExtraDBrands((prev) => (prev.includes(brand) ? prev : [...prev, brand]));
+        setDBrand(brand); filled++;
+        brandSkipped = brand;
       }
-      if (!brandSet) brandSkipped = brand;
     }
 
     if (data.modelName) {
@@ -969,7 +985,7 @@ export default function ValuationPage() {
     if (filled > 0 || brandSkipped) {
       const okPart = filled > 0 ? `✅ 已自动填入下方表单（${filled} 项）` : "";
       const warnPart = brandSkipped
-        ? `⚠️ 识别品牌「${brandSkipped}」暂不在估值品牌库，表单保持当前品牌，请手动核对`
+        ? `⚠️ 识别品牌「${brandSkipped}」不在估值品牌库，已按通用回归模型估值，建议核对铭牌`
         : "";
       setPrefillTip([okPart, warnPart].filter(Boolean).join("；"));
       setTimeout(() => setPrefillTip(""), 8000);
@@ -1084,7 +1100,7 @@ export default function ValuationPage() {
                     value={dBrand} onChange={(e) => setDBrand(e.target.value)}
                     className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
                   >
-                    {DOMESTIC_BRAND_LIST.map((b) => <option key={b} value={b}>{b}</option>)}
+                    {[...DOMESTIC_BRAND_LIST, ...extraDBrands].map((b) => <option key={b} value={b}>{b}</option>)}
                   </select>
                 </div>
                 <div>
@@ -1182,7 +1198,7 @@ export default function ValuationPage() {
               {/* 实时基准价预览 */}
               <div className="flex items-center justify-between rounded-lg bg-blue-50 px-4 py-3">
                 <span className="text-xs text-blue-600">
-                  新机基准价（{dBrand} 回归模型）
+                  新机基准价（{DOMESTIC_HP_REGRESSION[dBrand] ? `${dBrand} 回归模型` : `${dBrand} · 通用回归模型`}）
                 </span>
                 <span className="text-lg font-bold text-blue-700">
                   {formatMoney(previewBasePrice)}
@@ -1213,7 +1229,7 @@ export default function ValuationPage() {
                     value={iBrand} onChange={(e) => setIBrand(e.target.value)}
                     className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
                   >
-                    {INTL_BRAND_LIST.map((b) => <option key={b} value={b}>{b}</option>)}
+                    {[...INTL_BRAND_LIST, ...extraIBrands].map((b) => <option key={b} value={b}>{b}</option>)}
                   </select>
                 </div>
                 <div>
@@ -1314,7 +1330,7 @@ export default function ValuationPage() {
                     <label className="mb-1 block text-xs font-medium text-gray-600">品牌</label>
                     <select value={iBrand} onChange={(e) => setIBrand(e.target.value)}
                       className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none">
-                      {INTL_BRAND_LIST.map((b) => <option key={b} value={b}>{b}</option>)}
+                      {[...INTL_BRAND_LIST, ...extraIBrands].map((b) => <option key={b} value={b}>{b}</option>)}
                     </select>
                   </div>
                   <div>
