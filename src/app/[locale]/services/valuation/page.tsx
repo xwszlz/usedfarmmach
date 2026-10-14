@@ -21,7 +21,6 @@ import {
   isDomesticBrandSupported,
   getRegionalFactor,
   getSubsidyTrendFactor,
-  getCategoryAnnualHours,
 } from "@/lib/valuation/brand-data";
 import type { ValuationIntelligence } from "@/lib/valuation/intelligence";
 import ValuationReportPro from "@/components/valuation/valuation-report-pro";
@@ -764,21 +763,15 @@ export default function ValuationPage() {
     ? calcDomesticBasePrice(dBrand, dHP)
     : iNewPrice;
 
-  // 合成工时：优先用户真实工时；否则按品类年均工时估算。
-  // 无工时表的品类（打捆机/割台/旋耕机等）返回 undefined —— 不得用虚构工时压低残值。
-  const synthHours = (category?: string, years?: number, hours?: number | null) => {
-    if (hours && hours > 0) return hours;
-    const annual = getCategoryAnnualHours(category);
-    if (annual == null || !years) return undefined;
-    return Math.round(years * annual);
-  };
-
   // 执行估值
   const doValuation = async () => {
     setLoading(true);
     try {
       if (channel === "domestic") {
         // 调用网站API进行完整估值
+        // 注意：workingHours 只传用户真实工时，缺失即传 undefined。
+        // 「缺工时按品类年均强度合成」已下沉到估值引擎 calcCombinedDepreciation（唯一真源），
+        // 组件层不得再做任何工时推算，否则会与产品页 API 路径产生两套口径。
         const res = await fetch("/api/valuation", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -786,7 +779,7 @@ export default function ValuationPage() {
             brand: dBrand,
             category: dCategory,
             year: dYear - dYears,
-            workingHours: synthHours(dCategory, dYears, dHours),
+            workingHours: dHours && dHours > 0 ? dHours : undefined,
             condition: dCondition,
             enginePower: dHP,
             priceCny: dSellerPrice ? Number(dSellerPrice) : undefined,
@@ -1611,7 +1604,7 @@ export default function ValuationPage() {
                   modelYear: channel === "domestic" ? dYear - dYears : iYear,
                   ageYears: channel === "domestic" ? dYears : undefined,
                   horsepower: channel === "domestic" ? dHP : iHP,
-                  hours: channel === "domestic" ? synthHours(dCategory, dYears, dHours) : iHours,
+                  hours: channel === "domestic" ? (dHours && dHours > 0 ? dHours : undefined) : iHours,
                   region: channel === "domestic" ? dRegion : iRegion,
                   condition: channel === "domestic" ? "良好" : iCondition,
                   emission: channel !== "domestic" ? iEmission : undefined,
@@ -1633,7 +1626,7 @@ export default function ValuationPage() {
                   modelYear: channel === "domestic" ? dYear - dYears : iYear,
                   ageYears: channel === "domestic" ? dYears : undefined,
                   horsepower: channel === "domestic" ? dHP : iHP,
-                  hours: channel === "domestic" ? synthHours(dCategory, dYears, dHours) : iHours,
+                  hours: channel === "domestic" ? (dHours && dHours > 0 ? dHours : undefined) : iHours,
                   region: channel === "domestic" ? dRegion : iRegion,
                   condition: channel === "domestic" ? "良好" : iCondition,
                   emission: channel !== "domestic" ? iEmission : undefined,

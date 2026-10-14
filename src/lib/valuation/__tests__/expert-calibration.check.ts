@@ -205,6 +205,42 @@ function main(): void {
     tractor6.depreciationFactor === tractor6.hoursFactor;
   console.log(ok ? "✅ 回归自检通过" : "❌ 回归自检失败");
 
+  // ===== 回归自检：缺工时的三态口径（2026-10-15 统一，消除产品页/计算器两条路径分歧）=====
+  console.log("\n" + "=".repeat(78));
+  console.log("【回归自检】缺工时三态：actual / synthesized / none");
+  console.log("-".repeat(78));
+  const CY = new Date().getFullYear();
+  const sActual = calcCombinedDepreciation(1600, CY - 4, CY, "轮式拖拉机");
+  const sSynth = calcCombinedDepreciation(undefined, CY - 4, CY, "轮式拖拉机");
+  const sNone = calcCombinedDepreciation(undefined, CY - 6, CY, "打捆机");
+  const sNonePassed = calcCombinedDepreciation(5000, CY - 6, CY, "打捆机");
+  const sFresh = calcCombinedDepreciation(undefined, CY, CY, "轮式拖拉机");
+  console.log(
+    `有真实工时      → src=${sActual.hoursSource}  dep=${sActual.depreciationFactor.toFixed(4)}（期望 actual / 0.5268，专家锚点不可动）`
+  );
+  console.log(
+    `缺工时·有表品类 → src=${sSynth.hoursSource}  dep=${sSynth.depreciationFactor.toFixed(4)}（期望 synthesized，≈机龄4年×660h=2640h 的曲线值 0.4477）`
+  );
+  console.log(
+    `缺工时·无表品类 → src=${sNone.hoursSource}  dep=${sNone.depreciationFactor.toFixed(4)}（期望 none / 机龄法 0.550）`
+  );
+  console.log(
+    `传工时·无表品类 → src=${sNonePassed.hoursSource}  dep=${sNonePassed.depreciationFactor.toFixed(4)}（期望 none，传入工时不采信）`
+  );
+  console.log(
+    `全新机器(机龄0) → src=${sFresh.hoursSource}  dep=${sFresh.depreciationFactor.toFixed(4)}（期望 none / 1.0000，基准价不打折）`
+  );
+  const ok2 =
+    sActual.hoursSource === "actual" &&
+    Math.abs(sActual.depreciationFactor - 0.5268) < 1e-6 &&
+    sSynth.hoursSource === "synthesized" &&
+    Math.abs(sSynth.depreciationFactor - 0.4477) < 1e-3 &&
+    sNone.hoursSource === "none" &&
+    sNonePassed.hoursSource === "none" &&
+    sFresh.hoursSource === "none" &&
+    sFresh.depreciationFactor === 1.0;
+  console.log(ok2 ? "✅ 三态口径自检通过" : "❌ 三态口径自检失败");
+
   console.log("\n" + "=".repeat(78));
   console.log("说明：专家样本通常未给出真实工时，【4】按专家假想工况(hoursMid)代理，结论标注“按专家假想工况”。");
   console.log("=".repeat(78));

@@ -39,6 +39,7 @@ import {
   getTradeChannelFactor,
   getCategoryAnnualHours,
   calcAgeTableResidual,
+  MIN_RESIDUAL_RATIO,
 } from "./brand-data";
 // Phase C: 国产未配置品牌 — 品类内相对溢价兜底表（337品牌，替代常数兜底）
 import { BRAND_RELATIVE_PREMIUM } from "./brand-relative-premium";
@@ -258,13 +259,27 @@ function getCategoryBasePrice(category: string, modelName?: string, opts?: { bra
 }
 
 /**
+ * 基准价的「定价依据」—— 决定马力效应是否已经被计入 basePrice。
+ *
+ * calcSpecFactor 的马力因子据此判断是否叠加：
+ *  - hp-regression / generic-regression：基准价本身就是「每马力单价 × 马力」算出来的，
+ *    马力已计价，再叠加马力溢价等于把马力算两遍；
+ *  - category-median / category-base：基准价与马力无关，马力溢价应正常生效。
+ */
+export type BasePriceBasis =
+  | "hp-regression"      // 轨道B1：品牌马力回归 × 补贴到手比率
+  | "generic-regression" // 轨道B2b：通用马力回归
+  | "category-median"    // 轨道B2a：补贴数据品类中位价 × 品牌溢价
+  | "category-base";     // 轨道A：品类基准价 × 品牌系数
+
+/**
  * 数据驱动基准价计算（双轨制）
- * 
+ *
  * 轨道A（进口/无补贴数据品牌）：现有逻辑 — 品类基准价 × 品牌系数
  * 轨道B1（国产 + 有马力）：马力-价格回归模型
  * 轨道B2（国产 + 无马力）：品类中位价 × 品牌溢价系数
- * 
- * @returns { basePrice, brandFactor, dataSource } 基准价、品牌系数、数据来源
+ *
+ * @returns { basePrice, brandFactor, dataSource, basePriceBasis } 基准价、品牌系数、数据来源、定价依据
  */
 function getDataDrivenBasePrice(
   brand: string,
@@ -272,7 +287,7 @@ function getDataDrivenBasePrice(
   modelName?: string,
   enginePower?: number,
   opts?: { brandCode?: string | null; categoryCode?: string | null; modelCode?: string | null; brandValueFactor?: number | null }
-): { basePrice: number; brandFactor: number; dataSource: string } {
+): { basePrice: number; brandFactor: number; dataSource: string; basePriceBasis: BasePriceBasis } {
   // 检查是否为有补贴数据支持的国产品牌
   const isDomestic = isDomesticBrandSupported(brand);
 
@@ -300,6 +315,7 @@ function getDataDrivenBasePrice(
         basePrice,
         brandFactor: 1.0, // 回归已内含品牌差异
         dataSource: `回归模型(${regression.pricePerHP}元/HP × ${enginePower}HP) × 到手价${Math.round(toHand * 100)}%`,
+        basePriceBasis: "hp-regression",
       };
     }
 
@@ -331,6 +347,7 @@ function getDataDrivenBasePrice(
         basePrice: categoryData.median,
         brandFactor: premium,
         dataSource: `补贴中位价(${subsidyCategory} ¥${categoryData.median.toLocaleString()}) × 品牌溢价(${premium})`,
+        basePriceBasis: "category-median",
       };
     }
 
@@ -342,6 +359,7 @@ function getDataDrivenBasePrice(
         basePrice: Math.max(regPrice, 5000),
         brandFactor: premium,
         dataSource: `通用回归(${defaultReg.pricePerHP}元/HP × ${enginePower}HP) × 品牌溢价(${premium})`,
+        basePriceBasis: "generic-regression",
       };
     }
   }
@@ -353,6 +371,7 @@ function getDataDrivenBasePrice(
     basePrice: categoryBasePrice * brandFactor,
     brandFactor,
     dataSource: `品类基准价(¥${(categoryBasePrice / 10000).toFixed(1)}万) × 品牌系数(${brandFactor})`,
+    basePriceBasis: "category-base",
   };
 }
 
@@ -409,25 +428,75 @@ function calcHoursDepreciationFactor(workingHours: number | undefined): number |
 /**
  * Phase 1：组合折旧因子
  * 有工时 → 以工时折旧为主，机龄作为下限兜底（避免高龄低工时虚高）
- * 无工时 → 回退机龄折旧
+ * 无工时 → 见下方 hoursSource 三态
+ *
+ * hoursSource 三态（2026-10-15 统一口径，消除「产品页估值」与「手动计算器」两条路径的分歧）：
+ *  - "actual"       ：调用方提供了真实工时
+ *  - "synthesized"  ：缺工时，按「品类年均工时 A × 机龄」合成
+ *  - "none"         ：品类无原厂小时表（打捆机/割台/捡拾台/牵引式农具等），恒走机龄法
+ *
+ * 为什么要合成而不是直接回退机龄：机龄表从未被标定，在平均强度下比标定过的工时曲线
+ * 宽松得多（4 年拖拉机：机龄表 0.71 vs 合成工时 0.448，而唯一专家锚点给 0.527）。
+ * 不合成等于假设该机零使用，会系统性高估。合成 = 假设平均使用强度。
+ * 注：brand-new 机器（机龄 0）合成工时为 0，仍回落机龄法，保持 100% 基准价不变。
  */
 export function calcCombinedDepreciation(
   workingHours: number | undefined,
   year: number,
   currentYear: number,
   category?: string
-): { depreciationFactor: number; usedHours: boolean; ageFactor: number; hoursFactor: number } {
-  // 无工时表的品类（打捆机/割台/旋耕机等）：即使调用方传入了合成工时也一律忽略，
-  // 强制回退机龄法，避免用虚构工时把残值压低。
-  const effectiveHours = getCategoryAnnualHours(category) === null ? undefined : workingHours;
+): {
+  depreciationFactor: number;
+  usedHours: boolean;
+  ageFactor: number;
+  hoursFactor: number;
+  hoursSource: "actual" | "synthesized" | "none";
+  /** 实际参与工时曲线的工时（含合成值）；未走工时曲线时为 null。展示层必须用它，不能再用 input.workingHours。 */
+  effectiveHours: number | null;
+} {
   const ageFactor = calcYearFactor(year, currentYear);
-  const hoursFactor = calcHoursDepreciationFactor(effectiveHours);
+  const annualHours = getCategoryAnnualHours(category);
+
+  let hoursForCurve = workingHours;
+  let hoursSource: "actual" | "synthesized" | "none" = "actual";
+
+  if (annualHours == null) {
+    // 无原厂小时表的品类：调用方传入的工时不采信，强制回退机龄法，
+    // 避免用虚构工时把残值压低（打捆机/割台/旋耕机等均属此类）。
+    hoursForCurve = undefined;
+    hoursSource = "none";
+  } else if (!hoursForCurve || hoursForCurve <= 0) {
+    const age = Math.max(currentYear - year, 0);
+    if (age > 0) {
+      hoursForCurve = age * annualHours;
+      hoursSource = "synthesized";
+    } else {
+      hoursForCurve = undefined;
+      hoursSource = "none";
+    }
+  }
+
+  const hoursFactor = calcHoursDepreciationFactor(hoursForCurve);
   if (hoursFactor != null) {
     // 机龄作为下限兜底：折旧因子不超过 ageFactor（高龄机残值不应高于机龄法）
-    const depreciationFactor = Math.min(hoursFactor, ageFactor);
-    return { depreciationFactor, usedHours: true, ageFactor, hoursFactor };
+    const depreciationFactor = Math.max(Math.min(hoursFactor, ageFactor), MIN_RESIDUAL_RATIO);
+    return {
+      depreciationFactor,
+      usedHours: true,
+      ageFactor,
+      hoursFactor,
+      hoursSource,
+      effectiveHours: hoursForCurve ?? null,
+    };
   }
-  return { depreciationFactor: ageFactor, usedHours: false, ageFactor, hoursFactor: 1.0 };
+  return {
+    depreciationFactor: ageFactor,
+    usedHours: false,
+    ageFactor,
+    hoursFactor: 1.0,
+    hoursSource,
+    effectiveHours: null,
+  };
 }
 
 /**
@@ -446,7 +515,10 @@ function calcMarketFactor(foreignPriceCny: number | undefined, baseValue: number
  * 考虑：马力、驱动方式、配置、重量、尺寸等规格字段
  * 返回规格综合因子和各规格详情
  */
-function calcSpecFactor(input: ValuationInput): {
+function calcSpecFactor(
+  input: ValuationInput,
+  basePriceBasis?: BasePriceBasis
+): {
   specFactor: number;
   specDetails: SpecDetail[];
   specValuationDetails: ValuationDetail[]; // 用于详情展示
@@ -455,14 +527,21 @@ function calcSpecFactor(input: ValuationInput): {
   const specValuationDetails: ValuationDetail[] = [];
   let specFactor = 1.0;
 
+  // 马力是否已被基准价计入：马力回归轨道的基准价本身就是「每马力单价 × 马力」，
+  // 马力效应已内含，specFactor 不能再叠加马力溢价，否则同一属性被计算两次。
+  // 实测依据：天拖 TTQ2004（200HP / 品类均 120HP），回归已给 +66.5%，
+  // 再叠加 +8% 使 V4 系统性高于 V2 达 13.4%（115,012 vs 101,421）。
+  const hpAlreadyPriced =
+    basePriceBasis === "hp-regression" || basePriceBasis === "generic-regression";
+
   // 1. 马力因子
   let enginePowerFactor = 1.0;
   if (input.enginePower && input.enginePower > 0) {
     const avgPower = getAveragePowerForCategory(input.category);
     let score = 5; // 默认评分
-    
+
     if (input.enginePower > avgPower * 1.2) {
-      enginePowerFactor = 1.08;
+      enginePowerFactor = hpAlreadyPriced ? 1.0 : 1.08;
       score = 8;
       specDetails.push({
         field: "enginePower",
@@ -470,14 +549,23 @@ function calcSpecFactor(input: ValuationInput): {
         weight: 0.3,
         score: score,
       });
-      specValuationDetails.push({
-        label: "马力优势",
-        value: `+${Math.round((input.enginePower / avgPower - 1) * 100)}%`,
-        impact: "positive",
-        description: `${input.enginePower}HP，高于同类平均${avgPower}HP`,
-      });
+      specValuationDetails.push(
+        hpAlreadyPriced
+          ? {
+              label: "马力因素",
+              value: "已计入基准价",
+              impact: "neutral",
+              description: `${input.enginePower}HP 高于同类平均${avgPower}HP，但基准价来自马力回归，马力效应已内含，不重复叠加`,
+            }
+          : {
+              label: "马力优势",
+              value: `+${Math.round((input.enginePower / avgPower - 1) * 100)}%`,
+              impact: "positive",
+              description: `${input.enginePower}HP，高于同类平均${avgPower}HP`,
+            }
+      );
     } else if (input.enginePower < avgPower * 0.8) {
-      enginePowerFactor = 0.95;
+      enginePowerFactor = hpAlreadyPriced ? 1.0 : 0.95;
       score = 4;
       specDetails.push({
         field: "enginePower",
@@ -485,12 +573,21 @@ function calcSpecFactor(input: ValuationInput): {
         weight: 0.3,
         score: score,
       });
-      specValuationDetails.push({
-        label: "马力偏低",
-        value: `-${Math.round((1 - input.enginePower / avgPower) * 100)}%`,
-        impact: "negative",
-        description: `${input.enginePower}HP，低于同类平均${avgPower}HP`,
-      });
+      specValuationDetails.push(
+        hpAlreadyPriced
+          ? {
+              label: "马力因素",
+              value: "已计入基准价",
+              impact: "neutral",
+              description: `${input.enginePower}HP 低于同类平均${avgPower}HP，基准价已按马力回归下折，不重复减价`,
+            }
+          : {
+              label: "马力偏低",
+              value: `-${Math.round((1 - input.enginePower / avgPower) * 100)}%`,
+              impact: "negative",
+              description: `${input.enginePower}HP，低于同类平均${avgPower}HP`,
+            }
+      );
     } else {
       score = 6;
       specDetails.push({
@@ -784,7 +881,7 @@ export async function calculateValuationV4(
     modelCode: input.modelCode ?? null,
     brandValueFactor: input.brandValueFactor ?? null,
   };
-  const { basePrice, brandFactor, dataSource } = getDataDrivenBasePrice(
+  const { basePrice, brandFactor, dataSource, basePriceBasis } = getDataDrivenBasePrice(
     input.brand, input.category, input.modelName, input.enginePower, codeOpts
   );
 
@@ -822,7 +919,7 @@ export async function calculateValuationV4(
 
   // === V4 新增：规格因子 ===
   
-  const { specFactor, specDetails, specValuationDetails } = calcSpecFactor(input);
+  const { specFactor, specDetails, specValuationDetails } = calcSpecFactor(input, basePriceBasis);
   estimatedValue = Math.round(estimatedValue * specFactor);
 
   // === V4 新增：视频因子 ===
@@ -889,16 +986,16 @@ export async function calculateValuationV4(
         ? `工时折旧 ${Math.round((1 - depreciationFactor) * 100)}%`
         : `机龄折旧 ${Math.round((1 - depreciationFactor) * 100)}% (${age}年)`,
       impact: depreciationFactor > 0.5 ? "neutral" : "negative",
-      description: dep.usedHours
-        ? `${input.workingHours!.toLocaleString()}小时，按工时曲线折旧（机龄${age}年作下限兜底）`
+      description: dep.usedHours && dep.effectiveHours != null
+        ? `${dep.effectiveHours.toLocaleString()}小时${dep.hoursSource === "synthesized" ? "（按品类年均强度估算，非表显读数）" : ""}，按工时曲线折旧（机龄${age}年作下限兜底）`
         : `${age}年机龄折旧（未提供工时，按机龄法估算）`,
     },
     {
       label: "工时残值",
-      value: input.workingHours ? `${Math.round(hoursFactor * 100)}%` : "无数据",
-      impact: !input.workingHours ? "neutral" : hoursFactor >= 0.6 ? "positive" : "negative",
-      description: input.workingHours
-        ? `${input.workingHours.toLocaleString()}小时，对应累计残值率${Math.round(hoursFactor * 100)}%`
+      value: dep.effectiveHours != null ? `${Math.round(hoursFactor * 100)}%` : "无数据",
+      impact: dep.effectiveHours == null ? "neutral" : hoursFactor >= 0.6 ? "positive" : "negative",
+      description: dep.effectiveHours != null
+        ? `${dep.effectiveHours.toLocaleString()}小时${dep.hoursSource === "synthesized" ? "（估算）" : ""}，对应累计残值率${Math.round(hoursFactor * 100)}%`
         : "未提供工时数据",
     },
     {
@@ -1163,16 +1260,16 @@ export function calculateValuation(input: ValuationInput): ValuationResult {
         ? `工时折旧 ${Math.round((1 - depreciationFactor) * 100)}%`
         : `机龄折旧 ${Math.round((1 - depreciationFactor) * 100)}% (${age}年)`,
       impact: depreciationFactor > 0.5 ? "neutral" : "negative",
-      description: dep.usedHours
-        ? `${input.workingHours!.toLocaleString()}小时，按工时曲线折旧（机龄${age}年作下限兜底）`
+      description: dep.usedHours && dep.effectiveHours != null
+        ? `${dep.effectiveHours.toLocaleString()}小时${dep.hoursSource === "synthesized" ? "（按品类年均强度估算，非表显读数）" : ""}，按工时曲线折旧（机龄${age}年作下限兜底）`
         : `${age}年机龄折旧（未提供工时，按机龄法估算）`,
     },
     {
       label: "工时残值",
-      value: input.workingHours ? `${Math.round(hoursFactor * 100)}%` : "无数据",
-      impact: !input.workingHours ? "neutral" : hoursFactor >= 0.6 ? "positive" : "negative",
-      description: input.workingHours
-        ? `${input.workingHours.toLocaleString()}小时，对应累计残值率${Math.round(hoursFactor * 100)}%`
+      value: dep.effectiveHours != null ? `${Math.round(hoursFactor * 100)}%` : "无数据",
+      impact: dep.effectiveHours == null ? "neutral" : hoursFactor >= 0.6 ? "positive" : "negative",
+      description: dep.effectiveHours != null
+        ? `${dep.effectiveHours.toLocaleString()}小时${dep.hoursSource === "synthesized" ? "（估算）" : ""}，对应累计残值率${Math.round(hoursFactor * 100)}%`
         : "未提供工时数据",
     },
     {
