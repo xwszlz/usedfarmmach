@@ -737,6 +737,7 @@ export default function ValuationPage() {
     breakdown: { label: string; value: string; detail: string }[];
     formula: string;
     warnings: string[];
+    channelPrices?: Record<string, number>;
   } | null>(null);
 
   // 顶真实交易情报（/api/valuation 返回，服务端按 品牌/品类/型号/省份 切片）
@@ -843,6 +844,7 @@ export default function ValuationPage() {
             })),
             formula: `基准价(${formatMoney(previewBasePrice)}) × 折旧(${calcDomesticDepreciation(dYears).toFixed(2)}) × 地区(${getRegionalFactor(dRegion).toFixed(2)}) × 补贴趋势(${getSubsidyTrendFactor(dYear).toFixed(2)})`,
             warnings: [],
+            channelPrices: (r as { channelPrices?: Record<string, number> }).channelPrices,
           });
         } else {
           // API失败时用客户端计算
@@ -941,6 +943,7 @@ export default function ValuationPage() {
       })),
       formula: r.analysis || "",
       warnings: [],
+      channelPrices: (precise as { channelPrices?: Record<string, number> }).channelPrices,
     });
     setGateData(null);
     setLimitReached(false);
