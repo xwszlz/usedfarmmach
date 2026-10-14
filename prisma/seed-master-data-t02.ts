@@ -10,6 +10,7 @@
  *          打 isLeaf / parentId / nameEn（12 个缺英文名品类一并补）。
  *       ③ 按老板拍板清理 39 条脏/错字品牌（live id）。Brand 无 isActive 字段无法软下架；
  *          且 14/39 挂着商品、含真实品牌，故仅硬删「零商品纯脏行」，挂商品者跳过交人工复核。
+ *          同名重复但挂商品者（如 John Deere）走 MERGE_MAP（⑤）先改挂再删空壳，不在此列。
  *
  * 安全设计：
  *   - 默认 **dry-run**（只打印计划），必须显式传 `--apply` 才写库。
@@ -33,7 +34,7 @@ const APPLY = process.argv.includes("--apply");
  * ① 字典品牌 code → 线上 live brand id（来自缺口明细表 02 列的精确映射）
  * ---------------------------------------------------------------- */
 const BRAND_MAP: Record<string, string> = {
-  deere: "john-deere", fendt: "fendt", case: "cmpzm1oju001fyllpxhgrx4eg",
+  deere: "john-deere", fendt: "fendt", case: "case-ih",
   claas: "claas", new_holland: "new-holland", massey_ferguson: "massey-ferguson",
   kuhn: "kuhn", krone: "krone", lemken: "cmr9i0ep2000u505azgk38xxc",
   amazone: "cmr9i0ey8000z505aoce061j2", kubota: "kubota", yto: "dongfanghong",
@@ -56,7 +57,7 @@ const BRAND_MAP: Record<string, string> = {
   shuangying: "cmr94w7nq000rcb9d2n0ln5gp", tianren: "cmr9dgsss0000evulp00vochp",
   liulin: "cmr9dgt1f0001evulmlq64efo", chunyu: "cmr9dgt5v0002evulha70oh9a",
   china_harvest: "cmr9dgtav0003evuln65w1zz3", dafang: "cmr9dgtf90004evul4676ekmj",
-  modern_agro: "cmr9dgto90006evulshmzh48p", dima: "cmr9dgtx10008evulfrc4plo3",
+  modern_agro: "cmr9dgtjn0005evul85j6lydq", dima: "cmr9dgtx10008evulfrc4plo3",
   luzhong: "cmr9dgu1g0009evul8sqgc2ey", valtra: "cmr9i0cy90000505aku4x1ttd",
   challenger: "cmr9i0doh000a505adqgea64f", lely: "cmr9i0dxb000f505asrpqkv64",
   pottinger: "cmr9i0e6a000k505axx9tn6xx", horsch: "cmr9i0efe000p505a0xwoy1cg",
@@ -81,7 +82,7 @@ const BRAND_MAP: Record<string, string> = {
   househam: "cmrbayamf005pftadhmmz7ktl", bateman: "cmrbayb0o005wftadnfmeeurd",
   samasz: "cmrbaycpx006qftadr2hgebjv", amity: "cmrj3dklq0000i58xnnu704az",
   dangkang: "cmrxec0hz00005fp9j74q4h6t", agronic: "cmuv8ba2f0045tocmsn1959tr",
-  dexiang: "dexiang", dongfeng: "dongfeng", dorma: "dormoy", falaixin: "falaixin",
+  dexiang: "dexiang", dongfeng: "dongfeng", dorma: "dorma", falaixin: "falaixin",
   grain: "grain", grimme: "grimme", guwang: "guwang", kongskilde: "kongskilde",
   maike: "maike", mushen: "mushen", orke: "orke", toyonoki: "toyonoki",
   world: "world", yingjia: "yingjia",
@@ -91,7 +92,7 @@ const BRAND_MAP: Record<string, string> = {
  * ② 39 条脏/错字品牌 → 清理（live id，.com 实测）。零商品纯脏行硬删；挂商品者跳过交人工。
  * ---------------------------------------------------------------- */
 const DENYLIST: string[] = [
-  "cmpzm1niz000ryllpodjl8zfj", "cmrvbl1qk0000i9ud71mynv2b", "cmr4jzvnw0001at1b7o8zceei",
+  "cmpzm1niz000ryllpodjl8zfj", "cmr4jzvnw0001at1b7o8zceei",
   "cmrbaybv8006cftadh2ju2tlb", "cmrbayc9n006jftadihj7hsxf", "cmrbaybeo0063ftade64n6br5",
   "cmpzlwvt3000v4zwdjm4nhy4p", "cms334v9y000a135ixx3hh8d5", "cmpzlwvnw000s4zwdbub6x0e2",
   "cmpzm1m7r0000yllpre94slx8", "cmpzm1oui001myllpo12y821c", "cms334up90000135iivjuv24q",
@@ -105,7 +106,17 @@ const DENYLIST: string[] = [
   "cms334v370005135iraqvkh18", "cmpzlwxcj001m4zwdfdu731sz", "cmrx8sg46000n137rhm43jxg3",
   "massey",
   "cmpzlwviw000p4zwdbusy5ap3", "cmr34lal3000058eh35hayu4e",
+  // —— 同名重复空壳（归并保留正确 code 行后，零商品纯脏壳硬删）——
+  "dormoy", "cmr9i0des0005505addih9rv2", "cmr9dgto90006evulshmzh48p", "cmpzm1oju001fyllpxhgrx4eg",
 ];
+
+/* ---------------------------------------------------------------- *
+ * ⑤ 同名重复品牌归并（dupId → canonicalId）：先把商品改挂正牌，再删空壳。
+ *    用于 John Deere 等「正牌已存在、但重复行挂商品」的情况（DENYLIST 只处理零商品行）。
+ * ---------------------------------------------------------------- */
+const MERGE_MAP: Record<string, string> = {
+  "cmrvbl1qk0000i9ud71mynv2b": "john-deere",
+};
 
 /* ---------------------------------------------------------------- *
  * ③ 29 个字典品牌缺中文名 → 补译（仅前台展示用，可改）
@@ -261,70 +272,8 @@ async function main() {
     `[t02] 载入 brand=${brands.items.length} | DENYLIST=${DENYLIST.length} | CATEGORY_TREE=${CATEGORY_TREE.length}${APPLY ? "" : "（DRY-RUN，不写库）"}`,
   );
 
-  // ── 1) Brand 回填 ───────────────────────────────────────────────
-  let brandUpdated = 0;
-  for (const b of brands.items) {
-    const liveId = BRAND_MAP[b.code];
-    if (!liveId) {
-      console.warn(`[t02] ⚠️ 字典品牌 ${b.code} 无 live id 映射，跳过`);
-      continue;
-    }
-    const existing = await prisma.brand.findUnique({ where: { id: liveId } });
-    if (!existing) {
-      console.warn(`[t02] ⚠️ live brand ${liveId}（${b.code}）在目标库不存在，跳过（可能非 .com）`);
-      continue;
-    }
-    const { en, zh } = splitName(b.display_name);
-    const nameZh = CN_NAME_MAP[b.code] || zh || existing.nameZh || "";
-    const nameEn = en || existing.nameEn || b.code;
-    const iso = b.origin_country ? ORIGIN_ISO[b.origin_country] : undefined;
-    const data = {
-      code: b.code,
-      originCountryCode: iso ?? existing.originCountryCode,
-      brandValueFactor: b.brand_value_factor ?? existing.brandValueFactor,
-      isStandard: STANDARD.has(b.code),
-      nameZh,
-      nameEn,
-    };
-    if (APPLY) {
-      await prisma.brand.update({ where: { id: liveId }, data });
-    } else {
-      console.log(`  [dry] Brand.update ${b.code} → code=${b.code} iso=${iso ?? "?"} val=${data.brandValueFactor} std=${data.isStandard} zh=${nameZh}`);
-    }
-    brandUpdated++;
-  }
-  console.log(`[t02] Brand 将回填 ${brandUpdated} 条`);
-
-  // ── 2) Category 回填（22 节点） ────────────────────────────────
-  let catUpsert = 0;
-  for (const node of CATEGORY_TREE) {
-    let parentId: string | null = null;
-    if (node.parentCode) {
-      const pZh = CATEGORY_ZH[node.parentCode];
-      const p = await prisma.category.findFirst({ where: { nameZh: pZh }, select: { id: true } });
-      if (p) parentId = p.id;
-      else console.warn(`[t02] ⚠️ 父品类「${pZh}」未在库中找到，${node.code} 暂挂顶层`);
-    }
-    const existing = await prisma.category.findFirst({ where: { code: node.code } });
-    const data = {
-      code: node.code,
-      isLeaf: node.isLeaf,
-      parentId,
-      nameZh: CATEGORY_ZH[node.code],
-      nameEn: CATEGORY_EN[node.code] ?? node.code,
-    };
-    if (APPLY) {
-      if (existing) await prisma.category.update({ where: { id: existing.id }, data });
-      else await prisma.category.create({ data: { ...data, nameEn: CATEGORY_EN[node.code] ?? node.code } });
-    } else {
-      console.log(`  [dry] Category.${existing ? "update" : "create"} ${node.code} isLeaf=${node.isLeaf} parentId=${parentId} en=${CATEGORY_EN[node.code] ?? node.code}`);
-    }
-    catUpsert++;
-  }
-  console.log(`[t02] Category 将回填 ${catUpsert} 条`);
-
-  // ── 3) 脏/错字品牌清理 ───────────────────────────────────────
-  // Brand 模型无 isActive 字段，无法软下架；且 .com 实测 14/39 条挂着商品
+  // ── 0) 脏/错字品牌清理（先删，释放被占用的 code，避免后续品牌回填唯一键冲突） ──
+  // Brand 无 isActive 字段，无法软下架；且 .com 实测 14/39 条挂着商品
   // （含中联重科/常发/华夏/金轮/牧农等真实品牌），硬删会破坏 Product 外键。
   // 策略：零商品纯脏行才硬删；挂商品者跳过并打印 WARNING 交人工复核。
   let deleted = 0;
@@ -358,6 +307,101 @@ async function main() {
     }
   }
   console.log(`[t02] 清理：将删除 ${deleted} 条 | 因挂商品/外键跳过 ${skippedProducts} 条 | 目标库不存在 ${skippedMissing} 条`);
+
+  // ── 0.5) 同名重复品牌归并（先改挂商品到正牌，再删空壳） ──
+  for (const [dupId, canonId] of Object.entries(MERGE_MAP)) {
+    const dup = await prisma.brand.findUnique({ where: { id: dupId }, select: { id: true, nameZh: true, nameEn: true } });
+    if (!dup) { console.log(`  [skip] 归并源 ${dupId} 不存在（可能已归并）`); continue; }
+    const canon = await prisma.brand.findUnique({ where: { id: canonId }, select: { id: true } });
+    if (!canon) { console.warn(`[t02] ⚠️ 归并目标 ${canonId} 不存在，跳过 ${dupId}`); continue; }
+    const pc = await prisma.product.count({ where: { brandId: dupId } });
+    if (pc > 0) {
+      if (APPLY) {
+        const upd = await prisma.product.updateMany({ where: { brandId: dupId }, data: { brandId: canonId } });
+        console.log(`  [apply] 归并：${dup.nameZh || dup.nameEn}（${dupId}）的 ${upd.count} 台商品改挂 ${canonId}`);
+      } else {
+        console.log(`  [dry] 归并：${dup.nameZh || dup.nameEn}（${dupId}）的 ${pc} 台商品改挂 ${canonId}`);
+      }
+    }
+    const pcAfter = await prisma.product.count({ where: { brandId: dupId } });
+    if (pcAfter === 0) {
+      if (APPLY) { await prisma.brand.delete({ where: { id: dupId } }); console.log(`  [apply] 已删归并空壳 ${dupId}`); }
+      else console.log(`  [dry] 将删归并空壳 ${dupId}`);
+    } else {
+      console.warn(`[t02] ⚠️ ${dupId} 仍有 ${pcAfter} 台，跳过删除`);
+    }
+  }
+
+  // ── 1) Brand 回填 ───────────────────────────────────────────────
+  let brandUpdated = 0;
+  for (const b of brands.items) {
+    const liveId = BRAND_MAP[b.code];
+    if (!liveId) {
+      console.warn(`[t02] ⚠️ 字典品牌 ${b.code} 无 live id 映射，跳过`);
+      continue;
+    }
+    const existing = await prisma.brand.findUnique({ where: { id: liveId } });
+    if (!existing) {
+      console.warn(`[t02] ⚠️ live brand ${liveId}（${b.code}）在目标库不存在，跳过（可能非 .com）`);
+      continue;
+    }
+    const { en, zh } = splitName(b.display_name);
+    const nameZh = CN_NAME_MAP[b.code] || zh || existing.nameZh || "";
+    const nameEn = en || existing.nameEn || b.code;
+    const iso = b.origin_country ? ORIGIN_ISO[b.origin_country] : undefined;
+    const baseData = {
+      originCountryCode: iso ?? existing.originCountryCode,
+      brandValueFactor: b.brand_value_factor ?? existing.brandValueFactor,
+      isStandard: STANDARD.has(b.code),
+      nameZh,
+      nameEn,
+    };
+    if (APPLY) {
+      await prisma.brand.update({ where: { id: liveId }, data: baseData });
+      // code 单独写：若其他品牌已占用该 code（P2002 唯一键冲突），跳过并告警，不中断整批
+      try {
+        await prisma.brand.update({ where: { id: liveId }, data: { code: b.code } });
+      } catch (e: any) {
+        if (e?.code === "P2002") {
+          console.warn(`[t02] ⚠️ code=${b.code} 已被其他品牌占用（${liveId}）code 回填跳过，待人工归并`);
+        } else {
+          throw e;
+        }
+      }
+    } else {
+      console.log(`  [dry] Brand.update ${b.code} → code=${b.code} iso=${iso ?? "?"} val=${baseData.brandValueFactor} std=${baseData.isStandard} zh=${nameZh}`);
+    }
+    brandUpdated++;
+  }
+  console.log(`[t02] Brand 将回填 ${brandUpdated} 条`);
+
+  // ── 2) Category 回填（22 节点） ────────────────────────────────
+  let catUpsert = 0;
+  for (const node of CATEGORY_TREE) {
+    let parentId: string | null = null;
+    if (node.parentCode) {
+      // 按稳定的 code 解析父级（不依赖 nameZh，避免父级中文名被本脚本改写导致查不到）
+      const p = await prisma.category.findFirst({ where: { code: node.parentCode }, select: { id: true } });
+      if (p) parentId = p.id;
+      else console.warn(`[t02] ⚠️ 父品类 code=${node.parentCode} 未在库中找到，${node.code} 暂挂顶层`);
+    }
+    const existing = await prisma.category.findFirst({ where: { code: node.code } });
+    const data = {
+      code: node.code,
+      isLeaf: node.isLeaf,
+      parentId,
+      nameZh: CATEGORY_ZH[node.code],
+      nameEn: CATEGORY_EN[node.code] ?? node.code,
+    };
+    if (APPLY) {
+      if (existing) await prisma.category.update({ where: { id: existing.id }, data });
+      else await prisma.category.create({ data: { ...data, nameEn: CATEGORY_EN[node.code] ?? node.code } });
+    } else {
+      console.log(`  [dry] Category.${existing ? "update" : "create"} ${node.code} isLeaf=${node.isLeaf} parentId=${parentId} en=${CATEGORY_EN[node.code] ?? node.code}`);
+    }
+    catUpsert++;
+  }
+  console.log(`[t02] Category 将回填 ${catUpsert} 条`);
 
   // ── 4) 型号补齐（默认关闭） ───────────────────────────────────
   if (ADDITIONAL_MODELS_ENABLED) {
