@@ -18,10 +18,8 @@ import {
   CATEGORY_BASE_PRICES,
   MODEL_BASE_PRICES,
   CONDITION_FACTORS,
-  DEPRECIATION_TABLE,
   HOURS_PARAMS,
   MARKET_FACTOR_RANGE,
-  MIN_RESIDUAL_RATIO,
   CATEGORY_BASE_PRICES_BY_CODE,
   MODEL_BASE_PRICES_BY_CODE,
   // 数据驱动参数（520万条补贴数据库）
@@ -39,6 +37,8 @@ import {
   ENGINE_BRAND_PREMIUM,
   getEngineBrandPremium,
   getTradeChannelFactor,
+  getCategoryAnnualHours,
+  calcAgeTableResidual,
 } from "./brand-data";
 // Phase C: 国产未配置品牌 — 品类内相对溢价兜底表（337品牌，替代常数兜底）
 import { BRAND_RELATIVE_PREMIUM } from "./brand-relative-premium";
@@ -362,25 +362,8 @@ function getDataDrivenBasePrice(
 function calcYearFactor(year: number, currentYear: number): number {
   const age = currentYear - year;
   if (age <= 0) return 1.0;
-
-  let remaining = 1.0;
-  let yearsLeft = Math.min(age, 3);
-  remaining -= yearsLeft * DEPRECIATION_TABLE[0].rate;
-
-  if (age > 3) {
-    yearsLeft = Math.min(age - 3, 4);
-    remaining -= yearsLeft * DEPRECIATION_TABLE[1].rate;
-  }
-  if (age > 7) {
-    yearsLeft = Math.min(age - 7, 5);
-    remaining -= yearsLeft * DEPRECIATION_TABLE[2].rate;
-  }
-  if (age > 12) {
-    yearsLeft = age - 12;
-    remaining -= yearsLeft * DEPRECIATION_TABLE[3].rate;
-  }
-
-  return Math.max(remaining, MIN_RESIDUAL_RATIO);
+  // 四段机龄表的唯一实现在 brand-data.calcAgeTableResidual（与校准库共用同一口径）
+  return calcAgeTableResidual(age);
 }
 
 /**
@@ -428,13 +411,17 @@ function calcHoursDepreciationFactor(workingHours: number | undefined): number |
  * 有工时 → 以工时折旧为主，机龄作为下限兜底（避免高龄低工时虚高）
  * 无工时 → 回退机龄折旧
  */
-function calcCombinedDepreciation(
+export function calcCombinedDepreciation(
   workingHours: number | undefined,
   year: number,
-  currentYear: number
+  currentYear: number,
+  category?: string
 ): { depreciationFactor: number; usedHours: boolean; ageFactor: number; hoursFactor: number } {
+  // 无工时表的品类（打捆机/割台/旋耕机等）：即使调用方传入了合成工时也一律忽略，
+  // 强制回退机龄法，避免用虚构工时把残值压低。
+  const effectiveHours = getCategoryAnnualHours(category) === null ? undefined : workingHours;
   const ageFactor = calcYearFactor(year, currentYear);
-  const hoursFactor = calcHoursDepreciationFactor(workingHours);
+  const hoursFactor = calcHoursDepreciationFactor(effectiveHours);
   if (hoursFactor != null) {
     // 机龄作为下限兜底：折旧因子不超过 ageFactor（高龄机残值不应高于机龄法）
     const depreciationFactor = Math.min(hoursFactor, ageFactor);
@@ -802,7 +789,7 @@ export async function calculateValuationV4(
   );
 
   // 2. 折旧因子（Phase 1：工时主导 + 机龄兜底）
-  const dep = calcCombinedDepreciation(input.workingHours, input.year, currentYear);
+  const dep = calcCombinedDepreciation(input.workingHours, input.year, currentYear, input.category);
   const yearFactor = dep.ageFactor;        // 机龄因子（展示/兜底）
   const hoursFactor = dep.hoursFactor;     // 工时残值因子（展示）
   const depreciationFactor = dep.depreciationFactor;  // 实际主折旧因子
@@ -1091,7 +1078,7 @@ export function calculateValuation(input: ValuationInput): ValuationResult {
   );
 
   // 2. 折旧因子（Phase 1：工时主导 + 机龄兜底）
-  const dep = calcCombinedDepreciation(input.workingHours, input.year, currentYear);
+  const dep = calcCombinedDepreciation(input.workingHours, input.year, currentYear, input.category);
   const yearFactor = dep.ageFactor;
   const hoursFactor = dep.hoursFactor;
   const depreciationFactor = dep.depreciationFactor;
