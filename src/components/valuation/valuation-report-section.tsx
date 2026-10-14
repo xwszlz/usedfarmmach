@@ -39,6 +39,7 @@ export interface ValuationReportResult {
   breakdown: { label: string; value: string; detail?: string }[];
   formula: string;
   warnings: string[];
+  channelPrices?: Record<string, number>;   // retail/dealer/consignment/auction
 }
 
 interface ValuationReportSectionProps {
@@ -71,6 +72,31 @@ const PARAM_LABELS: { key: keyof ValuationReportMeta; zh: string; en: string; su
   { key: "condition", zh: "车况", en: "Condition" },
   { key: "emission", zh: "排放标准", en: "Emission" },
 ];
+
+// 买卖渠道中文/英文标签（与 formulas.ts TRADE_CHANNEL_FACTORS 键一致）
+const CHANNEL_LABELS: Record<string, { zh: string; en: string }> = {
+  retail: { zh: "零售挂牌价", en: "Retail" },
+  dealer: { zh: "经销商收购价", en: "Dealer buy" },
+  consignment: { zh: "寄售委托价", en: "Consignment" },
+  auction: { zh: "拍卖成交价", en: "Auction" },
+};
+
+// 铭牌核验字段（从 meta 提取，缺项即影响精度）
+function buildNameplate(meta: ValuationReportMeta, zh: boolean) {
+  const rows: { label: string; value: string; ok: boolean }[] = [
+    { label: zh ? "品牌" : "Brand", value: meta.brand || "", ok: !!meta.brand },
+    { label: zh ? "品类" : "Category", value: meta.category || "", ok: !!meta.category },
+    { label: zh ? "型号" : "Model", value: meta.modelName || "", ok: !!meta.modelName },
+    { label: zh ? "制造年份" : "Year", value: meta.modelYear ? String(meta.modelYear) : "", ok: !!meta.modelYear },
+    { label: zh ? "马力" : "Power", value: meta.horsepower ? `${meta.horsepower} HP` : "", ok: !!meta.horsepower },
+    { label: zh ? "使用小时" : "Hours", value: meta.hours ? `${meta.hours} h` : "", ok: !!meta.hours },
+    { label: zh ? "地区" : "Region", value: meta.region || "", ok: !!meta.region },
+    { label: zh ? "排放标准" : "Emission", value: meta.emission || "", ok: !!meta.emission },
+    { label: zh ? "车况" : "Condition", value: meta.condition || "", ok: !!meta.condition },
+  ];
+  const missing = rows.filter((r) => !r.ok).map((r) => r.label);
+  return { rows, missing };
+}
 
 export default function ValuationReportSection({
   channel,
@@ -115,6 +141,8 @@ export default function ValuationReportSection({
     if (v === undefined || v === null || v === "") return null;
     return { label: zh ? p.zh : p.en, value: `${v}${p.suffix || ""}` };
   }).filter(Boolean) as { label: string; value: string }[];
+
+  const np = buildNameplate(meta, zh);
 
   const handleCopy = () => {
     const lines = [
@@ -179,6 +207,37 @@ export default function ValuationReportSection({
           .join("")}</ul></div>`
       : "";
 
+    // 买卖渠道成交价矩阵
+    const channelRows = result.channelPrices
+      ? Object.entries(result.channelPrices)
+          .filter(([k]) => k !== "default")
+          .map(
+            ([k, v]) =>
+              `<tr><td>${esc(CHANNEL_LABELS[k]?.[zh ? "zh" : "en"] || k)}</td><td class="num">¥${v.toLocaleString()}</td></tr>`
+          )
+          .join("")
+      : "";
+    const channelCard = channelRows
+      ? `<div class="card"><h3>${zh ? "买卖渠道成交价参考" : "Channel Prices"}</h3><table>${channelRows}</table><div class="source">${
+          zh ? "同一台机在不同流通渠道的参考成交价，拍卖价通常最低" : "Reference transaction prices across channels; auction typically lowest"
+        }</div></div>`
+      : "";
+
+    // 铭牌核验 + 缺项提示
+    const np = buildNameplate(meta, zh);
+    const nameplateRows = np.rows
+      .map(
+        (r) =>
+          `<tr><td class="k">${esc(r.label)}</td><td>${r.ok ? esc(r.value) : '<span class="miss">未提供</span>'}</td></tr>`
+      )
+      .join("");
+    const nameplateCard = `<div class="card"><h3>${zh ? "铭牌核验" : "Nameplate Check"}</h3><table>${nameplateRows}</table></div>`;
+    const missingCard = np.missing.length
+      ? `<div class="card warn"><h3>${zh ? "缺项提示" : "Missing Fields"}</h3><ul>${np.missing
+          .map((f) => `<li>${esc(f)}${zh ? "：未提供，影响估值精度" : " missing, affects accuracy"}</li>`)
+          .join("")}</ul></div>`
+      : "";
+
     const html = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -224,6 +283,7 @@ td.num { text-align: right; font-weight: 600; white-space: nowrap; }
 .warn { border-left: 4px solid #f59e0b; }
 .warn ul { padding-left: 18px; }
 .warn li { font-size: 12px; color: #92400e; line-height: 1.8; }
+.miss { color: #dc2626; font-weight: 600; }
 .footer { margin-top: 20px; padding-top: 14px; border-top: 1px solid #e5e7eb; font-size: 11px; color: #9ca3af; text-align: center; }
 @media print { body { background: white; padding: 0; } }
 </style>
@@ -247,6 +307,9 @@ td.num { text-align: right; font-weight: 600; white-space: nowrap; }
 <div class="card"><h3>${zh ? "计算过程" : "Breakdown"}</h3><table>${breakdownRows}</table></div>
 <div class="card"><h3>${zh ? "估值公式" : "Formula"}</h3><div class="formula">${esc(result.formula)}</div></div>
 ${chart}
+${channelCard}
+${nameplateCard}
+${missingCard}
 ${warnings}
 <div class="footer">${zh ? "神雕农机 usedfarmmach.com" : "ShenDiao Agri Machinery"} | ${zh ? "本报告由AI生成，仅供参考，不构成交易建议" : "AI-generated, for reference only"} | ${reportId}</div>
 </body>
@@ -420,6 +483,61 @@ ${warnings}
             </div>
           </div>
         )}
+
+        {/* 买卖渠道成交价矩阵（Phase 2） */}
+        {result.channelPrices && Object.keys(result.channelPrices).length > 0 && (
+          <div className="border-b border-gray-100 p-5">
+            <h4 className="mb-2 text-sm font-semibold text-gray-800">
+              {zh ? "买卖渠道成交价参考" : "Channel Prices"}
+            </h4>
+            <div className="overflow-hidden rounded-lg border border-gray-100">
+              <table className="w-full text-xs">
+                <tbody>
+                  {Object.entries(result.channelPrices)
+                    .filter(([k]) => k !== "default")
+                    .map(([k, v]) => (
+                      <tr key={k} className="border-b border-gray-50 last:border-0">
+                        <td className="px-3 py-1.5 text-gray-500">
+                          {CHANNEL_LABELS[k]?.[zh ? "zh" : "en"] || k}
+                        </td>
+                        <td className="px-3 py-1.5 text-right font-semibold text-gray-800">
+                          {formatValuationMoney(v)}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-1.5 text-[10px] text-gray-400">
+              {zh ? "同一台机在不同流通渠道的参考成交价，拍卖价通常最低" : "Reference prices across channels; auction typically lowest"}
+            </p>
+          </div>
+        )}
+
+        {/* 铭牌核验 + 缺项提示（Phase 2） */}
+        <div className="border-b border-gray-100 p-5">
+          <h4 className="mb-2 text-sm font-semibold text-gray-800">
+            {zh ? "铭牌核验" : "Nameplate Check"}
+          </h4>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-1 sm:grid-cols-3">
+            {np.rows.map((r) => (
+              <div key={r.label} className="flex items-center justify-between border-b border-gray-50 pb-1 text-xs">
+                <span className="text-gray-500">{r.label}</span>
+                {r.ok ? (
+                  <span className="font-medium text-gray-800">{r.value}</span>
+                ) : (
+                  <span className="font-semibold text-red-600">{zh ? "未提供" : "Missing"}</span>
+                )}
+              </div>
+            ))}
+          </div>
+          {np.missing.length > 0 && (
+            <div className="mt-2 rounded-lg border-l-4 border-amber-400 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+              {zh ? "缺项提示" : "Missing fields"}：{np.missing.join("、")}
+              {zh ? " 未提供，将影响估值精度（尤其使用小时缺失时折旧按机龄估算，误差较大）" : " affect valuation accuracy"}
+            </div>
+          )}
+        </div>
 
         {/* Warnings */}
         {result.warnings.length > 0 && (
