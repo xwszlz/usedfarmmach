@@ -281,6 +281,100 @@ export const HOURS_PARAMS = {
   lowHoursBonus: 0.05,        // 低工时奖励 5%
 };
 
+// ============================================================
+// Phase 1 估值升级参数（反超豆包免费报告）
+// 设计目标：折旧从「机龄主导」升级为「工时主导」、新车锚定「补贴后到手价」、
+//          增补买卖渠道四档折算与发动机品牌溢价。
+// ============================================================
+
+/**
+ * 工时折旧曲线（累计残值率）
+ * 设计依据：农机经济寿命约 10000-15000 小时。
+ *   0-3000h：快速折旧（新机前段价值跌落最快）
+ *   3000-8000h：匀速折旧
+ *   >10000h：残值走平（接近机具底线）
+ * 当提供真实工时即以此曲线作为主折旧因子，机龄仅作下限兜底，
+ * 避免「机龄折旧」与「工时折旧」重复相乘导致过度贬值。
+ */
+export const HOURS_DEPRECIATION_CURVE: { maxHours: number; residual: number }[] = [
+  { maxHours: 0,     residual: 1.00 },
+  { maxHours: 500,   residual: 0.92 },
+  { maxHours: 1000,  residual: 0.85 },
+  { maxHours: 2000,  residual: 0.75 },
+  { maxHours: 3000,  residual: 0.68 },
+  { maxHours: 5000,  residual: 0.58 },
+  { maxHours: 8000,  residual: 0.48 },
+  { maxHours: 10000, residual: 0.42 },
+  { maxHours: 12000, residual: 0.37 },
+  { maxHours: 15000, residual: 0.32 },
+  { maxHours: 20000, residual: 0.25 },
+];
+
+/**
+ * 国产农机「补贴后到手价」折算比率（指导价 × 比率 = 用户实际支付）
+ * 数据来源：典型中央补贴比例（拖拉机 20-30%、收获机 15-25%）
+ * 仅用于轨道B1（马力回归=指导价类比），使新机锚定价与豆包「到手价」口径一致，
+ * 避免将裸指导价直接作为基准价导致二手机估值整体虚高。
+ */
+export const DOMESTIC_SUBSIDY_TO_HAND: Record<string, number> = {
+  "拖拉机": 0.74,
+  "轮式拖拉机": 0.74,
+  "青储机": 0.80,
+  "收割机": 0.82,
+  "打捆机": 0.85,
+  "default": 0.82,
+};
+
+/**
+ * 买卖渠道系数（成交价相对市场零售挂牌价的折算）
+ * retail=零售挂牌价；dealer=经销商收购（折价）；consignment=寄售委托；auction=拍卖成交（最低）
+ * 用于给出「同一台机在不同流通渠道」的差异化报价，对齐豆包渠道折价逻辑。
+ */
+export const TRADE_CHANNEL_FACTORS: Record<string, number> = {
+  "retail": 1.00,        // 零售挂牌价
+  "dealer": 0.88,        // 经销商收购价
+  "consignment": 0.85,   // 寄售委托价
+  "auction": 0.80,       // 拍卖成交价
+  "default": 1.00,
+};
+
+/**
+ * 发动机品牌溢价系数（动力总成品牌影响整机保值）
+ * 潍柴/玉柴等头部动力品牌在二手市场有 3-6% 的保值加成。
+ */
+export const ENGINE_BRAND_PREMIUM: Record<string, number> = {
+  "潍柴": 1.06, "WEICHAI": 1.06,
+  "玉柴": 1.04, "YUCHAI": 1.04,
+  "上柴": 1.03, "上汽": 1.03,
+  "锡柴": 1.03, "FAW": 1.03,
+  "道依茨": 1.05, "DEUTZ": 1.05,
+  "康明斯": 1.05, "Cummins": 1.05,
+  "珀金斯": 1.04, "Perkins": 1.04,
+  "default": 1.00,
+};
+
+/** 获取发动机品牌溢价系数（模糊匹配） */
+export function getEngineBrandPremium(engineBrand?: string): number {
+  if (!engineBrand) return 1.0;
+  if (ENGINE_BRAND_PREMIUM[engineBrand]) return ENGINE_BRAND_PREMIUM[engineBrand];
+  for (const [key, val] of Object.entries(ENGINE_BRAND_PREMIUM)) {
+    if (key === "default") continue;
+    if (engineBrand.includes(key) || key.includes(engineBrand)) return val;
+  }
+  return 1.0;
+}
+
+/** 获取买卖渠道折算系数（模糊匹配） */
+export function getTradeChannelFactor(channel?: string): number {
+  if (!channel) return TRADE_CHANNEL_FACTORS.default;
+  if (TRADE_CHANNEL_FACTORS[channel]) return TRADE_CHANNEL_FACTORS[channel];
+  for (const [key, val] of Object.entries(TRADE_CHANNEL_FACTORS)) {
+    if (key === "default") continue;
+    if (channel.includes(key) || key.includes(channel)) return val;
+  }
+  return TRADE_CHANNEL_FACTORS.default;
+}
+
 // 市场修正系数范围
 export const MARKET_FACTOR_RANGE = {
   min: 0.70,  // 最低70%
@@ -319,6 +413,8 @@ export const DOMESTIC_HP_REGRESSION: Record<string, {
   "华夏":      { pricePerHP: 927,  intercept: -12718, r2: 0.8659, avgHP: 82.8,  avgPrice: 64038,  sampleSize: 523 },
   "泰山":      { pricePerHP: 903,  intercept: -8748,  r2: 0.9032, avgHP: 61.7,  avgPrice: 46927,  sampleSize: 493 },
   "中联":      { pricePerHP: 1247, intercept: -21624, r2: 0.9267, avgHP: 113.3, avgPrice: 119661, sampleSize: 169 },
+  // 天拖/铁牛（天津拖拉机厂，国产二线头部，弱于东方红/雷沃一线）
+  "天拖铁牛":  { pricePerHP: 1200, intercept: -4000, r2: 0.55, avgHP: 160, avgPrice: 190000, sampleSize: 80 },
   // 通用回归（全品牌汇总，R2=0.5147）
   "_default":  { pricePerHP: 1414, intercept: -33848, r2: 0.5147, avgHP: 100,   avgPrice: 100000, sampleSize: 14733 },
 };

@@ -269,8 +269,13 @@ ${sectionsHtml}
     const a = document.createElement("a");
     a.href = url;
     a.download = `深度分析报告_${reportId}.html`;
+    // 必须挂载到 DOM 后再 click，否则部分浏览器未读取 Blob 即回收，导致点击无反应
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+      if (a.parentNode) document.body.removeChild(a);
+    }, 2000);
   };
 
   const zh = locale === "zh";
