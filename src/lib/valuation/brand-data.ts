@@ -295,19 +295,29 @@ export const HOURS_PARAMS = {
  *   >10000h：残值走平（接近机具底线）
  * 当提供真实工时即以此曲线作为主折旧因子，机龄仅作下限兜底，
  * 避免「机龄折旧」与「工时折旧」重复相乘导致过度贬值。
+ *
+ * [2026-10-14 专家校准重标定] 原曲线整体衰减过慢，较专家样本高估 45%~60%，
+ * 且缺少专家强调的「新车转二手一次性购置折价 20-25%」（原 0h=1.00 完全无折价）。
+ * 现按「专家纯曲线锚点」口径重标定：即剥离加装件溢价与发动机溢价后的纯折旧残值，
+ * 校准样本 DOUBAO-TTQ2004-20261014（天拖TTQ2004，补贴后到手价 18.5万）。
+ *   锚点  800h → 专家 0.607，本曲线 0.617（+1.6%）
+ *   锚点 1600h → 专家 0.512，本曲线 0.527（+2.9%）
+ *   锚点 2850h → 专家 0.431，本曲线 0.434（+0.8%）
+ * 注：本曲线只描述「工时→纯折旧」，不含区域/补贴退坡/成色等因子；
+ *     端到端估值仍可能因上述其他因子与专家结论存在偏差，属预期内、另行校准。
  */
 export const HOURS_DEPRECIATION_CURVE: { maxHours: number; residual: number }[] = [
-  { maxHours: 0,     residual: 1.00 },
-  { maxHours: 500,   residual: 0.92 },
-  { maxHours: 1000,  residual: 0.85 },
-  { maxHours: 2000,  residual: 0.75 },
-  { maxHours: 3000,  residual: 0.68 },
-  { maxHours: 5000,  residual: 0.58 },
-  { maxHours: 8000,  residual: 0.48 },
-  { maxHours: 10000, residual: 0.42 },
-  { maxHours: 12000, residual: 0.37 },
-  { maxHours: 15000, residual: 0.32 },
-  { maxHours: 20000, residual: 0.25 },
+  { maxHours: 0,     residual: 0.79 },  // 购置折价约21%（专家口径 20-25%）
+  { maxHours: 500,   residual: 0.665 },
+  { maxHours: 1000,  residual: 0.585 },
+  { maxHours: 2000,  residual: 0.488 },
+  { maxHours: 3000,  residual: 0.425 },
+  { maxHours: 5000,  residual: 0.360 },
+  { maxHours: 8000,  residual: 0.300 },
+  { maxHours: 10000, residual: 0.270 },
+  { maxHours: 12000, residual: 0.245 },
+  { maxHours: 15000, residual: 0.215 },
+  { maxHours: 20000, residual: 0.180 },
 ];
 
 /**
@@ -332,9 +342,11 @@ export const DOMESTIC_SUBSIDY_TO_HAND: Record<string, number> = {
  */
 export const TRADE_CHANNEL_FACTORS: Record<string, number> = {
   "retail": 1.00,        // 零售挂牌价
-  "dealer": 0.88,        // 经销商收购价
-  "consignment": 0.85,   // 寄售委托价
-  "auction": 0.80,       // 拍卖成交价
+  "dealer": 0.88,        // 经销商/商贩收购价（专家隐含 0.861，偏差 +2.2%）
+  // 寄售：专家口径为「接近公允零售价，仅扣 3-5% 服务费」→ 0.95~0.97，取中 0.96。
+  // 原 0.85 等于额外多砍 15%，属过度折价，2026-10-14 按专家样本校准上调。
+  "consignment": 0.96,   // 寄售委托价（扣服务费后）
+  "auction": 0.80,       // 拍卖成交价（专家隐含 0.785，偏差 +1.9%）
   "default": 1.00,
 };
 
