@@ -14,8 +14,8 @@ interface RechargeFormProps {
 /**
  * 积分充值表单（取消会员后启用）。
  * 口径：
- *   - .com：1 美元 = 1 积分，只走 Paddle（无微信/支付宝通道），金额随意充；
- *   - .cn ：1 元   = 1 积分，走微信 Native / 支付宝 扫码付。
+ *   - .com：1 美元 = 100 积分，只走 Paddle（无微信/支付宝通道），金额随意充；
+ *   - .cn ：1 元   = 100 积分，走微信 Native / 支付宝 扫码付。
  * 下单成功：.com 用 Paddle.js 弹出结账浮层；.cn 显示二维码扫码支付。
  *
  * 🔴 .com 收银台必须用 Paddle.Checkout.open({ transactionId }) 打开：

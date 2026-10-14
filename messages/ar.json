@@ -130,9 +130,9 @@
       "admin_adjust": "تعديل الإدارة",
       "gift": "هدية"
     },
-    "rechargeComRate": "١ دولار = ١ رصيد، أي مبلغ (دفع آمن عبر الإنترنت)",
+    "rechargeComRate": "١ دولار = ١٠٠ رصيد، أي مبلغ (دفع آمن عبر الإنترنت)",
 
-    "rechargeCnRate": "١ يوان = ١ رصيد، أي مبلغ",
+    "rechargeCnRate": "١ يوان = ١٠٠ رصيد، أي مبلغ",
 
     "payWechat": "WeChat Pay",
 

@@ -1854,7 +1854,7 @@ model CheckIn {
   id        String   @id @default(cuid())
   userId    String
   day       String
-  credits   Int      @default(1)
+  credits   Int      @default(100)
   streakDay Int      @default(1)
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)

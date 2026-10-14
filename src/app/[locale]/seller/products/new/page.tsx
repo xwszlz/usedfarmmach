@@ -821,7 +821,7 @@ export default function NewProductPage() {
 
       <h1 className="mb-2 text-2xl font-bold text-gray-900">发布新产品</h1>
       <p className="mb-8 text-sm text-gray-500">
-        先传图片 → 传视频 → 智能识别 → 确认参数 → 发布（消耗 1 积分） v0723
+        先传图片 → 传视频 → 智能识别 → 确认参数 → 发布
       </p>
 
       {/* ===== 估值预填提示条（C 任务）===== */}
@@ -1293,7 +1293,7 @@ export default function NewProductPage() {
       <button onClick={handleSubmit} disabled={submitting}
         className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-600 px-4 py-3.5 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50">
         {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-        {submitting ? "发布中..." : "消耗 1 积分发布产品"}
+        {submitting ? "发布中..." : "发布产品"}
       </button>
     </div>
   );

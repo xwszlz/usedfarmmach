@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     return okText();
   }
 
-  // —— 积分充值订单（R 前缀）：1 元 = 1 积分，直接加积分，不走会员逻辑 ——
+  // —— 积分充值订单（R 前缀）：1 元 = 100 积分，直接加积分，不走会员逻辑 ——
   if (isCreditOutTradeNo(params.out_trade_no)) {
     const pc = parseCreditOutTradeNo(params.out_trade_no);
     if (!pc) {
@@ -73,9 +73,10 @@ export async function POST(request: NextRequest) {
       console.error(`[需人工补单][Recharge/AlipayNotify] 缺少 passback_params。order=${params.out_trade_no} credits=${pc.credits}`);
       return okText();
     }
+    // 单位变更后：total_amount 是「元」，订单号里的 credits 是「积分」= 分，需 ×100 后比较
     const paid = Number(params.total_amount);
-    if (!Number.isFinite(paid) || paid !== pc.credits) {
-      console.error(`[Recharge/AlipayNotify] 金额不符 order=${params.out_trade_no} paid=${params.total_amount} expected=${pc.credits}`);
+    if (!Number.isFinite(paid) || Math.round(paid * 100) !== pc.credits) {
+      console.error(`[Recharge/AlipayNotify] 金额不符 order=${params.out_trade_no} paid=${params.total_amount} expected=${pc.credits / 100}`);
       return failText(400);
     }
     try {

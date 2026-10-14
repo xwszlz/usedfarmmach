@@ -22,6 +22,9 @@ import { findCountryInText } from "@/lib/location-data";
 import { resolveBrand } from "@/lib/agents/seller-helper/resolve-brand";
 import { resolveCategory, getCategorySynonymPrompt } from "@/lib/agents/seller-helper/resolve-category";
 import { prisma } from "@/lib/db";
+import { getUserFromRequest } from "@/lib/auth";
+import { computeAiCost, deductCredits, type AiCostBreakdown } from "@/lib/credits/spend";
+import { recordUsage, drainUsage, ESTIMATED_TOKENS } from "@/lib/credits/usage-collector";
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
 const OPENROUTER_BASE = "https://openrouter.ai/api/v1";
@@ -63,6 +66,16 @@ const MODEL_CHAIN = [
     label: "Claude Haiku via OpenRouter",
   },
 ];
+
+/** 从 referer / 路径推断 locale（与 quota guard 的 rechargeUrl 保持一致） */
+function getLocaleFromRequest(request: NextRequest): string {
+  const referer = request.headers.get("referer") || "";
+  const m = referer.match(/\/([a-z]{2})\b/) || referer.match(/\/([a-z]{2})$/);
+  if (m && ["zh", "en", "ru", "es", "pt", "fr", "hi", "ar"].includes(m[1])) {
+    return m[1];
+  }
+  return "zh";
+}
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 90; // Vercel PRO 最大 120s。预算：图片下载(并行，最坏20s) + 豆包(75s) = 95s 理论峰值，90s 内靠 deadline 收敛；.cn 侧 nginx proxy_read_timeout 已放宽至 180s（2026-09-20），不再被 60s 掐断
@@ -409,6 +422,17 @@ async function callDoubao(content: Array<Record<string, unknown>>): Promise<stri
   );
 
   const result = response.data as any;
+
+  // ── 计费归集：HTTP 一成功就记账（token 已被消耗，与后续解析/error 判断无关）──
+  // 必须放在 if (result.error) throw 之前：throw 之后就没机会记录了。
+  const doubaoUsage = result?.usage;
+  recordUsage(
+    ARK_MODEL_ID,
+    doubaoUsage?.prompt_tokens ?? ESTIMATED_TOKENS.input,
+    doubaoUsage?.completion_tokens ?? ESTIMATED_TOKENS.output,
+    { estimated: !doubaoUsage }
+  );
+
   const text = result.choices?.[0]?.message?.content || "";
 
   if (result.error) {
@@ -488,6 +512,17 @@ async function callOpenRouter(
   );
 
   const result = response.data as any;
+
+  // ── 计费归集：HTTP 一成功就记账（token 已被消耗，与后续解析/error 判断无关）──
+  // model 用调用方传入的模型 id（= MODEL_CHAIN 的 entry.model，与 MODEL_PRICING 的 key 对齐）
+  const orUsage = result?.usage;
+  recordUsage(
+    model,
+    orUsage?.prompt_tokens ?? ESTIMATED_TOKENS.input,
+    orUsage?.completion_tokens ?? ESTIMATED_TOKENS.output,
+    { estimated: !orUsage }
+  );
+
   const text = result.choices?.[0]?.message?.content || "";
 
   if (result.error) {
@@ -521,6 +556,17 @@ async function callGemini(
   );
 
   const result = response.data as any;
+
+  // ── 计费归集：HTTP 一成功就记账（token 已被消耗，与后续安全过滤/解析是否成功无关）──
+  // 必须放在所有 throw 之前。model 用调用方传入的模型 id（主识别与「聚焦补识别」都会走这里 → 都记得到）
+  const geminiUsage = result?.usageMetadata;
+  recordUsage(
+    model,
+    geminiUsage?.promptTokenCount ?? ESTIMATED_TOKENS.input,
+    geminiUsage?.candidatesTokenCount ?? ESTIMATED_TOKENS.output,
+    { estimated: !geminiUsage }
+  );
+
   if (result.promptFeedback?.blockReason) {
     throw new Error(`Gemini 安全过滤: ${result.promptFeedback.blockReason}`);
   }
@@ -747,7 +793,28 @@ async function getCategoryPromptFragment(): Promise<string> {
 }
 
 export async function POST(request: NextRequest) {
+  // ── 计费归集收口标志：本请求的 usage 是否已被「计费点」消费（drain）过 ──
+  // 详见文件末尾 finally 里的论证。
+  let usageConsumed = false;
   try {
+    // ── 登录校验（强制）：AI 智能识别按真实 token 计费，必须知道扣谁的积分 ──
+    // 游客没有 userId → 无法扣费 → 直接 401，由前端（公开估值页等）引导登录。
+    // 注：本 return 位于 try 内，退出前必经 finally 的 drainUsage() 兜底，
+    // 因此 401 分支不会把 usage 残留串到下一个请求。
+    const locale = getLocaleFromRequest(request);
+    const user = await getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "请先登录后再使用 AI 智能识别",
+          code: "LOGIN_REQUIRED",
+          loginUrl: `/${locale}/auth/login`,
+        },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const imageUrls: string[] = body.imageUrls || [];
     const imageDataUris: string[] = body.imageDataUris || [];
@@ -892,6 +959,53 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // ── 积分扣减（按 LLM token 实际消耗成本 × 2，反算积分）──
+    // 用量由三个 provider（豆包/Gemini/OpenRouter）在拿到 HTTP 响应后经 usage-collector 归集。
+    // 只扣一次：把本请求全部记录按模型算成本后求和，再一次 deductCredits。
+    // 多图是「一次请求」（buildDoubaoContent 把 N 张图塞进同一个 content 数组），
+    // 所以主识别最多 1 份 usage，**绝不按图片数重复计费**；
+    // 若走了 Gemini 聚焦补识别，会多 1 份 usage —— 那是同一次请求的第二次真实 LLM 调用，应计。
+    const usage = drainUsage();
+    usageConsumed = true; // 已消费：finally 不再重复处理
+    const perModel: AiCostBreakdown[] = usage.map((u) =>
+      computeAiCost({
+        model: u.model,
+        inputTokens: u.inputTokens,
+        outputTokens: u.outputTokens,
+      })
+    );
+    const totalPoints = perModel.reduce((sum, c) => sum + c.points, 0);
+
+    // 前置登录校验（POST 入口）已保证 user 非空；此处再判一次用于类型收窄与纵深防御 ——
+    // 正常路径不可达，万一可达也只是退回 401，绝不会出现「user 为 null 还继续扣费」的路径。
+    if (!user) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "请先登录后再使用 AI 智能识别",
+          code: "LOGIN_REQUIRED",
+          loginUrl: `/${locale}/auth/login`,
+        },
+        { status: 401 }
+      );
+    }
+    const deduction = await deductCredits(
+      user.id,
+      totalPoints,
+      "AI智能识别",
+      { models: perModel, totalPoints, usageCount: usage.length } as unknown as Record<string, unknown>
+    );
+    if (!deduction.ok) {
+      return NextResponse.json({
+        success: false,
+        error: "积分不足，请先充值后再使用 AI 智能识别",
+        code: "INSUFFICIENT_CREDITS",
+        rechargeUrl: `/${locale}/credits`,
+        required: deduction.required,
+        balance: deduction.credits,
+      }, { status: 402 });
+    }
+
     return await buildSuccessResponse(finalRecognized);
 
   } catch (error: any) {
@@ -902,5 +1016,20 @@ export async function POST(request: NextRequest) {
       error: "AI识别暂时不可用，请手动填写产品信息后发布",
       code: "MANUAL_FALLBACK",
     }, { status: 500 });
+  } finally {
+    // ── 防串账兜底：usage-collector 是「模块级数组」，不 drain 会串到下一个请求 ──
+    // 后果很严重：本请求记录的 usage 会被下一个任意请求（recognize / valuation ...）drain 走，
+    // 等于 A 用户消耗的 token 算到 B 用户头上（跨请求串账）。
+    //
+    // 两条不变量：
+    //   ① 不重复扣费：全函数只有上面「计费点」一处 drain 用于计费，且 drain 后立刻置
+    //      usageConsumed = true，因此这里不会二次处理它；即便二次调用 drainUsage()，
+    //      它「取出即清空」，只会拿到空数组，天然幂等 —— 不存在扣两次的可能。
+    //   ② 不漏 drain：所有提前 return（400 无图 / 503 全模型失败）与所有抛异常路径
+    //      （模型链内异常、聚焦补识别异常、buildSuccessResponse 异常…）都会经过 finally，
+    //      只要 usage 还没被消费，这里一律清掉。
+    if (!usageConsumed) {
+      drainUsage();
+    }
   }
 }
