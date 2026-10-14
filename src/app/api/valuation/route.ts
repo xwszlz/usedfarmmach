@@ -211,7 +211,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    const { productId, brand, modelName, category, year, workingHours, condition, priceCny, useV4, skipImageAnalysis } = body;
+    const { productId, brand, modelName, category, year, workingHours, condition, priceCny, useV4, skipImageAnalysis, engineBrand, tradeChannel } = body;
 
 
 
@@ -445,6 +445,10 @@ export async function POST(request: NextRequest) {
 
         overallHeight: overallHeight ?? product.overallHeight ?? undefined,
 
+        // Phase 1：发动机品牌 + 买卖渠道
+        engineBrand: engineBrand || undefined,
+        tradeChannel: tradeChannel || undefined,
+
       };
 
     } else {
@@ -494,6 +498,10 @@ export async function POST(request: NextRequest) {
         overallWidth,
 
         overallHeight,
+
+        // Phase 1：发动机品牌 + 买卖渠道
+        engineBrand: engineBrand || undefined,
+        tradeChannel: tradeChannel || undefined,
 
       };
 

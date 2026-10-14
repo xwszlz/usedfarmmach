@@ -32,6 +32,13 @@ import {
   isDomesticBrandSupported,
   getRegionalFactor,
   getSubsidyTrendFactor,
+  // Phase 1 升级参数
+  HOURS_DEPRECIATION_CURVE,
+  DOMESTIC_SUBSIDY_TO_HAND,
+  TRADE_CHANNEL_FACTORS,
+  ENGINE_BRAND_PREMIUM,
+  getEngineBrandPremium,
+  getTradeChannelFactor,
 } from "./brand-data";
 // Phase C: 国产未配置品牌 — 品类内相对溢价兜底表（337品牌，替代常数兜底）
 import { BRAND_RELATIVE_PREMIUM } from "./brand-relative-premium";
@@ -81,6 +88,10 @@ export interface ValuationInput {
   modelCode?: string;
   brandValueFactor?: number | null;
   modelPopularityFactor?: number | null;
+
+  // Phase 1：发动机品牌 + 买卖渠道
+  engineBrand?: string;       // 发动机品牌（如 潍柴/玉柴/道依茨）
+  tradeChannel?: string;      // 买卖渠道：retail/dealer/consignment/auction
 }
 
 export interface ValuationDetail {
@@ -141,6 +152,13 @@ export interface ValuationResult {
   // V4 新增：视频因子
   videoFactor?: number;           // 视频因子 0.92~1.08
   videoAnalysis?: string;         // 视频分析摘要
+
+  // Phase 1 新增
+  depreciationFactor?: number;    // 主折旧因子（工时主导或机龄兜底）
+  engineBrandFactor?: number;      // 发动机品牌溢价系数
+  tradeChannel?: string;          // 买卖渠道
+  tradeChannelFactor?: number;     // 渠道折算系数
+  channelPrices?: Record<string, number>;  // 四档渠道成交价（元）
 }
 
 /**
@@ -275,11 +293,13 @@ function getDataDrivenBasePrice(
     // 轨道B1：国产 + 有马力数据 → 回归模型
     if (enginePower && enginePower > 0 && regression) {
       const regPrice = regression.pricePerHP * enginePower + regression.intercept;
-      const basePrice = Math.max(regPrice, 5000); // 最低5000元
+      // Phase 1：裸指导价 × 补贴后到手比率 = 用户实际支付锚定价（对齐豆包到手价口径）
+      const toHand = DOMESTIC_SUBSIDY_TO_HAND[category] ?? DOMESTIC_SUBSIDY_TO_HAND.default;
+      const basePrice = Math.max(regPrice * toHand, 5000); // 最低5000元
       return {
         basePrice,
         brandFactor: 1.0, // 回归已内含品牌差异
-        dataSource: `回归模型(${regression.pricePerHP}元/HP × ${enginePower}HP)`,
+        dataSource: `回归模型(${regression.pricePerHP}元/HP × ${enginePower}HP) × 到手价${Math.round(toHand * 100)}%`,
       };
     }
 
@@ -379,6 +399,48 @@ function calcHoursFactor(workingHours: number | undefined, year: number, current
     const ratio = (workingHours - expectedHours) / (expectedHours * 3);
     return 1 - Math.min(ratio, 1) * HOURS_PARAMS.maxWearPenalty;
   }
+}
+
+/**
+ * Phase 1：基于工时的累计残值折旧因子
+ * 使用 HOURS_DEPRECIATION_CURVE 线性插值。
+ * 返回 null 表示未提供工时（调用方应回退到机龄折旧）。
+ */
+function calcHoursDepreciationFactor(workingHours: number | undefined): number | null {
+  if (!workingHours || workingHours <= 0) return null;
+  const curve = HOURS_DEPRECIATION_CURVE;
+  if (workingHours <= curve[0].maxHours) return curve[0].residual;
+  const last = curve[curve.length - 1];
+  if (workingHours >= last.maxHours) return last.residual;
+  for (let i = 0; i < curve.length - 1; i++) {
+    const a = curve[i];
+    const b = curve[i + 1];
+    if (workingHours >= a.maxHours && workingHours <= b.maxHours) {
+      const t = (workingHours - a.maxHours) / (b.maxHours - a.maxHours);
+      return a.residual + t * (b.residual - a.residual);
+    }
+  }
+  return last.residual;
+}
+
+/**
+ * Phase 1：组合折旧因子
+ * 有工时 → 以工时折旧为主，机龄作为下限兜底（避免高龄低工时虚高）
+ * 无工时 → 回退机龄折旧
+ */
+function calcCombinedDepreciation(
+  workingHours: number | undefined,
+  year: number,
+  currentYear: number
+): { depreciationFactor: number; usedHours: boolean; ageFactor: number; hoursFactor: number } {
+  const ageFactor = calcYearFactor(year, currentYear);
+  const hoursFactor = calcHoursDepreciationFactor(workingHours);
+  if (hoursFactor != null) {
+    // 机龄作为下限兜底：折旧因子不超过 ageFactor（高龄机残值不应高于机龄法）
+    const depreciationFactor = Math.min(hoursFactor, ageFactor);
+    return { depreciationFactor, usedHours: true, ageFactor, hoursFactor };
+  }
+  return { depreciationFactor: ageFactor, usedHours: false, ageFactor, hoursFactor: 1.0 };
 }
 
 /**
@@ -739,11 +801,15 @@ export async function calculateValuationV4(
     input.brand, input.category, input.modelName, input.enginePower, codeOpts
   );
 
-  // 2. 年份因子
-  const yearFactor = calcYearFactor(input.year, currentYear);
+  // 2. 折旧因子（Phase 1：工时主导 + 机龄兜底）
+  const dep = calcCombinedDepreciation(input.workingHours, input.year, currentYear);
+  const yearFactor = dep.ageFactor;        // 机龄因子（展示/兜底）
+  const hoursFactor = dep.hoursFactor;     // 工时残值因子（展示）
+  const depreciationFactor = dep.depreciationFactor;  // 实际主折旧因子
 
-  // 3. 工时因子
-  const hoursFactor = calcHoursFactor(input.workingHours, input.year, currentYear);
+  // 3. 发动机品牌溢价（Phase 1）
+  const engineBrandFactor = getEngineBrandPremium(input.engineBrand);
+  const effectiveBasePrice = basePrice * engineBrandFactor;
 
   // 4. 成色因子（V4视觉 OR V2传统）
   let visualAnalysisResult: VisualValuationResult | undefined = visualResult || input.visualResult;
@@ -756,7 +822,7 @@ export async function calculateValuationV4(
   const conditionFactor = conditionInfo.conditionFactor;
 
   // 5. 市场因子
-  const baseValue = basePrice * yearFactor * hoursFactor * conditionFactor;
+  const baseValue = effectiveBasePrice * depreciationFactor * conditionFactor;
   const marketFactor = calcMarketFactor(input.foreignPriceCny, baseValue);
 
   // 6. 最终估值（V2公式）
@@ -782,8 +848,21 @@ export async function calculateValuationV4(
   const subsidyFactor = getSubsidyTrendFactor(input.year);
   estimatedValue = Math.round(estimatedValue * regionalFactor * subsidyFactor);
 
+  // 6b. 买卖渠道折算（Phase 1）
+  const tradeChannelFactor = getTradeChannelFactor(input.tradeChannel);
+  if (tradeChannelFactor !== 1.0) {
+    estimatedValue = Math.round(estimatedValue * tradeChannelFactor);
+  }
+  // 四档渠道成交价矩阵（以最终估值为零售基准回推）
+  const channelPrices: Record<string, number> = {};
+  const channelRef = tradeChannelFactor !== 0 ? estimatedValue / tradeChannelFactor : estimatedValue;
+  for (const [ch, f] of Object.entries(TRADE_CHANNEL_FACTORS)) {
+    if (ch === "default") continue;
+    channelPrices[ch] = Math.round(channelRef * f);
+  }
+
   // 7. 折旧率
-  const depreciationPercent = Math.round((1 - estimatedValue / basePrice) * 100);
+  const depreciationPercent = Math.round((1 - estimatedValue / effectiveBasePrice) * 100);
 
   // 8. 价格区间
   const mid = estimatedValue;
@@ -818,19 +897,21 @@ export async function calculateValuationV4(
       description: `${input.brand} 国际市场认可度${brandFactor >= 0.85 ? "高" : "中等"}`,
     },
     {
-      label: "年份折旧",
-      value: `${Math.round((1 - yearFactor) * 100)}% (${age}年)`,
-      impact: yearFactor > 0.5 ? "neutral" : "negative",
-      description: `${age}年折旧率约${Math.round((1 - yearFactor) * 100)}%`,
+      label: "折旧方式",
+      value: dep.usedHours
+        ? `工时折旧 ${Math.round((1 - depreciationFactor) * 100)}%`
+        : `机龄折旧 ${Math.round((1 - depreciationFactor) * 100)}% (${age}年)`,
+      impact: depreciationFactor > 0.5 ? "neutral" : "negative",
+      description: dep.usedHours
+        ? `${input.workingHours!.toLocaleString()}小时，按工时曲线折旧（机龄${age}年作下限兜底）`
+        : `${age}年机龄折旧（未提供工时，按机龄法估算）`,
     },
     {
-      label: "工时影响",
-      value: input.workingHours
-        ? hoursFactor >= 1.0 ? `+${Math.round((hoursFactor - 1) * 100)}%` : `${Math.round((1 - hoursFactor) * 100)}%`
-        : "无数据",
-      impact: !input.workingHours ? "neutral" : hoursFactor >= 1 ? "positive" : "negative",
+      label: "工时残值",
+      value: input.workingHours ? `${Math.round(hoursFactor * 100)}%` : "无数据",
+      impact: !input.workingHours ? "neutral" : hoursFactor >= 0.6 ? "positive" : "negative",
       description: input.workingHours
-        ? `${input.workingHours.toLocaleString()}小时${hoursFactor >= 1 ? "，低于预期，加分" : "，超出预期"}`
+        ? `${input.workingHours.toLocaleString()}小时，对应累计残值率${Math.round(hoursFactor * 100)}%`
         : "未提供工时数据",
     },
     {
@@ -854,6 +935,30 @@ export async function calculateValuationV4(
         : "暂无国际市场价格参考",
     },
   ];
+
+  // 添加发动机品牌溢价详情（Phase 1）
+  if (engineBrandFactor !== 1.0) {
+    details.push({
+      label: "发动机品牌",
+      value: `+${Math.round((engineBrandFactor - 1) * 100)}%`,
+      impact: "positive",
+      description: `${input.engineBrand || "指定动力"} 动力总成保值加成`,
+    });
+  }
+
+  // 添加买卖渠道折算详情（Phase 1）
+  if (tradeChannelFactor !== 1.0) {
+    const chLabel = input.tradeChannel === "dealer" ? "经销商收购"
+      : input.tradeChannel === "consignment" ? "寄售委托"
+      : input.tradeChannel === "auction" ? "拍卖成交"
+      : input.tradeChannel || "渠道";
+    details.push({
+      label: "买卖渠道",
+      value: `${Math.round(tradeChannelFactor * 100)}%`,
+      impact: "neutral",
+      description: `按${chLabel}渠道折算成交价`,
+    });
+  }
 
   // 添加规格详情
   if (specValuationDetails.length > 0) {
@@ -955,6 +1060,13 @@ export async function calculateValuationV4(
     // V4 新增：视频因子
     videoFactor,
     videoAnalysis: videoAnalysisResult?.analysis,
+
+    // Phase 1 新增字段
+    depreciationFactor,
+    engineBrandFactor,
+    tradeChannel: input.tradeChannel,
+    tradeChannelFactor,
+    channelPrices,
   };
 }
 
@@ -978,17 +1090,21 @@ export function calculateValuation(input: ValuationInput): ValuationResult {
     input.brand, input.category, input.modelName, input.enginePower, codeOpts
   );
 
-  // 2. 年份因子
-  const yearFactor = calcYearFactor(input.year, currentYear);
+  // 2. 折旧因子（Phase 1：工时主导 + 机龄兜底）
+  const dep = calcCombinedDepreciation(input.workingHours, input.year, currentYear);
+  const yearFactor = dep.ageFactor;
+  const hoursFactor = dep.hoursFactor;
+  const depreciationFactor = dep.depreciationFactor;
 
-  // 3. 工时因子
-  const hoursFactor = calcHoursFactor(input.workingHours, input.year, currentYear);
+  // 3. 发动机品牌溢价（Phase 1）
+  const engineBrandFactor = getEngineBrandPremium(input.engineBrand);
+  const effectiveBasePrice = basePrice * engineBrandFactor;
 
   // 4. 成色因子
   const conditionFactor = CONDITION_FACTORS[input.condition || "good"] || 1.0;
 
   // 5. 市场因子
-  const baseValue = basePrice * yearFactor * hoursFactor * conditionFactor;
+  const baseValue = effectiveBasePrice * depreciationFactor * conditionFactor;
   const marketFactor = calcMarketFactor(input.foreignPriceCny, baseValue);
 
   // 6. 最终估值
@@ -1004,8 +1120,20 @@ export function calculateValuation(input: ValuationInput): ValuationResult {
   const subsidyFactor = getSubsidyTrendFactor(input.year);
   estimatedValue = Math.round(estimatedValue * regionalFactor * subsidyFactor);
 
+  // 6c. 买卖渠道折算（Phase 1）
+  const tradeChannelFactor = getTradeChannelFactor(input.tradeChannel);
+  if (tradeChannelFactor !== 1.0) {
+    estimatedValue = Math.round(estimatedValue * tradeChannelFactor);
+  }
+  const channelPrices: Record<string, number> = {};
+  const channelRef = tradeChannelFactor !== 0 ? estimatedValue / tradeChannelFactor : estimatedValue;
+  for (const [ch, f] of Object.entries(TRADE_CHANNEL_FACTORS)) {
+    if (ch === "default") continue;
+    channelPrices[ch] = Math.round(channelRef * f);
+  }
+
   // 7. 折旧率
-  const depreciationPercent = Math.round((1 - estimatedValue / basePrice) * 100);
+  const depreciationPercent = Math.round((1 - estimatedValue / effectiveBasePrice) * 100);
 
   // 8. 价格区间
   const mid = estimatedValue;
@@ -1043,19 +1171,21 @@ export function calculateValuation(input: ValuationInput): ValuationResult {
       description: `${input.brand} 国际市场认可度${brandFactor >= 0.85 ? "高" : "中等"}`,
     },
     {
-      label: "年份折旧",
-      value: `${Math.round((1 - yearFactor) * 100)}% (${age}年)`,
-      impact: yearFactor > 0.5 ? "neutral" : "negative",
-      description: `${age}年折旧率约${Math.round((1 - yearFactor) * 100)}%`,
+      label: "折旧方式",
+      value: dep.usedHours
+        ? `工时折旧 ${Math.round((1 - depreciationFactor) * 100)}%`
+        : `机龄折旧 ${Math.round((1 - depreciationFactor) * 100)}% (${age}年)`,
+      impact: depreciationFactor > 0.5 ? "neutral" : "negative",
+      description: dep.usedHours
+        ? `${input.workingHours!.toLocaleString()}小时，按工时曲线折旧（机龄${age}年作下限兜底）`
+        : `${age}年机龄折旧（未提供工时，按机龄法估算）`,
     },
     {
-      label: "工时影响",
-      value: input.workingHours
-        ? hoursFactor >= 1.0 ? `+${Math.round((hoursFactor - 1) * 100)}%` : `${Math.round((1 - hoursFactor) * 100)}%`
-        : "无数据",
-      impact: !input.workingHours ? "neutral" : hoursFactor >= 1 ? "positive" : "negative",
+      label: "工时残值",
+      value: input.workingHours ? `${Math.round(hoursFactor * 100)}%` : "无数据",
+      impact: !input.workingHours ? "neutral" : hoursFactor >= 0.6 ? "positive" : "negative",
       description: input.workingHours
-        ? `${input.workingHours.toLocaleString()}小时${hoursFactor >= 1 ? "，低于预期，加分" : "，超出预期"}`
+        ? `${input.workingHours.toLocaleString()}小时，对应累计残值率${Math.round(hoursFactor * 100)}%`
         : "未提供工时数据",
     },
     {
@@ -1124,6 +1254,13 @@ export function calculateValuation(input: ValuationInput): ValuationResult {
     isGoodDeal,
     analysis,
     version: "v2-20260527",
+
+    // Phase 1 新增字段
+    depreciationFactor,
+    engineBrandFactor,
+    tradeChannel: input.tradeChannel,
+    tradeChannelFactor,
+    channelPrices,
   };
 }
 
