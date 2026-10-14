@@ -86,6 +86,13 @@ interface LeadRecord {
   phoneKey: string;
   bareQq: boolean;
   selfOwned: boolean;
+  /**
+   * U7-B 关联标记：`[同号·关联：<对方公司名>]`。
+   * 老板拍板 **不合并**（保住两个工商主体名），改用备注互标，
+   * 让外呼员打开任意一户都能立刻看到「同号的另一户是谁」，避免重复拨打。
+   * 空串表示本行无同号同伴。
+   */
+  relation: string;
   notes: string;
   /** CSV 九列（顺序对齐 HEADER_RULES） */
   csvRow: string[];
@@ -256,7 +263,16 @@ function resolveScope(row: SourceRow, presets: Presets): { scope: Scope; selfOwn
   return { scope: isForeign ? "intl" : "cn", selfOwned: false };
 }
 
-/** 组装 `notes`（方案 §8.8 前缀约定） */
+/**
+ * 组装 `notes`（方案 §8.8 前缀约定 + U7-B 关联标记）。
+ *
+ * **前缀拼接顺序（固定，写死以保证确定性）**：
+ * ```
+ * [import]… ｜ [性质]… ｜ [机型组]… ｜ [补全]… ｜ [同号·关联：…] ｜ [电话占位] ｜ … ｜ [来源]…
+ * ```
+ * `[同号·关联：…]` 插在结构化四段之后、状态旗标之前：既跟着身份信息走，
+ * 又不会被状态旗标挤到行尾看不到。
+ */
 function buildNotes(
   record: Omit<LeadRecord, "notes" | "csvRow">,
   presets: Presets,
@@ -268,6 +284,8 @@ function buildNotes(
     `[机型组]${record.source.modelGroup}`,
     `[补全]${record.phone.confidence === "原始" ? "原始" : `T2·${record.phone.confidence}`}`,
   ];
+  // U7-B：仅 K1 同号组的两户互写对方公司名（单个同伴；若某行命中多组则用「；」连接，按组键升序）
+  if (record.relation) parts.push(record.relation);
   const flags: string[] = [];
   if (record.phone.placeholder) flags.push("[电话占位]");
   if (record.brand.isFallback) flags.push("[品牌兜底]");
@@ -302,6 +320,7 @@ function buildRecord(row: SourceRow, presets: Presets, date: string): LeadRecord
     phoneKey,
     bareQq,
     selfOwned: scopeResult.selfOwned,
+    relation: "",
   };
   const notes = buildNotes(base, presets, date);
 
@@ -319,6 +338,59 @@ function buildRecord(row: SourceRow, presets: Presets, date: string): LeadRecord
   ];
 
   return { ...base, notes, csvRow };
+}
+
+/** 由 seq 取公司名（找不到返回空串） */
+function companyOfSeq(records: readonly LeadRecord[], seq: number): string {
+  const hit = records.find((r) => r.source.seq === seq);
+  return hit ? hit.source.company : "";
+}
+
+/**
+ * U7-B：给 K1 同号组的每一户**互写对方公司名**到 `notes`，**不合并、不减行**。
+ *
+ * - 只对 `K1` 组生效（同号 = 最强证据）；K2/K3 只在报告里提示，不打标记。
+ * - 只对**恰好 2 户**的组生效；若将来出现 3 户同号，会把另两户都写进去（用「；」连接）。
+ * - 遍历顺序按 `runDedupe` 产出的组序（组内按 seq 升序、组间按 phoneKey 字典序），确定性。
+ *
+ * @param records 全部记录（会被就地更新 `relation` / `notes` / `csvRow[7]`）
+ * @param groups  `runDedupe` 检出的组
+ * @param presets 预设
+ * @param date    运行日期口径
+ * @returns 被打了标记的行数
+ */
+function applyRelationMarkers(
+  records: LeadRecord[],
+  groups: readonly DedupeGroup[],
+  presets: Presets,
+  date: string,
+): number {
+  // seq → 同伴公司名列表（按组序追加，保证确定性）
+  const partnersOf = new Map<number, string[]>();
+  for (const group of groups) {
+    if (group.level !== "K1") continue;
+    if (group.seqs.length < 2) continue;
+    for (const seq of group.seqs) {
+      const others = group.seqs.filter((s) => s !== seq).map((s) => companyOfSeq(records, s));
+      const list = partnersOf.get(seq);
+      if (list) {
+        for (const name of others) if (name && !list.includes(name)) list.push(name);
+      } else {
+        partnersOf.set(seq, others.filter((n) => n));
+      }
+    }
+  }
+
+  let touched = 0;
+  for (const record of records) {
+    const partners = partnersOf.get(record.source.seq);
+    if (!partners || partners.length === 0) continue;
+    record.relation = `[同号·关联：${partners.join("；")}]`;
+    record.notes = buildNotes(record, presets, date);
+    record.csvRow[7] = record.notes;
+    touched += 1;
+  }
+  return touched;
 }
 
 // ───────────────────────────────────────────────
@@ -375,7 +447,10 @@ async function main(): Promise<void> {
   }));
   const dedupe = runDedupe(dedupeRows, presets.companyGenericSuffixes);
 
-  // ── 按归属拆三份 CSV（原始 78 行口径，合并前）──
+  // ── U7-B：不合并，给 K1 同号组互打 [同号·关联：…] 标记（不减行）──
+  const relationMarked = applyRelationMarkers(records, dedupe.groups, presets, args.date);
+
+  // ── 按归属拆三份 CSV（U7-B 最终口径：78 户，不合并）──
   const scopeOrder: Scope[] = ["cn", "intl", "unknown"];
   const written: Array<{ scope: Scope; file: string; rows: number; md5: string }> = [];
   for (const scope of scopeOrder) {
@@ -428,7 +503,9 @@ async function main(): Promise<void> {
   report.push(`- **运行日期口径**：\`${args.date}\`（来自 \`task-presets.json\` 的 \`runDate\`，非 \`Date.now()\`，保证确定性）`);
   report.push(`- **输入**：\`${args.xlsx}\``);
   report.push(`- **输出目录**：\`${args.out}\``);
-  report.push(`- **总行数（合并前口径）**：**${total}**`);
+  report.push(
+    `- **最终户数：${total}（U7-B 方案：不合并，保持 78 户 + 同号互标）**`,
+  );
   report.push("");
 
   report.push("## 1. BRAND_KEYS 核实（开工第一件事）");
@@ -497,7 +574,10 @@ async function main(): Promise<void> {
   );
   report.push("");
   report.push(
-    `- **合计 = ${written.reduce((s, w) => s + w.rows, 0)}**（合并前口径，与源 xlsx 78 行一致）`,
+    `- **合计 = ${written.reduce((s, w) => s + w.rows, 0)}** —— **U7-B 最终口径：不合并，保持 78 户**`,
+  );
+  report.push(
+    `  （与源 xlsx 78 行 1:1 对应，**没有**任何两户被合并成一行；同号问题改用备注互标解决）`,
   );
   report.push("");
 
@@ -612,25 +692,71 @@ async function main(): Promise<void> {
     report.push("（未检出任何重复组）");
   }
   report.push("");
-  report.push(
-    `### 2.6 应用 U7 后的最终行数：**${dedupe.finalRowCount}**`,
-  );
+  report.push("### 2.6 🔴 U7 已拍板：**选 B —— 不合并，保持 78 户**");
   report.push("");
   report.push(
-    `- 建议**合并**的组：**${dedupe.mergeCount}**（每组 2 户 → 1 户，各减 1）`,
-  );
-  report.push(`- 建议**保持 2 户并互标关联**的组：**${dedupe.relatedCount}**（不减行）`);
-  report.push(
-    `- 算式：${total} − ${dedupe.mergeCount} = **${dedupe.finalRowCount}**`,
+    `**最终户数 = ${total}**（境内 ${scopeCount.get("cn") || 0} ／ 境外 ${scopeCount.get("intl") || 0} ／ 待核 ${scopeCount.get("unknown") || 0}）`,
   );
   report.push("");
+  report.push("老板决策依据：那两组看着像重复，实为**两个不同工商主体共用同一部电话** ——");
+  report.push("**保住两个公司名比强行去重更重要**，合并不可逆、信息丢了找不回来。");
+  report.push("");
   report.push(
-    "> ⚠️ **PRD §4.3 写「78 → 75」，但按其自身的三条建议（前 2 组合并、第 3 组保持 2 户）应为 76。** ",
+    "⇒ **不再有 76 这个中间态**。去重目的（别重复外呼）改由备注互标达成：K1 检出的 3 组共 "
   );
   report.push(
-    "> 本 ETL **不硬套 75 或 76**，而是让 K1/K2/K3 实际跑检出后如实算出 —— 上式的 "
+    `**${relationMarked} 行**，两两互写 \`[同号·关联：<对方公司名>]\`，打开任意一户都能看到同伴是谁。`,
   );
-  report.push(`> **${dedupe.finalRowCount}** 就是脚本实测值。`);
+  report.push("");
+  report.push("**备注前缀拼接顺序（固定，写死以保证确定性）**：");
+  report.push("");
+  report.push("```");
+  report.push(
+    "[import]… ｜ [性质]… ｜ [机型组]… ｜ [补全]… ｜ [同号·关联：…] ｜ [电话占位] ｜ … ｜ [来源]…",
+  );
+  report.push("```");
+  report.push("");
+  report.push(
+    "> `[同号·关联：…]` 插在结构化四段之后、状态旗标之前：既跟着身份信息走，又不会被状态旗标挤到行尾。",
+  );
+  report.push("");
+
+  report.push("#### 2.6.1 打标的 6 行 —— 备注**全文**实证（指向的对方名字逐字核对）");
+  report.push("");
+  const marked = records.filter((r) => r.relation);
+  report.push(
+    table(
+      ["#", "公司/商户名", "同号键", "备注全文"],
+      marked.map((r) => [
+        String(r.source.seq),
+        r.source.company,
+        `\`${r.phoneKey}\``,
+        r.notes,
+      ]),
+    ),
+  );
+  report.push("");
+  report.push("**指向正确性逐条核对**（本行写的名字 == 同伴行的公司名）：");
+  report.push("");
+  report.push(
+    table(
+      ["本行 #", "本行公司", "写入的对方名", "对方行 #", "对方实际公司名", "一致?"],
+      marked.map((r) => {
+        const written = r.relation.replace(/^\[同号·关联：/, "").replace(/\]$/, "");
+        const partner = records.find(
+          (o) => o.source.seq !== r.source.seq && o.source.company === written,
+        );
+        return [
+          String(r.source.seq),
+          r.source.company,
+          written,
+          partner ? String(partner.source.seq) : "（未找到）",
+          partner ? partner.source.company : "（未找到）",
+          partner && partner.phoneKey === r.phoneKey ? "✅" : "❌",
+        ];
+      }),
+    ),
+  );
   report.push("");
 
   report.push("### 2.7 确定性（二次运行 md5 完全一致）");
@@ -689,30 +815,40 @@ async function main(): Promise<void> {
   report.push(`- 裸 QQ 无号（打 \`[弱价值]\`）：**${records.filter((r) => r.bareQq).length}**`);
   report.push("");
 
-  report.push("## 4. 🔴 实测发现：Round-1 导入会丢弃 `备注`（需要老板决策）");
+  report.push("## 4. ✅ `备注` 落地链路已修通（本分支上一并交付）");
   report.push("");
   report.push(
-    "`src/lib/raw-listing/import-leads.ts:287` 在落库时把 `notes` **整体覆盖**：",
+    "**这是 U7-B 能否生效的前提**：`[同号·关联：…]` 写在 `备注` 列，若备注整列被丢，",
   );
+  report.push("标记就白打、外呼员照样重复拨打。故本次**先把这个缺陷修掉**，再加标记。");
+  report.push("");
+  report.push("**缺陷**：`src/lib/raw-listing/import-leads.ts`（原 `:287`）落库时把 `notes` **整体覆盖**：");
   report.push("");
   report.push("```ts");
-  report.push("notes: `[import] ${source} by ${actorId}`,");
+  report.push("notes: `[import] ${source} by ${actorId}`,   // ← 不读 row.notes，写什么都会被丢");
   report.push("```");
   report.push("");
+  report.push("**修复后**（本分支已推）：");
+  report.push("");
+  report.push("```ts");
+  report.push("notes: [`[import] ${source} by ${actorId}`, (row.notes ?? \"\").toString().trim()]");
+  report.push("  .filter((part) => part !== \"\")");
+  report.push("  .join(\"\\n\"),");
+  report.push("```");
+  report.push("");
+  report.push("- 分隔符固定为 `\"\\n\"`：确定性，每个标记各占一行便于 grep/回溯；");
   report.push(
-    "即：**CSV 里 `备注` 列写什么都会被丢掉**，`[性质]`／`[机型组]`／`[补全]`／`[电话占位]`／`[品牌兜底]`／`[自家·禁外呼]` "
+    "- **无 row.notes（undefined / null / `\"\"` / 纯空白）时输出与改动前逐字相同**，只有 `[import] …` 一句；",
   );
   report.push(
-    "这些 Round-1 唯一的结构化载体**在入库那一刻全部消失**（全文件 grep `notes` 只此一处写入）。"
+    "- **零风险**：`notes` **不参与** `contentHash`（hash 只取 brand/model/year/location/price/phone/name），",
   );
+  report.push("  故不影响导入幂等，也不会让已入库行产生重复。");
   report.push("");
   report.push(
-    "本 ETL 仍**严格按 §8.8 写出 `备注` 列**（表头要对齐 `HEADER_RULES`，且 Round-2 一旦修好即可回溯），"
+    "⇒ 至此 `[性质]`／`[机型组]`／`[补全]`／`[电话占位]`／`[品牌兜底]`／`[自家·禁外呼]`／`[同号·关联：…]` "
   );
-  report.push(
-    "但**不能声称这些标记已入库**。若要让它们真正留存，需改 `import-leads.ts` 把 `row.notes` 拼进去 —— "
-  );
-  report.push("**属于改现有文件，超出本任务「零改动现有文件」边界，未在本次执行。**");
+  report.push("**全部能真正落库**，U7-B 的备注互标才成立。");
   report.push("");
 
   // ── tsc 结果（外部实跑后以文件注入，脚本不伪造「通过」）──
@@ -753,7 +889,7 @@ async function main(): Promise<void> {
     `[T01] 去重检出            : K1=${dedupe.k1MergeGroups.length} K2=${dedupe.k2ReviewGroups.length} K3=${dedupe.k3SuspectedGroups.length}`,
   );
   lines.push(
-    `[T01] U7 应用后最终行数   : ${dedupe.finalRowCount} (合并 ${dedupe.mergeCount} 组 / 关联 ${dedupe.relatedCount} 组)`,
+    `[T01] U7-B 最终户数        : ${total}（不合并）｜同号互标 ${relationMarked} 行 / K1 ${dedupe.k1MergeGroups.length} 组`,
   );
   lines.push(`[T01] 归属非空率          : ${pct(goodsRegionNonEmpty, total)}`);
   lines.push(`[T01] 与 xlsx 完备度不一致: ${levelMismatch.length} 行；还缺什么不一致: ${missingMismatch.length} 行`);
