@@ -15,10 +15,12 @@ import { useMemo, useState } from "react";
 import { Printer, Download, Copy, Check, FileText, BarChart3 } from "lucide-react";
 import { formatValuationMoney } from "@/lib/valuation/formulas";
 import { getSubsidyPriceHistory, type SubsidyYearDatum } from "@/lib/valuation/brand-data";
+import type { ValuationIntelligence } from "@/lib/valuation/intelligence";
 
 export interface ValuationReportMeta {
   brand: string;
   category?: string;
+  modelName?: string;
   modelYear?: number;
   ageYears?: number;
   horsepower?: number;
@@ -43,6 +45,7 @@ interface ValuationReportSectionProps {
   channel: "domestic" | "international" | "export";
   meta: ValuationReportMeta;
   result: ValuationReportResult;
+  intelligence?: ValuationIntelligence | null;
   locale?: string;
 }
 
@@ -73,6 +76,7 @@ export default function ValuationReportSection({
   channel,
   meta,
   result,
+  intelligence,
   locale = "zh",
 }: ValuationReportSectionProps) {
   const [copied, setCopied] = useState(false);
@@ -81,8 +85,19 @@ export default function ValuationReportSection({
   const reportTime = useMemo(() => new Date().toLocaleString("zh-CN"), []);
 
   const isDomestic = channel === "domestic";
-  const priceRangeLow = Math.round(result.value * 0.85);
-  const priceRangeHigh = Math.round(result.value * 1.15);
+  // 数据驱动置信区间：优先用真实交易 P25~P75（来自 866 万条补贴数据）
+  const statRange = intelligence?.model || intelligence?.brandCat;
+  const priceRangeLow =
+    statRange && statRange.p25 > 0 ? Math.round(statRange.p25) : Math.round(result.value * 0.85);
+  const priceRangeHigh =
+    statRange && statRange.p75 > 0 ? Math.round(statRange.p75) : Math.round(result.value * 1.15);
+  const rangeLabel = statRange
+    ? zh
+      ? "真实成交区间(P25~P75)"
+      : "Real Range (P25~P75)"
+    : zh
+      ? "参考区间(±15%)"
+      : "Range(±15%)";
   const sellerPrice = meta.sellerPrice ?? null;
   const sellerDiff =
     sellerPrice && result.value > 0
@@ -222,7 +237,7 @@ td.num { text-align: right; font-weight: 600; white-space: nowrap; }
 <div class="card">
   <div class="value-row">
     <span class="big-value">${formatValuationMoney(result.value)}</span>
-    <span class="range">${zh ? "参考区间(±15%)" : "Range(±15%)"}: ${formatValuationMoney(priceRangeLow)} ~ ${formatValuationMoney(priceRangeHigh)}</span>
+    <span class="range">${rangeLabel}: ${formatValuationMoney(priceRangeLow)} ~ ${formatValuationMoney(priceRangeHigh)}</span>
     <span class="conf">${zh ? "置信度" : "Confidence"} ${Math.round(result.confidence)}%</span>
   </div>
   ${sellerBlock}
@@ -299,7 +314,7 @@ ${warnings}
           <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
             <span className="text-3xl font-extrabold text-blue-700">{formatValuationMoney(result.value)}</span>
             <span className="text-xs text-gray-500">
-              {zh ? "参考区间(±15%)" : "Range"}：{formatValuationMoney(priceRangeLow)} ~ {formatValuationMoney(priceRangeHigh)}
+              {rangeLabel}：{formatValuationMoney(priceRangeLow)} ~ {formatValuationMoney(priceRangeHigh)}
             </span>
             <span className="rounded-full bg-green-50 px-2 py-0.5 text-xs font-semibold text-green-700">
               {zh ? "置信度" : "Confidence"} {Math.round(result.confidence)}%

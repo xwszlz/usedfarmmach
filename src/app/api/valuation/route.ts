@@ -11,6 +11,8 @@ import { drainUsage } from "@/lib/credits/usage-collector";
 
 import { calculateValuation, calculateValuationV4, type ValuationInput, type ValuationResult } from "@/lib/valuation/formulas";
 
+import { getValuationIntelligence } from "@/lib/valuation/intelligence";
+
 import { analyzeProductImages } from "@/lib/valuation/image-analyzer";
 
 import { analyzeVideo } from "@/lib/valuation/video-analyzer";
@@ -498,6 +500,14 @@ export async function POST(request: NextRequest) {
     }
 
 
+    // 真实交易情报切片（基于 866 万条补贴数据的顶级报告原料，仅服务端加载）
+    const intelRegion = body.region || input.location || undefined;
+    const intelligence = getValuationIntelligence(
+      input.brand,
+      input.category,
+      input.modelName,
+      intelRegion,
+    );
 
     // 执行估值
 
@@ -675,6 +685,8 @@ export async function POST(request: NextRequest) {
 
         blurred: true,
 
+        intelligence,
+
         data: toBlurredValuation(result),
 
         meta: {
@@ -698,6 +710,8 @@ export async function POST(request: NextRequest) {
       success: true,
 
       blurred: false,
+
+      intelligence,
 
       version: result.version,
 

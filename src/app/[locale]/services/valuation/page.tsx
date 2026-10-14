@@ -22,6 +22,8 @@ import {
   getRegionalFactor,
   getSubsidyTrendFactor,
 } from "@/lib/valuation/brand-data";
+import type { ValuationIntelligence } from "@/lib/valuation/intelligence";
+import ValuationReportPro from "@/components/valuation/valuation-report-pro";
 
 // ============================================================
 // 常量定义
@@ -737,6 +739,9 @@ export default function ValuationPage() {
     warnings: string[];
   } | null>(null);
 
+  // 顶真实交易情报（/api/valuation 返回，服务端按 品牌/品类/型号/省份 切片）
+  const [intel, setIntel] = useState<ValuationIntelligence | null>(null);
+
   const [arbitrage, setArbitrage] = useState<{
     totalCost: number; exportPrice: number; profit: number;
     profitRate: number; breakdown: { label: string; value: string }[];
@@ -774,6 +779,7 @@ export default function ValuationPage() {
             condition: dCondition,
             enginePower: dHP,
             priceCny: dSellerPrice ? Number(dSellerPrice) : undefined,
+            region: dRegion,
             useV4: true,
             skipImageAnalysis: !hasImage,
           }),
@@ -816,6 +822,7 @@ export default function ValuationPage() {
               confidence: r.confidence,
             });
             setLimitReached(false);
+            setIntel(data.intelligence ?? null);
             setResult(null);
             return;
           }
@@ -825,6 +832,7 @@ export default function ValuationPage() {
           setLimitReached(false);
           setQuotaExhausted(false);
           const r = data.data;
+          setIntel(data.intelligence ?? null);
           setResult({
             value: r.estimatedValue,
             confidence: r.confidence || calcConfidence(channel, dBrand, dHP, hasImage, dYears),
@@ -1586,6 +1594,7 @@ export default function ValuationPage() {
                 meta={{
                   brand: channel === "domestic" ? dBrand : iBrand,
                   category: dCategory,
+                  modelName: channel === "domestic" ? dModel : iModel,
                   modelYear: channel === "domestic" ? dYear - dYears : iYear,
                   ageYears: channel === "domestic" ? dYears : undefined,
                   horsepower: channel === "domestic" ? dHP : iHP,
@@ -1598,6 +1607,30 @@ export default function ValuationPage() {
                   isChineseBrand: channel === "domestic",
                 }}
                 result={result}
+                intelligence={intel}
+              />
+
+              {/* ── 顶级数据报告：基于 866 万条真实补贴交易，recharts 8 大模块 ── */}
+              <ValuationReportPro
+                channel={channel}
+                meta={{
+                  brand: channel === "domestic" ? dBrand : iBrand,
+                  category: dCategory,
+                  modelName: channel === "domestic" ? dModel : iModel,
+                  modelYear: channel === "domestic" ? dYear - dYears : iYear,
+                  ageYears: channel === "domestic" ? dYears : undefined,
+                  horsepower: channel === "domestic" ? dHP : iHP,
+                  hours: channel === "domestic" ? dYears * 500 : iHours,
+                  region: channel === "domestic" ? dRegion : iRegion,
+                  condition: channel === "domestic" ? "良好" : iCondition,
+                  emission: channel !== "domestic" ? iEmission : undefined,
+                  newBasePrice: previewBasePrice,
+                  sellerPrice: channel === "domestic" && dSellerPrice ? Number(dSellerPrice) : null,
+                  isChineseBrand: channel === "domestic",
+                }}
+                result={result}
+                intelligence={intel}
+                locale={locale}
               />
 
               {/* Export Arbitrage */}
