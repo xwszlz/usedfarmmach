@@ -242,8 +242,12 @@ ${warnings}
     const a = document.createElement("a");
     a.href = url;
     a.download = `估值报告_${reportId}.html`;
+    // 必须先挂进 DOM：部分浏览器/内嵌场景下游离节点 click() 会静默失效
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
+    a.remove();
+    // 不能同步 revoke：浏览器可能尚未开始读取 Blob，提前回收会导致下载被静默取消
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
   };
 
   return (
