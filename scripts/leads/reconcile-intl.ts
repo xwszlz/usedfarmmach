@@ -33,6 +33,7 @@
 
 import * as fs from "fs";
 import * as path from "path";
+import { PrismaClient } from "@prisma/client";
 
 import { primaryPhoneKey } from "./lib/phone-judger";
 import { writeText } from "./lib/csv-emitter";
@@ -124,6 +125,8 @@ interface ReconcileItem {
   sellerName: string;
   dbId: string;
   diffs: string[];
+  /** 差异明细（库值 → CSV 值） */
+  detail: string;
   note: string;
 }
 
@@ -289,14 +292,7 @@ async function queryLive(
 ): Promise<{ rows: DbRow[]; checks: DbChecks; error?: string }> {
   const empty: DbChecks = { total: -1, distinctSellerName: -1, dupContentHashGroups: -1, cnRowsOnCom: -1 };
   try {
-    // 延迟 require，保证 --fixture 模式完全不碰数据库
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const mod = await import("@prisma/client");
-    const PrismaClient = (mod as { PrismaClient: new (o?: unknown) => {
-      $queryRawUnsafe: (q: string, ...a: unknown[]) => Promise<unknown>;
-      $executeRawUnsafe: (q: string, ...a: unknown[]) => Promise<unknown>;
-      $disconnect: () => Promise<void>;
-    } }).PrismaClient;
+    // 用静态 import 的 PrismaClient（动态 import() 绕不过 NODE_PATH 解析）
     const prisma = new PrismaClient({ datasources: { db: { url } } });
 
     assertReadOnly(SELECT_ROWS_SQL);
@@ -322,8 +318,15 @@ async function queryLive(
 // 5. 比对
 // ───────────────────────────────────────────────
 
-function diffRow(csv: CsvSide, db: DbRow): string[] {
-  const diffs: string[] = [];
+interface FieldDiff {
+  field: string;
+  csv: string;
+  db: string;
+}
+
+/** 逐字段比对，返回差异明细（含库值 / CSV 值，供人工一眼看懂差在哪） */
+function diffRow(csv: CsvSide, db: DbRow): FieldDiff[] {
+  const diffs: FieldDiff[] = [];
   const pair: ReadonlyArray<[string, string, unknown]> = [
     ["brandName", csv.brandName, db.brandName],
     ["modelName", csv.modelName, db.modelName],
@@ -345,7 +348,9 @@ function diffRow(csv: CsvSide, db: DbRow): string[] {
     if (["year", "priceCny", "priceRaw", "sellerWechat", "sellerWhatsapp", "notes"].includes(field)) {
       continue;
     }
-    if (normValue(csvVal) !== normValue(dbVal)) diffs.push(field);
+    if (normValue(csvVal) !== normValue(dbVal)) {
+      diffs.push({ field, csv: normValue(csvVal), db: normValue(dbVal) });
+    }
   }
   return diffs;
 }
@@ -396,6 +401,7 @@ function reconcile(csvSide: readonly CsvSide[], dbRows: readonly DbRow[]): Recon
         sellerName: csv.sellerName,
         dbId: nameHits.map((d) => d.id).join(" / "),
         diffs: [],
+        detail: "",
         note: `库里 ${nameHits.length} 行同名，无法唯一定位，需人工确认`,
       });
       for (const d of nameHits) usedDbIds.add(d.id);
@@ -412,13 +418,18 @@ function reconcile(csvSide: readonly CsvSide[], dbRows: readonly DbRow[]): Recon
         sellerName: csv.sellerName,
         dbId: "",
         diffs: [],
+        detail: "",
         note: "xlsx 有、库里没有 ⇒ 需导入（不属本次对账范围，本次只补字段）",
       });
       continue;
     }
 
     usedDbIds.add(match.id);
-    const diffs = diffRow(csv, match);
+    const details = diffRow(csv, match);
+    const diffs = details.map((d) => d.field);
+    const detail = details
+      .map((d) => `${d.field}: 库「${d.db || "（空）"}」 → CSV「${d.csv || "（空）"}」`)
+      .join("；");
     const bucket = classify(diffs);
     let note = `匹配方式：${how}`;
     if (bucket === "已存在（一致）") note += "；字段全部一致";
@@ -441,6 +452,7 @@ function reconcile(csvSide: readonly CsvSide[], dbRows: readonly DbRow[]): Recon
       sellerName: csv.sellerName,
       dbId: match.id,
       diffs,
+      detail,
       note,
     });
   }
@@ -454,6 +466,7 @@ function reconcile(csvSide: readonly CsvSide[], dbRows: readonly DbRow[]): Recon
       sellerName: d.sellerName || "",
       dbId: d.id,
       diffs: [],
+      detail: "",
       note: "库中存在但境外 CSV 里没有 ⇒ 需人工确认是否多导/错导",
     });
   }
@@ -618,12 +631,12 @@ async function main(): Promise<void> {
       rep.push("");
       rep.push(
         table(
-          ["CSV #", "卖家", "库 id", "差异字段", "说明"],
+          ["CSV #", "卖家", "库 id", "差异明细（库值 → CSV值）", "说明"],
           list.map((it) => [
             it.seq || "—",
             it.sellerName,
             it.dbId || "—",
-            it.diffs.length ? `\`${it.diffs.join(", ")}\`` : "—",
+            it.detail || "—",
             it.note,
           ]),
         ),
