@@ -41,17 +41,23 @@ const CATEGORY_SYNONYMS: Record<string, string> = {
   "秸秆打捆机": "打捆机",
   "草捆机": "打捆机",
 
-  // 青贮机
-  "青贮机": "青贮机",
-  "青储机": "青贮机",
-  "silage harvester": "青贮机",
-  "forage harvester": "青贮机",
-  "forage chopper": "青贮机",
-  "chopper": "青贮机",
+  // 青贮饲料收获机（Category 表 canonical 名：code=forage_harvester，
+  // 见 prisma/master-data/category.json v1.1.0 与 seed-master-data-t02.ts CATEGORY_ZH。
+  // 历史 Bug：此处曾归一到「青贮机」——该名在 Category 表与估值表中均不存在，
+  // 导致 AI 识别的青储类新品既挂不上 DB 品类（categoryId=null），估值也落 80 万默认价，
+  // 且 MODEL_BASE_PRICES 的品类一致性检查失效（如 Jaguar 980 丢 350 万型号价））
+  "青贮饲料收获机": "青贮饲料收获机",
+  "青贮机": "青贮饲料收获机",
+  "青储机": "青贮饲料收获机",
+  "青饲料收获机": "青贮饲料收获机",
+  "silage harvester": "青贮饲料收获机",
+  "forage harvester": "青贮饲料收获机",
+  "forage chopper": "青贮饲料收获机",
+  "chopper": "青贮饲料收获机",
 
   // 收割/青贮两用
-  "玉米青贮机": "青贮机",
-  "秸秆收获机": "青贮机",
+  "玉米青贮机": "青贮饲料收获机",
+  "秸秆收获机": "青贮饲料收获机",
 
   // 旋耕机
   "旋耕机": "旋耕机",

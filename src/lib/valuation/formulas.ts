@@ -196,6 +196,9 @@ function getCategoryBasePrice(category: string, modelName?: string, opts?: { bra
     "打捆机": ["小方捆", "大方捆", "圆捆机", "打包机"],
     "收获机": ["茎穗兼收机", "茎穗双收", "单收"],
     "青储机": [],
+    // Category 表 canonical 名（forage_harvester）→ 估值表名。修复新品挂 DB canonical 名时
+    // MODEL_BASE_PRICES 子串匹配的品类一致性检查失效（如 Jaguar 980 丢 350 万型号价）
+    "青贮饲料收获机": ["青储机"],
   };
 
   // T04: 主数据 code 优先（modelCode → categoryCode），命中即返回；否则回退下方名匹配（原样保留）
@@ -746,6 +749,7 @@ function calcSpecFactor(
 function getAveragePowerForCategory(category: string): number {
   const powerMap: Record<string, number> = {
     "青储机": 450,
+    "青贮饲料收获机": 450,
     "打捆机": 120,
     "收获机": 180,
     "拖拉机": 120,
@@ -764,6 +768,7 @@ function getAveragePowerForCategory(category: string): number {
 function getAverageWeightForCategory(category: string): number {
   const weightMap: Record<string, number> = {
     "青储机": 12000,
+    "青贮饲料收获机": 12000,
     "打捆机": 4000,
     "收获机": 6000,
     "拖拉机": 4500,
