@@ -14,16 +14,25 @@
  *     故用动态 import + 兜底 dummy URL（不实际连接）。
  *
  * 运行：./node_modules/.bin/tsx src/lib/valuation/__tests__/category-keys.check.ts
+ *
+ * 2026-10-15 新增【F】组：国际品牌 P2 长尾补齐回归——
+ *   引擎 BRAND_COEFFICIENTS 新增 Zetor/MTZ/Rostselmash/Sampo/Jacto/Iseki/
+ *   Mitsubishi/BCS/Goldoni/Vermeer/Valtra（此前走 0.85 兜底）；页面两张国际
+ *   品牌表按引擎值补齐；EXPORT_COUNTRIES 扩至六大区域 58 国并分组渲染。
+ *   "罗斯特"（国产青储机 0.45）与 Rostselmash（俄系收割机 0.88）撞名保护。
  */
 
 // @/lib/db 在模块加载时即校验 DATABASE_URL；给个不连接的 dummy 值（仅同义词 Prompt 需要）
 process.env.DATABASE_URL ||= "postgresql://dummy:dummy@127.0.0.1:5432/dummy";
 
+import fs from "node:fs";
+import path from "node:path";
 import {
   calcCombinedDepreciation,
   calculateValuation,
   calculateValuationV4,
 } from "../formulas";
+import { BRAND_COEFFICIENTS } from "../brand-data";
 
 const CURRENT_YEAR = 2026;
 
@@ -176,6 +185,144 @@ async function main() {
     Math.abs(oldKey.estimatedValue - canonical.estimatedValue) < 1,
     `「青储机」旧键(${oldKey.estimatedValue}) 与「青贮饲料收获机」新键(${canonical.estimatedValue}) 估值应完全一致`
   );
+
+  // ═══════════════════════════════════════════════════════════════
+  console.log("\n【F】国际品牌 P2 长尾补齐 + 页面表/出口国一致性（2026-10-15）");
+  // ═══════════════════════════════════════════════════════════════
+
+  // F1 引擎精确值（11 个新英文键 + 8 个中文别名）
+  const P2_EXPECTED: Record<string, number> = {
+    "Zetor": 0.90, "MTZ": 0.85, "Rostselmash": 0.88, "Sampo": 0.95,
+    "Jacto": 0.85, "Iseki": 0.90, "Mitsubishi": 0.90, "BCS": 0.90,
+    "Goldoni": 0.92, "Vermeer": 0.95, "Valtra": 1.10,
+  };
+  const P2_ALIASES: Record<string, number> = {
+    "泽特": 0.90, "明斯克": 0.85, "雅克托": 0.85, "井关": 0.90,
+    "三菱": 0.90, "戈尔多尼": 0.92, "弗米尔": 0.95, "维尔特拉": 1.10,
+  };
+  for (const [k, v] of Object.entries(P2_EXPECTED)) {
+    assert(
+      BRAND_COEFFICIENTS[k] === v,
+      `引擎「${k}」系数应为 ${v}（实得 ${BRAND_COEFFICIENTS[k]}）`
+    );
+  }
+  for (const [k, v] of Object.entries(P2_ALIASES)) {
+    assert(
+      BRAND_COEFFICIENTS[k] === v,
+      `引擎中文别名「${k}」系数应为 ${v}（实得 ${BRAND_COEFFICIENTS[k]}）`
+    );
+  }
+  // 撞名保护：国产青储机「罗斯特」0.45 与俄系 Rostselmash 0.88 必须并存且互不污染
+  assert(
+    BRAND_COEFFICIENTS["罗斯特"] === 0.45,
+    `「罗斯特」（国产青储机）应保持 0.45（实得 ${BRAND_COEFFICIENTS["罗斯特"]}）`
+  );
+  assert(
+    BRAND_COEFFICIENTS["Rostselmash"] === 0.88,
+    `Rostselmash（俄系收割机）应为 0.88（实得 ${BRAND_COEFFICIENTS["Rostselmash"]}）`
+  );
+
+  // F2 端到端：calculateValuation 品牌系数取配置值，不再静默走 0.85 兜底
+  for (const [brand, expected] of Object.entries(P2_EXPECTED)) {
+    const r = await calculateValuation({
+      brand, category: "轮式拖拉机", modelName: "",
+      year: 2018, condition: "good", workingHours: 2000,
+    });
+    assert(
+      r.brandFactor === expected,
+      `calculateValuation(${brand}).brandFactor 应为 ${expected}，实得 ${r.brandFactor}（不得走 0.85 兜底）`
+    );
+  }
+  const luo = await calculateValuation({
+    brand: "罗斯特", category: "青贮饲料收获机", modelName: "",
+    year: 2018, condition: "good", workingHours: 2000,
+  });
+  assert(
+    luo.brandFactor === 0.45,
+    `calculateValuation(罗斯特).brandFactor 应仍为国产 0.45（实得 ${luo.brandFactor}，防 Rostselmash 污染）`
+  );
+  // 对照组：未知国际品牌仍走 0.85 兜底（证明 F2 断言有效区分）
+  const unknown = await calculateValuation({
+    brand: "NoSuchBrandXYZ", category: "轮式拖拉机", modelName: "",
+    year: 2018, condition: "good", workingHours: 2000,
+  });
+  assert(
+    unknown.brandFactor === 0.85,
+    `对照组未知品牌应仍走 0.85 兜底（实得 ${unknown.brandFactor}）`
+  );
+
+  // F3 页面两张国际品牌表：引擎全部英文键必须在表内（源码级一致性）
+  const pageSrc = fs.readFileSync(
+    path.join(__dirname, "../../../app/[locale]/services/valuation/page.tsx"),
+    "utf8"
+  );
+  const extractBlock = (src: string, name: string): string => {
+    const m = src.match(new RegExp(`const ${name}[^{]*\\{([\\s\\S]*?)\\n\\};`));
+    return m ? m[1] : "";
+  };
+  const coeffSrc = extractBlock(pageSrc, "INTL_BRAND_COEFFICIENTS");
+  const retentionSrc = extractBlock(pageSrc, "INTL_BRAND_RETENTION");
+  assert(coeffSrc.length > 0, "应能提取页面 INTL_BRAND_COEFFICIENTS 代码块");
+  assert(retentionSrc.length > 0, "应能提取页面 INTL_BRAND_RETENTION 代码块");
+  const engineIntlKeys = Object.keys(BRAND_COEFFICIENTS).filter(
+    (b) => !/[\u4e00-\u9fa5]/.test(b) && b !== "进口"
+  );
+  for (const key of engineIntlKeys) {
+    assert(coeffSrc.includes(`"${key}"`), `页面 INTL_BRAND_COEFFICIENTS 应含引擎键「${key}」`);
+    assert(retentionSrc.includes(`"${key}"`), `页面 INTL_BRAND_RETENTION 应含引擎键「${key}」`);
+  }
+  // 既有 9 项页面历史口径不变（additive-only 回归保护）
+  const pageLegacy9: Record<string, string> = {
+    "John Deere": '"John Deere": 1.15', "Kubota": '"Kubota": 1.10',
+    "Fendt": '"Fendt": 1.085', "CLAAS": '"CLAAS": 1.08',
+    "Case IH": '"Case IH": 1.00', "New Holland": '"New Holland": 0.95',
+    "Massey Ferguson": '"Massey Ferguson": 0.92', "Valtra": '"Valtra": 0.90',
+    "其他国际": '"其他国际": 0.95',
+  };
+  for (const [k, lit] of Object.entries(pageLegacy9)) {
+    assert(
+      coeffSrc.includes(lit) && retentionSrc.includes(lit),
+      `页面既有 9 项「${k}」历史口径应保持不变（${lit}）`
+    );
+  }
+
+  // F4 出口国家：六大区域分组与 EXPORT_COUNTRIES 键一一对应 + 既有 19 国系数不变
+  const mapSrc = extractBlock(pageSrc, "EXPORT_COUNTRIES");
+  assert(mapSrc.length > 0, "应能提取页面 EXPORT_COUNTRIES 代码块");
+  const groupsSrcMatch = pageSrc.match(/const EXPORT_REGION_GROUPS[\s\S]*?\n\];/);
+  assert(!!groupsSrcMatch, "页面应定义 EXPORT_REGION_GROUPS（下拉分组渲染）");
+  const groupsSrc = groupsSrcMatch ? groupsSrcMatch[0] : "";
+  const mapCountries = new Set(
+    [...mapSrc.matchAll(/"([^"]+)":\s*\{\s*buy:\s*[\d.]+,\s*sell:\s*[\d.]+/g)].map((m) => m[1])
+  );
+  const grouped = new Set<string>();
+  for (const gm of groupsSrc.matchAll(/countries:\s*\[([^\]]+)\]/g)) {
+    for (const cm of gm[1].matchAll(/"([^"]+)"/g)) grouped.add(cm[1]);
+  }
+  assert(mapCountries.size >= 50, `出口国家应覆盖六大区域 ≥50 国（实得 ${mapCountries.size}）`);
+  assert(
+    grouped.size === mapCountries.size && [...grouped].every((c) => mapCountries.has(c)),
+    `分组国家(${grouped.size}) 与 EXPORT_COUNTRIES 键(${mapCountries.size}) 应一一对应、无孤儿`
+  );
+  for (const region of ["中东欧与巴尔干", "俄语区与中亚", "南美", "非洲", "东南亚与南亚", "中东"]) {
+    assert(groupsSrc.includes(`"${region}"`), `出口分组应含区域「${region}」`);
+  }
+  // 既有 19 国 buy/sell 系数回归保护
+  const legacy19: Record<string, string> = {
+    "阿根廷": '"阿根廷": { buy: 0.75, sell: 1.40 }', "尼日利亚": '"尼日利亚": { buy: 0.70, sell: 1.50 }',
+    "俄罗斯": '"俄罗斯": { buy: 0.85, sell: 1.25 }', "泰国": '"泰国": { buy: 0.80, sell: 1.30 }',
+    "哈萨克斯坦": '"哈萨克斯坦": { buy: 0.82, sell: 1.28 }', "乌兹别克斯坦": '"乌兹别克斯坦": { buy: 0.82, sell: 1.28 }',
+    "南非": '"南非": { buy: 0.75, sell: 1.35 }', "肯尼亚": '"肯尼亚": { buy: 0.72, sell: 1.45 }',
+    "加纳": '"加纳": { buy: 0.72, sell: 1.45 }', "巴西": '"巴西": { buy: 0.78, sell: 1.35 }',
+    "越南": '"越南": { buy: 0.80, sell: 1.32 }', "菲律宾": '"菲律宾": { buy: 0.80, sell: 1.32 }',
+    "缅甸": '"缅甸": { buy: 0.75, sell: 1.40 }', "柬埔寨": '"柬埔寨": { buy: 0.75, sell: 1.40 }',
+    "巴基斯坦": '"巴基斯坦": { buy: 0.78, sell: 1.35 }', "伊朗": '"伊朗": { buy: 0.80, sell: 1.30 }',
+    "伊拉克": '"伊拉克": { buy: 0.80, sell: 1.30 }', "沙特阿拉伯": '"沙特阿拉伯": { buy: 0.85, sell: 1.25 }',
+    "阿联酋": '"阿联酋": { buy: 0.85, sell: 1.25 }',
+  };
+  for (const [c, lit] of Object.entries(legacy19)) {
+    assert(mapSrc.includes(lit), `既有出口国「${c}」系数应保持不变（${lit}）`);
+  }
 
   // ═══════════════════════════════════════════════════════════════
   console.log("\n══════════════════════════════════════════════");

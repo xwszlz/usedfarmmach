@@ -58,10 +58,22 @@ const INTL_BRAND_LIST = Array.from(new Set([
   ),
 ]));
 
+// 国际品牌保值率/价值系数（2026-10-15 按引擎 BRAND_COEFFICIENTS 补齐 Phase B+P2 长尾；
+// 上方既有 9 项为页面历史口径，保持不变以免影响存量估值——additive-only）
 const INTL_BRAND_COEFFICIENTS: Record<string, number> = {
   "John Deere": 1.15, "Kubota": 1.10, "Fendt": 1.085, "CLAAS": 1.08,
   "Case IH": 1.00, "New Holland": 0.95, "Massey Ferguson": 0.92,
   "Valtra": 0.90, "其他国际": 0.95,
+  // === 引擎 Phase B/P2 补齐（值取自 brand-data.ts BRAND_COEFFICIENTS）===
+  "Krone": 1.25, "Orkel": 1.15, "Manitou": 1.10, "Kuhn": 1.00, "Grimme": 0.95,
+  "Amazone": 1.15, "Horsch": 1.15, "Väderstad": 1.15, "Vaderstad": 1.15,
+  "McHale": 1.15, "Lamborghini": 1.10, "Pöttinger": 1.10, "Pottinger": 1.10,
+  "Deutz-Fahr": 1.05, "Yanmar": 0.95, "SAME": 1.00, "Hardi": 1.00, "Mahindra": 0.88,
+  "Zetor": 0.90, "MTZ": 0.85, "Rostselmash": 0.88, "Sampo": 0.95, "Jacto": 0.85,
+  "Iseki": 0.90, "Mitsubishi": 0.90, "BCS": 0.90, "Goldoni": 0.92, "Vermeer": 0.95,
+  "Kongskilde": 0.80, "Arcusin": 0.75, "arcusln": 0.75, "IDASS": 0.70,
+  // 国产英文键（本就经 INTL_BRAND_LIST 进入国际下拉，此前静默走 0.95 默认）
+  "Dongfanghong": 0.65, "Mushen": 0.60, "Dexiang": 0.50, "Yingjia": 0.50, "RSM": 0.45,
 };
 
 // 国际品牌保值率
@@ -69,6 +81,15 @@ const INTL_BRAND_RETENTION: Record<string, number> = {
   "John Deere": 1.15, "Kubota": 1.10, "Fendt": 1.085, "CLAAS": 1.08,
   "Case IH": 1.00, "New Holland": 0.95, "Massey Ferguson": 0.92,
   "Valtra": 0.90, "其他国际": 0.95,
+  // === 引擎 Phase B/P2 补齐（值同上表，未补齐前这些品牌静默走 0.95 默认）===
+  "Krone": 1.25, "Orkel": 1.15, "Manitou": 1.10, "Kuhn": 1.00, "Grimme": 0.95,
+  "Amazone": 1.15, "Horsch": 1.15, "Väderstad": 1.15, "Vaderstad": 1.15,
+  "McHale": 1.15, "Lamborghini": 1.10, "Pöttinger": 1.10, "Pottinger": 1.10,
+  "Deutz-Fahr": 1.05, "Yanmar": 0.95, "SAME": 1.00, "Hardi": 1.00, "Mahindra": 0.88,
+  "Zetor": 0.90, "MTZ": 0.85, "Rostselmash": 0.88, "Sampo": 0.95, "Jacto": 0.85,
+  "Iseki": 0.90, "Mitsubishi": 0.90, "BCS": 0.90, "Goldoni": 0.92, "Vermeer": 0.95,
+  "Kongskilde": 0.80, "Arcusin": 0.75, "arcusln": 0.75, "IDASS": 0.70,
+  "Dongfanghong": 0.65, "Mushen": 0.60, "Dexiang": 0.50, "Yingjia": 0.50, "RSM": 0.45,
 };
 
 // 国际折旧（按小时）
@@ -105,18 +126,56 @@ const INTL_REGIONS: Record<string, number> = {
 
 const DEVELOPED_REGIONS = new Set(["北美", "欧洲"]);
 
+// 出口目标国 buy/sell 系数（2026-10-15 扩至六大区域全覆盖 58 国；
+// buy=相对中国基准价的当地收购折扣，sell=当地售价溢价；既有 19 国数值不变——additive-only）
 const EXPORT_COUNTRIES: Record<string, { buy: number; sell: number }> = {
-  "阿根廷": { buy: 0.75, sell: 1.40 }, "尼日利亚": { buy: 0.70, sell: 1.50 },
-  "俄罗斯": { buy: 0.85, sell: 1.25 }, "泰国": { buy: 0.80, sell: 1.30 },
-  "哈萨克斯坦": { buy: 0.82, sell: 1.28 }, "乌兹别克斯坦": { buy: 0.82, sell: 1.28 },
-  "南非": { buy: 0.75, sell: 1.35 }, "肯尼亚": { buy: 0.72, sell: 1.45 },
-  "加纳": { buy: 0.72, sell: 1.45 }, "巴西": { buy: 0.78, sell: 1.35 },
-  "越南": { buy: 0.80, sell: 1.32 }, "菲律宾": { buy: 0.80, sell: 1.32 },
-  "缅甸": { buy: 0.75, sell: 1.40 }, "柬埔寨": { buy: 0.75, sell: 1.40 },
+  // ── 中东欧与巴尔干（欧盟/候选国，农机需求旺、当地旧机价格低）──
+  "波兰": { buy: 0.72, sell: 1.15 }, "罗马尼亚": { buy: 0.70, sell: 1.18 },
+  "匈牙利": { buy: 0.70, sell: 1.15 }, "捷克": { buy: 0.72, sell: 1.12 },
+  "塞尔维亚": { buy: 0.68, sell: 1.20 }, "保加利亚": { buy: 0.68, sell: 1.18 },
+  "克罗地亚": { buy: 0.72, sell: 1.12 }, "立陶宛": { buy: 0.70, sell: 1.15 },
+  "斯洛伐克": { buy: 0.70, sell: 1.12 }, "波黑": { buy: 0.65, sell: 1.22 },
+  "北马其顿": { buy: 0.65, sell: 1.22 }, "希腊": { buy: 0.70, sell: 1.15 },
+  // ── 俄语区与中亚 ──
+  "俄罗斯": { buy: 0.85, sell: 1.25 }, "哈萨克斯坦": { buy: 0.82, sell: 1.28 },
+  "乌兹别克斯坦": { buy: 0.82, sell: 1.28 }, "乌克兰": { buy: 0.55, sell: 1.30 },
+  "白俄罗斯": { buy: 0.60, sell: 1.22 }, "吉尔吉斯斯坦": { buy: 0.80, sell: 1.28 },
+  "格鲁吉亚": { buy: 0.72, sell: 1.28 }, "摩尔多瓦": { buy: 0.62, sell: 1.25 },
+  // ── 南美 ──
+  "阿根廷": { buy: 0.75, sell: 1.40 }, "巴西": { buy: 0.78, sell: 1.35 },
+  "智利": { buy: 0.78, sell: 1.30 }, "乌拉圭": { buy: 0.75, sell: 1.35 },
+  "巴拉圭": { buy: 0.72, sell: 1.38 }, "哥伦比亚": { buy: 0.72, sell: 1.35 },
+  "秘鲁": { buy: 0.72, sell: 1.35 },
+  // ── 非洲 ──
+  "尼日利亚": { buy: 0.70, sell: 1.50 }, "南非": { buy: 0.75, sell: 1.35 },
+  "肯尼亚": { buy: 0.72, sell: 1.45 }, "加纳": { buy: 0.72, sell: 1.45 },
+  "埃及": { buy: 0.72, sell: 1.35 }, "埃塞俄比亚": { buy: 0.68, sell: 1.45 },
+  "坦桑尼亚": { buy: 0.70, sell: 1.42 }, "赞比亚": { buy: 0.70, sell: 1.42 },
+  "摩洛哥": { buy: 0.72, sell: 1.32 }, "塞内加尔": { buy: 0.70, sell: 1.42 },
+  "安哥拉": { buy: 0.72, sell: 1.40 }, "莫桑比克": { buy: 0.70, sell: 1.42 },
+  // ── 东南亚与南亚 ──
+  "泰国": { buy: 0.80, sell: 1.30 }, "越南": { buy: 0.80, sell: 1.32 },
+  "菲律宾": { buy: 0.80, sell: 1.32 }, "缅甸": { buy: 0.75, sell: 1.40 },
+  "柬埔寨": { buy: 0.75, sell: 1.40 }, "印度尼西亚": { buy: 0.78, sell: 1.30 },
+  "马来西亚": { buy: 0.80, sell: 1.25 }, "老挝": { buy: 0.75, sell: 1.35 },
+  "孟加拉国": { buy: 0.75, sell: 1.32 },
+  // ── 中东 ──
   "巴基斯坦": { buy: 0.78, sell: 1.35 }, "伊朗": { buy: 0.80, sell: 1.30 },
   "伊拉克": { buy: 0.80, sell: 1.30 }, "沙特阿拉伯": { buy: 0.85, sell: 1.25 },
-  "阿联酋": { buy: 0.85, sell: 1.25 },
+  "阿联酋": { buy: 0.85, sell: 1.25 }, "土耳其": { buy: 0.75, sell: 1.25 },
+  "以色列": { buy: 0.82, sell: 1.22 }, "约旦": { buy: 0.78, sell: 1.28 },
+  "卡塔尔": { buy: 0.82, sell: 1.25 }, "科威特": { buy: 0.82, sell: 1.25 },
 };
+
+// 出口国家下拉分组（与 EXPORT_COUNTRIES 键一一对应，供 optgroup 渲染）
+const EXPORT_REGION_GROUPS: { region: string; countries: string[] }[] = [
+  { region: "中东欧与巴尔干", countries: ["波兰", "罗马尼亚", "匈牙利", "捷克", "塞尔维亚", "保加利亚", "克罗地亚", "立陶宛", "斯洛伐克", "波黑", "北马其顿", "希腊"] },
+  { region: "俄语区与中亚", countries: ["俄罗斯", "哈萨克斯坦", "乌兹别克斯坦", "乌克兰", "白俄罗斯", "吉尔吉斯斯坦", "格鲁吉亚", "摩尔多瓦"] },
+  { region: "南美", countries: ["阿根廷", "巴西", "智利", "乌拉圭", "巴拉圭", "哥伦比亚", "秘鲁"] },
+  { region: "非洲", countries: ["尼日利亚", "南非", "肯尼亚", "加纳", "埃及", "埃塞俄比亚", "坦桑尼亚", "赞比亚", "摩洛哥", "塞内加尔", "安哥拉", "莫桑比克"] },
+  { region: "东南亚与南亚", countries: ["泰国", "越南", "菲律宾", "缅甸", "柬埔寨", "印度尼西亚", "马来西亚", "老挝", "孟加拉国"] },
+  { region: "中东", countries: ["巴基斯坦", "伊朗", "伊拉克", "沙特阿拉伯", "阿联酋", "土耳其", "以色列", "约旦", "卡塔尔", "科威特"] },
+];
 
 const DOMESTIC_REGIONS_LIST = [
   "山东", "河北", "河南", "黑龙江", "江西", "湖北", "甘肃",
@@ -1447,7 +1506,11 @@ export default function ValuationPage() {
                     <label className="mb-1 block text-xs font-medium text-gray-600">目标国家</label>
                     <select value={eTargetCountry} onChange={(e) => setETargetCountry(e.target.value)}
                       className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none">
-                      {Object.keys(EXPORT_COUNTRIES).map((c) => <option key={c} value={c}>{c}</option>)}
+                      {EXPORT_REGION_GROUPS.map((g) => (
+                        <optgroup key={g.region} label={g.region}>
+                          {g.countries.map((c) => <option key={c} value={c}>{c}</option>)}
+                        </optgroup>
+                      ))}
                     </select>
                   </div>
                   <div>
