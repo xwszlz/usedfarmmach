@@ -8,13 +8,14 @@
  *          （线上行当前这些字段为空 → 估值/套利计算无法使用）；并补 29 个缺中文名品牌的 nameZh。
  *       ② Category：把 22 个字典节点（28 树 − 6 个 T01 已建叶）回填进 Category 表，
  *          打 isLeaf / parentId / nameEn（12 个缺英文名品类一并补）。
- *       ③ 按老板拍板，把 39 条脏/错字品牌（live id）直接下架（isActive=false，软下架，不破坏商品外键）。
+ *       ③ 按老板拍板清理 39 条脏/错字品牌（live id）。Brand 无 isActive 字段无法软下架；
+ *          且 14/39 挂着商品、含真实品牌，故仅硬删「零商品纯脏行」，挂商品者跳过交人工复核。
  *
  * 安全设计：
  *   - 默认 **dry-run**（只打印计划），必须显式传 `--apply` 才写库。
- *   - 下架前先统计每个待下架品牌挂载的商品数，打印 WARNING，绝不硬删。
- *   - 下架只作用于「目标库里真实存在」的 id；在 .cn（不同 DB）跑时这些 .com 的 id 不存在则自动跳过。
- *   - 全部 upsert / 软下架，天然幂等；重复执行结果一致。
+ *   - 清理前先统计每个待清理品牌挂载的商品数：零商品纯脏行才硬删；挂商品者打印 WARNING 并跳过，交人工复核。
+ *   - 清理只作用于「目标库里真实存在」的 id；在 .cn（不同 DB）跑时这些 .com 的 id 不存在则自动跳过。
+ *   - upsert 天然幂等；硬删仅针对零商品行，重复执行结果一致（已删行 findUnique 返回 null → 自动 skip）。
  *
  * 用法：
  *   npx tsx prisma/seed-master-data-t02.ts            # dry-run（默认）
@@ -87,7 +88,7 @@ const BRAND_MAP: Record<string, string> = {
 };
 
 /* ---------------------------------------------------------------- *
- * ② 39 条脏/错字品牌 → 直接软下架（live id，.com 实测）
+ * ② 39 条脏/错字品牌 → 清理（live id，.com 实测）。零商品纯脏行硬删；挂商品者跳过交人工。
  * ---------------------------------------------------------------- */
 const DENYLIST: string[] = [
   "cmpzm1niz000ryllpodjl8zfj", "cmrvbl1qk0000i9ud71mynv2b", "cmr4jzvnw0001at1b7o8zceei",
@@ -282,7 +283,6 @@ async function main() {
       originCountryCode: iso ?? existing.originCountryCode,
       brandValueFactor: b.brand_value_factor ?? existing.brandValueFactor,
       isStandard: STANDARD.has(b.code),
-      isActive: true,
       nameZh,
       nameEn,
     };
@@ -323,26 +323,41 @@ async function main() {
   }
   console.log(`[t02] Category 将回填 ${catUpsert} 条`);
 
-  // ── 3) 软下架 39 条脏/错字品牌（pre-flight 统计商品数） ────────
-  let delisted = 0;
+  // ── 3) 脏/错字品牌清理 ───────────────────────────────────────
+  // Brand 模型无 isActive 字段，无法软下架；且 .com 实测 14/39 条挂着商品
+  // （含中联重科/常发/华夏/金轮/牧农等真实品牌），硬删会破坏 Product 外键。
+  // 策略：零商品纯脏行才硬删；挂商品者跳过并打印 WARNING 交人工复核。
+  let deleted = 0;
+  let skippedProducts = 0;
+  let skippedMissing = 0;
   for (const id of DENYLIST) {
-    const existing = await prisma.brand.findUnique({ where: { id }, select: { id: true, nameZh: true, nameEn: true, isActive: true } });
+    const existing = await prisma.brand.findUnique({ where: { id }, select: { id: true, nameZh: true, nameEn: true } });
     if (!existing) {
-      console.log(`  [skip] 下架目标 ${id} 在目标库不存在`);
+      console.log(`  [skip] 清理目标 ${id} 在目标库不存在（可能非 .com）`);
+      skippedMissing++;
       continue;
     }
     const productCount = await prisma.product.count({ where: { brandId: id } });
     if (productCount > 0) {
-      console.warn(`[t02] ⚠️ 下架 ${existing.nameZh || existing.nameEn}（${id}）挂载 ${productCount} 台商品 —— 软下架保留外键，商品不受影响`);
+      console.warn(`[t02] ⚠️ 跳过 ${existing.nameZh || existing.nameEn}（${id}）：挂载 ${productCount} 台商品，硬删会破坏外键 —— 需人工复核（真实品牌勿删）`);
+      skippedProducts++;
+      continue;
     }
     if (APPLY) {
-      await prisma.brand.update({ where: { id }, data: { isActive: false } });
+      try {
+        await prisma.brand.delete({ where: { id } });
+        deleted++;
+        console.log(`  [apply] Brand.delete ${existing.nameZh || existing.nameEn}（${id}）— 零商品纯脏行已删除`);
+      } catch (e: any) {
+        console.warn(`[t02] ⚠️ 删除 ${id} 失败（可能还有 valuations/展示项等外键）：${e?.message ?? e} —— 跳过交人工`);
+        skippedProducts++;
+      }
     } else {
-      console.log(`  [dry] Brand.update ${id} isActive=false（挂载商品 ${productCount}）`);
+      console.log(`  [dry] 将 Brand.delete ${id}（零商品纯脏行，安全删除）`);
+      deleted++;
     }
-    delisted++;
   }
-  console.log(`[t02] 将软下架 ${delisted} 条`);
+  console.log(`[t02] 清理：将删除 ${deleted} 条 | 因挂商品/外键跳过 ${skippedProducts} 条 | 目标库不存在 ${skippedMissing} 条`);
 
   // ── 4) 型号补齐（默认关闭） ───────────────────────────────────
   if (ADDITIONAL_MODELS_ENABLED) {
