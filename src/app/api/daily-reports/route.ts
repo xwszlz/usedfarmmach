@@ -12,6 +12,7 @@ import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import { prisma } from "@/lib/db";
+import { dedupeBrandBenchmark } from "@/lib/benchmark-dedupe";
 
 export const dynamic = 'force-dynamic';
 
@@ -69,7 +70,7 @@ async function getBenchmarkSection(today: string) {
     return { available: false as const, enabled: false as const, reason: "disabled" };
   }
   try {
-    const [benchmark, arbitrageCount, domesticCount] = await Promise.all([
+    const [benchmarkRaw, arbitrageCount, domesticCount] = await Promise.all([
       prisma.brandBenchmark.findMany({
         where: { isActive: true },
         orderBy: [{ sourceSite: "asc" }, { brand: "asc" }, { model: "asc" }],
@@ -95,6 +96,10 @@ async function getBenchmarkSection(today: string) {
       prisma.internationalPrice.count({ where: { isActive: true } }),
       prisma.rawListing.count({ where: { source: { startsWith: "domestic_" } } }),
     ]);
+
+    // 读层去重：吸收 cn-postgres 历史镜像残留的重复行（见 src/lib/benchmark-dedupe.ts）。
+    // 不改 orderBy / 响应结构 / schema，仅对结果做幂等去重；.com(Neon) 本无重复 ⇒ no-op。
+    const benchmark = dedupeBrandBenchmark(benchmarkRaw);
 
     const sampleTotal = benchmark.reduce((s, b) => s + (b.sampleSize || 0), 0);
     const freshCount = benchmark.filter((b) => {
