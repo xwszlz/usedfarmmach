@@ -11,6 +11,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { RawListingRow } from "@/lib/raw-listing/review";
+import { rowKind, derivePlatform } from "@/lib/raw-listing/source-catalog";
 
 /** 与 RawListingRow 对齐的线索行类型 */
 export type LeadRow = RawListingRow;
@@ -146,6 +147,7 @@ export function LeadTable({ items, locale: _locale }: Props) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-gray-50 text-left text-xs text-gray-500">
+              <th className="px-3 py-3 font-medium">类型</th>
               <th className="px-3 py-3 font-medium">来源</th>
               <th className="px-3 py-3 font-medium">品牌/型号</th>
               <th className="px-3 py-3 font-medium">地区</th>
@@ -164,6 +166,18 @@ export function LeadTable({ items, locale: _locale }: Props) {
               const busy = busyId === it.id;
               return (
                 <tr key={it.id} className="border-b align-top last:border-0 hover:bg-gray-50">
+                  {/* 类型徽章：经销商 / 挂牌（由 source 前缀派生）+ 平台裸域名小字 */}
+                  <td className="px-3 py-2.5">
+                    {rowKind(it.source) === "dealer" ? (
+                      <span className="inline-block rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">经销商</span>
+                    ) : (
+                      <span className="inline-block rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">挂牌</span>
+                    )}
+                    {(() => {
+                      const platform = derivePlatform(it.sourceUrl);
+                      return platform ? <div className="mt-0.5 text-[11px] text-gray-400">{platform}</div> : null;
+                    })()}
+                  </td>
                   <td className="px-3 py-2.5 text-xs text-gray-500">{it.source}</td>
                   <td className="px-3 py-2.5 text-gray-700">
                     <div>{it.brandName}</div>
@@ -252,7 +266,7 @@ export function LeadTable({ items, locale: _locale }: Props) {
             })}
             {items.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-4 py-10 text-center text-gray-400">
+                <td colSpan={10} className="px-4 py-10 text-center text-gray-400">
                   暂无线索
                 </td>
               </tr>

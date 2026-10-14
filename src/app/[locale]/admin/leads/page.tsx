@@ -23,7 +23,7 @@ export default async function LeadsPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ q?: string; model?: string; page?: string; pageSize?: string }>;
+  searchParams: Promise<{ q?: string; model?: string; page?: string; pageSize?: string; kind?: string }>;
 }) {
   const { locale } = await params;
   const sp = await searchParams;
@@ -43,13 +43,17 @@ export default async function LeadsPage({
   const model = sp.model || "";
   const page = parseInt(sp.page || "1", 10) || 1;
   const pageSize = Math.min(100, Math.max(1, parseInt(sp.pageSize || "30", 10) || 30));
+  const kindRaw: string | undefined = sp.kind;
+  const kind: "all" | "dealer" | "listing" =
+    kindRaw === "dealer" || kindRaw === "listing" ? kindRaw : "all";
 
-  const list = await listLeads({ page, pageSize, q: query || undefined, model: model || undefined });
+  const list = await listLeads({ page, pageSize, q: query || undefined, model: model || undefined, kind });
 
   const buildPageHref = (p: number) => {
     const params2 = new URLSearchParams();
     if (query) params2.set("q", query);
     if (model) params2.set("model", model);
+    if (kind !== "all") params2.set("kind", kind);
     params2.set("page", String(p));
     return `?${params2.toString()}`;
   };
@@ -61,6 +65,33 @@ export default async function LeadsPage({
         内部线索池：采集到的卖方线索统一在此查看与补全联系方式（电话 / 微信 / WhatsApp / 邮箱）。
         点击「查看联系方式」将留痕 PII 审计后展示明文；微信 / WhatsApp / 邮箱 可在此行内补全（采集端未自动落的可人工补）。
       </p>
+
+      {/* 类型切换（P0）：全部 / 经销商 / 挂牌，按 source 前缀过滤；保留 q / model */}
+      <div className="mb-5 flex flex-wrap items-center gap-2">
+        <span className="text-sm text-gray-500">类型：</span>
+        {[
+          { key: "all", label: "全部" },
+          { key: "dealer", label: "经销商" },
+          { key: "listing", label: "挂牌" },
+        ].map((opt) => {
+          const params2 = new URLSearchParams();
+          if (query) params2.set("q", query);
+          if (model) params2.set("model", model);
+          params2.set("kind", opt.key);
+          const active = kind === opt.key;
+          return (
+            <Link
+              key={opt.key}
+              href={`?${params2.toString()}`}
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
+                active ? "bg-primary-600 text-white" : "border text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              {opt.label}
+            </Link>
+          );
+        })}
+      </div>
 
       {/* 搜索表单 */}
       <form method="GET" className="mb-5 flex flex-wrap items-center gap-3">
