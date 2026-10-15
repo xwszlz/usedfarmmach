@@ -203,8 +203,13 @@ export const MODEL_BASE_PRICES: Record<string, { category: string; basePrice: nu
   "RP": { category: "圆捆机", basePrice: 110 },
 
   // === 青储机 ===
-  "970": { category: "青储机", basePrice: 280 },         // CLAAS Jaguar 970
-  "980": { category: "青储机", basePrice: 350 },         // CLAAS Jaguar 980
+  // ⚠️ 马力级校准（2026-10 第二来源复核）：450万级真实成交价属 CLAAS Jaguar 960(653 HP)，
+  //    多源佐证：政府公开招标中标 455万(2025-10-21)、农业农村部补贴 396万、农机通经销商 450万、大同艾谷 468万(2026-09)。
+  //    970/980 为 790–850 HP 更高马力级，公开中文渠道无权威新机报价，真实价应 >500万
+  //    （当前 280/350 为占位值，待补充第二来源后再上调，避免无据编造）。
+  "960": { category: "青储机", basePrice: 450 },         // CLAAS Jaguar 960 (653 HP) — 450万多源佐证
+  "970": { category: "青储机", basePrice: 280 },         // CLAAS Jaguar 970（CN价未确认，占位值）
+  "980": { category: "青储机", basePrice: 350 },         // CLAAS Jaguar 980（CN价未确认，占位值，真实应>500万）
   "900": { category: "青储机", basePrice: 200 },         // CLAAS 900
   "9080": { category: "青储机", basePrice: 200 },        // 纽荷兰9080
   "FR500": { category: "青储机", basePrice: 180 },       // 纽荷兰FR500
