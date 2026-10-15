@@ -14,12 +14,32 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const { boothId, productId, ...manualData } = body;
 
-  if (!boothId) return NextResponse.json({ success: false, error: "缺少展位ID" }, { status: 400 });
-
-  // Verify booth ownership
-  const booth = await prisma.booth.findUnique({ where: { id: boothId } });
+  // 解析或自动创建展位（自主发布农机：卖家无需预先由管理员分配展位即可发布）
+  let booth = boothId ? await prisma.booth.findUnique({ where: { id: boothId } }) : null;
   if (!booth || booth.merchantId !== payload.userId) {
-    return NextResponse.json({ success: false, error: "无权操作此展位" }, { status: 403 });
+    const expo =
+      (await prisma.expo.findFirst({ where: { status: "active" }, orderBy: { startDate: "asc" } })) ??
+      (await prisma.expo.findFirst({ orderBy: { startDate: "asc" } }));
+    let expoId = expo?.id;
+    if (!expoId) {
+      const created = await prisma.expo.create({
+        data: { name: "自主发布展厅", slug: "self-publish-" + Date.now(), type: "self", status: "active", startDate: new Date() },
+      });
+      expoId = created.id;
+    }
+    const u = await prisma.user.findUnique({ where: { id: payload.userId }, select: { companyName: true } });
+    booth = await prisma.booth.create({
+      data: {
+        expoId,
+        merchantId: payload.userId,
+        name: u?.companyName || "我的展位",
+        hall: "comprehensive",
+        pavilion: "china",
+        tier: "standard",
+        status: "published",
+        template: "standard",
+      },
+    });
   }
 
   let itemData: Record<string, unknown> = {
@@ -55,20 +75,43 @@ export async function POST(request: NextRequest) {
       description: product.descriptionZh || product.descriptionEn || null,
     };
   } else {
-    // Manual entry
+    // Manual entry — 自主发布新机（itemType 默认 new，提交即上线）
     itemData = {
       ...itemData,
       deviceType: manualData.deviceType || "other",
       brand: manualData.brand || null,
+      brandId: manualData.brandId || null,
       model: manualData.model || null,
+      series: manualData.series || null,
       year: manualData.year ? parseInt(manualData.year) : null,
+      launchYear: manualData.launchYear ? parseInt(manualData.launchYear) : null,
       workingHours: manualData.workingHours ? parseInt(manualData.workingHours) : null,
-      condition: manualData.condition || null,
+      condition: manualData.condition || "new",
       price: manualData.price ? parseFloat(manualData.price) : null,
+      msrpCny: manualData.msrpCny != null ? parseFloat(manualData.msrpCny) : null,
+      msrpUsd: manualData.msrpUsd != null ? parseFloat(manualData.msrpUsd) : null,
       currency: manualData.currency || "CNY",
+      origin: manualData.origin || null,
+      isChineseMade: manualData.isChineseMade ?? null,
+      machineTier: manualData.machineTier || null,
+      priceRange: manualData.priceRange || null,
       images: manualData.images || [],
       videos: manualData.videos || [],
       description: manualData.description || null,
+      descriptionZh: manualData.descriptionZh || null,
+      descriptionEn: manualData.descriptionEn || null,
+      descriptionRu: manualData.descriptionRu || null,
+      descriptionEs: manualData.descriptionEs || null,
+      descriptionFr: manualData.descriptionFr || null,
+      descriptionPt: manualData.descriptionPt || null,
+      descriptionHi: manualData.descriptionHi || null,
+      descriptionAr: manualData.descriptionAr || null,
+      brochureUrl: manualData.brochureUrl || null,
+      arModelUrl: manualData.arModelUrl || null,
+      specs: manualData.specs || null,
+      country: manualData.country || null,
+      itemType: manualData.itemType || "new",
+      isNewLaunch: manualData.isNewLaunch ?? true,
     };
   }
 
@@ -106,7 +149,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ success: false, error: "无权操作" }, { status: 403 });
   }
 
-  const allowed = ["sortIndex", "status", "brand", "model", "year", "workingHours", "condition", "price", "description", "images", "videos"];
+  const allowed = ["sortIndex", "status", "brand", "brandId", "model", "series", "year", "launchYear", "workingHours", "condition", "price", "msrpCny", "msrpUsd", "currency", "origin", "isChineseMade", "machineTier", "priceRange", "images", "videos", "description", "descriptionZh", "descriptionEn", "descriptionRu", "descriptionEs", "descriptionFr", "descriptionPt", "descriptionHi", "descriptionAr", "brochureUrl", "arModelUrl", "specs", "country", "itemType", "isNewLaunch"];
   const data: Record<string, unknown> = {};
   for (const key of allowed) {
     if (key in updateData) data[key] = updateData[key];
