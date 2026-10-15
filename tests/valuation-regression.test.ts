@@ -24,6 +24,7 @@ import {
   HOURS_PARAMS,
   MARKET_FACTOR_RANGE,
   MIN_RESIDUAL_RATIO,
+  calcAgeTableResidual,
 } from "../src/lib/valuation/brand-data";
 
 // ============================================================
@@ -66,26 +67,66 @@ const currentYear = new Date().getFullYear();
 // ============================================================
 // 辅助：计算年份折旧因子（与源码一致，用于交叉验证）
 // ============================================================
-function calcYearFactor(year: number): number {
+// 注意：此处**直接委托** calcAgeTableResidual，不再内联一份副本。
+// 旧实现内联了线性减法副本，源码改为 y9+ 乘性复利后（本commit）副本未同步，
+// 导致断言拿旧值 0.1000 去比新值 0.2843 而误报失败——
+// 这正是「两份实现导致口径漂移」的教科书案例。
+// 另外本函数原签名无 category，跨白名单品类时会与源码判定分叉，故一并修正。
+function calcYearFactor(year: number, category?: string): number {
   const age = currentYear - year;
   if (age <= 0) return 1.0;
-  let remaining = 1.0;
-  let yearsLeft = Math.min(age, 3);
-  remaining -= yearsLeft * DEPRECIATION_TABLE[0].rate;
-  if (age > 3) {
-    yearsLeft = Math.min(age - 3, 4);
-    remaining -= yearsLeft * DEPRECIATION_TABLE[1].rate;
-  }
-  if (age > 7) {
-    yearsLeft = Math.min(age - 7, 5);
-    remaining -= yearsLeft * DEPRECIATION_TABLE[2].rate;
-  }
-  if (age > 12) {
-    yearsLeft = age - 12;
-    remaining -= yearsLeft * DEPRECIATION_TABLE[3].rate;
-  }
-  return Math.max(remaining, MIN_RESIDUAL_RATIO);
+  return calcAgeTableResidual(age, category);
 }
+
+// ============================================================
+// 测试1b：机龄表 y9+ 复利改造的结构性护栏
+// ============================================================
+// 这几条断言锁住本次改造的核心不变量，防止未来再次回退到线性减法。
+assert(
+  calcYearFactor(currentYear - 8) === 0.4,
+  "机龄表 y8 残值 = 0.4000（y1-y8 线性段一位未动，守住专家锚点）",
+  "0.4000",
+  calcYearFactor(currentYear - 8).toFixed(4)
+);
+assert(
+  Math.abs(calcYearFactor(currentYear - 8) - calcYearFactor(currentYear - 7)) < 0.09,
+  "机龄表 y7→y8 无跳变（分段衔接连续）",
+  "线性段收敛",
+  `${calcYearFactor(currentYear - 7).toFixed(4)} → ${calcYearFactor(currentYear - 8).toFixed(4)}`
+);
+assert(
+  calcYearFactor(currentYear - 13) > 0.25 && calcYearFactor(currentYear - 13) < 0.32,
+  "机龄表 y13 残值落在 0.25~0.32（复利后不再触底；对照实测大方捆 0.315）",
+  "0.25~0.32",
+  calcYearFactor(currentYear - 13).toFixed(4)
+);
+assert(
+  calcYearFactor(currentYear - 13) > calcYearFactor(currentYear - 20),
+  "机龄表 y13 > y20（核心 bug 回归护栏：旧实现两者都被锁死在 MIN_RESIDUAL_RATIO=0.10）",
+  "y13 > y20",
+  `${calcYearFactor(currentYear - 13).toFixed(4)} vs ${calcYearFactor(currentYear - 20).toFixed(4)}`
+);
+assert(
+  calcYearFactor(currentYear - 30) > 0.10,
+  "机龄表 y30 残值 > 0.10（未跌到 MIN_RESIDUAL_RATIO 地板；" +
+    "理论值 0.40×0.93⁴×0.95¹⁷ = 0.1189，30 年机不应与 13 年机同价）",
+  ">0.10",
+  calcYearFactor(currentYear - 30).toFixed(4)
+);
+// 单调性：y1→y30 必须严格递减，不允许任何平台期
+let monotonic = true;
+for (let a = 1; a <= 30; a++) {
+  if (calcYearFactor(currentYear - a) <= calcYearFactor(currentYear - a - 1)) {
+    monotonic = false;
+    break;
+  }
+}
+assert(
+  monotonic,
+  "机龄表 y1→y30 残值严格单调递减（无平台期=无触底锁死）",
+  "严格递减",
+  monotonic ? "递减" : "存在平台期"
+);
 
 // ============================================================
 // 测试1：核心Bug修复验证 — 纽荷兰5070（2013款）
