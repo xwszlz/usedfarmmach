@@ -8,7 +8,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyToken, getTokenFromHeaders } from "@/lib/auth";
-import { getQuotaUser, consumeQuota, quotaExceededResponse, rollbackQuota } from "@/lib/quota";
 import { deductCredits } from "@/lib/credits/spend";
 import { writePiiAuditLog } from "@/lib/audit";
 
@@ -43,38 +42,29 @@ export async function POST(
     return NextResponse.json({ success: false, error: "无权限" }, { status: 403 });
   }
 
-  // ── P1-a 双闸门：额度(50/月) + 积分(10/次)（查看联系方式）──
-  // 顺序：先 consumeQuota（超额→QUOTA_EXCEEDED），再 deductCredits（不足→INSUFFICIENT_CREDITS 并回滚额度）。
+  // ── 查看联系方式仅需积分闸门：按积分扣减（无每月次数上限）──
   let creditsRemaining: number | null = null;
-  const qUser = await getQuotaUser(admin.userId);
-  if (qUser) {
-    const q = await consumeQuota(qUser, "viewContact");
-    if (!q.ok) {
-      return quotaExceededResponse(q.resetAt);
-    }
-    const cost = await deductCredits(
-      admin.userId,
-      10,
-      "查看联系方式",
-      { action: "viewContact", quotaRemaining: q.remaining },
-      "viewcontact_cost",
+  const cost = await deductCredits(
+    admin.userId,
+    10,
+    "查看联系方式",
+    { action: "viewContact" },
+    "viewcontact_cost",
+  );
+  if (!cost.ok) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "积分不足，请先充值后再查看联系方式",
+        code: "INSUFFICIENT_CREDITS",
+        rechargeUrl: `/${getLocaleFromRequest(request)}/credits`,
+        required: cost.required,
+        balance: cost.credits,
+      },
+      { status: 402 },
     );
-    if (!cost.ok) {
-      await rollbackQuota(qUser, "viewContact");
-      return NextResponse.json(
-        {
-          success: false,
-          error: "积分不足，请先充值后再查看联系方式",
-          code: "INSUFFICIENT_CREDITS",
-          rechargeUrl: `/${getLocaleFromRequest(request)}/credits`,
-          required: cost.required,
-          balance: cost.credits,
-        },
-        { status: 402 },
-      );
-    }
-    creditsRemaining = cost.credits ?? null;
   }
+  creditsRemaining = cost.credits ?? null;
 
   const { id } = params;
   const body = await request.json().catch(() => ({}));

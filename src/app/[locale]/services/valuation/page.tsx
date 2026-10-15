@@ -831,8 +831,6 @@ export default function ValuationPage() {
   const [gateData, setGateData] = useState<BlurredValuation | null>(null);
   const [limitReached, setLimitReached] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
-  // 登录用户本月 AI 估值额度已用完（后端 403 QUOTA_EXCEEDED）→ 已降级为本地模型
-  const [quotaExhausted, setQuotaExhausted] = useState(false);
   // 本次估值的 token 计费摘要（/api/valuation 的 billing 字段；无 LLM 用量时为 null）
   const [valuationBilling, setValuationBilling] = useState<{
     points: number; balance?: number;
@@ -878,19 +876,9 @@ export default function ValuationPage() {
           return;
         }
 
-        // ── 登录用户本月 AI 估值次数用尽（403 QUOTA_EXCEEDED）──
-        // 之前只认 429，403 会掉进 else 分支静默降级，用户看不到原因。
         // body 只能读一次：先取出再分支，避免二次 res.json() 报
         // "body stream already read" 导致结果区卡死。
         const data = await res.json().catch(() => null);
-
-        if (res.status === 403 && data?.code === "QUOTA_EXCEEDED") {
-          setQuotaExhausted(true);
-          setGateData(null);
-          setResult(null);
-          doClientCalc();
-          return;
-        }
 
         if (!data) {
           doClientCalc();
@@ -915,7 +903,6 @@ export default function ValuationPage() {
           // 登录用户（blurred: false）：照旧展示精确结果
           setGateData(null);
           setLimitReached(false);
-          setQuotaExhausted(false);
           const r = data.data;
           setIntel(data.intelligence ?? null);
           setResult({
@@ -1609,18 +1596,6 @@ export default function ValuationPage() {
             </div>
           )}
 
-          {/* 本月 AI 估值额度已用完提示 */}
-          {quotaExhausted && (
-            <div className="mt-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-              <div>
-                <strong className="font-semibold">本月 AI 估值次数已用完</strong>
-                <p className="mt-1 text-xs text-amber-700">
-                  下方结果由本地模型估算，精度略低于 AI 模型。额度将在下个自然月重置。
-                </p>
-              </div>
-            </div>
-          )}
 
           {/* Results */}
           {result && (

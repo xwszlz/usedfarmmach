@@ -25,7 +25,7 @@ export function InquiryActions({ productId, productName, locale }: InquiryAction
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [upgradeUrl, setUpgradeUrl] = useState("");
+  const [rechargeUrl, setRechargeUrl] = useState("");
   const [form, setForm] = useState({ name: "", phone: "", message: "" });
   const l = LABELS[locale] || LABELS.zh;
 
@@ -43,7 +43,7 @@ export function InquiryActions({ productId, productName, locale }: InquiryAction
     if (!form.name || !form.phone) return;
     setLoading(true);
     setError("");
-    setUpgradeUrl("");
+    setRechargeUrl("");
     try {
       const res = await fetch("/api/inquiries", {
         method: "POST",
@@ -58,12 +58,9 @@ export function InquiryActions({ productId, productName, locale }: InquiryAction
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        if (res.status === 403 && json?.code === "QUOTA_EXCEEDED") {
-          setError(json?.error || "本月额度已用尽");
-          setUpgradeUrl(json?.data?.upgradeUrl || "");
-        } else {
-          setError(json?.error || "提交失败，请稍后重试");
-        }
+        // 询盘仅需积分闸门：积分不足 → 402 INSUFFICIENT_CREDITS（月度额度闸门已移除）
+        setError(json?.error || "提交失败，请稍后重试");
+        setRechargeUrl(json?.rechargeUrl || "");
         return;
       }
       setSubmitted(true);
@@ -143,9 +140,9 @@ export function InquiryActions({ productId, productName, locale }: InquiryAction
                 {error && (
                   <div className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
                     <p>{error}</p>
-                    {upgradeUrl && (
-                      <a href={upgradeUrl} className="mt-1 inline-block font-medium text-emerald-700 underline">
-                        升级会员
+                    {rechargeUrl && (
+                      <a href={rechargeUrl} className="mt-1 inline-block font-medium text-emerald-700 underline">
+                        去充值
                       </a>
                     )}
                   </div>
