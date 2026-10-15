@@ -71,12 +71,11 @@ export async function ensureQuotaWindow(user: QuotaUser): Promise<QuotaUser> {
 async function writeUsageLog(
   userId: string,
   action: QuotaAction,
-  tier: string,
   periodStart: Date,
 ): Promise<void> {
   try {
     await prisma.usageLog.create({
-      data: { userId, action, tier, periodStart },
+      data: { userId, action, periodStart },
     });
   } catch (err) {
     // eslint-disable-next-line no-console
@@ -102,7 +101,7 @@ export async function consumeQuota(
   action: QuotaAction,
 ): Promise<ConsumeResult> {
   const fresh = await ensureQuotaWindow(user);
-  const limit = getQuotaLimit(fresh.membershipTier, action);
+  const limit = getQuotaLimit(action);
   const field = COUNTER_FIELD[action];
   const used = fresh[field] as number;
   const resetAt = nextMonthStart(new Date()).toISOString();
@@ -130,7 +129,6 @@ export async function consumeQuota(
   await writeUsageLog(
     fresh.id,
     action,
-    fresh.membershipTier,
     fresh.usagePeriodStart || startOfMonth(new Date()),
   );
 
@@ -168,7 +166,7 @@ export async function getQuotaState(user: QuotaUser): Promise<QuotaState> {
 
   const actions: QuotaAction[] = ["publish", "inquiry", "viewContact"];
   const items: QuotaItem[] = actions.map((action) => {
-    const limit = getQuotaLimit(user.membershipTier, action);
+    const limit = getQuotaLimit(action);
     const used = inWindow ? (user[COUNTER_FIELD[action]] as number) : 0;
     const remaining = limit === -1 ? -1 : Math.max(0, limit - used);
     return { action, used, limit, remaining };
