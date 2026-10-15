@@ -1,12 +1,13 @@
 /**
  * image-analyzer.ts 单元测试
- * 
- * 测试图片分析模块的逻辑
- * 注意：需要mock axios以避免实际LLM调用
+ *
+ * 测试图片分析模块的逻辑（统一豆包视觉能力入口）。
+ * 注意：需 mock axios（豆包 chat/completions 内部走 axios.post）与全局 fetch（图片下载），
+ * 以避免实际 LLM / 网络调用。
  */
 
-// 注意：由于image-analyzer依赖外部环境（OpenRouter API），
-// 我们需要测试其降级逻辑和结果处理
+// 注意：image-analyzer 统一走 chatCompletionDoubao（火山方舟 ARK），
+// 其内部通过 axios.post 调用，本测试 mock axios 即可拦截，无需真实 key。
 
 import {
   analyzeProductImages,
@@ -14,13 +15,14 @@ import {
   type ImageAnalysisResult,
 } from "../image-analyzer";
 
-// 保存原始的axios
+// 保存原始 axios / fetch
 let originalAxios: any;
+let originalFetch: any;
 
-// Mock axios
+// Mock axios（拦截 ark-client 的 chat/completions 调用）
 function mockAxios() {
-  const mockPost = async (url: string, data: any, config: any) => {
-    // 模拟成功响应
+  const mockPost = async (_url: string, _data: any, _config: any) => {
+    // 模拟豆包成功响应（OpenAI 兼容结构 + usage 供计费归集）
     return {
       data: {
         choices: [
@@ -35,16 +37,16 @@ function mockAxios() {
             },
           },
         ],
+        usage: { prompt_tokens: 100, completion_tokens: 20 },
       },
     };
   };
 
-  // 动态mock
   const axios = require("axios");
   originalAxios = { ...axios };
   axios.default = mockPost;
   axios.post = mockPost;
-  
+
   return mockPost;
 }
 
@@ -53,6 +55,19 @@ function restoreAxios() {
     const axios = require("axios");
     Object.assign(axios, originalAxios);
   }
+}
+
+// Mock 全局 fetch（模拟图片下载返回字节，避免真实网络）
+function mockFetch() {
+  originalFetch = global.fetch;
+  global.fetch = (async (_url: string) => ({
+    ok: true,
+    arrayBuffer: async () => Buffer.from("fake-image-bytes"),
+  })) as any;
+}
+
+function restoreFetch() {
+  if (originalFetch) global.fetch = originalFetch;
 }
 
 async function runImageAnalyzerTests() {
@@ -78,33 +93,16 @@ async function runImageAnalyzerTests() {
   // -------------------------------------------------------
   console.log("\n📊 测试: visualScoreToConditionFactor 映射");
   {
-    // 9-10分 → 1.05
     assert(Math.abs(visualScoreToConditionFactor(9) - 1.05) < 0.001, "9分 → 1.05");
     assert(Math.abs(visualScoreToConditionFactor(10) - 1.05) < 0.001, "10分 → 1.05");
-
-    // 8分 → 1.0
     assert(Math.abs(visualScoreToConditionFactor(8) - 1.0) < 0.001, "8分 → 1.0");
-
-    // 7分 → 0.98
     assert(Math.abs(visualScoreToConditionFactor(7) - 0.98) < 0.001, "7分 → 0.98");
-
-    // 6分 → 0.95
     assert(Math.abs(visualScoreToConditionFactor(6) - 0.95) < 0.001, "6分 → 0.95");
-
-    // 5分 → 0.90
     assert(Math.abs(visualScoreToConditionFactor(5) - 0.90) < 0.001, "5分 → 0.90");
-
-    // 4分 → 0.85
     assert(Math.abs(visualScoreToConditionFactor(4) - 0.85) < 0.001, "4分 → 0.85");
-
-    // 3分 → 0.78
     assert(Math.abs(visualScoreToConditionFactor(3) - 0.78) < 0.001, "3分 → 0.78");
-
-    // 1-2分 → 0.70
     assert(Math.abs(visualScoreToConditionFactor(1) - 0.70) < 0.001, "1分 → 0.70");
     assert(Math.abs(visualScoreToConditionFactor(2) - 0.70) < 0.001, "2分 → 0.70");
-
-    // 边界测试
     assert(Math.abs(visualScoreToConditionFactor(0) - 0.70) < 0.001, "0分 → 0.70 (边界)");
     assert(Math.abs(visualScoreToConditionFactor(11) - 1.05) < 0.001, "11分 → 1.05 (边界)");
   }
@@ -115,33 +113,43 @@ async function runImageAnalyzerTests() {
   console.log("\n📊 测试: 无图片输入");
   {
     const result = await analyzeProductImages([]);
-    
     assert(result.visualConditionScore === 0, "无图片时 visualConditionScore 应为 0");
     assert(result.usedV4Condition === false, "无图片时 usedV4Condition 应为 false");
     assert(result.imageConfidence === 0, "无图片时 imageConfidence 应为 0");
   }
 
   // -------------------------------------------------------
-  // 测试3: 降级逻辑（当没有API key时）
+  // 测试3: 正常路径（mock 豆包返回结构化 JSON）
+  // -------------------------------------------------------
+  console.log("\n📊 测试: 正常路径（豆包视觉返回）");
+  {
+    mockFetch();
+    mockAxios();
+    try {
+      const result = await analyzeProductImages(["https://example.com/test.jpg"]);
+      assert(result.visualConditionScore === 8, "正常路径 visualConditionScore 应为 8");
+      assert(result.usedV4Condition === true, "正常路径 usedV4Condition 应为 true");
+      assert(Math.abs(result.imageConfidence - 0.85) < 0.001, "正常路径 imageConfidence 应为 0.85");
+    } finally {
+      restoreAxios();
+      restoreFetch();
+    }
+  }
+
+  // -------------------------------------------------------
+  // 测试4: 降级逻辑（豆包不可用时返回默认分析）
   // -------------------------------------------------------
   console.log("\n📊 测试: 降级逻辑");
   {
-    // 保存原始环境变量
-    const originalKey = process.env.OPENROUTER_API_KEY;
-    
-    // 模拟无API key
-    process.env.OPENROUTER_API_KEY = "";
-    
-    // 注意：这里会调用真实的axios，但因为没配置key会失败并降级
-    // 由于我们无法轻松mock，这个测试主要是检查降级是否工作
-    const result = await analyzeProductImages(["https://example.com/test.jpg"]);
-    
-    // 降级时应该返回默认分析
-    assert(result.visualConditionScore === 5, "降级时默认评分为 5");
-    assert(result.usedV4Condition === false, "降级时 usedV4Condition 应为 false");
-    
-    // 恢复环境变量
-    process.env.OPENROUTER_API_KEY = originalKey;
+    mockFetch();
+    // 不 mock axios → 真实 axios.post 离线会失败并被 image-analyzer 捕获降级
+    try {
+      const result = await analyzeProductImages(["https://example.com/test.jpg"]);
+      assert(result.visualConditionScore === 5, "降级时默认评分为 5");
+      assert(result.usedV4Condition === false, "降级时 usedV4Condition 应为 false");
+    } finally {
+      restoreFetch();
+    }
   }
 
   // -------------------------------------------------------

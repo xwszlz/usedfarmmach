@@ -14,6 +14,17 @@ import { buildLocationText } from "@/lib/location-parser";
 import { checkContent, isBlocked } from "@/lib/wechat-sec-check";
 import { checkDuplicateProduct, fireVideoModeration, MAX_VIDEOS_PER_PRODUCT, MAX_VIDEO_DURATION_SECONDS, MAX_VIDEO_FILE_SIZE_BYTES } from "@/lib/content-moderation";
 import { translateProductOnPublish } from "@/lib/services/product-translation";
+import { consumeQuota, quotaExceededResponse, rollbackQuota } from "@/lib/quota/guard";
+import type { QuotaUser } from "@/lib/quota/constants";
+import { deductCredits } from "@/lib/credits/spend";
+
+/** 从 referer / 路径推断 locale（与 quota guard / 各 AI 路由保持一致） */
+function getLocaleFromRequest(request: NextRequest): string {
+  const referer = request.headers.get("referer") || "";
+  const m = referer.match(/\/([a-z]{2})\b/) || referer.match(/\/([a-z]{2})$/);
+  if (m && ["zh", "en", "ru", "es", "pt", "fr", "hi", "ar"].includes(m[1])) return m[1];
+  return "zh";
+}
 
 // 图片上传 + AI审核需要较长时间
 export const dynamic = "force-dynamic"; // 防 .cn 构建期静态固化，详见 scripts/check-route-dynamic.mjs
@@ -221,6 +232,36 @@ export async function POST(request: NextRequest) {
       console.error("[seller/products] 内容安全检测异常（非阻塞）:", secErr instanceof Error ? secErr.message : String(secErr));
     }
 
+    // === 发布双闸门：额度(50/月) + 积分(1/次) ===
+    // 顺序：先 consumeQuota（超额→QUOTA_EXCEEDED），再 deductCredits（不足→INSUFFICIENT_CREDITS 并回滚额度）。
+    // 任一步失败都不创建产品，保证「额度/积分」与「实际发布」严格一致。
+    const locale = getLocaleFromRequest(request);
+    const quota = await consumeQuota(user as unknown as QuotaUser, "publish");
+    if (!quota.ok) {
+      return quotaExceededResponse(quota.resetAt, locale);
+    }
+    const publishCost = await deductCredits(
+      seller.userId,
+      1,
+      "发布产品",
+      { action: "publish", quotaRemaining: quota.remaining },
+      "publish_cost",
+    );
+    if (!publishCost.ok) {
+      await rollbackQuota(user as unknown as QuotaUser, "publish");
+      return NextResponse.json(
+        {
+          success: false,
+          error: "积分不足，请先充值后再发布",
+          code: "INSUFFICIENT_CREDITS",
+          rechargeUrl: `/${locale}/credits`,
+          required: publishCost.required,
+          balance: publishCost.credits,
+        },
+        { status: 402 },
+      );
+    }
+
     // === 创建产品 ===
     const product = await prisma.product.create({
       data: {
@@ -394,7 +435,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: product,
-      creditsRemaining: user.credits,
+      creditsRemaining: publishCost.credits ?? user.credits,
     });
   } catch (error) {
     console.error("Publish error:", error);

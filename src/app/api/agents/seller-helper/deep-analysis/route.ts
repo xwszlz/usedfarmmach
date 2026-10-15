@@ -1,10 +1,9 @@
 /**
  * POST /api/agents/seller-helper/deep-analysis
- * AI深度分析 — 双引擎版（国内农机/国际农机）
+ * AI深度分析 — 统一豆包版（火山方舟 ARK）
  *
  * V2.2（2026-09-26）：移除全部价格/估值内容，价格口径统一到 /api/valuation
- * V2.1 升级（2026-07-12）：
- *   双引擎架构 — 国内农机走豆包 / 国际农机走Gemini
+ * V1.3 升级（2026-10）：全量统一到豆包多模态能力（.cn 直连 / .com 经 B 通道代理），不再使用 Gemini / OpenRouter。
  *   接受 isChineseBrand 参数，自动切换分析prompt
  *
  * Body: { imageUrls?: string[], imageDataUris?: string[], videoUrls?: string[], isChineseBrand?: boolean }
@@ -16,6 +15,8 @@ import axios from "axios";
 
 import { getTokenFromHeaders, verifyToken } from "@/lib/auth";
 import { computeAiCost, deductCredits, type AiCostBreakdown } from "@/lib/credits/spend";
+import { getBillingCountry } from "@/lib/credits/fx";
+import { chatCompletionDoubao, getArkModelId } from "@/lib/ai/ark-client";
 
 export const dynamic = "force-dynamic";
 
@@ -35,14 +36,6 @@ function getLocaleFromRequest(request: NextRequest): string {
   return "zh";
 }
 export const maxDuration = 120; // 豆包深度分析需要更长时间
-
-const ARK_API_KEY = process.env.ARK_API_KEY || "";
-const ARK_BASE_URL = process.env.ARK_BASE_URL || "https://ark.cn-beijing.volces.com/api/v3";
-const ARK_MODEL_ID = process.env.ARK_MODEL_ID || "doubao-seed-2-1-pro-260915";
-
-// 备用：Gemini 和 OpenRouter（与 recognize 路由共享配置）
-const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || "";
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
 
 /**
  * 国际农机深度分析 Prompt — 全球市场
@@ -273,38 +266,26 @@ async function buildDoubaoContent(
 }
 
 /**
- * 调用豆包 API
+ * 调用豆包 API（统一出口 chatCompletionDoubao）
  */
 async function callDoubao(
   content: Array<Record<string, unknown>>
 ): Promise<LlmCallResult> {
+  const model = getArkModelId();
   console.log(
-    `[DeepAnalysis] 豆包调用: model=${ARK_MODEL_ID}, ` +
+    `[DeepAnalysis] 豆包调用: model=${model}, ` +
     `图片数=${content.filter((c) => c.type === "image_url").length}, ` +
     `视频数=${content.filter((c) => c.type === "video_url").length}`
   );
 
-  const response = await axios.post(
-    `${ARK_BASE_URL}/chat/completions`,
-    {
-      model: ARK_MODEL_ID,
-      messages: [{ role: "user", content }],
-      max_tokens: 4096,
-      temperature: 0.7,
-      top_p: 0.9,
-      thinking: { type: "disabled" }, // ★ 关闭思考链：同 recognize，思考 token 是超时主因（本接口原 90s 超时、100% 失败）
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${ARK_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      timeout: 140000, // 140秒：实测长报告 3223 输出 token（reasoning=0，纯生成）需 107.474s，原 90s 必挂。关 thinking 只解决「思考拖慢」，解决不了「长输出就是慢」。.cn 真实上限是 nginx proxy_read_timeout 180s（自托管 Next 不执行 maxDuration）；.com 走 Gemini 不受影响
-    }
-  );
+  const result = await chatCompletionDoubao({
+    model,
+    maxTokens: 4096,
+    timeoutMs: 140000, // 140秒：长报告生成需要较长时间
+    messages: [{ role: "user", content }],
+  });
 
-  const result = response.data as any;
-  const text = result.choices?.[0]?.message?.content || "";
+  const text = result.text || "";
 
   if (!text || text.trim().length < 50) {
     throw new Error("豆包返回空响应或响应过短");
@@ -327,111 +308,6 @@ async function downloadImageAsBase64(url: string): Promise<{ mimeType: string; d
   const contentType = response.headers["content-type"] || "image/jpeg";
   const base64 = Buffer.from(new Uint8Array(response.data as ArrayBuffer)).toString("base64");
   return { mimeType: contentType.split(";")[0], data: base64 };
-}
-
-/**
- * 备用：调用 Gemini API（用于深度分析）
- */
-async function callGeminiDeep(
-  images: string[],
-  videos: string[],
-  prompt: string
-): Promise<LlmCallResult> {
-  const parts: Array<Record<string, unknown>> = [{ text: prompt }];
-
-  for (const url of images) {
-    if (url.startsWith("data:")) {
-      const [mimeInfo, base64Data] = url.split(",");
-      const mimeType = mimeInfo.replace("data:", "").split(";")[0] || "image/jpeg";
-      parts.push({ inline_data: { mime_type: mimeType, data: base64Data } });
-    } else {
-      // 公开 URL → 下载后转 base64 inline_data
-      try {
-        const { mimeType, data } = await downloadImageAsBase64(url);
-        parts.push({ inline_data: { mime_type: mimeType, data } });
-      } catch (err: any) {
-        console.warn(`[DeepAnalysis] 下载图片失败 ${url}:`, err.message?.substring(0, 80));
-      }
-    }
-  }
-
-  // Gemini 不直接支持视频，跳过视频（prompt 中已描述视频链接）
-  if (videos.length > 0) {
-    parts.push({ text: `[相关视频] ${videos.join("\n")}` });
-  }
-
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY}`;
-  console.log(`[DeepAnalysis] Gemini 备用调用，图片数=${images.length}, 视频数=${videos.length}`);
-
-  const response = await axios.post(
-    url,
-    {
-      contents: [{ role: "user", parts }],
-      generationConfig: {
-        max_output_tokens: 8192,
-        temperature: 0.7,
-        top_p: 0.9,
-      },
-    },
-    {
-      headers: { "Content-Type": "application/json" },
-      timeout: 90000,
-    }
-  );
-
-  const result = response.data as any;
-  if (result.promptFeedback?.blockReason) {
-    throw new Error(`Gemini 安全过滤: ${result.promptFeedback.blockReason}`);
-  }
-
-  const candidate = result.candidates?.[0];
-  if (!candidate) throw new Error("Gemini 无候选结果");
-  if (candidate.finishReason === "SAFETY") throw new Error("Gemini 安全拦截");
-
-  const text = candidate.content?.parts?.[0]?.text || "";
-  if (!text || text.trim().length < 50) throw new Error("Gemini 返回空响应");
-
-  // Gemini 用量在 usageMetadata 中（promptTokenCount / candidatesTokenCount）
-  const um = (result as any).usageMetadata || {};
-  const usage = {
-    inputTokens: um.promptTokenCount ?? 0,
-    outputTokens: um.candidatesTokenCount ?? 0,
-  };
-
-  return { text, usage };
-}
-
-/**
- * 备用：调用 OpenRouter（Gemini Flash 免费模型）
- */
-async function callOpenRouter(
-  content: Array<Record<string, unknown>>
-): Promise<LlmCallResult> {
-  const response = await axios.post(
-    "https://openrouter.ai/api/v1/chat/completions",
-    {
-      model: "google/gemini-2.0-flash-001:free",
-      messages: [{ role: "user", content }],
-      max_tokens: 4096,
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://usedfarmmach.com",
-        "X-Title": "Seller Helper Deep Analysis",
-      },
-      timeout: 90000,
-    }
-  );
-  const result = response.data as any;
-  const text = result?.choices?.[0]?.message?.content || "";
-  if (!text || text.trim().length < 50) throw new Error("OpenRouter 返回空响应");
-  const usage = {
-    inputTokens: result.usage?.prompt_tokens ?? 0,
-    outputTokens: result.usage?.completion_tokens ?? 0,
-  };
-  return { text, usage };
 }
 
 /**
@@ -532,81 +408,27 @@ export async function POST(request: NextRequest) {
 
     const engineLabel = isChineseBrand ? "国内(DOMESTIC)" : "国际(INTERNATIONAL)";
 
-    // 站点感知：国内站 (.cn) 网络环境下优先且强制使用豆包，避免依赖 Google/OpenRouter
-    const site = process.env.SITE || process.env.NEXT_PUBLIC_SITE || "";
-    const isCnSite = site === "cn";
-    // 🔴 境外 AI 开关：.cn 一律禁用（数据不出境）。
-    // fail-closed：站点标识缺失（site 为空）时也按 .cn 处理，绝不放行。
-    const allowOverseasAi = site === "com";
-    console.log(`[DeepAnalysis] 引擎模式: ${engineLabel}, isChineseBrand: ${isChineseBrand}, site: ${site}, isCnSite: ${isCnSite}`);
-
     let analysisText = "";
     let modelUsed = "";
     let billingModel = "";
     let lastUsage = { inputTokens: 0, outputTokens: 0 };
     const errors: string[] = [];
 
-    // ===== 模型选择：国内站强制走豆包；国际站保持原策略 =====
-    // 国内站：豆包为首选+必选，Gemini/OpenRouter 仅作为降级（如果配了 key 且网络可达）
-    // 国际站：国内品牌或未定义时首选豆包；国际品牌跳过豆包直接走 Gemini
-    const shouldTryDoubao = isCnSite || isChineseBrand !== false;
-    if (shouldTryDoubao) {
-      if (ARK_API_KEY) {
-        try {
-          console.log(`[DeepAnalysis] 首选豆包: ${ARK_MODEL_ID}, 引擎: ${engineLabel}, 图片数: ${images.length}, 视频数: ${videoUrls.length}`);
-          const content = await buildDoubaoContent(images, videoUrls, activePrompt);
-          const res = await callDoubao(content);
-          analysisText = res.text;
-          lastUsage = res.usage;
-          billingModel = ARK_MODEL_ID;
-          modelUsed = `豆包 ${ARK_MODEL_ID} [${engineLabel}]`;
-        } catch (error: any) {
-          const msg = `[豆包] ${error.message || ""}`.substring(0, 150);
-          console.warn("[DeepAnalysis] 豆包失败:", msg);
-          errors.push(msg);
-        }
-      } else {
-        errors.push("[豆包] ARK_API_KEY未配置");
-      }
-    }
-
-    // Gemini：国际站国际品牌首选 / 豆包失败后降级。
-    // 🔴 .cn 站禁用：数据不出境（allowOverseasAi 为 false 时整段跳过）
-    if (!analysisText && GOOGLE_API_KEY && allowOverseasAi) {
-      try {
-        const geminiRole = isCnSite ? "国内站降级" : (isChineseBrand === false ? "国际首选" : "降级备用");
-        console.log(`[DeepAnalysis] Gemini ${geminiRole}, 引擎: ${engineLabel}`);
-        const res = await callGeminiDeep(images, videoUrls, activePrompt);
-        analysisText = res.text;
-        lastUsage = res.usage;
-        billingModel = "gemini-2.5-flash";
-        modelUsed = `Gemini 2.5 Flash [${engineLabel}]`;
-      } catch (error: any) {
-        const msg = `[Gemini] ${error.message || ""}`.substring(0, 150);
-        console.warn("[DeepAnalysis] Gemini 失败:", msg);
-        errors.push(msg);
-      }
-    } else if (!analysisText) {
-      errors.push(allowOverseasAi ? "[Gemini] GOOGLE_API_KEY未配置" : "[Gemini] 国内站禁用境外模型");
-    }
-
-    // 备用：OpenRouter（🔴 .cn 站禁用，数据不出境）
-    if (!analysisText && OPENROUTER_API_KEY && allowOverseasAi) {
-      try {
-        console.log(`[DeepAnalysis] 降级到 OpenRouter, 引擎: ${engineLabel}`);
-        const content = await buildDoubaoContent(images, [], activePrompt); // OpenRouter 不支持 video_url
-        const res = await callOpenRouter(content);
-        analysisText = res.text;
-        lastUsage = res.usage;
-        billingModel = "google/gemini-2.0-flash-001:free";
-        modelUsed = `OpenRouter Gemini Flash [${engineLabel}]`;
-      } catch (error: any) {
-        const msg = `[OpenRouter] ${error.message || ""}`.substring(0, 150);
-        console.warn("[DeepAnalysis] OpenRouter 失败:", msg);
-        errors.push(msg);
-      }
-    } else if (!analysisText) {
-      errors.push(allowOverseasAi ? "[OpenRouter] OPENROUTER_API_KEY未配置" : "[OpenRouter] 国内站禁用境外模型");
+    // 全站统一豆包（火山方舟 ARK）：.cn 直连国行、.com 经 B 通道代理（见 ark-client.ts）。
+    // 数据不出境红线：豆包为境内服务，.cn 数据不经境外。
+    try {
+      const model = getArkModelId();
+      console.log(`[DeepAnalysis] 首选豆包: ${model}, 引擎: ${engineLabel}, 图片数: ${images.length}, 视频数: ${videoUrls.length}`);
+      const content = await buildDoubaoContent(images, videoUrls, activePrompt);
+      const res = await callDoubao(content);
+      analysisText = res.text;
+      lastUsage = res.usage;
+      billingModel = model;
+      modelUsed = `豆包 ${model} [${engineLabel}]`;
+    } catch (error: any) {
+      const msg = `[豆包] ${error.message || ""}`.substring(0, 150);
+      console.warn("[DeepAnalysis] 豆包失败:", msg);
+      errors.push(msg);
     }
 
     if (!analysisText || analysisText.trim().length < 50) {
@@ -623,10 +445,12 @@ export async function POST(request: NextRequest) {
     const structured = extractStructured(analysisText);
 
     // ── 积分扣减（按 LLM token 实际消耗成本 × 2，反算积分）──
+    const billingCountry = await getBillingCountry(payload.userId);
     const cost: AiCostBreakdown = computeAiCost({
-      model: billingModel || ARK_MODEL_ID,
+      model: billingModel || getArkModelId(),
       inputTokens: lastUsage.inputTokens,
       outputTokens: lastUsage.outputTokens,
+      billingCountry,
     });
     const deduction = await deductCredits(
       payload.userId,

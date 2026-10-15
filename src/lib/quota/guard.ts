@@ -71,11 +71,12 @@ export async function ensureQuotaWindow(user: QuotaUser): Promise<QuotaUser> {
 async function writeUsageLog(
   userId: string,
   action: QuotaAction,
+  tier: string,
   periodStart: Date,
 ): Promise<void> {
   try {
     await prisma.usageLog.create({
-      data: { userId, action, periodStart },
+      data: { userId, action, tier, periodStart },
     });
   } catch (err) {
     // eslint-disable-next-line no-console
@@ -101,7 +102,7 @@ export async function consumeQuota(
   action: QuotaAction,
 ): Promise<ConsumeResult> {
   const fresh = await ensureQuotaWindow(user);
-  const limit = getQuotaLimit(action);
+  const limit = getQuotaLimit(fresh.membershipTier, action);
   const field = COUNTER_FIELD[action];
   const used = fresh[field] as number;
   const resetAt = nextMonthStart(new Date()).toISOString();
@@ -129,6 +130,7 @@ export async function consumeQuota(
   await writeUsageLog(
     fresh.id,
     action,
+    fresh.membershipTier,
     fresh.usagePeriodStart || startOfMonth(new Date()),
   );
 
@@ -166,7 +168,7 @@ export async function getQuotaState(user: QuotaUser): Promise<QuotaState> {
 
   const actions: QuotaAction[] = ["publish", "inquiry", "viewContact"];
   const items: QuotaItem[] = actions.map((action) => {
-    const limit = getQuotaLimit(action);
+    const limit = getQuotaLimit(user.membershipTier, action);
     const used = inWindow ? (user[COUNTER_FIELD[action]] as number) : 0;
     const remaining = limit === -1 ? -1 : Math.max(0, limit - used);
     return { action, used, limit, remaining };
@@ -193,4 +195,29 @@ export function quotaExceededResponse(resetAt: string, locale = "zh") {
     },
     { status: 403 },
   );
+}
+
+/**
+ * 回滚一次额度消费（双闸门：先 consumeQuota 后 deductCredits；
+ * 若积分不足则必须回滚，避免「额度被吃掉但动作未成」）。
+ * 递减对应计数器并删除最近一条该用户该动作的 UsageLog 流水。
+ */
+export async function rollbackQuota(
+  user: QuotaUser,
+  action: QuotaAction,
+): Promise<void> {
+  const field = COUNTER_FIELD[action];
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { [field]: { decrement: 1 } },
+  });
+  try {
+    const last = await prisma.usageLog.findFirst({
+      where: { userId: user.id, action },
+      orderBy: { createdAt: "desc" },
+    });
+    if (last) await prisma.usageLog.delete({ where: { id: last.id } });
+  } catch (err) {
+    console.error("[quota] rollbackQuota delete UsageLog failed:", err);
+  }
 }

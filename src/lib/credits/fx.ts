@@ -1,0 +1,119 @@
+/**
+ * 汇率 / 币种 / 国家解析（R-03 复用 + §3.10 / R-24 注册国感知计费）
+ *
+ * 方向约定：本模块所有汇率均为 **CNY → 本币**（与 config/exchange-rates.ts 的
+ * staticRates 方向一致，也契合 ExchangeRateService.getAllRates() 的 CNY 基准返回）。
+ *   R_d(c) = 1 CNY 可兑多少 c 本币。
+ *
+ * 计费公式（§3.10）：
+ *   points = round( 豆包 CNY 成本 × R_d(c) ÷ U(c) × 100 × 2 )
+ * 其中 U(c) = 计价单位（VND/IDR=1000，其余 1）。
+ *
+ * 本模块为服务端库，不进客户端包；所有函数为异步（读取库内实时汇率，失败回落代码兜底）。
+ */
+import { prisma } from "@/lib/db";
+import { exchangeRateService } from "@/lib/services/exchange-rate-service";
+import { UPDATE_STRATEGY } from "@/config/exchange-rates";
+
+/** 国家（ISO-3166 alpha-2，大写）→ 币种（R-03 代码兜底；运营可经 SystemConfig.currency_map 覆盖） */
+const COUNTRY_CURRENCY: Record<string, string> = {
+  CN: "CNY",
+  US: "USD",
+  GB: "GBP",
+  EU: "EUR",
+  DE: "EUR",
+  FR: "EUR",
+  ES: "EUR",
+  PT: "EUR",
+  RU: "RUB",
+  IN: "INR",
+  BR: "BRL",
+  KZ: "KZT",
+  VN: "VND",
+  ID: "IDR",
+  // 兜底（未知/缺失 → USD，与 R-05 失败默认值一致）
+  DEFAULT: "USD",
+};
+
+/** 币种 → 计价单位 U(c)（VND/IDR=1000，其余 1） */
+const CURRENCY_UNIT: Record<string, number> = {
+  VND: 1000,
+  IDR: 1000,
+};
+
+/** 静态兜底汇率表（CNY→本币，与 config/exchange-rates.ts staticRates 同源） */
+const STATIC_RATES: Record<string, number> =
+  (UPDATE_STRATEGY as unknown as {
+    fallbackStrategy: { staticRates: Record<string, number> };
+  }).fallbackStrategy.staticRates || {};
+
+/** 国家 → 币种 */
+export function getCurrencyOfCountry(country?: string | null): string {
+  if (!country) return COUNTRY_CURRENCY.DEFAULT;
+  const c = country.toUpperCase();
+  return COUNTRY_CURRENCY[c] ?? COUNTRY_CURRENCY.DEFAULT;
+}
+
+/** 币种 → 计价单位 U(c) */
+export function getUnit(currency: string): number {
+  return CURRENCY_UNIT[currency] ?? 1;
+}
+
+/** 同步兜底 R_d(c)（代码静态表），保证计费永不崩 */
+export function getRdSync(currency: string): number {
+  if (currency === "CNY") return 1;
+  if (currency in STATIC_RATES && STATIC_RATES[currency] > 0) return STATIC_RATES[currency];
+  return 1;
+}
+
+/**
+ * R_d(c)：CNY → 本币 实时汇率。
+ * 优先级：ExchangeRateService（库内实时，base=CNY）→ 同步静态兜底。
+ * .cn（CNY）恒返回 1。
+ */
+export async function getRd(currency: string): Promise<number> {
+  if (currency === "CNY") return 1;
+  try {
+    const all = await exchangeRateService.getAllRates();
+    const r = all.rates[currency];
+    if (typeof r === "number" && r > 0) return r;
+  } catch {
+    // 回落静态
+  }
+  return getRdSync(currency);
+}
+
+/**
+ * 解析用户注册锁定的计费国家（R-04/R-05）。
+ * 取 User.country（注册时锁定，登录 IP 不变更）；缺失/异常回落 DEFAULT（USD）。
+ */
+export async function getBillingCountry(userId?: string | null): Promise<string> {
+  if (!userId) return COUNTRY_CURRENCY.DEFAULT;
+  try {
+    const u = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { country: true },
+    });
+    return u?.country || COUNTRY_CURRENCY.DEFAULT;
+  } catch {
+    return COUNTRY_CURRENCY.DEFAULT;
+  }
+}
+
+/**
+ * 一次性解析计费所需的全部参数（国家/币种/单位/汇率）。
+ * 接收 userId 或已解析的 billingCountry；每请求调用一次即可。
+ */
+export async function getBillingParams(
+  userId?: string | null,
+  billingCountry?: string | null
+): Promise<{ country: string; currency: string; unit: number; rd: number }> {
+  const country = billingCountry || (await getBillingCountry(userId));
+  const currency = getCurrencyOfCountry(country);
+  return {
+    country,
+    currency,
+    unit: getUnit(currency),
+    rd: await getRd(currency),
+  };
+}

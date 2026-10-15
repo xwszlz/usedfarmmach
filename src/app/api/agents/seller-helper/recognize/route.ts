@@ -1,21 +1,19 @@
 // ───────────────────────────────────────────────
-// #8 卖家助手 Agent — 图片识别 API（双引擎版）
+// #8 卖家助手 Agent — 图片识别 API（统一豆包版）
 // 多模态 LLM 识别农机图片 → 品牌/型号/年份/工时/状况
 // POST /api/agents/seller-helper/recognize
 // Body: { imageUrls?: string[], imageDataUris?: string[], isChineseBrand?: boolean }
 //
-// 🔧 V2.1 升级（2026-07-12）：
-//   双引擎架构 — 国内农机用豆包(中文铭牌强) / 国际农机用Gemini(英文铭牌强)
+// 🔧 V1.3 升级（统一豆包 - 火山方舟 ARK）：
+//   全量统一到豆包多模态能力（.cn 直连 / .com 经 B 通道代理），不再使用 Gemini / OpenRouter。
 //   自动检测isChineseBrand并返回，贯通到深度分析和估值系统
 //
 // 🔧 Round6 更新（2026-07-06）保留：
-//   1. 豆包（火山引擎ARK）为第一优先模型（免费+快速）
+//   1. 豆包（火山引擎ARK）为唯一模型
 //   2. 支持 imageUrls（HTTP URL）输入格式
-//   3. Gemini 降为第二备用，OpenRouter 保持第三备选
 // ───────────────────────────────────────────────
 
 import { NextRequest, NextResponse } from "next/server";
-import { isOverseasAiAllowed } from "@/config/site";
 import axios from "axios";
 import { parseLocationText, buildLocationText } from "@/lib/location-parser";
 import { findCountryInText } from "@/lib/location-data";
@@ -25,47 +23,7 @@ import { prisma } from "@/lib/db";
 import { getUserFromRequest } from "@/lib/auth";
 import { computeAiCost, deductCredits, type AiCostBreakdown } from "@/lib/credits/spend";
 import { recordUsage, drainUsage, ESTIMATED_TOKENS } from "@/lib/credits/usage-collector";
-
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
-const OPENROUTER_BASE = "https://openrouter.ai/api/v1";
-const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || "";
-const GOOGLE_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
-
-// 豆包（火山引擎ARK）
-const ARK_API_KEY = process.env.ARK_API_KEY || "";
-const ARK_BASE_URL = process.env.ARK_BASE_URL || "https://ark.cn-beijing.volces.com/api/v3";
-const ARK_MODEL_ID = process.env.ARK_MODEL_ID || "doubao-seed-2-1-pro-260915";
-
-// 模型优先级链：豆包（免费主力）→ Gemini → OpenRouter 备选
-const MODEL_CHAIN = [
-  // ── 第一优先：豆包（火山引擎ARK，免费、快速） ──
-  {
-    provider: "ark" as const,
-    label: `豆包 ${ARK_MODEL_ID}`,
-  },
-  // ── 第二优先：Google Gemini（免费、稳定） ──
-  {
-    provider: "google" as const,
-    model: "gemini-2.5-flash",
-    label: "Gemini 2.5 Flash（免费）",
-  },
-  // ── 第三优先：OpenRouter 备选模型链 ──
-  {
-    provider: "openrouter" as const,
-    model: "google/gemini-2.0-flash-001:free",
-    label: "Gemini Flash via OpenRouter（免费）",
-  },
-  {
-    provider: "openrouter" as const,
-    model: "openai/gpt-4o-mini",
-    label: "GPT-4o-mini via OpenRouter",
-  },
-  {
-    provider: "openrouter" as const,
-    model: "anthropic/claude-haiku",
-    label: "Claude Haiku via OpenRouter",
-  },
-];
+import { chatCompletionDoubao, getArkModelId } from "@/lib/ai/ark-client";
 
 /** 从 referer / 路径推断 locale（与 quota guard 的 rechargeUrl 保持一致） */
 function getLocaleFromRequest(request: NextRequest): string {
@@ -399,58 +357,27 @@ async function buildDoubaoContent(
   return content;
 }
 
-// ── 调用豆包 API（OpenAI 兼容格式）──
+// ── 调用豆包 API（统一出口 chatCompletionDoubao，OpenAI 兼容格式）──
 async function callDoubao(content: Array<Record<string, unknown>>): Promise<string> {
-  const url = `${ARK_BASE_URL}/chat/completions`;
-  console.log(`[SellerHelper] 豆包调用: ${ARK_MODEL_ID}，图片数: ${content.length - 1}`);
+  const model = getArkModelId();
+  console.log(`[SellerHelper] 豆包调用: ${model}，图片数: ${content.length - 1}`);
 
-  const response = await axios.post(
-    url,
-    {
-      model: ARK_MODEL_ID,
-      messages: [{ role: "user", content }],
-      max_tokens: 2048, // 21个字段完整JSON需要更大输出空间
-      thinking: { type: "disabled" }, // ★ 关闭思考链：实测同图同prompt 63.0s -> 2.0s。豆包是思考型模型，reasoning_tokens 1692~3154 是唯一的超时来源（max_tokens 管不住它）
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${ARK_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      timeout: 75000, // 75秒（实测单张真实产品图需>60s：.com 同图 66.7s 成功；60s 卡在临界点导致 timeout of 60000ms exceeded 后 503。maxDuration=90，留 15s 序列化余量）
-    }
-  );
+  const result = await chatCompletionDoubao({
+    model,
+    maxTokens: 2048, // 21个字段完整JSON需要更大输出空间
+    messages: [{ role: "user", content }],
+  });
 
-  const result = response.data as any;
-
-  // ── 计费归集：HTTP 一成功就记账（token 已被消耗，与后续解析/error 判断无关）──
-  // 必须放在 if (result.error) throw 之前：throw 之后就没机会记录了。
+  // ── 计费归集：HTTP 一成功就记账（token 已被消耗，与后续解析是否成功无关）──
   const doubaoUsage = result?.usage;
   recordUsage(
-    ARK_MODEL_ID,
+    model,
     doubaoUsage?.prompt_tokens ?? ESTIMATED_TOKENS.input,
     doubaoUsage?.completion_tokens ?? ESTIMATED_TOKENS.output,
     { estimated: !doubaoUsage }
   );
 
-  const text = result.choices?.[0]?.message?.content || "";
-
-  if (result.error) {
-    throw new Error(`豆包API错误: ${result.error.message || JSON.stringify(result.error)}`);
-  }
-
-  return text;
-}
-
-// ── 构建 OpenRouter 格式的消息内容 ──
-function buildOpenRouterContent(images: string[], prompt: string) {
-  return [
-    { type: "text" as const, text: prompt },
-    ...images.map((url: string) => ({
-      type: "image_url" as const,
-      image_url: { url },
-    })),
-  ];
+  return result.text || "";
 }
 
 // ── 下载图片并转为 base64 ──
@@ -462,125 +389,6 @@ async function downloadImageAsBase64(url: string): Promise<{ mimeType: string; d
   const contentType = response.headers["content-type"] || "image/jpeg";
   const base64 = Buffer.from(new Uint8Array(response.data as ArrayBuffer)).toString("base64");
   return { mimeType: contentType.split(";")[0], data: base64 };
-}
-
-// ── 构建 Gemini 格式的消息内容 ──
-async function buildGeminiContent(images: string[], prompt: string) {
-  const parts: Array<Record<string, unknown>> = [{ text: prompt }];
-  for (const url of images) {
-    if (url.startsWith("data:")) {
-      const [mimeInfo, base64Data] = url.split(",");
-      const mimeType = mimeInfo.replace("data:", "").split(";")[0] || "image/jpeg";
-      parts.push({ inline_data: { mime_type: mimeType, data: base64Data } });
-    } else {
-      // 公开 URL → 下载后转 base64 inline_data（Gemini 不支持 file_url）
-      try {
-        const { mimeType, data } = await downloadImageAsBase64(url);
-        parts.push({ inline_data: { mime_type: mimeType, data } });
-      } catch (err: any) {
-        console.warn(`[SellerHelper] 下载图片失败 ${url}:`, err.message?.substring(0, 80));
-      }
-    }
-  }
-  return parts;
-}
-
-// ── 调用 OpenRouter API ──
-async function callOpenRouter(
-  model: string,
-  content: Array<Record<string, unknown>>
-): Promise<string> {
-  console.log(`[SellerHelper] OpenRouter 调用: ${model}，图片数: ${content.length - 1}`);
-
-  const response = await axios.post(
-    `${OPENROUTER_BASE}/chat/completions`,
-    {
-      model,
-      messages: [{ role: "user", content }],
-      response_format: { type: "json_object" },
-      max_tokens: 2048,
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://usedfarmmach.com",
-        "X-Title": "Seller Helper Agent",
-      },
-      timeout: 45000,
-    }
-  );
-
-  const result = response.data as any;
-
-  // ── 计费归集：HTTP 一成功就记账（token 已被消耗，与后续解析/error 判断无关）──
-  // model 用调用方传入的模型 id（= MODEL_CHAIN 的 entry.model，与 MODEL_PRICING 的 key 对齐）
-  const orUsage = result?.usage;
-  recordUsage(
-    model,
-    orUsage?.prompt_tokens ?? ESTIMATED_TOKENS.input,
-    orUsage?.completion_tokens ?? ESTIMATED_TOKENS.output,
-    { estimated: !orUsage }
-  );
-
-  const text = result.choices?.[0]?.message?.content || "";
-
-  if (result.error) {
-    throw new Error(`OpenRouter API 错误: ${result.error.message || JSON.stringify(result.error)}`);
-  }
-
-  return text;
-}
-
-// ── 调用 Gemini API ──
-async function callGemini(
-  model: string,
-  parts: Array<Record<string, unknown>>
-): Promise<string> {
-  const url = `${GOOGLE_BASE}/${model}:generateContent?key=${GOOGLE_API_KEY}`;
-  console.log(`[SellerHelper] Gemini 调用: ${url.substring(0, 60)}...，图片数: ${parts.length - 1}`);
-
-  const response = await axios.post(
-    url,
-    {
-      contents: [{ role: "user", parts }],
-      generationConfig: {
-        response_mime_type: "application/json",
-        max_output_tokens: 2048,
-      },
-    },
-    {
-      headers: { "Content-Type": "application/json" },
-      timeout: 45000,
-    }
-  );
-
-  const result = response.data as any;
-
-  // ── 计费归集：HTTP 一成功就记账（token 已被消耗，与后续安全过滤/解析是否成功无关）──
-  // 必须放在所有 throw 之前。model 用调用方传入的模型 id（主识别与「聚焦补识别」都会走这里 → 都记得到）
-  const geminiUsage = result?.usageMetadata;
-  recordUsage(
-    model,
-    geminiUsage?.promptTokenCount ?? ESTIMATED_TOKENS.input,
-    geminiUsage?.candidatesTokenCount ?? ESTIMATED_TOKENS.output,
-    { estimated: !geminiUsage }
-  );
-
-  if (result.promptFeedback?.blockReason) {
-    throw new Error(`Gemini 安全过滤: ${result.promptFeedback.blockReason}`);
-  }
-
-  const candidate = result.candidates?.[0];
-  if (!candidate) {
-    throw new Error("Gemini 无候选结果");
-  }
-
-  if (candidate.finishReason === "SAFETY") {
-    throw new Error("Gemini 安全拦截响应内容");
-  }
-
-  return candidate.content?.parts?.[0]?.text || "";
 }
 
 // ── 解析 AI 响应为结构化数据 ──
@@ -600,7 +408,7 @@ function parseAIResponse(aiText: string): Record<string, any> {
       recognized = { error: "无法解析 AI 响应" };
     }
   }
-  // 中文字段名 → 英文字段名映射（兼容 Gemini 等模型返回中文键的情况）
+  // 中文字段名 → 英文字段名映射（兼容多模态模型返回中文键的情况）
   const fieldMap: Record<string, string> = {
     "品牌": "brand",
     "型号": "modelName",
@@ -667,7 +475,7 @@ function parseAIResponse(aiText: string): Record<string, any> {
 
 /**
  * 构建品牌型号聚焦补识别 Prompt
- * 当主识别结果中 brand 或 modelName 缺失时，用此精简 Prompt 再调一次 Gemini
+ * 当主识别结果中 brand 或 modelName 缺失时，用此精简 Prompt 再调一次豆包（聚焦补识别）
  * 只要求返回 brand 和 modelName 两个字段，提高聚焦识别成功率
  */
 function buildBrandModelFallbackPrompt(isDomestic: boolean): string {
@@ -843,82 +651,31 @@ export async function POST(request: NextRequest) {
     const errors: string[] = [];
     let finalRecognized: Record<string, any> | null = null;
 
-    // 🔴 合规：.cn 站数据不出境 —— 只允许境内 provider（ark/豆包）
-    const allowOverseasAi = isOverseasAiAllowed();
-
-    for (const entry of MODEL_CHAIN) {
-      // 站点过滤：.cn 跳过一切境外模型（google / openrouter）
-      if (!allowOverseasAi && entry.provider !== "ark") {
-        errors.push(`[${entry.label}] 国内站禁用境外模型`);
-        continue;
-      }
-      // 检查 API Key 是否可用
-      if (entry.provider === "ark" && !ARK_API_KEY) {
-        errors.push("[豆包] ARK_API_KEY未配置");
-        continue;
-      }
-      if (entry.provider === "openrouter" && !OPENROUTER_API_KEY) {
-        errors.push("[OpenRouter] OPENROUTER_API_KEY未配置");
-        continue;
-      }
-      if (entry.provider === "google" && !GOOGLE_API_KEY) {
-        errors.push("[Gemini] GOOGLE_API_KEY未配置");
-        continue;
-      }
-
-      // 豆包不支持 base64 图片 → 如果只有base64则跳过豆包
-
-      console.log(`[SellerHelper] 尝试模型: ${entry.label}`);
-
-      try {
-        let aiText: string;
-
-        if (entry.provider === "ark") {
-          // 豆包：使用 OpenAI 兼容格式
-          const content = await buildDoubaoContent(images, videoUrls, activePrompt);
-          const imageParts = content.filter((c) => c.type === "image_url").length;
-    if (imageParts === 0) {
-            // 只有文字没有有效图片
-            lastError = new Error("豆包无有效图片输入");
-            errors.push("[豆包] 无有效图片输入");
-            continue;
-          }
-          aiText = await callDoubao(content);
-        } else if (entry.provider === "openrouter") {
-          const content = buildOpenRouterContent(images, activePrompt);
-          aiText = await callOpenRouter(entry.model!, content);
-        } else {
-          const parts = await buildGeminiContent(images, activePrompt);
-          aiText = await callGemini(entry.model!, parts);
-        }
-
+    // 全站统一豆包（火山方舟 ARK）：.cn 直连国行、.com 经 B 通道代理（见 ark-client.ts）。
+    // 数据不出境红线：豆包为境内服务，.cn 数据不经境外。
+    try {
+      const content = await buildDoubaoContent(images, videoUrls, activePrompt);
+      const imageParts = content.filter((c) => c.type === "image_url").length;
+      if (imageParts === 0) {
+        lastError = new Error("豆包无有效图片输入");
+        errors.push("[豆包] 无有效图片输入");
+      } else {
+        console.log(`[SellerHelper] 调用豆包识别（统一出口）`);
+        const aiText = await callDoubao(content);
         if (!aiText || aiText.trim().length < 10) {
-          console.warn(`[SellerHelper] ${entry.label} 返回空响应，尝试下一个`);
-          lastError = new Error(`${entry.label} 返回空响应`);
-          errors.push(`[${entry.label}] 返回空响应`);
-          continue;
+          lastError = new Error("豆包 返回空响应");
+          errors.push("[豆包] 返回空响应");
+        } else {
+          finalRecognized = parseAIResponse(aiText);
+          console.log(`[SellerHelper] 豆包识别成功，置信度: ${finalRecognized.confidence}`);
         }
-
-        finalRecognized = parseAIResponse(aiText);
-        console.log(`[SellerHelper] ${entry.label} 识别成功，置信度: ${finalRecognized.confidence}`);
-        break; // 成功，跳出循环
-
-      } catch (error: any) {
-        const statusCode = error?.response?.status;
-        const msg = `[${entry.label}] ${error.message || ""}`.substring(0, 120);
-        console.warn(`[SellerHelper] ${msg} (HTTP ${statusCode})`);
-        lastError = error;
-        errors.push(msg);
-
-        if (statusCode === 401 || statusCode === 403 || statusCode === 402) {
-          console.log(`[SellerHelper] ${entry.label} 权限不足(HTTP ${statusCode})，自动降级...`);
-          continue;
-        }
-        if (statusCode === 429) {
-          continue;
-        }
-        continue;
       }
+    } catch (error: any) {
+      const statusCode = error?.response?.status;
+      const msg = `[豆包] ${error.message || ""}`.substring(0, 120);
+      console.warn(`[SellerHelper] ${msg} (HTTP ${statusCode})`);
+      lastError = error;
+      errors.push(msg);
     }
 
     // 所有模型均失败
@@ -933,38 +690,33 @@ export async function POST(request: NextRequest) {
       }, { status: 503 });
     }
 
-    // 关键字段（brand/modelName）缺失时，用 Gemini 做一次聚焦补识别
+    // 关键字段（brand/modelName）缺失时，用豆包做一次聚焦补识别（仍是同一境内模型，无出境风险）
     if (!finalRecognized.brand || !finalRecognized.modelName) {
-      // 🔴 .cn 站禁用 Gemini 补识别（数据不出境）
-      if (GOOGLE_API_KEY && allowOverseasAi) {
-        try {
-          console.log("[SellerHelper] 关键字段缺失，启动 Gemini 聚焦补识别...");
-          const fallbackPrompt = buildBrandModelFallbackPrompt(useDomestic);
-          const parts = await buildGeminiContent(images, fallbackPrompt);
-          const fallbackText = await callGemini("gemini-2.5-flash", parts);
-          const fallback = parseAIResponse(fallbackText);
-          if (!finalRecognized.brand && fallback.brand) {
-            finalRecognized.brand = fallback.brand;
-            console.log("[SellerHelper] 补识别 brand 成功:", finalRecognized.brand);
-          }
-          if (!finalRecognized.modelName && fallback.modelName) {
-            finalRecognized.modelName = fallback.modelName;
-            console.log("[SellerHelper] 补识别 modelName 成功:", finalRecognized.modelName);
-          }
-        } catch (e: any) {
-          console.warn("[SellerHelper] 品牌型号补识别失败:", e?.message?.substring(0, 100));
+      try {
+        console.log("[SellerHelper] 关键字段缺失，启动豆包聚焦补识别...");
+        const fallbackPrompt = buildBrandModelFallbackPrompt(useDomestic);
+        const fallbackContent = await buildDoubaoContent(images, [], fallbackPrompt);
+        const fallbackText = await callDoubao(fallbackContent);
+        const fallback = parseAIResponse(fallbackText);
+        if (!finalRecognized.brand && fallback.brand) {
+          finalRecognized.brand = fallback.brand;
+          console.log("[SellerHelper] 补识别 brand 成功:", finalRecognized.brand);
         }
-      } else {
-        console.warn(`[SellerHelper] 关键字段缺失，跳过 Gemini 补识别（${allowOverseasAi ? "GOOGLE_API_KEY 未配置" : "国内站禁用境外模型"}）`);
+        if (!finalRecognized.modelName && fallback.modelName) {
+          finalRecognized.modelName = fallback.modelName;
+          console.log("[SellerHelper] 补识别 modelName 成功:", finalRecognized.modelName);
+        }
+      } catch (e: any) {
+        console.warn("[SellerHelper] 品牌型号补识别失败:", e?.message?.substring(0, 100));
       }
     }
 
     // ── 积分扣减（按 LLM token 实际消耗成本 × 2，反算积分）──
-    // 用量由三个 provider（豆包/Gemini/OpenRouter）在拿到 HTTP 响应后经 usage-collector 归集。
+    // 用量由豆包（唯一 provider）在拿到 HTTP 响应后经 usage-collector 归集。
     // 只扣一次：把本请求全部记录按模型算成本后求和，再一次 deductCredits。
     // 多图是「一次请求」（buildDoubaoContent 把 N 张图塞进同一个 content 数组），
     // 所以主识别最多 1 份 usage，**绝不按图片数重复计费**；
-    // 若走了 Gemini 聚焦补识别，会多 1 份 usage —— 那是同一次请求的第二次真实 LLM 调用，应计。
+    // 若走了豆包聚焦补识别，会多 1 份 usage —— 那是同一次请求的第二次真实 LLM 调用，应计。
     const usage = drainUsage();
     usageConsumed = true; // 已消费：finally 不再重复处理
     const perModel: AiCostBreakdown[] = usage.map((u) =>
@@ -972,6 +724,7 @@ export async function POST(request: NextRequest) {
         model: u.model,
         inputTokens: u.inputTokens,
         outputTokens: u.outputTokens,
+        billingCountry: user.country ?? undefined,
       })
     );
     const totalPoints = perModel.reduce((sum, c) => sum + c.points, 0);
