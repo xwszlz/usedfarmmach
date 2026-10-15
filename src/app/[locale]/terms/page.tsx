@@ -34,7 +34,7 @@ export default async function TermsPage({
         {translate("用户协议", locale)}
       </h1>
       <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-        {translate("最近更新日期：2026年7月17日 | 生效日期：2026年7月17日", locale)}
+        {translate("最近更新日期：2026年10月15日 | 生效日期：2026年10月15日", locale)}
       </p>
 
       <div className="prose prose-sm dark:prose-invert mt-8 max-w-none text-gray-700 dark:text-gray-300 leading-relaxed space-y-6">
@@ -77,7 +77,7 @@ function TermsContentZh() {
               <li>AI工程师认证体系</li>
               <li>行业研究与资讯内容</li>
               <li>零部件信息发布与询价</li>
-              <li>会员增值服务</li>
+              <li>AI 增值服务（按积分计费）</li>
             </ul>
           </li>
           <li>
@@ -244,31 +244,26 @@ function TermsContentZh() {
       </section>
 
       <section>
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">第十条　会员服务</h2>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">第十条　积分服务</h2>
         <ol className="list-decimal pl-6 space-y-2">
           <li>
-            <strong>会员等级：</strong>
-            本平台提供以下会员等级：
-            <ul className="list-disc pl-6 mt-1">
-              <li>免费会员（Free）：每日5次AI估值查询</li>
-              <li>基础会员（Basic）：99元/年，50次AI估值查询</li>
-              <li>高级会员（Premium）：299元/年，无限次AI估值查询</li>
-              <li>企业会员（Enterprise）：999元/年，无限次查询+企业专属功能</li>
-            </ul>
+            <strong>积分体系：</strong>
+            本平台不设会员等级。AI 功能（AI 估值、AI 智能识别、AI 深度分析等）按大模型 token
+            实际消耗计费，以「积分」预付结算：.cn 站 1 元 = 100 积分，.com 站 1 美元 = 100 积分。
+            单次消耗按该次调用的模型 token 实际成本 × 2 反算积分；扣减前展示预估门槛，扣减后展示本次消耗与剩余积分。
           </li>
           <li>
-            <strong>支付方式：</strong>
-            会员费通过对公转账方式收取。
-            具体收款账户信息将在您选择会员升级时展示。
+            <strong>充值方式：</strong>
+            .cn 站通过微信支付、支付宝充值，.com 站通过 Paddle 支付充值。积分实时到账，
+            充值及消耗记录可在「积分中心」查询。
           </li>
           <li>
-            <strong>退费政策：</strong>
-            会员服务为数字内容服务，一经开通不支持无理由退款。
-            如因平台原因导致会员服务无法正常使用，我们将按剩余服务期限比例退还会员费。
+            <strong>合规声明：</strong>
+            本服务为增值信息服务费，积分仅用于平台信息服务，不可提现、不可转让、不可退款。
           </li>
           <li>
-            <strong>会员义务：</strong>
-            会员不得将账号转让、出借给他人使用。如发现违规，我们有权封禁账号且不予退费。
+            <strong>账号义务：</strong>
+            账号不得转让、出借给他人使用。如发现违规，我们有权封禁账号且不予退还未使用积分。
           </li>
         </ol>
       </section>
@@ -397,7 +392,7 @@ function TermsContentCn() {
               <li>AI工程师认证体系</li>
               <li>行业研究与资讯内容</li>
               <li>零部件信息发布与询价</li>
-              <li>会员增值服务</li>
+              <li>AI 增值服务（按积分计费）</li>
             </ul>
           </li>
           <li>
@@ -564,31 +559,26 @@ function TermsContentCn() {
       </section>
 
       <section>
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">第十条　会员服务</h2>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">第十条　积分服务</h2>
         <ol className="list-decimal pl-6 space-y-2">
           <li>
-            <strong>会员等级：</strong>
-            本平台提供以下会员等级（按自然年计费）：
-            <ul className="list-disc pl-6 mt-1">
-              <li>免费会员（Free）：每日5次AI估值查询</li>
-              <li>基础会员（Basic）：99元/年，50次AI估值查询</li>
-              <li>高级会员（Premium）：299元/年，无限次AI估值查询</li>
-              <li>企业会员（Enterprise）：999元/年，无限次查询+企业专属功能</li>
-            </ul>
+            <strong>积分体系：</strong>
+            本平台不设会员等级。AI 功能（AI 估值、AI 智能识别、AI 深度分析等）按大模型 token
+            实际消耗计费，以「积分」预付结算：.cn 站 1 元 = 100 积分，.com 站 1 美元 = 100 积分。
+            单次消耗按该次调用的模型 token 实际成本 × 2 反算积分；扣减前展示预估门槛，扣减后展示本次消耗与剩余积分。
           </li>
           <li>
-            <strong>支付方式：</strong>
-            会员费通过<strong>微信小程序收发通（微信支付）</strong>收取。资金由微信支付直接清算至本平台商户账户，
-            <strong>平台不触碰、不中转用户资金</strong>；您亦可通过对公银行转账方式缴纳会员费，具体收款账户信息将在您选择会员升级时展示。
+            <strong>充值方式：</strong>
+            .cn 站通过微信支付、支付宝充值，.com 站通过 Paddle 支付充值。积分实时到账，
+            充值及消耗记录可在「积分中心」查询。
           </li>
           <li>
-            <strong>退费政策：</strong>
-            会员服务为数字内容服务，一经开通不支持无理由退款。
-            如因平台原因导致会员服务无法正常使用，我们将按剩余服务期限比例退还会员费。
+            <strong>合规声明：</strong>
+            本服务为增值信息服务费，积分仅用于平台信息服务，不可提现、不可转让、不可退款。
           </li>
           <li>
-            <strong>会员义务：</strong>
-            会员不得将账号转让、出借给他人使用。如发现违规，我们有权封禁账号且不予退费。
+            <strong>账号义务：</strong>
+            账号不得转让、出借给他人使用。如发现违规，我们有权封禁账号且不予退还未使用积分。
           </li>
         </ol>
       </section>

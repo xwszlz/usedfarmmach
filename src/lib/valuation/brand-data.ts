@@ -54,6 +54,18 @@ export const BRAND_COEFFICIENTS: Record<string, number> = {
   "SAME": 1.00, "萨美": 1.00,              // SDF走量子品牌
   "Hardi": 1.00, "哈迪": 1.00,             // 丹麦植保中坚
   "Mahindra": 0.88, "马恒达": 0.88,        // 印度经济型出口霸主
+  // === 进口 P2 长尾补齐 ===
+  "Zetor": 0.90, "泽特": 0.90,             // 捷克实用型拖拉机
+  "MTZ": 0.85, "明斯克": 0.85,              // 白俄罗斯经济型（全球保有量极大）
+  "Rostselmash": 0.88,                     // 俄系收割机龙头（"罗斯特"与国产青储机 0.45 撞名，仅挂英文键）
+  "Sampo": 0.95,                           // 芬兰（AGCO 旗下）
+  "Jacto": 0.85, "雅克托": 0.85,           // 巴西植保机械
+  "Iseki": 0.90, "井关": 0.90,             // 日本紧凑型
+  "Mitsubishi": 0.90, "三菱": 0.90,        // 日本
+  "BCS": 0.90,                             // 意大利专业拖拉机
+  "Goldoni": 0.92, "戈尔多尼": 0.92,       // 意大利特种高端
+  "Vermeer": 0.95, "弗米尔": 0.95,         // 美国特色机械
+  "Valtra": 1.10, "维尔特拉": 1.10,        // AGCO 高端（页面下拉早有、引擎缺失）
   // === 国产品牌 ===
   "东方红": 0.65,
   "Dongfanghong": 0.65,
@@ -113,6 +125,9 @@ export const CATEGORY_BASE_PRICES: Record<string, number> = {
   "裹包机": 30,      // 国产小裹包机基准，进口大型通过MODEL_BASE_PRICES覆盖
   "捡石机": 15,      // 降低：原20万
   "搂草机": 20,      // 降低：原35万
+  // 必须置于"收获机"之前：否则"花生收获机"被子串匹配吞掉拿到40万（收获机级），
+  // 而花生收获机新机实际仅5-15万，取中低端8万
+  "花生收获机": 8,
   "收获机": 40,      // 降低：原80万
   "拖拉机": 50,      // 降低：原100万
   "播种机": 30,      // 降低：原40万
@@ -129,6 +144,9 @@ export const CATEGORY_BASE_PRICES: Record<string, number> = {
   "风吸玉米脱粒机": 10,          // 降低：国产小型
   "自走式多功能牧草叉车": 25,    // 降低
   "粪污泵": 8,
+  // 必须置于"三花犁"之前：否则通用"犁"被子串匹配吞掉拿到8万（三花犁级），
+  // 通用铧式犁中低端取5万
+  "犁": 5,
   "三花犁": 8,
   "施肥机": 10,
   "喷洒机": 12,
@@ -139,6 +157,23 @@ export const CATEGORY_BASE_PRICES: Record<string, number> = {
   // === Phase B 新增品类 ===
   "免耕播种机": 70,     // Horsch/Väderstad/Amazone 新机60-120万
   "自走式植保机": 60,   // Amazone Pantera/Hardi 新机40-80万
+  // === 2026-10-15 品类键补齐 ===
+  // (a) 估值页国产下拉 15 品类：此前 10 个在 CATEGORY_BASE_PRICES / CATEGORY_MAPPING /
+  //     SUBSIDY_CATEGORY_PRICES 中全部无键，无马力机器一律落 800,000 默认价
+  // (b) Category 表 canonical 名（prisma/master-data/category.json）与估值表名对齐，
+  //     修复 resolve-category 归一后新品估值落空
+  "插秧机": 10,          // 进口高速插秧机（久保田/洋马）中低端新机
+  "旋耕机": 4,           // 进口旋耕机中低端新机
+  "穴播机": 4,
+  "条播机": 3,           // Category 表 canonical 名（code=seed_drill）
+  "秸秆粉碎还田机": 6,
+  "微型耕耘机": 2,       // 与微耕机同级（步行式微耕新机1-3万）
+  "微耕机": 2,
+  "田园管理机": 2,       // 步行式园艺管理机新机1-3万
+  "饲料粉碎机": 1,
+  "辅助驾驶系统设备": 5, // 北斗/迪尔自动驾驶系统中低端新机3-10万
+  "谷物联合收割机": 60,  // Category 表 canonical 名（code=combine）；进口联合收割机中低端
+  "青贮饲料收获机": 100, // Category 表 canonical 名（code=forage_harvester），与"青储机"同价
 };
 
 // 型号基准价格映射表（万元人民币）
@@ -295,19 +330,29 @@ export const HOURS_PARAMS = {
  *   >10000h：残值走平（接近机具底线）
  * 当提供真实工时即以此曲线作为主折旧因子，机龄仅作下限兜底，
  * 避免「机龄折旧」与「工时折旧」重复相乘导致过度贬值。
+ *
+ * [2026-10-14 专家校准重标定] 原曲线整体衰减过慢，较专家样本高估 45%~60%，
+ * 且缺少专家强调的「新车转二手一次性购置折价 20-25%」（原 0h=1.00 完全无折价）。
+ * 现按「专家纯曲线锚点」口径重标定：即剥离加装件溢价与发动机溢价后的纯折旧残值，
+ * 校准样本 DOUBAO-TTQ2004-20261014（天拖TTQ2004，补贴后到手价 18.5万）。
+ *   锚点  800h → 专家 0.607，本曲线 0.617（+1.6%）
+ *   锚点 1600h → 专家 0.512，本曲线 0.527（+2.9%）
+ *   锚点 2850h → 专家 0.431，本曲线 0.434（+0.8%）
+ * 注：本曲线只描述「工时→纯折旧」，不含区域/补贴退坡/成色等因子；
+ *     端到端估值仍可能因上述其他因子与专家结论存在偏差，属预期内、另行校准。
  */
 export const HOURS_DEPRECIATION_CURVE: { maxHours: number; residual: number }[] = [
-  { maxHours: 0,     residual: 1.00 },
-  { maxHours: 500,   residual: 0.92 },
-  { maxHours: 1000,  residual: 0.85 },
-  { maxHours: 2000,  residual: 0.75 },
-  { maxHours: 3000,  residual: 0.68 },
-  { maxHours: 5000,  residual: 0.58 },
-  { maxHours: 8000,  residual: 0.48 },
-  { maxHours: 10000, residual: 0.42 },
-  { maxHours: 12000, residual: 0.37 },
-  { maxHours: 15000, residual: 0.32 },
-  { maxHours: 20000, residual: 0.25 },
+  { maxHours: 0,     residual: 0.79 },  // 购置折价约21%（专家口径 20-25%）
+  { maxHours: 500,   residual: 0.665 },
+  { maxHours: 1000,  residual: 0.585 },
+  { maxHours: 2000,  residual: 0.488 },
+  { maxHours: 3000,  residual: 0.425 },
+  { maxHours: 5000,  residual: 0.360 },
+  { maxHours: 8000,  residual: 0.300 },
+  { maxHours: 10000, residual: 0.270 },
+  { maxHours: 12000, residual: 0.245 },
+  { maxHours: 15000, residual: 0.215 },
+  { maxHours: 20000, residual: 0.180 },
 ];
 
 /**
@@ -320,6 +365,7 @@ export const DOMESTIC_SUBSIDY_TO_HAND: Record<string, number> = {
   "拖拉机": 0.74,
   "轮式拖拉机": 0.74,
   "青储机": 0.80,
+  "青贮饲料收获机": 0.80, // Category 表 canonical 名，与"青储机"同口径
   "收割机": 0.82,
   "打捆机": 0.85,
   "default": 0.82,
@@ -332,9 +378,11 @@ export const DOMESTIC_SUBSIDY_TO_HAND: Record<string, number> = {
  */
 export const TRADE_CHANNEL_FACTORS: Record<string, number> = {
   "retail": 1.00,        // 零售挂牌价
-  "dealer": 0.88,        // 经销商收购价
-  "consignment": 0.85,   // 寄售委托价
-  "auction": 0.80,       // 拍卖成交价
+  "dealer": 0.88,        // 经销商/商贩收购价（专家隐含 0.861，偏差 +2.2%）
+  // 寄售：专家口径为「接近公允零售价，仅扣 3-5% 服务费」→ 0.95~0.97，取中 0.96。
+  // 原 0.85 等于额外多砍 15%，属过度折价，2026-10-14 按专家样本校准上调。
+  "consignment": 0.96,   // 寄售委托价（扣服务费后）
+  "auction": 0.80,       // 拍卖成交价（专家隐含 0.785，偏差 +1.9%）
   "default": 1.00,
 };
 
@@ -362,6 +410,215 @@ export function getEngineBrandPremium(engineBrand?: string): number {
     if (engineBrand.includes(key) || key.includes(engineBrand)) return val;
   }
   return 1.0;
+}
+
+// ============================================================
+// 分品类折旧参数（2026-10-14 专家校准 + ASABE/ORNL 权威系数）
+// ============================================================
+
+/**
+ * 品类年工时基准 A（h/年）。
+ * null = 该品类无发动机小时表（无动力配套农具/附件），不接受工时输入。
+ * 数据来源：中国实地调研（拖拉机 660、本地收割机 300、跨区 1000、播种 280、
+ * 植保 250、旋耕 380）与平台进口青储机挂牌实测（344，n=15）。
+ */
+export const CATEGORY_ANNUAL_HOURS: Record<string, number | null> = {
+  轮式拖拉机: 660,
+  拖拉机: 660,
+  青储机: 350,
+  青贮饲料收获机: 350,
+  收获机: 300,
+  收割机: 300,
+  谷物联合收割机: 300,
+  玉米收割机: 500,
+  玉米收获机: 500,
+  水稻收割机: 500,
+  插秧机: 250,
+  播种机: 280,
+  单粒精密播种机: 280,   // 类比播种机（同为播种作业机械）
+  穴播机: 280,
+  条播机: 280,
+  花生收获机: 300,       // 类比收获机/收割机（收割作业强度）
+  植保机: 250,
+  割草机: 350,
+  伸缩臂夹包机: 300,
+  自走式多功能牧草叉车: 300,
+  田园管理机: 200,       // 估算：步行式管理机果园/田园轻度使用（150-250h/年）
+  // 无发动机小时表：无动力配套农具与附件
+  旋耕机: null,
+  打捆机: null,
+  小方捆: null,
+  大方捆: null,
+  圆捆机: null,
+  割台: null,
+  捡拾台: null,
+  裹包机: null,
+  码垛机: null,
+  打包机: null,
+  搂草机: null,
+  秸秆处理机: null,
+  耕作机具: null,
+  微耕机: null,
+  微型耕耘机: null,      // 类比微耕机
+  犁: null,              // 无动力配套农具
+  秸秆粉碎还田机: null,  // 无自带动力，类比秸秆处理机
+  饲料粉碎机: null,      // 类比饲料加工机
+  辅助驾驶系统设备: null, // 电子设备，无发动机工时表
+  饲料加工机: null,
+  烘干机: null,
+  灌溉设备: null,
+  移栽机: null,
+  default: 500,
+};
+
+/**
+ * 逐品类 ASABE 残值系数 `RV = max(C1 − C2·√n − C3·√h, 0)²`
+ *   n = 机龄（年）；h = 年均工时；c3 = null 表示该类别无工时项（ASABE 原文：
+ *   only powered equipment has a coefficient on hours of annual use）。
+ * 来源：ANSI ASABE D497-4-2003，经美国能源部 ORNL Pub11927 明文指定类别归属。
+ *
+ * ⚠️ 青储机/青贮饲料收获机 归 **Swathers & all other harvest equipment**，
+ *    不是 Combines——用错会在 y10–y12 低估 33%~52%（青储机为平台第一大品类）。
+ *
+ * ╔══════════════════════════════════════════════════════════════════════╗
+ * ║ 🚫 用途声明：这是「参考模型」，**未接入估值主链路**，请勿直接调用。      ║
+ * ╚══════════════════════════════════════════════════════════════════════╝
+ * 主链路仍用 `DEPRECIATION_TABLE`(机龄) + `HOURS_DEPRECIATION_CURVE`(工时)，
+ * 本表只允许出现在校准报告的「外部模型参考列」。三条不接入的理由：
+ *  (a) 公式里的 h 是**年均工时**而非累计工时（ORNL Pub11927 Eq 2-4），因此
+ *      C3·√h 在整机寿命内是恒定项——ASABE 对单机工时差异只有约 ±5pp 的敏感度，
+ *      它撑不起「按工时定价」这条主链路（同一机龄不同工时几乎给出同一个残值）。
+ *  (b) 绝对水平不可信：各品类 C1² 跨度 0.545~1.281，联合收割机 C1²=1.281
+ *      （>100%，即 0 年机残值高于新机价），不能直接当残值率用。
+ *  (c) 即使把 C1² 归一化到 1.0 再代入唯一专家样本（天拖 TTQ2004，4 年 / 1600h），
+ *      仍与专家锚点差约 −23%，未通过专家校验。
+ * 参数表本身保留，供后续按品类标定 / 交叉验证时引用。
+ */
+export const CATEGORY_ASABE_PARAMS: Record<string, { c1: number; c2: number; c3: number | null }> = {
+  轮式拖拉机: { c1: 0.9756, c2: 0.1187, c3: 0.0019 },
+  拖拉机: { c1: 0.9756, c2: 0.1187, c3: 0.0019 },
+  其他拖拉机: { c1: 0.9421, c2: 0.0997, c3: 0.0008 },
+  手扶拖拉机: { c1: 0.9809, c2: 0.0934, c3: 0.0058 },
+  收获机: { c1: 1.1318, c2: 0.1645, c3: 0.0079 },
+  收割机: { c1: 1.1318, c2: 0.1645, c3: 0.0079 },
+  玉米收割机: { c1: 1.1318, c2: 0.1645, c3: 0.0079 },
+  玉米收获机: { c1: 1.1318, c2: 0.1645, c3: 0.0079 },
+  水稻收割机: { c1: 1.1318, c2: 0.1645, c3: 0.0079 },
+  // ★ 青储机 = Swathers，不是 Combines
+  青储机: { c1: 0.7911, c2: 0.0913, c3: null },
+  青贮饲料收获机: { c1: 0.7911, c2: 0.0913, c3: null },
+  茎穗双收: { c1: 0.7911, c2: 0.0913, c3: null },
+  茎穗兼收机: { c1: 0.7911, c2: 0.0913, c3: null },
+  甜菜机: { c1: 0.7911, c2: 0.0913, c3: null },
+  搂草机: { c1: 0.7911, c2: 0.0913, c3: null },
+  打捆机: { c1: 0.8521, c2: 0.1014, c3: null },
+  小方捆: { c1: 0.8521, c2: 0.1014, c3: null },
+  大方捆: { c1: 0.8521, c2: 0.1014, c3: null },
+  圆捆机: { c1: 0.8521, c2: 0.1014, c3: null },
+  裹包机: { c1: 0.8521, c2: 0.1014, c3: null },
+  打包机: { c1: 0.8521, c2: 0.1014, c3: null },
+  播种机: { c1: 0.8826, c2: 0.0778, c3: null },
+  割草机: { c1: 0.7557, c2: 0.0672, c3: null },
+  旋耕机: { c1: 0.891, c2: 0.11, c3: null },
+  耕作机具: { c1: 0.891, c2: 0.11, c3: null },
+  秸秆处理机: { c1: 0.891, c2: 0.11, c3: null },
+  捡石机: { c1: 0.891, c2: 0.11, c3: null },
+  插秧机: { c1: 0.8826, c2: 0.0778, c3: null },
+  移栽机: { c1: 0.8826, c2: 0.0778, c3: null },
+  植保机: { c1: 0.9427, c2: 0.1111, c3: null },
+  施肥机: { c1: 0.9427, c2: 0.1111, c3: null },
+  伸缩臂夹包机: { c1: 0.7858, c2: 0.0629, c3: 0.0033 },
+  自走式多功能牧草叉车: { c1: 0.7858, c2: 0.0629, c3: 0.0033 },
+  码垛机: { c1: 0.9427, c2: 0.1111, c3: null },
+  // 附件：取主机系数，无工时项
+  割台: { c1: 0.7911, c2: 0.0913, c3: null },
+  捡拾台: { c1: 0.7911, c2: 0.0913, c3: null },
+  default: { c1: 0.9427, c2: 0.1111, c3: null },
+};
+
+/** 启用 ASABE 机龄曲线的品类白名单。当前为空 —— 未经验证不得接入主链路。 */
+export const CATEGORY_ASABE_ENABLED: string[] = [];
+
+/**
+ * 四段机龄表的残值率（单一真源）。
+ * `formulas.ts` 的 calcYearFactor 与校准库的机龄锚点对比共用此实现，
+ * 避免两处各写一份导致口径漂移。逻辑与 DEPRECIATION_TABLE 严格对应：
+ *   0-3 年 7%/yr、4-7 年 8%/yr、8-12 年 7%/yr、13 年+ 5%/yr，最后夹到 MIN_RESIDUAL_RATIO。
+ */
+export function calcAgeTableResidual(ageYears: number): number {
+  if (ageYears <= 0) return 1.0;
+
+  let remaining = 1.0;
+  let yearsLeft = Math.min(ageYears, DEPRECIATION_TABLE[0].maxYear);
+  remaining -= yearsLeft * DEPRECIATION_TABLE[0].rate;
+
+  if (ageYears > DEPRECIATION_TABLE[0].maxYear) {
+    const start = DEPRECIATION_TABLE[0].maxYear;
+    const span = DEPRECIATION_TABLE[1].maxYear - DEPRECIATION_TABLE[0].maxYear;
+    yearsLeft = Math.min(ageYears - start, span);
+    remaining -= yearsLeft * DEPRECIATION_TABLE[1].rate;
+  }
+  if (ageYears > DEPRECIATION_TABLE[1].maxYear) {
+    const start = DEPRECIATION_TABLE[1].maxYear;
+    const span = DEPRECIATION_TABLE[2].maxYear - DEPRECIATION_TABLE[1].maxYear;
+    yearsLeft = Math.min(ageYears - start, span);
+    remaining -= yearsLeft * DEPRECIATION_TABLE[2].rate;
+  }
+  if (ageYears > DEPRECIATION_TABLE[2].maxYear) {
+    yearsLeft = ageYears - DEPRECIATION_TABLE[2].maxYear;
+    remaining -= yearsLeft * DEPRECIATION_TABLE[3].rate;
+  }
+
+  return Math.max(remaining, MIN_RESIDUAL_RATIO);
+}
+
+/**
+ * 轮式拖拉机机龄表的专家锚点保护上限（年）。
+ * 轮式拖拉机是唯一拥有外部专家基准（豆包 TTQ2004 报告）的品类：
+ * y1–y8 沿用已用专家样本标定的现行 `DEPRECIATION_TABLE`，y9+ 才切到 ASABE。
+ * 这样既保住端到端验证（10.14万 vs 专家 10.45万，−2.95%），又修掉 y10+ 的高龄机崩塌。
+ */
+export const TRACTOR_EXPERT_AGE_MAX_YEAR = 8;
+
+/** 模糊匹配取品类年工时基准（null 表示不接受工时输入） */
+export function getCategoryAnnualHours(category?: string): number | null {
+  if (!category) return CATEGORY_ANNUAL_HOURS.default;
+  if (category in CATEGORY_ANNUAL_HOURS) return CATEGORY_ANNUAL_HOURS[category];
+  for (const key of Object.keys(CATEGORY_ANNUAL_HOURS)) {
+    if (key === "default") continue;
+    if (category.includes(key) || key.includes(category)) return CATEGORY_ANNUAL_HOURS[key];
+  }
+  return CATEGORY_ANNUAL_HOURS.default;
+}
+
+/** 模糊匹配取品类 ASABE 系数 */
+export function getCategoryAsabeParams(
+  category?: string
+): { c1: number; c2: number; c3: number | null } {
+  if (!category) return CATEGORY_ASABE_PARAMS.default;
+  if (category in CATEGORY_ASABE_PARAMS) return CATEGORY_ASABE_PARAMS[category];
+  for (const key of Object.keys(CATEGORY_ASABE_PARAMS)) {
+    if (key === "default") continue;
+    if (category.includes(key) || key.includes(category)) return CATEGORY_ASABE_PARAMS[key];
+  }
+  return CATEGORY_ASABE_PARAMS.default;
+}
+
+/**
+ * ASABE 残值计算（带护栏）。
+ * 内层必须 >= 0，否则平方项会让残值反弹、模型反向（"越残旧越值钱"）。
+ * 结果再夹到 [MIN_RESIDUAL_RATIO, 1]。
+ */
+export function calcAsabeResidual(
+  params: { c1: number; c2: number; c3: number | null },
+  ageYears: number,
+  annualHours: number | null
+): number {
+  const n = Math.max(ageYears, 0);
+  const hoursTerm = params.c3 != null && annualHours ? params.c3 * Math.sqrt(Math.max(annualHours, 0)) : 0;
+  const base = params.c1 - params.c2 * Math.sqrt(n) - hoursTerm;
+  const rv = Math.pow(Math.max(base, 0), 2);
+  return Math.min(Math.max(rv, MIN_RESIDUAL_RATIO), 1);
 }
 
 /** 获取买卖渠道折算系数（模糊匹配） */
@@ -451,8 +708,19 @@ export const CATEGORY_MAPPING: Record<string, string> = {
   "收获机": "收割机",
   "收割机": "收割机",
   "青储机": "收割机",
+  // Category 表 canonical 名 → 补贴数据品类（2026-10-15 补齐）
+  "青贮饲料收获机": "收割机",
+  "谷物联合收割机": "收割机",
+  "玉米收获机": "玉米收割机",
   "打捆机": "秸秆处理机",
   "播种机": "播种机",
+  "单粒精密播种机": "播种机",
+  "穴播机": "播种机",
+  "条播机": "播种机",
+  "犁": "耕作机具",
+  "秸秆粉碎还田机": "秸秆处理机",
+  "微型耕耘机": "微耕机",
+  "饲料粉碎机": "饲料加工机",
   "旋耕机": "旋耕机",
   "植保机": "植保机",
   "插秧机": "插秧机",

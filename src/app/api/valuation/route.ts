@@ -645,6 +645,21 @@ export async function POST(request: NextRequest) {
     // 只扣一次：把全部记录按模型分组算成本后求和，再一次 deductCredits。
     // 无论如何都要 drain：模块级数组是本进程的，游客/异常分支不 drain 会跨请求串账。
     const usage = drainUsage();
+    // 回传给前端的计费摘要（本请求无 LLM 用量时为 undefined，前端不展示"本次消耗"）
+    let billing:
+      | {
+          points: number;
+          balance?: number;
+          deducted: boolean;
+          models: Array<{
+            model: string;
+            inputTokens: number;
+            outputTokens: number;
+            points: number;
+            estimated: boolean;
+          }>;
+        }
+      | undefined;
     if (authUserId) {
       const perModel: AiCostBreakdown[] = usage.map((u) =>
         computeAiCost({
@@ -678,6 +693,22 @@ export async function POST(request: NextRequest) {
         console.error(
           `[Valuation] 计费失败 user=${authUserId} required=${deduction.required} balance=${deduction.credits}`
         );
+      }
+
+      // 有用量才回传：无 LLM 调用（纯参数估值）时 points=0，前端无需展示
+      if (usage.length > 0) {
+        billing = {
+          points: totalPoints,
+          balance: deduction.credits,
+          deducted: deduction.ok,
+          models: perModel.map((c, i) => ({
+            model: c.model,
+            inputTokens: c.inputTokens,
+            outputTokens: c.outputTokens,
+            points: c.points,
+            estimated: usage[i]?.estimated === true,
+          })),
+        };
       }
     }
 
@@ -725,7 +756,8 @@ export async function POST(request: NextRequest) {
 
       data: result,
 
-
+      // token 计费摘要（本请求无 LLM 用量时为 undefined；供前端展示"本次消耗 N 积分"）
+      billing,
 
       // V4 额外元信息
 

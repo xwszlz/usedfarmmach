@@ -35,7 +35,7 @@ export default async function PrivacyPage({
         {translate("隐私政策", locale)}
       </h1>
       <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-        {translate("最近更新日期：2026年7月17日 | 生效日期：2026年7月17日", locale)}
+        {translate("最近更新日期：2026年10月15日 | 生效日期：2026年10月15日", locale)}
       </p>
 
       <div className="prose prose-sm dark:prose-invert mt-8 max-w-none text-gray-700 dark:text-gray-300 leading-relaxed space-y-6">
@@ -109,9 +109,9 @@ function PrivacyContentZh() {
               <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">小程序用户身份识别</td>
             </tr>
             <tr>
-              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">会员支付信息</td>
-              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">会员等级、充值记录（支付由持牌支付机构处理，我们不存储完整支付凭证）</td>
-              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">会员服务管理</td>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">积分充值信息</td>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">积分充值记录、积分消耗记录（支付由持牌支付机构处理，我们不存储完整支付凭证）</td>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">积分服务管理</td>
             </tr>
             <tr>
               <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">设备与技术信息</td>
@@ -173,7 +173,7 @@ function PrivacyContentZh() {
             <tr>
               <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">银行对公转账</td>
               <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">汇款备注信息（由银行直接处理）</td>
-              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">会员费收取</td>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">积分充值收款</td>
             </tr>
           </tbody>
         </table>
@@ -336,7 +336,7 @@ function PrivacyContentZh() {
             用于产品产地展示和筛选。该信息基于用户自愿提供，不会用于其他目的。
           </li>
           <li>
-            <strong>支付信息：</strong>会员费通过对公转账方式收取，
+            <strong>支付信息：</strong>积分充值可通过对公转账方式收取，
             我们不接触、不存储您的完整支付凭证（银行卡号、支付密码等）。
           </li>
         </ul>
@@ -566,9 +566,9 @@ function PrivacyContentCn() {
               <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">小程序用户身份识别与登录态维持</td>
             </tr>
             <tr>
-              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">会员支付信息</td>
-              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">会员等级、订单与充值记录（支付由微信支付/微信收付通处理，我们不存储完整支付凭证）</td>
-              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">会员服务管理与订单对账</td>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">积分充值信息</td>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">积分充值记录、订单与积分消耗记录（支付由微信支付/微信收付通处理，我们不存储完整支付凭证）</td>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">积分服务管理与订单对账</td>
             </tr>
             <tr>
               <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">设备与技术信息</td>
@@ -626,8 +626,8 @@ function PrivacyContentCn() {
             </tr>
             <tr>
               <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">微信支付 / 微信收付通</td>
-              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">会员订单与支付流水（由微信侧处理）</td>
-              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">会员订单收取与支付清算</td>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">积分充值订单与支付流水（由微信侧处理）</td>
+              <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">积分充值订单收取与支付清算</td>
               <td className="border border-gray-200 dark:border-gray-700 px-3 py-2">中国（微信支付境内主体）</td>
             </tr>
           </tbody>
@@ -647,7 +647,7 @@ function PrivacyContentCn() {
         <ul className="list-disc pl-6 space-y-2 mt-2">
           <li><strong>用户个人信息与产品数据：</strong>存储于阿里云 ECS 本地部署的 PostgreSQL 数据库，地域为河北省 / 北京。</li>
           <li><strong>图片数据：</strong>存储于阿里云 OSS，地域为北京。</li>
-          <li><strong>会员订单与支付流水：</strong>由微信支付 / 微信收付通在中国境内处理。</li>
+          <li><strong>积分充值订单与支付流水：</strong>由微信支付 / 微信收付通在中国境内处理。</li>
         </ul>
         <p className="mt-2">
           <strong>不向境外传输：</strong>我们<strong>不向任何境外接收方传输</strong>您的个人信息。
@@ -744,7 +744,7 @@ function PrivacyContentCn() {
             用于产品产地展示和筛选。该信息基于用户自愿提供，不会用于其他目的。
           </li>
           <li>
-            <strong>支付信息：</strong>会员费通过微信支付 / 微信收付通收取，
+            <strong>支付信息：</strong>积分充值通过微信支付 / 微信收付通收取，
             我们不接触、不存储您的完整支付凭证（银行卡号、支付密码等）。
           </li>
         </ul>
