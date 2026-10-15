@@ -46,7 +46,6 @@ export default function PublishNewPage() {
   const [cats, setCats] = useState<Opt[]>([]);
   const [brands, setBrands] = useState<Opt[]>([]);
   const [form, setForm] = useState({ ...INITIAL });
-  const [brandId, setBrandId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [done, setDone] = useState(false);
@@ -149,7 +148,7 @@ export default function PublishNewPage() {
         <div className="mt-6 flex justify-center gap-3">
           <Link href={`/${locale}/expo/showroom`} className="rounded-lg bg-red-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-red-700">查看我的展品</Link>
           <button
-            onClick={() => { setDone(false); setForm({ ...INITIAL }); setBrandId(null); }}
+            onClick={() => { setDone(false); setForm({ ...INITIAL }); }}
             className="rounded-lg border px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">再发一台</button>
         </div>
       </div>
