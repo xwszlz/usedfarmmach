@@ -536,7 +536,12 @@ export const CATEGORY_ASABE_PARAMS: Record<string, { c1: number; c2: number; c3:
   default: { c1: 0.9427, c2: 0.1111, c3: null },
 };
 
-/** 启用 ASABE 机龄曲线的品类白名单。当前为空 —— 未经验证不得接入主链路。 */
+/**
+ * [已弃用] 原 ASABE 机龄曲线品类白名单。
+ * y9+ 切换现由 `isAsabeAgeEnabled(category)` 基于 `CATEGORY_ASABE_PARAMS` 是否存在
+ * 非 default 专属系数来判定，新增 ASABE 系数即自动纳入，无需维护此白名单。
+ * 保留空数组仅为兼容可能的历史引用，不再参与主链路判定。
+ */
 export const CATEGORY_ASABE_ENABLED: string[] = [];
 
 /**
@@ -545,8 +550,15 @@ export const CATEGORY_ASABE_ENABLED: string[] = [];
  * 避免两处各写一份导致口径漂移。逻辑与 DEPRECIATION_TABLE 严格对应：
  *   0-3 年 7%/yr、4-7 年 8%/yr、8-12 年 7%/yr、13 年+ 5%/yr，最后夹到 MIN_RESIDUAL_RATIO。
  */
-export function calcAgeTableResidual(ageYears: number): number {
+export function calcAgeTableResidual(ageYears: number, category?: string): number {
   if (ageYears <= 0) return 1.0;
+
+  // y9+（机龄 > TRACTOR_EXPERT_AGE_MAX_YEAR）启用 ASABE 残值曲线替代机龄表外推，
+  // 修复高龄机（y10+）残值崩塌至 MIN_RESIDUAL_RATIO 的问题。
+  // 仅对「拥有专属 ASABE 系数」的品类生效（按 CATEGORY_ASABE_PARAMS 是否存在非 default 项判定）。
+  if (ageYears > TRACTOR_EXPERT_AGE_MAX_YEAR && isAsabeAgeEnabled(category)) {
+    return calcAsabeResidual(getCategoryAsabeParams(category), ageYears, null);
+  }
 
   let remaining = 1.0;
   let yearsLeft = Math.min(ageYears, DEPRECIATION_TABLE[0].maxYear);
@@ -579,6 +591,21 @@ export function calcAgeTableResidual(ageYears: number): number {
  * 这样既保住端到端验证（10.14万 vs 专家 10.45万，−2.95%），又修掉 y10+ 的高龄机崩塌。
  */
 export const TRACTOR_EXPERT_AGE_MAX_YEAR = 8;
+
+/**
+ * 品类是否启用「y9+ 切 ASABE 机龄曲线」。
+ * 判定依据：该品类在 `CATEGORY_ASABE_PARAMS` 中是否存在专属系数（非 `default` 兜底）。
+ * 这样新增 ASABE 系数即自动纳入 y9+ 切换，无需另行维护白名单，且与校准库共用同一真源。
+ */
+export function isAsabeAgeEnabled(category?: string): boolean {
+  if (!category) return false;
+  if (category in CATEGORY_ASABE_PARAMS) return category !== "default";
+  for (const key of Object.keys(CATEGORY_ASABE_PARAMS)) {
+    if (key === "default") continue;
+    if (category.includes(key) || key.includes(category)) return true;
+  }
+  return false;
+}
 
 /** 模糊匹配取品类年工时基准（null 表示不接受工时输入） */
 export function getCategoryAnnualHours(category?: string): number | null {

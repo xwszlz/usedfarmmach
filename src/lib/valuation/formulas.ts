@@ -381,11 +381,12 @@ function getDataDrivenBasePrice(
 /**
  * 计算年份折旧因子
  */
-function calcYearFactor(year: number, currentYear: number): number {
+function calcYearFactor(year: number, currentYear: number, category?: string): number {
   const age = currentYear - year;
   if (age <= 0) return 1.0;
   // 四段机龄表的唯一实现在 brand-data.calcAgeTableResidual（与校准库共用同一口径）
-  return calcAgeTableResidual(age);
+  // 传入 category 以支持 y9+ 切 ASABE 残值曲线
+  return calcAgeTableResidual(age, category);
 }
 
 /**
@@ -457,7 +458,7 @@ export function calcCombinedDepreciation(
   /** 实际参与工时曲线的工时（含合成值）；未走工时曲线时为 null。展示层必须用它，不能再用 input.workingHours。 */
   effectiveHours: number | null;
 } {
-  const ageFactor = calcYearFactor(year, currentYear);
+  const ageFactor = calcYearFactor(year, currentYear, category);
   const annualHours = getCategoryAnnualHours(category);
 
   let hoursForCurve = workingHours;
