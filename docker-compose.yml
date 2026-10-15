@@ -30,6 +30,8 @@ services:
       - ./deploy/nginx/conf.d:/etc/nginx/conf.d:ro
       # SSL 证书挂载（Let's Encrypt / 阿里云 DV）：将证书放到 ./deploy/nginx/ssl/cn/
       - ./deploy/nginx/ssl:/etc/nginx/ssl:ro
+      # Let's Encrypt HTTP-01 挑战文件（certbot 写主机侧，nginx 容器读，见 renew-cn-ssl.sh）
+      - ./deploy/nginx/certbot-webroot:/var/www/certbot:ro
     depends_on:
       - app
     restart: unless-stopped
