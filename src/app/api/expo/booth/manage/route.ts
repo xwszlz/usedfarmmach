@@ -58,7 +58,12 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { id, deviceType, brand, model, year, workingHours, condition, price, currency, images, videos, description } = body;
+    const {
+      id, deviceType, brand, brandId, model, series, year, launchYear, workingHours, condition, price,
+      msrpCny, msrpUsd, currency, origin, isChineseMade, machineTier, priceRange, images, videos, description,
+      descriptionZh, descriptionEn, descriptionRu, descriptionEs, descriptionFr, descriptionPt, descriptionHi, descriptionAr,
+      brochureUrl, arModelUrl, specs, country, itemType, isNewLaunch,
+    } = body;
 
     if (!deviceType) {
       return NextResponse.json({ success: false, error: "请填写设备类型" }, { status: 400 });
@@ -73,7 +78,15 @@ export async function POST(req: NextRequest) {
       }
       item = await prisma.showcaseItem.update({
         where: { id },
-        data: { deviceType, brand, model, year, workingHours, condition, price, currency, images: images || [], videos: videos || [], description },
+        data: {
+          deviceType, brand, brandId: brandId ?? null, model, series: series ?? null, year, launchYear: launchYear ?? null,
+          workingHours, condition, price, msrpCny: msrpCny ?? null, msrpUsd: msrpUsd ?? null, currency, origin: origin ?? null,
+          isChineseMade: isChineseMade ?? null, machineTier: machineTier ?? null, priceRange: priceRange ?? null,
+          images: images || [], videos: videos || [], description,
+          descriptionZh, descriptionEn, descriptionRu, descriptionEs, descriptionFr, descriptionPt, descriptionHi, descriptionAr,
+          brochureUrl: brochureUrl ?? null, arModelUrl: arModelUrl ?? null, specs: specs ?? null, country: country ?? null,
+          itemType: itemType || undefined, isNewLaunch: isNewLaunch ?? undefined,
+        },
       });
     } else {
       // 新增展品
@@ -86,15 +99,38 @@ export async function POST(req: NextRequest) {
           boothId: booth.id,
           deviceType,
           brand: brand || user.companyName,
+          brandId: brandId ?? null,
           model: model || "",
+          series: series ?? null,
           year: year || null,
+          launchYear: launchYear ?? null,
           workingHours: workingHours || null,
           condition: condition || "used",
           price: price || null,
+          msrpCny: msrpCny ?? null,
+          msrpUsd: msrpUsd ?? null,
           currency: currency || "CNY",
+          origin: origin ?? null,
+          isChineseMade: isChineseMade ?? null,
+          machineTier: machineTier ?? null,
+          priceRange: priceRange ?? null,
           images: images || [],
           videos: videos || [],
           description: description || "",
+          descriptionZh: descriptionZh || null,
+          descriptionEn: descriptionEn || null,
+          descriptionRu: descriptionRu || null,
+          descriptionEs: descriptionEs || null,
+          descriptionFr: descriptionFr || null,
+          descriptionPt: descriptionPt || null,
+          descriptionHi: descriptionHi || null,
+          descriptionAr: descriptionAr || null,
+          brochureUrl: brochureUrl ?? null,
+          arModelUrl: arModelUrl ?? null,
+          specs: specs ?? null,
+          country: country ?? null,
+          itemType: itemType || "used",
+          isNewLaunch: isNewLaunch ?? false,
           status: "draft",
           sortIndex: (maxSort?.sortIndex || 0) + 1,
         },

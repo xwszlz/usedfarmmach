@@ -864,7 +864,7 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
             {t.subtitle}
           </p>
           <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link href={`/${locale}/seller/products/new`}>
+            <Link href={`/${locale}/seller/publish-new`}>
               <Button size="lg" className={`w-full text-white sm:w-auto ${S.cta}`}>
                 {t.cta}
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -1092,7 +1092,7 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
         <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
           <h2 className="mb-3 text-3xl font-bold text-gray-900">{t.selfPublishCta}</h2>
           <p className="mx-auto mb-8 max-w-2xl text-gray-600">{t.selfPublishDesc}</p>
-          <Link href={`/${locale}/seller/products/new`}>
+          <Link href={`/${locale}/seller/publish-new`}>
             <Button size="lg" className={`text-white ${S.cta}`}>
               {t.cta}
               <ArrowRight className="ml-2 h-4 w-4" />
