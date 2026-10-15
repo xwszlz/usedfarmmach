@@ -6556,14 +6556,14 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "fr": "Politique de confidentialité",
     "hi": "गोपनीयता नीति",
   },
-  "最近更新日期：2026年7月17日 | 生效日期：2026年7月17日": {
-    "en": "Last updated: July 17, 2026 | Effective date: July 17, 2026",
-    "ru": "Дата последнего обновления: 17 июля 2026 г. | Дата вступления в силу: 17 июля 2026 г.",
-    "es": "Fecha de última actualización: 17 de julio de 2026 | Fecha de entrada en vigor: 17 de julio de 2026",
-    "pt": "Data de atualização mais recente: 17 de julho de 2026 | Data de entrada em vigor: 17 de julho de 2026",
-    "ar": "تاريخ آخر تحديث: 2026年7月17日 | تاريخ النفاذ: 2026年7月17日",
-    "fr": "Date de mise à jour récente : 17 juillet 2026 | Date d'entrée en vigueur : 17 juillet 2026",
-    "hi": "अंतिम अद्यतन तिथि: 2026年7月17日 | प्रभावी तिथि: 2026年7月17日",
+  "最近更新日期：2026年10月15日 | 生效日期：2026年10月15日": {
+    "en": "Last updated: October 15, 2026 | Effective date: October 15, 2026",
+    "ru": "Дата последнего обновления: 15 октября 2026 г. | Дата вступления в силу: 15 октября 2026 г.",
+    "es": "Fecha de última actualización: 15 de octubre de 2026 | Fecha de entrada en vigor: 15 de octubre de 2026",
+    "pt": "Data de atualização mais recente: 15 de outubro de 2026 | Data de entrada em vigor: 15 de outubro de 2026",
+    "ar": "تاريخ آخر تحديث: 2026年10月15日 | تاريخ النفاذ: 2026年10月15日",
+    "fr": "Date de mise à jour récente : 15 octobre 2026 | Date d'entrée en vigueur : 15 octobre 2026",
+    "hi": "अंतिम अद्यतन तिथि: 2026年10月15日 | प्रभावी तिथि: 2026年10月15日",
   },
   "增值服务_AI估值_跨境物流_金融保险_一站式农机解决方案_神雕农机": {
     "en": "Value-Added Services | AI Valuation · Logistics · Finance · One-Stop Agri Solutions",
