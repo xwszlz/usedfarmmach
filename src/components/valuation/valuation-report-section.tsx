@@ -42,11 +42,23 @@ export interface ValuationReportResult {
   channelPrices?: Record<string, number>;   // retail/dealer/consignment/auction
 }
 
+export interface DeepAnalysisStructured {
+  conditionScores?: Record<string, number | null>;
+  engineType?: string | null;
+  driveSystem?: string | null;
+  netWeight?: string | number | null;
+  mainConfig?: string | null;
+  overallLength?: string | number | null;
+  overallWidth?: string | number | null;
+  overallHeight?: string | number | null;
+}
+
 interface ValuationReportSectionProps {
   channel: "domestic" | "international" | "export";
   meta: ValuationReportMeta;
   result: ValuationReportResult;
   intelligence?: ValuationIntelligence | null;
+  deepAnalysis?: DeepAnalysisStructured | null;
   locale?: string;
 }
 
@@ -121,6 +133,7 @@ export default function ValuationReportSection({
   meta,
   result,
   intelligence,
+  deepAnalysis,
   locale = "zh",
 }: ValuationReportSectionProps) {
   const [copied, setCopied] = useState(false);
@@ -269,6 +282,44 @@ export default function ValuationReportSection({
           .join("")}</ul></div>`
       : "";
 
+    // ── P3：复用上方「AI 深度分析」的结构化结果，注入技术参数表 + 六维车况评分条 ──
+    const deepTechRows: [string, string][] = [];
+    if (deepAnalysis?.engineType) deepTechRows.push([zh ? "发动机型号" : "Engine", String(deepAnalysis.engineType)]);
+    if (deepAnalysis?.driveSystem) deepTechRows.push([zh ? "驱动方式" : "Drive", String(deepAnalysis.driveSystem)]);
+    if (deepAnalysis?.netWeight) deepTechRows.push([zh ? "整机重量" : "Weight", `${deepAnalysis.netWeight} kg`]);
+    if (deepAnalysis?.mainConfig) deepTechRows.push([zh ? "主要配置" : "Config", String(deepAnalysis.mainConfig)]);
+    if (deepAnalysis?.overallLength && deepAnalysis?.overallWidth)
+      deepTechRows.push([
+        zh ? "外形尺寸" : "Dimensions",
+        `${deepAnalysis.overallLength}x${deepAnalysis.overallWidth}${deepAnalysis.overallHeight ? `x${deepAnalysis.overallHeight}` : ""} mm`,
+      ]);
+    const deepTechCard = deepTechRows.length
+      ? `<div class="card"><h3>${zh ? "深度分析 · 技术参数" : "Deep-Analysis Technical Specs"}</h3><table>${deepTechRows
+          .map(([k, v]) => `<tr><td class="k">${esc(k)}</td><td>${esc(v)}</td></tr>`)
+          .join("")}</table></div>`
+      : "";
+
+    const deepCondDef: [string, string][] = [
+      ["exterior", zh ? "外观漆面" : "Exterior"],
+      ["rust", zh ? "锈蚀程度" : "Rust"],
+      ["tires", zh ? "轮胎/履带" : "Tires"],
+      ["cabin", zh ? "驾驶室/操作台" : "Cabin"],
+      ["hydraulic", zh ? "液压渗漏" : "Hydraulic"],
+      ["overall", zh ? "整体印象" : "Overall"],
+    ];
+    const deepCondHtml =
+      deepAnalysis?.conditionScores
+        ? `<div class="card"><h3>${zh ? "深度分析 · 设备现状评估（六维度）" : "Deep-Analysis Condition"}</h3>${deepCondDef
+            .map(([key, label]) => {
+              const score = deepAnalysis.conditionScores?.[key];
+              if (score === undefined || score === null) return "";
+              const pct = (Number(score) / 10) * 100;
+              const color = Number(score) >= 8 ? "#10b981" : Number(score) >= 6 ? "#f59e0b" : "#ef4444";
+              return `<div class="cond-row"><span class="cond-label">${esc(label)}</span><div class="cond-track"><div class="cond-fill" style="width:${pct}%;background:${color}"></div></div><span class="cond-score" style="color:${color}">${score}/10</span></div>`;
+            })
+            .join("")}</div>`
+        : "";
+
     const html = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -316,6 +367,11 @@ td.num { text-align: right; font-weight: 600; white-space: nowrap; }
 .warn li { font-size: 12px; color: #92400e; line-height: 1.8; }
 .miss { color: #dc2626; font-weight: 600; }
 .footer { margin-top: 20px; padding-top: 14px; border-top: 1px solid #e5e7eb; font-size: 11px; color: #9ca3af; text-align: center; }
+.cond-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.cond-label { width: 96px; font-size: 12px; color: #4b5563; }
+.cond-track { flex: 1; height: 8px; border-radius: 999px; background: #f3f4f6; }
+.cond-fill { height: 100%; border-radius: 999px; }
+.cond-score { width: 40px; text-align: right; font-size: 12px; font-weight: 700; }
 @media print { body { background: white; padding: 0; } }
 </style>
 </head>
@@ -341,6 +397,8 @@ ${chart}
 ${channelCard}
 ${nameplateCard}
 ${missingCard}
+${deepTechCard}
+${deepCondHtml}
 ${warnings}
 <div class="footer">${zh ? "神雕农机 usedfarmmach.com" : "ShenDiao Agri Machinery"} | ${zh ? "本报告由AI生成，仅供参考，不构成交易建议" : "AI-generated, for reference only"} | ${reportId}</div>
 </body>
