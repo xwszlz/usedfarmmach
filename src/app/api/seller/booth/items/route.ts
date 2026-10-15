@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
   }
 
   let itemData: Record<string, unknown> = {
-    boothId,
+    boothId: booth.id,
     status: "published",
   };
 
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
 
   // Get next sortIndex
   const maxSort = await prisma.showcaseItem.aggregate({
-    where: { boothId },
+    where: { boothId: booth.id },
     _max: { sortIndex: true },
   });
 
