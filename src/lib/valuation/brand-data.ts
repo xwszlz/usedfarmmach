@@ -608,6 +608,27 @@ export const CATEGORY_ASABE_ENABLED: string[] = [
  * `formulas.ts` 的 calcYearFactor 与校准库的机龄锚点对比共用此实现，
  * 避免两处各写一份导致口径漂移。逻辑与 DEPRECIATION_TABLE 严格对应：
  *   0-3 年 7%/yr、4-7 年 8%/yr、8-12 年 7%/yr、13 年+ 5%/yr，最后夹到 MIN_RESIDUAL_RATIO。
+ *
+ * ⚠️ 数学形式分两段（`AGE_TABLE_LINEAR_MAX_YEAR` = 8 为界）：
+ *
+ *  - **y1–y8 线性减法**（保持历史行为，一位不变）。这段是全系统唯一有外部专家
+ *    锚点的区间（豆包 TTQ2004 报告：10.14万 vs 专家 10.45万，−2.95%），
+ *    没有依据不得改动。
+ *
+ *  - **y9+ 逐段乘性复利** `r *= (1-rate)^years`。原实现在全段用线性减法，
+ *    产生两个可证伪的错误：
+ *      (a) 名义费率被严重高估——y12 实际衰减 36.84%，而名义写的是 7%；
+ *      (b) y13 触底 MIN_RESIDUAL_RATIO(0.10) 后**永久锁死**，13 年的机与
+ *          40 年的机估值完全相同（硬 bug，非观点问题）。
+ *    改复利后 y13 从 0.1000 升至 0.2843，且此后继续逐年递减，不再锁死。
+ *
+ * 换复利后 y13=0.2843，与两个独立外部参照对齐：
+ *  - ASABE D497 Balers 曲线在 y13 给 0.2367（偏低 17%）
+ *  - 麦赛福格森 2170XD 大方捆 13 年实测残值 0.315（偏低 10%）
+ * 参见 `docs/机龄表复利改造评估.md` 的完整推导与取舍。
+ *
+ * 未采用「全表 y1-y20 改复利」的原因：它会把 y7 上移 22.6%、y8 上移 34%，
+ * 作废唯一的专家锚点，且 y13 给到 0.3808——比实测市场证据（0.315）高 21%。
  */
 export function calcAgeTableResidual(ageYears: number, category?: string): number {
   if (ageYears <= 0) return 1.0;
@@ -625,29 +646,54 @@ export function calcAgeTableResidual(ageYears: number, category?: string): numbe
     return calcAsabeResidual(getCategoryAsabeParams(category), ageYears, annualHours);
   }
 
-  let remaining = 1.0;
-  let yearsLeft = Math.min(ageYears, DEPRECIATION_TABLE[0].maxYear);
-  remaining -= yearsLeft * DEPRECIATION_TABLE[0].rate;
+  if (ageYears <= AGE_TABLE_LINEAR_MAX_YEAR) {
+    // ── y1–y8：线性减法（历史行为，逐位保持不变）──
+    let remaining = 1.0;
+    let yearsLeft = Math.min(ageYears, DEPRECIATION_TABLE[0].maxYear);
+    remaining -= yearsLeft * DEPRECIATION_TABLE[0].rate;
 
-  if (ageYears > DEPRECIATION_TABLE[0].maxYear) {
-    const start = DEPRECIATION_TABLE[0].maxYear;
-    const span = DEPRECIATION_TABLE[1].maxYear - DEPRECIATION_TABLE[0].maxYear;
-    yearsLeft = Math.min(ageYears - start, span);
-    remaining -= yearsLeft * DEPRECIATION_TABLE[1].rate;
+    if (ageYears > DEPRECIATION_TABLE[0].maxYear) {
+      const start = DEPRECIATION_TABLE[0].maxYear;
+      const span = DEPRECIATION_TABLE[1].maxYear - DEPRECIATION_TABLE[0].maxYear;
+      yearsLeft = Math.min(ageYears - start, span);
+      remaining -= yearsLeft * DEPRECIATION_TABLE[1].rate;
+    }
+    if (ageYears > DEPRECIATION_TABLE[1].maxYear) {
+      const start = DEPRECIATION_TABLE[1].maxYear;
+      const span = DEPRECIATION_TABLE[2].maxYear - DEPRECIATION_TABLE[1].maxYear;
+      yearsLeft = Math.min(ageYears - start, span);
+      remaining -= yearsLeft * DEPRECIATION_TABLE[2].rate;
+    }
+    return Math.max(remaining, MIN_RESIDUAL_RATIO);
   }
-  if (ageYears > DEPRECIATION_TABLE[1].maxYear) {
-    const start = DEPRECIATION_TABLE[1].maxYear;
-    const span = DEPRECIATION_TABLE[2].maxYear - DEPRECIATION_TABLE[1].maxYear;
-    yearsLeft = Math.min(ageYears - start, span);
-    remaining -= yearsLeft * DEPRECIATION_TABLE[2].rate;
-  }
-  if (ageYears > DEPRECIATION_TABLE[2].maxYear) {
-    yearsLeft = ageYears - DEPRECIATION_TABLE[2].maxYear;
-    remaining -= yearsLeft * DEPRECIATION_TABLE[3].rate;
+
+  // ── y9+：以 y8 的线性残值为起点，按各段在 (y8, age] 区间上的重叠年数逐段复利 ──
+  // 关键点：必须用**区间重叠**而非「从段起点算起」，否则 y9 会把4-7 段也乘进去，
+  // 造成 y8→y9 的假跳变（0.4000 → 0.1994）。
+  const base = calcAgeTableResidual(AGE_TABLE_LINEAR_MAX_YEAR, category);
+  let remaining = base;
+  for (let i = 0; i < DEPRECIATION_TABLE.length; i++) {
+    const segStart = i === 0 ? 0 : DEPRECIATION_TABLE[i - 1].maxYear;
+    const segEnd = DEPRECIATION_TABLE[i].maxYear;
+    const overlap =
+      Math.min(ageYears, segEnd) - Math.max(AGE_TABLE_LINEAR_MAX_YEAR, segStart);
+    if (overlap > 0) remaining *= Math.pow(1 - DEPRECIATION_TABLE[i].rate, overlap);
   }
 
   return Math.max(remaining, MIN_RESIDUAL_RATIO);
 }
+
+/**
+ * 机龄表「线性减法 / 乘性复利」的分界机龄（年，含）。
+ *
+ * = y8，即 `TRACTOR_EXPERT_AGE_MAX_YEAR`。y1–y8 沿用线性减法以保住唯一的外部
+ * 专家锚点（豆包 TTQ2004）；y9 起改乘性复利，消除 y13+ 触底锁死。
+ *
+ * 独立命名而非直接复用 `TRACTOR_EXPERT_AGE_MAX_YEAR`：后者语义是「拖拉机专家
+ * 样本的保护上限」，而此处是「机龄表数学形式的分界」，两者当前同为 8 但含义不同，
+ * 日前者调整不应隐式改变后者。
+ */
+export const AGE_TABLE_LINEAR_MAX_YEAR = 8;
 
 /**
  * 轮式拖拉机机龄表的专家锚点保护上限（年）。
