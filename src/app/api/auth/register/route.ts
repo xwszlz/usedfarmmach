@@ -70,6 +70,11 @@ export async function POST(request: NextRequest) {
         emailVerified: false,
         // 数据出境单独同意留痕：仅 .com 站且真实勾选时才写入时间戳；.cn 无条件为 null（即使客户端伪造传 true 也不写）
         consentCrossBorderAt: isComSite() && dataCrossBorderConsent ? new Date() : null,
+        // R-05 前置：记录注册来源 IP（合规留痕；计费国以 country 为准，currency 由 country 派生）
+        registerIp:
+          (request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+            request.headers.get("x-real-ip") ||
+            null),
         credits: 0,
         freeValuationsUsed: 0,
       },

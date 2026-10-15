@@ -1,111 +1,18 @@
 /**
  * AI估值引擎 V4 — 多模态图片分析模块
- * 
- * 使用多模态LLM分析产品图片，输出视觉成色评分
- * 支持多个API提供商：Google Gemini（免费）、OpenRouter（付费）
+ *
+ * 使用统一豆包（火山方舟 ARK）视觉能力分析产品图片，输出视觉成色评分。
+ * 全站 AI 统一出口：src/lib/ai/ark-client.ts#chatCompletionDoubao
+ *   - .cn 直连国行 ARK（数据不出境红线不动）
+ *   - .com 经 HK/SG 代理节点（B 通道）代调国行（详见 ark-client.ts / 设计稿 §3.6 E-1）
+ *
+ * 模型：ARK_VISION_MODEL_ID（默认回退 ARK_MODEL_ID），部署侧按方舟视觉能力模型填。
  */
 
-import axios from "axios";
-import { isOverseasAiAllowed } from "@/config/site";
+import { chatCompletionDoubao, getArkVisionModelId } from "@/lib/ai/ark-client";
 import { recordUsage, ESTIMATED_TOKENS } from "@/lib/credits/usage-collector";
 
-const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || "";
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
-const OPENROUTER_BASE = "https://openrouter.ai/api/v1";
-
-// 模型标识：必须与 src/lib/credits/spend.ts 的 MODEL_PRICING 键一致（改模型要同步改两边）
-const GEMINI_MODEL = "gemini-1.5-flash";
-const OPENROUTER_VISION_MODEL = "meta-llama/llama-3.2-11b-vision-instruct";
-
-// 🔴 合规：.cn 站数据不出境 —— Gemini / OpenRouter 均为境外服务，一律禁用。
-// 模块级常量：站点在进程生命周期内不变，可安全提升到模块作用域。
-const ALLOW_OVERSEAS_AI = isOverseasAiAllowed();
-
-// 优先使用 Google Gemini（免费），其次使用 OpenRouter（仅 .com 可用）
-const USE_GOOGLE_PRIMARY = GOOGLE_API_KEY !== "" && ALLOW_OVERSEAS_AI;
-const USE_OPENROUTER = OPENROUTER_API_KEY !== "" && ALLOW_OVERSEAS_AI;
-
-export interface ImageAnalysisResult {
-  conditionScore: number;      // 成色评分 1-10
-  conditionLabel: string;       // 成色标签：优秀/良好/一般/较差
-  analysis: string;             // 评估依据
-  confidence: number;           // 置信度 0-1
-  isDefault?: boolean;          // 是否为默认分析结果（未调用LLM）
-}
-
-export interface VisualValuationResult {
-  visualConditionScore: number;    // 视觉成色评分 1-10
-  visualConditionAnalysis: string;  // 视觉评估依据
-  imageConfidence: number;         // 图片分析置信度
-  usedV4Condition: boolean;       // 是否使用了V4视觉成色
-}
-
-/**
- * 分析产品图片，评估设备成色
- * 
- * @param imageUrl 产品图片URL（OSS URL）
- * @returns ImageAnalysisResult 图片分析结果
- */
-export async function analyzeProductImage(
-  imageUrl: string
-): Promise<ImageAnalysisResult> {
-  console.log(`[ImageAnalyzer] ========== 开始分析图片 ==========`);
-  console.log(`[ImageAnalyzer] 图片URL: ${imageUrl}`);
-  console.log(`[ImageAnalyzer] API配置状态:`, {
-    hasGoogleKey: !!GOOGLE_API_KEY,
-    hasOpenRouterKey: !!OPENROUTER_API_KEY,
-    allowOverseasAi: ALLOW_OVERSEAS_AI,
-    useGooglePrimary: USE_GOOGLE_PRIMARY
-  });
-
-  // 优先使用 Google Gemini（免费）
-  if (USE_GOOGLE_PRIMARY) {
-    console.log(`[ImageAnalyzer] 使用 Google Gemini API（免费）`);
-    try {
-      const result = await analyzeWithGoogleGemini(imageUrl);
-      console.log(`[ImageAnalyzer] ========== 图片分析完成（Gemini） ==========`);
-      return result;
-    } catch (error: any) {
-      console.error(`[ImageAnalyzer] Google Gemini 调用失败:`, error?.message || String(error));
-      console.log(`[ImageAnalyzer] 尝试降级到 OpenRouter...`);
-      // 如果Google失败且有OpenRouter密钥，尝试降级
-      if (USE_OPENROUTER) {
-        try {
-          const result = await analyzeWithOpenRouter(imageUrl);
-          return result;
-        } catch (err) {
-          console.error(`[ImageAnalyzer] OpenRouter 降级也失败，使用默认分析`);
-          return getDefaultAnalysis();
-        }
-      }
-      return getDefaultAnalysis();
-    }
-  }
-
-  // 降级到 OpenRouter（仅 .com）
-  if (USE_OPENROUTER) {
-    console.log(`[ImageAnalyzer] 使用 OpenRouter API`);
-    try {
-      const result = await analyzeWithOpenRouter(imageUrl);
-      console.log(`[ImageAnalyzer] ========== 图片分析完成（OpenRouter） ==========`);
-      return result;
-    } catch (error: any) {
-      console.error(`[ImageAnalyzer] OpenRouter 调用失败:`, error?.message || String(error));
-      return getDefaultAnalysis();
-    }
-  }
-
-  console.warn("[ImageAnalyzer] 无可用API密钥，使用降级方案");
-  return getDefaultAnalysis();
-}
-
-/**
- * 使用 Google Gemini API 分析图片
- */
-async function analyzeWithGoogleGemini(imageUrl: string): Promise<ImageAnalysisResult> {
-  console.log(`[ImageAnalyzer] 调用 Google Gemini API...`);
-  
-  const prompt = `你是一位资深二手农业机械评估专家，熟悉各类农机设备的成色评估标准。
+const IMAGE_PROMPT = `你是一位资深二手农业机械评估专家，熟悉各类农机设备的成色评估标准。
 请仔细分析这张农机设备图片，评估设备的成色状态。
 
 重要要求：
@@ -133,238 +40,92 @@ JSON字段说明：
 
 注意：评估要客观公正，基于图片实际状况，confidence取决于图片清晰度和可见范围`;
 
-  const requestBody = {
-    contents: [{
-      parts: [
-        { text: prompt },
-        {
-          inline_data: {
-            mime_type: "image/jpeg",
-            data: await fetchImageAsBase64(imageUrl)
-          }
-        }
-      ]
-    }],
-    generationConfig: {
-      maxOutputTokens: 800,
-      temperature: 0.4
-    }
-  };
+export interface ImageAnalysisResult {
+  conditionScore: number;      // 成色评分 1-10
+  conditionLabel: string;       // 成色标签：优秀/良好/一般/较差
+  analysis: string;             // 评估依据
+  confidence: number;           // 置信度 0-1
+  isDefault?: boolean;          // 是否为默认分析结果（未调用LLM）
+}
 
-  console.log(`[ImageAnalyzer] Gemini 请求体准备完成`);
-  
-  const response = await axios.post(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GOOGLE_API_KEY}`,
-    requestBody,
-    {
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      timeout: 45000
-    }
-  );
-
-  console.log(`[ImageAnalyzer] Gemini API 调用成功！`);
-  console.log(`[ImageAnalyzer] 响应状态:`, response.status);
-
-  // ── 计费归集：HTTP 一成功就记账（token 已被消耗，与后续 JSON 解析是否成功无关）──
-  const geminiUsage = (response.data as any).usageMetadata;
-  recordUsage(
-    GEMINI_MODEL,
-    geminiUsage?.promptTokenCount ?? ESTIMATED_TOKENS.input,
-    geminiUsage?.candidatesTokenCount ?? ESTIMATED_TOKENS.output,
-    { estimated: !geminiUsage }
-  );
-
-  const candidates = (response.data as any).candidates || [];
-  if (candidates.length === 0) {
-    throw new Error('Gemini API 返回空结果');
-  }
-
-  const aiText = candidates[0].content?.parts?.[0]?.text || '';
-  console.log(`[ImageAnalyzer] AI 返回文本长度: ${aiText.length}`);
-  console.log(`[ImageAnalyzer] AI 返回文本预览: ${aiText.substring(0, 200)}`);
-
-  let result: Partial<ImageAnalysisResult> = {};
-  try {
-    console.log(`[ImageAnalyzer] 尝试解析 JSON...`);
-    result = JSON.parse(aiText);
-    console.log(`[ImageAnalyzer] JSON 解析成功:`, result);
-  } catch (e) {
-    console.error(`[ImageAnalyzer] JSON 解析失败:`, e);
-    console.log(`[ImageAnalyzer] 尝试从文本中提取 JSON...`);
-    const jsonMatch = aiText.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      console.log(`[ImageAnalyzer] 找到 JSON 匹配，尝试解析...`);
-      result = JSON.parse(jsonMatch[0]);
-      console.log(`[ImageAnalyzer] 提取的 JSON 解析成功:`, result);
-    } else {
-      console.error(`[ImageAnalyzer] 未找到 JSON 匹配`);
-      throw new Error('无法解析 AI 返回的 JSON');
-    }
-  }
-
-  // 验证和规范化结果
-  const finalResult = {
-    conditionScore: Math.max(1, Math.min(10, Number(result.conditionScore) || 5)),
-    conditionLabel: result.conditionLabel || "一般",
-    analysis: result.analysis || "AI分析未完成",
-    confidence: Math.max(0, Math.min(1, Number(result.confidence) || 0.5)),
-  };
-  console.log(`[ImageAnalyzer] 最终结果:`, finalResult);
-  
-  return finalResult;
+export interface VisualValuationResult {
+  visualConditionScore: number;    // 视觉成色评分 1-10
+  visualConditionAnalysis: string;  // 视觉评估依据
+  imageConfidence: number;         // 图片分析置信度
+  usedV4Condition: boolean;       // 是否使用了V4视觉成色
 }
 
 /**
- * 使用 OpenRouter API 分析图片（降级方案）
- */
-async function analyzeWithOpenRouter(imageUrl: string): Promise<ImageAnalysisResult> {
-  console.log(`[ImageAnalyzer] 调用 OpenRouter API...`);
-  console.log(`[ImageAnalyzer] API Endpoint: ${OPENROUTER_BASE}/chat/completions`);
-  
-  // 下载图片并转为 base64（provider 可能无法直接访问 OSS URL）
-  console.log(`[ImageAnalyzer] 下载图片并转为 base64...`);
-  const base64Image = await fetchImageAsBase64(imageUrl);
-  console.log(`[ImageAnalyzer] 图片 base64 长度: ${base64Image.length}`);
-  
-  const requestBody = {
-    model: "meta-llama/llama-3.2-11b-vision-instruct",
-    messages: [
-      {
-        role: "user",
-        content: [
-          {
-            type: "text",
-            text: `你是一位资深二手农业机械评估专家，熟悉各类农机设备的成色评估标准。
-请仔细分析这张农机设备图片，评估设备的成色状态。
-
-重要要求：
-1. 必须以纯JSON格式返回结果，不要有任何其他文字、说明或markdown标记
-2. 返回格式必须是有效的JSON，可以被JSON.parse()解析
-3. 不要使用\`\`\`json\`\`\`包装，直接返回JSON对象
-
-JSON字段说明：
-{
-  "conditionScore": 成色评分（1-10分，10分为全新状态）,
-  "conditionLabel": "成色标签（优秀/良好/一般/较差）",
-  "analysis": "详细的评估依据，描述设备外观、磨损、锈蚀等情况",
-  "confidence": 置信度（0-1之间的小数）
-}
-
-评估标准：
-- 9-10分：设备外观接近全新，无明显磨损、锈蚀或损伤
-- 7-8分：设备保养良好，有轻微使用痕迹，无结构性损伤
-- 5-6分：设备有明显使用痕迹，可能有轻度锈蚀或磨损，但不影响使用
-- 3-4分：设备磨损较重，可能有明显锈蚀或需要维修的部分
-- 1-2分：设备状况很差，可能需要大修或已接近报废
-
-示例输出：
-{"conditionScore": 7, "conditionLabel": "良好", "analysis": "设备整体状况良好，有轻微使用痕迹，油漆完整，无重大锈蚀", "confidence": 0.85}
-
-注意：评估要客观公正，基于图片实际状况，confidence取决于图片清晰度和可见范围`,
-          },
-          {
-            type: "image_url",
-            image_url: { url: `data:image/jpeg;base64,${base64Image}` },
-          },
-        ],
-      },
-    ],
-    max_tokens: 800,
-  };
-  
-  console.log(`[ImageAnalyzer] 请求体预览:`, JSON.stringify(requestBody, null, 2).substring(0, 500) + '...');
-  
-  const response = await axios.post(
-    `${OPENROUTER_BASE}/chat/completions`,
-    requestBody,
-    {
-      headers: {
-        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://usedfarmmach.com",
-        "X-Title": "Valuation Engine V4",
-      },
-      timeout: 45000,
-    }
-  );
-
-  console.log(`[ImageAnalyzer] API 调用成功！`);
-  console.log(`[ImageAnalyzer] 响应状态:`, response.status);
-
-  // ── 计费归集：OpenRouter 走 OpenAI 兼容 usage 字段 ──
-  const routerUsage = (response.data as any).usage;
-  recordUsage(
-    OPENROUTER_VISION_MODEL,
-    routerUsage?.prompt_tokens ?? ESTIMATED_TOKENS.input,
-    routerUsage?.completion_tokens ?? ESTIMATED_TOKENS.output,
-    { estimated: !routerUsage }
-  );
-
-  const aiText = (response.data as any).choices?.[0]?.message?.content || "";
-  console.log(`[ImageAnalyzer] AI 返回文本长度: ${aiText.length}`);
-  console.log(`[ImageAnalyzer] AI 返回文本预览: ${aiText.substring(0, 200)}`);
-
-  let result: Partial<ImageAnalysisResult> = {};
-  try {
-    console.log(`[ImageAnalyzer] 尝试解析 JSON...`);
-    result = JSON.parse(aiText);
-    console.log(`[ImageAnalyzer] JSON 解析成功:`, result);
-  } catch (e) {
-    console.error(`[ImageAnalyzer] JSON 解析失败:`, e);
-    console.log(`[ImageAnalyzer] 尝试从文本中提取 JSON...`);
-    const jsonMatch = aiText.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      console.log(`[ImageAnalyzer] 找到 JSON 匹配，尝试解析...`);
-      result = JSON.parse(jsonMatch[0]);
-      console.log(`[ImageAnalyzer] 提取的 JSON 解析成功:`, result);
-    } else {
-      console.error(`[ImageAnalyzer] 未找到 JSON 匹配`);
-    }
-  }
-
-  // 验证和规范化结果
-  const finalResult = {
-    conditionScore: Math.max(1, Math.min(10, Number(result.conditionScore) || 5)),
-    conditionLabel: result.conditionLabel || "一般",
-    analysis: result.analysis || "AI分析未完成",
-    confidence: Math.max(0, Math.min(1, Number(result.confidence) || 0.5)),
-  };
-  console.log(`[ImageAnalyzer] 最终结果:`, finalResult);
-  
-  return finalResult;
-}
-
-/**
- * 获取图片并转换为 base64（用于 Gemini API）
+ * 获取图片并转换为 base64（豆包视觉以 image_url/data 传入）
  */
 async function fetchImageAsBase64(imageUrl: string): Promise<string> {
-  console.log(`[ImageAnalyzer] 下载图片并转换为 base64...`);
-  const response = await axios.get(imageUrl, {
-    responseType: 'arraybuffer',
-    timeout: 30000
-  });
-  
-  const base64 = Buffer.from(response.data as ArrayBuffer).toString('base64');
-  console.log(`[ImageAnalyzer] 图片转换完成，base64 长度: ${base64.length}`);
-  return base64;
+  const resp = await fetch(imageUrl);
+  if (!resp.ok) throw new Error(`图片下载失败: ${resp.status}`);
+  const buf = Buffer.from(await resp.arrayBuffer());
+  return buf.toString("base64");
+}
+
+/**
+ * 分析产品图片，评估设备成色。统一经豆包视觉能力。
+ */
+export async function analyzeProductImage(
+  imageUrl: string
+): Promise<ImageAnalysisResult> {
+  try {
+    const base64Image = await fetchImageAsBase64(imageUrl);
+    const model = getArkVisionModelId();
+
+    const result = await chatCompletionDoubao({
+      model,
+      maxTokens: 800,
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: IMAGE_PROMPT },
+            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } },
+          ],
+        },
+      ],
+    });
+
+    // ── 计费归集：HTTP 一成功就记账（token 已被消耗，与后续 JSON 解析是否成功无关）──
+    recordUsage(
+      model,
+      result.usage?.prompt_tokens ?? ESTIMATED_TOKENS.input,
+      result.usage?.completion_tokens ?? ESTIMATED_TOKENS.output,
+      { estimated: !result.usage }
+    );
+
+    const aiText = result.text || "";
+    let parsed: Partial<ImageAnalysisResult> = {};
+    try {
+      parsed = JSON.parse(aiText);
+    } catch {
+      const jsonMatch = aiText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) parsed = JSON.parse(jsonMatch[0]);
+      else throw new Error("无法解析 AI 返回的 JSON");
+    }
+
+    return {
+      conditionScore: Math.max(1, Math.min(10, Number(parsed.conditionScore) || 5)),
+      conditionLabel: parsed.conditionLabel || "一般",
+      analysis: parsed.analysis || "AI分析未完成",
+      confidence: Math.max(0, Math.min(1, Number(parsed.confidence) || 0.5)),
+    };
+  } catch (error: any) {
+    console.error(`[ImageAnalyzer] 豆包视觉调用失败:`, error?.message || String(error));
+    return getDefaultAnalysis();
+  }
 }
 
 /**
  * 批量分析多张产品图片（并行处理）
- * 
- * @param imageUrls 产品图片URL列表
- * @returns VisualValuationResult 综合视觉评估结果
  */
 export async function analyzeProductImages(
   imageUrls: string[]
 ): Promise<VisualValuationResult> {
-  console.log(`[ImageAnalyzer] ========== 批量分析开始 ==========`);
-  console.log(`[ImageAnalyzer] 传入图片数量: ${imageUrls?.length || 0}`);
-  
   if (!imageUrls || imageUrls.length === 0) {
-    console.log(`[ImageAnalyzer] 无图片，返回空结果`);
     return {
       visualConditionScore: 0,
       visualConditionAnalysis: "",
@@ -375,33 +136,15 @@ export async function analyzeProductImages(
 
   // 最多分析3张图片（避免过多API调用）
   const urlsToAnalyze = imageUrls.slice(0, 3);
-  console.log(`[ImageAnalyzer] 准备分析 ${urlsToAnalyze.length} 张图片:`, urlsToAnalyze);
 
   try {
-    // 并行分析多张图片
-    const analysisPromises = urlsToAnalyze.map((url) => analyzeProductImage(url));
-    console.log(`[ImageAnalyzer] 开始并行调用 analyzeProductImage...`);
-    const results = await Promise.all(analysisPromises);
-    console.log(`[ImageAnalyzer] 所有图片分析完成，结果:`, results);
-
-    // 检查是否有任何真实LLM分析结果（非默认）
+    const results = await Promise.all(urlsToAnalyze.map((url) => analyzeProductImage(url)));
     const hasRealAnalysis = results.some((r) => !r.isDefault);
-    console.log(`[ImageAnalyzer] 是否有真实分析: ${hasRealAnalysis}`);
-    console.log(`[ImageAnalyzer] 各图片结果:`, results.map((r, i) => ({ 
-      index: i, 
-      isDefault: r.isDefault, 
-      conditionScore: r.conditionScore,
-      confidence: r.confidence 
-    })));
 
-    // 综合多张图片的分析结果
-    // 取最高分（最乐观评估）作为参考，但考虑置信度
     let bestScore = 0;
     let bestAnalysis = "";
     let totalConfidence = 0;
-
     results.forEach((result) => {
-      // 加权评分：置信度高的权重更大
       const weightedScore = result.conditionScore * result.confidence;
       if (weightedScore > bestScore) {
         bestScore = weightedScore;
@@ -410,21 +153,15 @@ export async function analyzeProductImages(
       totalConfidence += result.confidence;
     });
 
-    // 取平均分并归一化
     const avgScore = results.reduce((sum, r) => sum + r.conditionScore, 0) / results.length;
     const avgConfidence = totalConfidence / results.length;
 
-    const finalResult = {
-      visualConditionScore: Math.round(avgScore * 10) / 10, // 保留1位小数
+    return {
+      visualConditionScore: Math.round(avgScore * 10) / 10,
       visualConditionAnalysis: bestAnalysis,
       imageConfidence: avgConfidence,
-      usedV4Condition: hasRealAnalysis, // 只有真实LLM分析才标记为V4
+      usedV4Condition: hasRealAnalysis,
     };
-    
-    console.log(`[ImageAnalyzer] 批量分析最终结果:`, finalResult);
-    console.log(`[ImageAnalyzer] ========== 批量分析完成 ==========`);
-    
-    return finalResult;
   } catch (error) {
     console.error("[ImageAnalyzer] 批量图片分析失败:", error);
     return {
@@ -451,18 +188,8 @@ function getDefaultAnalysis(): ImageAnalysisResult {
 
 /**
  * 将视觉成色评分转换为成色因子
- * 
- * @param visualScore 视觉成色评分 1-10
- * @returns 成色因子 0-1.x（用于乘以基准价）
  */
 export function visualScoreToConditionFactor(visualScore: number): number {
-  // 将 1-10 分映射到成色因子
-  // 10分 → 1.0 (标准成色)
-  // 8-9分 → 1.0-1.05 (良好，轻微加分)
-  // 6-7分 → 0.95-1.0 (一般，轻微扣分)
-  // 4-5分 → 0.85-0.95 (较差，明显扣分)
-  // 1-3分 → 0.7-0.85 (很差，严重扣分)
-
   if (visualScore >= 9) return 1.05;
   if (visualScore >= 8) return 1.0;
   if (visualScore >= 7) return 0.98;

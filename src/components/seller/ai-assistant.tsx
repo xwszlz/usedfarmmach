@@ -320,7 +320,7 @@ export default function SellerAiAssistant({
         setPhase(`AI 智能识别中...(${finalImageUrls.length}张图片)`);
       }
 
-      // 调用识别 API（内部API路由，豆包→Gemini→OpenRouter 三级降级）
+      // 调用识别 API（统一豆包：火山方舟 ARK 视觉能力，.cn 直连 / .com 经 B 通道代理）
       const res = await fetch("/api/agents/seller-helper/recognize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

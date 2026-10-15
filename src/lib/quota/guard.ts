@@ -194,3 +194,28 @@ export function quotaExceededResponse(resetAt: string, locale = "zh") {
     { status: 403 },
   );
 }
+
+/**
+ * 回滚一次额度消费（双闸门：先 consumeQuota 后 deductCredits；
+ * 若积分不足则必须回滚，避免「额度被吃掉但动作未成」）。
+ * 递减对应计数器并删除最近一条该用户该动作的 UsageLog 流水。
+ */
+export async function rollbackQuota(
+  user: QuotaUser,
+  action: QuotaAction,
+): Promise<void> {
+  const field = COUNTER_FIELD[action];
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { [field]: { decrement: 1 } },
+  });
+  try {
+    const last = await prisma.usageLog.findFirst({
+      where: { userId: user.id, action },
+      orderBy: { createdAt: "desc" },
+    });
+    if (last) await prisma.usageLog.delete({ where: { id: last.id } });
+  } catch (err) {
+    console.error("[quota] rollbackQuota delete UsageLog failed:", err);
+  }
+}

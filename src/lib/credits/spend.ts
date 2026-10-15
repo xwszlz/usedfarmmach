@@ -23,6 +23,7 @@
  */
 import { prisma } from "@/lib/db";
 import { isComSite } from "@/config/site";
+import { getCurrencyOfCountry, getUnit, getRdSync } from "./fx";
 
 export interface DeductResult {
   ok: boolean;
@@ -38,14 +39,24 @@ export interface AiCostBreakdown {
   outputTokens: number;
   inPrice: number;
   outPrice: number;
-  /** 计费货币：cny 或 usd（.com 站 USD 模型直接以 $ 计） */
-  currency?: "cny" | "usd";
-  /** 计费货币下的实际成本（cny 或 usd，配合 currency 字段） */
+  /** 计费币种代码（CNY/USD/VND/...），由注册国解析得到；.cn 恒为 CNY */
+  currency?: string;
+  /** 豆包 CNY 实际成本（无论站点/国家，底价统一为 CNY） */
   actualCostCny: number;
   multiplier: number;
   points: number;
-  /** 当时的积分单位换算（1 元/1 美元 = pointsPerUnit 积分），用于区分新旧单位时代的账本 */
+  /** 当时的积分单位换算（1 计价单位 = pointsPerUnit 积分），用于区分新旧单位时代的账本 */
   pointsPerUnit?: number;
+  /** 统一渠道标记（恒为 doubao，5 路由统一国行火山方舟豆包） */
+  channel?: string;
+  /** 链路路径：b-channel（.com 经 HK/SG 代理）/ direct（.cn 直连） */
+  linkPath?: "b-channel" | "direct";
+  /** 计费国家（注册锁定的 AI 计费国） */
+  country?: string | null;
+  /** 豆包原始 CNY 成本（独立字段，便于核对） */
+  cnyCost?: number;
+  /** 使用的 CNY→本币 实时汇率 R_d(c)（.cn 不填） */
+  fxRateUsed?: number;
 }
 
 /**
@@ -63,17 +74,8 @@ interface ModelPrice {
 }
 
 export const MODEL_PRICING: Record<string, ModelPrice> = {
-  // 豆包（.cn 主用 / .com 国际品牌降级）：火山方舟官方价（推理输入 6 元/百万、输出 30 元/百万）
+  // 豆包（.cn 主用 / .com 经 B 通道降级）：火山方舟官方价（推理输入 6 元/百万、输出 30 元/百万）
   "doubao-seed-2-1-pro-260915": { inPrice: 0.006, outPrice: 0.03, currency: "cny", note: "火山方舟官方：推理输入 6 元/百万 tokens、输出 30 元/百万 tokens" },
-  // Gemini（估值/深度分析境外链路）
-  "gemini-1.5-flash": { inPrice: 0.0003, outPrice: 0.0006, currency: "usd", note: "待校准（官方 $0.075/$0.30 每百万，未核实档位）" },
-  "gemini-2.5-flash": { inPrice: 0.0003, outPrice: 0.0025, currency: "usd", note: "官方 $0.30/$2.50 每百万" },
-  // OpenRouter（深度分析 / 视频分析降级）
-  "openai/gpt-4o": { inPrice: 0.0025, outPrice: 0.01, currency: "usd", note: "官方 $2.50/$10.00 每百万" },
-  "openai/gpt-4o-mini": { inPrice: 0.00015, outPrice: 0.0006, currency: "usd", note: "官方 $0.15/$0.60 每百万" },
-  "anthropic/claude-haiku": { inPrice: 0.0008, outPrice: 0.004, currency: "usd", note: "Claude 3.5 Haiku 保守估，待校准" },
-  "meta-llama/llama-3.2-11b-vision-instruct": { inPrice: 0.0001, outPrice: 0.0002, currency: "usd", note: "Llama 3.2 vision via OpenRouter，待校准" },
-  "google/gemini-2.0-flash-001:free": { inPrice: 0, outPrice: 0, currency: "usd", note: "免费模型，0 成本" },
 };
 
 /** 兜底混合单价（未知模型） */
@@ -107,26 +109,32 @@ export function computeAiCost(params: {
   model: string;
   inputTokens: number;
   outputTokens: number;
+  /** 注册锁定的 AI 计费国家（R-04/R-05 落库字段），缺省回落 USD */
+  billingCountry?: string;
+  /** CNY→本币 实时汇率 R_d(c)；缺省走同步静态兜底（getRdSync） */
+  rd?: number;
 }): AiCostBreakdown {
   const p: ModelPrice = MODEL_PRICING[params.model] || FALLBACK_PRICING;
   const inputTokens = Math.max(0, Math.floor(params.inputTokens || 0));
   const outputTokens = Math.max(0, Math.floor(params.outputTokens || 0));
 
-  const rawCost =
+  // 底价统一为豆包 CNY 成本（5 路由统一国行火山方舟豆包，不再有 USD 计价模型）
+  const cnyCost =
     (inputTokens / 1000) * p.inPrice + (outputTokens / 1000) * p.outPrice;
 
-  // 站点感知本位币：
-  //   comUsd = 在 .com 站且模型以 USD 计价 → 直接以 $ 计费，不折 ¥。
-  const comUsd = isComSite() && p.currency === "usd";
-  const actualCost = comUsd
-    ? rawCost
-    : p.currency === "usd"
-      ? rawCost * DEFAULT_USD_TO_CNY
-      : rawCost;
-  const currency: "cny" | "usd" = comUsd ? "usd" : "cny";
+  // 注册国感知：国家 → 币种 → 计价单位 U(c) + 汇率 R_d(c)（CNY→本币）
+  const currency = getCurrencyOfCountry(params.billingCountry);
+  const unit = getUnit(currency);
+  const rd =
+    typeof params.rd === "number" && params.rd > 0 ? params.rd : getRdSync(currency);
+  const linkPath: "b-channel" | "direct" =
+    isComSite() && process.env.ARK_PROXY_URL ? "b-channel" : "direct";
 
-  // 1 元/1 美元 = 100 积分：actualCost 先换算成积分，再乘倍率 2
-  const points = Math.round(actualCost * CREDITS_PER_UNIT * AI_COST_MULTIPLIER);
+  // 公式：points = round( 豆包CNY成本 × R_d(c) ÷ U(c) × 100 × 2 )
+  // .cn：R=1、U=1 → 退化为 round(成本 × 100 × 2)，与改动前完全一致（验收 I-1）。
+  const points = Math.round(
+    (cnyCost * rd) / unit * CREDITS_PER_UNIT * AI_COST_MULTIPLIER
+  );
 
   return {
     model: params.model,
@@ -135,10 +143,15 @@ export function computeAiCost(params: {
     inPrice: p.inPrice,
     outPrice: p.outPrice,
     currency,
-    actualCostCny: Math.round(actualCost * 1000) / 1000,
+    actualCostCny: Math.round(cnyCost * 1000) / 1000,
     multiplier: AI_COST_MULTIPLIER,
     points,
     pointsPerUnit: CREDITS_PER_UNIT,
+    channel: "doubao",
+    linkPath,
+    country: params.billingCountry ?? null,
+    cnyCost: Math.round(cnyCost * 1000) / 1000,
+    fxRateUsed: currency === "CNY" ? undefined : rd,
   };
 }
 
@@ -154,7 +167,8 @@ export async function deductCredits(
   userId: string,
   points: number,
   reason: string,
-  breakdown?: Record<string, unknown>
+  breakdown?: Record<string, unknown>,
+  type: string = "ai_deduct"
 ): Promise<DeductResult> {
   const need = Math.max(0, Math.floor(points));
 
@@ -196,7 +210,7 @@ export async function deductCredits(
         await tx.creditTransaction.create({
           data: {
             userId,
-            type: "ai_deduct",
+            type,
             amount: -need,
             balance: newBalance,
             reason,
@@ -215,7 +229,7 @@ export async function deductCredits(
       await tx.creditTransaction.create({
         data: {
           userId,
-          type: "ai_deduct",
+          type,
           amount: 0,
           balance: current,
           reason,
