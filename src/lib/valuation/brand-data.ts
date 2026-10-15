@@ -493,34 +493,53 @@ export const CATEGORY_ANNUAL_HOURS: Record<string, number | null> = {
  *   n = 机龄（年）；h = 年均工时；c3 = null 表示该类别无工时项（ASABE 原文：
  *   only powered equipment has a coefficient on hours of annual use）。
  * 来源：ANSI ASABE D497-4-2003，经美国能源部 ORNL Pub11927 明文指定类别归属。
+ * 已核验的 published class（ORNL Pub11927 Table 2.3 / AAEA 2000 rendering）：
+ *   Balers 0.8521/0.1014 · Swathers & other harvest 0.7911/0.0913 ·
+ *   Manure spreaders & misc 0.9427/0.1111 · Mowers 0.7557/0.0672 ·
+ *   Planters 0.8826/0.0778 · Skid-steer loaders 0.7858/0.0629/0.0033 ·
+ *   Combines 1.1318/0.1645/0.0079
  *
  * ⚠️ 青储机/青贮饲料收获机 归 **Swathers & all other harvest equipment**，
  *    不是 Combines——用错会在 y10–y12 低估 33%~52%（青储机为平台第一大品类）。
  *
- * ╔══════════════════════════════════════════════════════════════════════╗
- * ║ 🚫 用途声明：这是「参考模型」，**未接入估值主链路**，请勿直接调用。      ║
- * ╚══════════════════════════════════════════════════════════════════════╝
- * 主链路仍用 `DEPRECIATION_TABLE`(机龄) + `HOURS_DEPRECIATION_CURVE`(工时)，
- * 本表只允许出现在校准报告的「外部模型参考列」。三条不接入的理由：
- *  (a) 公式里的 h 是**年均工时**而非累计工时（ORNL Pub11927 Eq 2-4），因此
- *      C3·√h 在整机寿命内是恒定项——ASABE 对单机工时差异只有约 ±5pp 的敏感度，
- *      它撑不起「按工时定价」这条主链路（同一机龄不同工时几乎给出同一个残值）。
- *  (b) 绝对水平不可信：各品类 C1² 跨度 0.545~1.281，联合收割机 C1²=1.281
- *      （>100%，即 0 年机残值高于新机价），不能直接当残值率用。
- *  (c) 即使把 C1² 归一化到 1.0 再代入唯一专家样本（天拖 TTQ2004，4 年 / 1600h），
- *      仍与专家锚点差约 −23%，未通过专家校验。
- * 参数表本身保留，供后续按品类标定 / 交叉验证时引用。
+ * ⚠️ 打包机/裹包机（forage bagger / baler-wrapper）**不是 Balers**：
+ *    ORNL Pub11927 明确把 forage baggers 归到 manure-spreader-and-miscellaneous
+ *    一类；Wiley (2021) 亦发布 "Forage bagger 0.943 0.111"。见下方分组注释。
+ *
+ * ══════════════════════════════════════════════════════════════════════
+ * 📌 当前接入状态（本次修订，纠正此前自相矛盾的「未接入主链路」声明）
+ * ══════════════════════════════════════════════════════════════════════
+ * 本表**已接入估值主链路**，但接入范围由 `CATEGORY_ASABE_ENABLED` 白名单严格控制：
+ * 机龄 > `TRACTOR_EXPERT_AGE_MAX_YEAR`(8) 且品类在白名单内时，
+ * `calcAgeTableResidual` 才改用本曲线替代四段机龄表外推；其余品类一律走机龄表。
+ *
+ * 已知局限（诚实记录，勿在未补样本前扩大白名单）：
+ *  (a) 品类级交叉验证目前**只覆盖 青储机 / 青贮饲料收获机**一个品类，且该样本
+ *      `confidence: low`——用的是挂牌价而非成交价。
+ *  (b) 其余 published class 虽系数权威（ASABE/ORNL），但**从未与任何一台真实机器
+ *      对过账**；原参数表作者曾明确判定它们不适合进主链路，故默认不在白名单。
+ *  (c) 公式中的 h 是**年均工时**（ORNL Pub11927 Eq 2-4），C3·√h 在整机寿命内是
+ *      恒定项，ASABE 对单机工时差异只有约 ±5pp 敏感度。因此本表只用于
+ *      「y9+ 高龄段残值不崩塌」的修正，**不用于按工时定价**。
+ *  (d) 绝对水平不可直接当残值率：联合收割机 C1²=1.281（>100%）。
+ *      这一点由 `calcAsabeResidual` 的 [MIN_RESIDUAL_RATIO, 1] 夹取兜底。
+ *
+ * 扩大白名单的前置条件：拿到该品类至少一份**成交价**（非挂牌价）样本，
+ * 并记录与本曲线的偏差量级。
  */
 export const CATEGORY_ASABE_PARAMS: Record<string, { c1: number; c2: number; c3: number | null }> = {
-  轮式拖拉机: { c1: 0.9756, c2: 0.1187, c3: 0.0019 },
-  拖拉机: { c1: 0.9756, c2: 0.1187, c3: 0.0019 },
-  其他拖拉机: { c1: 0.9421, c2: 0.0997, c3: 0.0008 },
-  手扶拖拉机: { c1: 0.9809, c2: 0.0934, c3: 0.0058 },
+  // ── Combines ──
   收获机: { c1: 1.1318, c2: 0.1645, c3: 0.0079 },
   收割机: { c1: 1.1318, c2: 0.1645, c3: 0.0079 },
   玉米收割机: { c1: 1.1318, c2: 0.1645, c3: 0.0079 },
   玉米收获机: { c1: 1.1318, c2: 0.1645, c3: 0.0079 },
   水稻收割机: { c1: 1.1318, c2: 0.1645, c3: 0.0079 },
+  // ── Tractors ──
+  轮式拖拉机: { c1: 0.9756, c2: 0.1187, c3: 0.0019 },
+  拖拉机: { c1: 0.9756, c2: 0.1187, c3: 0.0019 },
+  其他拖拉机: { c1: 0.9421, c2: 0.0997, c3: 0.0008 },
+  手扶拖拉机: { c1: 0.9809, c2: 0.0934, c3: 0.0058 },
+  // ── Swathers & all other harvest equipment ──
   // ★ 青储机 = Swathers，不是 Combines
   青储机: { c1: 0.7911, c2: 0.0913, c3: null },
   青贮饲料收获机: { c1: 0.7911, c2: 0.0913, c3: null },
@@ -528,12 +547,17 @@ export const CATEGORY_ASABE_PARAMS: Record<string, { c1: number; c2: number; c3:
   茎穗兼收机: { c1: 0.7911, c2: 0.0913, c3: null },
   甜菜机: { c1: 0.7911, c2: 0.0913, c3: null },
   搂草机: { c1: 0.7911, c2: 0.0913, c3: null },
+  // ── Balers（真正的打捆机：方捆/圆捆）──
   打捆机: { c1: 0.8521, c2: 0.1014, c3: null },
   小方捆: { c1: 0.8521, c2: 0.1014, c3: null },
   大方捆: { c1: 0.8521, c2: 0.1014, c3: null },
   圆捆机: { c1: 0.8521, c2: 0.1014, c3: null },
-  裹包机: { c1: 0.8521, c2: 0.1014, c3: null },
-  打包机: { c1: 0.8521, c2: 0.1014, c3: null },
+  // ⚠️ 打包机/裹包机 = forage bagger / baler-wrapper，**不是 baler**。
+  //    ORNL Pub11927 把 forage baggers 归入 manure-spreader-and-miscellaneous
+  //    （0.9427/0.1111）；Wiley (2021) 独立发布 "Forage bagger 0.943 0.111" 印证。
+  //    原先误挂在 Balers 行（0.8521/0.1014），本次修正。
+  裹包机: { c1: 0.9427, c2: 0.1111, c3: null },
+  打包机: { c1: 0.9427, c2: 0.1111, c3: null },
   播种机: { c1: 0.8826, c2: 0.0778, c3: null },
   割草机: { c1: 0.7557, c2: 0.0672, c3: null },
   旋耕机: { c1: 0.891, c2: 0.11, c3: null },
@@ -554,52 +578,122 @@ export const CATEGORY_ASABE_PARAMS: Record<string, { c1: number; c2: number; c3:
 };
 
 /**
- * [已弃用] 原 ASABE 机龄曲线品类白名单。
- * y9+ 切换现由 `isAsabeAgeEnabled(category)` 基于 `CATEGORY_ASABE_PARAMS` 是否存在
- * 非 default 专属系数来判定，新增 ASABE 系数即自动纳入，无需维护此白名单。
- * 保留空数组仅为兼容可能的历史引用，不再参与主链路判定。
+ * ASABE 机龄曲线的**主链路安全白名单**（唯一准入闸门）。
+ *
+ * 背景：commit 7a4777f 把白名单标为「已弃用」，改用「在 CATEGORY_ASABE_PARAMS 里有键
+ * 就启用」——等于把一道**刻意的安全闸门**反转成了 ~34 个品类的自动准入。本次恢复白名单。
+ *
+ * 收录标准：该品类的 published class 至少有一份**与真实机器的交叉验证证据**。
+ *  - 青储机 / 青贮饲料收获机：唯一有交叉验证样本的品类（`confidence: low`，
+ *    样本为挂牌价而非成交价）。两者共用 ORNL 的同一个 published class
+ *    （Swathers & other harvest, 0.7911/0.0913），是同一台机器的两个名字，
+ *    故一并收录，不算扩大证据面。
+ *
+ * 明确**不**收录（即使系数权威）：
+ *  - 打捆机 / 小方捆 / 大方捆 / 圆捆机（Balers 0.8521/0.1014）：系数来自 ASABE/ORNL，
+ *    但从未与任何一台真实机器对过账，且原参数表作者明确判定其不适合进主链路。
+ *    移出白名单 = 这些机退回四段机龄表，这是安全且诚实的状态。
+ *  - 其它全部品类：同上，无任何交叉验证。
+ *
+ * ⚠️ 扩容前置条件：拿到该品类至少一份**成交价**（非挂牌价）样本，并记录偏差量级。
+ * 不要因为「系数看起来是对的」就加进来——那正是 7a4777f 犯的错。
  */
-export const CATEGORY_ASABE_ENABLED: string[] = [];
+export const CATEGORY_ASABE_ENABLED: string[] = [
+  "青储机",
+  "青贮饲料收获机",   // 与「青储机」同一 published class（Swathers 0.7911/0.0913），别名
+];
 
 /**
  * 四段机龄表的残值率（单一真源）。
  * `formulas.ts` 的 calcYearFactor 与校准库的机龄锚点对比共用此实现，
  * 避免两处各写一份导致口径漂移。逻辑与 DEPRECIATION_TABLE 严格对应：
  *   0-3 年 7%/yr、4-7 年 8%/yr、8-12 年 7%/yr、13 年+ 5%/yr，最后夹到 MIN_RESIDUAL_RATIO。
+ *
+ * ⚠️ 数学形式分两段（`AGE_TABLE_LINEAR_MAX_YEAR` = 8 为界）：
+ *
+ *  - **y1–y8 线性减法**（保持历史行为，一位不变）。这段是全系统唯一有外部专家
+ *    锚点的区间（豆包 TTQ2004 报告：10.14万 vs 专家 10.45万，−2.95%），
+ *    没有依据不得改动。
+ *
+ *  - **y9+ 逐段乘性复利** `r *= (1-rate)^years`。原实现在全段用线性减法，
+ *    产生两个可证伪的错误：
+ *      (a) 名义费率被严重高估——y12 实际衰减 36.84%，而名义写的是 7%；
+ *      (b) y13 触底 MIN_RESIDUAL_RATIO(0.10) 后**永久锁死**，13 年的机与
+ *          40 年的机估值完全相同（硬 bug，非观点问题）。
+ *    改复利后 y13 从 0.1000 升至 0.2843，且此后继续逐年递减，不再锁死。
+ *
+ * 换复利后 y13=0.2843，与两个独立外部参照对齐：
+ *  - ASABE D497 Balers 曲线在 y13 给 0.2367（偏低 17%）
+ *  - 麦赛福格森 2170XD 大方捆 13 年实测残值 0.315（偏低 10%）
+ * 参见 `docs/机龄表复利改造评估.md` 的完整推导与取舍。
+ *
+ * 未采用「全表 y1-y20 改复利」的原因：它会把 y7 上移 22.6%、y8 上移 34%，
+ * 作废唯一的专家锚点，且 y13 给到 0.3808——比实测市场证据（0.315）高 21%。
  */
 export function calcAgeTableResidual(ageYears: number, category?: string): number {
   if (ageYears <= 0) return 1.0;
 
   // y9+（机龄 > TRACTOR_EXPERT_AGE_MAX_YEAR）启用 ASABE 残值曲线替代机龄表外推，
   // 修复高龄机（y10+）残值崩塌至 MIN_RESIDUAL_RATIO 的问题。
-  // 仅对「拥有专属 ASABE 系数」的品类生效（按 CATEGORY_ASABE_PARAMS 是否存在非 default 项判定）。
+  // 准入闸门 = `CATEGORY_ASABE_ENABLED` 白名单（见该常量注释），**不是**
+  // 「在 CATEGORY_ASABE_PARAMS 里有键」——后者会让 default 兜底品类静默继承
+  // manure-spreader 折旧，并把全部 ~34 个品类自动放行。
   if (ageYears > TRACTOR_EXPERT_AGE_MAX_YEAR && isAsabeAgeEnabled(category)) {
-    return calcAsabeResidual(getCategoryAsabeParams(category), ageYears, null);
+    // 传入品类年工时基准，使 ASABE 的 C3·√h 工时项真正生效。
+    // 此前恒传 null，导致 C3 对所有品类都是死代码，系统性高估动力机型残值。
+    // 无小时表的品类 getCategoryAnnualHours 返回 null → hoursTerm=0，行为与从前一致。
+    const annualHours = getCategoryAnnualHours(category);
+    return calcAsabeResidual(getCategoryAsabeParams(category), ageYears, annualHours);
   }
 
-  let remaining = 1.0;
-  let yearsLeft = Math.min(ageYears, DEPRECIATION_TABLE[0].maxYear);
-  remaining -= yearsLeft * DEPRECIATION_TABLE[0].rate;
+  if (ageYears <= AGE_TABLE_LINEAR_MAX_YEAR) {
+    // ── y1–y8：线性减法（历史行为，逐位保持不变）──
+    let remaining = 1.0;
+    let yearsLeft = Math.min(ageYears, DEPRECIATION_TABLE[0].maxYear);
+    remaining -= yearsLeft * DEPRECIATION_TABLE[0].rate;
 
-  if (ageYears > DEPRECIATION_TABLE[0].maxYear) {
-    const start = DEPRECIATION_TABLE[0].maxYear;
-    const span = DEPRECIATION_TABLE[1].maxYear - DEPRECIATION_TABLE[0].maxYear;
-    yearsLeft = Math.min(ageYears - start, span);
-    remaining -= yearsLeft * DEPRECIATION_TABLE[1].rate;
+    if (ageYears > DEPRECIATION_TABLE[0].maxYear) {
+      const start = DEPRECIATION_TABLE[0].maxYear;
+      const span = DEPRECIATION_TABLE[1].maxYear - DEPRECIATION_TABLE[0].maxYear;
+      yearsLeft = Math.min(ageYears - start, span);
+      remaining -= yearsLeft * DEPRECIATION_TABLE[1].rate;
+    }
+    if (ageYears > DEPRECIATION_TABLE[1].maxYear) {
+      const start = DEPRECIATION_TABLE[1].maxYear;
+      const span = DEPRECIATION_TABLE[2].maxYear - DEPRECIATION_TABLE[1].maxYear;
+      yearsLeft = Math.min(ageYears - start, span);
+      remaining -= yearsLeft * DEPRECIATION_TABLE[2].rate;
+    }
+    return Math.max(remaining, MIN_RESIDUAL_RATIO);
   }
-  if (ageYears > DEPRECIATION_TABLE[1].maxYear) {
-    const start = DEPRECIATION_TABLE[1].maxYear;
-    const span = DEPRECIATION_TABLE[2].maxYear - DEPRECIATION_TABLE[1].maxYear;
-    yearsLeft = Math.min(ageYears - start, span);
-    remaining -= yearsLeft * DEPRECIATION_TABLE[2].rate;
-  }
-  if (ageYears > DEPRECIATION_TABLE[2].maxYear) {
-    yearsLeft = ageYears - DEPRECIATION_TABLE[2].maxYear;
-    remaining -= yearsLeft * DEPRECIATION_TABLE[3].rate;
+
+  // ── y9+：以 y8 的线性残值为起点，按各段在 (y8, age] 区间上的重叠年数逐段复利 ──
+  // 关键点：必须用**区间重叠**而非「从段起点算起」，否则 y9 会把4-7 段也乘进去，
+  // 造成 y8→y9 的假跳变（0.4000 → 0.1994）。
+  const base = calcAgeTableResidual(AGE_TABLE_LINEAR_MAX_YEAR, category);
+  let remaining = base;
+  for (let i = 0; i < DEPRECIATION_TABLE.length; i++) {
+    const segStart = i === 0 ? 0 : DEPRECIATION_TABLE[i - 1].maxYear;
+    const segEnd = DEPRECIATION_TABLE[i].maxYear;
+    const overlap =
+      Math.min(ageYears, segEnd) - Math.max(AGE_TABLE_LINEAR_MAX_YEAR, segStart);
+    if (overlap > 0) remaining *= Math.pow(1 - DEPRECIATION_TABLE[i].rate, overlap);
   }
 
   return Math.max(remaining, MIN_RESIDUAL_RATIO);
 }
+
+/**
+ * 机龄表「线性减法 / 乘性复利」的分界机龄（年，含）。
+ *
+ * = y8，即 `TRACTOR_EXPERT_AGE_MAX_YEAR`。y1–y8 沿用线性减法以保住唯一的外部
+ * 专家锚点（豆包 TTQ2004）；y9 起改乘性复利，消除 y13+ 触底锁死。
+ *
+ * 独立命名而非直接复用 `TRACTOR_EXPERT_AGE_MAX_YEAR`：后者语义是「拖拉机专家
+ * 样本的保护上限」，而此处是「机龄表数学形式的分界」，两者当前同为 8 但含义不同，
+ * 日前者调整不应隐式改变后者。
+ */
+export const AGE_TABLE_LINEAR_MAX_YEAR = 8;
 
 /**
  * 轮式拖拉机机龄表的专家锚点保护上限（年）。
@@ -611,15 +705,25 @@ export const TRACTOR_EXPERT_AGE_MAX_YEAR = 8;
 
 /**
  * 品类是否启用「y9+ 切 ASABE 机龄曲线」。
- * 判定依据：该品类在 `CATEGORY_ASABE_PARAMS` 中是否存在专属系数（非 `default` 兜底）。
- * 这样新增 ASABE 系数即自动纳入 y9+ 切换，无需另行维护白名单，且与校准库共用同一真源。
+ *
+ * 判定依据 = `CATEGORY_ASABE_ENABLED` 安全白名单（精确键 → 子串兜底）。
+ * 白名单是**唯一**闸门：在 `CATEGORY_ASABE_PARAMS` 里有系数**不足以**准入。
+ * 这一点是刻意的——`CATEGORY_ASABE_PARAMS.default` 同时兼任粪污撒布机系数与
+ * 未映射品类的兜底，若用「有键即启用」，任何未映射品类都会静默继承
+ * manure-spreader 折旧，且全部 ~34 个品类会被自动放行（7a4777f 的缺陷）。
+ *
+ * 子串兜底**只允许「传入品类包含白名单键」这一个方向**（如 "CLAAS青储机" → 青储机），
+ * 且要求至少 3 个汉字，避免短键（如「收获机」）被长白名单键（青贮饲料收获机）
+ * 反向包含、把所有联合收割机品类一并放行——那等于绕过闸门。
+ * `default` 不在白名单，也永不参与匹配，未映射品类因此无法通过闸门。
  */
 export function isAsabeAgeEnabled(category?: string): boolean {
   if (!category) return false;
-  if (category in CATEGORY_ASABE_PARAMS) return category !== "default";
-  for (const key of Object.keys(CATEGORY_ASABE_PARAMS)) {
-    if (key === "default") continue;
-    if (category.includes(key) || key.includes(category)) return true;
+  if (category === "default") return false;
+  if (CATEGORY_ASABE_ENABLED.includes(category)) return true;
+  for (const key of CATEGORY_ASABE_ENABLED) {
+    if (key.length < 3) continue;          // 过短的键做子串匹配会大面积误命中
+    if (category.includes(key)) return true;
   }
   return false;
 }
