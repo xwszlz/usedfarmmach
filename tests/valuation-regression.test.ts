@@ -85,8 +85,8 @@ function calcYearFactor(year: number, category?: string): number {
 assert(
   calcYearFactor(currentYear - 8) === 0.4,
   "机龄表 y8 残值 = 0.4000（y1-y8 线性段一位未动，守住专家锚点）",
-  0.4,
-  calcYearFactor(currentYear - 8)
+  "0.4000",
+  calcYearFactor(currentYear - 8).toFixed(4)
 );
 assert(
   Math.abs(calcYearFactor(currentYear - 8) - calcYearFactor(currentYear - 7)) < 0.09,
