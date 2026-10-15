@@ -75,9 +75,11 @@ export default function PublishNewPage() {
 
   const onImages = async (files: FileList | null) => {
     if (!files) return;
+    const urls: string[] = [];
     for (const f of Array.from(files)) {
-      try { const u = await uploadFile(f); set("images", [...form.images, u]); } catch (e: any) { setError(e.message); }
+      try { urls.push(await uploadFile(f)); } catch (e: any) { setError(e.message); }
     }
+    if (urls.length) setForm((f) => ({ ...f, images: [...f.images, ...urls] }));
   };
 
   const onBrochure = async (file: File | null) => {
