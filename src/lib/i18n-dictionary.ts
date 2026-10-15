@@ -7951,14 +7951,14 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "fr": "Échec de la génération du rapport, veuillez réessayer",
     "hi": "रिपोर्ट जनरेशन विफल, कृपया पुनः प्रयास करें",
   },
-  "深度估值报告 — 市场对比·趋势分析·购买建议（¥9-29）": {
-    "en": "Deep valuation report — Market analysis·Trends·Buying advice (¥9-29)",
-    "ru": "Глубинный отчет оценки — сравнение рынка, анализ тенденций, рекомендации по покупке (¥9-29)",
-    "es": "Informe de valoración en profundidad — Comparación de mercado · Análisis de tendencias · Sugerencias de compra (¥9-29)",
-    "pt": "Relatório de avaliação aprofundada — Comparação de mercado · Análise de tendências · Sugestão de compra (¥9-29)",
-    "ar": "تقرير التقييم العميق — مقارنة السوق · تحليل الاتجاهات · نصائح الشراء (9-29 يوان)",
-    "fr": "Rapport d'évaluation approfondie — Comparaison du marché, analyse des tendances, conseils d'achat (9-29 ¥)",
-    "hi": "गहराई मूल्यांकन रिपोर्ट — बाजार तुलना · रुझान विश्लेषण · खरीद सुझाव (₹9-29)",
+  "深度估值报告 — 市场对比·趋势分析·购买建议（按 token 用量计费）": {
+    "en": "Deep valuation report — Market analysis·Trends·Buying advice (billed by token usage)",
+    "ru": "Глубинный отчет оценки — сравнение рынка, анализ тенденций, рекомендации по покупке (оплата по токенам)",
+    "es": "Informe de valoración en profundidad — Comparación de mercado · Análisis de tendencias · Sugerencias de compra (facturado por uso de tokens)",
+    "pt": "Relatório de avaliação aprofundada — Comparação de mercado · Análise de tendências · Sugestão de compra (faturado por uso de tokens)",
+    "ar": "تقرير التقييم العميق — مقارنة السوق · تحليل الاتجاهات · نصائح الشراء (الدفع حسب استهلاك التوكن)",
+    "fr": "Rapport d'évaluation approfondie — Comparaison du marché, analyse des tendances, conseils d'achat (facturé à l'usage des tokens)",
+    "hi": "गहराई मूल्यांकन रिपोर्ट — बाजार तुलना · रुझान विश्लेषण · खरीद सुझाव (टोकन उपयोग के अनुसार बिलिंग)",
   },
   "深度报告": {
     "en": "Deep report",

@@ -624,6 +624,8 @@ function DeepAnalysisSection({
   const [error, setError] = useState("");
   const [locked, setLocked] = useState(false);
   const [insufficientCredits, setInsufficientCredits] = useState(false);
+  // 本次深度分析的 token 计费摘要（API 返回 pointsCharged / creditsBalance）
+  const [consumption, setConsumption] = useState<{ points: number; balance?: number } | null>(null);
   const locale = useLocale();
 
   const runDeepAnalysis = async () => {
@@ -633,6 +635,7 @@ function DeepAnalysisSection({
     setStructured(null);
     setLocked(false);
     setInsufficientCredits(false);
+    setConsumption(null);
     try {
       const res = await fetch("/api/agents/seller-helper/deep-analysis", {
         method: "POST",
@@ -653,6 +656,10 @@ function DeepAnalysisSection({
         setReport(data.data?.analysis || "");
         setStructured(data.data?.structured || null);
         setLocked(true);
+        // token 计费可见化：本次按 LLM 真实用量 ×2 扣的积分与扣后余额
+        if (typeof data.data?.pointsCharged === "number") {
+          setConsumption({ points: data.data.pointsCharged, balance: data.data?.creditsBalance });
+        }
       } else {
         if (data.code === "INSUFFICIENT_CREDITS") setInsufficientCredits(true);
         setError(data.error || "深度分析失败");
@@ -731,6 +738,16 @@ function DeepAnalysisSection({
             locked={locked}
             onUnlock={() => setLocked(false)}
           />
+          {/* token 计费可见化：本次消耗 / 剩余积分 + 充值入口 */}
+          {consumption && (
+            <div className="flex items-center justify-between rounded-lg bg-purple-50 px-3 py-2 text-xs text-purple-700">
+              <span>
+                本次消耗 <b className="text-sm">{consumption.points}</b> 积分（按大模型 token 实际用量 ×2 计费）
+                {consumption.balance != null && <> · 剩余 <b>{consumption.balance}</b> 积分</>}
+              </span>
+              <a href={`/${locale}/credits`} className="font-medium underline">积分中心</a>
+            </div>
+          )}
           <button
             onClick={runDeepAnalysis}
             className="w-full rounded-lg border border-purple-300 py-2 text-xs text-purple-600 hover:bg-purple-50"
@@ -816,6 +833,10 @@ export default function ValuationPage() {
   const [unlocked, setUnlocked] = useState(false);
   // 登录用户本月 AI 估值额度已用完（后端 403 QUOTA_EXCEEDED）→ 已降级为本地模型
   const [quotaExhausted, setQuotaExhausted] = useState(false);
+  // 本次估值的 token 计费摘要（/api/valuation 的 billing 字段；无 LLM 用量时为 null）
+  const [valuationBilling, setValuationBilling] = useState<{
+    points: number; balance?: number;
+  } | null>(null);
 
   // 实时预览基准价
   const previewBasePrice = channel === "domestic"
@@ -825,6 +846,7 @@ export default function ValuationPage() {
   // 执行估值
   const doValuation = async () => {
     setLoading(true);
+    setValuationBilling(null);
     try {
       if (channel === "domestic") {
         // 调用网站API进行完整估值
@@ -908,6 +930,11 @@ export default function ValuationPage() {
             warnings: [],
             channelPrices: (r as { channelPrices?: Record<string, number> }).channelPrices,
           });
+          // token 计费可见化：本次估值按 LLM 真实用量扣了多少积分（无 LLM 用量时后端不返回）
+          const billing = (data as { billing?: { points?: number; balance?: number } }).billing;
+          if (billing && typeof billing.points === "number" && billing.points > 0) {
+            setValuationBilling({ points: billing.points, balance: billing.balance });
+          }
         } else {
           // API失败时用客户端计算
           doClientCalc();
@@ -1209,7 +1236,7 @@ export default function ValuationPage() {
               return (
                 <button
                   key={tab.key}
-                  onClick={() => { setChannel(tab.key); setResult(null); setArbitrage(null); setGateData(null); setLimitReached(false); }}
+                  onClick={() => { setChannel(tab.key); setResult(null); setArbitrage(null); setGateData(null); setLimitReached(false); setValuationBilling(null); }}
                   className={`flex-1 rounded-lg py-2.5 text-sm font-medium transition-all ${
                     channel === tab.key
                       ? "bg-primary-600 text-white shadow-sm"
@@ -1655,6 +1682,16 @@ export default function ValuationPage() {
                     <div className="mb-1 text-xs font-medium text-gray-400">估值公式</div>
                     <div className="font-mono text-xs text-gray-600">{result.formula}</div>
                   </div>
+                  {/* token 计费可见化：本次估值按 LLM 真实用量 ×2 扣的积分（无 LLM 用量时不展示） */}
+                  {valuationBilling && (
+                    <div className="mt-3 flex items-center justify-between rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                      <span>
+                        本次消耗 <b className="text-sm">{valuationBilling.points}</b> 积分（按大模型 token 实际用量 ×2 计费）
+                        {valuationBilling.balance != null && <> · 剩余 <b>{valuationBilling.balance}</b> 积分</>}
+                      </span>
+                      <a href={`/${locale}/credits`} className="font-medium underline">积分中心</a>
+                    </div>
+                  )}
                 </div>
               </div>
 
