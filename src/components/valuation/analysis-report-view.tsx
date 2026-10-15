@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef } from "react";
-import { Printer, Download, Copy, Check, BarChart3, FileText } from "lucide-react";
+import { Printer, Download, Copy, Check, BarChart3, FileText, Loader2, AlertTriangle } from "lucide-react";
 import { getSubsidyPriceHistory, type SubsidyYearDatum } from "@/lib/valuation/brand-data";
 
 interface AnalysisReportViewProps {
@@ -50,6 +50,24 @@ function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+/**
+ * 用 Blob 触发浏览器下载。
+ *
+ * 两处历史教训（前两次修复都栽在这里，别改回去）：
+ * - 必须先 appendChild 进 DOM：游离节点的 click() 在部分浏览器/内嵌场景会静默失效；
+ * - 不能同步 revokeObjectURL：浏览器可能尚未开始读取 Blob，提前回收会让下载被静默取消。
+ */
+function saveBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
 /** Standalone Markdown→HTML (inline styles, safe lists) for the downloadable report */
 function mdToHtmlStandalone(md: string): string {
   const html = esc(md)
@@ -79,6 +97,11 @@ export default function AnalysisReportView({
   onUnlock,
 }: AnalysisReportViewProps) {
   const [copied, setCopied] = useState(false);
+  // 下载态：downloading 防重复点击；downloadError 让任何失败都在页面上可见（本次修复的核心）
+  const [downloading, setDownloading] = useState(false);
+  const [downloadOk, setDownloadOk] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [errorCopied, setErrorCopied] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
   const reportId = useMemo(() => genReportId(), []);
   const reportTime = useMemo(() => new Date().toLocaleString("zh-CN"), []);
@@ -133,9 +156,17 @@ export default function AnalysisReportView({
     window.print();
   };
 
-  const handleDownloadHtml = () => {
-    // 数据驱动重建独立 HTML（不再拷贝带 Tailwind 的 innerHTML —— 拷贝会导致
-    // ①模板表头+组件表头重复 ②柱状图/加粗/列表全部丢样式）。样式全部内联。
+  // 数据驱动重建独立 HTML（不再拷贝带 Tailwind 的 innerHTML —— 拷贝会导致
+  // ①模板表头+组件表头重复 ②柱状图/加粗/列表全部丢样式）。样式全部内联。
+  //
+  // 报障场景：「下载HTML」点了没反应，且线上 bundle 已是修复版 —— 说明失败发生在
+  // 运行时且被 React 事件处理器静默吞掉（异常只进 console，页面零反馈）。所以整个
+  // 函数体包进 try/catch：要么成功，要么把失败原因直接显示到页面上（见下方红色提示区）。
+  const handleDownloadHtml = async () => {
+    setDownloadError(null);
+    setDownloadOk(false);
+    setDownloading(true);
+    try {
     const secHtml = (s: string) => esc(s);
 
     const metricsHtml = metrics
@@ -264,17 +295,62 @@ ${sectionsHtml}
 </div>
 </body>
 </html>`;
-    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `深度分析报告_${reportId}.html`;
-    // 必须先挂进 DOM：部分浏览器/内嵌场景下游离节点 click() 会静默失效
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    // 不能同步 revoke：浏览器可能尚未开始读取 Blob，提前回收会导致下载被静默取消
-    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    const filename = `深度分析报告_${reportId}.html`;
+
+    // ── 主路径：走服务端通道，与前端 blob 解耦（失败原因通过 HTTP 状态/JSON 可观测）──
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const res = await fetch("/api/report/download", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ html, filename }),
+      });
+      if (!res.ok) {
+        let msg = `服务端下载失败（HTTP ${res.status}）`;
+        try {
+          const j = await res.json();
+          if (j?.error) msg = String(j.error);
+        } catch {
+          /* 响应不是 JSON，沿用上面的默认文案 */
+        }
+        throw new Error(msg);
+      }
+      saveBlob(await res.blob(), filename);
+    } catch (e1: any) {
+      // ── 兜底：服务端通道不可用时退回纯前端 Blob 直出（历史实现，保留）──
+      try {
+        saveBlob(new Blob([html], { type: "text/html;charset=utf-8" }), filename);
+      } catch (e2: any) {
+        throw new Error(
+          `服务端下载失败：${e1?.message || String(e1)}；本地兜底下载也失败：${e2?.message || String(e2)}`
+        );
+      }
+    }
+
+    setDownloadOk(true);
+    setTimeout(() => setDownloadOk(false), 3000);
+    } catch (err: any) {
+      // 生成失败 / 两条通道都失败 —— 一律显示到页面，不再静默
+      setDownloadError(err?.message || String(err));
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const handleCopyError = () => {
+    if (!downloadError) return;
+    navigator.clipboard
+      .writeText(downloadError)
+      .then(() => {
+        setErrorCopied(true);
+        setTimeout(() => setErrorCopied(false), 2000);
+      })
+      .catch(() => {
+        /* 非安全上下文下 clipboard 不可用，忽略 */
+      });
   };
 
   const zh = locale === "zh";
@@ -299,12 +375,44 @@ ${sectionsHtml}
         </button>
         <button
           onClick={handleDownloadHtml}
-          className="flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50"
+          disabled={downloading}
+          className="flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <Download className="h-3.5 w-3.5" />
-          {zh ? "下载HTML" : "Download"}
+          {downloading ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Download className="h-3.5 w-3.5" />
+          )}
+          {downloading ? (zh ? "下载中…" : "Downloading") : zh ? "下载HTML" : "Download"}
         </button>
       </div>
+
+      {/* 下载结果反馈：失败必须可见（终结「点了没反应」的盲猜循环） */}
+      {downloadOk && (
+        <div className="no-print mb-3 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-700">
+          {zh ? "已开始下载，若无反应请检查浏览器下载拦截" : "Download started — check your download blocker if nothing happens"}
+        </div>
+      )}
+      {downloadError && (
+        <div className="no-print mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <div className="min-w-0 flex-1">
+              <div className="font-semibold">{zh ? "下载失败" : "Download failed"}</div>
+              <div className="mt-1 break-all">{downloadError}</div>
+              <div className="mt-1 text-[10px] text-red-400">
+                {zh ? "请把此错误信息截图反馈，便于定位" : "Screenshot this error and send it to support"}
+              </div>
+            </div>
+            <button
+              onClick={handleCopyError}
+              className="shrink-0 rounded border border-red-300 px-2 py-1 text-[11px] text-red-700 hover:bg-red-100"
+            >
+              {errorCopied ? (zh ? "已复制" : "Copied") : zh ? "复制错误信息" : "Copy error"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Report Body */}
       <div ref={reportRef} className="overflow-hidden rounded-xl border border-gray-200">
