@@ -7,7 +7,7 @@
  *   真实登录态由 middleware / login 写入 httpOnly cookie（token），浏览器对同源请求
  *   自动附带，无需前端读取 localStorage（前端也无从读取 httpOnly cookie）。
  *
- * 返回：本人真实 { id, email, username, role, credits, membershipTier,
+ * 返回：本人真实 { id, email, username, role, credits,
  *   membershipExpiresAt, emailVerified, lifetime, ... }。
  *
  * 错误码：
@@ -44,7 +44,6 @@ export async function GET(request: NextRequest) {
         country: true,
         preferredLanguage: true,
         credits: true,
-        membershipTier: true,
         membershipExpiresAt: true,
         emailVerified: true,
         lifetime: true,
@@ -71,7 +70,6 @@ export async function GET(request: NextRequest) {
         country: user.country,
         preferredLanguage: user.preferredLanguage,
         credits: user.credits,
-        membershipTier: user.membershipTier,
         membershipExpiresAt: user.membershipExpiresAt,
         emailVerified: user.emailVerified,
         lifetime: user.lifetime,

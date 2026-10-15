@@ -17,7 +17,6 @@ interface NavbarProps {
 type Userinfo = {
   role: string;
   email: string;
-  membershipTier: string;
   credits: number;
 } | null;
 
@@ -38,7 +37,6 @@ export function Navbar({ locale }: NavbarProps) {
             setUser({
               role: json.data.user.role,
               email: json.data.user.email,
-              membershipTier: json.data.user.membershipTier || "free",
               credits: json.data.user.credits || 0,
             });
             return;

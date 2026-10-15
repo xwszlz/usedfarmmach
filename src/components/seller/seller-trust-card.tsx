@@ -12,7 +12,6 @@ interface TrustProfile {
     companyName: string | null;
     country: string | null;
     role: string;
-    membershipTier: string;
     createdAt: string;
   };
   trustProfile: {
@@ -185,12 +184,6 @@ export function SellerTrustCard({
             <div className="font-semibold text-gray-900">{productCount}</div>
             <p className="text-xs text-gray-500">{isZh ? "总发布" : "Total"}</p>
           </div>
-          {profile.seller.membershipTier && profile.seller.membershipTier !== "free" && (
-            <div className="text-center">
-              <div className="font-semibold text-primary-600 uppercase">{profile.seller.membershipTier}</div>
-              <p className="text-xs text-gray-500">{isZh ? "会员等级" : "Membership"}</p>
-            </div>
-          )}
         </div>
       </CardContent>
     </Card>

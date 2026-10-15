@@ -6,8 +6,8 @@
  * 1. 余额迁移（Q4）：每个 credits > 0 且无 migration 批次的用户
  *    建 CreditLot{account:'recharge', sourceType:'migration', expiresAt=now+1年}
  *    + 一条 type='migration' 流水（不污染 recharge 充值收入口径）。
- * 2. 终身标记：membershipTier IN (basic/premium/enterprise) 且 membershipExpiresAt IS NULL
- *    的用户置 lifetime=true（已有过期时间的用户保持原值不动）。
+ * 2. 终身标记：曾开通付费订阅（membershipExpiresAt 非空）且 lifetime=false
+ *    的用户置 lifetime=true（会员等级概念已取消，以订阅有效期为付费依据）。
  * 3. 邀请码：所有 inviteCode 为空的用户生成 8 位 base36 码（撞码重试）。
  * 4. 输出迁移报告（用户数/总迁移分/lifetime 用户数）。
  *
@@ -91,8 +91,7 @@ async function migrateBalances(): Promise<{ users: number; totalCredits: number 
 async function markLifetimeUsers(): Promise<number> {
   const result = await prisma.user.updateMany({
     where: {
-      membershipTier: { in: ["basic", "premium", "enterprise"] },
-      membershipExpiresAt: null,
+      membershipExpiresAt: { not: null },
       lifetime: false,
     },
     data: { lifetime: true },

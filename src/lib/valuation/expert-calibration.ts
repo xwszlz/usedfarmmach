@@ -377,7 +377,7 @@ export function deriveAgeAnchors(s: ExpertSample): AgeAnchor[] {
   return anchors.map((a) => {
     const synthHours = annual != null ? Math.round(a.ageYears * annual) : null;
     const hoursCurveResidual = synthHours != null ? interpolateHoursResidual(synthHours) : null;
-    const ageTableResidual = calcAgeTableResidual(a.ageYears);
+    const ageTableResidual = calcAgeTableResidual(a.ageYears, s.asset?.category);
     const ourResidual =
       hoursCurveResidual != null ? Math.min(hoursCurveResidual, ageTableResidual) : ageTableResidual;
     const deviationPct = pct(ourResidual, a.residualRatio);

@@ -71,7 +71,6 @@ export async function POST(request: NextRequest) {
     const token = signToken({
       userId: user.id,
       role: user.role,
-      tier: user.membershipTier,
     });
 
     return NextResponse.json({

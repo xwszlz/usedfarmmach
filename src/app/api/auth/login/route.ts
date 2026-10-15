@@ -55,7 +55,6 @@ export async function POST(request: NextRequest) {
     const token = signToken({
       userId: user.id,
       role: user.role,
-      tier: user.membershipTier,
     });
 
     const response = NextResponse.json({
@@ -70,7 +69,6 @@ export async function POST(request: NextRequest) {
           country: user.country,
           preferredLanguage: user.preferredLanguage,
           credits: user.credits,
-          membershipTier: user.membershipTier,
           membershipExpiresAt: user.membershipExpiresAt,
           freeValuationsUsed: user.freeValuationsUsed,
         },
