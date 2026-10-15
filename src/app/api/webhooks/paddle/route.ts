@@ -33,7 +33,6 @@ import {
   PADDLE_SKU,
   getPaddleSubscription,
   isPaddlePlan,
-  mapPlanToMembershipTier,
   mapPlanToUsageAction,
   verifyWebhookSignature,
 } from "@/lib/payments/paddle";
@@ -177,7 +176,6 @@ async function handleMembershipTransaction(data: any): Promise<void> {
     return;
   }
   const plan = planRaw;
-  const tier = mapPlanToMembershipTier(plan);
   const action = mapPlanToUsageAction(plan);
 
   // Paddle 侧金额（最小货币单位的字符串形式）与币种，仅用于对账留痕
@@ -233,10 +231,10 @@ async function handleMembershipTransaction(data: any): Promise<void> {
     expiry = new Date(Date.now() + CYCLE_DAYS[cycle] * 86400000);
   }
 
-  // 会员等级升级
+  // 订阅有效期更新（会员等级概念已取消，仅保留有效期快照）
   await prisma.user.update({
     where: { id: userId },
-    data: { membershipTier: tier, membershipExpiresAt: expiry },
+    data: { membershipExpiresAt: expiry },
   });
 
   // 记 UsageLog（额度消费只写 UsageLog，绝不写 CreditTransaction）
@@ -244,13 +242,12 @@ async function handleMembershipTransaction(data: any): Promise<void> {
     data: {
       userId,
       action,
-      tier,
       periodStart: currentPeriodStart(),
     },
   });
 
   console.log(
-    `[Webhook/Paddle] 会员履约成功 user=${userId} plan=${plan} tier=${tier} cycle=${cycle} currency=${currency} total=${amount ?? "-"} txn=${txnId}`
+    `[Webhook/Paddle] 履约成功 user=${userId} plan=${plan} cycle=${cycle} currency=${currency} total=${amount ?? "-"} txn=${txnId}`
   );
 }
 

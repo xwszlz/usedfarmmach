@@ -79,7 +79,6 @@ export async function POST(request: NextRequest) {
           data: {
             userId: intent.buyerUserId,
             action: "guarantee",
-            tier: "free",
             periodStart: currentPeriodStart(),
           },
         });

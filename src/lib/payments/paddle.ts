@@ -226,13 +226,6 @@ const PADDLE_PLAN_NAME: Record<PaddlePlan, string> = {
   enterprise: "Enterprise 会员订阅",
 };
 
-/** 计划 → 会员等级映射（webhook 升级用） */
-export function mapPlanToMembershipTier(
-  plan: PaddlePlan
-): "basic" | "premium" | "enterprise" {
-  return PADDLE_SKU[plan].tier;
-}
-
 /** 计划 → UsageLog action 映射（webhook 记用量用） */
 export function mapPlanToUsageAction(
   plan: PaddlePlan

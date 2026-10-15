@@ -15,7 +15,6 @@ interface TrustProfile {
     companyName: string | null;
     country: string | null;
     role: string;
-    membershipTier: string;
     createdAt: string;
   };
   trustProfile: {

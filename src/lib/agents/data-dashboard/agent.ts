@@ -95,19 +95,19 @@ export class DataDashboardAgent {
           prisma.creditTransaction.aggregate({ where: { type: "recharge" }, _sum: { amount: true } }),
           prisma.creditTransaction.aggregate({ where: { type: "consume" }, _sum: { amount: true } }),
         ]);
-        const membershipBreakdown = await prisma.user.groupBy({ by: ["membershipTier"], _count: true });
+        const roleBreakdown = await prisma.user.groupBy({ by: ["role"], _count: true });
         revenueMetrics = {
           totalCredits: recharged._sum.amount || 0,
           consumedCredits: Math.abs(consumed._sum.amount || 0),
-          membershipBreakdown: Object.fromEntries(membershipBreakdown.map((m) => [m.membershipTier, m._count])),
+          roleBreakdown: Object.fromEntries(roleBreakdown.map((m) => [m.role, m._count])),
         };
         this.log(`Revenue: recharged=${revenueMetrics.totalCredits} consumed=${revenueMetrics.consumedCredits}`);
       } catch {
-        revenueMetrics = { totalCredits: 0, consumedCredits: 0, membershipBreakdown: {} };
+        revenueMetrics = { totalCredits: 0, consumedCredits: 0, roleBreakdown: {} };
         this.log("Revenue: CreditTransaction table not available");
       }
     } else {
-      revenueMetrics = { totalCredits: 0, consumedCredits: 0, membershipBreakdown: {} };
+      revenueMetrics = { totalCredits: 0, consumedCredits: 0, roleBreakdown: {} };
     }
 
     // Valuation reports

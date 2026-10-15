@@ -25,7 +25,6 @@ export async function GET(
         companyName: true,
         country: true,
         role: true,
-        membershipTier: true,
         createdAt: true,
       },
     });

@@ -8,7 +8,6 @@ export interface RoleRow {
   id: string;
   emailMasked: string;
   role: string;
-  membershipTier: string;
   companyName: string | null;
   country: string | null;
 }

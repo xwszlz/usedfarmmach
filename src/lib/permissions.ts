@@ -1,140 +1,18 @@
 /**
 
- * 用户体系：三层权限模型
+ * 用户体系：权限模型
 
  * Layer 1: 登录状态（游客 vs 注册用户）
 
  * Layer 2: 角色（buyer / seller / admin）
 
- * Layer 3: 会员等级（free / basic / premium / enterprise）
+ * Layer 3（原会员等级）已取消：2026-10 起配额与权限统一走角色 + 积分体系，
+
+ *        不再按 membershipTier 区分（见 src/lib/quota/constants.ts 的 UNIFIED_QUOTA_LIMITS）。
 
  */
 
 
-
-// 会员等级配置
-
-export const MEMBERSHIP_TIERS = {
-
-  free: {
-
-    label: { zh: '免费用户', en: 'Free', ru: 'Бесплатно' },
-
-    valuationsPerMonth: 5,   // 每月免费估价次数
-
-    publishesPerMonth: 5,      // 每月免费发布产品数（P1：1 → 5）
-
-    inquiriesPerMonth: 5,     // 每月免费询盘次数（P1 新增）
-
-    contactsPerMonth: 5,       // 每月查看联系方式次数（P1 新增）
-
-    credits: 2000,             // P0 增长方案 2026-09-06：赠分 5→20，消解"发第6台卡死"，配合月额度 publishesPerMonth（与 DEFAULT_REWARD_VALUES.registerGift 保持一致；2026-10-13 积分单位细化：1 元 = 100 积分，20 → 2000）
-
-    freeValuationsPerMonth: 5,
-
-    canViewSellerContact: true, // 能否查看卖家联系方式
-
-    canExportData: false,
-
-    canSeeArbitrage: false,       // 能否查看跨境套利数据
-
-    canTopProduct: false,
-
-    maxImagesPerProduct: 5,
-
-    maxVideosPerProduct: 1,
-
-  },
-
-  basic: {
-
-    label: { zh: '普通会员', en: 'Standard', ru: 'Стандарт' },
-
-    valuationsPerMonth: 50,
-
-    publishesPerMonth: 50,     // P1：10 → 50
-
-    inquiriesPerMonth: 50,
-
-    contactsPerMonth: 50,
-
-    canViewSellerContact: true,
-
-    canExportData: false,
-
-    canSeeArbitrage: true,
-
-    canTopProduct: false,
-
-    maxImagesPerProduct: 10,
-
-    maxVideosPerProduct: 3,
-
-  },
-
-  premium: {
-
-    label: { zh: 'Pro', en: 'Pro', ru: 'Pro' },
-
-    valuationsPerMonth: -1,      // -1 = 无限
-
-    publishesPerMonth: -1,
-
-    inquiriesPerMonth: -1,
-
-    contactsPerMonth: -1,
-
-    canViewSellerContact: true,
-
-    canExportData: true,
-
-    canSeeArbitrage: true,
-
-    canTopProduct: true,
-
-    maxImagesPerProduct: 20,
-
-    maxVideosPerProduct: 5,
-
-  },
-
-  enterprise: {
-
-    label: { zh: '高级会员', en: 'Premium', ru: 'Премиум' },
-
-    valuationsPerMonth: -1,
-
-    publishesPerMonth: -1,
-
-    inquiriesPerMonth: -1,
-
-    contactsPerMonth: -1,
-
-    canViewSellerContact: true,
-
-    canExportData: true,
-
-    canSeeArbitrage: true,
-
-    canTopProduct: true,
-
-    maxImagesPerProduct: 50,
-
-    maxVideosPerProduct: 10,
-
-  },
-
-} as const;
-
-
-
-// 兼容旧代码的别名导出
-
-export const membershipConfig = MEMBERSHIP_TIERS;
-
-
-
-export type MembershipTier = keyof typeof MEMBERSHIP_TIERS;
 
 
 
@@ -222,7 +100,25 @@ export const ROLE_PERMISSIONS = {
 
 
 
+
+
 export type UserRole = keyof typeof ROLE_PERMISSIONS;
+
+
+
+
+
+/**
+
+ * 会员等级类型（保留类型导出以兼容 src/lib/membership/pricing.ts 等历史模块；
+
+ * 会员体系本身已于 2026-10 取消，不再有升级入口，新注册恒 free）。
+
+ */
+
+export type MembershipTier = 'free' | 'basic' | 'premium' | 'enterprise';
+
+
 
 
 
@@ -230,19 +126,19 @@ export type UserRole = keyof typeof ROLE_PERMISSIONS;
 
  * 检查用户是否有某项权限
 
+ * 会员等级限制已于 2026-10 取消：本函数仅按角色判定，tier 参数保留为兼容占位但不再参与逻辑。
+
  */
 
 export function checkPermission(
 
   role: string,
 
-  tier: string,
+  _tier: string,
 
   action: 'valuation' | 'publish' | 'viewContact' | 'viewArbitrage' | 'exportData' | 'topProduct'
 
 ): boolean {
-
-  // 先检查角色权限
 
   const rolePerms = ROLE_PERMISSIONS[role as UserRole];
 
@@ -250,21 +146,15 @@ export function checkPermission(
 
 
 
-  // 再检查会员等级限制
-
-  const tierConfig = MEMBERSHIP_TIERS[tier as MembershipTier] || MEMBERSHIP_TIERS.free;
-
-
-
   switch (action) {
 
     case 'valuation':
 
-      return (tierConfig.valuationsPerMonth as number) === -1 || (tierConfig.valuationsPerMonth as number) > 0;
+      return true; // 估值按 token 实际消耗计费，无等级限制
 
     case 'publish':
 
-      return !!rolePerms.canPublishProduct && ((tierConfig.publishesPerMonth as number) === -1 || (tierConfig.publishesPerMonth as number) > 0);
+      return !!rolePerms.canPublishProduct;
 
     case 'viewContact':
 
@@ -272,15 +162,13 @@ export function checkPermission(
 
     case 'viewArbitrage':
 
-      return !!tierConfig.canSeeArbitrage;
+      return !!rolePerms.canViewArbitrage;
 
     case 'exportData':
 
-      return !!tierConfig.canExportData;
-
     case 'topProduct':
 
-      return !!tierConfig.canTopProduct;
+      return false; // 导出/置顶为历史会员专属能力，现无会员体系
 
     default:
 
@@ -289,6 +177,8 @@ export function checkPermission(
   }
 
 }
+
+
 
 
 
@@ -328,11 +218,15 @@ export function getMonthlyQuotaUsed(
 
 
 
+
+
 // ── P1 超管与角色集 ──
 
 /** 超级管理员数量上限（多超管治理基线；石家庄铁家伙维持 super_admin 不降级） */
 
 export const SUPER_ADMIN_MAX = 3;
+
+
 
 
 
@@ -357,4 +251,3 @@ export const ROLE_SET = [
 
 
 export type AppRole = (typeof ROLE_SET)[number];
-

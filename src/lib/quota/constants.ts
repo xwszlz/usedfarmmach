@@ -44,7 +44,6 @@ export type AppRole = (typeof ROLE_SET)[number];
 /** QuotaUser：额度守卫所需的最小用户字段集合（与 QUOTA_USER_SELECT 对应） */
 export interface QuotaUser {
   id: string;
-  membershipTier: string;
   usagePeriodStart: Date | null;
   usagePublish: number;
   usageInquiry: number;
@@ -63,10 +62,10 @@ const ACTION_FIELD: Record<
 
 /**
  * 取某动作的月度上限。
- * 2026-10 重构后忽略会员等级（tier 形参保留兼容旧调用方），统一返回 UNIFIED_QUOTA_LIMITS。
+ * 2026-10 重构后取消会员分档，统一返回 UNIFIED_QUOTA_LIMITS（不再接收 tier 参数）。
  * -1 表示无限；未知动作回退 0。
  */
-export function getQuotaLimit(_tier: string, action: QuotaAction): number {
+export function getQuotaLimit(action: QuotaAction): number {
   const v = UNIFIED_QUOTA_LIMITS[action];
   return typeof v === "number" ? v : 0;
 }
@@ -74,7 +73,6 @@ export function getQuotaLimit(_tier: string, action: QuotaAction): number {
 /** 统一 SELECT（供 getQuotaUser 使用，保证字段集合一致） */
 export const QUOTA_USER_SELECT = {
   id: true,
-  membershipTier: true,
   usagePeriodStart: true,
   usagePublish: true,
   usageInquiry: true,
