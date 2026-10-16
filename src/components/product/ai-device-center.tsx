@@ -40,6 +40,8 @@ export default function AiDeviceCenter({
 }: AiDeviceCenterProps) {
   const [deepOpen, setDeepOpen] = useState(false);
   const [valOpen, setValOpen] = useState(false);
+  // P3 联动：深度分析结构化结果回灌估值卡（与估值中心一致）
+  const [deepStructured, setDeepStructured] = useState<Record<string, any> | null>(null);
   const zh = locale === "zh";
 
   const deepLabel = zh ? "AI 深度分析" : "AI Deep Analysis";
@@ -99,6 +101,7 @@ export default function AiDeviceCenter({
             brandName={brandName}
             year={year}
             enginePower={enginePower}
+            onComplete={setDeepStructured}
           />
         </div>
       )}
@@ -111,6 +114,7 @@ export default function AiDeviceCenter({
             productName={productName}
             locale={locale}
             autoLoad={false}
+            deepAnalysis={deepStructured}
           />
         </div>
       )}
