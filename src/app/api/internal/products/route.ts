@@ -1502,6 +1502,14 @@ export async function POST(request: NextRequest) {
           if (!finalNetWeight && recognizedData.netWeight) mergedUpdate.netWeight = Number(recognizedData.netWeight);
 
           if (!finalMainConfig && recognizedData.mainConfig) mergedUpdate.mainConfig = recognizedData.mainConfig;
+          // 2026-10-17 补：把 AI 识别出的工时写入 DB。
+          // 背景：AI prompt（第 1404 行返回字段清单）早已索要 workingHours，recognize 路由也返回该字段，
+          // 但本「用户优先 > AI补空」合并名单此前遗漏了它 —— 识别结果被丢弃，DB 恒为 null。
+          // 工时是工时折旧曲线的唯一真实输入（CATEGORY_ANNUAL_HOURS / HOURS_DEPRECIATION_CURVE）；
+          // 缺这一行时，缺工时的机器只能走 age × A 合成工时，单机误差可达 ±40%。
+          if (recognizedData.workingHours != null && Number(recognizedData.workingHours) > 0) {
+            mergedUpdate.workingHours = Math.round(Number(recognizedData.workingHours));
+          }
 
           if (condition === "good" && recognizedData.condition && recognizedData.condition !== "good") {
 
