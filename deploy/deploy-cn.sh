@@ -229,6 +229,27 @@ else
     node scripts/import-intelligence-to-cn.js || echo "WARN: intelligence import failed"
 fi
 
+# ------------------------------------------------------------
+# nginx 容器配置漂移对齐（2026-10-16 新增）
+# 背景：本脚本此前只 `--force-recreate app scout`，【nginx 从不在 recreate 列表】，
+#       于是 docker-compose.yml 里 nginx 服务的任何变更（镜像 / 挂载 / env）
+#       在 ECS 上永不生效。2026-10-16 排查 .cn 证书自动续签时实测踩到：
+#       CI 早已把 compose 同步到 ECS，但 cn-nginx 仍是 24 小时前创建的旧实例，
+#       新增的 `./deploy/nginx/certbot-webroot:/var/www/certbot:ro` 挂载缺失，
+#       ACME HTTP-01 挑战文件 nginx 读不到，挑战必然 404。
+# 做法：单独对齐 nginx 服务，两个参数都是必需的 ——
+#   - `up -d` 幂等：仅当检测到 compose 配置漂移时才重建容器，配置未变则为
+#     空操作。刻意【不加】--force-recreate，否则每次部署都重建 nginx，
+#     平白产生数秒 502。
+#   - `--no-deps` 必需：否则会连带解析 depends_on 的 app，而 app 镜像 tag
+#     （usedfarmmach-cn:<历史 SHA>）很可能已被上一次部署结尾的
+#     `docker image prune -af`（或本次 workflow 的「部署前磁盘清理」步骤）
+#     清掉，会直接报 "No such image" 令整条命令失败（2026-10-16 实测踩到）。
+# 位置：放在 reload 之前、排在 app 健康检查之后，避免 nginx 先于后端就绪。
+# ------------------------------------------------------------
+echo "==> 对齐 nginx 容器配置（幂等：仅在 compose 配置漂移时重建）"
+docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d --no-deps nginx
+
 echo "==> reload nginx（应用最新证书 / 配置）"
 docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T nginx nginx -s reload || \
   docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" restart nginx
