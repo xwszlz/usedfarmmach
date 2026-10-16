@@ -14,6 +14,7 @@ import { prisma } from "@/lib/db";
 import { isRawListingAdminRole } from "@/lib/raw-listing/admin-auth";
 import { listUnifiedLeads, groupByTierBrand } from "@/lib/raw-listing/dealer-view";
 import type { UnifiedLeadRow, TierBrandGroup } from "@/lib/raw-listing/dealer-view";
+import { DealerContact } from "@/components/admin/dealer-contact";
 
 export const dynamic = "force-dynamic";
 
@@ -24,16 +25,6 @@ const MAX_GROUPS = 200;
 function formatPrice(priceCny: number | null): string {
   if (priceCny == null) return "—";
   return `¥${priceCny.toLocaleString("zh-CN")}`;
-}
-
-/** 经销商联系方式拼接（电话/微信/WhatsApp/邮箱，仅非空项） */
-function contactLine(row: UnifiedLeadRow): string {
-  const parts: string[] = [];
-  if (row.sellerPhone) parts.push(`电话：${row.sellerPhone}`);
-  if (row.sellerWechat) parts.push(`微信：${row.sellerWechat}`);
-  if (row.sellerWhatsapp) parts.push(`WhatsApp：${row.sellerWhatsapp}`);
-  if (row.sellerEmail) parts.push(`邮箱：${row.sellerEmail}`);
-  return parts.length > 0 ? parts.join(" · ") : "—";
 }
 
 export default async function DealersPage({
@@ -99,7 +90,16 @@ export default async function DealersPage({
                         {g.dealers.map((d) => (
                           <tr key={d.id} className="border-b last:border-0">
                             <td className="py-2 pr-2 align-top text-gray-700">{d.sellerName ?? "—"}</td>
-                            <td className="py-2 align-top text-xs text-gray-500">{contactLine(d)}</td>
+                            <td className="py-2 align-top text-xs text-gray-500">
+                              {/* P0-5：明文电话/微信/WhatsApp/邮箱改为掩码 + reveal，首次查看写 PII 审计 */}
+                              <DealerContact
+                                id={d.id}
+                                phone={d.sellerPhone}
+                                wechat={d.sellerWechat}
+                                whatsapp={d.sellerWhatsapp}
+                                email={d.sellerEmail}
+                              />
+                            </td>
                           </tr>
                         ))}
                       </tbody>
