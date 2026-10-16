@@ -2,16 +2,13 @@
  * 跨境套利日报生成器
  *
  * 聚合当日平台数据（基准价 / 采集量 / 库存 / 套利线索），
- * 调用 OpenRouter 生成 Markdown 日报，写入 public/daily-reports/{date}_跨境套利日报.md。
- * 无 OPENROUTER_API_KEY 或调用失败时，降级为结构化模板，保证 cron 永远产出文件。
+ * 调用豆包（火山方舟 ARK，数据不出境）生成 Markdown 日报，写入 public/daily-reports/{date}_跨境套利日报.md。
+ * 调用失败（含 ARK 未配置/熔断）时，降级为结构化模板，保证 cron 永远产出文件。
  */
 import fs from "fs";
 import path from "path";
 import { prisma } from "@/lib/db";
-
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
-const OPENROUTER_BASE = "https://openrouter.ai/api/v1";
-const MODEL = process.env.DAILY_REPORT_MODEL || "openai/gpt-4o-mini";
+import { chatCompletionDoubao, getArkModelId } from "@/lib/ai/ark-client";
 
 const REPORTS_DIR = path.join(process.cwd(), "public", "daily-reports");
 
@@ -110,28 +107,20 @@ function buildTemplate(stats: AggStats, date: string): string {
 }
 
 async function callLLM(system: string, user: string): Promise<string | null> {
-  if (!OPENROUTER_API_KEY) return null;
   try {
-    const res = await fetch(`${OPENROUTER_BASE}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: user },
-        ],
-        max_tokens: 1500,
-        temperature: 0.4,
-      }),
+    const res = await chatCompletionDoubao({
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
+      model: getArkModelId(),
+      maxTokens: 1500,
+      timeoutMs: 60000,
     });
-    if (!res.ok) return null;
-    const data: any = await res.json();
-    return data.choices?.[0]?.message?.content || null;
-  } catch {
+    const text = res.text?.trim();
+    return text && text.length > 0 ? text : null;
+  } catch (e) {
+    console.warn("[DailyReport] 豆包调用失败，降级模板:", (e as Error)?.message);
     return null;
   }
 }

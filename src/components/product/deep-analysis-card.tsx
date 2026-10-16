@@ -15,6 +15,8 @@ interface DeepAnalysisCardProps {
   brandName?: string;
   year?: number;
   enginePower?: string;
+  /** 深度分析完成回调（结构化结果），供父组件 AiDeviceCenter 回灌估值卡（对齐估值中心 P3 联动） */
+  onComplete?: (structured: Record<string, any> | null) => void;
 }
 
 export default function DeepAnalysisCard({
@@ -28,6 +30,7 @@ export default function DeepAnalysisCard({
   brandName,
   year,
   enginePower,
+  onComplete,
 }: DeepAnalysisCardProps) {
   const [analyzing, setAnalyzing] = useState(false);
   const [report, setReport] = useState<string | null>(null);
@@ -101,6 +104,7 @@ export default function DeepAnalysisCard({
 
       setReport(data.data.analysis || "");
       setStructured(data.data.structured || null);
+      onComplete?.(data.data.structured || null);
       setModelUsed(data.data.model || "");
       setLocked(true);
     } catch (err: any) {

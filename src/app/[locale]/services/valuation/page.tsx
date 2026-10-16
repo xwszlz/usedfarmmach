@@ -30,7 +30,6 @@ import ValuationReportPro from "@/components/valuation/valuation-report-pro";
 // ============================================================
 
 type Channel = "domestic" | "international" | "export";
-type Mode = "quick" | "deep";
 
 // 国产品类
 const DOMESTIC_CATEGORIES = [
@@ -614,9 +613,11 @@ function AIRecognizeSection({
 function DeepAnalysisSection({
   prefillData,
   images = [],
+  onComplete,
 }: {
   prefillData: { brand?: string; category?: string; year?: number; horsepower?: number };
   images?: string[];
+  onComplete?: (structured: Record<string, any> | null) => void;
 }) {
   const [loading, setLoading] = useState(false);
   const [report, setReport] = useState<string | null>(null);
@@ -653,9 +654,11 @@ function DeepAnalysisSection({
       });
       const data = await res.json();
       if (data.success) {
+        const s = data.data?.structured || null;
         setReport(data.data?.analysis || "");
-        setStructured(data.data?.structured || null);
+        setStructured(s);
         setLocked(true);
+        onComplete?.(s);
         // token 计费可见化：本次按 LLM 真实用量 ×2 扣的积分与扣后余额
         if (typeof data.data?.pointsCharged === "number") {
           setConsumption({ points: data.data.pointsCharged, balance: data.data?.creditsBalance });
@@ -766,7 +769,6 @@ function DeepAnalysisSection({
 
 export default function ValuationPage() {
   const locale = useLocale();
-  const [mode, setMode] = useState<Mode>("quick");
   const [channel, setChannel] = useState<Channel>("domestic");
 
   // 国产参数
@@ -785,6 +787,8 @@ export default function ValuationPage() {
   const [prefillTip, setPrefillTip] = useState("");
   // AI 识别区已上传的图片（压缩 dataURI），深度报告复用
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  // 深度分析结构化结果（P3：生成后回灌 AI 估值报告，复用同一份车况/技术参数）
+  const [deepStructured, setDeepStructured] = useState<Record<string, any> | null>(null);
   // 识别到品牌库未收录品牌（如"铁牛"）时动态加入下拉选项；估值走通用兜底模型
   const [extraDBrands, setExtraDBrands] = useState<string[]>([]);
   const [extraIBrands, setExtraIBrands] = useState<string[]>([]);
@@ -1178,30 +1182,6 @@ export default function ValuationPage() {
         </p>
       </div>
 
-      {/* Mode Selector */}
-      <div className="mb-6 flex gap-2 rounded-xl bg-white p-2 shadow-sm">
-        <button
-          onClick={() => setMode("quick")}
-          className={`flex-1 rounded-lg py-3 text-sm font-semibold transition-all ${
-            mode === "quick" ? "bg-primary-600 text-white" : "text-gray-500 hover:bg-gray-50"
-          }`}
-        >
-          <Zap className="mr-1 inline h-4 w-4" />
-          快速估价
-          <span className="ml-1 text-xs opacity-70">AI估值 · 按量计费</span>
-        </button>
-        <button
-          onClick={() => setMode("deep")}
-          className={`flex-1 rounded-lg py-3 text-sm font-semibold transition-all ${
-            mode === "deep" ? "bg-purple-600 text-white" : "text-gray-500 hover:bg-gray-50"
-          }`}
-        >
-          <FileText className="mr-1 inline h-4 w-4" />
-          深度报告
-          <span className="ml-1 text-xs opacity-70">AI深度分析 · 按量计费</span>
-        </button>
-      </div>
-
       {/* AI Recognition (shared) */}
       <div className="mb-6">
         <AIRecognizeSection onRecognized={handleRecognized} onImagesChange={setUploadedImages} channel={channel} />
@@ -1214,8 +1194,6 @@ export default function ValuationPage() {
         </div>
       )}
 
-      {mode === "quick" && (
-        <>
           {/* Channel Tabs */}
           <div className="mb-6 flex gap-2 rounded-xl bg-white p-2 shadow-sm">
             {channelTabs.map((tab) => {
@@ -1597,6 +1575,18 @@ export default function ValuationPage() {
           )}
 
 
+          {/* ── AI 深度分析：识图后可选，按 token 计费；结构化结果回灌下方 AI 估值报告（P3）── */}
+          <DeepAnalysisSection
+            prefillData={{
+              brand: channel === "domestic" ? dBrand : iBrand,
+              category: dCategory,
+              year: channel === "domestic" ? dYear - dYears : iYear,
+              horsepower: channel === "domestic" ? dHP : iHP,
+            }}
+            images={uploadedImages}
+            onComplete={setDeepStructured}
+          />
+
           {/* Results */}
           {result && (
             <div className="mt-6 space-y-4 animate-in">
@@ -1690,6 +1680,7 @@ export default function ValuationPage() {
                 }}
                 result={result}
                 intelligence={intel}
+                deepAnalysis={deepStructured}
               />
 
               {/* ── 顶级数据报告：基于 866 万条真实补贴交易，recharts 8 大模块 ── */}
@@ -1760,21 +1751,6 @@ export default function ValuationPage() {
               />
             </div>
           )}
-        </>
-      )}
-
-      {mode === "deep" && (
-        <DeepAnalysisSection
-          prefillData={{
-            brand: channel === "domestic" ? dBrand : iBrand,
-            category: dCategory,
-            year: channel === "domestic" ? dYear - dYears : iYear,
-            horsepower: channel === "domestic" ? dHP : iHP,
-          }}
-          images={uploadedImages}
-        />
-      )}
-
       {/* Disclaimer */}
       <div className="mt-8 text-center text-xs leading-relaxed text-gray-400">
         <strong className="text-gray-500">免责声明：</strong>

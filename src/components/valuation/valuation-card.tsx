@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ChevronDown, ChevronUp, Sparkles, ThumbsUp, AlertTriangle, Shield } from "lucide-react";
+import { ChevronDown, ChevronUp, Sparkles, Calculator, ThumbsUp, AlertTriangle, Shield, FileText, BarChart3 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatValuationMoney } from "@/lib/valuation/formulas";
 import type { ValuationResult } from "@/lib/valuation/formulas";
@@ -20,6 +20,8 @@ const LABELS: Record<string, {
   error: string;
   retry: string;
   free: string;
+  startVal: string;
+  idleDesc: string;
   badge: string;
   deal: string;
   overpriced: string;
@@ -37,7 +39,9 @@ const LABELS: Record<string, {
     loading: "估值计算中...",
     error: "估值失败",
     retry: "重试",
-    free: "免费",
+    free: "按量计费",
+    startVal: "开始AI估值",
+    idleDesc: "基于豆包视觉分析 + 866万条真实补贴交易，按 token 计费",
     badge: "AI估值",
     deal: "超值！",
     overpriced: "偏贵",
@@ -55,7 +59,9 @@ const LABELS: Record<string, {
     loading: "Calculating...",
     error: "Failed",
     retry: "Retry",
-    free: "Free",
+    free: "Pay-per-use",
+    startVal: "Start AI Valuation",
+    idleDesc: "Doubao vision + 8.66M subsidy records, token-metered",
     badge: "AI",
     deal: "Great Deal!",
     overpriced: "Overpriced",
@@ -73,7 +79,9 @@ const LABELS: Record<string, {
     loading: "Расчёт...",
     error: "Ошибка",
     retry: "Повтор",
-    free: "Бесплатно",
+    free: "По запросу",
+    startVal: "Оценить",
+    idleDesc: "Доубао + 8.66 млн записей субсидий, по токенам",
     badge: "AI",
     deal: "Выгодно!",
     overpriced: "Дорого",
@@ -85,14 +93,18 @@ interface ValuationCardProps {
   productName?: string;
   locale: string;
   autoLoad?: boolean;
+  /** 深度分析结构化结果（P3 联动），存在时结果区追加技术参数表 + 六维车况评分 */
+  deepAnalysis?: Record<string, any> | null;
 }
 
-export function ValuationCard({ productId, productName, locale, autoLoad = true }: ValuationCardProps) {
+export function ValuationCard({ productId, productName, locale, autoLoad = false, deepAnalysis }: ValuationCardProps) {
   const [result, setResult] = useState<ValuationResult | null>(null);
   const [loading, setLoading] = useState(autoLoad);
   const [error, setError] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const l = LABELS[locale] || LABELS.zh;
+  const zh = locale === "zh";
+  const da = deepAnalysis ?? undefined;
 
   const fetchValuation = async () => {
     setLoading(true);
@@ -124,6 +136,27 @@ export function ValuationCard({ productId, productName, locale, autoLoad = true 
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-purple-300 border-t-purple-600" />
             <span className="text-sm">{l.loading}</span>
           </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!result && !error) {
+    return (
+      <Card className="border-purple-200 bg-purple-50/30">
+        <CardContent className="flex flex-col items-center gap-3 py-8 text-center">
+          <Sparkles className="h-7 w-7 text-purple-500" />
+          <div>
+            <div className="text-sm font-medium text-gray-700">{l.title}</div>
+            <p className="mt-1 text-xs text-gray-500">{l.idleDesc}</p>
+          </div>
+          <button
+            onClick={fetchValuation}
+            className="flex items-center gap-2 rounded-lg bg-purple-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-purple-700"
+          >
+            <Calculator className="h-4 w-4" />
+            {l.startVal}
+          </button>
         </CardContent>
       </Card>
     );
@@ -211,6 +244,81 @@ export function ValuationCard({ productId, productName, locale, autoLoad = true 
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* 深度分析回灌：技术参数表 + 六维车况评分（与估值中心一致，P3 联动） */}
+        {da && (da.engineType || da.driveSystem || da.netWeight || da.mainConfig || da.overallLength) && (
+          <div className="mt-3 border-t border-purple-100 pt-3">
+            <div className="mb-2 flex items-center gap-2">
+              <FileText className="h-4 w-4 text-blue-600" />
+              <h4 className="text-sm font-semibold text-gray-800">{zh ? "技术参数" : "Technical Specs"}</h4>
+            </div>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+              {da.engineType && (
+                <div className="flex justify-between border-b border-gray-50 pb-1">
+                  <span className="text-gray-500">{zh ? "发动机型号" : "Engine"}</span>
+                  <span className="font-medium text-gray-800">{da.engineType}</span>
+                </div>
+              )}
+              {da.driveSystem && (
+                <div className="flex justify-between border-b border-gray-50 pb-1">
+                  <span className="text-gray-500">{zh ? "驱动方式" : "Drive"}</span>
+                  <span className="font-medium text-gray-800">{da.driveSystem}</span>
+                </div>
+              )}
+              {da.netWeight && (
+                <div className="flex justify-between border-b border-gray-50 pb-1">
+                  <span className="text-gray-500">{zh ? "整机重量" : "Weight"}</span>
+                  <span className="font-medium text-gray-800">{da.netWeight} kg</span>
+                </div>
+              )}
+              {da.mainConfig && (
+                <div className="flex justify-between border-b border-gray-50 pb-1">
+                  <span className="text-gray-500">{zh ? "主要配置" : "Config"}</span>
+                  <span className="font-medium text-gray-800">{da.mainConfig}</span>
+                </div>
+              )}
+              {da.overallLength && da.overallWidth && (
+                <div className="flex justify-between border-b border-gray-50 pb-1">
+                  <span className="text-gray-500">{zh ? "外形尺寸" : "Dimensions"}</span>
+                  <span className="font-medium text-gray-800">{da.overallLength}x{da.overallWidth}{da.overallHeight ? `x${da.overallHeight}` : ""} mm</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {da?.conditionScores && (
+          <div className="mt-3 border-t border-purple-100 pt-3">
+            <div className="mb-3 flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-purple-600" />
+              <h4 className="text-sm font-semibold text-gray-800">{zh ? "设备现状评估（六维度）" : "Condition Assessment"}</h4>
+            </div>
+            <div className="space-y-2">
+              {[
+                { key: "exterior", label: zh ? "外观漆面" : "Exterior" },
+                { key: "rust", label: zh ? "锈蚀程度" : "Rust" },
+                { key: "tires", label: zh ? "轮胎/履带" : "Tires" },
+                { key: "cabin", label: zh ? "驾驶室/操作台" : "Cabin" },
+                { key: "hydraulic", label: zh ? "液压渗漏" : "Hydraulic" },
+                { key: "overall", label: zh ? "整体印象" : "Overall" },
+              ].map(({ key, label }) => {
+                const score = da!.conditionScores[key];
+                if (score === undefined || score === null) return null;
+                const pct = (Number(score) / 10) * 100;
+                const color = Number(score) >= 8 ? "#10b981" : Number(score) >= 6 ? "#f59e0b" : "#ef4444";
+                return (
+                  <div key={key} className="flex items-center gap-3">
+                    <span className="w-24 text-xs text-gray-600">{label}</span>
+                    <div className="h-2 flex-1 rounded-full bg-gray-100">
+                      <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
+                    </div>
+                    <span className="w-10 text-right text-xs font-bold" style={{ color }}>{score}/10</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </CardContent>

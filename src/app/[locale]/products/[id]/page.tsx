@@ -15,8 +15,7 @@ import { normalizeCondition } from "@/lib/condition";
 import ArbitrageCalculatorSection from "@/components/product/arbitrage-calculator-section";
 import { InquiryActions } from "@/components/product/inquiry-actions";
 import InquirySection from "@/components/product/inquiry-section";
-import { ValuationCard } from "@/components/valuation/valuation-card";
-import DeepAnalysisCard from "@/components/product/deep-analysis-card";
+import AiDeviceCenter from "@/components/product/ai-device-center";
 import { getHreflangLanguages } from "@/components/seo/hreflang-head";
 import { ProductStructuredData, BreadcrumbStructuredData } from "@/components/seo/structured-data";
 import { FloatingChat } from "@/components/chat/floating-chat";
@@ -376,9 +375,9 @@ export default async function ProductDetailPage({
           )}
 
           {/* ================================================================ */}
-          {/*  AI 深度分析（豆包大模型）— 原在下方，与联系卖家对调后移到这里        */}
+          {/*  AI 设备中心（豆包大模型）— 深度分析 + 智能估值合并大卡          */}
           {/* ================================================================ */}
-          <DeepAnalysisCard
+          <AiDeviceCenter
             productId={product.id}
             productName={`${brandName} ${product.modelName}`}
             category={categoryName}
@@ -398,17 +397,6 @@ export default async function ProductDetailPage({
       {/* ================================================================ */}
       <div className="mt-8">
         <MachineryIdentityCard productId={product.id} locale={locale} />
-      </div>
-
-      {/* ================================================================ */}
-      {/*  AI 智能估值                                                      */}
-      {/* ================================================================ */}
-      <div className="mt-6">
-        <ValuationCard
-          productId={product.id}
-          productName={`${brandName} ${product.modelName}`}
-          locale={locale}
-        />
       </div>
 
       {/* ================================================================ */}

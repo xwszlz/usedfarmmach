@@ -12,7 +12,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { Printer, Download, Copy, Check, FileText, BarChart3 } from "lucide-react";
+import { Printer, Download, Copy, Check, FileText, BarChart3, Loader2, AlertTriangle } from "lucide-react";
 import { formatValuationMoney } from "@/lib/valuation/formulas";
 import { getSubsidyPriceHistory, type SubsidyYearDatum } from "@/lib/valuation/brand-data";
 import type { ValuationIntelligence } from "@/lib/valuation/intelligence";
@@ -42,11 +42,23 @@ export interface ValuationReportResult {
   channelPrices?: Record<string, number>;   // retail/dealer/consignment/auction
 }
 
+export interface DeepAnalysisStructured {
+  conditionScores?: Record<string, number | null>;
+  engineType?: string | null;
+  driveSystem?: string | null;
+  netWeight?: string | number | null;
+  mainConfig?: string | null;
+  overallLength?: string | number | null;
+  overallWidth?: string | number | null;
+  overallHeight?: string | number | null;
+}
+
 interface ValuationReportSectionProps {
   channel: "domestic" | "international" | "export";
   meta: ValuationReportMeta;
   result: ValuationReportResult;
   intelligence?: ValuationIntelligence | null;
+  deepAnalysis?: DeepAnalysisStructured | null;
   locale?: string;
 }
 
@@ -59,6 +71,24 @@ function genReportId(): string {
 
 function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/**
+ * 用 Blob 触发浏览器下载。
+ *
+ * 两处历史教训（前两次修复都栽在这里，别改回去）：
+ * - 必须先 appendChild 进 DOM：游离节点的 click() 在部分浏览器/内嵌场景会静默失效；
+ * - 不能同步 revokeObjectURL：浏览器可能尚未开始读取 Blob，提前回收会让下载被静默取消。
+ */
+function saveBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
 const PARAM_LABELS: { key: keyof ValuationReportMeta; zh: string; en: string; suffix?: string }[] = [
@@ -103,9 +133,15 @@ export default function ValuationReportSection({
   meta,
   result,
   intelligence,
+  deepAnalysis,
   locale = "zh",
 }: ValuationReportSectionProps) {
   const [copied, setCopied] = useState(false);
+  // 下载态：downloading 防重复点击；downloadError 让任何失败都在页面上可见（本次修复的核心）
+  const [downloading, setDownloading] = useState(false);
+  const [downloadOk, setDownloadOk] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [errorCopied, setErrorCopied] = useState(false);
   const zh = locale === "zh";
   const reportId = useMemo(() => genReportId(), []);
   const reportTime = useMemo(() => new Date().toLocaleString("zh-CN"), []);
@@ -168,7 +204,15 @@ export default function ValuationReportSection({
   const handlePrint = () => window.print();
 
   // ── 下载：数据驱动生成完全自包含的独立 HTML（带内联样式，无外部依赖）──
-  const handleDownloadHtml = () => {
+  //
+  // 第三次报障「点了没反应」：线上 bundle 已是修复版，说明失败发生在运行时且被
+  // React 事件处理器静默吞掉（异常只进 console，页面零反馈）。所以这里把整个函数体
+  // 包进 try/catch —— 要么成功，要么把失败原因直接显示到页面上（见下方红色提示区）。
+  const handleDownloadHtml = async () => {
+    setDownloadError(null);
+    setDownloadOk(false);
+    setDownloading(true);
+    try {
     const rows = paramRows
       .map((r) => `<tr><td class="k">${esc(r.label)}</td><td>${esc(r.value)}</td></tr>`)
       .join("");
@@ -238,6 +282,44 @@ export default function ValuationReportSection({
           .join("")}</ul></div>`
       : "";
 
+    // ── P3：复用上方「AI 深度分析」的结构化结果，注入技术参数表 + 六维车况评分条 ──
+    const deepTechRows: [string, string][] = [];
+    if (deepAnalysis?.engineType) deepTechRows.push([zh ? "发动机型号" : "Engine", String(deepAnalysis.engineType)]);
+    if (deepAnalysis?.driveSystem) deepTechRows.push([zh ? "驱动方式" : "Drive", String(deepAnalysis.driveSystem)]);
+    if (deepAnalysis?.netWeight) deepTechRows.push([zh ? "整机重量" : "Weight", `${deepAnalysis.netWeight} kg`]);
+    if (deepAnalysis?.mainConfig) deepTechRows.push([zh ? "主要配置" : "Config", String(deepAnalysis.mainConfig)]);
+    if (deepAnalysis?.overallLength && deepAnalysis?.overallWidth)
+      deepTechRows.push([
+        zh ? "外形尺寸" : "Dimensions",
+        `${deepAnalysis.overallLength}x${deepAnalysis.overallWidth}${deepAnalysis.overallHeight ? `x${deepAnalysis.overallHeight}` : ""} mm`,
+      ]);
+    const deepTechCard = deepTechRows.length
+      ? `<div class="card"><h3>${zh ? "深度分析 · 技术参数" : "Deep-Analysis Technical Specs"}</h3><table>${deepTechRows
+          .map(([k, v]) => `<tr><td class="k">${esc(k)}</td><td>${esc(v)}</td></tr>`)
+          .join("")}</table></div>`
+      : "";
+
+    const deepCondDef: [string, string][] = [
+      ["exterior", zh ? "外观漆面" : "Exterior"],
+      ["rust", zh ? "锈蚀程度" : "Rust"],
+      ["tires", zh ? "轮胎/履带" : "Tires"],
+      ["cabin", zh ? "驾驶室/操作台" : "Cabin"],
+      ["hydraulic", zh ? "液压渗漏" : "Hydraulic"],
+      ["overall", zh ? "整体印象" : "Overall"],
+    ];
+    const deepCondHtml =
+      deepAnalysis?.conditionScores
+        ? `<div class="card"><h3>${zh ? "深度分析 · 设备现状评估（六维度）" : "Deep-Analysis Condition"}</h3>${deepCondDef
+            .map(([key, label]) => {
+              const score = deepAnalysis.conditionScores?.[key];
+              if (score === undefined || score === null) return "";
+              const pct = (Number(score) / 10) * 100;
+              const color = Number(score) >= 8 ? "#10b981" : Number(score) >= 6 ? "#f59e0b" : "#ef4444";
+              return `<div class="cond-row"><span class="cond-label">${esc(label)}</span><div class="cond-track"><div class="cond-fill" style="width:${pct}%;background:${color}"></div></div><span class="cond-score" style="color:${color}">${score}/10</span></div>`;
+            })
+            .join("")}</div>`
+        : "";
+
     const html = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -285,6 +367,11 @@ td.num { text-align: right; font-weight: 600; white-space: nowrap; }
 .warn li { font-size: 12px; color: #92400e; line-height: 1.8; }
 .miss { color: #dc2626; font-weight: 600; }
 .footer { margin-top: 20px; padding-top: 14px; border-top: 1px solid #e5e7eb; font-size: 11px; color: #9ca3af; text-align: center; }
+.cond-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.cond-label { width: 96px; font-size: 12px; color: #4b5563; }
+.cond-track { flex: 1; height: 8px; border-radius: 999px; background: #f3f4f6; }
+.cond-fill { height: 100%; border-radius: 999px; }
+.cond-score { width: 40px; text-align: right; font-size: 12px; font-weight: 700; }
 @media print { body { background: white; padding: 0; } }
 </style>
 </head>
@@ -310,22 +397,69 @@ ${chart}
 ${channelCard}
 ${nameplateCard}
 ${missingCard}
+${deepTechCard}
+${deepCondHtml}
 ${warnings}
 <div class="footer">${zh ? "神雕农机 usedfarmmach.com" : "ShenDiao Agri Machinery"} | ${zh ? "本报告由AI生成，仅供参考，不构成交易建议" : "AI-generated, for reference only"} | ${reportId}</div>
 </body>
 </html>`;
 
-    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `估值报告_${reportId}.html`;
-    // 必须先挂进 DOM：部分浏览器/内嵌场景下游离节点 click() 会静默失效
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    // 不能同步 revoke：浏览器可能尚未开始读取 Blob，提前回收会导致下载被静默取消
-    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    const filename = `估值报告_${reportId}.html`;
+
+    // ── 主路径：走服务端通道，与前端 blob 解耦（失败原因通过 HTTP 状态/JSON 可观测）──
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const res = await fetch("/api/report/download", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ html, filename }),
+      });
+      if (!res.ok) {
+        let msg = `服务端下载失败（HTTP ${res.status}）`;
+        try {
+          const j = await res.json();
+          if (j?.error) msg = String(j.error);
+        } catch {
+          /* 响应不是 JSON，沿用上面的默认文案 */
+        }
+        throw new Error(msg);
+      }
+      saveBlob(await res.blob(), filename);
+    } catch (e1: any) {
+      // ── 兜底：服务端通道不可用时退回纯前端 Blob 直出（历史实现，保留）──
+      try {
+        saveBlob(new Blob([html], { type: "text/html;charset=utf-8" }), filename);
+      } catch (e2: any) {
+        throw new Error(
+          `服务端下载失败：${e1?.message || String(e1)}；本地兜底下载也失败：${e2?.message || String(e2)}`
+        );
+      }
+    }
+
+    setDownloadOk(true);
+    setTimeout(() => setDownloadOk(false), 3000);
+    } catch (err: any) {
+      // 生成失败 / 两条通道都失败 —— 一律显示到页面，不再静默
+      setDownloadError(err?.message || String(err));
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const handleCopyError = () => {
+    if (!downloadError) return;
+    navigator.clipboard
+      .writeText(downloadError)
+      .then(() => {
+        setErrorCopied(true);
+        setTimeout(() => setErrorCopied(false), 2000);
+      })
+      .catch(() => {
+        /* 非安全上下文下 clipboard 不可用，忽略 */
+      });
   };
 
   return (
@@ -352,12 +486,44 @@ ${warnings}
         </button>
         <button
           onClick={handleDownloadHtml}
-          className="flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50"
+          disabled={downloading}
+          className="flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <Download className="h-3.5 w-3.5" />
-          {zh ? "下载HTML" : "Download"}
+          {downloading ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Download className="h-3.5 w-3.5" />
+          )}
+          {downloading ? (zh ? "下载中…" : "Downloading") : zh ? "下载HTML" : "Download"}
         </button>
       </div>
+
+      {/* 下载结果反馈：失败必须可见（第三次报障的终结手段 —— 下次点击要么成功、要么显示原因） */}
+      {downloadOk && (
+        <div className="no-print mb-3 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-700">
+          {zh ? "已开始下载，若无反应请检查浏览器下载拦截" : "Download started — check your download blocker if nothing happens"}
+        </div>
+      )}
+      {downloadError && (
+        <div className="no-print mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <div className="min-w-0 flex-1">
+              <div className="font-semibold">{zh ? "下载失败" : "Download failed"}</div>
+              <div className="mt-1 break-all">{downloadError}</div>
+              <div className="mt-1 text-[10px] text-red-400">
+                {zh ? "请把此错误信息截图反馈，便于定位" : "Screenshot this error and send it to support"}
+              </div>
+            </div>
+            <button
+              onClick={handleCopyError}
+              className="shrink-0 rounded border border-red-300 px-2 py-1 text-[11px] text-red-700 hover:bg-red-100"
+            >
+              {errorCopied ? (zh ? "已复制" : "Copied") : zh ? "复制错误信息" : "Copy error"}
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="overflow-hidden rounded-xl border border-blue-100 bg-white shadow-sm">
         {/* Report Header */}

@@ -2,13 +2,10 @@
  * Auto product translation service (8-locale).
  *
  * When a product is published/updated we translate the source (zh) title and
- * description into the other 7 locales via the SAME provider/endpoint/model as
- * the existing i18n translation infra (OpenRouter, see i18n-translate-core.cjs
- * and translate-messages.cjs). We cannot import that CJS module directly
- * because it calls `process.exit(2)` at load time when OPENROUTER_API_KEY is
- * unset, which would crash the Next.js server. So the HTTP call is replicated
- * here, scoped to graceful degradation: this module NEVER throws out of the
- * publish path.
+ * description into the other 7 locales via Doubao (Volcengine Ark). Uses the
+ * shared `chatCompletionDoubao` client so the Ark API key is read from env
+ * internally (no process.exit at load time). Scoped to graceful degradation:
+ * this module NEVER throws out of the publish path.
  *
  * Storage: a `translationMeta` Json column on Product holds per-locale
  * translated values + human-override flags. We also back-fill the existing
@@ -22,6 +19,7 @@
  * run `prisma migrate` for this additive column.
  */
 import { prisma } from "@/lib/db";
+import { chatCompletionDoubao, getArkModelId } from "@/lib/ai/ark-client";
 import { RT_LOCALES, type RtLocale } from "@/lib/i18n-types";
 import type { Prisma } from "@prisma/client";
 
@@ -39,8 +37,6 @@ const LANG_NAME: Record<string, string> = {
   hi: "Hindi",
 };
 
-// Model default mirrors i18n-translate-core.cjs (overridable via I18N_MODEL).
-const MODEL = process.env.I18N_MODEL || "meta-llama/llama-3.3-70b-instruct";
 // Brand names that must stay untranslated (mirror i18n-translate-core.cjs).
 const BRANDS = "神雕农机, CLAAS, John Deere, New Holland, Fendt, Agriaffaires, usedfarmmach";
 
@@ -61,17 +57,8 @@ type TranslateSource = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// OpenRouter translation call (replicates i18n-translate-core.cjs semantics)
+// 豆包（火山方舟 ARK，数据不出境）翻译调用 —— 复用全站统一 AI 出口
 // ─────────────────────────────────────────────────────────────────────────────
-
-function getApiKey(): string | undefined {
-  const key = process.env.OPENROUTER_API_KEY;
-  return key && key.length > 0 ? key : undefined;
-}
-
-interface OpenRouterResult {
-  choices?: { message?: { content?: string } }[];
-}
 
 async function callOnce(
   sources: string[],
@@ -90,34 +77,17 @@ async function callOnce(
     `5) UI text must be concise and natural in the target language.`;
   const user = JSON.stringify(sources);
 
-  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${getApiKey()}`,
-      "Content-Type": "application/json",
-      "HTTP-Referer": "https://usedfarmmach.com",
-      "X-Title": "usedfarmmach-product-translate",
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      temperature: 0.1,
-      max_tokens: 4000,
-      messages: [
-        { role: "system", content: sys },
-        { role: "user", content: user },
-      ],
-    }),
+  const res = await chatCompletionDoubao({
+    messages: [
+      { role: "system", content: sys },
+      { role: "user", content: user },
+    ],
+    model: getArkModelId(),
+    maxTokens: 4000,
+    timeoutMs: 60000,
   });
 
-  if (!res.ok) {
-    const t = await res.text().catch(() => "");
-    const err = new Error(`HTTP ${res.status}: ${t.slice(0, 200)}`);
-    (err as { status?: number }).status = res.status;
-    throw err;
-  }
-
-  const j = (await res.json()) as OpenRouterResult;
-  let txt = j.choices?.[0]?.message?.content?.trim() || "";
+  let txt = res.text?.trim() || "";
   // Strip possible ```json fences.
   txt = txt.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "");
   let arr: unknown;
@@ -132,7 +102,7 @@ async function callOnce(
   return (arr as unknown[]).map((s) => (typeof s === "string" ? s : String(s)));
 }
 
-async function translateBatchOpenRouter(
+async function translateBatchDoubao(
   sources: string[],
   srcLang: string,
   tgtLang: string
@@ -211,8 +181,8 @@ function sourceValue(product: TranslateSource, field: ProductTranslationField): 
 /**
  * Compute the new translation meta for a product.
  *
- * - If OPENROUTER_API_KEY is missing → degrade: return existing meta unchanged
- *   (or an empty meta). Never throw.
+ * - If the Doubao call fails (missing key / network / parse) → the per-locale
+ *   catch keeps previous values; never throw.
  * - Per locale (parallelized): translate the non-overridden, non-empty fields.
  * - On any per-locale failure → keep previous values, log, continue.
  */
@@ -220,14 +190,6 @@ export async function translateProductFields(
   product: TranslateSource,
   existingMeta: ProductTranslationMeta | null
 ): Promise<ProductTranslationMeta> {
-  const apiKey = getApiKey();
-  if (!apiKey) {
-    console.warn(
-      "[product-translation] OPENROUTER_API_KEY 未配置，跳过自动翻译（降级保留既有值，发布不受影响）"
-    );
-    return existingMeta ?? emptyMeta();
-  }
-
   const meta: ProductTranslationMeta = existingMeta
     ? {
         ...existingMeta,
@@ -251,7 +213,7 @@ export async function translateProductFields(
 
       const sources = pending.map((f) => sourceValue(product, f));
       try {
-        const trs = await translateBatchOpenRouter(sources, "Chinese", tgtLang);
+        const trs = await translateBatchDoubao(sources, "Chinese", tgtLang);
         if (!meta.values[locale]) meta.values[locale] = {};
         pending.forEach((f, i) => {
           if (meta.values[locale]) meta.values[locale]![f] = trs[i];
