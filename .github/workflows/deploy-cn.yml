@@ -183,15 +183,27 @@ jobs:
             echo "==== 清理后 ===="
             df -h / || true
 
-      # 部署前先把仓库最新的 deploy/deploy-cn.sh 同步到 ECS，
+      # 部署前先把仓库最新的 deploy 脚本同步到 ECS，
       # 避免 ECS 本地旧脚本（缺少 R4/#37/#38 等修复）导致部署失败。
+      #
+      # 2026-10-16 补齐：此前 source 只列 deploy-cn.sh 一个文件，导致以下两个
+      # 脚本在仓库里存在、ECS 上却永远看不到，只能靠人工 scp 放上去：
+      #   - deploy/renew-cn-ssl.sh    证书签发/续签本体 + certbot deploy-hook
+      #   - deploy/watchdog-cn-cert.sh 证书续签看门狗（重试 + 告警）
+      # 风险不是洁癖：certbot 会把 deploy-hook 命令写死进
+      # /etc/letsencrypt/renewal/usedfarmmach.cn.conf，指向
+      # /opt/cn/deploy/renew-cn-ssl.sh。该脚本一旦丢失（换机器、或误清
+      # /opt/cn/deploy），自动续签会在需要续签的那天【静默失败】——
+      # 不报错、不通知，直到证书过期、站点中断才被发现。
+      # target=/opt/cn + strip_components=0 → 落到 /opt/cn/deploy/<name>，
+      # 与脚本内互相引用的绝对路径保持一致。
       - name: Sync deploy script to ECS
         uses: appleboy/scp-action@v1
         with:
           host: 101.200.125.199
           username: deploy
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          source: "deploy/deploy-cn.sh"
+          source: "deploy/deploy-cn.sh,deploy/renew-cn-ssl.sh,deploy/watchdog-cn-cert.sh"
           target: "/opt/cn"
 
       # R47 教训：docker-compose.yml 之前没 sync 到 ECS，PR #47 改的 healthcheck
