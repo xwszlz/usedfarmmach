@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ChevronDown, ChevronUp, Sparkles, ThumbsUp, AlertTriangle, Shield } from "lucide-react";
+import { ChevronDown, ChevronUp, Sparkles, Calculator, ThumbsUp, AlertTriangle, Shield } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatValuationMoney } from "@/lib/valuation/formulas";
 import type { ValuationResult } from "@/lib/valuation/formulas";
@@ -20,6 +20,8 @@ const LABELS: Record<string, {
   error: string;
   retry: string;
   free: string;
+  startVal: string;
+  idleDesc: string;
   badge: string;
   deal: string;
   overpriced: string;
@@ -37,7 +39,9 @@ const LABELS: Record<string, {
     loading: "估值计算中...",
     error: "估值失败",
     retry: "重试",
-    free: "免费",
+    free: "按量计费",
+    startVal: "开始AI估值",
+    idleDesc: "基于豆包视觉分析 + 866万条真实补贴交易，按 token 计费",
     badge: "AI估值",
     deal: "超值！",
     overpriced: "偏贵",
@@ -55,7 +59,9 @@ const LABELS: Record<string, {
     loading: "Calculating...",
     error: "Failed",
     retry: "Retry",
-    free: "Free",
+    free: "Pay-per-use",
+    startVal: "Start AI Valuation",
+    idleDesc: "Doubao vision + 8.66M subsidy records, token-metered",
     badge: "AI",
     deal: "Great Deal!",
     overpriced: "Overpriced",
@@ -73,7 +79,9 @@ const LABELS: Record<string, {
     loading: "Расчёт...",
     error: "Ошибка",
     retry: "Повтор",
-    free: "Бесплатно",
+    free: "По запросу",
+    startVal: "Оценить",
+    idleDesc: "Доубао + 8.66 млн записей субсидий, по токенам",
     badge: "AI",
     deal: "Выгодно!",
     overpriced: "Дорого",
@@ -87,7 +95,7 @@ interface ValuationCardProps {
   autoLoad?: boolean;
 }
 
-export function ValuationCard({ productId, productName, locale, autoLoad = true }: ValuationCardProps) {
+export function ValuationCard({ productId, productName, locale, autoLoad = false }: ValuationCardProps) {
   const [result, setResult] = useState<ValuationResult | null>(null);
   const [loading, setLoading] = useState(autoLoad);
   const [error, setError] = useState<string | null>(null);
@@ -124,6 +132,27 @@ export function ValuationCard({ productId, productName, locale, autoLoad = true 
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-purple-300 border-t-purple-600" />
             <span className="text-sm">{l.loading}</span>
           </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!result && !error) {
+    return (
+      <Card className="border-purple-200 bg-purple-50/30">
+        <CardContent className="flex flex-col items-center gap-3 py-8 text-center">
+          <Sparkles className="h-7 w-7 text-purple-500" />
+          <div>
+            <div className="text-sm font-medium text-gray-700">{l.title}</div>
+            <p className="mt-1 text-xs text-gray-500">{l.idleDesc}</p>
+          </div>
+          <button
+            onClick={fetchValuation}
+            className="flex items-center gap-2 rounded-lg bg-purple-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-purple-700"
+          >
+            <Calculator className="h-4 w-4" />
+            {l.startVal}
+          </button>
         </CardContent>
       </Card>
     );
