@@ -25,8 +25,19 @@
 #
 # 【告警通道（可选）】
 #   在 /opt/cn/.env.cn 增加一行（企业微信机器人 webhook，境内可达，不受跨境影响）：
-#     CN_CERT_ALERT_WEBHOOK=https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxxx
-#   未配置则仅写日志 + syslog，不会报错。
+#     CN_CERT_ALERT_WEBHOOK=https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=<真实key>
+#   未配置、或值仍是占位符（如 "你的key" / "xxxx" / "YOUR_KEY"）时，仅写日志 + syslog，
+#   不会报错 —— 但会明确打印「仍是占位符」，避免出现"以为配好了其实没配"。
+#
+#   ⚠️ 判断是否真的发出，必须看 errcode，不能只看 curl 退出码：
+#      企业微信 webhook 即使 key 无效也只返回 HTTP 200（curl 退出码仍为 0），
+#      错误信息在响应体的 errcode/errmsg 里。本脚本解析 errcode，仅 errcode=0
+#      记为「已发出」，否则记为「被拒绝」并打印原始响应体。
+#
+#   自测连通性（在 ECS 上跑，期望输出 {"errcode":0,"errmsg":"ok"}）：
+#     H="$(grep -E '^CN_CERT_ALERT_WEBHOOK=' /opt/cn/.env.cn | head -1 | cut -d= -f2-)"
+#     curl -sS -X POST "$H" -H 'Content-Type: application/json' \
+#       -d '{"msgtype":"text","text":{"content":"[神雕农机 .cn] webhook 连通性测试（可忽略）"}}'
 # ============================================================
 set -uo pipefail
 
@@ -75,19 +86,42 @@ send_alert() {
   if [ -f "$ENV_FILE" ]; then
     hook="$(grep -E '^CN_CERT_ALERT_WEBHOOK=' "$ENV_FILE" | head -1 | cut -d= -f2- || true)"
   fi
-  if [ -z "$hook" ]; then
-    log "未配置 CN_CERT_ALERT_WEBHOOK，本次仅记录日志（未发出外部通知）"
-    return 0
+
+  # 空值 / 占位符一律按「未配置」处理，并明确说出当前值是什么。
+  # 2026-10-16 实测教训：`echo '...key=你的key' >> .env.cn` 这类占位符会被
+  # 原样写进去；若不识别，就会被当作"已配置"而永远静默失效。
+  case "$hook" in
+    "")
+      log "未配置 CN_CERT_ALERT_WEBHOOK，本次仅记录日志（未发出外部通知）"
+      return 0
+      ;;
+    *你的key*|*你的KEY*|*YOUR_KEY*|*your_key*|*CHANGE_ME*|*change_me*|*xxxx*|*XXXX*)
+      log "CN_CERT_ALERT_WEBHOOK 仍是占位符（当前值：${hook}），本次仅记录日志（未发出外部通知）"
+      return 0
+      ;;
+  esac
+
+  local payload resp errcode
+  payload="$(printf '{"msgtype":"text","text":{"content":"[神雕农机 .cn] %s"}}' "$msg")"
+
+  if ! resp="$(curl -sS --max-time 15 -X POST "$hook" \
+       -H 'Content-Type: application/json' -d "$payload" 2>&1)"; then
+    log "告警 webhook 请求失败（curl 返回非 0）：${resp}"
+    return 1
   fi
 
-  local payload
-  payload="$(printf '{"msgtype":"text","text":{"content":"[神雕农机 .cn] %s"}}' "$msg")"
-  if curl -sS --max-time 15 -X POST "$hook" \
-       -H 'Content-Type: application/json' -d "$payload" >/dev/null 2>&1; then
-    log "告警已通过 webhook 发出"
-  else
-    log "告警 webhook 发送失败"
+  # ⚠️ 关键：企业微信 webhook 即使 key 无效也返回 HTTP 200，只在响应体里给
+  # errcode/errmsg，curl 退出码仍为 0。2026-10-16 用无效 key 实测得到：
+  #   {"errcode":93000,"errmsg":"invalid webhook url, hint: [...]"}
+  # 所以绝不能只看 curl 退出码 —— 那会把「key 填错」误报成「告警已发出」，
+  # 等于让人以为有监控、实际全程静默。必须解析 errcode==0 才算真正发出。
+  errcode="$(printf '%s' "$resp" | sed -n 's/.*"errcode"[[:space:]]*:[[:space:]]*\(-\{0,1\}[0-9]\{1,\}\).*/\1/p')"
+  if [ "$errcode" = "0" ]; then
+    log "告警已通过 webhook 发出（errcode=0）"
+    return 0
   fi
+  log "告警 webhook 被拒绝：errcode=${errcode:-<未解析到>}，响应体=${resp}"
+  return 1
 }
 
 do_check() {
