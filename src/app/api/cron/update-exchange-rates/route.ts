@@ -16,8 +16,10 @@ function isValidToken(token: string | null | undefined): boolean {
   if (!token) return false;
   const cronApiKey = process.env.CRON_API_KEY;
   const internalApiKey = process.env.INTERNAL_API_KEY;
+  const cronSecret = process.env.CRON_SECRET;
   if (cronApiKey && token === cronApiKey) return true;
   if (internalApiKey && token === internalApiKey) return true;
+  if (cronSecret && token === cronSecret) return true;
   return false;
 }
 
@@ -43,7 +45,11 @@ async function runUpdate(): Promise<NextResponse> {
 
 // Vercel Cron 实际以 GET 触发
 export async function GET(request: NextRequest) {
-  const token = request.nextUrl.searchParams.get("token");
+  const queryToken = request.nextUrl.searchParams.get("token");
+  const authHeader = request.headers.get("authorization");
+  const token =
+    queryToken ||
+    (authHeader && authHeader.startsWith("Bearer ") ? authHeader.substring(7) : null);
   if (!isValidToken(token)) {
     return NextResponse.json({ success: false, error: "缺少或无效的授权信息" }, { status: 401 });
   }
@@ -53,12 +59,12 @@ export async function GET(request: NextRequest) {
 // 手动触发（Bearer 风格，便于本地/脚本触发）
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get("Authorization");
-  const apiKey = process.env.CRON_API_KEY;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return NextResponse.json({ success: false, error: "缺少授权信息" }, { status: 401 });
   }
   const token = authHeader.substring(7);
-  if (!apiKey || token !== apiKey) {
+  // 复用 isValidToken（CRON_API_KEY / INTERNAL_API_KEY / CRON_SECRET 任一匹配即放行，fail-closed）
+  if (!isValidToken(token)) {
     return NextResponse.json({ success: false, error: "无效的API密钥" }, { status: 401 });
   }
   return runUpdate();
