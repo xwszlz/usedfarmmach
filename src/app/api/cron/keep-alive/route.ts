@@ -41,8 +41,10 @@ function isValidToken(token: string | null | undefined): boolean {
   if (!token) return false;
   const cronApiKey = process.env.CRON_API_KEY;
   const internalApiKey = process.env.INTERNAL_API_KEY;
+  const cronSecret = process.env.CRON_SECRET;
   if (cronApiKey && token === cronApiKey) return true;
   if (internalApiKey && token === internalApiKey) return true;
+  if (cronSecret && token === cronSecret) return true;
   return false;
 }
 
@@ -51,7 +53,11 @@ function isValidToken(token: string | null | undefined): boolean {
  * 真实打一次库，唤醒 Neon 计算节点。返回耗时，便于判断是否发生了冷启动。
  */
 export async function GET(request: NextRequest) {
-  const token = request.nextUrl.searchParams.get("token");
+  const queryToken = request.nextUrl.searchParams.get("token");
+  const authHeader = request.headers.get("authorization");
+  const token =
+    queryToken ||
+    (authHeader && authHeader.startsWith("Bearer ") ? authHeader.substring(7) : null);
 
   if (!isValidToken(token)) {
     return NextResponse.json(

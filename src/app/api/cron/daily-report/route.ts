@@ -18,8 +18,10 @@ export const maxDuration = 300;
  * 当生产环境漏配密钥时，`?token=dev-secret-key` 会退化成万能钥匙。
  * 因此这里在两个环境变量都未配置时返回 null，由调用方 fail-closed（拒绝所有请求）。
  */
-function resolveExpectedKey(): string | null {
-  return process.env.INTERNAL_API_KEY || process.env.CRON_API_KEY || null;
+function resolveValidTokens(): string[] {
+  return [process.env.CRON_API_KEY, process.env.INTERNAL_API_KEY, process.env.CRON_SECRET].filter(
+    (k): k is string => Boolean(k)
+  );
 }
 
 /** 从 query(?token=) 或 Authorization: Bearer 头中提取调用方凭证。 */
@@ -31,14 +33,14 @@ function extractToken(req: NextRequest): string {
 
 export async function GET(request: NextRequest) {
   // fail-closed：密钥未配置时绝不放行，也绝不使用任何默认值兜底。
-  const expected = resolveExpectedKey();
-  if (!expected) {
+  const validTokens = resolveValidTokens();
+  if (validTokens.length === 0) {
     return NextResponse.json(
-      { ok: false, error: "Server misconfigured: INTERNAL_API_KEY / CRON_API_KEY is not set" },
+      { ok: false, error: "Server misconfigured: INTERNAL_API_KEY / CRON_API_KEY / CRON_SECRET is not set" },
       { status: 500 }
     );
   }
-  if (extractToken(request) !== expected) {
+  if (!validTokens.includes(extractToken(request))) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 

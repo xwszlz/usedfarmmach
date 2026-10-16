@@ -27,8 +27,10 @@ function isValidToken(token: string | null | undefined): boolean {
   const cronApiKey = process.env.CRON_API_KEY;
   const internalApiKey = process.env.INTERNAL_API_KEY;
 
+  const cronSecret = process.env.CRON_SECRET;
   if (cronApiKey && token === cronApiKey) return true;
   if (internalApiKey && token === internalApiKey) return true;
+  if (cronSecret && token === cronSecret) return true;
 
   return false;
 }
@@ -67,7 +69,11 @@ async function executePriceUpdate(body: Record<string, unknown> = {}) {
  * schedule: "0 23 * * 0" → 每周日 23:00 UTC = 每周一 07:00 UTC+8
  */
 export async function GET(request: NextRequest) {
-  const token = request.nextUrl.searchParams.get("token");
+  const queryToken = request.nextUrl.searchParams.get("token");
+  const authHeader = request.headers.get("authorization");
+  const token =
+    queryToken ||
+    (authHeader && authHeader.startsWith("Bearer ") ? authHeader.substring(7) : null);
 
   if (!isValidToken(token)) {
     return NextResponse.json(

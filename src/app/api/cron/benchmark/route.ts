@@ -24,8 +24,10 @@ function isValidToken(token: string | null | undefined): boolean {
   // 与 src/app/api/cron/daily-report/route.ts 的约定保持一致。
   const cronApiKey = process.env.CRON_API_KEY;
   const internalApiKey = process.env.INTERNAL_API_KEY;
+  const cronSecret = process.env.CRON_SECRET;
   if (cronApiKey && token === cronApiKey) return true;
   if (internalApiKey && token === internalApiKey) return true;
+  if (cronSecret && token === cronSecret) return true;
   return false;
 }
 
@@ -51,7 +53,11 @@ async function executeRefresh() {
 
 // GET — Vercel Cron（token 通过 ?token= 传递）
 export async function GET(request: NextRequest) {
-  const token = request.nextUrl.searchParams.get("token");
+  const queryToken = request.nextUrl.searchParams.get("token");
+  const authHeader = request.headers.get("authorization");
+  const token =
+    queryToken ||
+    (authHeader && authHeader.startsWith("Bearer ") ? authHeader.substring(7) : null);
   if (!isValidToken(token)) {
     return NextResponse.json(
       { success: false, error: "缺少或无效的授权信息" },
