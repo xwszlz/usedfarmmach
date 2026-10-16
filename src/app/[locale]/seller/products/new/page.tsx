@@ -767,29 +767,19 @@ export default function NewProductPage() {
         setTimeout(() => router.push(`/${locale}/seller/products`), 2500);
       } else if (res.status === 401) {
         setResult({ success: false, message: "请先登录后再发布" });
+      } else if (res.status === 402 || data.code === "INSUFFICIENT_CREDITS") {
+        // 发布仅需积分闸门：积分不足 → 402（body 含 balance/required）
+        const balance = typeof data.balance === "number" ? data.balance : data.credits;
+        setResult({
+          success: false,
+          message:
+            typeof balance === "number"
+              ? `积分不足！当前 ${balance} 积分，发布需 ${data.required ?? 1} 积分。请先充值后再发布。`
+              : data.error || "积分不足，请先充值后再发布",
+        });
       } else if (res.status === 403) {
-        // 403 有两种来源：额度超限（QUOTA_EXCEEDED，body 不含 credits）
-        // 与积分不足（body 含 credits）。旧实现一律按积分不足渲染，
-        // 额度超限时会显示「当前 undefined 积分」，掩盖真实原因。
-        if (data.code === "QUOTA_EXCEEDED") {
-          const resetAt =
-            typeof data.data?.resetAt === "string" ? new Date(data.data.resetAt) : null;
-          const resetTxt =
-            resetAt && !isNaN(resetAt.getTime())
-              ? `，将于 ${resetAt.toLocaleDateString("zh-CN")} 恢复`
-              : "";
-          setResult({
-            success: false,
-            message: `本月发布额度已用尽${resetTxt}。如需继续发布，请升级会员。`,
-          });
-        } else if (typeof data.credits === "number") {
-          setResult({
-            success: false,
-            message: `积分不足！当前 ${data.credits} 积分，发布需 ${data.required ?? 1} 积分`,
-          });
-        } else {
-          setResult({ success: false, message: data.error || "发布被拒绝（403）" });
-        }
+        // 403 为权限等其他拒绝（月度额度闸门已移除，不再有 QUOTA_EXCEEDED）
+        setResult({ success: false, message: data.error || "发布被拒绝（403）" });
       } else {
         setResult({ success: false, message: data.error || `发布失败（HTTP ${res.status}）` });
       }

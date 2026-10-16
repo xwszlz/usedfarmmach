@@ -8,8 +8,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyToken, getTokenFromHeaders } from "@/lib/auth";
-import { getQuotaUser, consumeQuota, quotaExceededResponse } from "@/lib/quota";
+import { deductCredits } from "@/lib/credits/spend";
 import { writePiiAuditLog } from "@/lib/audit";
+
+/** 从 referer / 路径推断 locale（与 quota guard / 各 AI 路由保持一致） */
+function getLocaleFromRequest(request: NextRequest): string {
+  const referer = request.headers.get("referer") || "";
+  const m = referer.match(/\/([a-z]{2})\b/) || referer.match(/\/([a-z]{2})$/);
+  if (m && ["zh", "en", "ru", "es", "pt", "fr", "hi", "ar"].includes(m[1])) return m[1];
+  return "zh";
+}
 
 /** 角色门禁：仅 admin / super_admin */
 async function checkAdmin(req: NextRequest) {
@@ -34,14 +42,29 @@ export async function POST(
     return NextResponse.json({ success: false, error: "无权限" }, { status: 403 });
   }
 
-  // ── P1-a 额度闸门：查看联系方式计 actor 的 viewContact 额度 ──
-  const qUser = await getQuotaUser(admin.userId);
-  if (qUser) {
-    const q = await consumeQuota(qUser, "viewContact");
-    if (!q.ok) {
-      return quotaExceededResponse(q.resetAt);
-    }
+  // ── 查看联系方式仅需积分闸门：按积分扣减（无每月次数上限）──
+  let creditsRemaining: number | null = null;
+  const cost = await deductCredits(
+    admin.userId,
+    10,
+    "查看联系方式",
+    { action: "viewContact" },
+    "viewcontact_cost",
+  );
+  if (!cost.ok) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "积分不足，请先充值后再查看联系方式",
+        code: "INSUFFICIENT_CREDITS",
+        rechargeUrl: `/${getLocaleFromRequest(request)}/credits`,
+        required: cost.required,
+        balance: cost.credits,
+      },
+      { status: 402 },
+    );
   }
+  creditsRemaining = cost.credits ?? null;
 
   const { id } = params;
   const body = await request.json().catch(() => ({}));
@@ -64,5 +87,5 @@ export async function POST(
     purpose,
   });
 
-  return NextResponse.json({ success: true, data: { email: target.email } });
+  return NextResponse.json({ success: true, data: { email: target.email }, creditsRemaining });
 }

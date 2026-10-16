@@ -1,63 +1,23 @@
 /**
  * AI估值引擎 V4 — 视频分析模块
  *
- * 使用多模态LLM（GPT-4o）分析农机运转视频，
- * 评估发动机状态、作业机构流畅度、视频质量等维度。
+ * 使用统一豆包（火山方舟 ARK）多模态能力分析农机运转视频，
+ * 评估发动机状态、作业机构流畅度、视频质量等维度。全站统一出口：
+ *   src/lib/ai/ark-client.ts#chatCompletionDoubao
+ *   - .cn 直连国行 ARK；.com 经 HK/SG 代理节点（B 通道）。
+ *
+ * ⚠️ E-2（待决策）：方舟视频理解能力模型待选，ARK_VIDEO_MODEL_ID 由部署侧填。
+ *   当前调用链路已接好（video_url 内容块）；若所选模型暂不支持视频，调用将失败并降级，
+ *   不影响估值主链路。计费仍按豆包模型归集。
  *
  * 视频因子取值范围：0.92 ~ 1.08
  * 设计原则：有视频只加分不扣分（除非发现明显缺陷）
  */
 
-import axios from "axios";
-import { isOverseasAiAllowed } from "@/config/site";
+import { chatCompletionDoubao, getArkVideoModelId } from "@/lib/ai/ark-client";
 import { recordUsage, ESTIMATED_TOKENS } from "@/lib/credits/usage-collector";
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
-const OPENROUTER_BASE = "https://openrouter.ai/api/v1";
-const MODEL = "openai/gpt-4o"; // 支持视频/多帧分析的高质量模型
-
-export interface VideoAnalysisResult {
-  hasVideo: boolean;
-  qualityScore: number; // 0~1 (清晰度+稳定性+完整度)
-  engineSoundStatus: "normal" | "abnormal_noise" | "abnormal_smoke" | "no_sound";
-  mechanismSmoothness: "smooth" | "sluggish" | "jammed";
-  overallImpression: "excellent" | "good" | "fair" | "poor";
-  analysis: string; // 详细分析文本
-  confidence: number; // 置信度 0-1
-}
-
-/**
- * 分析农机运转视频
- *
- * @param videoUrl 视频URL（OSS HTTPS URL）
- * @returns VideoAnalysisResult 视频分析结果
- */
-export async function analyzeVideo(
-  videoUrl: string
-): Promise<VideoAnalysisResult> {
-  // 🔴 合规：.cn 站数据不出境 —— GPT-4o 经 OpenRouter 属境外服务，一律禁用
-  if (!isOverseasAiAllowed()) {
-    console.warn("[VideoAnalyzer] 国内站禁用境外模型（OpenRouter），使用降级方案");
-    return getDefaultAnalysis();
-  }
-
-  if (!OPENROUTER_API_KEY) {
-    console.warn("[VideoAnalyzer] OPENROUTER_API_KEY 未配置，使用降级方案");
-    return getDefaultAnalysis();
-  }
-
-  try {
-    const response = await axios.post(
-      `${OPENROUTER_BASE}/chat/completions`,
-      {
-        model: MODEL,
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: `你是一位资深二手农业机械评估专家，熟悉各类农机设备的运转状态评估。
+const VIDEO_PROMPT = `你是一位资深二手农业机械评估专家，熟悉各类农机设备的运转状态评估。
 请分析这台农机的运转视频，评估以下维度，以 JSON 格式返回。
 
 返回字段说明：
@@ -91,76 +51,74 @@ export async function analyzeVideo(
 注意：
 1. 只返回 JSON，不要任何其他文字说明
 2. 如果视频质量太差无法判断，qualityScore 设为 0.3 以下
-3. confidence 取决于视频清晰度和内容完整度`,
-              },
-              {
-                type: "video_url",
-                video_url: { url: videoUrl },
-              },
-            ],
-          },
-        ],
-        response_format: { type: "json_object" },
-        max_tokens: 1000,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": "https://usedfarmmach.com",
-          "X-Title": "Valuation Engine V4 - Video Analyzer",
+3. confidence 取决于视频清晰度和内容完整度`;
+
+export interface VideoAnalysisResult {
+  hasVideo: boolean;
+  qualityScore: number; // 0~1 (清晰度+稳定性+完整度)
+  engineSoundStatus: "normal" | "abnormal_noise" | "abnormal_smoke" | "no_sound";
+  mechanismSmoothness: "smooth" | "sluggish" | "jammed";
+  overallImpression: "excellent" | "good" | "fair" | "poor";
+  analysis: string; // 详细分析文本
+  confidence: number; // 置信度 0-1
+}
+
+/**
+ * 分析农机运转视频（统一豆包）。失败/模型不支持时降级。
+ */
+export async function analyzeVideo(
+  videoUrl: string
+): Promise<VideoAnalysisResult> {
+  try {
+    const model = getArkVideoModelId();
+    const result = await chatCompletionDoubao({
+      model,
+      maxTokens: 1000,
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: VIDEO_PROMPT },
+            { type: "video_url", video_url: { url: videoUrl } },
+          ],
         },
-        timeout: 60000, // 视频分析可能需要更长时间
-      }
-    );
+      ],
+    });
 
-    // ── 计费归集：OpenRouter（OpenAI 兼容 usage 字段）──
-    const videoUsage = (response.data as any).usage;
+    // ── 计费归集（豆包视频模型）──
     recordUsage(
-      MODEL,
-      videoUsage?.prompt_tokens ?? ESTIMATED_TOKENS.input,
-      videoUsage?.completion_tokens ?? ESTIMATED_TOKENS.output,
-      { estimated: !videoUsage }
+      model,
+      result.usage?.prompt_tokens ?? ESTIMATED_TOKENS.input,
+      result.usage?.completion_tokens ?? ESTIMATED_TOKENS.output,
+      { estimated: !result.usage }
     );
 
-    const aiText = (response.data as any).choices?.[0]?.message?.content || "";
-
-    let result: Partial<VideoAnalysisResult> = {};
+    const aiText = result.text || "";
+    let parsed: Partial<VideoAnalysisResult> = {};
     try {
-      result = JSON.parse(aiText);
+      parsed = JSON.parse(aiText);
     } catch {
-      // 尝试从文本中提取 JSON
       const jsonMatch = aiText.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        result = JSON.parse(jsonMatch[0]);
-      }
+      if (jsonMatch) parsed = JSON.parse(jsonMatch[0]);
     }
 
     return {
       hasVideo: true,
-      qualityScore: Math.max(0, Math.min(1, Number(result.qualityScore) || 0.5)),
-      engineSoundStatus: (result.engineSoundStatus as VideoAnalysisResult["engineSoundStatus"]) || "no_sound",
-      mechanismSmoothness: (result.mechanismSmoothness as VideoAnalysisResult["mechanismSmoothness"]) || "smooth",
-      overallImpression: (result.overallImpression as VideoAnalysisResult["overallImpression"]) || "good",
-      analysis: result.analysis || "视频分析未完成",
-      confidence: Math.max(0, Math.min(1, Number(result.confidence) || 0.5)),
+      qualityScore: Math.max(0, Math.min(1, Number(parsed.qualityScore) || 0.5)),
+      engineSoundStatus: (parsed.engineSoundStatus as VideoAnalysisResult["engineSoundStatus"]) || "no_sound",
+      mechanismSmoothness: (parsed.mechanismSmoothness as VideoAnalysisResult["mechanismSmoothness"]) || "smooth",
+      overallImpression: (parsed.overallImpression as VideoAnalysisResult["overallImpression"]) || "good",
+      analysis: parsed.analysis || "视频分析未完成",
+      confidence: Math.max(0, Math.min(1, Number(parsed.confidence) || 0.5)),
     };
   } catch (error: any) {
-    console.error("[VideoAnalyzer] 视频分析失败:", error?.message || String(error));
+    console.error("[VideoAnalyzer] 豆包视频分析失败（降级）:", error?.message || String(error));
     return getDefaultAnalysis();
   }
 }
 
 /**
  * 计算视频因子（videoFactor）
- *
- * 取值范围：0.92 ~ 1.08
- * - 无视频：1.0（基准，不扣不加）
- * - 有高质量视频+运转正常：1.05~1.08
- * - 有视频+发现异常：0.92~0.96
- *
- * @param video 视频分析结果
- * @returns videoFactor 数值因子
  */
 export function calculateVideoFactor(video: VideoAnalysisResult): number {
   if (!video.hasVideo) return 1.0; // 无视频 = 基准，不扣分
@@ -168,49 +126,28 @@ export function calculateVideoFactor(video: VideoAnalysisResult): number {
   let factor = 1.0;
 
   // 1. 基础奖励：有合格视频就加分
-  if (video.qualityScore >= 0.6) {
-    factor += 0.02; // +2% 基础奖励
-  }
-  if (video.qualityScore >= 0.85) {
-    factor += 0.01; // 高质量额外+1%
-  }
+  if (video.qualityScore >= 0.6) factor += 0.02;
+  if (video.qualityScore >= 0.85) factor += 0.01;
 
   // 2. 发动机状态（基于声音分析）
   switch (video.engineSoundStatus) {
-    case "normal":
-      factor += 0.03; // 运转正常 +3%
-      break;
-    case "abnormal_noise":
-      factor -= 0.06; // 异响 -6%（可能轴承/活塞问题）
-      break;
-    case "abnormal_smoke":
-      factor -= 0.08; // 冒烟 -8%（燃烧室/涡轮问题）
-      break;
-    case "no_sound":
-      break; // 无音频，不做判断
+    case "normal": factor += 0.03; break;
+    case "abnormal_noise": factor -= 0.06; break;
+    case "abnormal_smoke": factor -= 0.08; break;
+    case "no_sound": break;
   }
 
   // 3. 作业机构流畅度
   switch (video.mechanismSmoothness) {
-    case "smooth":
-      factor += 0.02; // 动作流畅 +2%
-      break;
-    case "sluggish":
-      factor -= 0.02; // 迟缓 -2%（液压可能老化）
-      break;
-    case "jammed":
-      factor -= 0.06; // 卡顿 -6%（严重机械问题）
-      break;
+    case "smooth": factor += 0.02; break;
+    case "sluggish": factor -= 0.02; break;
+    case "jammed": factor -= 0.06; break;
   }
 
   // 4. 总体印象微调
   switch (video.overallImpression) {
-    case "excellent":
-      factor += 0.02;
-      break;
-    case "poor":
-      factor -= 0.04;
-      break;
+    case "excellent": factor += 0.02; break;
+    case "poor": factor -= 0.04; break;
   }
 
   // 限制范围：视频因子不超过 ±8% 浮动

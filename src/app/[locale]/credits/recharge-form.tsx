@@ -90,7 +90,15 @@ export function RechargeForm({ locale, isCom }: RechargeFormProps) {
         return;
       }
       if (data.data?.codeUrl) {
-        setQr(data.data.codeUrl);
+        // codeUrl 是 weixin://…（微信 Native）或 https://qr.alipay.com/…（支付宝）这类支付链接，
+        // 不是图片地址；必须先用 qrcode 生成二维码图片再展示，否则 <img src="weixin://…"> 会渲染成破图。
+        const QRCode = (await import("qrcode")).default;
+        const qrDataUrl = await QRCode.toDataURL(data.data.codeUrl, {
+          width: 240,
+          margin: 2,
+          color: { dark: "#000000", light: "#ffffff" },
+        });
+        setQr(qrDataUrl);
         setMsg(t("scanToPay", { credits: data.data.credits }));
       }
     } catch {

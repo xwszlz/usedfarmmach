@@ -156,6 +156,7 @@
 
   },
   "nav": {
+    "brands": "العلامات التجارية",
     "home": "الرئيسية",
     "products": "المعدات",
     "logistics": "الخدمات اللوجستية",
@@ -171,7 +172,6 @@
     "sellEquipment": "نشر معدة",
     "intelligence": "استخبارات السوق",
     "blog": "المدونة",
-    "brands": "العلامات التجارية",
     "categories": "الفئات",
     "buyMachinery": "شراء",
     "sellMachinery": "بيع",

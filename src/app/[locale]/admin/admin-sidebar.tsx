@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Package, Settings, FileText, Tent, Boxes, Shield, Bot, Gavel, FileSignature, ShieldCheck, ScrollText, SlidersHorizontal, Activity, BarChart3, BadgeCheck, Award, Inbox, Phone, Upload } from "lucide-react";
+import { LayoutDashboard, Users, Package, Settings, FileText, Tent, Boxes, Shield, Bot, Gavel, FileSignature, ShieldCheck, ScrollText, SlidersHorizontal, Activity, BarChart3, BadgeCheck, Award, Inbox, Phone, Upload, Store } from "lucide-react";
 import { SITE } from "@/config/site";
 
 export function AdminSidebar({ role }: { role: string }) {
@@ -28,6 +28,8 @@ export function AdminSidebar({ role }: { role: string }) {
     { href: `/${locale}/admin/products`, label: "产品管理", icon: Package, hideForEditor: false },
     { href: `/${locale}/admin/raw-listings`, label: "采集审核", icon: Inbox, hideForEditor: true },
     { href: `/${locale}/admin/leads`, label: "线索池", icon: Phone, hideForEditor: true },
+    // 整合视图：经销商（户）与挂牌（台）按马力档+品牌对照；仅 admin/super_admin 可见
+    { href: `/${locale}/admin/dealers`, label: "经销商对照", icon: Store, hideForEditor: true },
     // 境内线索录入：仅 .cn 站点显示（数据不出境红线），editor 不可见
     { href: `/${locale}/admin/leads/import`, label: "境内线索录入", icon: Upload, hideForEditor: true, showForSite: "cn" },
     { href: `/${locale}/admin/auction-bookings`, label: "询价报名管理", icon: Gavel, hideForEditor: false },

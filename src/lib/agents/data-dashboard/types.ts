@@ -13,7 +13,7 @@ export interface DashboardMetrics {
   users: { total: number; new: number; byRole: Record<string, number>; growthPct: number };
   products: { total: number; new: number; active: number; byCountry: Record<string, number>; topBrands: { name: string; count: number }[] };
   inquiries: { totalBids: number; totalAuctions: number; acceptedBids: number; pendingBids: number; conversionRate: number };
-  revenue: { totalCredits: number; consumedCredits: number; membershipBreakdown: Record<string, number> };
+  revenue: { totalCredits: number; consumedCredits: number; roleBreakdown: Record<string, number> };
   valuationReports: { total: number; last7Days: number };
 }
 

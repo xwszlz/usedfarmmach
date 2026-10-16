@@ -284,7 +284,17 @@ export async function importLeadsRows(
           contentHash: hash,
           scrapedAt: new Date(),
           goodsRegion: scope,
-          notes: `[import] ${source} by ${actorId}`,
+          // notes 拼装：CSV「备注」列是 Round-1 唯一的结构化载体（`[性质]`/`[机型组]`/`[补全]`/
+          // `[电话占位]`/`[品牌兜底]`/`[自家·禁外呼]` 等），**必须落库** —— 否则外呼员会拨到
+          // 「平台联系」「拍卖页联系」这类占位假号，或把电话打到自家主体。
+          // 分隔符固定为 `"\n"`：确定性，且每个标记各占一行，便于 grep/回溯。
+          // ⚠️ row.notes 为 undefined / null / "" / 纯空白时，输出与改动前**逐字相同**
+          //    （仍只有 `[import] ... ` 一句），这是防回归的关键。
+          // ⚠️ notes **不参与** contentHash（hash 只取 brand|model|year|location|price|phone|name），
+          //    故本处改动不影响导入幂等，也不会让已入库行产生重复。
+          notes: [`[import] ${source} by ${actorId}`, (row.notes ?? "").toString().trim()]
+            .filter((part) => part !== "")
+            .join("\n"),
         },
       });
       result.imported += 1;

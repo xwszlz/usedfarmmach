@@ -156,6 +156,7 @@
 
   },
   "nav": {
+    "brands": "ब्रांड",
     "home": "होम",
     "products": "उपकरण",
     "logistics": "लॉजिस्टिक्स",
@@ -171,7 +172,6 @@
     "sellEquipment": "उपकरण बेचें",
     "intelligence": "बाजार खुफिया",
     "blog": "ब्लॉग",
-    "brands": "ब्रांड",
     "categories": "श्रेणियाँ",
     "buyMachinery": "खरीदें",
     "sellMachinery": "बेचें",

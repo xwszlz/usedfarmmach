@@ -39,7 +39,6 @@ export default async function AdminRolesPage({ params }: { params: Promise<{ loc
       id: true,
       email: true,
       role: true,
-      membershipTier: true,
       companyName: true,
       country: true,
     },
@@ -49,7 +48,6 @@ export default async function AdminRolesPage({ params }: { params: Promise<{ loc
     id: u.id,
     emailMasked: maskEmail(u.email),
     role: u.role,
-    membershipTier: u.membershipTier,
     companyName: u.companyName,
     country: u.country,
   }));

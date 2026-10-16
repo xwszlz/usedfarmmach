@@ -156,6 +156,7 @@
 
   },
   "nav": {
+    "brands": "Бренды",
     "home": "Главная",
     "products": "Оборудование",
     "logistics": "Логистика",
@@ -171,7 +172,6 @@
     "sellEquipment": "Продать оборудование",
     "intelligence": "Разведка рынка",
     "blog": "Новости отрасли",
-    "brands": "Бренды",
     "categories": "Категории",
     "buyMachinery": "Купить",
     "sellMachinery": "Продать",

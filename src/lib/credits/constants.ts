@@ -19,6 +19,8 @@ export const TXN_TYPES = [
   "publish_cost",
   "mall_cost",
   "ai_deduct",
+  "inquiry_cost",
+  "viewcontact_cost",
   "expire",
   "migration",
 ] as const;

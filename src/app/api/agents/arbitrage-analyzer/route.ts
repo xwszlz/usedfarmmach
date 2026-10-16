@@ -3,6 +3,7 @@ import { ArbitrageInputSchema } from "@/lib/agents/arbitrage-analyzer/types";
 import { arbitrageAnalyzerAgent } from "@/lib/agents/arbitrage-analyzer/agent";
 import { getTokenFromHeaders, verifyToken } from "@/lib/auth";
 import { computeAiCost, deductCredits } from "@/lib/credits/spend";
+import { getBillingCountry } from "@/lib/credits/fx";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +47,7 @@ export async function POST(request: NextRequest) {
       model: "doubao-seed-2-1-pro-260915",
       inputTokens: ARBITRAGE_NOMINAL_INPUT_TOKENS,
       outputTokens: 0,
+      billingCountry: await getBillingCountry(payload.userId),
     });
     const deduction = await deductCredits(
       payload.userId,

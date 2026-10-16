@@ -1,0 +1,109 @@
+{
+  "version": "T01-2026-10-13",
+  "runDate": "2026-10-13",
+  "actorId": "leads-etl-t01",
+  "source": {
+    "xlsxPath": "D:/神雕农机/deliverables/82户经销商联系表-外发版-2026-10-13.xlsx",
+    "sheetName": "82户经销商联系表",
+    "headerRowNumber": 1,
+    "columnHeaders": {
+      "seq": "#",
+      "company": "公司/商户名",
+      "region": "地区",
+      "nature": "性质",
+      "phone": "电话",
+      "email": "邮箱",
+      "social": "微信/WA",
+      "modelGroup": "覆盖机型组",
+      "model": "覆盖机型",
+      "sourceUrl": "来源URL",
+      "completeness": "联络完备度",
+      "missing": "还缺什么"
+    }
+  },
+  "modelGroups": ["850", "2504/2204", "9080", "850+2504/2204"],
+  "brandKeys": [
+    "claas",
+    "new_holland",
+    "john_deere",
+    "lovol",
+    "yto",
+    "changfa",
+    "dongfeng",
+    "huaxia",
+    "kubota",
+    "case_ih",
+    "yanmar",
+    "krone"
+  ],
+  "targetMarkets": {
+    "selfOwnedKeywords": ["自家"],
+    "foreignKeywords": [
+      "德国",
+      "荷兰",
+      "波兰",
+      "奥地利",
+      "乌克兰",
+      "丹麦",
+      "意大利",
+      "美国",
+      "英国",
+      "法国",
+      "堪萨斯",
+      "怀俄明",
+      "犹他",
+      "约克郡",
+      "奥尔堡",
+      "Rødding",
+      "Lérouville",
+      "Drenthe",
+      "Landsberg",
+      "Бахмач"
+    ]
+  },
+  "sourceWhitelist": ["manual_dealer", "manual_dealer_intl"],
+  "sourceByScope": {
+    "cn": "manual_dealer",
+    "intl": "manual_dealer_intl",
+    "unknown": "manual_dealer"
+  },
+  "phonePlaceholderWords": [
+    "平台站内信(Mascus)",
+    "平台站内信",
+    "站内信",
+    "平台联系",
+    "拍卖页联系",
+    "各省级网点(官网查)",
+    "平台留言(未公开)",
+    "未找到(需回原平台)",
+    "见官网",
+    "未公开"
+  ],
+  "companyGenericSuffixes": [
+    "农业机械",
+    "农机",
+    "机械",
+    "科技",
+    "设备",
+    "有限",
+    "公司"
+  ],
+  "output": {
+    "filePrefixByScope": {
+      "cn": "境内",
+      "intl": "境外",
+      "unknown": "待核"
+    },
+    "csvHeaders": [
+      "品牌",
+      "机型",
+      "地区",
+      "卖家",
+      "电话",
+      "邮箱",
+      "来源链接",
+      "备注",
+      "归属"
+    ]
+  }
+}
