@@ -1,19 +1,19 @@
 {
   "crons": [
     {
-      "path": "/api/cron/update-prices?token=${INTERNAL_API_KEY}",
+      "path": "/api/cron/update-prices",
       "schedule": "0 23 * * 0"
     },
     {
-      "path": "/api/cron/benchmark?token=${INTERNAL_API_KEY}",
+      "path": "/api/cron/benchmark",
       "schedule": "30 23 * * 0"
     },
     {
-      "path": "/api/cron/daily-report?token=${INTERNAL_API_KEY}",
+      "path": "/api/cron/daily-report",
       "schedule": "45 23 * * *"
     },
     {
-      "path": "/api/cron/keep-alive?token=${INTERNAL_API_KEY}",
+      "path": "/api/cron/keep-alive",
       "schedule": "50 0,5 * * *"
     },
     {
@@ -25,7 +25,7 @@
       "schedule": "0 19 * * *"
     },
     {
-      "path": "/api/cron/update-exchange-rates?token=${INTERNAL_API_KEY}",
+      "path": "/api/cron/update-exchange-rates",
       "schedule": "0 2 * * *"
     }
   ]
