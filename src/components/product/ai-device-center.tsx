@@ -87,6 +87,13 @@ export default function AiDeviceCenter({
         </button>
       </div>
 
+      {/* 操作提示：估值卡为按需触发（autoLoad=false，避免未请求就耗积分），且单次实测 15-22 秒 */}
+      <p className="-mt-1 px-5 pb-1 text-xs text-gray-500">
+        {zh
+          ? "「AI 智能估值」按需触发：展开后需再点一次「开始AI估值」，单次约需 15–20 秒，期间请勿关闭页面。"
+          : "AI Valuation runs on demand - expand, then press Start AI Valuation. Takes ~15-20s."}
+      </p>
+
       {/* 展开区：AI 深度分析（豆包报告） */}
       {deepOpen && (
         <div className="px-5 pb-5">

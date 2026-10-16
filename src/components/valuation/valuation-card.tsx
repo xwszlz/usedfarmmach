@@ -41,7 +41,7 @@ const LABELS: Record<string, {
     retry: "重试",
     free: "按量计费",
     startVal: "开始AI估值",
-    idleDesc: "基于豆包视觉分析 + 866万条真实补贴交易，按 token 计费",
+    idleDesc: "点「开始AI估值」后约需 15–20 秒（豆包视觉分析 + 866 万条真实补贴成交数据）",
     badge: "AI估值",
     deal: "超值！",
     overpriced: "偏贵",
@@ -61,7 +61,7 @@ const LABELS: Record<string, {
     retry: "Retry",
     free: "Pay-per-use",
     startVal: "Start AI Valuation",
-    idleDesc: "Doubao vision + 8.66M subsidy records, token-metered",
+    idleDesc: "Takes ~15-20s after you press Start (Doubao vision + 8.66M subsidy records)",
     badge: "AI",
     deal: "Great Deal!",
     overpriced: "Overpriced",
@@ -102,6 +102,8 @@ export function ValuationCard({ productId, productName, locale, autoLoad = false
   const [loading, setLoading] = useState(autoLoad);
   const [error, setError] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  // 估值请求通常需要 15-20 秒；用已等待秒数给用户明确反馈，避免误判为按钮失灵
+  const [elapsed, setElapsed] = useState(0);
   const l = LABELS[locale] || LABELS.zh;
   const zh = locale === "zh";
   const da = deepAnalysis ?? undefined;
@@ -128,14 +130,36 @@ export function ValuationCard({ productId, productName, locale, autoLoad = false
     if (autoLoad) fetchValuation();
   }, [productId]);
 
+  // loading 期间每秒 tick 一次；卸载或结束时清理
+  useEffect(() => {
+    if (!loading) {
+      setElapsed(0);
+      return;
+    }
+    const timer = setInterval(() => setElapsed((s) => s + 1), 1000);
+    return () => clearInterval(timer);
+  }, [loading]);
+
   if (loading) {
+    // 线上实测单次估值 15-22 秒：豆包视觉识别图片 + 视频分析 + 估值引擎。
+    // 原先这里只有一个转圈，用户干等十几秒没有任何变化，会以为按钮失灵。
+    const stage =
+      elapsed < 6
+        ? "正在识别设备图片与视频…"
+        : elapsed < 12
+          ? "正在结合 866 万条补贴成交数据计算…"
+          : "正在生成估值区间与置信度…";
     return (
       <Card className="border-purple-200 bg-purple-50/30">
-        <CardContent className="flex items-center justify-center py-8">
+        <CardContent className="flex flex-col items-center gap-2 py-8 text-center">
           <div className="flex items-center gap-2 text-purple-500">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-purple-300 border-t-purple-600" />
             <span className="text-sm">{l.loading}</span>
           </div>
+          <p className="text-xs text-purple-600">{stage}</p>
+          <p className="text-xs text-gray-500">
+            已等待 {elapsed} 秒 · 全程约需 15–20 秒，请勿关闭或离开页面
+          </p>
         </CardContent>
       </Card>
     );
