@@ -1272,6 +1272,18 @@ export default function ValuationPage() {
             })}
           </div>
 
+          {/* ── AI 深度分析：识图后可选，按 token 计费；结构化结果回灌下方 AI 估值报告（P3）── */}
+          <DeepAnalysisSection
+            prefillData={{
+              brand: channel === "domestic" ? dBrand : iBrand,
+              category: dCategory,
+              year: channel === "domestic" ? dYear - dYears : iYear,
+              horsepower: channel === "domestic" ? dHP : iHP,
+            }}
+            images={uploadedImages}
+            onComplete={setDeepStructured}
+          />
+
           {/* Domestic Form */}
           {channel === "domestic" && (
             <div id="valuation-form-anchor" className="space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -1646,17 +1658,6 @@ export default function ValuationPage() {
           )}
 
 
-          {/* ── AI 深度分析：识图后可选，按 token 计费；结构化结果回灌下方 AI 估值报告（P3）── */}
-          <DeepAnalysisSection
-            prefillData={{
-              brand: channel === "domestic" ? dBrand : iBrand,
-              category: dCategory,
-              year: channel === "domestic" ? dYear - dYears : iYear,
-              horsepower: channel === "domestic" ? dHP : iHP,
-            }}
-            images={uploadedImages}
-            onComplete={setDeepStructured}
-          />
 
           {/* Results */}
           {result && (
