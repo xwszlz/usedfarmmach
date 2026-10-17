@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Sparkles, Bot, Calculator, ChevronDown } from "lucide-react";
 import DeepAnalysisCard from "./deep-analysis-card";
 import { ValuationCard } from "@/components/valuation/valuation-card";
@@ -42,6 +42,29 @@ export default function AiDeviceCenter({
   const [valOpen, setValOpen] = useState(false);
   // P3 联动：深度分析结构化结果回灌估值卡（与估值中心一致）
   const [deepStructured, setDeepStructured] = useState<Record<string, any> | null>(null);
+
+  // 手风琴互斥 + 展开自动滚动：两个面板上下堆叠，深度分析面板很长时，
+  // 点「AI 智能估值」新面板会在视口外展开，用户会误以为按钮失灵（移动端实测反馈）。
+  const deepRef = useRef<HTMLDivElement>(null);
+  const valRef = useRef<HTMLDivElement>(null);
+
+  const toggleDeep = () => {
+    const next = !deepOpen;
+    setDeepOpen(next);
+    if (next) setValOpen(false);
+  };
+  const toggleVal = () => {
+    const next = !valOpen;
+    setValOpen(next);
+    if (next) setDeepOpen(false);
+  };
+
+  useEffect(() => {
+    if (deepOpen) deepRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [deepOpen]);
+  useEffect(() => {
+    if (valOpen) valRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [valOpen]);
   const zh = locale === "zh";
 
   const deepLabel = zh ? "AI 深度分析" : "AI Deep Analysis";
@@ -62,7 +85,7 @@ export default function AiDeviceCenter({
       {/* 两个入口按钮（深度分析在前、估值在后） */}
       <div className="grid grid-cols-2 gap-3 p-5">
         <button
-          onClick={() => setDeepOpen((o) => !o)}
+          onClick={toggleDeep}
           className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${
             deepOpen
               ? "border-purple-400 bg-purple-600 text-white shadow-sm"
@@ -74,7 +97,7 @@ export default function AiDeviceCenter({
           <ChevronDown className={`h-4 w-4 transition-transform ${deepOpen ? "rotate-180" : ""}`} />
         </button>
         <button
-          onClick={() => setValOpen((o) => !o)}
+          onClick={toggleVal}
           className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${
             valOpen
               ? "border-indigo-400 bg-indigo-600 text-white shadow-sm"
@@ -87,9 +110,16 @@ export default function AiDeviceCenter({
         </button>
       </div>
 
+      {/* 操作提示：估值卡为按需触发（autoLoad=false，避免未请求就耗积分），且单次实测 15-22 秒 */}
+      <p className="-mt-1 px-5 pb-1 text-xs text-gray-500">
+        {zh
+          ? "「AI 智能估值」按需触发：展开后需再点一次「开始AI估值」，单次约需 15–20 秒，期间请勿关闭页面。"
+          : "AI Valuation runs on demand - expand, then press Start AI Valuation. Takes ~15-20s."}
+      </p>
+
       {/* 展开区：AI 深度分析（豆包报告） */}
       {deepOpen && (
-        <div className="px-5 pb-5">
+        <div ref={deepRef} className="px-5 pb-5 scroll-mt-20">
           <DeepAnalysisCard
             productId={productId}
             productName={productName}
@@ -108,7 +138,7 @@ export default function AiDeviceCenter({
 
       {/* 展开区：AI 智能估值（豆包视觉 + 866万条补贴数据，点击触发） */}
       {valOpen && (
-        <div className="px-5 pb-5">
+        <div ref={valRef} className="px-5 pb-5 scroll-mt-20">
           <ValuationCard
             productId={productId}
             productName={productName}
