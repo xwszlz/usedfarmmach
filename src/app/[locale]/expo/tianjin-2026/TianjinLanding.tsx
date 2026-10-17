@@ -10,7 +10,6 @@ import {
   Globe,
   MapPin,
 } from "lucide-react";
-import { ExpoInquiryForm } from "@/components/expo/ExpoInquiryForm";
 import { TJ_FAQS, pickFaqs } from "@/components/expo/expo-faqs";
 
 const SHOWCASE_MACHINE = {
@@ -790,13 +789,6 @@ export function TianjinLanding({ locale }: { locale: string }) {
           <p className="mt-6 max-w-3xl text-lg text-blue-50">{t.sub}</p>
           <p className="mt-3 text-sm text-blue-200">{t.disclaimer}</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <a
-              href={`/${locale}/seller/products/new`}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-400 px-6 py-3 font-semibold text-amber-900 shadow-lg transition hover:bg-amber-300"
-            >
-              {locale === "zh" ? "自主发布 · 免费上线" : locale === "ru" ? "Разместить технику бесплатно" : "Publish your machine — free"}
-              <ArrowRight className="h-4 w-4" />
-            </a>
             <Link
               href={`/${locale}/expo/showroom`}
               className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/40 bg-white/10 px-6 py-3 font-semibold backdrop-blur-sm transition hover:bg-white/20"
@@ -974,7 +966,7 @@ export function TianjinLanding({ locale }: { locale: string }) {
               </div>
 
               <a
-                href={`/${locale}/seller/products/new`}
+                href={`/${locale}/seller/publish-new`}
                 className="inline-flex items-center gap-2 rounded-xl bg-amber-400 px-6 py-3 text-sm font-bold text-amber-900 transition hover:bg-amber-300"
               >
                 {t.showcase.cta}
@@ -1027,15 +1019,6 @@ export function TianjinLanding({ locale }: { locale: string }) {
             ))}
           </div>
         </div>
-      </section>
-
-      {/* CTA + 表单 */}
-      <section id="expo-inquiry-form" className="mx-auto max-w-2xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="text-center">
-          <h2 className="mb-3 text-2xl font-bold text-gray-900 dark:text-white">{t.ctaTitle}</h2>
-          <p className="mb-8 text-gray-600 dark:text-gray-400">{t.ctaSub}</p>
-        </div>
-        <ExpoInquiryForm locale={locale} source="tj-2026" />
       </section>
 
       {/* 信息来源与免责声明 */}
