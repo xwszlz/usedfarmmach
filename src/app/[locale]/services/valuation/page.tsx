@@ -125,6 +125,12 @@ const INTL_REGIONS: Record<string, number> = {
 
 const DEVELOPED_REGIONS = new Set(["北美", "欧洲"]);
 
+// 国际/出口渠道估值需要的品类（供 V4 引擎识别基准价，须与服务端 CATEGORY 标准名一致）
+const INTL_CATEGORY_LIST = [
+  "拖拉机", "收割机", "青储机", "打捆机", "割草机",
+  "搂草机", "播种机", "植保机", "其他",
+];
+
 // 出口目标国 buy/sell 系数（2026-10-15 扩至六大区域全覆盖 58 国；
 // buy=相对中国基准价的当地收购折扣，sell=当地售价溢价；既有 19 国数值不变——additive-only）
 const EXPORT_COUNTRIES: Record<string, { buy: number; sell: number }> = {
@@ -777,7 +783,7 @@ export default function ValuationPage() {
   const [dModel, setDModel] = useState("");
   const [dHP, setDHP] = useState(120);
   const [dYears, setDYears] = useState(3);
-  const [dHours, setDHours] = useState(1500);
+  const [dHours, setDHours] = useState(0);
   const [dCondition, setDCondition] = useState("good");
   const [dRegion, setDRegion] = useState("山东");
   const [dYear, setDYear] = useState(2024);
@@ -795,6 +801,7 @@ export default function ValuationPage() {
 
   // 国际参数
   const [iBrand, setIBrand] = useState("John Deere");
+  const [iCategory, setICategory] = useState("拖拉机");
   const [iModel, setIModel] = useState("");
   const [iHP, setIHP] = useState(150);
   const [iHours, setIHours] = useState(1000);
@@ -912,10 +919,10 @@ export default function ValuationPage() {
           setResult({
             value: r.estimatedValue,
             confidence: r.confidence || calcConfidence(channel, dBrand, dHP, hasImage, dYears),
-            breakdown: (r.details || []).map((d: { factor: string; impact: string }) => ({
-              label: d.factor,
-              value: d.impact,
-              detail: "",
+            breakdown: (r.details || []).map((d: { label: string; impact: string; description: string }) => ({
+              label: d.label || "",
+              value: d.impact || "",
+              detail: d.description || "",
             })),
             formula: `基准价(${formatMoney(previewBasePrice)}) × 折旧(${calcDomesticDepreciation(dYears).toFixed(2)}) × 地区(${getRegionalFactor(dRegion).toFixed(2)}) × 补贴趋势(${getSubsidyTrendFactor(dYear).toFixed(2)})`,
             warnings: [],
@@ -931,28 +938,78 @@ export default function ValuationPage() {
           doClientCalc();
         }
       } else {
-        // 国际/出口：客户端计算
-        const { value, breakdown } = calcIntlValuation(
-          channel === "export" ? iBrand : iBrand,
-          iHP, iHours, iNewPrice, iRegion, iYear, iCondition, iEmission, iConfigAddon,
-        );
-        setResult({
-          value,
-          confidence: calcConfidence(channel, iBrand, iHP, hasImage, Math.round(iHours / 500)),
-          breakdown,
-          formula: `(${formatMoney(iNewPrice)} × ${getIntlHoursCoeff(iHours).toFixed(2)} × ${INTL_CONDITIONS[iCondition].toFixed(3)} × ${(DEVELOPED_REGIONS.has(iRegion) ? EMISSION_DEVELOPED[iEmission] : EMISSION_DEVELOPING[iEmission]).toFixed(2)} + ${formatMoney(iConfigAddon)}) × ${INTL_REGIONS[iRegion].toFixed(2)} × ${(INTL_BRAND_RETENTION[iBrand] || 0.95).toFixed(3)}`,
-          warnings: generateWarnings(),
-        });
-
-        if (channel === "export") {
-          const arb = calcExportArbitrage(value, eTargetCountry, eShipping, eTariff);
-          setArbitrage(arb);
+        // 国际/出口：统一走 /api/valuation (V4 引擎)，与产品页、国产渠道同源，消除「两套模型」
+        try {
+          const res = await fetch("/api/valuation", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              brand: iBrand,
+              category: iCategory,
+              modelName: iModel,
+              year: iYear,
+              workingHours: iHours > 0 ? iHours : undefined,
+              condition: iCondition.toLowerCase(),
+              enginePower: iHP,
+              priceCny: iNewPrice,
+              foreignPriceCny: iNewPrice,
+              region: iRegion,
+              tradeChannel: channel === "export" ? "export" : undefined,
+              useV4: true,
+              skipImageAnalysis: !hasImage,
+              imageDataUris: hasImage ? uploadedImages : [],
+            }),
+          });
+          const data = await res.json().catch(() => null);
+          if (data && data.success) {
+            const r = data.data;
+            setIntel(data.intelligence ?? null);
+            const v4Value = r.estimatedValue;
+            setResult({
+              value: v4Value,
+              confidence: r.confidence || calcConfidence(channel, iBrand, iHP, hasImage, Math.round(iHours / 500)),
+              breakdown: (r.details || []).map((d: { label: string; impact: string; description: string }) => ({
+                label: d.label || "",
+                value: d.impact || "",
+                detail: d.description || "",
+              })),
+              formula: "V4 引擎（与产品页/国产渠道同源）",
+              warnings: generateWarnings(),
+              channelPrices: (r as { channelPrices?: Record<string, number> }).channelPrices,
+            });
+            if (channel === "export") {
+              const arb = calcExportArbitrage(v4Value, eTargetCountry, eShipping, eTariff);
+              setArbitrage(arb);
+            }
+          } else {
+            fallbackIntlCalc();
+          }
+        } catch {
+          fallbackIntlCalc();
         }
       }
     } catch {
       doClientCalc();
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 国际/出口渠道：服务端 V4 不可用时回退到原客户端公式（保留 calcIntlValuation 逻辑）
+  const fallbackIntlCalc = () => {
+    const { value, breakdown } = calcIntlValuation(
+      iBrand, iHP, iHours, iNewPrice, iRegion, iYear, iCondition, iEmission, iConfigAddon,
+    );
+    setResult({
+      value,
+      confidence: calcConfidence(channel, iBrand, iHP, hasImage, Math.round(iHours / 500)),
+      breakdown,
+      formula: `(${formatMoney(iNewPrice)} × ${getIntlHoursCoeff(iHours).toFixed(2)} × ${INTL_CONDITIONS[iCondition].toFixed(3)} × ${(DEVELOPED_REGIONS.has(iRegion) ? EMISSION_DEVELOPED[iEmission] : EMISSION_DEVELOPING[iEmission]).toFixed(2)} + ${formatMoney(iConfigAddon)}) × ${INTL_REGIONS[iRegion].toFixed(2)} × ${(INTL_BRAND_RETENTION[iBrand] || 0.95).toFixed(3)}`,
+      warnings: generateWarnings(),
+    });
+    if (channel === "export") {
+      const arb = calcExportArbitrage(value, eTargetCountry, eShipping, eTariff);
+      setArbitrage(arb);
     }
   };
 
@@ -1058,7 +1115,7 @@ export default function ValuationPage() {
     brand: dBrand,
     category: dCategory,
     year: dYear - dYears,
-    workingHours: dHours || dYears * 500,
+    workingHours: dHours > 0 ? dHours : undefined,
     condition: dCondition,
     enginePower: dHP,
     priceCny: dSellerPrice ? Number(dSellerPrice) : undefined,
@@ -1378,6 +1435,13 @@ export default function ValuationPage() {
                   />
                 </div>
                 <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-600">品类</label>
+                  <select value={iCategory} onChange={(e) => setICategory(e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none">
+                    {INTL_CATEGORY_LIST.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div>
                   <label className="mb-1 block text-xs font-medium text-gray-600">马力 (HP)</label>
                   <input type="number" value={iHP} min={50} max={500}
                     onChange={(e) => setIHP(Number(e.target.value))}
@@ -1470,6 +1534,13 @@ export default function ValuationPage() {
                       {[...INTL_BRAND_LIST, ...extraIBrands].map((b) => <option key={b} value={b}>{b}</option>)}
                     </select>
                   </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-600">品类</label>
+                  <select value={iCategory} onChange={(e) => setICategory(e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none">
+                    {INTL_CATEGORY_LIST.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
                   <div>
                     <label className="mb-1 block text-xs font-medium text-gray-600">马力 (HP)</label>
                     <input type="number" value={iHP} min={50} max={500}
