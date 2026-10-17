@@ -263,7 +263,10 @@ export function ValuationCard({ productId, productName, locale, autoLoad = false
                   <span className="font-medium text-gray-700">{d.label}</span>
                 </div>
                 <div className="text-right">
-                  <div className="font-semibold text-gray-900">{d.value}</div>
+                  <div className="font-semibold text-gray-900">
+                    {/* ValuationDetail 无 value 字段，右侧按 impact 显示中文定性 */}
+                    {d.impact === "positive" ? (zh ? "加分" : "+") : d.impact === "negative" ? (zh ? "减分" : "-") : (zh ? "中性" : "~")}
+                  </div>
                   {d.description && <div className="text-[10px] text-gray-400">{d.description}</div>}
                 </div>
               </div>
