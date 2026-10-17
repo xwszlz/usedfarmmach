@@ -8,6 +8,7 @@ import ValuationReportSection, {
   type DeepAnalysisStructured,
 } from "@/components/valuation/valuation-report-section";
 import type { ValuationResult } from "@/lib/valuation/formulas";
+import type { ValuationIntelligence } from "@/lib/valuation/intelligence";
 
 interface ProductValuationReportProps {
   productId: string;
@@ -62,7 +63,7 @@ export default function ProductValuationReport({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [started, setStarted] = useState(false);
-  const [intel, setIntel] = useState<Record<string, any> | null>(null);
+  const [intel, setIntel] = useState<ValuationIntelligence | null>(null);
   const [apiFormula, setApiFormula] = useState<string | null>(null);
   const zh = locale === "zh";
 
