@@ -49,16 +49,12 @@ const TEXTS: Record<string, {
   success: string;
   error: string;
   selectPlaceholder: string;
-  selfPublishCta?: string;
-  selfPublishDesc?: string;
-  selfPublishBtn?: string;
   videoShowcase?: string;
   showroomShowcase?: string;
   viewAll?: string;
   loading?: string;
   noData?: string;
   playsUnit?: string;
-  contactAdvisor?: string;
 }> = {
   zh: {
     badge: "中国农机 · 走向世界",
@@ -146,16 +142,12 @@ const TEXTS: Record<string, {
     success: "提交成功！我们将在24小时内与您联系。",
     error: "提交失败，请稍后重试或直接联系 WhatsApp: +86 15511395016",
     selectPlaceholder: "请选择",
-    selfPublishCta: "自主发布农机 · 免费上线",
-    selfPublishDesc: "无需积分，提交即上线。把您的农机直接展示给全球买家。",
-    selfPublishBtn: "自主发布农机",
     videoShowcase: "WingShow 真实作业视频精选",
     showroomShowcase: "数字展厅 · 新品精选",
     viewAll: "查看全部",
     loading: "加载中…",
     noData: "暂无内容",
     playsUnit: "次播放",
-    contactAdvisor: "或联系顾问：",
   },
   en: {
     badge: "Chinese Machinery · Global Stage",
@@ -243,16 +235,12 @@ const TEXTS: Record<string, {
     success: "Submitted successfully! We'll contact you within 24 hours.",
     error: "Submission failed. Please try again or contact Email: jiusei0319@gmail.com",
     selectPlaceholder: "Please select",
-    selfPublishCta: "List Your Machinery — Free & Live",
-    selfPublishDesc: "No credits required — you are live instantly. Show your machinery to buyers worldwide.",
-    selfPublishBtn: "List Your Machinery",
     videoShowcase: "WingShow Field Operation Videos",
     showroomShowcase: "Digital Showroom — New Arrivals",
     viewAll: "View All",
     loading: "Loading…",
     noData: "No content yet",
     playsUnit: "plays",
-    contactAdvisor: "Or contact an advisor: ",
   },
   ru: {
     badge: "Китайская техника · Мировая сцена",
@@ -340,16 +328,12 @@ const TEXTS: Record<string, {
     success: "Заявка отправлена! Мы свяжемся с вами в течение 24 часов.",
     error: "Ошибка отправки. Повторите или напишите WhatsApp: +86 15511395016",
     selectPlaceholder: "Выберите",
-    selfPublishCta: "Разместите технику — бесплатно и сразу",
-    selfPublishDesc: "Без баллов — опубликовали и сразу в сети. Покажите свою технику покупателям по всему миру.",
-    selfPublishBtn: "Разместить технику",
     videoShowcase: "Видео реальной работы WingShow",
     showroomShowcase: "Цифровой шоурум — новинки",
     viewAll: "Смотреть всё",
     loading: "Загрузка…",
     noData: "Пока нет материалов",
     playsUnit: "просмотров",
-    contactAdvisor: "Или свяжитесь с консультантом: ",
   },
   es: {
     badge: "Maquinaria China · Escenario Global",
@@ -413,16 +397,12 @@ const TEXTS: Record<string, {
     success: "¡Enviado con éxito! Le contactaremos en 24 horas.",
     error: "Error. Intente de nuevo o contacte Email: jiusei0319@gmail.com",
     selectPlaceholder: "Seleccione",
-    selfPublishCta: "Publica tu maquinaria — gratis y en línea",
-    selfPublishDesc: "Sin créditos: publica y aparece al instante. Muestra tu maquinaria a compradores de todo el mundo.",
-    selfPublishBtn: "Publicar maquinaria gratis",
     videoShowcase: "Vídeos de operación real de WingShow",
     showroomShowcase: "Showroom digital — novedades",
     viewAll: "Ver todo",
     loading: "Cargando…",
     noData: "Aún no hay contenido",
     playsUnit: "reproducciones",
-    contactAdvisor: "O contacta a un asesor: ",
   },
   pt: {
     badge: "Máquinas Chinesas · Palco Global",
@@ -486,16 +466,12 @@ const TEXTS: Record<string, {
     success: "Enviado com sucesso! Entraremos em contato em 24 horas.",
     error: "Erro. Tente novamente ou contate WhatsApp: +86 15511395016",
     selectPlaceholder: "Selecione",
-    selfPublishCta: "Anuncie sua máquina — grátis e online",
-    selfPublishDesc: "Sem créditos: anuncie e apareça na hora. Mostre sua máquina a compradores do mundo todo.",
-    selfPublishBtn: "Anunciar máquina grátis",
     videoShowcase: "Vídeos de operação real da WingShow",
     showroomShowcase: "Showroom digital — novidades",
     viewAll: "Ver tudo",
     loading: "Carregando…",
     noData: "Sem conteúdo ainda",
     playsUnit: "reproduções",
-    contactAdvisor: "Ou fale com um consultor: ",
   },
   ar: {
     badge: "الآلات الصينية · منصة عالمية",
@@ -559,16 +535,12 @@ const TEXTS: Record<string, {
     success: "تم الإرسال بنجاح! سنتواصل معك خلال 24 ساعة.",
     error: "فشل الإرسال. حاول مرة أخرى أو تواصل عبر WhatsApp: +86 15511395016",
     selectPlaceholder: "اختر",
-    selfPublishCta: "انشر آلتك الزراعية — مجاناً ومباشرة",
-    selfPublishDesc: "بدون نقاط: انشر لتظهر فوراً. اعرض آلتك على المشترين حول العالم.",
-    selfPublishBtn: "انشر آلتك الزراعية",
     videoShowcase: "فيديوهات التشغيل الحقيقي من WingShow",
     showroomShowcase: "الصالة الرقمية — أحدث الوافدين",
     viewAll: "عرض الكل",
     loading: "جارٍ التحميل…",
     noData: "لا يوجد محتوى بعد",
     playsUnit: "مشاهدة",
-    contactAdvisor: "أو تواصل مع مستشار: ",
   },
   fr: {
     badge: "Machinerie Chinoise · Scène Mondiale",
@@ -632,16 +604,12 @@ const TEXTS: Record<string, {
     success: "Envoyé avec succès! Nous vous contacterons sous 24 heures.",
     error: "Échec de l'envoi. Réessayez ou contactez Email: jiusei0319@gmail.com",
     selectPlaceholder: "Sélectionner",
-    selfPublishCta: "Publiez votre machine — gratuit et en ligne",
-    selfPublishDesc: "Sans crédits : publiez et c'est en ligne. Présentez votre machine aux acheteurs du monde entier.",
-    selfPublishBtn: "Publier ma machine gratuitement",
     videoShowcase: "Vidéos d'opération réelle WingShow",
     showroomShowcase: "Showroom numérique — nouveautés",
     viewAll: "Tout voir",
     loading: "Chargement…",
     noData: "Aucun contenu pour le moment",
     playsUnit: "lectures",
-    contactAdvisor: "Ou contactez un conseiller : ",
   },
   hi: {
     badge: "चीनी मशीनरी · वैश्विक मंच",
@@ -705,16 +673,12 @@ const TEXTS: Record<string, {
     success: "सफलतापूर्वक भेजा गया! हम 24 घंटे में संपर्क करेंगे।",
     error: "भेजना विफल। पुनः प्रयास करें या WhatsApp: +86 15511395016 पर संपर्क करें",
     selectPlaceholder: "चुनें",
-    selfPublishCta: "अपनी मशीन प्रकाशित करें — मुफ़्त और लाइव",
-    selfPublishDesc: "क्रेडिट की ज़रूरत नहीं — प्रकाशित करें और तुरंत लाइव। अपनी मशीन विश्वभर के खरीदारों को दिखाएँ।",
-    selfPublishBtn: "मुफ़्त में मशीन प्रकाशित करें",
     videoShowcase: "WingShow वास्तविक कार्य वीडियो",
     showroomShowcase: "डिजिटल शोरूम — नई आमद",
     viewAll: "सभी देखें",
     loading: "लोड हो रहा है…",
     noData: "अभी कोई सामग्री नहीं",
     playsUnit: "बार देखा गया",
-    contactAdvisor: "या सलाहकार से संपर्क करें: ",
   },
 };
 
@@ -1085,26 +1049,6 @@ export function ExpoLanding({ locale }: ExpoLandingProps) {
             ))}
           </div>
         )}
-      </section>
-
-      {/* ===== Closing CTA ===== */}
-      <section className={`${S.softBg} py-16`}>
-        <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
-          <h2 className="mb-3 text-3xl font-bold text-gray-900">{t.selfPublishCta}</h2>
-          <p className="mx-auto mb-8 max-w-2xl text-gray-600">{t.selfPublishDesc}</p>
-          <Link href={`/${locale}/seller/publish-new`}>
-            <Button size="lg" className={`text-white ${S.cta}`}>
-              {t.cta}
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
-          <p className="mt-8 text-sm text-gray-500">
-            {t.contactAdvisor}
-            <a href="mailto:jiusei0319@gmail.com" className={`hover:underline ${S.accentText}`}>
-              jiusei0319@gmail.com
-            </a>
-          </p>
-        </div>
       </section>
     </div>
   );
