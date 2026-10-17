@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Sparkles, Bot, Calculator, ChevronDown } from "lucide-react";
 import DeepAnalysisCard from "./deep-analysis-card";
-import { ValuationCard } from "@/components/valuation/valuation-card";
+import ProductValuationReport from "@/components/product/product-valuation-report";
 
 interface AiDeviceCenterProps {
   productId: string;
@@ -16,6 +16,11 @@ interface AiDeviceCenterProps {
   brandName?: string;
   year?: number;
   enginePower?: string;
+  modelName?: string;
+  workingHours?: number;
+  condition?: string;
+  region?: string;
+  sellerPrice?: number | null;
 }
 
 /**
@@ -37,6 +42,11 @@ export default function AiDeviceCenter({
   brandName,
   year,
   enginePower,
+  modelName,
+  workingHours,
+  condition,
+  region,
+  sellerPrice,
 }: AiDeviceCenterProps) {
   const [deepOpen, setDeepOpen] = useState(false);
   const [valOpen, setValOpen] = useState(false);
@@ -139,11 +149,19 @@ export default function AiDeviceCenter({
       {/* 展开区：AI 智能估值（豆包视觉 + 866万条补贴数据，点击触发） */}
       {valOpen && (
         <div ref={valRef} className="px-5 pb-5 scroll-mt-20">
-          <ValuationCard
+          <ProductValuationReport
             productId={productId}
-            productName={productName}
             locale={locale}
-            autoLoad={false}
+            isChineseBrand={isChineseBrand}
+            brand={brandName}
+            category={category}
+            modelName={modelName}
+            modelYear={year}
+            horsepower={enginePower ? Number(enginePower) : undefined}
+            hours={workingHours}
+            region={region}
+            condition={condition}
+            sellerPrice={sellerPrice}
             deepAnalysis={deepStructured}
           />
         </div>

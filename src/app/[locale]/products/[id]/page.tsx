@@ -388,6 +388,11 @@ export default async function ProductDetailPage({
             brandName={brandName}
             year={product.year || undefined}
             enginePower={product.enginePower ? String(product.enginePower) : undefined}
+            modelName={product.modelName || undefined}
+            workingHours={product.workingHours ?? undefined}
+            condition={product.condition || undefined}
+            region={product.location || undefined}
+            sellerPrice={product.priceCny ?? undefined}
           />
         </div>
       </div>
