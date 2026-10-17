@@ -19,6 +19,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { matchInternalApiKey } from "@/lib/internal-api-key-auth";
 import { cnyToUsd, getUsdPerCny } from "@/lib/exchange-rate";
 
 import { prisma } from "@/lib/db";
@@ -170,26 +171,10 @@ function getApiKey(req: NextRequest): string | null {
 
 
 
-function requireApiKey(req: NextRequest) {
-
+function requireApiKey(req: NextRequest): true | null {
   const key = getApiKey(req);
-
-  const expected = process.env.INTERNAL_API_KEY;
-
-  if (!expected) {
-
-    throw new Error("INTERNAL_API_KEY not configured on server");
-
-  }
-
-  if (!key || key !== expected) {
-
-    return null;
-
-  }
-
-  return true;
-
+  // 双值匹配：同时接受当前 INTERNAL_API_KEY 与过渡期 INTERNAL_API_KEY_PREVIOUS（fail-closed）。
+  return matchInternalApiKey(key) !== null ? true : null;
 }
 
 

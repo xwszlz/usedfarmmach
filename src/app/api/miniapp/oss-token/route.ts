@@ -11,6 +11,7 @@
  *    绝不静默回退到硬编码凭据。请确保部署环境正确配置上述变量。
  */
 import { NextRequest, NextResponse } from "next/server";
+import { matchInternalApiKey } from "@/lib/internal-api-key-auth";
 import crypto from "crypto";
 
 // Vercel Serverless Function 超时延长至30秒（默认10秒）
@@ -49,18 +50,18 @@ function getOSSCredentials(): { accessKeyId: string; accessKeySecret: string } {
   return { accessKeyId, accessKeySecret };
 }
 
-// 统一使用 INTERNAL_API_KEY 认证（与 /api/internal/products 一致）
+// 统一使用 INTERNAL_API_KEY 认证（与 /api/internal/products 一致）。
+// 双值匹配：同时接受当前 INTERNAL_API_KEY 与过渡期 INTERNAL_API_KEY_PREVIOUS（fail-closed）。
 function requireAuth(req: NextRequest): boolean {
   const header = req.headers.get("x-api-key");
   if (!header) return false;
-  const expected = process.env.INTERNAL_API_KEY;
-  if (!expected) {
+  if (!process.env.INTERNAL_API_KEY && !process.env.INTERNAL_API_KEY_PREVIOUS) {
     // ⚠️ fail-closed：未配置密钥时必须拒绝，绝不跳过认证。
     // 原实现返回 true（放行），任何人都能拿到云存储直传凭证。
-    console.error("[oss-token] INTERNAL_API_KEY 未配置，拒绝所有请求");
+    console.error("[oss-token] INTERNAL_API_KEY / INTERNAL_API_KEY_PREVIOUS 均未配置，拒绝所有请求");
     return false;
   }
-  return header === expected;
+  return matchInternalApiKey(header) !== null;
 }
 
 export async function POST(request: NextRequest) {
