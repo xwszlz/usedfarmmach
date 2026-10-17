@@ -919,10 +919,10 @@ export default function ValuationPage() {
           setResult({
             value: r.estimatedValue,
             confidence: r.confidence || calcConfidence(channel, dBrand, dHP, hasImage, dYears),
-            breakdown: (r.details || []).map((d: { factor: string; impact: string }) => ({
-              label: d.factor,
-              value: d.impact,
-              detail: "",
+            breakdown: (r.details || []).map((d: { label: string; impact: string; description: string }) => ({
+              label: d.label || "",
+              value: d.impact || "",
+              detail: d.description || "",
             })),
             formula: `基准价(${formatMoney(previewBasePrice)}) × 折旧(${calcDomesticDepreciation(dYears).toFixed(2)}) × 地区(${getRegionalFactor(dRegion).toFixed(2)}) × 补贴趋势(${getSubsidyTrendFactor(dYear).toFixed(2)})`,
             warnings: [],
@@ -968,9 +968,9 @@ export default function ValuationPage() {
             setResult({
               value: v4Value,
               confidence: r.confidence || calcConfidence(channel, iBrand, iHP, hasImage, Math.round(iHours / 500)),
-              breakdown: (r.details || []).map((d) => ({
+              breakdown: (r.details || []).map((d: { label: string; impact: string; description: string }) => ({
                 label: d.label || "",
-                value: d.value || "",
+                value: d.impact || "",
                 detail: d.description || "",
               })),
               formula: "V4 引擎（与产品页/国产渠道同源）",
