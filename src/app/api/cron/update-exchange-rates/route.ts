@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { matchInternalApiKey } from "@/lib/internal-api-key-auth";
 import { ExchangeRateService } from "@/lib/services/exchange-rate-service";
 
 export const dynamic = "force-dynamic"; // 防 .cn 构建期静态固化
@@ -15,10 +16,10 @@ export const maxDuration = 60;
 function isValidToken(token: string | null | undefined): boolean {
   if (!token) return false;
   const cronApiKey = process.env.CRON_API_KEY;
-  const internalApiKey = process.env.INTERNAL_API_KEY;
   const cronSecret = process.env.CRON_SECRET;
   if (cronApiKey && token === cronApiKey) return true;
-  if (internalApiKey && token === internalApiKey) return true;
+  // 双值匹配：INTERNAL_API_KEY（当前）或 INTERNAL_API_KEY_PREVIOUS（过渡期）任一命中即放行。
+  if (matchInternalApiKey(token) !== null) return true;
   if (cronSecret && token === cronSecret) return true;
   return false;
 }

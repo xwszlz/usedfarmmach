@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { matchInternalApiKey } from "@/lib/internal-api-key-auth";
 import { DashboardInputSchema } from "@/lib/agents/data-dashboard/types";
 import { dataDashboardAgent } from "@/lib/agents/data-dashboard/agent";
 
@@ -7,15 +8,17 @@ export const maxDuration = 30;
 
 /**
  * 🔒 P0 止血：Bearer API Key 鉴权（与 seller-scout 同范式，fail-closed）。
- * 接受 INTERNAL_API_KEY 或 CRON_API_KEY（运行时经环境变量注入，仓库内不存明文）。
+ * 接受 INTERNAL_API_KEY（含过渡期 INTERNAL_API_KEY_PREVIOUS）或 CRON_API_KEY（运行时经环境变量注入，仓库内不存明文）。
  * 缺失密钥或 Bearer 不匹配一律 401，绝不兜底放行。
  */
 function requireBearer(req: NextRequest): NextResponse | null {
-  const keys = [process.env.INTERNAL_API_KEY, process.env.CRON_API_KEY].filter(
-    (k): k is string => Boolean(k)
-  );
+  const cronApiKey = process.env.CRON_API_KEY;
   const auth = req.headers.get("Authorization");
-  if (keys.length === 0 || !auth || !auth.startsWith("Bearer ") || !keys.includes(auth.substring(7))) {
+  const presented = auth && auth.startsWith("Bearer ") ? auth.substring(7) : null;
+  // 双值匹配：INTERNAL_API_KEY / INTERNAL_API_KEY_PREVIOUS（过渡期）任一命中即放行；同时保留 CRON_API_KEY。
+  const internalMatch = matchInternalApiKey(presented);
+  const cronOk = !!cronApiKey && presented === cronApiKey;
+  if (!presented || (internalMatch === null && !cronOk)) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
   return null;
