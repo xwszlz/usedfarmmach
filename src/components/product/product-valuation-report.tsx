@@ -8,6 +8,7 @@ import ValuationReportSection, {
   type DeepAnalysisStructured,
 } from "@/components/valuation/valuation-report-section";
 import type { ValuationResult } from "@/lib/valuation/formulas";
+import type { ValuationIntelligence } from "@/lib/valuation/intelligence";
 
 interface ProductValuationReportProps {
   productId: string;
@@ -62,6 +63,8 @@ export default function ProductValuationReport({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [started, setStarted] = useState(false);
+  const [intel, setIntel] = useState<ValuationIntelligence | null>(null);
+  const [apiFormula, setApiFormula] = useState<string | null>(null);
   const zh = locale === "zh";
 
   // 游客（未登录）走 GET 模糊区间结果：响应字段是 {priceMid,priceLow,priceHigh,confidence,details:null}
@@ -82,6 +85,8 @@ export default function ProductValuationReport({
           details: Array.isArray(raw.details) ? raw.details : [],
         };
         setResult(mapped);
+        setIntel((data as any).intelligence ?? null);
+        setApiFormula((data as any).formula ?? null);
       } else {
         setError(data.error || (zh ? "估值失败" : "Valuation failed"));
       }
@@ -170,7 +175,7 @@ export default function ProductValuationReport({
           : "— Neutral",
       detail: d.description,
     })),
-    formula: buildFormula(result, zh),
+    formula: apiFormula || buildFormula(result, zh),
     warnings: [],
     channelPrices: result.channelPrices,
   };
@@ -180,7 +185,7 @@ export default function ProductValuationReport({
       channel={isChineseBrand ? "domestic" : "international"}
       meta={meta}
       result={reportResult}
-      intelligence={null}
+      intelligence={intel}
       deepAnalysis={deepAnalysis ? (deepAnalysis as unknown as DeepAnalysisStructured) : null}
       locale={locale}
     />
