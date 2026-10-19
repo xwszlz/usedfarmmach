@@ -38,6 +38,16 @@ const INITIAL = {
   descriptionAr: "",
 };
 
+// ⚠️ 必须定义在组件外：此前 Field 定义在 PublishNewPage 函数体内部，
+// 每次 setState 都会生成新的组件类型，React 卸载重建整棵子树 => 输入框 DOM 被替换、焦点丢失，
+// 表现为「只能敲进第一个字 / 字填不进去」。提到模块作用域后组件类型恒定，不会重挂载。
+const Field = ({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) => (
+  <div>
+    <label className="mb-1.5 block text-sm font-medium text-gray-700">{label}{hint && <span className="ml-2 text-xs font-normal text-gray-400">{hint}</span>}</label>
+    {children}
+  </div>
+);
+
 export default function PublishNewPage() {
   const router = useRouter();
   const locale = useLocale();
@@ -158,13 +168,6 @@ export default function PublishNewPage() {
       </div>
     );
   }
-
-  const Field = ({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) => (
-    <div>
-      <label className="mb-1.5 block text-sm font-medium text-gray-700">{label}{hint && <span className="ml-2 text-xs font-normal text-gray-400">{hint}</span>}</label>
-      {children}
-    </div>
-  );
 
   const inputCls = "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-red-500";
   const sectionCls = "mb-6 rounded-xl border bg-white p-5 shadow-sm";
