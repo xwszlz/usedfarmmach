@@ -159,8 +159,9 @@ export default function PublishNewPage() {
         <CheckCircle className="mx-auto mb-4 h-16 w-16 text-green-500" />
         <h1 className="text-2xl font-bold text-gray-900">发布成功，已上线！</h1>
         <p className="mt-2 text-gray-500">您的展品已发布到农机展数字展厅，全球买家现在就能看到它。</p>
-        <div className="mt-6 flex justify-center gap-3">
-          <Link href={`/${locale}/expo/showroom`} className="rounded-lg bg-red-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-red-700">查看我的展品</Link>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <Link href={`/${locale}/seller/booth`} className="rounded-lg bg-red-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-red-700">管理我的展品</Link>
+          <Link href={`/${locale}/expo/showroom`} className="rounded-lg border px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">查看展厅</Link>
           <button
             onClick={() => { setDone(false); setForm({ ...INITIAL }); }}
             className="rounded-lg border px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">再发一台</button>
