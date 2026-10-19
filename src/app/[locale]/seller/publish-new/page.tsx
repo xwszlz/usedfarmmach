@@ -68,8 +68,10 @@ export default function PublishNewPage() {
       fd.append("file", file);
       const res = await fetch("/api/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
       const data = await res.json();
-      if (data.success) return data.url;
-      throw new Error(data.error || "上传失败");
+      // 兼容两种返回形态：{url} / {data:{url}}（修复缩略图 src=undefined 灰块不显示）
+      const url = data?.url || data?.data?.url;
+      if (data?.success && url) return url;
+      throw new Error(data?.error || "上传失败");
     } finally { setUploading(false); }
   };
 
@@ -195,7 +197,7 @@ export default function PublishNewPage() {
           </Field>
           <Field label="型号" hint="必填"><input className={inputCls} value={form.model} onChange={e => set("model", e.target.value)} placeholder="如：JAGUAR 870" /></Field>
           <Field label="系列"><input className={inputCls} value={form.series} onChange={e => set("series", e.target.value)} placeholder="如：SC系列" /></Field>
-          <Field label="上市年份"><input className={inputCls} type="number" value={form.launchYear} onChange={e => set("launchYear", e.target.value)} placeholder="如：2025" /></Field>
+          <Field label="上市年份"><input className={inputCls} type="text" inputMode="numeric" value={form.launchYear} onChange={e => set("launchYear", e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="如：2025" /></Field>
           <Field label="产地"><input className={inputCls} value={form.origin} onChange={e => set("origin", e.target.value)} placeholder="如：德国 / 中国山东" /></Field>
         </div>
         <label className="mt-3 flex items-center gap-2 text-sm text-gray-700">
@@ -207,8 +209,8 @@ export default function PublishNewPage() {
       <section className={sectionCls}>
         <h2 className="mb-4 flex items-center gap-2 text-sm font-bold text-gray-900"><Star className="h-4 w-4 text-red-600" />② 价格与定位</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="人民币指导价 (¥)"><input className={inputCls} type="number" value={form.msrpCny} onChange={e => set("msrpCny", e.target.value)} placeholder="如：1280000" /></Field>
-          <Field label="美元指导价 ($)"><input className={inputCls} type="number" value={form.msrpUsd} onChange={e => set("msrpUsd", e.target.value)} placeholder="如：180000" /></Field>
+          <Field label="人民币指导价 (¥)"><input className={inputCls} type="text" inputMode="decimal" value={form.msrpCny} onChange={e => set("msrpCny", e.target.value.replace(/[^\d.]/g, "").slice(0, 12))} placeholder="如：1280000" /></Field>
+          <Field label="美元指导价 ($)"><input className={inputCls} type="text" inputMode="decimal" value={form.msrpUsd} onChange={e => set("msrpUsd", e.target.value.replace(/[^\d.]/g, "").slice(0, 12))} placeholder="如：180000" /></Field>
           <Field label="价格区间档"><input className={inputCls} value={form.priceRange} onChange={e => set("priceRange", e.target.value)} placeholder="如：100-150万" /></Field>
           <Field label="机型档位">
             <select className={inputCls} value={form.machineTier} onChange={e => set("machineTier", e.target.value)}>
