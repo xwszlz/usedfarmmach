@@ -119,8 +119,10 @@ export default function SellerBoothPage() {
         body: fd,
       });
       const data = await res.json();
-      if (data.success) return data.url;
-      throw new Error(data.error || "Upload failed");
+      // 兼容两种返回形态：{url} / {data:{url}}（与 inspection-booking-modal 同一惯例）
+      const url = data?.url || data?.data?.url;
+      if (data?.success && url) return url;
+      throw new Error(data?.error || "Upload failed");
     } finally {
       setUploading(false);
     }
