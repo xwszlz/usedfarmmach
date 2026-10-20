@@ -255,12 +255,30 @@ export async function importLeadsRows(
     deduplicated.push(row);
   });
 
+  let lineNo = 0;
   for (const row of deduplicated) {
+    lineNo += 1;
     const brandName = (row.brandName ?? "").toString().trim();
     const modelName = (row.modelName ?? "").toString().trim();
     const hash = generateContentHash(row);
     const scope = resolveStoreScope(row);
     const source = resolveLeadSource(row, scope);
+    // [合规闸门] 境内归属线索只允许落 CN 库；在 .com（Neon 境外）导入境内线索一律拒绝
+    if (scope === "cn" && (process.env.SITE ?? "com") !== "cn") {
+      result.pending += 1;
+      if (result.pendingDetail.length < 50) {
+        result.pendingDetail.push({
+          lineNo,
+          identity: rowIdentity(row),
+          scope,
+          reason: "cn_lead_must_use_cn_db",
+        });
+      }
+      console.warn(
+        `[合规闸门] 拒绝境内线索落非 CN 库（SITE=${process.env.SITE ?? "com"}），请在 .cn 后台导入`,
+      );
+      continue;
+    }
     try {
       const created = await prisma.rawListing.create({
         data: {
