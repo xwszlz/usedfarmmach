@@ -56,6 +56,8 @@ export interface DoubaoUsage {
 export interface DoubaoResult {
   text: string;
   usage?: DoubaoUsage;
+  /** 模型停止原因：stop=自然结束；length=触及 max_tokens 被截断（调用方据此决定是否续写） */
+  finishReason?: string;
 }
 
 export interface ChatCompletionOptions {
@@ -69,7 +71,7 @@ export interface ChatCompletionOptions {
 
 /**
  * 调用豆包 chat/completions（OpenAI 兼容）。
- * 自动选择直连 / B 通道，处理超时、重试、熔断；成功时返回文本与 usage 供计费归集。
+ * 自动选择直连 / B 通道，处理超时、重试、熔断；成功时返回文本、usage 与 finishReason 供计费归集与截断判定。
  */
 export async function chatCompletionDoubao(opts: ChatCompletionOptions): Promise<DoubaoResult> {
   const model = opts.model || ARK_MODEL_ID;
@@ -107,16 +109,18 @@ export async function chatCompletionDoubao(opts: ChatCompletionOptions): Promise
       );
       circuitFailures = 0;
       const data = resp.data as {
-        choices?: Array<{ message?: { content?: string } }>;
+        choices?: Array<{ message?: { content?: string }; finish_reason?: string }>;
         usage?: { prompt_tokens?: number; completion_tokens?: number };
         error?: { message?: string };
       };
       const text = data?.choices?.[0]?.message?.content || "";
+      const finishReason = data?.choices?.[0]?.finish_reason;
       if (data?.error) {
         throw new Error(`豆包API错误: ${data.error.message || JSON.stringify(data.error)}`);
       }
       return {
         text,
+        finishReason,
         usage: data?.usage
           ? { prompt_tokens: data.usage.prompt_tokens, completion_tokens: data.usage.completion_tokens }
           : undefined,
