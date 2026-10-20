@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
 import Link from "next/link";
 import {
-  Store, Upload, Save, Eye, Package, Trash2, Plus, ArrowUp, ArrowDown,
+  Store, Upload, Save, Eye, Package, Trash2, Pencil, Plus, ArrowUp, ArrowDown,
   CheckCircle, XCircle, Loader2, Image as ImageIcon, ExternalLink, Star
 } from "lucide-react";
 
@@ -39,6 +39,18 @@ interface ShowcaseItem {
   sortIndex: number;
   viewCount: number;
   inquiryCount: number;
+  origin?: string | null;
+  machineTier?: string | null;
+  priceRange?: string | null;
+  series?: string | null;
+  launchYear?: number | null;
+  msrpCny?: number | null;
+  msrpUsd?: number | null;
+  isChineseMade?: boolean | null;
+  descriptionZh?: string | null;
+  descriptionEn?: string | null;
+  brochureUrl?: string | null;
+  itemType?: string | null;
 }
 
 interface Product {
@@ -75,6 +87,10 @@ export default function SellerBoothPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [showAddItem, setShowAddItem] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [editing, setEditing] = useState<ShowcaseItem | null>(null);
+  const [editForm, setEditForm] = useState<Record<string, any>>({});
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
@@ -201,6 +217,78 @@ export default function SellerBoothPage() {
     fetchBooths();
   };
 
+  // Open edit modal for a showcase item
+  const openEdit = (item: ShowcaseItem) => {
+    setEditError(null);
+    setEditForm({
+      brand: item.brand || "",
+      model: item.model || "",
+      year: item.year != null ? String(item.year) : "",
+      workingHours: item.workingHours != null ? String(item.workingHours) : "",
+      origin: item.origin || "",
+      price: item.price != null ? String(item.price) : "",
+      machineTier: item.machineTier || "",
+      priceRange: item.priceRange || "",
+      status: item.status || "published",
+      descriptionZh: item.descriptionZh || "",
+      images: [...(item.images || [])],
+    });
+    setEditing(item);
+  };
+
+  // Close edit modal without saving
+  const closeEdit = () => {
+    setEditing(null);
+    setEditForm({});
+    setEditError(null);
+  };
+
+  // Save edited showcase item via PATCH (whitelisted fields only)
+  const saveEdit = async () => {
+    if (!editing) return;
+    setEditSaving(true);
+    setEditError(null);
+    try {
+      const toNum = (v: unknown, useFloat: boolean): number | null => {
+        if (v === "" || v === null || v === undefined) return null;
+        const n = useFloat ? parseFloat(String(v)) : parseInt(String(v), 10);
+        return Number.isNaN(n) ? null : n;
+      };
+      const toStr = (v: unknown): string | null => (v === "" || v === null || v === undefined ? null : String(v));
+      const body = {
+        id: editing.id,
+        brand: toStr(editForm.brand),
+        model: toStr(editForm.model),
+        year: toNum(editForm.year, false),
+        workingHours: toNum(editForm.workingHours, false),
+        origin: toStr(editForm.origin),
+        price: toNum(editForm.price, true),
+        machineTier: toStr(editForm.machineTier),
+        priceRange: toStr(editForm.priceRange),
+        status: editForm.status === "offline" ? "offline" : "published",
+        descriptionZh: toStr(editForm.descriptionZh),
+        images: Array.isArray(editForm.images) ? editForm.images : [],
+      };
+      const res = await fetch("/api/seller/booth/items", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setEditing(null);
+        setEditForm({});
+        fetchBooths();
+      } else {
+        setEditError(data?.error || "保存失败，请重试");
+      }
+    } catch (e) {
+      setEditError("网络错误，请稍后重试");
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
   if (loading) {
     return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-gray-400" /></div>;
   }
@@ -238,6 +326,7 @@ export default function SellerBoothPage() {
             我的展位
           </h1>
           <p className="mt-1 text-sm text-gray-500">{booth.name} · {HALL_NAMES[booth.hall] || booth.hall}</p>
+          <p className="mt-1 text-xs text-gray-400">展台管理：可修改展品信息、上下架与排序</p>
         </div>
         <div className="flex items-center gap-2">
           {saved && <span className="flex items-center gap-1 text-sm text-green-600"><CheckCircle className="h-4 w-4" />已保存</span>}
@@ -428,13 +517,134 @@ export default function SellerBoothPage() {
                     <span className="flex items-center gap-0.5"><Star className="h-3 w-3" />{item.inquiryCount}</span>
                   </div>
                 </div>
-                <button onClick={() => deleteItem(item.id)}
-                  className="flex-shrink-0 text-red-400 hover:text-red-600"><Trash2 className="h-4 w-4" /></button>
+                <div className="flex flex-shrink-0 items-center gap-1.5">
+                  <button onClick={() => openEdit(item)} title="编辑展品"
+                    className="text-gray-400 hover:text-blue-600"><Pencil className="h-4 w-4" /></button>
+                  <button onClick={() => deleteItem(item.id)} title="删除展品"
+                    className="text-red-400 hover:text-red-600"><Trash2 className="h-4 w-4" /></button>
+                </div>
               </div>
             ))}
           </div>
         )}
       </section>
+
+      {/* Edit showcase item modal */}
+      {editing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => closeEdit()}>
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-sm font-bold text-gray-900">编辑展品</h3>
+              <span className="text-xs text-gray-400">{editing.brand} {editing.model || editing.deviceType}</span>
+            </div>
+
+            {editError && <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{editError}</p>}
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-gray-600">品牌</label>
+                <input type="text" value={editForm.brand || ""} onChange={(e) => setEditForm(prev => ({ ...prev, brand: e.target.value }))}
+                  placeholder="如：约翰迪尔" className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-gray-600">型号</label>
+                <input type="text" value={editForm.model || ""} onChange={(e) => setEditForm(prev => ({ ...prev, model: e.target.value }))}
+                  placeholder="如：6E-1504" className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-gray-600">年份</label>
+                <input type="number" value={editForm.year ?? ""} onChange={(e) => setEditForm(prev => ({ ...prev, year: e.target.value }))}
+                  placeholder="如：2023" className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-gray-600">工作小时</label>
+                <input type="number" value={editForm.workingHours ?? ""} onChange={(e) => setEditForm(prev => ({ ...prev, workingHours: e.target.value }))}
+                  placeholder="如：1200" className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-gray-600">产地</label>
+                <input type="text" value={editForm.origin || ""} onChange={(e) => setEditForm(prev => ({ ...prev, origin: e.target.value }))}
+                  placeholder="如：美国" className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-gray-600">价格（¥）</label>
+                <input type="number" value={editForm.price ?? ""} onChange={(e) => setEditForm(prev => ({ ...prev, price: e.target.value }))}
+                  placeholder="如：380000" className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-gray-600">机型档位</label>
+                <select value={editForm.machineTier || ""} onChange={(e) => setEditForm(prev => ({ ...prev, machineTier: e.target.value }))}
+                  className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:border-blue-500">
+                  <option value="">未设置</option>
+                  <option value="standard">标准机型</option>
+                  <option value="premium">高端机型</option>
+                  <option value="flagship">旗舰机型</option>
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-gray-600">价格区间</label>
+                <input type="text" value={editForm.priceRange || ""} onChange={(e) => setEditForm(prev => ({ ...prev, priceRange: e.target.value }))}
+                  placeholder="如：30-50万" className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:border-blue-500" />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="mb-1.5 block text-xs font-medium text-gray-600">上架状态</label>
+                <select value={editForm.status || "published"} onChange={(e) => setEditForm(prev => ({ ...prev, status: e.target.value }))}
+                  className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:border-blue-500">
+                  <option value="published">已上架</option>
+                  <option value="offline">已下架</option>
+                </select>
+              </div>
+              <div className="sm:col-span-2">
+                <label className="mb-1.5 block text-xs font-medium text-gray-600">中文描述</label>
+                <textarea value={editForm.descriptionZh || ""} onChange={(e) => setEditForm(prev => ({ ...prev, descriptionZh: e.target.value }))}
+                  rows={4} placeholder="介绍该展品的车况、配置、优势等..."
+                  className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:border-blue-500" />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="mb-1.5 block text-xs font-medium text-gray-600">展品图片</label>
+                <div className="flex flex-wrap gap-2">
+                  {(editForm.images || []).map((url: string, i: number) => (
+                    <div key={`${url}-${i}`} className="relative h-16 w-16 overflow-hidden rounded-lg border bg-gray-100">
+                      <img src={url} alt="" className="h-full w-full object-cover" />
+                      <button type="button" onClick={() => setEditForm(prev => ({ ...prev, images: (prev.images || []).filter((_: string, j: number) => j !== i) }))}
+                        className="absolute right-0.5 top-0.5 rounded bg-white/80 p-0.5 text-red-500 hover:text-red-700">
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                  <label className="cursor-pointer">
+                    <input type="file" accept="image/*" className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        e.target.value = "";
+                        if (!file) return;
+                        try {
+                          const url = await uploadImage(file);
+                          setEditForm(prev => ({ ...prev, images: [...(prev.images || []), url] }));
+                        } catch (err) {
+                          setEditError("图片上传失败，请重试");
+                        }
+                      }} />
+                    <span className={`flex h-16 w-16 flex-col items-center justify-center rounded-lg border border-dashed text-gray-400 ${uploading ? "opacity-50" : "hover:bg-gray-50"}`}>
+                      <Upload className="h-4 w-4" />
+                      <span className="mt-0.5 text-[10px]">{uploading ? "上传中" : "上传图片"}</span>
+                    </span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button type="button" onClick={() => closeEdit()}
+                className="rounded-lg border px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">取消</button>
+              <button type="button" onClick={() => saveEdit()} disabled={editSaving}
+                className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+                {editSaving ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />保存中...</> : <><Save className="h-3.5 w-3.5" />保存</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
