@@ -64,7 +64,6 @@ export async function POST(request: NextRequest) {
         companyName,
         country,
         role: role || "buyer",
-        membershipTier: "free",
         // 邮箱待补全标记：有邮箱则 false，无邮箱（小程序等）则 true
         emailPending: email ? false : true,
         // 阶段0：注册即视为未验证，补全资料后置 true（自证）
@@ -88,7 +87,6 @@ export async function POST(request: NextRequest) {
         country: true,
         preferredLanguage: true,
         credits: true,
-        membershipTier: true,
         freeValuationsUsed: true,
         freeValuationsResetAt: true,
       },
@@ -117,7 +115,6 @@ export async function POST(request: NextRequest) {
     const token = signToken({
       userId: user.id,
       role: user.role,
-      tier: user.membershipTier,
     });
 
     const response = NextResponse.json({
@@ -127,7 +124,6 @@ export async function POST(request: NextRequest) {
         user: {
           ...user,
           credits: finalCredits,
-          membershipTier: user.membershipTier,
           freeValuationsUsed: user.freeValuationsUsed,
         },
       },

@@ -99,6 +99,7 @@ services:
   # 数据合规：入库脚本 SITE-aware，国内卖家信息只落 cn-postgres（数据不出境红线）。
   scout:
     image: ${CN_IMAGE}
+    pull_policy: never
     container_name: cn-scout
     env_file:
       - /opt/cn/.env.cn

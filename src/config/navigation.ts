@@ -90,6 +90,7 @@ export const mainNav: TopNavItem[] = [
 
       { href: "/expo", labelKey: "nav.machineryExpo" },
 
+      { href: "/brands", labelKey: "nav.brands" },
       { href: "/parts", labelKey: "nav.parts" },
 
     ],

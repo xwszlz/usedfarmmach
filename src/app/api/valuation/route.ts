@@ -1011,7 +1011,20 @@ export async function GET(request: NextRequest) {
     // usage-collector 是模块级数组，不清会串到下一个请求。
     drainUsage();
 
+    // 真实成交情报切片（与 POST 同源，GET 也回传，供产品页报告渲染真实 P25~P75 区间）
+    const intelRegion = input.location || undefined;
+    const intelligence = getValuationIntelligence(
+      input.brand,
+      input.category,
+      input.modelName,
+      intelRegion,
+    );
 
+    // 数值系数公式串（与产品页客户端 buildFormula 同逻辑，服务端直接产出避免二次计算漂移）
+    const fNum = (n: number | undefined | null) =>
+      n === undefined || n === null || Number.isNaN(Number(n)) ? "?" : Number(n).toFixed(2);
+    const formula =
+      `估值 = 新机基准价 ¥${Math.round(result.basePrice || 0)} × 年份折旧 ${fNum((result as any).yearFactor)} × 工时因子 ${fNum((result as any).hoursFactor)} × 成色因子 ${fNum((result as any).conditionFactor)} × 市场因子 ${fNum((result as any).marketFactor)} × 品牌系数 ${fNum((result as any).brandFactor)} = ¥${Math.round(result.estimatedValue || 0)}`;
 
     return NextResponse.json({
 
@@ -1020,6 +1033,10 @@ export async function GET(request: NextRequest) {
       version: result.version,
 
       data: result,
+
+      formula,
+
+      intelligence,
 
       meta: {
 

@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { Globe, Menu, X, Store, LayoutDashboard, ChevronDown } from "lucide-react";
+import { Globe, Menu, X, Store, LayoutDashboard, LayoutGrid, ChevronDown } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { mainNav, isDropdown, type NavItem, type TopNavItem } from "@/config/navigation";
 import { cn } from "@/lib/utils";
@@ -17,7 +17,6 @@ interface NavbarProps {
 type Userinfo = {
   role: string;
   email: string;
-  membershipTier: string;
   credits: number;
 } | null;
 
@@ -38,7 +37,6 @@ export function Navbar({ locale }: NavbarProps) {
             setUser({
               role: json.data.user.role,
               email: json.data.user.email,
-              membershipTier: json.data.user.membershipTier || "free",
               credits: json.data.user.credits || 0,
             });
             return;
@@ -107,6 +105,12 @@ export function Navbar({ locale }: NavbarProps) {
                     {locale === "en" ? "Seller" : "卖家中心"}
                   </Button>
                 </Link>
+                <Link href={`/${locale}/seller/booth`}>
+                  <Button variant="ghost" size="sm" className="flex items-center gap-1.5">
+                    <LayoutGrid className="h-4 w-4" />
+                    {locale === "en" ? "My Booth" : "展台管理"}
+                  </Button>
+                </Link>
                 {["admin", "super_admin"].includes(user.role) && (
                   <Link href={`/${locale}/admin`}>
                     <Button variant="ghost" size="sm" className="flex items-center gap-1.5">
@@ -162,6 +166,9 @@ export function Navbar({ locale }: NavbarProps) {
                   </span>
                   <Link href={`/${locale}/seller/products`} className="flex-1" onClick={() => setMobileOpen(false)}>
                     <Button size="sm" className="w-full">{locale === "en" ? "Seller" : "卖家中心"}</Button>
+                  </Link>
+                  <Link href={`/${locale}/seller/booth`} className="flex-1" onClick={() => setMobileOpen(false)}>
+                    <Button variant="outline" size="sm" className="w-full">{locale === "en" ? "My Booth" : "展台管理"}</Button>
                   </Link>
                   {["admin", "super_admin"].includes(user.role) && (
                     <Link href={`/${locale}/admin`} className="flex-1" onClick={() => setMobileOpen(false)}>

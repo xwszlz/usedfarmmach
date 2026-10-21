@@ -24,7 +24,27 @@ export const dynamic = "force-dynamic";
 interface LlmCallResult {
   text: string;
   usage: { inputTokens: number; outputTokens: number };
+  /** 豆包停止原因：length = 触及 max_tokens 被截断（长报告需续写） */
+  finishReason?: string;
 }
+
+/**
+ * 深度分析单次生成的 max_tokens。
+ * 模型（doubao-seed-2-1-pro）官方上限 256k，但单次调用受路由 maxDuration 约束：
+ * 16384 tokens 在 300s 预算内可稳定生成完，超出部分走续写轮次拼接（见下方续写逻辑）。
+ */
+const DEEP_ANALYSIS_MAX_TOKENS = 16384;
+/** 单次调用超时：必须小于路由 maxDuration(300s)，否则路由先被平台杀掉、自身超时永远等不到 */
+const DEEP_ANALYSIS_TIMEOUT_MS = 280_000;
+/** 续写轮次上限：1 次初稿 + 2 次续写，理论可覆盖约 48k tokens 的报告 */
+const DEEP_ANALYSIS_MAX_CONTINUE_ROUNDS = 2;
+/** 续写指令：明确要求只写剩余部分，避免 LLM 从头重复整篇报告 */
+const DEEP_ANALYSIS_CONTINUE_PROMPT =
+  "上面的内容是你正在撰写的深度分析报告，因单次输出长度上限被截断。" +
+  "请紧接着截断处继续输出剩余部分，严格要求：" +
+  "① 严禁重复任何已写内容；② 不要输出报告摘要或开头语；" +
+  "③ 保持原有章节编号与格式继续往下写；" +
+  "④ 若报告正文已完结，只需补上结尾要求的 ```json 结构化数据块。";
 
 /** 从 referer / 路径推断 locale（与 quota guard 的 rechargeUrl 保持一致） */
 function getLocaleFromRequest(request: NextRequest): string {
@@ -35,7 +55,7 @@ function getLocaleFromRequest(request: NextRequest): string {
   }
   return "zh";
 }
-export const maxDuration = 120; // 豆包深度分析需要更长时间
+export const maxDuration = 300; // 长报告（含续写轮次）需要更长时间；与 internal/products 的 300s 对齐
 
 /**
  * 国际农机深度分析 Prompt — 全球市场
@@ -269,7 +289,9 @@ async function buildDoubaoContent(
  * 调用豆包 API（统一出口 chatCompletionDoubao）
  */
 async function callDoubao(
-  content: Array<Record<string, unknown>>
+  content: Array<Record<string, unknown>>,
+  /** 续写时追加的历史消息（assistant 已写内容 + user 续写指令） */
+  extraMessages: Array<{ role: string; content: string }> = []
 ): Promise<LlmCallResult> {
   const model = getArkModelId();
   console.log(
@@ -280,9 +302,9 @@ async function callDoubao(
 
   const result = await chatCompletionDoubao({
     model,
-    maxTokens: 4096,
-    timeoutMs: 140000, // 140秒：长报告生成需要较长时间
-    messages: [{ role: "user", content }],
+    maxTokens: DEEP_ANALYSIS_MAX_TOKENS,
+    timeoutMs: DEEP_ANALYSIS_TIMEOUT_MS,
+    messages: [{ role: "user", content }, ...extraMessages],
   });
 
   const text = result.text || "";
@@ -296,7 +318,7 @@ async function callDoubao(
     outputTokens: result.usage?.completion_tokens ?? 0,
   };
 
-  return { text, usage };
+  return { text, usage, finishReason: result.finishReason };
 }
 
 // ── 下载图片并转为 base64 ──
@@ -412,6 +434,8 @@ export async function POST(request: NextRequest) {
     let modelUsed = "";
     let billingModel = "";
     let lastUsage = { inputTokens: 0, outputTokens: 0 };
+    let truncated = false;
+    let continueRounds = 0;
     const errors: string[] = [];
 
     // 全站统一豆包（火山方舟 ARK）：.cn 直连国行、.com 经 B 通道代理（见 ark-client.ts）。
@@ -425,10 +449,38 @@ export async function POST(request: NextRequest) {
       lastUsage = res.usage;
       billingModel = model;
       modelUsed = `豆包 ${model} [${engineLabel}]`;
+
+      // 长报告续写：finishReason === "length" 表示输出触及 max_tokens 被截断
+      // （历史上这正是「报告下面没出全」的静默根因——截断信号此前被 ark-client 丢弃）。
+      // 按火山官方推荐做法：把已生成内容作为上下文继续写；轮次用尽仍截断则置 truncated。
+      let finishReason = res.finishReason;
+      while (finishReason === "length" && continueRounds < DEEP_ANALYSIS_MAX_CONTINUE_ROUNDS) {
+        continueRounds += 1;
+        console.warn(
+          `[DeepAnalysis] 输出被 max_tokens 截断(finish_reason=length)，第 ${continueRounds}/${DEEP_ANALYSIS_MAX_CONTINUE_ROUNDS} 次续写`
+        );
+        const cont = await callDoubao(content, [
+          { role: "assistant", content: analysisText },
+          { role: "user", content: DEEP_ANALYSIS_CONTINUE_PROMPT },
+        ]);
+        analysisText += cont.text;
+        lastUsage = {
+          inputTokens: lastUsage.inputTokens + cont.usage.inputTokens,
+          outputTokens: lastUsage.outputTokens + cont.usage.outputTokens,
+        };
+        finishReason = cont.finishReason;
+      }
+      if (finishReason === "length") {
+        truncated = true;
+        console.error("[DeepAnalysis] 已达最大续写轮次，报告仍不完整，已标记 truncated");
+      }
     } catch (error: any) {
       const msg = `[豆包] ${error.message || ""}`.substring(0, 150);
       console.warn("[DeepAnalysis] 豆包失败:", msg);
       errors.push(msg);
+      // 初稿失败 → analysisText 为空，走下方 ALL_MODELS_FAILED；
+      // 续写失败 → 保留已生成内容并标记 truncated，避免静默缺尾。
+      if (analysisText) truncated = true;
     }
 
     if (!analysisText || analysisText.trim().length < 50) {
@@ -489,6 +541,9 @@ export async function POST(request: NextRequest) {
         mediaCount: { images: images.length, videos: videoUrls.length },
         pointsCharged: cost.points,
         creditsBalance: deduction.credits,
+        // true = 续写轮次用尽仍未收尾，前端应提示「报告未完整生成」
+        truncated,
+        continueRounds,
       },
     });
 

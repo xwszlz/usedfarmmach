@@ -19,6 +19,10 @@ import {
   DOMESTIC_SUBSIDY_TO_HAND,
   DOMESTIC_BRAND_PREMIUM,
   getEngineBrandPremium,
+  getCategoryAnnualHours,
+  getCategoryAsabeParams,
+  calcAsabeResidual,
+  calcAgeTableResidual,
 } from "./brand-data";
 import type { ValuationInput } from "./formulas";
 
@@ -40,6 +44,21 @@ export interface ExpertAsset {
   prodYear: number;
   region: string;
   emission: string;
+  /** 该样本实测/采用的年均工时（h/yr），仅作标注，计算以 CATEGORY_ANNUAL_HOURS 为准 */
+  annualHours?: number | null;
+}
+
+/** 样本类型：expert-machine = 外部专家单机报告；market-curve = 市场挂牌/成交曲线聚合 */
+export type SampleType = "expert-machine" | "market-curve";
+
+/** 样本置信度 */
+export type SampleConfidence = "high" | "medium" | "low";
+
+/** 机龄-残值锚点（按机龄分桶的市场观测值） */
+export interface AgeResidualAnchor {
+  ageYears: number;
+  residualRatio: number;
+  note?: string;
 }
 
 export interface ExpertNewPrice {
@@ -87,24 +106,32 @@ export interface ExpertSample {
   source: string;
   sourceRef: string;
   asset: ExpertAsset;
-  newPrice: ExpertNewPrice;
-  conditionTiers: ExpertConditionTier[];
-  channels: ExpertChannels;
+  // ↓↓ market-curve 类样本（挂牌数据聚合）没有单机新机价/成色档/渠道/基准价，
+  //    这些字段为可选；消费方必须能安全跳过缺字段的样本，不得抛错。
+  newPrice?: ExpertNewPrice;
+  conditionTiers?: ExpertConditionTier[];
+  channels?: ExpertChannels;
   exportFob?: ExpertExportFob;
   addonPremium?: number;
   enginePremiumRange?: NumRange;
   brandDiscountRange?: NumRange;
   enginePremiumNote?: string;
   brandDiscountNote?: string;
-  benchmark: {
-    conditionTier: string;
-    retailMid: number;
+  benchmark?: {
+    conditionTier?: string;
+    retailMid?: number;
     retailRange?: NumRange;
     dealerBuyMid?: number;
     fobMid?: number;
     listAdvice?: NumRange;
     exportFloor?: number;
   };
+  /** 样本类型，缺省按 expert-machine（外部专家单机报告）处理 */
+  sampleType?: SampleType;
+  /** 置信度：market-curve（挂牌价聚合）通常为 low */
+  confidence?: SampleConfidence;
+  /** 机龄-残值锚点序列（挂牌/成交价 ÷ 新机价 按机龄分桶） */
+  ageResidualAnchors?: AgeResidualAnchor[];
   missingVerification?: string[];
   methodology?: string;
 }
@@ -233,7 +260,9 @@ export interface ChannelImplied {
  *  consignment = 1 - 寄售服务费率中位（专家口径：接近零售，仅扣服务费）
  *  auction     = 拍卖折价系数中位
  */
-export function deriveChannelImplied(ch: ExpertChannels): ChannelImplied {
+export function deriveChannelImplied(ch?: ExpertChannels | null): ChannelImplied {
+  // market-curve 类样本没有渠道数据 → 全量返回 null，下游判定为 unknown
+  if (!ch) return { retail: 1.0, dealer: null, consignment: null, auction: null };
   let dealer: number | null = null;
   if (ch.retailMid) {
     if (ch.dealerBuyMid) dealer = ch.dealerBuyMid / ch.retailMid;
@@ -304,6 +333,69 @@ export function deriveHourAnchors(s: ExpertSample): HourAnchor[] {
       deviationPct: dev,
       verdict: verdictOf(dev),
       note: t.note,
+    };
+  });
+}
+
+// ============================================================
+// 机龄-残值锚点（我们模型 vs 样本锚点 vs ASABE 参考）
+// ============================================================
+
+export interface AgeAnchor {
+  ageYears: number;
+  /** 合成累计工时 = 机龄 × 品类年均工时；品类无工时表（null）则为 null */
+  synthHours: number | null;
+  /** 我们工时曲线在该合成工时处的残值率 */
+  hoursCurveResidual: number | null;
+  /** 我们四段机龄表在该机龄处的残值率 */
+  ageTableResidual: number;
+  /** 我们引擎实际采用值 = min(工时曲线, 机龄表)（无合成工时则只取机龄表） */
+  ourResidual: number;
+  /** 样本给出的锚点残值率 */
+  anchorResidual: number;
+  /** (our − anchor) / anchor × 100 → 正=我们高估（折旧偏慢），负=我们低估 */
+  deviationPct: number | null;
+  /** ASABE 参考残值率（外部模型，**未接入主链路**，仅作对照列） */
+  asabeResidual: number;
+  /** (asabe − anchor) / anchor × 100 */
+  asabeDeviationPct: number | null;
+  verdict: Verdict;
+  note?: string;
+}
+
+/**
+ * 由样本的机龄-残值锚点推导逐点对比。
+ * 口径说明：
+ *  - 样本通常给不出真实工时，用「机龄 × 品类年均工时」合成（无工时表品类不合成，只走机龄法）；
+ *  - 我们的引擎实际取 min(工时曲线, 机龄表)，与 formulas.calcCombinedDepreciation 同口径。
+ */
+export function deriveAgeAnchors(s: ExpertSample): AgeAnchor[] {
+  const anchors = s.ageResidualAnchors ?? [];
+  const annual = getCategoryAnnualHours(s.asset?.category);
+  const asabeParams = getCategoryAsabeParams(s.asset?.category);
+
+  return anchors.map((a) => {
+    const synthHours = annual != null ? Math.round(a.ageYears * annual) : null;
+    const hoursCurveResidual = synthHours != null ? interpolateHoursResidual(synthHours) : null;
+    const ageTableResidual = calcAgeTableResidual(a.ageYears, s.asset?.category);
+    const ourResidual =
+      hoursCurveResidual != null ? Math.min(hoursCurveResidual, ageTableResidual) : ageTableResidual;
+    const deviationPct = pct(ourResidual, a.residualRatio);
+    const asabeResidual = calcAsabeResidual(asabeParams, a.ageYears, annual);
+    const asabeDeviationPct = pct(asabeResidual, a.residualRatio);
+
+    return {
+      ageYears: a.ageYears,
+      synthHours,
+      hoursCurveResidual,
+      ageTableResidual,
+      ourResidual,
+      anchorResidual: a.residualRatio,
+      deviationPct,
+      asabeResidual,
+      asabeDeviationPct,
+      verdict: verdictOf(deviationPct),
+      note: a.note,
     };
   });
 }

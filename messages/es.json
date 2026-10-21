@@ -163,6 +163,7 @@
 
   },
   "nav": {
+    "brands": "Marcas",
     "home": "Inicio",
     "products": "Maquinaria",
     "logistics": "Logística",
@@ -178,7 +179,6 @@
     "sellEquipment": "Publicar equipo",
     "intelligence": "Inteligencia mercado",
     "blog": "Noticias",
-    "brands": "Marcas",
     "categories": "Categorías",
     "buyMachinery": "Comprar",
     "sellMachinery": "Vender",

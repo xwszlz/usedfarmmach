@@ -57,10 +57,22 @@ const INTL_BRAND_LIST = Array.from(new Set([
   ),
 ]));
 
+// 国际品牌保值率/价值系数（2026-10-15 按引擎 BRAND_COEFFICIENTS 补齐 Phase B+P2 长尾；
+// 上方既有 9 项为页面历史口径，保持不变以免影响存量估值——additive-only）
 const INTL_BRAND_COEFFICIENTS: Record<string, number> = {
   "John Deere": 1.15, "Kubota": 1.10, "Fendt": 1.085, "CLAAS": 1.08,
   "Case IH": 1.00, "New Holland": 0.95, "Massey Ferguson": 0.92,
   "Valtra": 0.90, "其他国际": 0.95,
+  // === 引擎 Phase B/P2 补齐（值取自 brand-data.ts BRAND_COEFFICIENTS）===
+  "Krone": 1.25, "Orkel": 1.15, "Manitou": 1.10, "Kuhn": 1.00, "Grimme": 0.95,
+  "Amazone": 1.15, "Horsch": 1.15, "Väderstad": 1.15, "Vaderstad": 1.15,
+  "McHale": 1.15, "Lamborghini": 1.10, "Pöttinger": 1.10, "Pottinger": 1.10,
+  "Deutz-Fahr": 1.05, "Yanmar": 0.95, "SAME": 1.00, "Hardi": 1.00, "Mahindra": 0.88,
+  "Zetor": 0.90, "MTZ": 0.85, "Rostselmash": 0.88, "Sampo": 0.95, "Jacto": 0.85,
+  "Iseki": 0.90, "Mitsubishi": 0.90, "BCS": 0.90, "Goldoni": 0.92, "Vermeer": 0.95,
+  "Kongskilde": 0.80, "Arcusin": 0.75, "arcusln": 0.75, "IDASS": 0.70,
+  // 国产英文键（本就经 INTL_BRAND_LIST 进入国际下拉，此前静默走 0.95 默认）
+  "Dongfanghong": 0.65, "Mushen": 0.60, "Dexiang": 0.50, "Yingjia": 0.50, "RSM": 0.45,
 };
 
 // 国际品牌保值率
@@ -68,6 +80,15 @@ const INTL_BRAND_RETENTION: Record<string, number> = {
   "John Deere": 1.15, "Kubota": 1.10, "Fendt": 1.085, "CLAAS": 1.08,
   "Case IH": 1.00, "New Holland": 0.95, "Massey Ferguson": 0.92,
   "Valtra": 0.90, "其他国际": 0.95,
+  // === 引擎 Phase B/P2 补齐（值同上表，未补齐前这些品牌静默走 0.95 默认）===
+  "Krone": 1.25, "Orkel": 1.15, "Manitou": 1.10, "Kuhn": 1.00, "Grimme": 0.95,
+  "Amazone": 1.15, "Horsch": 1.15, "Väderstad": 1.15, "Vaderstad": 1.15,
+  "McHale": 1.15, "Lamborghini": 1.10, "Pöttinger": 1.10, "Pottinger": 1.10,
+  "Deutz-Fahr": 1.05, "Yanmar": 0.95, "SAME": 1.00, "Hardi": 1.00, "Mahindra": 0.88,
+  "Zetor": 0.90, "MTZ": 0.85, "Rostselmash": 0.88, "Sampo": 0.95, "Jacto": 0.85,
+  "Iseki": 0.90, "Mitsubishi": 0.90, "BCS": 0.90, "Goldoni": 0.92, "Vermeer": 0.95,
+  "Kongskilde": 0.80, "Arcusin": 0.75, "arcusln": 0.75, "IDASS": 0.70,
+  "Dongfanghong": 0.65, "Mushen": 0.60, "Dexiang": 0.50, "Yingjia": 0.50, "RSM": 0.45,
 };
 
 // 国际折旧（按小时）
@@ -104,18 +125,62 @@ const INTL_REGIONS: Record<string, number> = {
 
 const DEVELOPED_REGIONS = new Set(["北美", "欧洲"]);
 
+// 国际/出口渠道估值需要的品类（供 V4 引擎识别基准价，须与服务端 CATEGORY 标准名一致）
+const INTL_CATEGORY_LIST = [
+  "拖拉机", "收割机", "青储机", "打捆机", "割草机",
+  "搂草机", "播种机", "植保机", "其他",
+];
+
+// 出口目标国 buy/sell 系数（2026-10-15 扩至六大区域全覆盖 58 国；
+// buy=相对中国基准价的当地收购折扣，sell=当地售价溢价；既有 19 国数值不变——additive-only）
 const EXPORT_COUNTRIES: Record<string, { buy: number; sell: number }> = {
-  "阿根廷": { buy: 0.75, sell: 1.40 }, "尼日利亚": { buy: 0.70, sell: 1.50 },
-  "俄罗斯": { buy: 0.85, sell: 1.25 }, "泰国": { buy: 0.80, sell: 1.30 },
-  "哈萨克斯坦": { buy: 0.82, sell: 1.28 }, "乌兹别克斯坦": { buy: 0.82, sell: 1.28 },
-  "南非": { buy: 0.75, sell: 1.35 }, "肯尼亚": { buy: 0.72, sell: 1.45 },
-  "加纳": { buy: 0.72, sell: 1.45 }, "巴西": { buy: 0.78, sell: 1.35 },
-  "越南": { buy: 0.80, sell: 1.32 }, "菲律宾": { buy: 0.80, sell: 1.32 },
-  "缅甸": { buy: 0.75, sell: 1.40 }, "柬埔寨": { buy: 0.75, sell: 1.40 },
+  // ── 中东欧与巴尔干（欧盟/候选国，农机需求旺、当地旧机价格低）──
+  "波兰": { buy: 0.72, sell: 1.15 }, "罗马尼亚": { buy: 0.70, sell: 1.18 },
+  "匈牙利": { buy: 0.70, sell: 1.15 }, "捷克": { buy: 0.72, sell: 1.12 },
+  "塞尔维亚": { buy: 0.68, sell: 1.20 }, "保加利亚": { buy: 0.68, sell: 1.18 },
+  "克罗地亚": { buy: 0.72, sell: 1.12 }, "立陶宛": { buy: 0.70, sell: 1.15 },
+  "斯洛伐克": { buy: 0.70, sell: 1.12 }, "波黑": { buy: 0.65, sell: 1.22 },
+  "北马其顿": { buy: 0.65, sell: 1.22 }, "希腊": { buy: 0.70, sell: 1.15 },
+  // ── 俄语区与中亚 ──
+  "俄罗斯": { buy: 0.85, sell: 1.25 }, "哈萨克斯坦": { buy: 0.82, sell: 1.28 },
+  "乌兹别克斯坦": { buy: 0.82, sell: 1.28 }, "乌克兰": { buy: 0.55, sell: 1.30 },
+  "白俄罗斯": { buy: 0.60, sell: 1.22 }, "吉尔吉斯斯坦": { buy: 0.80, sell: 1.28 },
+  "格鲁吉亚": { buy: 0.72, sell: 1.28 }, "摩尔多瓦": { buy: 0.62, sell: 1.25 },
+  // ── 南美 ──
+  "阿根廷": { buy: 0.75, sell: 1.40 }, "巴西": { buy: 0.78, sell: 1.35 },
+  "智利": { buy: 0.78, sell: 1.30 }, "乌拉圭": { buy: 0.75, sell: 1.35 },
+  "巴拉圭": { buy: 0.72, sell: 1.38 }, "哥伦比亚": { buy: 0.72, sell: 1.35 },
+  "秘鲁": { buy: 0.72, sell: 1.35 },
+  // ── 非洲 ──
+  "尼日利亚": { buy: 0.70, sell: 1.50 }, "南非": { buy: 0.75, sell: 1.35 },
+  "肯尼亚": { buy: 0.72, sell: 1.45 }, "加纳": { buy: 0.72, sell: 1.45 },
+  "埃及": { buy: 0.72, sell: 1.35 }, "埃塞俄比亚": { buy: 0.68, sell: 1.45 },
+  "坦桑尼亚": { buy: 0.70, sell: 1.42 }, "赞比亚": { buy: 0.70, sell: 1.42 },
+  "摩洛哥": { buy: 0.72, sell: 1.32 }, "塞内加尔": { buy: 0.70, sell: 1.42 },
+  "安哥拉": { buy: 0.72, sell: 1.40 }, "莫桑比克": { buy: 0.70, sell: 1.42 },
+  // ── 东南亚与南亚 ──
+  "泰国": { buy: 0.80, sell: 1.30 }, "越南": { buy: 0.80, sell: 1.32 },
+  "菲律宾": { buy: 0.80, sell: 1.32 }, "缅甸": { buy: 0.75, sell: 1.40 },
+  "柬埔寨": { buy: 0.75, sell: 1.40 }, "印度尼西亚": { buy: 0.78, sell: 1.30 },
+  "马来西亚": { buy: 0.80, sell: 1.25 }, "老挝": { buy: 0.75, sell: 1.35 },
+  "孟加拉国": { buy: 0.75, sell: 1.32 },
+  // ── 中东 ──
   "巴基斯坦": { buy: 0.78, sell: 1.35 }, "伊朗": { buy: 0.80, sell: 1.30 },
   "伊拉克": { buy: 0.80, sell: 1.30 }, "沙特阿拉伯": { buy: 0.85, sell: 1.25 },
-  "阿联酋": { buy: 0.85, sell: 1.25 },
+  "阿联酋": { buy: 0.85, sell: 1.25 }, "土耳其": { buy: 0.75, sell: 1.25 },
+  "以色列": { buy: 0.82, sell: 1.22 }, "约旦": { buy: 0.78, sell: 1.28 },
+  "卡塔尔": { buy: 0.82, sell: 1.25 }, "科威特": { buy: 0.82, sell: 1.25 },
 };
+
+// 出口国家下拉分组（与 EXPORT_COUNTRIES 键一一对应，供 optgroup 渲染）
+const EXPORT_REGION_GROUPS: { region: string; countries: string[] }[] = [
+  { region: "中东欧与巴尔干", countries: ["波兰", "罗马尼亚", "匈牙利", "捷克", "塞尔维亚", "保加利亚", "克罗地亚", "立陶宛", "斯洛伐克", "波黑", "北马其顿", "希腊"] },
+  { region: "俄语区与中亚", countries: ["俄罗斯", "哈萨克斯坦", "乌兹别克斯坦", "乌克兰", "白俄罗斯", "吉尔吉斯斯坦", "格鲁吉亚", "摩尔多瓦"] },
+  { region: "南美", countries: ["阿根廷", "巴西", "智利", "乌拉圭", "巴拉圭", "哥伦比亚", "秘鲁"] },
+  { region: "非洲", countries: ["尼日利亚", "南非", "肯尼亚", "加纳", "埃及", "埃塞俄比亚", "坦桑尼亚", "赞比亚", "摩洛哥", "塞内加尔", "安哥拉", "莫桑比克"] },
+  { region: "东南亚与南亚", countries: ["泰国", "越南", "菲律宾", "缅甸", "柬埔寨", "印度尼西亚", "马来西亚", "老挝", "孟加拉国"] },
+  { region: "中东", countries: ["巴基斯坦", "伊朗", "伊拉克", "沙特阿拉伯", "阿联酋", "土耳其", "以色列", "约旦", "卡塔尔", "科威特"] },
+];
 
 const DOMESTIC_REGIONS_LIST = [
   "山东", "河北", "河南", "黑龙江", "江西", "湖北", "甘肃",
@@ -566,6 +631,8 @@ function DeepAnalysisSection({
   const [error, setError] = useState("");
   const [locked, setLocked] = useState(false);
   const [insufficientCredits, setInsufficientCredits] = useState(false);
+  // 本次深度分析的 token 计费摘要（API 返回 pointsCharged / creditsBalance）
+  const [consumption, setConsumption] = useState<{ points: number; balance?: number } | null>(null);
   const locale = useLocale();
 
   const runDeepAnalysis = async () => {
@@ -575,6 +642,7 @@ function DeepAnalysisSection({
     setStructured(null);
     setLocked(false);
     setInsufficientCredits(false);
+    setConsumption(null);
     try {
       const res = await fetch("/api/agents/seller-helper/deep-analysis", {
         method: "POST",
@@ -597,6 +665,10 @@ function DeepAnalysisSection({
         setStructured(s);
         setLocked(true);
         onComplete?.(s);
+        // token 计费可见化：本次按 LLM 真实用量 ×2 扣的积分与扣后余额
+        if (typeof data.data?.pointsCharged === "number") {
+          setConsumption({ points: data.data.pointsCharged, balance: data.data?.creditsBalance });
+        }
       } else {
         if (data.code === "INSUFFICIENT_CREDITS") setInsufficientCredits(true);
         setError(data.error || "深度分析失败");
@@ -675,6 +747,16 @@ function DeepAnalysisSection({
             locked={locked}
             onUnlock={() => setLocked(false)}
           />
+          {/* token 计费可见化：本次消耗 / 剩余积分 + 充值入口 */}
+          {consumption && (
+            <div className="flex items-center justify-between rounded-lg bg-purple-50 px-3 py-2 text-xs text-purple-700">
+              <span>
+                本次消耗 <b className="text-sm">{consumption.points}</b> 积分（按大模型 token 实际用量 ×2 计费）
+                {consumption.balance != null && <> · 剩余 <b>{consumption.balance}</b> 积分</>}
+              </span>
+              <a href={`/${locale}/credits`} className="font-medium underline">积分中心</a>
+            </div>
+          )}
           <button
             onClick={runDeepAnalysis}
             className="w-full rounded-lg border border-purple-300 py-2 text-xs text-purple-600 hover:bg-purple-50"
@@ -701,7 +783,7 @@ export default function ValuationPage() {
   const [dModel, setDModel] = useState("");
   const [dHP, setDHP] = useState(120);
   const [dYears, setDYears] = useState(3);
-  const [dHours, setDHours] = useState(1500);
+  const [dHours, setDHours] = useState(0);
   const [dCondition, setDCondition] = useState("good");
   const [dRegion, setDRegion] = useState("山东");
   const [dYear, setDYear] = useState(2024);
@@ -719,6 +801,7 @@ export default function ValuationPage() {
 
   // 国际参数
   const [iBrand, setIBrand] = useState("John Deere");
+  const [iCategory, setICategory] = useState("拖拉机");
   const [iModel, setIModel] = useState("");
   const [iHP, setIHP] = useState(150);
   const [iHours, setIHours] = useState(1000);
@@ -759,8 +842,10 @@ export default function ValuationPage() {
   const [gateData, setGateData] = useState<BlurredValuation | null>(null);
   const [limitReached, setLimitReached] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
-  // 登录用户本月 AI 估值额度已用完（后端 403 QUOTA_EXCEEDED）→ 已降级为本地模型
-  const [quotaExhausted, setQuotaExhausted] = useState(false);
+  // 本次估值的 token 计费摘要（/api/valuation 的 billing 字段；无 LLM 用量时为 null）
+  const [valuationBilling, setValuationBilling] = useState<{
+    points: number; balance?: number;
+  } | null>(null);
 
   // 实时预览基准价
   const previewBasePrice = channel === "domestic"
@@ -770,9 +855,13 @@ export default function ValuationPage() {
   // 执行估值
   const doValuation = async () => {
     setLoading(true);
+    setValuationBilling(null);
     try {
       if (channel === "domestic") {
         // 调用网站API进行完整估值
+        // 注意：workingHours 只传用户真实工时，缺失即传 undefined。
+        // 「缺工时按品类年均强度合成」已下沉到估值引擎 calcCombinedDepreciation（唯一真源），
+        // 组件层不得再做任何工时推算，否则会与产品页 API 路径产生两套口径。
         const res = await fetch("/api/valuation", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -780,7 +869,7 @@ export default function ValuationPage() {
             brand: dBrand,
             category: dCategory,
             year: dYear - dYears,
-            workingHours: dHours || dYears * 500,
+            workingHours: dHours && dHours > 0 ? dHours : undefined,
             condition: dCondition,
             enginePower: dHP,
             priceCny: dSellerPrice ? Number(dSellerPrice) : undefined,
@@ -798,19 +887,9 @@ export default function ValuationPage() {
           return;
         }
 
-        // ── 登录用户本月 AI 估值次数用尽（403 QUOTA_EXCEEDED）──
-        // 之前只认 429，403 会掉进 else 分支静默降级，用户看不到原因。
         // body 只能读一次：先取出再分支，避免二次 res.json() 报
         // "body stream already read" 导致结果区卡死。
         const data = await res.json().catch(() => null);
-
-        if (res.status === 403 && data?.code === "QUOTA_EXCEEDED") {
-          setQuotaExhausted(true);
-          setGateData(null);
-          setResult(null);
-          doClientCalc();
-          return;
-        }
 
         if (!data) {
           doClientCalc();
@@ -835,48 +914,102 @@ export default function ValuationPage() {
           // 登录用户（blurred: false）：照旧展示精确结果
           setGateData(null);
           setLimitReached(false);
-          setQuotaExhausted(false);
           const r = data.data;
           setIntel(data.intelligence ?? null);
           setResult({
             value: r.estimatedValue,
             confidence: r.confidence || calcConfidence(channel, dBrand, dHP, hasImage, dYears),
-            breakdown: (r.details || []).map((d: { factor: string; impact: string }) => ({
-              label: d.factor,
-              value: d.impact,
-              detail: "",
+            breakdown: (r.details || []).map((d: { label: string; impact: string; description: string }) => ({
+              label: d.label || "",
+              value: d.impact || "",
+              detail: d.description || "",
             })),
             formula: `基准价(${formatMoney(previewBasePrice)}) × 折旧(${calcDomesticDepreciation(dYears).toFixed(2)}) × 地区(${getRegionalFactor(dRegion).toFixed(2)}) × 补贴趋势(${getSubsidyTrendFactor(dYear).toFixed(2)})`,
             warnings: [],
             channelPrices: (r as { channelPrices?: Record<string, number> }).channelPrices,
           });
+          // token 计费可见化：本次估值按 LLM 真实用量扣了多少积分（无 LLM 用量时后端不返回）
+          const billing = (data as { billing?: { points?: number; balance?: number } }).billing;
+          if (billing && typeof billing.points === "number" && billing.points > 0) {
+            setValuationBilling({ points: billing.points, balance: billing.balance });
+          }
         } else {
           // API失败时用客户端计算
           doClientCalc();
         }
       } else {
-        // 国际/出口：客户端计算
-        const { value, breakdown } = calcIntlValuation(
-          channel === "export" ? iBrand : iBrand,
-          iHP, iHours, iNewPrice, iRegion, iYear, iCondition, iEmission, iConfigAddon,
-        );
-        setResult({
-          value,
-          confidence: calcConfidence(channel, iBrand, iHP, hasImage, Math.round(iHours / 500)),
-          breakdown,
-          formula: `(${formatMoney(iNewPrice)} × ${getIntlHoursCoeff(iHours).toFixed(2)} × ${INTL_CONDITIONS[iCondition].toFixed(3)} × ${(DEVELOPED_REGIONS.has(iRegion) ? EMISSION_DEVELOPED[iEmission] : EMISSION_DEVELOPING[iEmission]).toFixed(2)} + ${formatMoney(iConfigAddon)}) × ${INTL_REGIONS[iRegion].toFixed(2)} × ${(INTL_BRAND_RETENTION[iBrand] || 0.95).toFixed(3)}`,
-          warnings: generateWarnings(),
-        });
-
-        if (channel === "export") {
-          const arb = calcExportArbitrage(value, eTargetCountry, eShipping, eTariff);
-          setArbitrage(arb);
+        // 国际/出口：统一走 /api/valuation (V4 引擎)，与产品页、国产渠道同源，消除「两套模型」
+        try {
+          const res = await fetch("/api/valuation", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              brand: iBrand,
+              category: iCategory,
+              modelName: iModel,
+              year: iYear,
+              workingHours: iHours > 0 ? iHours : undefined,
+              condition: iCondition.toLowerCase(),
+              enginePower: iHP,
+              priceCny: iNewPrice,
+              foreignPriceCny: iNewPrice,
+              region: iRegion,
+              tradeChannel: channel === "export" ? "export" : undefined,
+              useV4: true,
+              skipImageAnalysis: !hasImage,
+              imageDataUris: hasImage ? uploadedImages : [],
+            }),
+          });
+          const data = await res.json().catch(() => null);
+          if (data && data.success) {
+            const r = data.data;
+            setIntel(data.intelligence ?? null);
+            const v4Value = r.estimatedValue;
+            setResult({
+              value: v4Value,
+              confidence: r.confidence || calcConfidence(channel, iBrand, iHP, hasImage, Math.round(iHours / 500)),
+              breakdown: (r.details || []).map((d: { label: string; impact: string; description: string }) => ({
+                label: d.label || "",
+                value: d.impact || "",
+                detail: d.description || "",
+              })),
+              formula: "V4 引擎（与产品页/国产渠道同源）",
+              warnings: generateWarnings(),
+              channelPrices: (r as { channelPrices?: Record<string, number> }).channelPrices,
+            });
+            if (channel === "export") {
+              const arb = calcExportArbitrage(v4Value, eTargetCountry, eShipping, eTariff);
+              setArbitrage(arb);
+            }
+          } else {
+            fallbackIntlCalc();
+          }
+        } catch {
+          fallbackIntlCalc();
         }
       }
     } catch {
       doClientCalc();
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 国际/出口渠道：服务端 V4 不可用时回退到原客户端公式（保留 calcIntlValuation 逻辑）
+  const fallbackIntlCalc = () => {
+    const { value, breakdown } = calcIntlValuation(
+      iBrand, iHP, iHours, iNewPrice, iRegion, iYear, iCondition, iEmission, iConfigAddon,
+    );
+    setResult({
+      value,
+      confidence: calcConfidence(channel, iBrand, iHP, hasImage, Math.round(iHours / 500)),
+      breakdown,
+      formula: `(${formatMoney(iNewPrice)} × ${getIntlHoursCoeff(iHours).toFixed(2)} × ${INTL_CONDITIONS[iCondition].toFixed(3)} × ${(DEVELOPED_REGIONS.has(iRegion) ? EMISSION_DEVELOPED[iEmission] : EMISSION_DEVELOPING[iEmission]).toFixed(2)} + ${formatMoney(iConfigAddon)}) × ${INTL_REGIONS[iRegion].toFixed(2)} × ${(INTL_BRAND_RETENTION[iBrand] || 0.95).toFixed(3)}`,
+      warnings: generateWarnings(),
+    });
+    if (channel === "export") {
+      const arb = calcExportArbitrage(value, eTargetCountry, eShipping, eTariff);
+      setArbitrage(arb);
     }
   };
 
@@ -962,6 +1095,7 @@ export default function ValuationPage() {
     "小麦收割机": "谷物联合收割机", "水稻收割机": "谷物联合收割机",
     "玉米机": "玉米收获机", "玉米收割机": "玉米收获机",
     "青储机": "青储机", "青饲料收获机": "青储机", "青贮收获机": "青储机",
+    "青贮机": "青储机", "青贮饲料收获机": "青储机",
     "播种机": "单粒精密播种机", "免耕播种机": "单粒精密播种机",
     "打捆机": "打捆机", "旋耕播种机": "旋耕机",
     "微耕机": "微型耕耘机", "秸秆还田机": "秸秆粉碎还田机",
@@ -981,7 +1115,7 @@ export default function ValuationPage() {
     brand: dBrand,
     category: dCategory,
     year: dYear - dYears,
-    workingHours: dHours || dYears * 500,
+    workingHours: dHours > 0 ? dHours : undefined,
     condition: dCondition,
     enginePower: dHP,
     priceCny: dSellerPrice ? Number(dSellerPrice) : undefined,
@@ -1124,7 +1258,7 @@ export default function ValuationPage() {
               return (
                 <button
                   key={tab.key}
-                  onClick={() => { setChannel(tab.key); setResult(null); setArbitrage(null); setGateData(null); setLimitReached(false); }}
+                  onClick={() => { setChannel(tab.key); setResult(null); setArbitrage(null); setGateData(null); setLimitReached(false); setValuationBilling(null); }}
                   className={`flex-1 rounded-lg py-2.5 text-sm font-medium transition-all ${
                     channel === tab.key
                       ? "bg-primary-600 text-white shadow-sm"
@@ -1137,6 +1271,18 @@ export default function ValuationPage() {
               );
             })}
           </div>
+
+          {/* ── AI 深度分析：识图后可选，按 token 计费；结构化结果回灌下方 AI 估值报告（P3）── */}
+          <DeepAnalysisSection
+            prefillData={{
+              brand: channel === "domestic" ? dBrand : iBrand,
+              category: dCategory,
+              year: channel === "domestic" ? dYear - dYears : iYear,
+              horsepower: channel === "domestic" ? dHP : iHP,
+            }}
+            images={uploadedImages}
+            onComplete={setDeepStructured}
+          />
 
           {/* Domestic Form */}
           {channel === "domestic" && (
@@ -1301,6 +1447,13 @@ export default function ValuationPage() {
                   />
                 </div>
                 <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-600">品类</label>
+                  <select value={iCategory} onChange={(e) => setICategory(e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none">
+                    {INTL_CATEGORY_LIST.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div>
                   <label className="mb-1 block text-xs font-medium text-gray-600">马力 (HP)</label>
                   <input type="number" value={iHP} min={50} max={500}
                     onChange={(e) => setIHP(Number(e.target.value))}
@@ -1393,6 +1546,13 @@ export default function ValuationPage() {
                       {[...INTL_BRAND_LIST, ...extraIBrands].map((b) => <option key={b} value={b}>{b}</option>)}
                     </select>
                   </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-600">品类</label>
+                  <select value={iCategory} onChange={(e) => setICategory(e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none">
+                    {INTL_CATEGORY_LIST.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
                   <div>
                     <label className="mb-1 block text-xs font-medium text-gray-600">马力 (HP)</label>
                     <input type="number" value={iHP} min={50} max={500}
@@ -1421,7 +1581,11 @@ export default function ValuationPage() {
                     <label className="mb-1 block text-xs font-medium text-gray-600">目标国家</label>
                     <select value={eTargetCountry} onChange={(e) => setETargetCountry(e.target.value)}
                       className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none">
-                      {Object.keys(EXPORT_COUNTRIES).map((c) => <option key={c} value={c}>{c}</option>)}
+                      {EXPORT_REGION_GROUPS.map((g) => (
+                        <optgroup key={g.region} label={g.region}>
+                          {g.countries.map((c) => <option key={c} value={c}>{c}</option>)}
+                        </optgroup>
+                      ))}
                     </select>
                   </div>
                   <div>
@@ -1493,30 +1657,7 @@ export default function ValuationPage() {
             </div>
           )}
 
-          {/* 本月 AI 估值额度已用完提示 */}
-          {quotaExhausted && (
-            <div className="mt-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-              <div>
-                <strong className="font-semibold">本月 AI 估值次数已用完</strong>
-                <p className="mt-1 text-xs text-amber-700">
-                  下方结果由本地模型估算，精度略低于 AI 模型。额度将在下个自然月重置。
-                </p>
-              </div>
-            </div>
-          )}
 
-          {/* ── AI 深度分析：识图后可选，按 token 计费；结构化结果回灌下方 AI 估值报告（P3）── */}
-          <DeepAnalysisSection
-            prefillData={{
-              brand: channel === "domestic" ? dBrand : iBrand,
-              category: dCategory,
-              year: channel === "domestic" ? dYear - dYears : iYear,
-              horsepower: channel === "domestic" ? dHP : iHP,
-            }}
-            images={uploadedImages}
-            onComplete={setDeepStructured}
-          />
 
           {/* Results */}
           {result && (
@@ -1578,6 +1719,16 @@ export default function ValuationPage() {
                     <div className="mb-1 text-xs font-medium text-gray-400">估值公式</div>
                     <div className="font-mono text-xs text-gray-600">{result.formula}</div>
                   </div>
+                  {/* token 计费可见化：本次估值按 LLM 真实用量 ×2 扣的积分（无 LLM 用量时不展示） */}
+                  {valuationBilling && (
+                    <div className="mt-3 flex items-center justify-between rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                      <span>
+                        本次消耗 <b className="text-sm">{valuationBilling.points}</b> 积分（按大模型 token 实际用量 ×2 计费）
+                        {valuationBilling.balance != null && <> · 剩余 <b>{valuationBilling.balance}</b> 积分</>}
+                      </span>
+                      <a href={`/${locale}/credits`} className="font-medium underline">积分中心</a>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1591,7 +1742,7 @@ export default function ValuationPage() {
                   modelYear: channel === "domestic" ? dYear - dYears : iYear,
                   ageYears: channel === "domestic" ? dYears : undefined,
                   horsepower: channel === "domestic" ? dHP : iHP,
-                  hours: channel === "domestic" ? dYears * 500 : iHours,
+                  hours: channel === "domestic" ? (dHours && dHours > 0 ? dHours : undefined) : iHours,
                   region: channel === "domestic" ? dRegion : iRegion,
                   condition: channel === "domestic" ? "良好" : iCondition,
                   emission: channel !== "domestic" ? iEmission : undefined,
@@ -1614,7 +1765,7 @@ export default function ValuationPage() {
                   modelYear: channel === "domestic" ? dYear - dYears : iYear,
                   ageYears: channel === "domestic" ? dYears : undefined,
                   horsepower: channel === "domestic" ? dHP : iHP,
-                  hours: channel === "domestic" ? dYears * 500 : iHours,
+                  hours: channel === "domestic" ? (dHours && dHours > 0 ? dHours : undefined) : iHours,
                   region: channel === "domestic" ? dRegion : iRegion,
                   condition: channel === "domestic" ? "良好" : iCondition,
                   emission: channel !== "domestic" ? iEmission : undefined,

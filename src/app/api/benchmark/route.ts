@@ -1,6 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { dedupeBrandBenchmark } from "@/lib/benchmark-dedupe";
+import { requireRawListingAdmin } from "@/lib/raw-listing/admin-auth";
+import { isCnSite, SITE } from "@/config/site";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -11,8 +13,20 @@ export const maxDuration = 60;
  *  1) BrandBenchmark   —— 全球品牌×机型×源站基准价指数（与库存解耦）
  *  2) InternationalPrice(+Product) —— 跨境套利匹配（按 品牌/型号/年份 绑定国内库存）
  *  3) RawListing(domestic_*) —— 国内卖方采集挂牌（爬虫跑通后才有数据）
+ *
+ * 🔒 P0 止血（合规）：
+ *  - 鉴权：仅 admin / super_admin 可访问（与采集审核后台同口径，见 admin-auth.ts），
+ *    避免跨境套利与境内挂牌等敏感数据对匿名/低权用户公开。
+ *  - SITE 门控（数据不出境）：.cn 仅返境内源（domestic RawListing），.com 仅返国际源
+ *    （InternationalPrice 跨境套利），防止境内卖方数据（含联系方式）经 .com 站出境。
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
+  // 鉴权：与管理后台受保护 API 同口径（requireRawListingAdmin = admin / super_admin）。
+  const guard = await requireRawListingAdmin(req);
+  if (!guard.ok) {
+    return NextResponse.json(guard.body, { status: guard.status });
+  }
+
   try {
     const [benchmarkRaw, arbitrage, domestic, domesticCount] = await Promise.all([
       prisma.brandBenchmark.findMany({
@@ -46,8 +60,8 @@ export async function GET() {
       prisma.rawListing.count({ where: { source: { startsWith: "domestic_" } } }),
     ]);
 
-    // 读层去重：吸收 cn-postgres 历史镜像残留的重复行（见 src/lib/benchmark-dedupe.ts）。
-    // 不改 orderBy / 响应结构 / schema，仅对结果做幂等去重；.com(Neon) 本无重复 ⇒ no-op。
+    // 读层去重：吸收历史镜像残留的重复行（见 src/lib/benchmark-dedupe.ts）。
+    // 不改 orderBy / 响应结构 / schema，仅对结果做幂等去重；Neon 本无重复 ⇒ no-op。
     const benchmark = dedupeBrandBenchmark(benchmarkRaw);
 
     const sampleTotal = benchmark.reduce((s, b) => s + (b.sampleSize || 0), 0);
@@ -109,20 +123,29 @@ export async function GET() {
     }
     spread.sort((a, b) => b.spreadWan - a.spreadWan);
 
+    // —— SITE 门控（数据不出境）——
+    // .cn 仅返境内源：跨境套利（InternationalPrice）属国际源，.cn 不返回；
+    // .com 仅返国际源：境内挂牌（RawListing domestic_*，含卖方联系方式）属境内源，.com 不返回。
+    const cn = isCnSite();
+    const arbitrageOut = cn ? [] : arbitrage;
+    const domesticOut = cn ? domestic : [];
+    const domesticCountOut = cn ? domesticCount : 0;
+
     return NextResponse.json({
       ok: true,
+      site: SITE,
       generatedAt: new Date().toISOString(),
       summary: {
         benchmarkCount: benchmark.length,
         freshCount,
-        arbitrageCount: arbitrage.length,
+        arbitrageCount: arbitrageOut.length,
         sampleTotal,
-        domesticCount,
+        domesticCount: domesticCountOut,
         spreadCount: spread.length,
       },
       benchmark,
-      arbitrage,
-      domestic,
+      arbitrage: arbitrageOut,
+      domestic: domesticOut,
       spread,
     });
   } catch (e: unknown) {

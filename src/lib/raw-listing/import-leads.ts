@@ -255,12 +255,30 @@ export async function importLeadsRows(
     deduplicated.push(row);
   });
 
+  let lineNo = 0;
   for (const row of deduplicated) {
+    lineNo += 1;
     const brandName = (row.brandName ?? "").toString().trim();
     const modelName = (row.modelName ?? "").toString().trim();
     const hash = generateContentHash(row);
     const scope = resolveStoreScope(row);
     const source = resolveLeadSource(row, scope);
+    // [合规闸门] 境内归属线索只允许落 CN 库；在 .com（Neon 境外）导入境内线索一律拒绝
+    if (scope === "cn" && (process.env.SITE ?? "com") !== "cn") {
+      result.pending += 1;
+      if (result.pendingDetail.length < 50) {
+        result.pendingDetail.push({
+          lineNo,
+          identity: rowIdentity(row),
+          scope,
+          reason: "cn_lead_must_use_cn_db",
+        });
+      }
+      console.warn(
+        `[合规闸门] 拒绝境内线索落非 CN 库（SITE=${process.env.SITE ?? "com"}），请在 .cn 后台导入`,
+      );
+      continue;
+    }
     try {
       const created = await prisma.rawListing.create({
         data: {
@@ -284,7 +302,17 @@ export async function importLeadsRows(
           contentHash: hash,
           scrapedAt: new Date(),
           goodsRegion: scope,
-          notes: `[import] ${source} by ${actorId}`,
+          // notes 拼装：CSV「备注」列是 Round-1 唯一的结构化载体（`[性质]`/`[机型组]`/`[补全]`/
+          // `[电话占位]`/`[品牌兜底]`/`[自家·禁外呼]` 等），**必须落库** —— 否则外呼员会拨到
+          // 「平台联系」「拍卖页联系」这类占位假号，或把电话打到自家主体。
+          // 分隔符固定为 `"\n"`：确定性，且每个标记各占一行，便于 grep/回溯。
+          // ⚠️ row.notes 为 undefined / null / "" / 纯空白时，输出与改动前**逐字相同**
+          //    （仍只有 `[import] ... ` 一句），这是防回归的关键。
+          // ⚠️ notes **不参与** contentHash（hash 只取 brand|model|year|location|price|phone|name），
+          //    故本处改动不影响导入幂等，也不会让已入库行产生重复。
+          notes: [`[import] ${source} by ${actorId}`, (row.notes ?? "").toString().trim()]
+            .filter((part) => part !== "")
+            .join("\n"),
         },
       });
       result.imported += 1;

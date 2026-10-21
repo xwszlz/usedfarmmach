@@ -25,6 +25,7 @@ import {
 } from "./convert";
 import type { SanityAction, SanityContext, SanityInput, RawListingLike, PreResolvedFks } from "./types";
 import { buildModelBrandWhere } from "./model-aliases";
+import { rowKind, type RowKind } from "./source-catalog";
 
 // ───────────────────────────────────────────────
 // 领域错误（供路由映射为 HTTP 错误码）
@@ -213,6 +214,8 @@ export const RAW_SELECT = {
 
 export type RawListingRow = {
   id: string; source: string; sourceUrl: string; status: string; brandName: string; modelName: string;
+  /** 行类型（dealer / listing），由 source-catalog#rowKind 派生；零新增列 */
+  rowKind: RowKind;
   year: number | null; workingHours: number | null; condition: string | null; priceRaw: number | null;
   currency: string | null; priceCny: number | null; location: string; sellerName: string | null;
   sellerPhone: string | null; sellerWechat: string | null; sellerWhatsapp: string | null;
@@ -358,10 +361,21 @@ export async function listLeads(q: {
   model?: string;
   /** 品牌筛选（中英均可、可为合并串；双通道：brandName ∪ modelName insensitive 命中） */
   brand?: string;
+  /** 行类型过滤：all（默认，不加 source 过滤）/ dealer（manual_*）/ listing（domestic_*） */
+  kind?: "all" | "dealer" | "listing";
 }): Promise<LeadListResult> {
   const page = Math.max(1, Number(q.page) || 1);
   const pageSize = Math.min(100, Math.max(1, Number(q.pageSize) || 30));
   const query = q.q ? q.q.trim() : "";
+
+  const where: Prisma.RawListingWhereInput = {};
+  // 行类型过滤：按 source 前缀分流（dealer=manual_*，listing=domestic_*），all 不加 source 过滤
+  const kind = q.kind ?? "all";
+  if (kind === "dealer") {
+    where.source = { startsWith: "manual_" };
+  } else if (kind === "listing") {
+    where.source = { startsWith: "domestic_" };
+  }
 
   const orTerms: Prisma.RawListingWhereInput[] = [];
   if (query) {
@@ -374,7 +388,8 @@ export async function listLeads(q: {
   // 机型/品牌双通道筛选（仅当传入时追加；未传 brand 时维持既有行为）
   const modelBrandWhere = buildModelBrandWhere(q.model, q.brand);
   if (modelBrandWhere) orTerms.push(modelBrandWhere);
-  const where: Prisma.RawListingWhereInput = orTerms.length > 0 ? { OR: orTerms } : {};
+  // source 过滤与 q/brand/model 以 AND 组合（Prisma 顶层字段默认 AND）
+  if (orTerms.length > 0) where.OR = orTerms;
 
   const [rows, total] = await Promise.all([
     prisma.rawListing.findMany({
@@ -387,8 +402,12 @@ export async function listLeads(q: {
     prisma.rawListing.count({ where }),
   ]);
 
+  // RAW_SELECT 不含派生字段，在 JS 层补 rowKind（保持 RAW_SELECT 不变）
   return {
-    items: rows as RawListingRow[],
+    items: (rows as Array<Omit<RawListingRow, "rowKind">>).map((r) => ({
+      ...r,
+      rowKind: rowKind(r.source),
+    })),
     total,
     page,
     pageSize,

@@ -296,6 +296,7 @@
   },
 
   "nav": {
+    "brands": "品牌",
 
     "credits": "积分中心",
 
@@ -328,8 +329,6 @@
     "intelligence": "市场情报",
 
     "blog": "行业资讯",
-
-    "brands": "品牌馆",
 
     "categories": "品类专区",
 

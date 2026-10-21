@@ -43,7 +43,12 @@ jobs:
           while [ "$ATTEMPT" -lt "$MAX" ]; do
             ATTEMPT=$((ATTEMPT + 1))
             echo "── 第 ${ATTEMPT}/${MAX} 次尝试 ──"
-            HTTP_CODE=$(curl -s -o /tmp/cn_fx_resp.json -w "%{http_code}" -m 120 "$FULL_URL" || echo "000")
+            HTTP_CODE=$(curl -s -o /tmp/cn_fx_resp.json -w "%{http_code}" -m 120 "$FULL_URL")
+            CURL_EXIT=$?
+            if [ "$CURL_EXIT" -ne 0 ]; then
+              # 连接层失败诊断：28=超时 6=DNS解析失败 35/60=TLS握手失败 7=拒绝连接
+              echo "⚠️ curl 连接失败 exit=${CURL_EXIT}（28=超时 6=DNS 7=拒绝连接 35/60=TLS），未收到 HTTP 响应"
+            fi
             echo "HTTP 状态码: ${HTTP_CODE}"
             BODY="$(cat /tmp/cn_fx_resp.json 2>/dev/null || echo '')"
             echo "响应体: ${BODY}"
