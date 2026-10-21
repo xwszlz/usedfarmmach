@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
     });
 
     // 构造支付宝支付URL
-    const subject = `神雕农机 - ${order.product.modelName}`;
+    const subject = `神雕农机 - ${order.product?.modelName || "担保交易"}`;
     const payUrl = createPagePayUrl(order.orderNo, order.amount, subject, returnUrl);
 
     // 更新支付记录

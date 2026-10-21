@@ -19,6 +19,7 @@ interface OrderDetail {
   sellerAmount: number;
   paymentMethod: string;
   paymentStatus: string;
+  itemType?: string;
   createdAt: string;
   paidAt: string | null;
   escrowStartedAt: string | null;
@@ -31,7 +32,8 @@ interface OrderDetail {
   shippedAt: string | null;
   disputeStatus: string | null;
   disputeReason: string | null;
-  product: { id: string; modelName: string; images: { url: string }[] };
+  product: { id: string; modelName: string; images: { url: string }[] } | null;
+  part: { id: string; nameZh: string; nameEn: string; sku: string; images: { url: string }[] } | null;
   buyer: { id: string; username: string };
   seller: { id: string; username: string };
 }
@@ -176,19 +178,34 @@ export default function EscrowOrderDetailPage() {
         </CardContent>
       </Card>
 
-      {/* 产品信息 */}
+      {/* 交易标的（整机 / 配件） */}
       <Card className="mb-4">
-        <CardHeader><CardTitle>交易设备</CardTitle></CardHeader>
+        <CardHeader><CardTitle>交易标的</CardTitle></CardHeader>
         <CardContent>
-          <div className="flex items-center gap-4">
-            <div className="w-20 h-20 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
-              {order.product.images[0] && <img src={order.product.images[0].url} alt={order.product.modelName} className="w-full h-full object-cover" />}
+          {order.itemType === "part" && order.part ? (
+            <div className="flex items-center gap-4">
+              <div className="w-20 h-20 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
+                {order.part.images[0] && <img src={order.part.images[0].url} alt={order.part.nameZh} className="w-full h-full object-cover" />}
+              </div>
+              <div>
+                <div className="font-medium">{order.part.nameZh || order.part.nameEn}</div>
+                <div className="text-xs text-gray-400 mt-1">SKU: {order.part.sku}</div>
+                <Link href={`/${locale}/parts/${order.part.id}`} className="text-sm text-blue-600 hover:underline">查看配件详情</Link>
+              </div>
             </div>
-            <div>
-              <div className="font-medium">{order.product.modelName}</div>
-              <Link href={`/${locale}/products/${order.product.id}`} className="text-sm text-blue-600 hover:underline">查看产品详情</Link>
+          ) : order.product ? (
+            <div className="flex items-center gap-4">
+              <div className="w-20 h-20 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
+                {order.product.images[0] && <img src={order.product.images[0].url} alt={order.product.modelName} className="w-full h-full object-cover" />}
+              </div>
+              <div>
+                <div className="font-medium">{order.product.modelName}</div>
+                <Link href={`/${locale}/products/${order.product.id}`} className="text-sm text-blue-600 hover:underline">查看产品详情</Link>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="text-sm text-gray-400">交易标的信息缺失</div>
+          )}
         </CardContent>
       </Card>
 

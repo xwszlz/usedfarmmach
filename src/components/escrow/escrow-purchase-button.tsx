@@ -8,16 +8,20 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 
 interface EscrowPurchaseButtonProps {
-  productId: string;
+  productId?: string;
+  partId?: string;
   productName: string;
   price: number;
-  sellerId: string;
+  sellerId?: string;
+  itemType?: "product" | "part";
 }
 
 export function EscrowPurchaseButton({
   productId,
+  partId,
   productName,
   price,
+  itemType = "product",
 }: EscrowPurchaseButtonProps) {
   const router = useRouter();
   const locale = useLocale();
@@ -34,7 +38,7 @@ export function EscrowPurchaseButton({
       const res = await fetch("/api/escrow/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId, paymentMethod, deliveryAddress }),
+        body: JSON.stringify({ productId, partId, paymentMethod, deliveryAddress }),
       });
       const data = await res.json();
 
@@ -71,7 +75,11 @@ export function EscrowPurchaseButton({
     }
   }
 
-  const fee = Math.max(price * 0.015, 50);
+  // 费率：整机=定金 1.5% / 最低 50 元；配件（D7）= 整笔 3% / 最低 2 元
+  const fee = itemType === "part"
+    ? Math.max(price * 0.03, 2)
+    : Math.max(price * 0.015, 50);
+  const feeLabel = itemType === "part" ? "3%（最低¥2）" : "1.5%（最低¥50）";
 
   return (
     <>
@@ -91,12 +99,12 @@ export function EscrowPurchaseButton({
             资金由平台托管，确认收货后才会放款给卖家
           </p>
 
-          {/* 产品信息 */}
+          {/* 交易标的 */}
           <div className="rounded-lg bg-gray-50 p-3 text-sm">
             <div className="font-medium">{productName}</div>
             <div className="text-gray-500 mt-1">交易金额：¥{price.toLocaleString()}</div>
             <div className="text-xs text-gray-400 mt-1">
-              含平台手续费 ¥{fee.toFixed(2)}（1.5%，最低50元）
+              含平台手续费 ¥{fee.toFixed(2)}（{feeLabel}）
             </div>
           </div>
 
