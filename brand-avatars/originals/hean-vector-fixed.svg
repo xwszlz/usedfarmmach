@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="禾安 神雕四杰 正确中文字版">
+  <defs>
+    <radialGradient id="hb" cx="50%" cy="42%" r="62%">
+      <stop offset="0%" stop-color="#211b16"/>
+      <stop offset="100%" stop-color="#14110f"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e8c65a"/>
+      <stop offset="100%" stop-color="#b8912a"/>
+    </linearGradient>
+  </defs>
+
+  <circle cx="256" cy="256" r="256" fill="url(#hb)"/>
+  <!-- 鎏金圆环（与雕兄/价探/展翼统一） -->
+  <circle cx="256" cy="256" r="222" fill="none" stroke="#c9a227" stroke-width="9"/>
+
+  <!-- 盾牌：朱红外缘 + 机灰盾面 + 鎏金内线 -->
+  <path d="M256 62 L400 112 V246 C400 330 340 386 256 424 C172 386 112 330 112 246 V112 Z"
+        fill="#e63e2e"/>
+  <path d="M256 84 L382 128 V246 C382 320 328 371 256 405 C184 371 130 320 130 246 V128 Z"
+        fill="#7a8a90"/>
+  <path d="M256 84 L382 128 V246 C382 320 328 371 256 405 C184 371 130 320 130 246 V128 Z"
+        fill="none" stroke="#c9a227" stroke-width="6"/>
+
+  <!-- 正确的中文「禾安」二字（隶书/楷体，鎏金） -->
+  <text x="256" y="222" text-anchor="middle"
+        font-family="'STKaiti','KaiTi','标楷体','SimSun',serif"
+        font-size="96" font-weight="700" fill="url(#gold)">禾安</text>
+
+  <!-- 下方细金装饰线 -->
+  <rect x="196" y="252" width="120" height="5" rx="2.5" fill="#c9a227" opacity="0.9"/>
+
+  <!-- 副标 -->
+  <text x="256" y="316" text-anchor="middle"
+        font-family="'STKaiti','KaiTi','SimSun',serif"
+        font-size="34" font-weight="600" fill="#f3ede1" letter-spacing="6">合规·信任</text>
+</svg>

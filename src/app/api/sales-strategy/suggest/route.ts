@@ -24,6 +24,7 @@ import { getDailyReportData, type IntlPriceEntry, type UpcomingEvent } from "@/l
 import { matchPortByLocation } from "@/lib/port-matcher";
 import { getTokenFromHeaders, verifyToken } from "@/lib/auth";
 import { computeAiCost, deductCredits } from "@/lib/credits/spend";
+import { getBillingCountry } from "@/lib/credits/fx";
 
 export const dynamic = "force-dynamic";
 
@@ -70,6 +71,7 @@ async function chargeAiRequest(
     model: "doubao-seed-2-1-pro-260915",
     inputTokens: nominalInputTokens,
     outputTokens: 0,
+    billingCountry: await getBillingCountry(payload.userId),
   });
   const deduction = await deductCredits(
     payload.userId,

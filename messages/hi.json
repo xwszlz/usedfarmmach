@@ -118,6 +118,13 @@
     "noRecords": "अभी कोई रिकॉर्ड नहीं",
     "pleaseLogin": "देखने के लिए साइन इन करें",
     "transactionTypes": {
+"first_order_reward": "पहले ऑर्डर बोनस",
+"publish_cost": "प्रकाशन शुल्क",
+"mall_cost": "मॉल खरीद",
+"ai_deduct": "AI सेवा शुल्क",
+"inquiry_cost": "पूछताछ शुल्क",
+"viewcontact_cost": "संपर्क देखने का शुल्क",
+"migration": "क्रेडिट माइग्रेशन",
       "recharge": "रिचार्ज",
       "consume": "उपभोग",
       "reward": "इनाम",

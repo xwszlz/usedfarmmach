@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-10-14",
+  "description": "专家/外部模型校准样本库。用于反向校准品牌溢价、渠道折算、工时折旧曲线、发动机溢价、补贴到手比率。每样本须带可追溯来源(sourceRef)，禁止无来源臆造。",
+  "samples": [
+    {
+      "id": "DOUBAO-TTQ2004-20261014",
+      "source": "doubao",
+      "sourceRef": "豆包《二手轮式拖拉机价值评估报告》· 天拖TTQ2004 · 评估基准日2026-10-14 · 河北省",
+      "asset": {
+        "brand": "天拖铁牛(IRON BULL)",
+        "brandKey": "天拖",
+        "model": "TTQ2004",
+        "category": "轮式拖拉机",
+        "powerHp": 200,
+        "drive": "4WD",
+        "engine": "潍柴WP6G200E330",
+        "engineBrand": "潍柴",
+        "prodYear": 2022,
+        "region": "河北省",
+        "emission": "国三GB20891-2014"
+      },
+      "newPrice": {
+        "listPrice": 242000,
+        "listRange": [235000, 248000],
+        "dealerBareRange": [228000, 238000],
+        "subsidyRange": [34800, 36500],
+        "afterSubsidyMid": 185000,
+        "afterSubsidyRange": [182000, 194000],
+        "competitorNote": "同马力段东方红LX2004/雷沃M2004-Q 补贴后19-21万；天拖定位低于一线头部3-5%"
+      },
+      "conditionTiers": [
+        {
+          "tier": "A",
+          "hoursMin": 0,
+          "hoursMax": 1000,
+          "hoursMid": 800,
+          "retailLow": 118000,
+          "retailHigh": 128000,
+          "retailMid": 123000,
+          "desc": "全程正规保养，三大件未拆解，手续齐全"
+        },
+        {
+          "tier": "B",
+          "hoursMin": 1000,
+          "hoursMax": 2200,
+          "hoursMid": 1600,
+          "retailLow": 97000,
+          "retailHigh": 112000,
+          "retailMid": 104500,
+          "desc": "正常农田作业，无重大故障，局部渗油属正常（最大概率现实工况）"
+        },
+        {
+          "tier": "C",
+          "hoursMin": 2200,
+          "hoursMax": 3500,
+          "hoursMid": 2850,
+          "retailLow": 81000,
+          "retailHigh": 96000,
+          "retailMid": 88500,
+          "desc": "多处渗漏、有过维修记录"
+        },
+        {
+          "tier": "D",
+          "hoursMin": 3500,
+          "hoursMax": null,
+          "hoursMid": 4500,
+          "retailLow": null,
+          "retailHigh": 80000,
+          "retailMid": null,
+          "desc": "或发动机/后桥大修、手续缺失、事故变形",
+          "note": "≤80000 为上界而非中位，曲线校准不采用该点"
+        }
+      ],
+      "channels": {
+        "retailMid": 104500,
+        "dealerBuy": [83000, 98000],
+        "dealerBuyMid": 90000,
+        "dealerBuyFactorRange": [0.85, 0.9],
+        "consignmentFeeRate": [0.03, 0.05],
+        "auctionFactor": [0.75, 0.82]
+      },
+      "exportFob": {
+        "market": "中亚（哈萨克斯坦/乌兹别克斯坦/吉尔吉斯斯坦）",
+        "fob": [132000, 151000],
+        "fobMid": 141000,
+        "newPriceLocal": [260000, 300000],
+        "emissionDiscount": [0.08, 0.15],
+        "note": "FOB离岸，不含海运/报关/目的国关税；中亚市场对国产潍柴大马力接受度高，不看国内补贴，对标当地新机价"
+      },
+      "addonPremium": 4000,
+      "enginePremiumRange": [0.05, 0.08],
+      "brandDiscountRange": [0.03, 0.05],
+      "enginePremiumNote": "潍柴动力市场认可度最高的国产大马力柴油机，较部分自有品牌发动机溢价5-8%",
+      "brandDiscountNote": "天拖二手流通热度弱于雷沃/东方红一线头部；新车本身较一线有3-5%折价",
+      "benchmark": {
+        "conditionTier": "B",
+        "retailMid": 104500,
+        "retailRange": [97000, 112000],
+        "dealerBuyMid": 90000,
+        "fobMid": 141000,
+        "listAdvice": [112000, 118000],
+        "exportFloor": 132000
+      },
+      "missingVerification": [
+        "实际工作小时数",
+        "发动机拆解/大修记录",
+        "液压系统渗漏情况",
+        "前后桥检修记录",
+        "全部原始购机发票",
+        "补贴档案",
+        "农机登记证是否齐全有效"
+      ],
+      "methodology": "重置成本法 + 市场比较法 + 收益法交叉校验"
+    }
+  ]
+}

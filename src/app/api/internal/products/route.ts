@@ -36,6 +36,7 @@ import { resolveValuationCodes } from "@/lib/valuation/resolve-codes";
 import { analyzeProductImages } from "@/lib/valuation/image-analyzer";
 
 import { analyzeVideo, calculateVideoFactor } from "@/lib/valuation/video-analyzer";
+import { chatCompletionDoubao, getArkVisionModelId } from "@/lib/ai/ark-client";
 import { drainUsage } from "@/lib/credits/usage-collector";
 
 import { getDetailImageUrl, getVideoUrl } from "@/lib/image-url";
@@ -1371,83 +1372,46 @@ export async function POST(request: NextRequest) {
 
 
 
-        // 7b. AI 识别（调用 GPT-4o-mini 多模态识别）
+        // 7b. AI 识别（统一豆包：火山方舟 ARK 视觉能力，OpenAI 兼容）
+        // 豆包服务端下载公开图片 URL 会超时，故先在本服务把图片下载为 base64 data URI 再传入。
 
         let recognizedData: Record<string, any> | null = null;
 
-        const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-
-        if (OPENROUTER_API_KEY && imageFullUrls.length > 0) {
+        if (imageFullUrls.length > 0) {
 
           try {
 
-            const recognizeResponse = await axios.post(
+            const model = getArkVisionModelId();
 
-              "https://openrouter.ai/api/v1/chat/completions",
-
-              {
-
-                model: "openai/gpt-4o-mini",
-
-                messages: [{
-
-                  role: "user",
-
-                  content: [
-
-                    {
-
-                      type: "text",
-
-                      text: `你是一位资深二手农业机械专家。请根据提供的农机图片，识别以下信息，以 JSON 格式返回。
-
-返回字段：brand, modelName, year, enginePower, engineType, driveSystem, overallLength, overallWidth, overallHeight, netWeight, mainConfig, workingHours, condition, confidence
-
-无法识别的字段设为 null。只返回 JSON。`,
-
-                    },
-
-                    ...imageFullUrls.slice(0, 8).map(url => ({
-
-                      type: "image_url" as const,
-
-                      image_url: { url },
-
-                    })),
-
-                  ],
-
-                }],
-
-                response_format: { type: "json_object" },
-
-                max_tokens: 800,
-
-              },
-
-              {
-
-                headers: {
-
-                  Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-
-                  "Content-Type": "application/json",
-
-                  "HTTP-Referer": "https://usedfarmmach.com",
-
-                  "X-Title": "Internal Product AutoAI",
-
-                },
-
-                timeout: 45000,
-
-              }
-
+            const imageContents = (
+              await Promise.all(
+                imageFullUrls.slice(0, 8).map(async (url: string) => {
+                  try {
+                    const resp = await axios.get(url, { responseType: "arraybuffer", timeout: 20000 });
+                    const mime = (resp.headers["content-type"] || "image/jpeg").split(";")[0];
+                    const b64 = Buffer.from(resp.data as ArrayBuffer).toString("base64");
+                    return { type: "image_url" as const, image_url: { url: `data:${mime};base64,${b64}` } };
+                  } catch {
+                    return null;
+                  }
+                })
+              )
+            ).filter(
+              (x): x is { type: "image_url"; image_url: { url: string } } => x !== null
             );
 
+            const content: Array<Record<string, unknown>> = [
+              {
+                type: "text",
+                text: `你是一位资深二手农业机械专家。请根据提供的农机图片，识别以下信息，以 JSON 格式返回。
+返回字段：brand, modelName, year, enginePower, engineType, driveSystem, overallLength, overallWidth, overallHeight, netWeight, mainConfig, workingHours, condition, confidence
+无法识别的字段设为 null。只返回 JSON。`,
+              },
+              ...imageContents,
+            ];
 
-
-            const aiText = (recognizeResponse.data as any).choices?.[0]?.message?.content || "";
+            const result = await chatCompletionDoubao({ model, maxTokens: 800, messages: [{ role: "user", content }] });
+            const aiText = result.text || "";
 
             try {
 
@@ -1470,8 +1434,6 @@ export async function POST(request: NextRequest) {
           }
 
         }
-
-
 
         // 7c. 字段合并（用户优先 > AI补空）
 

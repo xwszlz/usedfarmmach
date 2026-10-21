@@ -118,6 +118,13 @@
     "noRecords": "Записей пока нет",
     "pleaseLogin": "Войдите, чтобы просмотреть",
     "transactionTypes": {
+"first_order_reward": "Премия за первый заказ",
+"publish_cost": "Списание за публикацию",
+"mall_cost": "Покупка в магазине",
+"ai_deduct": "Списание за ИИ",
+"inquiry_cost": "Списание за запрос",
+"viewcontact_cost": "Просмотр контактов",
+"migration": "Миграция баллов",
       "recharge": "Пополнение",
       "consume": "Списание",
       "reward": "Награда",

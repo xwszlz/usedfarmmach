@@ -150,6 +150,10 @@ export const UPDATE_STRATEGY = {
       KRW: 200.46,
       TRY: 7.3479,
       ZAR: 2.4705,
+      // ── AI 计费国（PRD §3.10 / R-24）：CNY→本币 方向，静态兜底 ──
+      VND: 3500, // 1 CNY ≈ 3,500 VND（U=1000）
+      IDR: 2200, // 1 CNY ≈ 2,200 IDR（U=1000）
+      KZT: 70, // 1 CNY ≈ 70 KZT
     },
   },
 };

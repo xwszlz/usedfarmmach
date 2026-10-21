@@ -118,6 +118,13 @@
     "noRecords": "لا توجد سجلات بعد",
     "pleaseLogin": "يرجى تسجيل الدخول للعرض",
     "transactionTypes": {
+"first_order_reward": "مكافأة أول طلب",
+"publish_cost": "رسوم النشر",
+"mall_cost": "شراء من المتجر",
+"ai_deduct": "رسوم خدمة الذكاء الاصطناعي",
+"inquiry_cost": "رسوم الاستفسار",
+"viewcontact_cost": "رسوم عرض جهة الاتصال",
+"migration": "ترحيل النقاط",
       "recharge": "شحن",
       "consume": "استهلاك",
       "reward": "مكافأة",

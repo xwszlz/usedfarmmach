@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="雕兄 神雕四杰">
+  <defs>
+    <radialGradient id="bg1" cx="50%" cy="42%" r="62%">
+      <stop offset="0%" stop-color="#211b16"/>
+      <stop offset="100%" stop-color="#14110f"/>
+    </radialGradient>
+  </defs>
+  <circle cx="256" cy="256" r="256" fill="url(#bg1)"/>
+  <!-- 机灰条带 -->
+  <path d="M70 296 Q256 352 442 296" stroke="#7a8a90" stroke-width="13" fill="none" opacity="0.55" stroke-linecap="round"/>
+  <!-- 红鸟俯冲徽标：双翼上展、喙向下 -->
+  <path d="M118 150 Q256 206 256 306 Q256 206 394 150 Q300 248 256 198 Q212 248 118 150 Z" fill="#e63e2e"/>
+  <!-- 喙（鎏金） -->
+  <path d="M256 306 L246 286 L266 286 Z" fill="#c9a227"/>
+  <!-- 翼尖高光 -->
+  <path d="M118 150 Q168 178 214 196 L196 172 Z" fill="#ff6b53" opacity="0.85"/>
+  <path d="M394 150 Q344 178 298 196 L316 172 Z" fill="#ff6b53" opacity="0.85"/>
+  <!-- 隶书字标印章 -->
+  <text x="256" y="436" text-anchor="middle" font-family="'STKaiti','KaiTi','SimSun',serif" font-size="40" font-weight="700" fill="#f3ede1" letter-spacing="4">神雕·农机</text>
+</svg>

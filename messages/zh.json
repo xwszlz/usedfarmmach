@@ -237,6 +237,13 @@
     "pleaseLogin": "请先登录后查看",
 
     "transactionTypes": {
+"first_order_reward": "首单奖励",
+"publish_cost": "发布扣费",
+"mall_cost": "商城消费",
+"ai_deduct": "AI功能扣费",
+"inquiry_cost": "询价扣费",
+"viewcontact_cost": "查看联系方式扣费",
+"migration": "积分迁移",
 
       "recharge": "充值",
 

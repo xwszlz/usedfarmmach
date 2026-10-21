@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="禾安 神雕四杰">
+  <defs>
+    <radialGradient id="bg3" cx="50%" cy="42%" r="62%">
+      <stop offset="0%" stop-color="#211b16"/>
+      <stop offset="100%" stop-color="#14110f"/>
+    </radialGradient>
+  </defs>
+  <circle cx="256" cy="256" r="256" fill="url(#bg3)"/>
+  <!-- 信任盾牌 -->
+  <path d="M256 120 L372 160 V270 C372 340 320 386 256 412 C192 386 140 340 140 270 V160 Z"
+        fill="#7a8a90" stroke="#e63e2e" stroke-width="10"/>
+  <path d="M256 120 L372 160 V270 C372 340 320 386 256 412 C192 386 140 340 140 270 V160 Z"
+        fill="none" stroke="#c9a227" stroke-width="3" opacity="0.6"/>
+  <!-- 隶书字标 禾安 -->
+  <text x="256" y="250" text-anchor="middle" font-family="'STKaiti','KaiTi','SimSun',serif" font-size="92" font-weight="800" fill="#f3ede1" letter-spacing="6">禾安</text>
+  <text x="256" y="318" text-anchor="middle" font-family="'STKaiti','KaiTi','SimSun',serif" font-size="30" font-weight="600" fill="#c9a227" letter-spacing="3">合规·信任</text>
+  <text x="256" y="452" text-anchor="middle" font-family="'STKaiti','KaiTi','SimSun',serif" font-size="34" font-weight="700" fill="#f3ede1" letter-spacing="4">禾安·守护</text>
+</svg>

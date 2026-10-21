@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="价探 神雕四杰">
+  <defs>
+    <radialGradient id="bg2" cx="50%" cy="42%" r="62%">
+      <stop offset="0%" stop-color="#211b16"/>
+      <stop offset="100%" stop-color="#14110f"/>
+    </radialGradient>
+  </defs>
+  <circle cx="256" cy="256" r="256" fill="url(#bg2)"/>
+  <!-- 数据流光带（机灰→鎏金） -->
+  <path d="M96 360 Q256 300 416 360" stroke="#7a8a90" stroke-width="10" fill="none" opacity="0.5" stroke-linecap="round"/>
+  <path d="M96 330 Q256 270 416 330" stroke="#c9a227" stroke-width="6" fill="none" opacity="0.55" stroke-linecap="round"/>
+  <!-- 价探：由 € $ ¥ 光点聚成的灵动数据精灵 -->
+  <g>
+    <!-- 主体圆核 -->
+    <circle cx="256" cy="232" r="70" fill="#7a8a90"/>
+    <circle cx="256" cy="232" r="70" fill="none" stroke="#c9a227" stroke-width="6"/>
+    <!-- 双眼 -->
+    <circle cx="234" cy="222" r="12" fill="#14110f"/>
+    <circle cx="278" cy="222" r="12" fill="#14110f"/>
+    <!-- 微笑 -->
+    <path d="M228 256 Q256 282 284 256" stroke="#14110f" stroke-width="8" fill="none" stroke-linecap="round"/>
+    <!-- 漂浮货币光点 -->
+    <text x="120" y="180" font-family="Arial, sans-serif" font-size="46" font-weight="800" fill="#c9a227">€</text>
+    <text x="360" y="160" font-family="Arial, sans-serif" font-size="46" font-weight="800" fill="#e63e2e">$</text>
+    <text x="250" y="120" font-family="Arial, sans-serif" font-size="44" font-weight="800" fill="#7a8a90">¥</text>
+    <text x="330" y="320" font-family="Arial, sans-serif" font-size="40" font-weight="800" fill="#c9a227">$</text>
+    <text x="150" y="320" font-family="Arial, sans-serif" font-size="40" font-weight="800" fill="#e63e2e">¥</text>
+  </g>
+  <text x="256" y="436" text-anchor="middle" font-family="'STKaiti','KaiTi','SimSun',serif" font-size="40" font-weight="700" fill="#f3ede1" letter-spacing="4">价探·比价</text>
+</svg>

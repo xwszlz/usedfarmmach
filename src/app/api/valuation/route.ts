@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db";
 import { getTokenFromHeaders, verifyToken } from "@/lib/auth";
 
 import { computeAiCost, deductCredits, type AiCostBreakdown } from "@/lib/credits/spend";
+import { getBillingCountry } from "@/lib/credits/fx";
 import { drainUsage } from "@/lib/credits/usage-collector";
 
 import { calculateValuation, calculateValuationV4, type ValuationInput, type ValuationResult } from "@/lib/valuation/formulas";
@@ -646,11 +647,13 @@ export async function POST(request: NextRequest) {
     // 无论如何都要 drain：模块级数组是本进程的，游客/异常分支不 drain 会跨请求串账。
     const usage = drainUsage();
     if (authUserId) {
+      const billingCountry = await getBillingCountry(authUserId);
       const perModel: AiCostBreakdown[] = usage.map((u) =>
         computeAiCost({
           model: u.model,
           inputTokens: u.inputTokens,
           outputTokens: u.outputTokens,
+          billingCountry,
         })
       );
       const totalPoints = perModel.reduce((sum, c) => sum + c.points, 0);

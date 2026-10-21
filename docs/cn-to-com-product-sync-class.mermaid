@@ -1,0 +1,71 @@
+classDiagram
+    class Product {
+      +String id
+      +String sellerId
+      +String brandId
+      +String categoryId
+      +String modelName
+      +Int year
+      +String condition
+      +Float priceCny
+      +Float priceUsd
+      +String location
+      +String status
+      +DateTime updatedAt
+    }
+    class Brand {
+      +String id
+      +String nameZh
+      +String nameEn
+      +String originCountry
+      +Boolean isImported
+    }
+    class Category {
+      +String id
+      +String nameZh
+      +String nameEn
+    }
+    class ProductImage {
+      +String id
+      +String productId
+      +String url
+      +Int sortOrder
+      +Boolean isPrimary
+    }
+    class ProductVideo {
+      +String id
+      +String productId
+      +String url
+      +Int sortOrder
+      +String moderationStatus
+    }
+    class ProductSyncMap {
+      +String cnProductId
+      +String neonProductId
+      +String sourceHash
+      +DateTime sourceUpdatedAt
+      +DateTime lastSeenAt
+      +Boolean isActive
+    }
+    class CnProductExportRoute {
+      +GET(request) NextResponse
+      -requireSyncKey(req) bool
+      -buildWhitelistPayload(product) object
+    }
+    class CnProductSyncRunner {
+      +runCnProductSync(opts) SyncStats
+      -fetchFromCn(since) object[]
+      -upsertProduct(item) void
+      -resolveBrand(brand) string
+      -resolveSystemSeller() string
+      -reconcile(fullIdSet) void
+    }
+    Product "1" --> "1" Brand : brand
+    Product "1" --> "1" Category : category
+    Product "1" --> "*" ProductImage : images
+    Product "1" --> "*" ProductVideo : videos
+    ProductSyncMap "1" --> "1" Product : neonProductId
+    CnProductExportRoute ..> Product : reads (on .cn)
+    CnProductSyncRunner ..> CnProductExportRoute : pulls HTTP (from .com)
+    CnProductSyncRunner ..> Product : upserts (on Neon)
+    CnProductSyncRunner ..> ProductSyncMap : writes
