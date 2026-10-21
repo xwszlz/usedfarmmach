@@ -31,6 +31,18 @@ export function calculateFee(amount: number): { platformFee: number; sellerAmoun
 }
 
 /**
+ * 配件担保手续费策略（D7）：整笔金额的 3%，最低 2 元。
+ * 与整机 calculateFee（定金 1.5% / 最低 50 元）相互独立，不可混用。
+ */
+export function calculatePartFee(amount: number): { platformFee: number; sellerAmount: number } {
+  const fee = Math.max(Math.round(amount * 0.03 * 100) / 100, 2);
+  return {
+    platformFee: fee,
+    sellerAmount: Math.round((amount - fee) * 100) / 100,
+  };
+}
+
+/**
  * 定金计算：max(¥1,000, 商品价×10%)，封顶 ¥50,000
  * 用户决策（2026-07-20）：固定 10% 定金 + 线下对公尾款
  */
@@ -85,17 +97,24 @@ export const BALANCE_TIMEOUT_DAYS = 30;
  * 尾款 = 商品价 - 定金（线下对公转账）
  */
 export async function createEscrowOrder(params: {
-  productId: string;
+  productId?: string;
+  partId?: string;
   buyerId: string;
   sellerId: string;
   amount: number; // 商品总价
   paymentMethod: string;
   deliveryAddress?: string;
+  itemType?: "product" | "part";
 }) {
-  const depositAmount = calculateDeposit(params.amount);
+  const isPart = params.itemType === "part" || !!params.partId;
+  const depositAmount = isPart
+    ? Math.round(params.amount * 100) / 100 // 配件：全款 upfront（deposit=整笔）
+    : calculateDeposit(params.amount);
   const balanceAmount = Math.round((params.amount - depositAmount) * 100) / 100;
-  // 手续费按定金计提（尾款走线下对公，不收平台费）
-  const { platformFee, sellerAmount } = calculateFee(depositAmount);
+  // 配件：手续费按整笔金额计提（D7）；整机：手续费按定金计提
+  const { platformFee, sellerAmount } = isPart
+    ? calculatePartFee(params.amount)
+    : calculateFee(depositAmount);
   const orderNo = generateOrderNo();
 
   // 定金支付截止时间（7天后）
@@ -105,7 +124,9 @@ export async function createEscrowOrder(params: {
   const order = await prisma.escrowOrder.create({
     data: {
       orderNo,
-      productId: params.productId,
+      productId: params.productId ?? null,
+      partId: params.partId ?? null,
+      itemType: isPart ? "part" : "product",
       buyerId: params.buyerId,
       sellerId: params.sellerId,
       amount: params.amount,
@@ -121,6 +142,7 @@ export async function createEscrowOrder(params: {
     },
     include: {
       product: { select: { id: true, modelName: true, priceCny: true } },
+      part: { select: { id: true, nameZh: true, nameEn: true, sku: true, price: true } },
       buyer: { select: { id: true, username: true, phone: true } },
       seller: { select: { id: true, username: true, phone: true } },
     },
@@ -182,11 +204,13 @@ export async function handlePaymentSuccess(
     },
   });
 
-  // 标记产品为交易中（防止其他人下单）
-  await prisma.product.update({
-    where: { id: order.productId },
-    data: { status: "reserved" }, // reserved = 已被定金锁定
-  });
+  // 标记产品为交易中（防止其他人下单）——配件订单无 Product，跳过
+  if (order.productId) {
+    await prisma.product.update({
+      where: { id: order.productId },
+      data: { status: "reserved" }, // reserved = 已被定金锁定
+    });
+  }
 
   console.log(`[Escrow] 订单 ${orderNo} 定金支付成功（¥${order.depositAmount}），等待尾款`);
 }
@@ -236,11 +260,13 @@ export async function cancelForBreach(orderId: string): Promise<void> {
     },
   });
 
-  // 恢复产品为可售
-  await prisma.product.update({
-    where: { id: order.productId },
-    data: { status: "active" },
-  });
+  // 恢复产品为可售（配件订单无 Product，跳过）
+  if (order.productId) {
+    await prisma.product.update({
+      where: { id: order.productId },
+      data: { status: "active" },
+    });
+  }
 
   console.log(`[Escrow] 订单 ${order.orderNo} 买家违约（超期未付尾款），定金不退，订单已取消`);
 }
@@ -291,11 +317,13 @@ export async function releaseToSeller(orderId: string): Promise<void> {
     },
   });
 
-  // 更新产品状态为已售
-  await prisma.product.update({
-    where: { id: order.productId },
-    data: { status: "sold" },
-  });
+  // 更新产品状态为已售（配件订单无 Product，跳过）
+  if (order.productId) {
+    await prisma.product.update({
+      where: { id: order.productId },
+      data: { status: "sold" },
+    });
+  }
 
   console.log(`[Escrow] 订单 ${order.orderNo} 已放款给卖家，金额 ¥${order.sellerAmount}`);
 }
@@ -332,11 +360,13 @@ export async function refundOrder(orderId: string, reason: string): Promise<void
     },
   });
 
-  // 恢复产品为可售
-  await prisma.product.update({
-    where: { id: order.productId },
-    data: { status: "active" },
-  });
+  // 恢复产品为可售（配件订单无 Product，跳过）
+  if (order.productId) {
+    await prisma.product.update({
+      where: { id: order.productId },
+      data: { status: "active" },
+    });
+  }
 
   console.log(`[Escrow] 订单 ${order.orderNo} 已退款（定金 ¥${order.depositAmount} 线上退，尾款线下退），原因: ${reason}`);
 }

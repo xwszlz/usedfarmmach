@@ -14,9 +14,11 @@ interface EscrowOrder {
   amount: number;
   paymentMethod: string;
   paymentStatus: string;
+  itemType?: string;
   createdAt: string;
   disputeStatus: string | null;
-  product: { id: string; modelName: string; images: { url: string }[] };
+  product: { id: string; modelName: string; images: { url: string }[] } | null;
+  part: { id: string; nameZh: string; nameEn: string; images: { url: string }[] } | null;
   buyer: { id: string; username: string };
   seller: { id: string; username: string };
 }
@@ -86,13 +88,21 @@ export default function EscrowOrdersPage() {
                 onClick={() => router.push(`/${locale}/escrow/${order.id}`)}>
                 <CardContent className="flex items-center gap-4 py-4">
                   <div className="w-16 h-16 rounded-lg bg-gray-100 flex-shrink-0 overflow-hidden">
-                    {order.product.images[0] && (
+                    {order.itemType === "part" && order.part?.images[0] && (
+                      <img src={order.part.images[0].url} alt={order.part.nameZh}
+                        className="w-full h-full object-cover" />
+                    )}
+                    {order.itemType !== "part" && order.product?.images[0] && (
                       <img src={order.product.images[0].url} alt={order.product.modelName}
                         className="w-full h-full object-cover" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium truncate">{order.product.modelName}</div>
+                    <div className="font-medium truncate">
+                      {order.itemType === "part"
+                        ? (order.part?.nameZh || order.part?.nameEn || "配件")
+                        : (order.product?.modelName || "整机")}
+                    </div>
                     <div className="text-sm text-gray-500 mt-0.5">订单号：{order.orderNo}</div>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-sm font-medium text-green-600">¥{order.amount.toLocaleString()}</span>

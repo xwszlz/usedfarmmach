@@ -47,6 +47,15 @@ export async function GET(request: NextRequest) {
               images: { take: 1, orderBy: { sortOrder: "asc" } },
             },
           },
+          part: {
+            select: {
+              id: true,
+              nameZh: true,
+              nameEn: true,
+              sku: true,
+              images: true,
+            },
+          },
           buyer: { select: { id: true, username: true } },
           seller: { select: { id: true, username: true } },
           payments: { orderBy: { createdAt: "desc" }, take: 1 },

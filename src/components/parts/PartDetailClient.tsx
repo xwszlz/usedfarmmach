@@ -11,6 +11,7 @@ import { getImageUrl, getDetailImageUrl } from "@/lib/image-url";
 import PartsBreadcrumb from "./PartsBreadcrumb";
 import PartSpecsTable from "./PartSpecsTable";
 import PartCard, { type PartCardData } from "./PartCard";
+import { EscrowPurchaseButton } from "@/components/escrow/escrow-purchase-button";
 
 export interface PartDetailData {
   id: string;
@@ -218,6 +219,18 @@ export default function PartDetailClient({ part, relatedParts, locale }: PartDet
                 </p>
               </div>
             </div>
+
+            {/* 担保交易购买（D6=神雕自营；D7=整笔3%下限¥2） */}
+            {part.stockStatus !== "out_of_stock" && (
+              <div className="mb-6">
+                <EscrowPurchaseButton
+                  partId={part.id}
+                  itemType="part"
+                  productName={partName}
+                  price={part.price}
+                />
+              </div>
+            )}
 
             {/* CTA buttons */}
             <div className="flex gap-3 mb-6">

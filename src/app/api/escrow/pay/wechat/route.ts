@@ -41,7 +41,10 @@ export async function POST(request: NextRequest) {
 
     const order = await prisma.escrowOrder.findUnique({
       where: { id: orderId },
-      include: { product: { select: { modelName: true } } },
+      include: {
+        product: { select: { modelName: true } },
+        part: { select: { nameZh: true, nameEn: true } },
+      },
     });
 
     if (!order) {
@@ -73,7 +76,8 @@ export async function POST(request: NextRequest) {
 
     // 调用微信支付创建 Native 订单
     const amountInCents = Math.round(order.amount * 100);
-    const description = `神雕农机 - ${order.product.modelName}`;
+    const partName = order.part ? (order.part.nameZh || order.part.nameEn || "配件") : null;
+    const description = `神雕农机${order.itemType === "part" ? "配件" : ""} - ${order.product?.modelName || partName || "担保交易"}`;
 
     // 必须显式传回调地址：缺省会回退到全局 WECHAT_NOTIFY_URL，
     // 而 .cn 的该值指向会员回调（/api/membership/wechat/notify），

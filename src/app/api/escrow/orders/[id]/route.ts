@@ -30,6 +30,16 @@ export async function GET(
             images: { take: 3, orderBy: { sortOrder: "asc" } },
           },
         },
+        part: {
+          select: {
+            id: true,
+            nameZh: true,
+            nameEn: true,
+            sku: true,
+            price: true,
+            images: true,
+          },
+        },
         buyer: { select: { id: true, username: true, phone: true } },
         seller: { select: { id: true, username: true, phone: true } },
         payments: { orderBy: { createdAt: "desc" } },
