@@ -118,6 +118,13 @@
     "noRecords": "Aucun enregistrement pour l'instant",
     "pleaseLogin": "Veuillez vous connecter pour voir",
     "transactionTypes": {
+"first_order_reward": "Récompense première commande",
+"publish_cost": "Frais de publication",
+"mall_cost": "Achat boutique",
+"ai_deduct": "Frais IA",
+"inquiry_cost": "Frais de demande",
+"viewcontact_cost": "Frais de contact",
+"migration": "Migration de points",
       "recharge": "Recharger",
       "consume": "Consommation",
       "reward": "Récompense",

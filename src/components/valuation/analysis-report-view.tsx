@@ -23,7 +23,13 @@ interface ReportSection {
 /** Parse Markdown into sections by ## headings */
 function parseMarkdownSections(md: string): ReportSection[] {
   // Remove JSON code block at end
-  const cleaned = md.replace(/```json[\s\S]*?```/g, "").trim();
+  // 兜底加固：① 完整围栏块（大小写不敏感）② 被 max_tokens 截断、缺闭合 ``` 的尾部 JSON
+  // ③ 残留的孤立围栏行 —— 三种情况都不该在正文里露出裸 JSON
+  const cleaned = md
+    .replace(/```json[\s\S]*?```/gi, "")
+    .replace(/```json[\s\S]*$/i, "")
+    .replace(/^```+$/gm, "")
+    .trim();
   // Split by ## headings
   const parts = cleaned.split(/^## /m).filter((s) => s.trim());
   return parts.map((part) => {

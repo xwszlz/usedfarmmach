@@ -496,6 +496,14 @@ export async function POST(request: NextRequest) {
     // 提取结构化数据
     const structured = extractStructured(analysisText);
 
+    // 剥离报告尾部的 ```json 块后再返回正文：结构化字段已单独走 data.structured，
+    // 正文不应露出裸 JSON（含模型输出被 max_tokens 截断、缺闭合围栏的情形）。
+    const analysisClean = analysisText
+      .replace(/```json[\s\S]*?```/gi, "")
+      .replace(/```json[\s\S]*$/i, "")
+      .replace(/^```+$/gm, "")
+      .trim();
+
     // ── 积分扣减（按 LLM token 实际消耗成本 × 2，反算积分）──
     const billingCountry = await getBillingCountry(payload.userId);
     const cost: AiCostBreakdown = computeAiCost({
@@ -527,7 +535,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        analysis: analysisText,
+        analysis: analysisClean,
         structured: structured || {},
         model: modelUsed,
         mediaCount: { images: images.length, videos: videoUrls.length },

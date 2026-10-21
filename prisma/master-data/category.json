@@ -1,8 +1,8 @@
 {
-  "version": "1.1.0",
-  "generatedAt": "2026-10-07",
-  "source": "老板提供的《二手农机主数据字典》v1.0 + 老板 2026-10-07 拍板③④②（baler 挂 root / tractor 分档 / 补 corn_harvester）",
-  "note": "code 是程序唯一主键；display_name 仅前端展示；schema_comment 仅文档阅读。v1.1：baler 改挂 root；新增 tractor_compact/mid/high（<100/100–200/>200 hp）；新增 corn_harvester。is_leaf 由是否含子节点派生（无子节点=叶子）。",
+  "version": "1.2.0",
+  "generatedAt": "2026-10-20",
+  "source": "老板提供的《二手农机主数据字典》v1.0 + 老板 2026-10-07 拍板③④②（baler 挂 root / tractor 分档 / 补 corn_harvester） + 2026-10-19 产品库规范化/品类下沉实测回写",
+  "note": "code 是程序唯一主键；display_name 仅前端展示；schema_comment 仅文档阅读。v1.1：baler 改挂 root；新增 tractor_compact/mid/high（<100/100–200/>200 hp）；新增 corn_harvester。v1.2：回写 9 个仅在 DB 中存在、字典缺失的品类——beet_harvester/tomato_harvester/corn_thresher/header（挂 harvester）、pickup_header（挂 forage）、stone_picker（挂 tillage）、bale_stacker/bale_wrapper（挂 baler）、telescopic_handler（挂 root），消除字典与库不一致。is_leaf 由是否含子节点派生（无子节点=叶子）。",
   "items": [
     {
       "code": "root",
@@ -77,6 +77,30 @@
       "schema_comment": "棉花采摘设备"
     },
     {
+      "code": "beet_harvester",
+      "display_name": "甜菜收获机",
+      "parent_code": "harvester",
+      "schema_comment": "甜菜挖掘/收获设备；2026-10-19 产品库规范化补建"
+    },
+    {
+      "code": "tomato_harvester",
+      "display_name": "番茄收获机",
+      "parent_code": "harvester",
+      "schema_comment": "番茄采收机；2026-10-19 产品库规范化补建"
+    },
+    {
+      "code": "corn_thresher",
+      "display_name": "玉米脱粒机",
+      "parent_code": "harvester",
+      "schema_comment": "风吸玉米脱粒机；2026-10-19 产品库规范化补建"
+    },
+    {
+      "code": "header",
+      "display_name": "割台",
+      "parent_code": "harvester",
+      "schema_comment": "收获机配套割台（玉米割台/青贮圆盘割台等）；2026-10-19 品类下沉补建"
+    },
+    {
       "code": "mower",
       "display_name": "牧草割晒机",
       "parent_code": "forage",
@@ -95,6 +119,12 @@
       "schema_comment": "晾晒后收拢牧草成条"
     },
     {
+      "code": "pickup_header",
+      "display_name": "捡拾台",
+      "parent_code": "forage",
+      "schema_comment": "牧草捡拾台（配打捆机/青贮机）；2026-10-19 品类下沉补建"
+    },
+    {
       "code": "round_baler",
       "display_name": "圆捆打捆机",
       "parent_code": "baler",
@@ -105,6 +135,18 @@
       "display_name": "方捆打捆机",
       "parent_code": "baler",
       "schema_comment": "方形高密度草捆打包"
+    },
+    {
+      "code": "bale_stacker",
+      "display_name": "草捆码垛机",
+      "parent_code": "baler",
+      "schema_comment": "草捆码垛/堆放设备；2026-10-19 产品库规范化补建"
+    },
+    {
+      "code": "bale_wrapper",
+      "display_name": "草捆裹包机",
+      "parent_code": "baler",
+      "schema_comment": "草捆缠绕包膜设备；2026-10-19 产品库规范化补建"
     },
     {
       "code": "plow",
@@ -123,6 +165,12 @@
       "display_name": "圆盘耙",
       "parent_code": "tillage",
       "schema_comment": "碎土、整地"
+    },
+    {
+      "code": "stone_picker",
+      "display_name": "捡石机",
+      "parent_code": "tillage",
+      "schema_comment": "田间捡石机；2026-10-19 品类下沉补建"
     },
     {
       "code": "planter",
@@ -171,6 +219,12 @@
       "display_name": "农用拖车",
       "parent_code": "transport",
       "schema_comment": "农机配套运输车斗"
+    },
+    {
+      "code": "telescopic_handler",
+      "display_name": "伸缩臂叉装车",
+      "parent_code": "root",
+      "schema_comment": "伸缩臂夹包/叉装车；2026-10-19 产品库规范化补建"
     }
   ]
 }

@@ -33,7 +33,16 @@ const BASE_URL = "https://api.mch.weixin.qq.com";
  * 同时兼容 PKCS#1 与 PKCS#8 格式，以及缺失/多余头尾的粘贴。
  */
 function normalizePrivateKey(raw: string): string {
-  let key = raw.trim();
+  let key = String(raw || "").trim();
+  // docker env_file / .env 不会剥外层引号，值里带着引号会让 base64 解码直接炸
+  if (
+    key.length >= 2 &&
+    ((key.startsWith('"') && key.endsWith('"')) ||
+      (key.startsWith("'") && key.endsWith("'")))
+  ) {
+    key = key.slice(1, -1).trim();
+  }
+  key = key.replace(/^\uFEFF/, ""); // BOM
   // 将粘贴时被转义的 \n 还原为真实换行
   key = key.replace(/\\n/g, "\n");
   // 移除首尾空格与多余空行
@@ -51,13 +60,57 @@ function normalizePrivateKey(raw: string): string {
 
 const NORMALIZED_PRIVATE_KEY = normalizePrivateKey(PRIVATE_KEY);
 
+function toPkcs1Header(pem: string): string {
+  return pem
+    .replace("-----BEGIN PRIVATE KEY-----", "-----BEGIN RSA PRIVATE KEY-----")
+    .replace("-----END PRIVATE KEY-----", "-----END RSA PRIVATE KEY-----");
+}
+function toPkcs8Header(pem: string): string {
+  return pem
+    .replace("-----BEGIN RSA PRIVATE KEY-----", "-----BEGIN PRIVATE KEY-----")
+    .replace("-----END RSA PRIVATE KEY-----", "-----END PRIVATE KEY-----");
+}
+
+/**
+ * 加载商户私钥为 KeyObject（懒加载 + 缓存）。
+ * error:1E08010C:DECODER routines::unsupported 的三大成因都在这兜住：
+ *   ① PKCS#1 内容配了 PKCS#8 头尾（或反之）→ 头尾互换重试
+ *   ② 值带外层引号 / BOM / 字面量 \n → normalize 已处理
+ *   ③ 值根本不是 RSA 私钥（错填 APIv3 密钥/公钥/证书）→ 抛可读配置指引
+ */
+let privateKeyObj: crypto.KeyObject | null = null;
+function getPrivateKeyObject(): crypto.KeyObject {
+  if (privateKeyObj) return privateKeyObj;
+  const candidates = Array.from(
+    new Set([
+      NORMALIZED_PRIVATE_KEY,
+      toPkcs1Header(NORMALIZED_PRIVATE_KEY),
+      toPkcs8Header(NORMALIZED_PRIVATE_KEY),
+    ])
+  );
+  let firstError = "";
+  for (const cand of candidates) {
+    try {
+      privateKeyObj = crypto.createPrivateKey(cand);
+      return privateKeyObj;
+    } catch (e: any) {
+      if (!firstError) firstError = e?.message || String(e);
+    }
+  }
+  const headLine = NORMALIZED_PRIVATE_KEY.split("\n")[0] || "(空值)";
+  throw new Error(
+    `微信支付商户私钥配置无效（WECHAT_PRIVATE_KEY 无法解析为 RSA 私钥，首行: ${headLine}）。` +
+      `请确认为商户平台 apiclient_key.pem 的完整内容，而非 APIv3 密钥 / 公钥 / 证书。底层错误: ${firstError}`
+  );
+}
+
 /**
  * 用商户私钥对消息做 SHA256withRSA 签名
  */
 function signWithPrivateKey(message: string): string {
   const sign = crypto.createSign("RSA-SHA256");
   sign.update(message, "utf8");
-  return sign.sign(NORMALIZED_PRIVATE_KEY, "base64");
+  return sign.sign(getPrivateKeyObject(), "base64");
 }
 
 /**

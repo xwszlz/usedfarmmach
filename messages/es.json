@@ -118,6 +118,13 @@
     "noRecords": "Aún no hay registros",
     "pleaseLogin": "Inicie sesión para ver",
     "transactionTypes": {
+"first_order_reward": "Recompensa primer pedido",
+"publish_cost": "Coste de publicación",
+"mall_cost": "Compra en tienda",
+"ai_deduct": "Consumo de IA",
+"inquiry_cost": "Coste de consulta",
+"viewcontact_cost": "Coste por ver contacto",
+"migration": "Migración de puntos",
       "recharge": "Recarga",
       "consume": "Consumo",
       "reward": "Recompensa",

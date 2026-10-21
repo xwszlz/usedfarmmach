@@ -1,0 +1,37 @@
+sequenceDiagram
+    participant Cron as Vercel Cron (.com, 境外)
+    participant Sync as /api/cron/cn-product-sync
+    participant Core as runCnProductSync()
+    participant CN as GET .cn /api/internal/products/export
+    participant DB as cn-postgres (北京)
+    participant NM as Neon (.com DB)
+    participant WG as 企微机器人
+
+    Note over Cron,WG: 每 15 分钟增量同步（发起方=境外 .com → .cn 仅被动响应）
+    Cron->>Sync: 触发（CRON_SECRET 校验）
+    Sync->>Core: runCnProductSync({ since, mode:'incremental' })
+    Core->>CN: GET export?since=<watermark>&limit=N (x-sync-key)
+    CN->>DB: SELECT products(miniprogram·国际品牌·active) + brand/category/images/videos
+    DB-->>CN: 行数据
+    CN-->>Core: 白名单 JSON（无 PII）
+    Core->>Core: 清洗 + 计算 sourceHash
+    loop 每件产品
+        Core->>NM: SELECT ProductSyncMap / Product by id
+        alt 哈希未变
+            Core->>NM: UPDATE lastSeenAt only
+        else 新增或变更
+            Core->>NM: upsert Product + 重建 Images/Videos + 解析 Brand/Category + 系统 seller
+            Core->>NM: upsert ProductSyncMap
+        end
+    end
+    Core->>NM: 写入 AgentRunLog(cn-product-sync)
+    alt 失败
+        Core->>WG: 告警
+    end
+    Core-->>Sync: { created, updated, skipped, archived, errors }
+
+    Note over Cron,NM: 每日北京 03:00 全量对账（处理硬删除）
+    Cron->>Core: runCnProductSync({ mode:'full-reconcile' })
+    Core->>CN: GET export（全量 id 集合）
+    CN-->>Core: id 列表
+    Core->>NM: 将 ProductSyncMap 中缺失且 lastSeenAt 过期者 → archived

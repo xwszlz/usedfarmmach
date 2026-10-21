@@ -1,7 +1,7 @@
 {
-  "version": "1.1.0",
-  "generatedAt": "2026-10-07",
-  "source": "老板提供的《二手农机主数据字典》v1.0 + 老板 2026-10-07 拍板②（丙扩充：进口+国产全入，排除电控3+供应商全称9）",
+  "version": "1.2.0",
+  "generatedAt": "2026-10-20",
+  "source": "老板提供的《二手农机主数据字典》v1.0 + 老板 2026-10-07 拍板②（丙扩充：进口+国产全入，排除电控3+供应商全称9） + 2026-10-19 产品库规范化实测回写（10 个新建标准品牌 + 11 个已有未挂商品品牌）",
   "note": "code 是程序唯一主键；display_name 仅前端展示；brand_value_factor 品牌保值系数用于估价/套利；origin_country 参与套利计算但不作为聚合分组维度。v1.1 新增丙扩充真品牌；★凡 schema_comment 标『先验估计·待核』者，其 origin_country/brand_value_factor 为架构师先验值（非老板权威值），待人工/质检校准。",
   "items": [
     {
@@ -815,6 +815,153 @@
       "origin_country": "中国",
       "brand_value_factor": 0.7,
       "schema_comment": "丙扩充（国产）：国产农机｜★原产国/系数=先验估计·待核"
+    },
+    {
+      "code": "aimate",
+      "display_name": "Aimate 艾美特",
+      "origin_country": "中国",
+      "brand_value_factor": 0.7,
+      "schema_comment": "2026-10-19 产品库规范化：已在库且有在售商品，回写字典"
+    },
+    {
+      "code": "aobeisi",
+      "display_name": "Aobeisi 奥贝斯",
+      "origin_country": "中国",
+      "brand_value_factor": 0.7,
+      "schema_comment": "2026-10-19 产品库规范化：已在库且有在售商品，回写字典"
+    },
+    {
+      "code": "huaxia",
+      "display_name": "Huaxia 华夏",
+      "origin_country": "中国",
+      "brand_value_factor": 0.72,
+      "schema_comment": "2026-10-19 产品库规范化：已在库且有在售商品，回写字典"
+    },
+    {
+      "code": "jifeng",
+      "display_name": "Jinzhou Jifeng 晋州市冀丰农机",
+      "origin_country": "中国",
+      "brand_value_factor": 0.8,
+      "schema_comment": "2026-10-19 回写字典（当前未挂商品）"
+    },
+    {
+      "code": "jinlun",
+      "display_name": "Jinlun 金轮",
+      "origin_country": "中国",
+      "brand_value_factor": 0.7,
+      "schema_comment": "2026-10-19 产品库规范化：已在库且有在售商品，回写字典"
+    },
+    {
+      "code": "kangda",
+      "display_name": "Kangda 康达",
+      "origin_country": "中国",
+      "brand_value_factor": 0.8,
+      "schema_comment": "2026-10-19 回写字典（当前未挂商品）"
+    },
+    {
+      "code": "liyufeng",
+      "display_name": "Hebei Liyufeng 河北利裕丰机械",
+      "origin_country": "中国",
+      "brand_value_factor": 0.8,
+      "schema_comment": "2026-10-19 回写字典（当前未挂商品）"
+    },
+    {
+      "code": "longfeng",
+      "display_name": "Zhengzhou Longfeng 郑州龙丰农业机械",
+      "origin_country": "中国",
+      "brand_value_factor": 0.8,
+      "schema_comment": "2026-10-19 回写字典（当前未挂商品）"
+    },
+    {
+      "code": "lufeng",
+      "display_name": "Ningjin Lufeng 宁晋县陆风制动",
+      "origin_country": "中国",
+      "brand_value_factor": 0.8,
+      "schema_comment": "2026-10-19 回写字典（当前未挂商品）"
+    },
+    {
+      "code": "luosite",
+      "display_name": "Luosite 罗斯特",
+      "origin_country": "中国",
+      "brand_value_factor": 0.7,
+      "schema_comment": "2026-10-19 产品库规范化：已在库且有在售商品，回写字典"
+    },
+    {
+      "code": "meno",
+      "display_name": "Meno Technology 中机美诺科技",
+      "origin_country": "中国",
+      "brand_value_factor": 0.8,
+      "schema_comment": "2026-10-19 回写字典（当前未挂商品）"
+    },
+    {
+      "code": "mts",
+      "display_name": "MTS",
+      "origin_country": "待确认",
+      "brand_value_factor": 0.8,
+      "schema_comment": "2026-10-19 产品库规范化：已在库且有在售商品，回写字典"
+    },
+    {
+      "code": "munong",
+      "display_name": "Munong 牧农",
+      "origin_country": "中国",
+      "brand_value_factor": 0.7,
+      "schema_comment": "2026-10-19 产品库规范化：已在库且有在售商品，回写字典"
+    },
+    {
+      "code": "orkel",
+      "display_name": "Orkel 奥库",
+      "origin_country": "挪威",
+      "brand_value_factor": 0.9,
+      "schema_comment": "2026-10-19 产品库规范化：已在库且有在售商品，回写字典"
+    },
+    {
+      "code": "raven",
+      "display_name": "Raven",
+      "origin_country": "美国",
+      "brand_value_factor": 0.8,
+      "schema_comment": "2026-10-19 回写字典（当前未挂商品）"
+    },
+    {
+      "code": "shidaer",
+      "display_name": "Shidaer 世达尔",
+      "origin_country": "中国",
+      "brand_value_factor": 0.72,
+      "schema_comment": "2026-10-19 产品库规范化：已在库且有在售商品，回写字典"
+    },
+    {
+      "code": "topcon",
+      "display_name": "Topcon",
+      "origin_country": "日本",
+      "brand_value_factor": 0.8,
+      "schema_comment": "2026-10-19 回写字典（当前未挂商品）"
+    },
+    {
+      "code": "trimble",
+      "display_name": "Trimble",
+      "origin_country": "美国",
+      "brand_value_factor": 0.8,
+      "schema_comment": "2026-10-19 回写字典（当前未挂商品）"
+    },
+    {
+      "code": "xingwanda",
+      "display_name": "Tangshan Xinwanda 唐山鑫万达实业",
+      "origin_country": "中国",
+      "brand_value_factor": 0.8,
+      "schema_comment": "2026-10-19 回写字典（当前未挂商品）"
+    },
+    {
+      "code": "yaao",
+      "display_name": "Xi'an Yaao 西安亚澳农机",
+      "origin_country": "中国",
+      "brand_value_factor": 0.8,
+      "schema_comment": "2026-10-19 回写字典（当前未挂商品）"
+    },
+    {
+      "code": "zhongnongji",
+      "display_name": "Zhongnongji 中农机",
+      "origin_country": "中国",
+      "brand_value_factor": 0.72,
+      "schema_comment": "2026-10-19 产品库规范化：已在库且有在售商品，回写字典"
     }
   ]
 }

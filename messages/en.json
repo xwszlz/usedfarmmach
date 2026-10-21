@@ -237,6 +237,13 @@
     "pleaseLogin": "Please sign in to view",
 
     "transactionTypes": {
+"first_order_reward": "First Order Reward",
+"publish_cost": "Publishing Fee",
+"mall_cost": "Mall Purchase",
+"ai_deduct": "AI Service Fee",
+"inquiry_cost": "Inquiry Fee",
+"viewcontact_cost": "Contact Reveal Fee",
+"migration": "Credit Migration",
 
       "recharge": "Recharge",
 

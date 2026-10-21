@@ -1,0 +1,395 @@
+{
+ "schemaVersion": "1.0",
+ "botSlug": "nt_geo",
+ "runDate": "2026-09-24",
+ "generatedAt": "2026-09-24T15:25:00+08:00",
+ "generation": "g4(消费auction 12:30 r3 year/drive/yearSource;label↔year校验闸上线:冲突撤年份/无结构化锚挂审计;AU-05年份雷闭);slotNote=估值槽位为15:27 overlay-r3快照(成本带),不含appraisal 16:55打包情景/17:15三修/19:15九修终口径——g5复跑时由r4/r5 scenarioLabel块整替",
+ "targetSite": "usedfarmmach.cn /map (测试口令期;对外发布仍等nt_compliance signed:true)",
+ "dataIntegrity": {
+  "simulated": false,
+  "syntheticRejected": 0,
+  "notes": "坐标全由本管线geocode/GCJ转换回填,上游lat/lng=null设计正确;本件无phone/email/wechat字段(F22);机器点经hostPoint挂法人宿主,无独立坐标"
+ },
+ "selfCheck": {
+  "①allCoordsGCJ02": true,
+  "②noPrivateContactFields": true,
+  "③privateCityOrCoarser": "见issues(cityLevel警告已挂merge方)",
+  "④dataDatePriceTypeTriple": true,
+  "⑤simulatedFalse": true
+ },
+ "stats": {
+  "points": 9,
+  "renderable": 9,
+  "pendingNotRendered": 0,
+  "greyedStale": 0
+ },
+ "pipelineIssues": [
+  [
+   "AP-60924-01",
+   "PENDING_NOT_RENDERED:2024老挂在售待核实(G3),坐标留空,王先生电话回传后翻转"
+  ],
+  [
+   "AP-60924-02",
+   "PENDING_NOT_RENDERED:2024老挂在售待核实(G3),坐标留空,王先生电话回传后翻转"
+  ],
+  [
+   "AP-60924-03",
+   "YEAR_CLAIM_UNSTRUCTURED:label含2019无结构化锚(源URL人工可验,保留渲染+挂审计)"
+  ],
+  [
+   "AP-60924-04",
+   "YEAR_CLAIM_UNSTRUCTURED:label含2016无结构化锚(源URL人工可验,保留渲染+挂审计)"
+  ],
+  [
+   "AP-60924-05",
+   "raw cityLevel存在但derived只携render字段,raw已剔除 ✓"
+  ],
+  [
+   "AP-60924-05",
+   "YEAR_CLAIM_UNSTRUCTURED:label含2021无结构化锚(源URL人工可验,保留渲染+挂审计)"
+  ],
+  [
+   "E1-AM-FR600",
+   "MERGED→AU-60924-04.appraisalRangeCny(去重键:sourceListingId 24067-30/3057871)"
+  ],
+  [
+   "E2-AM-FR500",
+   "MERGED→AU-60924-05.appraisalRangeCny(去重键:sourceListingId 24067-30/3057871)"
+  ],
+  [
+   "E3-REBO-J950",
+   "PENDING_NOT_RENDERED:按总盘v2 §3② E3挂账(landwirt/详情页URL未落盘),补源后翻转"
+  ]
+ ],
+ "items": [
+  {
+   "pointId": "appraisal:AP-60924-03",
+   "origin": "appraisal",
+   "label": "CLAAS JAGUAR 850 (2019)",
+   "subjectType": "DEALER",
+   "hostPoint": "MT-OFF",
+   "latGcj02": 39.800135,
+   "lngGcj02": 116.481946,
+   "coordCrs": "GCJ-02",
+   "listingPriceCny": 1260542,
+   "priceType": "ASK",
+   "servicingCostCny": null,
+   "servicingNote": null,
+   "appraisalRangeCny": {
+    "low": 506860,
+    "mid": 596306,
+    "high": 685752
+   },
+   "eaeuBreakevenCny": 1170750,
+   "sellBandCny": {
+    "low": 1266000,
+    "high": 1450000,
+    "basis": "哈拍卖成交+欧盟→哈海关均价代理(8433.51口径警报见底账)"
+   },
+   "deviationFlag40": true,
+   "provenance": {
+    "sourcePlatform": "Mascus/nt_intel arbitrage-2026-09-24 + FIRST CLAAS USED",
+    "sourceUrl": "https://www.mascus.com.ua/selhoztehnika/kormouborochnye-kombayny/claas-jaguar-850/q2u9p6q6.html",
+    "dataDate": "2026-09-24",
+    "fetchedAt": "2026-09-24T00:44:54+08:00",
+    "confidence": "B"
+   },
+   "statusCaveat": null,
+   "stalenessDays": 0,
+   "year": null,
+   "drive": null
+  },
+  {
+   "pointId": "appraisal:AP-60924-04",
+   "origin": "appraisal",
+   "label": "CLAAS JAGUAR 960 4WD (2016)",
+   "subjectType": "DEALER",
+   "hostPoint": "MT-OFF",
+   "latGcj02": 39.800135,
+   "lngGcj02": 116.481946,
+   "coordCrs": "GCJ-02",
+   "listingPriceCny": 1342687,
+   "priceType": "ASK",
+   "servicingCostCny": null,
+   "servicingNote": null,
+   "appraisalRangeCny": {
+    "low": 236030,
+    "mid": 277682,
+    "high": 319334
+   },
+   "eaeuBreakevenCny": 1380750,
+   "sellBandCny": {
+    "low": 1266000,
+    "high": 1450000,
+    "basis": "哈拍卖成交+欧盟→哈海关均价代理(8433.51口径警报见底账)"
+   },
+   "deviationFlag40": true,
+   "provenance": {
+    "sourcePlatform": "Mascus/nt_intel arbitrage-2026-09-24",
+    "sourceUrl": "https://www.mascus.com/agriculture/cn,country.html",
+    "dataDate": "2026-09-24",
+    "fetchedAt": "2026-09-24T00:44:54+08:00",
+    "confidence": "C"
+   },
+   "statusCaveat": null,
+   "stalenessDays": 0,
+   "year": null,
+   "drive": null
+  },
+  {
+   "pointId": "appraisal:AP-60924-05",
+   "origin": "appraisal",
+   "label": "牧神 4QZ-3000A (2021)",
+   "subjectType": "PRIVATE",
+   "hostPoint": "AGG-新疆",
+   "latGcj02": 43.823804,
+   "lngGcj02": 87.61965,
+   "coordCrs": "GCJ-02",
+   "listingPriceCny": 280000,
+   "priceType": "ASK",
+   "servicingCostCny": null,
+   "servicingNote": null,
+   "appraisalRangeCny": {
+    "low": 359856,
+    "mid": 423360,
+    "high": 486864
+   },
+   "eaeuBreakevenCny": null,
+   "sellBandCny": {
+    "low": 1266000,
+    "high": 1450000,
+    "basis": "哈拍卖成交+欧盟→哈海关均价代理(8433.51口径警报见底账)"
+   },
+   "deviationFlag40": true,
+   "provenance": {
+    "sourcePlatform": "农机通/nt_cn_market domestic-2026-09-24",
+    "sourceUrl": "https://a.nongjitong.com/ershou/xinjiang.html",
+    "dataDate": "2026-09-24",
+    "fetchedAt": "2026-09-24T00:44:54+08:00",
+    "confidence": "C"
+   },
+   "statusCaveat": null,
+   "precision": "PROVINCE-ROLLED-UP(G4 k-匿名<3;坐标=省would点,非个人位置)",
+   "stalenessDays": 0,
+   "renderPrecision": "新疆(省级聚合, G4)",
+   "year": null,
+   "drive": null
+  },
+  {
+   "pointId": "auction:AU-60924-01",
+   "origin": "auction",
+   "label": "AM Machinery VOF（欧洲收购段·主触点）",
+   "subjectType": "DEALER",
+   "hostPoint": "EU-AM",
+   "latGcj02": 51.438419,
+   "lngGcj02": 6.066612,
+   "coordCrs": "GCJ-02",
+   "listingPriceCny": null,
+   "priceType": "ASK",
+   "servicingCostCny": null,
+   "servicingNote": null,
+   "appraisalRangeCny": null,
+   "eaeuBreakevenCny": null,
+   "sellBandCny": null,
+   "deviationFlag40": null,
+   "provenance": {
+    "sourcePlatform": "AM Machinery official site",
+    "sourceUrl": "https://www.ammachinery.eu/stock/forage-harvesters",
+    "dataDate": "2026-09-24",
+    "fetchedAt": "2026-09-24T08:11:00+08:00",
+    "confidence": "A"
+   },
+   "statusCaveat": "在售=官网当日直抓 confidence A；验机报告PDF镜像见 data/auction/am-machinery/",
+   "stalenessDays": 0,
+   "year": null,
+   "drive": null,
+   "popupMode": "ADDRESS_ONLY(验机点/宿主点·无价,不得渲ASK价格角标)"
+  },
+  {
+   "pointId": "auction:AU-60924-02",
+   "origin": "auction",
+   "label": "Beijing Matech International Trading Co.,Ltd（办公室）",
+   "subjectType": "DEALER",
+   "hostPoint": "MT-OFF",
+   "latGcj02": 39.800135,
+   "lngGcj02": 116.481946,
+   "coordCrs": "GCJ-02",
+   "listingPriceCny": null,
+   "priceType": "ASK",
+   "servicingCostCny": null,
+   "servicingNote": null,
+   "appraisalRangeCny": null,
+   "eaeuBreakevenCny": null,
+   "sellBandCny": null,
+   "deviationFlag40": null,
+   "provenance": {
+    "sourcePlatform": "bjmatech.com official site",
+    "sourceUrl": "http://www.bjmatech.com/",
+    "dataDate": "2026-09-24",
+    "fetchedAt": "2026-09-24T00:47:00+08:00",
+    "confidence": "B"
+   },
+   "statusCaveat": "战略定调=对手建档+物流口径探针，不采购；nt_geo 上轮挂起待实勘选点，本条仅公开门址",
+   "stalenessDays": 0,
+   "year": null,
+   "drive": null,
+   "popupMode": "ADDRESS_ONLY(验机点/宿主点·无价,不得渲ASK价格角标)"
+  },
+  {
+   "pointId": "auction:AU-60924-03",
+   "origin": "auction",
+   "label": "Matech 仓库（可实地验机）",
+   "subjectType": "DEALER",
+   "hostPoint": "MT-WH",
+   "latGcj02": 38.700494,
+   "lngGcj02": 116.642834,
+   "coordCrs": "GCJ-02",
+   "listingPriceCny": null,
+   "priceType": "ASK",
+   "servicingCostCny": null,
+   "servicingNote": null,
+   "appraisalRangeCny": null,
+   "eaeuBreakevenCny": null,
+   "sellBandCny": null,
+   "deviationFlag40": null,
+   "provenance": {
+    "sourcePlatform": "bjmatech.com official site",
+    "sourceUrl": "http://www.bjmatech.com/",
+    "dataDate": "2026-09-24",
+    "fetchedAt": "2026-09-24T00:47:00+08:00",
+    "confidence": "B"
+   },
+   "statusCaveat": "验机地点，非挂牌点；无价格（priceType=ASK 仅为与宿主法人点同构占位，listingPriceCny=null 前端不得渲染裸价，popup 只出门址+『验机点』角标）",
+   "stalenessDays": 0,
+   "year": null,
+   "drive": null,
+   "popupMode": "ADDRESS_ONLY(验机点/宿主点·无价,不得渲ASK价格角标)"
+  },
+  {
+   "pointId": "auction:AU-60924-04",
+   "origin": "auction",
+   "label": "E1 · NH FR600 2015 @AM Machinery（含8行玉米台）",
+   "subjectType": "DEALER",
+   "hostPoint": "EU-AM",
+   "latGcj02": 51.438419,
+   "lngGcj02": 6.066612,
+   "coordCrs": "GCJ-02",
+   "listingPriceCny": 610798,
+   "priceType": "ASK",
+   "servicingCostCny": 266938,
+   "servicingNote": "报告第6节明码70条修理全做完€34,744=26.7万，Buy-as-is价未含",
+   "appraisalRangeCny": {
+    "low": 519179,
+    "mid": 519179,
+    "high": 655388,
+    "note": "收购价~到岸净成本(含5%关税), 非零售估值带"
+   },
+   "eaeuBreakevenCny": 655388,
+   "sellBandCny": {
+    "low": 1266000,
+    "high": 1450000,
+    "basis": "同上"
+   },
+   "deviationFlag40": false,
+   "provenance": {
+    "sourcePlatform": "AM Machinery official product page",
+    "sourceUrl": "https://www.ammachinery.eu/new-holland-fr600-24067-30",
+    "dataDate": "2026-09-24",
+    "fetchedAt": "2026-09-24T08:11:00+08:00",
+    "confidence": "A"
+   },
+   "statusCaveat": "全盘首推标的；数据日期09-24，>30天置灰规则适用",
+   "stalenessDays": 0,
+   "appraisalProvenance": {
+    "sourcePlatform": "AM Machinery 官网库存页",
+    "sourceUrl": "https://ammachinery.eu/stock/forage-harvesters",
+    "dataDate": "2026-09-24",
+    "fetchedAt": "2026-09-24T08:00+08:00",
+    "confidence": "A",
+    "sourceListingId": "24067-30"
+   },
+   "valuationFromAppraisalOverlay": true,
+   "year": 2015,
+   "drive": "2WD",
+   "yearSource": "https://www.ammachinery.eu/new-holland-fr600-24067-30 desc:'2015 New Holland FR600 2WD'"
+  },
+  {
+   "pointId": "auction:AU-60924-05",
+   "origin": "auction",
+   "label": "E2 · NH FR500 2015 4WD @AM Machinery",
+   "subjectType": "DEALER",
+   "hostPoint": "EU-AM",
+   "latGcj02": 51.438419,
+   "lngGcj02": 6.066612,
+   "coordCrs": "GCJ-02",
+   "listingPriceCny": 841288,
+   "priceType": "ASK",
+   "servicingCostCny": 151655,
+   "servicingNote": "57条修理全做完€19,739",
+   "appraisalRangeCny": {
+    "low": 715095,
+    "mid": 715095,
+    "high": 861100,
+    "note": "收购价~到岸净成本(含5%关税), 非零售估值带"
+   },
+   "eaeuBreakevenCny": 861100,
+   "sellBandCny": {
+    "low": 1266000,
+    "high": 1450000,
+    "basis": "同上"
+   },
+   "deviationFlag40": false,
+   "provenance": {
+    "sourcePlatform": "AM Machinery official product page",
+    "sourceUrl": "https://www.ammachinery.eu/new-holland-fr500",
+    "dataDate": "2026-09-24",
+    "fetchedAt": "2026-09-24T08:11:00+08:00",
+    "confidence": "A"
+   },
+   "statusCaveat": null,
+   "stalenessDays": 0,
+   "appraisalProvenance": {
+    "sourcePlatform": "Machinetrack.eu (聚合AM Machinery库存)",
+    "sourceUrl": "https://machinetrack.eu/en/3057871/agricultural-machinery/harvesters/forage-harvester/new-holland-fr500",
+    "dataDate": "2026-09-17(挂牌快照≈1 week ago), 抓取2026-09-24",
+    "fetchedAt": "2026-09-24T08:00+08:00",
+    "confidence": "B",
+    "sourceListingId": "3057871"
+   },
+   "valuationFromAppraisalOverlay": true,
+   "year": 2015,
+   "drive": "4WD",
+   "yearSource": "https://www.ammachinery.eu/new-holland-fr500 desc:'For sale 2015 New Holland FR500 4WD incl 2015 600SFI'"
+  },
+  {
+   "pointId": "auction:AU-60924-06",
+   "origin": "auction",
+   "label": "P1 · John Deere 8400 2015 4WD @AM Machinery（潜力品·替代方案D收购端）",
+   "subjectType": "DEALER",
+   "hostPoint": "EU-AM",
+   "latGcj02": 51.438419,
+   "lngGcj02": 6.066612,
+   "coordCrs": "GCJ-02",
+   "listingPriceCny": 764458,
+   "priceType": "ASK",
+   "servicingCostCny": null,
+   "servicingNote": null,
+   "appraisalRangeCny": null,
+   "eaeuBreakevenCny": null,
+   "sellBandCny": null,
+   "deviationFlag40": null,
+   "provenance": {
+    "sourcePlatform": "AM Machinery official product page",
+    "sourceUrl": "https://www.ammachinery.eu/john-deere-8400-25105",
+    "dataDate": "2026-09-24",
+    "fetchedAt": "2026-09-24T08:22:00+08:00",
+    "confidence": "A"
+   },
+   "statusCaveat": "vs 科乐收官方店同款￥120万=64折；D案升格测算仍等俄/哈收入带证据（未获取）",
+   "stalenessDays": 0,
+   "year": 2015,
+   "drive": "4WD",
+   "yearSource": "https://www.ammachinery.eu/john-deere-8400-25105 og-desc:'For sale 2015 John Deere 8400 4WD'"
+  }
+ ]
+}
