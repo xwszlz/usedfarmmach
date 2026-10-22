@@ -182,15 +182,32 @@ export async function handlePaymentSuccess(
   const balanceExpiredAt = new Date();
   balanceExpiredAt.setDate(balanceExpiredAt.getDate() + BALANCE_TIMEOUT_DAYS);
 
-  // 定金支付成功 → 置定金已付
-  await prisma.escrowOrder.update({
-    where: { id: order.id },
-    data: {
-      paymentStatus: ESCROW_STATUS.DEPOSIT_PAID,
-      depositPaidAt: new Date(),
-      balanceExpiredAt,
-    },
-  });
+  // 配件订单（deposit=整笔、balance=0）：全款付清即直接进入担保期
+  // 整机订单（定金+线下尾款）：定金支付成功 → 置定金已付，等待尾款
+  const isFullPayment = order.balanceAmount === 0 || order.itemType === "part";
+
+  if (isFullPayment) {
+    await prisma.escrowOrder.update({
+      where: { id: order.id },
+      data: {
+        paymentStatus: ESCROW_STATUS.ESCROW,
+        depositPaidAt: new Date(),
+        paidAt: new Date(),         // 全款付清
+        escrowStartedAt: new Date(),
+      },
+    });
+    console.log(`[Escrow] 配件订单 ${orderNo} 全款支付成功，直接进入担保期`);
+  } else {
+    await prisma.escrowOrder.update({
+      where: { id: order.id },
+      data: {
+        paymentStatus: ESCROW_STATUS.DEPOSIT_PAID,
+        depositPaidAt: new Date(),
+        balanceExpiredAt,
+      },
+    });
+    console.log(`[Escrow] 订单 ${orderNo} 定金支付成功（¥${order.depositAmount}），等待尾款`);
+  }
 
   // 更新支付记录
   await prisma.paymentRecord.updateMany({
