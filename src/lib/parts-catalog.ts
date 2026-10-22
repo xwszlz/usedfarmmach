@@ -252,7 +252,14 @@ export async function getParts(filters: PartListFilters): Promise<{
   const [parts, total, brandAgg] = await Promise.all([
     prisma.part.findMany({
       where,
-      orderBy: [{ stockStatus: "asc" }, { createdAt: "desc" }],
+      // 排序：有货优先 → 被更多整机兼容引用的真件优先 → 新入库优先。
+      // 目的：把「0 兼容机型、无图无 OEM」的通用占位件（如 通用易损件）沉到列表后部，
+      // 避免它们因 createdAt 最新而占据 /parts 首屏。
+      orderBy: [
+        { stockStatus: "asc" },
+        { compatibleMachines: { _count: "desc" } },
+        { createdAt: "desc" },
+      ],
       skip: (page - 1) * pageSize,
       take: pageSize,
       select: {
