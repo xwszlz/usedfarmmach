@@ -10,7 +10,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getCompatiblePartsForProduct, getMachinePairedParts } from "@/lib/parts-catalog";
+import { getCompatiblePartsForProduct, getMachinePairedParts, GENERIC_PART_BRANDS } from "@/lib/parts-catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -72,7 +72,7 @@ export async function GET(
     if (brandMatchedCount.length > 0) {
       total = brandMatchedCount.length;
     } else {
-      const GENERIC_BRANDS = ["SKF", "Bosch", "通用", "Generic", "Standard"];
+      const GENERIC_BRANDS = GENERIC_PART_BRANDS;
       total = await prisma.part.count({
         where: { isActive: true, brand: { in: GENERIC_BRANDS } },
       });
