@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
         where: {
           partId,
           buyerId: user.id,
-          paymentStatus: { in: ["pending", "paid", "escrow"] },
+          paymentStatus: { in: ["pending", "pending_deposit", "paid", "escrow"] },
         },
       });
       if (existing) {
@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
       where: {
         productId,
         buyerId: user.id,
-        paymentStatus: { in: ["pending", "paid", "escrow"] },
+        paymentStatus: { in: ["pending", "pending_deposit", "paid", "escrow"] },
       },
     });
 

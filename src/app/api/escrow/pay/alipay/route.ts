@@ -56,7 +56,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "此订单不是支付宝支付" }, { status: 400 });
     }
 
-    if (order.paymentStatus !== "pending") {
+    // 新订单初始状态是 pending_deposit（待付定金/配件全款），旧数据可能是 pending
+    if (!["pending", "pending_deposit"].includes(order.paymentStatus)) {
       return NextResponse.json({ success: false, error: "订单状态不允许支付" }, { status: 400 });
     }
 
