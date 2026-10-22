@@ -507,6 +507,8 @@ export async function getCompatiblePartsForProduct(params: {
     where: {
       isActive: true,
       brand: { in: GENERIC_BRANDS },
+      // 排除无图占位件（如「通用易损件」12 条太阳占位图），避免详情页兜底出现空白图
+      images: { isEmpty: false },
     },
     orderBy: [{ stockStatus: "asc" }, { createdAt: "desc" }],
     take: limit,

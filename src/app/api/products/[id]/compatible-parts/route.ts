@@ -74,7 +74,7 @@ export async function GET(
     } else {
       const GENERIC_BRANDS = GENERIC_PART_BRANDS;
       total = await prisma.part.count({
-        where: { isActive: true, brand: { in: GENERIC_BRANDS } },
+        where: { isActive: true, brand: { in: GENERIC_BRANDS }, images: { isEmpty: false } },
       });
     }
 
