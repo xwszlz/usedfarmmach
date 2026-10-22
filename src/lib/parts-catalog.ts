@@ -12,6 +12,36 @@ import { prisma } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
 import type { PartCardData } from "@/components/parts/PartCard";
 
+// ─── 通用件（部件厂）品牌白名单 ─────────────────────────
+// 仅包含「部件/元件制造商」，不含整机 OEM 品牌（如 Horsch / Kverneland / Amazone / 雷沃 等
+// 整机厂的件不能当作「通用适配」展示，否则会把竞品整机件错标成通用兼容，误导买家）。
+// 用途：产品页「适配零部件」在该整机品牌无任何兼容记录时，回退展示这些品牌的通用件。
+export const GENERIC_PART_BRANDS: string[] = [
+  "SKF",
+  "Bosch",
+  "Bosch Rexroth",
+  "Gates",
+  "Danfoss",
+  "Eaton",
+  "Parker",
+  "Donaldson",
+  "Mahle",
+  "Mann-Filter",
+  "Mann+Filter",
+  "Elring Klinger",
+  "Continental",
+  "GKN",
+  "Hella",
+  "Holset",
+  "Hypro",
+  "TeeJet",
+  "Siemens",
+  "通用易损件",
+  "通用",
+  "Generic",
+  "Standard",
+];
+
 // ─── 类型定义 ───────────────────────────────────────────
 
 export interface CatalogTreeNode {
@@ -471,8 +501,8 @@ export async function getCompatiblePartsForProduct(params: {
     };
   }
 
-  // 兜底：通用配件（品牌为通用件品牌，如 SKF / Bosch / 通用）
-  const GENERIC_BRANDS = ["SKF", "Bosch", "通用", "Generic", "Standard"];
+  // 兜底：通用配件（部件厂白名单，见文件顶部 GENERIC_PART_BRANDS）
+  const GENERIC_BRANDS = GENERIC_PART_BRANDS;
   const genericMatched = await prisma.part.findMany({
     where: {
       isActive: true,
