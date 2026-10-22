@@ -123,6 +123,8 @@ export default function EscrowOrderDetailPage() {
 
   const statusMap: Record<string, { label: string; color: string }> = {
     pending: { label: "待支付", color: "bg-yellow-100 text-yellow-700" },
+    pending_deposit: { label: "待支付", color: "bg-yellow-100 text-yellow-700" },
+    deposit_paid: { label: "已支付", color: "bg-blue-100 text-blue-700" },
     paid: { label: "已支付", color: "bg-blue-100 text-blue-700" },
     escrow: { label: "担保中", color: "bg-green-100 text-green-700" },
     released: { label: "已放款", color: "bg-gray-100 text-gray-700" },
@@ -151,8 +153,8 @@ export default function EscrowOrderDetailPage() {
         </div>
       )}
 
-      {/* 微信支付二维码 */}
-      {codeUrl && order.paymentStatus === "pending" && (
+      {/* 微信支付二维码（新订单初始状态 pending_deposit） */}
+      {codeUrl && ["pending", "pending_deposit"].includes(order.paymentStatus) && (
         <Card className="mb-4 border-green-200">
           <CardContent className="flex flex-col items-center py-6">
             <p className="font-medium text-green-700 mb-3">请使用微信扫码支付</p>
@@ -185,7 +187,7 @@ export default function EscrowOrderDetailPage() {
           {order.itemType === "part" && order.part ? (
             <div className="flex items-center gap-4">
               <div className="w-20 h-20 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
-                {order.part.images[0] && <img src={order.part.images[0].url} alt={order.part.nameZh} className="w-full h-full object-cover" />}
+                {order.part.images[0] && <img src={order.part.images[0] as unknown as string} alt={order.part.nameZh} className="w-full h-full object-cover" />}
               </div>
               <div>
                 <div className="font-medium">{order.part.nameZh || order.part.nameEn}</div>

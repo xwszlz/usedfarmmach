@@ -89,7 +89,7 @@ export default function EscrowOrdersPage() {
                 <CardContent className="flex items-center gap-4 py-4">
                   <div className="w-16 h-16 rounded-lg bg-gray-100 flex-shrink-0 overflow-hidden">
                     {order.itemType === "part" && order.part?.images[0] && (
-                      <img src={order.part.images[0].url} alt={order.part.nameZh}
+                      <img src={order.part.images[0] as unknown as string} alt={order.part.nameZh}
                         className="w-full h-full object-cover" />
                     )}
                     {order.itemType !== "part" && order.product?.images[0] && (
