@@ -369,7 +369,7 @@ function AIRecognizeSection({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<RecognizeResult | null>(null);
-  // AI 智能识别已强制登录：needLogin = 静默探测到游客；loginUrl = 登录引导入口
+  // AI 图像识别已强制登录：needLogin = 静默探测到游客；loginUrl = 登录引导入口
   const [needLogin, setNeedLogin] = useState(false);
   const [loginUrl, setLoginUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);

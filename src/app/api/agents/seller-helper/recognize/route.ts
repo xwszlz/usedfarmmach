@@ -605,7 +605,7 @@ export async function POST(request: NextRequest) {
   // 详见文件末尾 finally 里的论证。
   let usageConsumed = false;
   try {
-    // ── 登录校验（强制）：AI 智能识别按真实 token 计费，必须知道扣谁的积分 ──
+    // ── 登录校验（强制）：AI 图像识别按真实 token 计费，必须知道扣谁的积分 ──
     // 游客没有 userId → 无法扣费 → 直接 401，由前端（公开估值页等）引导登录。
     // 注：本 return 位于 try 内，退出前必经 finally 的 drainUsage() 兜底，
     // 因此 401 分支不会把 usage 残留串到下一个请求。
