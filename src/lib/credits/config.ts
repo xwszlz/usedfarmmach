@@ -110,3 +110,28 @@ export async function getPlanBySku(sku: string): Promise<PlanSku | null> {
   const plans = await getPlans();
   return plans.find((p) => p.sku === sku) ?? null;
 }
+
+// ─── AI 销售策略按量计费（决策 B：[商业机密·内部]）──────────
+// 计费系数 / 护栏上限一律只从 SystemConfig 读取，代码不持有明文倍数。
+// 真实数值由老板后台配置；默认值均为占位，便于未配置时系统可运行。
+
+/**
+ * AI 销售策略计费系数。
+ * 单次成本公式：cost(积分) = 实际 token 消耗 × 本系数。
+ * ⚠️ [商业机密·内部]：本系数是平台计费核心参数，仅存于 SystemConfig，
+ *    代码中绝不出现明文倍数值；未知/非法值回落占位 1.0。
+ */
+export async function getAiCostCoeff(): Promise<number> {
+  const v = await getConfig<number>(CONFIG_KEYS.aiCostCoeff, 1.0);
+  return typeof v === "number" && Number.isFinite(v) && v > 0 ? v : 1.0;
+}
+
+/**
+ * 单次成本护栏上限（积分）。
+ * 单次请求实际成本超过此值 → 路由直接熔断返回（不扣费），防不可控高价检索/异常用量。
+ * ⚠️ [商业机密·内部]：占位值 5000，真实值由老板后台配置（ai_cost_guardrail_credits）。
+ */
+export async function getAiCostGuardrail(): Promise<number> {
+  const v = await getConfig<number>(CONFIG_KEYS.aiCostGuardrail, 5000);
+  return typeof v === "number" && Number.isFinite(v) && v > 0 ? v : 5000;
+}
