@@ -88,15 +88,31 @@ async function retrieveCandidates(input: StrategyRetrievalInput): Promise<LeadCa
   const region = (input.location || "").trim();
   if (!brand && !model && !region) return [];
 
-  const toCandidate = (row: any, type: "lead" | "dealer"): LeadCandidate => ({
-    id: `${type}_${row.id}`,
-    type,
-    name: row.name || (type === "lead" ? "潜在买家" : "渠道经销商"),
-    brand: row.brand ?? null,
-    model: row.model ?? null,
-    region: row.region ?? null,
-    source: row.source || (type === "lead" ? "lead_pool" : "dealer_pool"),
-  });
+  const toCandidate = (row: any, type: "lead" | "dealer"): LeadCandidate => {
+    if (type === "dealer") {
+      const brands = Array.isArray(row.brands) ? (row.brands as string[]) : [];
+      const regions = Array.isArray(row.regions) ? (row.regions as string[]) : [];
+      return {
+        id: `dealer_${row.id}`,
+        type: "dealer",
+        name: row.name || "渠道经销商",
+        // Dealer.brands / Dealer.regions 为数组列，取首个代表；Dealer 无 model 列
+        brand: brands[0] ?? null,
+        model: "",
+        region: regions[0] ?? null,
+        source: row.source || "dealer_pool",
+      };
+    }
+    return {
+      id: `lead_${row.id}`,
+      type: "lead",
+      name: row.name || "潜在买家",
+      brand: row.brand ?? null,
+      model: row.model ?? null,
+      region: row.region ?? null,
+      source: row.source || "lead_pool",
+    };
+  };
 
   try {
     const leads = await prisma
@@ -116,17 +132,16 @@ async function retrieveCandidates(input: StrategyRetrievalInput): Promise<LeadCa
 
     const dealers = await prisma
       .$queryRawUnsafe<
-        Array<{ id: string; name: string; brand: string | null; model: string | null; region: string | null; source: string | null }>
+        Array<{ id: string; name: string; brands: string[] | null; regions: string[] | null; source: string | null }>
       >(
-        `SELECT id, name, brand, model, region, source
+        `SELECT id, name, source, brands, regions
          FROM "Dealer"
-         WHERE ($1 = '' OR brand ILIKE '%' || $1 || '%'
-                OR region ILIKE '%' || $1 || '%'
-                OR $2 = '' OR regions::text ILIKE '%' || $2 || '%')
+         WHERE ($1 = '' OR regions::text ILIKE '%' || $1 || '%')
+           AND ($2 = '' OR brands::text ILIKE '%' || $2 || '%')
          ORDER BY "createdAt" DESC
          LIMIT 10`,
-        brand,
-        model
+        region,
+        brand
       )
       .catch(() => [] as Array<any>);
 
@@ -209,8 +224,8 @@ async function retrieveSimilarProducts(
         year: r.year,
         priceCny: r.priceCny,
         location: r.location,
-      }))
-      .filter((r) => !categoryName || true); // 品牌已过滤；品类过滤留给调用方在 prompt 中软匹配
+      }));
+    // 品类过滤延后到 prompt 软匹配，此处不再做恒真 filter
     return out.slice(0, 12);
   } catch {
     return [];

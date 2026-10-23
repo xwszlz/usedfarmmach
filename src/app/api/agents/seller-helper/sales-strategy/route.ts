@@ -82,6 +82,23 @@ export async function POST(request: NextRequest) {
       videoUrls?: string[];
     };
 
+    // ── 空内容守卫：text / imageUrls / videoUrls 全空则不触发检索与扣费 ──
+    const hasText = typeof body.text === "string" && body.text.trim().length > 0;
+    const hasImages = Array.isArray(body.imageUrls) && body.imageUrls.length > 0;
+    const hasVideos = Array.isArray(body.videoUrls) && body.videoUrls.length > 0;
+    if (!hasText && !hasImages && !hasVideos) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:/n            locale === "zh"
+              ? "请提供文字描述、图片或视频中的至少一项"
+              : "Please provide at least one of text, image, or video.",
+          code: "MISSING_INPUT",
+        },
+        { status: 400 }
+      );
+    }
+
     // ── 检索上下文（内部实时 + 外部快照）──
     const ctx: StrategyContext = await retrieveStrategyContext({
       productId: body.productId,
