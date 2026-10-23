@@ -373,7 +373,7 @@ function AIRecognizeSection({
   const [needLogin, setNeedLogin] = useState(false);
   const [loginUrl, setLoginUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const LOGIN_TIP = "请先登录后再使用 AI 智能识别";
+  const LOGIN_TIP = "请先登录后再使用 AI 图像识别";
 
   // 静默探测登录态：只有服务端明确返回「未登录」才拦截，
   // 网络异常/未知响应一律放行（仍会由 401 兜底引导），避免误伤已登录用户。

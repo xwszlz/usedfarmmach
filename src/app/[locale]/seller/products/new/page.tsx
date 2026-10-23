@@ -945,7 +945,7 @@ export default function NewProductPage() {
           <span className={`flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold text-white ${
             imageFiles.length > 0 ? "bg-primary-600" : "bg-gray-300"
           }`}>3</span>
-          <h2 className="text-base font-bold text-gray-800">AI 智能识别</h2>
+          <h2 className="text-base font-bold text-gray-800">AI 图像识别</h2>
         </div>
 
         <SellerAiAssistant

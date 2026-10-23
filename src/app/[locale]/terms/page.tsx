@@ -248,7 +248,7 @@ function TermsContentZh() {
         <ol className="list-decimal pl-6 space-y-2">
           <li>
             <strong>积分体系：</strong>
-            本平台不设会员等级。AI 功能（AI 估值、AI 智能识别、AI 深度分析等）按大模型 token
+            本平台不设会员等级。AI 功能（AI 估值、AI 图像识别、AI 深度分析等）按大模型 token
             实际消耗计费，以「积分」预付结算：.cn 站 1 元 = 100 积分，.com 站 1 美元 = 100 积分。
             单次消耗按该次调用的模型 token 实际成本 × 2 反算积分；扣减前展示预估门槛，扣减后展示本次消耗与剩余积分。
           </li>
@@ -563,7 +563,7 @@ function TermsContentCn() {
         <ol className="list-decimal pl-6 space-y-2">
           <li>
             <strong>积分体系：</strong>
-            本平台不设会员等级。AI 功能（AI 估值、AI 智能识别、AI 深度分析等）按大模型 token
+            本平台不设会员等级。AI 功能（AI 估值、AI 图像识别、AI 深度分析等）按大模型 token
             实际消耗计费，以「积分」预付结算：.cn 站 1 元 = 100 积分，.com 站 1 美元 = 100 积分。
             单次消耗按该次调用的模型 token 实际成本 × 2 反算积分；扣减前展示预估门槛，扣减后展示本次消耗与剩余积分。
           </li>

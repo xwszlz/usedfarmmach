@@ -272,7 +272,7 @@ export default function SellerAiAssistant({
       if (isUrlMode) {
         // ── URL模式：直接使用已有URL，跳过压缩和上传 ──
         finalImageUrls = propImageUrls!;
-        setPhase(`AI 智能识别中...(${finalImageUrls.length}张图片)`);
+        setPhase(`AI 图像识别中...(${finalImageUrls.length}张图片)`);
       } else {
         // ── 文件模式：压缩 → 上传 → 识别 ──
         setPhase("正在压缩图片...");
@@ -317,7 +317,7 @@ export default function SellerAiAssistant({
           );
         }
 
-        setPhase(`AI 智能识别中...(${finalImageUrls.length}张图片)`);
+        setPhase(`AI 图像识别中...(${finalImageUrls.length}张图片)`);
       }
 
       // 调用识别 API（统一豆包：火山方舟 ARK 视觉能力，.cn 直连 / .com 经 B 通道代理）
@@ -351,7 +351,7 @@ export default function SellerAiAssistant({
 
       // 强制登录：会话失效/未登录 → 明确提示 + 登录入口（不会白屏）
       if (res.status === 401 || data?.code === "LOGIN_REQUIRED") {
-        setError("请先登录后再使用 AI 智能识别");
+        setError("请先登录后再使用 AI 图像识别");
         setLoginUrl(data?.loginUrl || `/${locale}/auth/login`);
         return;
       }
@@ -560,7 +560,7 @@ export default function SellerAiAssistant({
     <div className="rounded-xl border border-primary-200 bg-gradient-to-br from-primary-50 to-white p-5 shadow-sm">
       <div className="mb-4 flex items-center gap-2">
         <Sparkles className="h-5 w-5 text-primary-600" />
-        <h3 className="text-base font-bold text-gray-900">AI 智能识别</h3>
+        <h3 className="text-base font-bold text-gray-900">AI 图像识别</h3>
         <span className="rounded-full bg-primary-100 px-2 py-0.5 text-[10px] font-medium text-primary-700">
           已上传 {totalImages} 张
         </span>

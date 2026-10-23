@@ -615,7 +615,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "请先登录后再使用 AI 智能识别",
+          error: "请先登录后再使用 AI 图像识别",
           code: "LOGIN_REQUIRED",
           loginUrl: `/${locale}/auth/login`,
         },
@@ -735,7 +735,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "请先登录后再使用 AI 智能识别",
+          error: "请先登录后再使用 AI 图像识别",
           code: "LOGIN_REQUIRED",
           loginUrl: `/${locale}/auth/login`,
         },
@@ -751,7 +751,7 @@ export async function POST(request: NextRequest) {
     if (!deduction.ok) {
       return NextResponse.json({
         success: false,
-        error: "积分不足，请先充值后再使用 AI 智能识别",
+        error: "积分不足，请先充值后再使用 AI 图像识别",
         code: "INSUFFICIENT_CREDITS",
         rechargeUrl: `/${locale}/credits`,
         required: deduction.required,
