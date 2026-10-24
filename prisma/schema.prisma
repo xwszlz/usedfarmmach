@@ -2017,6 +2017,9 @@ model Lead {
   id          String    @id @default(cuid())
   /// 数据来源：product_contact | raw_listing | valuation_lead | manual
   source      String    @default("product_contact")
+  /// ── AI 销售策略 additive 字段（T1：只追加，不改动任何既有列）──
+  /// Lead 来自产品联系方式，默认境内
+  partition   String    @default("cn")
   /// 姓名或公司名（可空）
   name        String?
   phone       String?
@@ -2043,6 +2046,7 @@ model Lead {
   @@index([model])
   @@index([region])
   @@index([productId])
+  @@index([partition])
 }
 
 /// 渠道经销商 / 代理商（企业卖家 / 后台录入）
@@ -2052,6 +2056,15 @@ model Dealer {
   phone     String?
   wechat    String?
   email     String?
+  /// ── AI 销售策略渠道经销商池 additive 字段（T1：只追加，不改动任何既有列）──
+  whatsapp  String?            // 境外经销商常用 WhatsApp / 平台站内信占位
+  models    String[] @default([]) // 机型组（覆盖匹配，如 ["AXION 850","JAGUAR"]）
+  partition String   @default("intl") // 双站归属 cn|intl（对齐 store-scope.ts 的 StoreScope）
+  nature    String?            // 性质（授权经销商/二手商/个人卖家/拍卖行平台）
+  grade     String?            // A/B/C 分级（T5 打标，默认 null；seed 时按规则预填）
+  sourceUrl String?            // 来源链接
+  note      String?            // 备注原文
+  tags      String[] @default([]) // 解析自备注（补全/来源/同号关联/自家禁外呼/电话占位）
   /// 经营品牌（nameZh 列表），支持多品牌覆盖匹配
   brands    String[] @default([])
   /// 覆盖地区列表，支持多地区匹配
@@ -2067,6 +2080,9 @@ model Dealer {
   @@index([brands])
   @@index([regions])
   @@index([productId])
+  @@index([models])
+  @@index([partition])
+  @@index([grade])
 }
 
 // ============================================================
