@@ -94,6 +94,7 @@ describe("① 鉴权 / 余额门禁", () => {
 
   it("余额不足（按名义预估）→ 402 INSUFFICIENT_CREDITS + rechargeUrl，不发起 LLM", async () => {
     (getUserFromRequest as any).mockResolvedValue({ id: "u1", credits: 0 });
+    (retrieveStrategyContext as any).mockResolvedValue(mockCtx());
     (estimateAiCost as any).mockResolvedValue(9999);
     const res = await POST(makeReq({ text: "test" }));
     expect(res.status).toBe(402);

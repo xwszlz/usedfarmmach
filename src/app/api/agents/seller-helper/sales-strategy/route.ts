@@ -90,7 +90,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error:/n            locale === "zh"
+          error:
+            locale === "zh"
               ? "请提供文字描述、图片或视频中的至少一项"
               : "Please provide at least one of text, image, or video.",
           code: "MISSING_INPUT",
