@@ -22,7 +22,7 @@ interface SpecificationTableProps {
   netWeight: number | null;
   conditionLabel: string;
   categoryName: string;
-  location: string;
+  brandOriginCountry?: string | null;
   locale: string;
 }
 
@@ -39,7 +39,7 @@ const LABELS: Record<string, Record<string, string>> = {
     overallDimension: "外形尺寸(长×宽×高 mm)",
     netWeight: "整机重量(KG)",
     category: "品类",
-    location: "产地",
+    origin: "产地",
     condition: "设备状况",
     hoursUnit: "小时",
     notAvailable: "暂无",
@@ -56,7 +56,7 @@ const LABELS: Record<string, Record<string, string>> = {
     overallDimension: "Overall Dimension(L×W×H mm)",
     netWeight: "Net Weight(KG)",
     category: "Category",
-    location: "Location",
+    origin: "Origin",
     condition: "Condition",
     hoursUnit: "hrs",
     notAvailable: "N/A",
@@ -73,7 +73,7 @@ const LABELS: Record<string, Record<string, string>> = {
     overallDimension: "Габариты(Д×Ш×В мм)",
     netWeight: "Вес(КГ)",
     category: "Категория",
-    location: "Местоположение",
+    origin: "Происхождение",
     condition: "Состояние",
     hoursUnit: "моточасов",
     notAvailable: "Н/Д",
@@ -96,7 +96,7 @@ export function SpecificationTable({
   netWeight,
   conditionLabel,
   categoryName,
-  location,
+  brandOriginCountry,
   locale,
 }: SpecificationTableProps) {
   const l = LABELS[locale] || LABELS.en;
@@ -150,8 +150,8 @@ export function SpecificationTable({
     },
     {
       icon: <MapPin className="h-4 w-4 text-gray-400" />,
-      label: l.location,
-      value: location || l.notAvailable,
+      label: l.origin,
+      value: brandOriginCountry || l.notAvailable,
     },
     {
       icon: <CheckCircle2 className="h-4 w-4 text-gray-400" />,

@@ -12,6 +12,7 @@ import { ArrowLeftRight, Info, MessageCircle } from "lucide-react";
 import { getImageUrl, getVideoUrl, generateImageAlt } from "@/lib/image-url";
 import { formatPrice } from "@/lib/utils";
 import { normalizeCondition } from "@/lib/condition";
+import { getCountryTranslations } from "@/lib/location-data";
 import ArbitrageCalculatorSection from "@/components/product/arbitrage-calculator-section";
 import { InquiryActions } from "@/components/product/inquiry-actions";
 import InquirySection from "@/components/product/inquiry-section";
@@ -166,6 +167,18 @@ export default async function ProductDetailPage({
   const langKey2 = `name${locale.charAt(0).toUpperCase()}${locale.slice(1)}` as keyof typeof product.brand;
   const brandName = (product.brand as any)[langKey2] || product.brand.nameEn || product.brand.nameZh;
   const categoryName = (product.category as any)[langKey2] || product.category.nameEn || product.category.nameZh;
+
+  // 产地（品牌原产国）：Brand.originCountry 存的是 ISO 代码（如 DE）或中文名（如 中国），
+  // 统一解析为当前语言名称；与 Product.location（发布/库存地址）严格区分。
+  const brandOriginRaw = product.brand?.originCountry ?? null;
+  const brandOriginCountry = brandOriginRaw
+    ? (() => {
+        const tr = getCountryTranslations(String(brandOriginRaw).toUpperCase());
+        if (locale === "en") return tr.labelEn;
+        if (locale === "ru") return tr.labelRu;
+        return tr.labelZh;
+      })()
+    : null;
   const description = (product as any)[`description${locale.charAt(0).toUpperCase()}${locale.slice(1)}`] || product.descriptionEn;
   const conditionSuffix = normalizeCondition(product.condition);
   const conditionLabel = conditionSuffix
@@ -278,7 +291,7 @@ export default async function ProductDetailPage({
             netWeight={product.netWeight ?? null}
             conditionLabel={conditionLabel}
             categoryName={categoryName}
-            location={product.location || ""}
+            brandOriginCountry={brandOriginCountry}
             locale={locale}
           />
 
