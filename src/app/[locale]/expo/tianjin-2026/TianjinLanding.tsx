@@ -4,11 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
+  Building2,
   Calendar,
   CheckCircle2,
   Clock,
   Globe,
   MapPin,
+  Users,
 } from "lucide-react";
 import { TJ_FAQS, pickFaqs } from "@/components/expo/expo-faqs";
 
@@ -755,6 +757,93 @@ const TEXTS: Record<string, TianjinTexts> = {
   },
 };
 
+// ─────── CIAME 2026 核心内容（神雕农机推介 + 六大板块 + 50 场怎么选 + 交通）───────
+interface CiamineCore {
+  introTitle: string;
+  introBody: string;
+  blocksTitle: string;
+  blocks: { name: string; desc: string }[];
+  forumTitle: string;
+  forumLead: string;
+  forumProfiles: { who: string; where: string }[];
+  forumVerified: string;
+  transportTitle: string;
+  transport: { label: string; value: string }[];
+}
+
+const CIAME_CORE: Record<string, CiamineCore> = {
+  zh: {
+    introTitle: "神雕农机是谁（展会核心推介）",
+    introBody:
+      "石家庄神雕农机科技有限公司，CAMDA 二手农机分会副会长单位。我们搭建了覆盖 .cn / .com / 微信小程序 三端的跨境二手农机数字平台，让全球卖家买家自主发布、自主交易。平台已沉淀 105+ 品牌数字展厅、AI 智能估值、跨境套利情报、担保交易、拍卖模块。",
+    blocksTitle: "神雕农机六大板块（核心内容全览）",
+    blocks: [
+      { name: "数字展厅", desc: "105+ 品牌全球展示，机器信息一目了然，找机看机一站式" },
+      { name: "自主发布（卖农机）", desc: "2 分钟自主上架、8 语全球同步，零门槛卖机器【最核心板块】" },
+      { name: "担保交易", desc: "零部件整笔担保（微信收付通，资金平台不碰，买卖更安心）" },
+      { name: "AI 智能估值", desc: "输入机型 / 年份 / 工况，秒出估值，买卖心里有底" },
+      { name: "跨境套利情报", desc: "六大区域每日价格情报，帮您低买高卖、把握套利窗口" },
+      { name: "拍卖模块", desc: "合规拍卖入口（仅 .cn），稀缺机型竞价捡漏" },
+    ],
+    forumTitle: "50 场论坛怎么选（来都来了怎么逛）",
+    forumLead:
+      "待几天？大多数人 2 天够（10/26 看展 + 10/27 听会）；做跨境/出海/二手的加 10/25 晚上中外交流会；采购/签单的 28 上午扫尾（⚠️ 28 入场截止 14:00）。口诀：26 看展、27 听会、28 上午收尾。",
+    forumProfiles: [
+      { who: "跨境/出海/二手商", where: "中外交流会(10/25晚) + 农机出海法律与知产(10/27 14:00 31A) + 市场形势分析会(10/27,出海图谱) + 鲁贸全球采购对接会" },
+      { who: "找货源经销商", where: "中外交流会一对一 + 26 泡展区实机 + 28 压价签单" },
+      { who: "技术/维修/选型", where: "AI 智慧农业(10/26) + 收获机械/保护性耕作 + 后市场论坛(10/27 14:00 33会议室)" },
+      { who: "合作社/农场/农服", where: "社会化服务研讨会(10/27 9:00–12:00) + 丘陵山区机械 + 设施农业" },
+      { who: "投资/政府/媒体", where: "开幕式(10/26 10:00) + 主论坛 + 创新产品评价 + 年鉴发布" },
+    ],
+    forumVerified:
+      "已点名论坛（核实）：中外农机贸易交流会 10/25 17:00–20:30（滨海圣光皇冠假日酒店，30+国/700海外买家，1900元/人，报名已截止）；AI 赋能智慧农业 10/26（赵春江院士团队）；农机出海法律与知产 10/27 14:00–17:00 31A（免费）；农机市场形势分析会 10/27（首发《中国农机出海图谱》）；农机后市场发展论坛 10/27 14:00–17:00 33会议室（免费）；社会化服务研讨会 10/27 9:00–12:00。论坛全在展馆二层，进场先看会议室号；闭门会议以官方通知为准。",
+    transportTitle: "交通与门票（收藏）",
+    transport: [
+      { label: "地铁", value: "1 号线「国家会展中心站」E 口直达展馆" },
+      { label: "火车站", value: "天津站乘 1 号线（东沽路方向）约 30 分钟可达" },
+      { label: "门票", value: "免费，官网实名预登记（手机号 + 企业/参观人信息 + 选日期）→ 电子证件入场" },
+      { label: "温馨提示", value: "10/28（最后一天）入场截止 14:00，深度洽谈请安排在 26、27 日" },
+    ],
+  },
+  en: {
+    introTitle: "Who is Shendiao Agri-Machinery (core intro at the expo)",
+    introBody:
+      "Shijiazhuang Shendiao Agri-Machinery Technology Co., Ltd. — Vice-Chairman unit of the CAMDA Used Agricultural Machinery Sub-Committee. We run a cross-border used agri-machinery digital platform across .cn / .com / WeChat Mini Program, letting global sellers and buyers publish and trade by themselves. The platform already offers 105+ brand showrooms, AI valuation, cross-border arbitrage intelligence, escrow trading and an auction module.",
+    blocksTitle: "Six core modules of Shendiao (full overview)",
+    blocks: [
+      { name: "Digital showroom", desc: "105+ brands on global display; machine info at a glance; one-stop browse" },
+      { name: "Self-publish (sell machines)", desc: "List in 2 minutes, synced in 8 languages, sell with zero threshold [core module]" },
+      { name: "Escrow trading", desc: "Lump-sum escrow for parts (WeChat Pay Connect — platform never touches funds)" },
+      { name: "AI valuation", desc: "Enter model / year / condition, get a valuation in seconds" },
+      { name: "Cross-border arbitrage intel", desc: "Daily price intel across six regions — buy low, sell high" },
+      { name: "Auction module", desc: "Compliant auction entry (China site only) — bid on scarce machines" },
+    ],
+    forumTitle: "How to pick among 50 forums (make the most of your visit)",
+    forumLead:
+      "How many days? Most visitors need 2 days (Oct 26 see the show + Oct 27 attend forums). Cross-border / export / used-machine folks add the evening exchange on Oct 25; buyers/signers wrap up the morning of Oct 28 (⚠️ last entry 14:00 on Oct 28). Rule of thumb: see on 26, listen on 27, wrap up the morning of 28.",
+    forumProfiles: [
+      { who: "Cross-border / export / used-machine", where: "Int'l exchange (Oct 25 eve) + Ag-machinery export law & IP (Oct 27 14:00 31A) + Market Outlook (Oct 27, export map) + Shandong global sourcing" },
+      { who: "Sourcing dealers", where: "Int'l exchange 1-on-1 + inspect live machines on Oct 26 + close deals on Oct 28" },
+      { who: "Tech / repair /选型", where: "AI smart agriculture (Oct 26) + harvest machinery / conservation tillage + aftermarket forum (Oct 27 14:00 Rm33)" },
+      { who: "Co-ops / farms / service", where: "Socialized service seminar (Oct 27 9:00–12:00) + hilly-mountain machinery + facility agriculture" },
+      { who: "Investors / gov / media", where: "Opening (Oct 26 10:00) + main forum + innovation awards + yearbook launch" },
+    ],
+    forumVerified:
+      "Named forums (verified): Int'l Ag-machinery Trade Exchange Oct 25 17:00–20:30 (Crowne Plaza Tianjin Binhai, 30+ countries / 700 overseas buyers, ¥1900/person, registration closed); AI Smart Agriculture Oct 26 (Acad. Zhao Chunjiang's team); Ag-machinery Export Law & IP Oct 27 14:00–17:00 31A (free); Market Outlook Oct 27 (debut of China Ag-machinery Export Map); Aftermarket Forum Oct 27 14:00–17:00 Rm33 (free); Socialized Service Seminar Oct 27 9:00–12:00. All forums are on the 2nd floor of the venue — check the room number first; closed-door sessions follow official notice.",
+    transportTitle: "Transport & Tickets (save this)",
+    transport: [
+      { label: "Metro", value: "Line 1 'National Exhibition Center Station' Exit E — direct to the hall" },
+      { label: "Railway", value: "From Tianjin Railway Station take Line 1 (toward Donggulu) ~30 min" },
+      { label: "Tickets", value: "Free; real-name pre-registration on official site (phone + visitor info + date) → e-badge entry" },
+      { label: "Tip", value: "Oct 28 (last day) last entry 14:00 — schedule deep talks on Oct 26/27" },
+    ],
+  },
+};
+
+function getCiamine(locale: string): CiamineCore {
+  return CIAME_CORE[locale] || CIAME_CORE.en;
+}
+
 // zh / en / ru / es / pt / ar / fr / hi 全语种完整实现
 function getTexts(locale: string): TianjinTexts {
   return TEXTS[locale] || TEXTS.en;
@@ -762,6 +851,7 @@ function getTexts(locale: string): TianjinTexts {
 
 export function TianjinLanding({ locale }: { locale: string }) {
   const t = getTexts(locale);
+  const c = getCiamine(locale);
   // FAQ 与页面 FAQPage 结构化数据共用一份数据源
   const faqs = pickFaqs(TJ_FAQS, locale);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
@@ -895,6 +985,89 @@ export function TianjinLanding({ locale }: { locale: string }) {
             </li>
           ))}
         </ol>
+      </section>
+
+      {/* 神雕农机是谁（展会核心推介） */}
+      <section className="mx-auto max-w-5xl px-4 py-14 sm:px-6 lg:px-8">
+        <h2 className="mb-4 flex items-center gap-2 text-2xl font-bold text-gray-900 dark:text-white">
+          <Building2 className="h-6 w-6 text-blue-600" />
+          {c.introTitle}
+        </h2>
+        <p className="text-base leading-relaxed text-gray-700 dark:text-gray-300">{c.introBody}</p>
+      </section>
+
+      {/* 神雕农机六大板块（核心内容全览） */}
+      <section className="bg-gray-50 py-14 dark:bg-gray-900">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+          <h2 className="mb-8 text-2xl font-bold text-gray-900 dark:text-white">{c.blocksTitle}</h2>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {c.blocks.map((b) => (
+              <div
+                key={b.name}
+                className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-950"
+              >
+                <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">{b.name}</h3>
+                <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">{b.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 50 场论坛怎么选 */}
+      <section className="mx-auto max-w-5xl px-4 py-14 sm:px-6 lg:px-8">
+        <h2 className="mb-4 flex items-center gap-2 text-2xl font-bold text-gray-900 dark:text-white">
+          <Users className="h-6 w-6 text-blue-600" />
+          {c.forumTitle}
+        </h2>
+        <p className="mb-6 text-base leading-relaxed text-gray-700 dark:text-gray-300">{c.forumLead}</p>
+        <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-gray-50 text-gray-700 dark:bg-gray-900 dark:text-gray-300">
+              <tr>
+                <th className="w-48 shrink-0 px-4 py-3 font-medium">您是谁</th>
+                <th className="px-4 py-3 font-medium">建议怎么逛</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
+              {c.forumProfiles.map((p) => (
+                <tr key={p.who} className="hover:bg-gray-50 dark:hover:bg-gray-900/50">
+                  <th className="w-48 shrink-0 bg-gray-50 px-4 py-3 font-medium text-gray-700 dark:bg-gray-900 dark:text-gray-300">
+                    {p.who}
+                  </th>
+                  <td className="px-4 py-3 text-gray-900 dark:text-white">{p.where}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+          {c.forumVerified}
+        </p>
+      </section>
+
+      {/* 交通与门票 */}
+      <section className="bg-gray-50 py-14 dark:bg-gray-900">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+          <h2 className="mb-6 flex items-center gap-2 text-2xl font-bold text-gray-900 dark:text-white">
+            <MapPin className="h-6 w-6 text-blue-600" />
+            {c.transportTitle}
+          </h2>
+          <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
+            <table className="w-full text-left text-sm">
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
+                {c.transport.map((row) => (
+                  <tr key={row.label} className="hover:bg-gray-50 dark:hover:bg-gray-900/50">
+                    <th className="w-40 shrink-0 bg-gray-50 px-4 py-3 font-medium text-gray-700 dark:bg-gray-900 dark:text-gray-300">
+                      {row.label}
+                    </th>
+                    <td className="px-4 py-3 text-gray-900 dark:text-white">{row.value}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </section>
 
       {/* 自主发布后 · 惊艳展示示例（示例数据） */}
