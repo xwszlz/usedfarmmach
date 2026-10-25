@@ -1,0 +1,221 @@
+/**
+ * 集成测试：POST /api/agents/seller-helper/sales-strategy/export/pdf（T2）
+ *
+ * 覆盖点：
+ *  ① 未登录 → 401 LOGIN_REQUIRED，且不进入渲染；
+ *  ② 余额不足（名义预估）→ 402 INSUFFICIENT_CREDITS，不进入渲染；
+ *  ③ 计费顺序（本次重点）：buildPdf 抛错 → 500 且 deductAiUsage 绝不被调用（钱不能扣了却拿不到文件）；
+ *  ④ build 成功 → 200 + Content-Type: application/pdf + Content-Disposition: attachment，扣费恰好一次。
+ *
+ * 说明：@/lib/sales-strategy/export 的 buildPdf 以「spy 包裹真实实现」方式 mock，
+ *       因此成功用例走的是真实 pdf-lib 渲染（字体走模块级缓存，仅首个用例付出 ~1s）；
+ *       失败用例用 mockRejectedValueOnce 注入异常，验证计费顺序。
+ */
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { NextRequest } from "next/server";
+
+vi.mock("@/lib/auth", () => ({ getUserFromRequest: vi.fn() }));
+vi.mock("@/lib/credits/deduct", () => ({
+  estimateAiCost: vi.fn(),
+  deductAiUsage: vi.fn(),
+  EXPORT_ESTIMATED_TOKENS: 800,
+}));
+
+// hoisted 句柄：保存真实 buildPdf，供 beforeEach 恢复默认实现
+const H = vi.hoisted(() => ({
+  realBuildPdf: null as unknown as (payload: any) => Promise<Uint8Array>,
+}));
+
+vi.mock("@/lib/sales-strategy/export", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/sales-strategy/export")>();
+  H.realBuildPdf = actual.buildPdf;
+  return { ...actual, buildPdf: vi.fn(actual.buildPdf) };
+});
+
+import { getUserFromRequest } from "@/lib/auth";
+import { estimateAiCost, deductAiUsage } from "@/lib/credits/deduct";
+import { buildPdf } from "@/lib/sales-strategy/export";
+import { POST } from "@/app/api/agents/seller-helper/sales-strategy/export/pdf/route";
+
+const PAYLOAD = {
+  strategy: {
+    summary: "先出清库存",
+    priceRange: { suggestedMinCny: 800000, suggestedMaxCny: 1200000 },
+    channels: [{ candidateId: "lead_abc", type: "lead", rationale: "本地买家" }],
+    scripts: [{ scenario: "首次触达", line: "您好" }],
+    listingChecklist: [{ step: 1, item: "补车况卡" }],
+  },
+  product: { brandName: "东方红", modelName: "YTO-1204", year: 2019 },
+  channels: [
+    {
+      candidateId: "lead_abc",
+      type: "lead",
+      name: "塔什干买家",
+      phoneMasked: "136****5678",
+      wechatMasked: "微信:********",
+      emailMasked: "ta***@corp.com",
+    },
+  ],
+};
+
+function makeReq(body: unknown, referer = "https://usedfarmmach.cn/zh/products/p1") {
+  return new NextRequest("https://usedfarmmach.cn/api/agents/seller-helper/sales-strategy/export/pdf", {
+    method: "POST",
+    headers: { referer },
+    body: JSON.stringify(body),
+  });
+}
+
+let errSpy: ReturnType<typeof vi.spyOn>;
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  // 每个用例默认：真实渲染 + 余额充足 + 扣费成功
+  vi.mocked(buildPdf).mockReset().mockImplementation(H.realBuildPdf as any);
+  vi.mocked(estimateAiCost).mockReset().mockResolvedValue(100);
+  vi.mocked(deductAiUsage)
+    .mockReset()
+    .mockResolvedValue({ ok: true, cost: 100, balance: 9900, code: "OK" } as any);
+  vi.mocked(getUserFromRequest).mockReset();
+  errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+});
+
+afterEach(() => {
+  errSpy.mockRestore();
+});
+
+describe("① 鉴权 / 余额门禁（渲染前短路）", () => {
+  it("未登录 → 401 LOGIN_REQUIRED，且不渲染、不扣费", async () => {
+    vi.mocked(getUserFromRequest).mockResolvedValue(null as any);
+
+    const res = await POST(makeReq(PAYLOAD));
+
+    expect(res.status).toBe(401);
+    const j = await res.json();
+    expect(j.success).toBe(false);
+    expect(j.code).toBe("LOGIN_REQUIRED");
+    expect(j.loginUrl).toContain("/auth/login");
+    expect(buildPdf).not.toHaveBeenCalled();
+    expect(deductAiUsage).not.toHaveBeenCalled();
+  });
+
+  it("余额不足（名义预估 9999 > 余额 0）→ 402 INSUFFICIENT_CREDITS，且不渲染、不扣费", async () => {
+    vi.mocked(getUserFromRequest).mockResolvedValue({ id: "u1", credits: 0 } as any);
+    vi.mocked(estimateAiCost).mockResolvedValue(9999);
+
+    const res = await POST(makeReq(PAYLOAD));
+
+    expect(res.status).toBe(402);
+    const j = await res.json();
+    expect(j.code).toBe("INSUFFICIENT_CREDITS");
+    expect(j.rechargeUrl).toContain("/credits");
+    expect(j.balance).toBe(0);
+    expect(buildPdf).not.toHaveBeenCalled();
+    expect(deductAiUsage).not.toHaveBeenCalled();
+  });
+});
+
+describe("③ 计费顺序：先 build 成功再扣费", () => {
+  it("buildPdf 抛错（如字体缺失）→ 500 SERVER_ERROR 且 deductAiUsage 未被调用", async () => {
+    vi.mocked(getUserFromRequest).mockResolvedValue({ id: "u1", credits: 99999 } as any);
+    vi.mocked(buildPdf).mockRejectedValueOnce(new Error("NotoSansSC 字体未找到"));
+
+    const res = await POST(makeReq(PAYLOAD));
+
+    expect(res.status).toBe(500);
+    const j = await res.json();
+    expect(j.success).toBe(false);
+    expect(j.code).toBe("SERVER_ERROR");
+    // 红线：渲染失败绝不扣费
+    expect(deductAiUsage).not.toHaveBeenCalled();
+  });
+
+  it("build 抛错时不写 UsageLog / 不返回文件头（无 Content-Disposition）", async () => {
+    vi.mocked(getUserFromRequest).mockResolvedValue({ id: "u1", credits: 99999 } as any);
+    vi.mocked(buildPdf).mockRejectedValueOnce(new Error("boom"));
+
+    const res = await POST(makeReq(PAYLOAD));
+    expect(res.headers.get("content-disposition")).toBeNull();
+    expect(res.headers.get("content-type")).toContain("application/json");
+    expect(deductAiUsage).not.toHaveBeenCalled();
+  });
+});
+
+describe("④ 成功路径", () => {
+  it("build 成功 → 200 + application/pdf + attachment，且扣费恰好一次（名义 800 token）", async () => {
+    vi.mocked(getUserFromRequest).mockResolvedValue({ id: "u1", credits: 99999 } as any);
+
+    const res = await POST(makeReq(PAYLOAD));
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toBe("application/pdf");
+    const cd = res.headers.get("content-disposition") || "";
+    expect(cd).toContain("attachment");
+    expect(cd).toContain('.pdf"');
+
+    // 响应体确为真实 PDF
+    const buf = Buffer.from(await res.arrayBuffer());
+    expect(buf.subarray(0, 5).toString("latin1")).toBe("%PDF-");
+    expect(buf.length).toBeGreaterThan(10 * 1024);
+
+    expect(deductAiUsage).toHaveBeenCalledTimes(1);
+    const arg = vi.mocked(deductAiUsage).mock.calls[0][0];
+    expect(arg.userId).toBe("u1");
+    expect(arg.action).toBe("exportManual");
+    expect(arg.estimatedTokens).toBe(800);
+  });
+
+  it("扣费失败（护栏熔断）→ 429 GUARDRAIL，不返回文件", async () => {
+    vi.mocked(getUserFromRequest).mockResolvedValue({ id: "u1", credits: 99999 } as any);
+    vi.mocked(deductAiUsage).mockResolvedValue({
+      ok: false,
+      code: "GUARDRAIL",
+      cost: 99999,
+      balance: 0,
+    } as any);
+
+    const res = await POST(makeReq(PAYLOAD));
+
+    expect(res.status).toBe(429);
+    const j = await res.json();
+    expect(j.code).toBe("GUARDRAIL");
+    expect(res.headers.get("content-type")).toContain("application/json");
+  });
+
+  it("扣费失败（余额不足）→ 402 INSUFFICIENT_CREDITS", async () => {
+    vi.mocked(getUserFromRequest).mockResolvedValue({ id: "u1", credits: 99999 } as any);
+    vi.mocked(deductAiUsage).mockResolvedValue({
+      ok: false,
+      code: "INSUFFICIENT",
+      cost: 100,
+      balance: 50,
+    } as any);
+
+    const res = await POST(makeReq(PAYLOAD));
+
+    expect(res.status).toBe(402);
+    const j = await res.json();
+    expect(j.code).toBe("INSUFFICIENT_CREDITS");
+    expect(j.balance).toBe(50);
+  });
+
+  it("body 为空（无 strategy/channels）也不 500：走兜底渲染", async () => {
+    vi.mocked(getUserFromRequest).mockResolvedValue({ id: "u1", credits: 99999 } as any);
+
+    const res = await POST(makeReq({}));
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toBe("application/pdf");
+    expect(deductAiUsage).toHaveBeenCalledTimes(1);
+  });
+
+  it("en referer → 英文文案渲染成功（locale 由 referer 决定并透传给扣费 breakdown）", async () => {
+    vi.mocked(getUserFromRequest).mockResolvedValue({ id: "u1", credits: 99999 } as any);
+
+    const res = await POST(makeReq(PAYLOAD, "https://usedfarmmach.com/en/products/p1"));
+
+    expect(res.status).toBe(200);
+    const arg = vi.mocked(deductAiUsage).mock.calls[0][0];
+    expect(arg.breakdown).toMatchObject({ locale: "en" });
+  });
+});
