@@ -264,12 +264,13 @@ async function retrieveMarketIntel(): Promise<StrategyContext["marketIntel"]> {
   try {
     const rows = await prisma.marketIntel.findMany({
       where: { isActive: true },
-      select: { title: true, text: true, region: true, tags: true },
+      // MarketIntel 模型没有 title 字段（只有 text/region/tags），标题由正文首行派生
+      select: { text: true, region: true, tags: true },
       orderBy: { date: "desc" },
       take: 20,
     });
     return rows.map((r) => ({
-      title: r.title,
+      title: (r.text ?? "").split("\n")[0].slice(0, 40),
       content: r.text,
       region: r.region,
       priority: r.tags?.includes("高") ? "高" : r.tags?.includes("低") ? "低" : "中",
