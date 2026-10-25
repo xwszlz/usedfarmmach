@@ -267,6 +267,8 @@ export async function POST(request: NextRequest) {
         compliance: strategy.compliance || null,
         actionChecklist: strategy.actionChecklist || [],
         responsibility: strategy.responsibility || null,
+        scripts: strategy.scripts || [],
+        listingChecklist: strategy.listingChecklist || [],
         model,
         estimatedCost,
         cost: deduction.cost,

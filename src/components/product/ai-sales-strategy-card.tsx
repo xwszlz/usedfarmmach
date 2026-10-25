@@ -14,6 +14,7 @@
  */
 import { useState } from "react";
 import { Sparkles, Loader2, AlertCircle, Target, Unlock, Phone, Mail, Lock, CheckCircle2 } from "lucide-react";
+import SalesStrategyExportButtons from "@/components/seller/sales-strategy-export-buttons";
 
 interface AiSalesStrategyCardProps {
   productId?: string;
@@ -52,6 +53,10 @@ interface StrategyResult {
   compliance: { dataExport?: string; crossBorder?: string; notes?: string } | null;
   actionChecklist: Array<{ step: number; action: string; owner?: string; eta?: string }>;
   responsibility: { seller?: string; platform?: string; disclaimer?: string } | null;
+  /** T2 导出：销售话术（场景 + 话术），可选 */
+  scripts?: Array<{ scenario: string; line: string }>;
+  /** T2 导出：上架清单（步骤 + 事项），可选 */
+  listingChecklist?: Array<{ step: number; item: string }>;
   model: string;
   estimatedCost: number;
   cost: number;
@@ -433,6 +438,32 @@ export default function AiSalesStrategyCard({
               {result.responsibility.disclaimer && <p>· {result.responsibility.disclaimer}</p>}
             </div>
           )}
+
+          {/* 导出（T2 PDF 作战手册 / T3 Excel 联系表） */}
+          <SalesStrategyExportButtons
+            strategy={{
+              summary: result.summary,
+              targetMarkets: result.targetMarkets,
+              priceRange: result.priceRange,
+              compliance: result.compliance,
+              actionChecklist: result.actionChecklist,
+              responsibility: result.responsibility,
+              scripts: result.scripts,
+              listingChecklist: result.listingChecklist,
+            }}
+            channels={result.channels}
+            product={{
+              brandName,
+              modelName,
+              year,
+              categoryName: category,
+              priceCny: sellerPrice ?? null,
+              location: region,
+              isChineseBrand,
+            }}
+            partition="all"
+            locale={locale}
+          />
 
           {/* 成本/余额 + 数据来源 */}
           <div className="flex items-center justify-between rounded-lg bg-emerald-50/60 px-3 py-2 text-xs text-gray-500">

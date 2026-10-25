@@ -13,10 +13,13 @@ import { deductCredits } from "@/lib/credits/spend";
 import { getAiCostCoeff, getAiCostGuardrail } from "@/lib/credits/config";
 
 /** 销售策略扣费动作（CreditTransaction.type 复用既有 ai_deduct / viewcontact_cost） */
-export type SalesStrategyAction = "aiSalesStrategy" | "unlockContact";
+export type SalesStrategyAction = "aiSalesStrategy" | "unlockContact" | "exportManual";
 
 /** 解锁联系固定预估 token（同档计费，无真实 LLM 调用，按固定量计费） */
 export const UNLOCK_ESTIMATED_TOKENS = 800;
+
+/** 导出手册（PDF/Excel）名义预估 token：无 LLM 调用，仅按固定量计费（不重复收取生成成本） */
+export const EXPORT_ESTIMATED_TOKENS = 800;
 
 export interface AiDeductInput {
   userId: string;
@@ -69,7 +72,10 @@ export async function deductAiUsage(input: AiDeductInput): Promise<AiDeductResul
     return { ok: false, cost, balance: 0, code: "GUARDRAIL" };
   }
 
-  const txnType = input.action === "unlockContact" ? "viewcontact_cost" : "ai_deduct";
+  const txnType =
+    input.action === "unlockContact"
+      ? "viewcontact_cost"
+      : "ai_deduct"; // aiSalesStrategy / exportManual 均归 ai_deduct
   const res = await deductCredits(input.userId, cost, input.reason, input.breakdown, txnType);
 
   if (!res.ok) {

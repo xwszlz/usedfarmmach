@@ -7,6 +7,14 @@ const nextConfig = {
   generateBuildId: () => `shendiao-build-${Date.now()}`,
   // .cn 站点使用 standalone 输出（适合 Docker/阿里云 ECS 部署）
   output: process.env.SITE === "cn" ? "standalone" : undefined,
+  // AI 销售策略 PDF 导出依赖 Noto Sans SC 字体文件（运行时 fs 读取）。
+  // standalone 构建只追踪 import 图，js 里用 process.cwd() 拼路径的字体不会被自动带上，
+  // 故显式声明：把字体目录纳入 export/pdf 路由的产物追踪，确保 .cn 镜像内可用。
+  outputFileTracingIncludes: {
+    "/api/agents/seller-helper/sales-strategy/export/pdf": [
+      "./src/lib/sales-strategy/fonts/**",
+    ],
+  },
   // 注入 SITE 环境变量到运行时
   env: {
     SITE: process.env.SITE ?? "com",

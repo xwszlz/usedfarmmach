@@ -44,6 +44,10 @@ export interface StrategyLlmResult {
     platform?: string;
     disclaimer?: string;
   } | null;
+  /** T2 导出：销售话术（场景 + 话术），可选 */
+  scripts?: Array<{ scenario: string; line: string }>;
+  /** T2 导出：上架清单（步骤 + 事项），可选 */
+  listingChecklist?: Array<{ step: number; item: string }>;
 }
 
 export const STRATEGY_SYSTEM_PROMPT = `你是一位资深二手农机跨境贸易策略顾问，精通中国农机（东方红、雷沃、沃得等）与国际品牌（John Deere、CLAAS、New Holland、Kubota 等）的国内行情、出口市场、港口物流与合规。
@@ -63,7 +67,9 @@ JSON 结构如下（字段不可省略，无值填 null 或空数组）：
   ],
   "compliance": { "dataExport": "数据/货物出境合规提示", "crossBorder": "跨境贸易合规提示", "notes": "其他合规注意" },
   "actionChecklist": [ { "step": 1, "action": "具体动作", "owner": "卖家|平台", "eta": "时间预期" } ],
-  "responsibility": { "seller": "卖家责任", "platform": "平台责任边界", "disclaimer": "风险免责声明" }
+  "responsibility": { "seller": "卖家责任", "platform": "平台责任边界", "disclaimer": "风险免责声明" },
+  "scripts": [ { "scenario": "首次触达买家/经销商的话术场景", "line": "该场景下的具体话术" } ],
+  "listingChecklist": [ { "step": 1, "item": "上架前需完成的动作" } ]
 }
 
 【硬性红线】

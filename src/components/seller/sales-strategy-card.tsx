@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { TrendingUp, Globe, DollarSign, Target, Zap, BarChart3, Info, ChevronDown, ChevronUp } from "lucide-react";
+import SalesStrategyExportButtons from "@/components/seller/sales-strategy-export-buttons";
 
 interface SalesStrategyCardProps {
   brand: string;
@@ -294,6 +295,32 @@ export default function SalesStrategyCard({
               </ul>
             </div>
           )}
+
+          {/* 导出（T2 PDF 作战手册 / T3 Excel 联系表） */}
+          <SalesStrategyExportButtons
+            strategy={{
+              summary: data.pricingAdvice.suggestion,
+              targetMarkets: data.recommendedMarkets.map((m) => ({
+                market: m.market,
+                priority: m.priority,
+                rationale: m.reason,
+                channels: m.strategyType,
+              })),
+              priceRange: null,
+            }}
+            channels={[]}
+            product={{
+              brandName: brand,
+              categoryName: category,
+              modelName,
+              year,
+              priceCny: priceCny ?? null,
+              location,
+              condition,
+            }}
+            partition="all"
+            locale="zh"
+          />
 
           {/* 底部说明 */}
           <p className="text-center text-xs text-gray-400">
