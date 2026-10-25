@@ -282,6 +282,10 @@ model Product {
   seller                User                 @relation(fields: [sellerId], references: [id])
   images                ProductImage[]
   videos                ProductVideo[]
+  /// AI 销售策略线索池（决策 A：additive 反向关联，外键由 Lead.productId 指向本表）
+  leads                 Lead[]    @relation("ProductLead")
+  /// AI 销售策略渠道经销商池（决策 A：additive 反向关联）
+  dealers               Dealer[]  @relation("ProductDealer")
   rentalListing         RentalListing?
   warranties            Warranty[]
 }
@@ -1996,6 +2000,89 @@ model ValuationReportOrder {
 
   @@index([orderNo])
   @@index([status, createdAt])
+}
+
+/// ══════════════════════════════════════════════════════════════
+/// AI 销售策略 — 线索池 / 渠道经销商池（决策 A：additive，不破坏任何现有表）
+/// 来源（由 prisma/seed-leads-dealers.sql 幂等同步）：
+///   - Product.contact*（开放直连卖家联系方式）
+///   - RawListing 卖家信息（采集线索）
+///   - ValuationLead（估值留资，若该表存在）
+/// 与 Product 通过 productId 可空外键关联；contentHash 作为幂等种子去重键。
+/// 合规：本文件不持有任何明文计费倍数；联系方式默认脱敏，解锁走 PII 审计。
+/// ══════════════════════════════════════════════════════════════
+
+/// 线索（潜在买家 / 留资用户 / 采集卖家）
+model Lead {
+  id          String    @id @default(cuid())
+  /// 数据来源：product_contact | raw_listing | valuation_lead | manual
+  source      String    @default("product_contact")
+  /// ── AI 销售策略 additive 字段（T1：只追加，不改动任何既有列）──
+  /// Lead 来自产品联系方式，默认境内
+  partition   String    @default("cn")
+  /// 姓名或公司名（可空）
+  name        String?
+  phone       String?
+  wechat      String?
+  whatsapp    String?
+  email       String?
+  /// 关联品牌（Product.Brand.nameZh 或 RawListing.brandName）
+  brand       String?
+  model       String?
+  year        Int?
+  /// 货源地 / 地区文本
+  location    String?
+  /// 归一化地区（用于检索匹配）
+  region      String?
+  /// 幂等种子去重键（sha256/uuid 串）
+  contentHash String    @unique
+  /// 可空外键 → Product（来源产品）；产品删除时置空而非级联，避免丢失线索
+  productId   String?
+  product     Product?  @relation("ProductLead", fields: [productId], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([brand])
+  @@index([model])
+  @@index([region])
+  @@index([productId])
+  @@index([partition])
+}
+
+/// 渠道经销商 / 代理商（企业卖家 / 后台录入）
+model Dealer {
+  id        String   @id @default(cuid())
+  name      String? // 经销商/代理商公司名
+  phone     String?
+  wechat    String?
+  email     String?
+  /// ── AI 销售策略渠道经销商池 additive 字段（T1：只追加，不改动任何既有列）──
+  whatsapp  String?            // 境外经销商常用 WhatsApp / 平台站内信占位
+  models    String[] @default([]) // 机型组（覆盖匹配，如 ["AXION 850","JAGUAR"]）
+  partition String   @default("intl") // 双站归属 cn|intl（对齐 store-scope.ts 的 StoreScope）
+  nature    String?            // 性质（授权经销商/二手商/个人卖家/拍卖行平台）
+  grade     String?            // A/B/C 分级（T5 打标，默认 null；seed 时按规则预填）
+  sourceUrl String?            // 来源链接
+  note      String?            // 备注原文
+  tags      String[] @default([]) // 解析自备注（补全/来源/同号关联/自家禁外呼/电话占位）
+  /// 经营品牌（nameZh 列表），支持多品牌覆盖匹配
+  brands    String[] @default([])
+  /// 覆盖地区列表，支持多地区匹配
+  regions   String[] @default([])
+  location  String?
+  source    String   @default("product_contact")
+  contentHash String @unique
+  productId String?
+  product   Product? @relation("ProductDealer", fields: [productId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([brands])
+  @@index([regions])
+  @@index([productId])
+  @@index([models])
+  @@index([partition])
+  @@index([grade])
 }
 
 // ============================================================

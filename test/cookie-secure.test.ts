@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-const { isSecureContext } = await import("../src/lib/cookie-secure.ts");
+const { isSecureContext } = await import("../src/lib/cookie-secure");
 
 test("undefined request → false (不强制 secure，保证可存储)", () => {
   assert.equal(isSecureContext(), false);

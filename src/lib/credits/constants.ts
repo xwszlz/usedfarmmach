@@ -167,6 +167,11 @@ export const CONFIG_KEYS = {
   complianceText: "compliance_text",
   paymentQr: "payment_qr",
   rewardValues: "reward_values",
+  // ── AI 销售策略按量计费（决策 B：[商业机密·内部]）──
+  // 计费系数：cost = 实际 token 消耗 × ai_cost_coeff；代码只读取、不写明文倍数。
+  // 护栏：单次成本（积分）超过 ai_cost_guardrail_credits 直接熔断，防不可控高价检索。
+  aiCostCoeff: "ai_cost_coeff",
+  aiCostGuardrail: "ai_cost_guardrail_credits",
 } as const;
 
 // ─── 合规文案默认值（§8.9 统一出处）──────────────────────────

@@ -116,6 +116,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/scripts/seed-eu-benchmark.js ./sc
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/seed-market-intel-arbitrage.js ./scripts/seed-market-intel-arbitrage.js
 COPY --from=builder --chown=nextjs:nodejs /app/market_intel_arbitrage_2026-08-16.json ./market_intel_arbitrage_2026-08-16.json
 
+# AI 销售策略 PDF 导出：Noto Sans SC 字体（standalone 产物不会自动带 src/ 下的字体文件）。
+# 显式复制到运行镜像，与 export.ts 的 process.cwd()/src/lib/sales-strategy/fonts 路径对齐。
+COPY --from=builder --chown=nextjs:nodejs /app/src/lib/sales-strategy/fonts ./src/lib/sales-strategy/fonts
+
 USER nextjs
 
 EXPOSE 3000

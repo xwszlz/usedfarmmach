@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, Bot, Calculator, ChevronDown } from "lucide-react";
+import { Sparkles, Bot, Calculator, Target, ChevronDown } from "lucide-react";
 import DeepAnalysisCard from "./deep-analysis-card";
 import ProductValuationReport from "@/components/product/product-valuation-report";
+import AiSalesStrategyCard from "./ai-sales-strategy-card";
 
 interface AiDeviceCenterProps {
   productId: string;
@@ -50,23 +51,39 @@ export default function AiDeviceCenter({
 }: AiDeviceCenterProps) {
   const [deepOpen, setDeepOpen] = useState(false);
   const [valOpen, setValOpen] = useState(false);
+  // 第四个 AI 能力模块：AI 销售策略（与深度分析/估值互斥展开）
+  const [strategyOpen, setStrategyOpen] = useState(false);
   // P3 联动：深度分析结构化结果回灌估值卡（与估值中心一致）
   const [deepStructured, setDeepStructured] = useState<Record<string, any> | null>(null);
 
-  // 手风琴互斥 + 展开自动滚动：两个面板上下堆叠，深度分析面板很长时，
-  // 点「AI 智能估值」新面板会在视口外展开，用户会误以为按钮失灵（移动端实测反馈）。
+  // 手风琴互斥 + 展开自动滚动：面板上下堆叠，长面板在视口外展开时自动滚回顶部（移动端实测反馈）。
   const deepRef = useRef<HTMLDivElement>(null);
   const valRef = useRef<HTMLDivElement>(null);
+  const strategyRef = useRef<HTMLDivElement>(null);
 
   const toggleDeep = () => {
     const next = !deepOpen;
     setDeepOpen(next);
-    if (next) setValOpen(false);
+    if (next) {
+      setValOpen(false);
+      setStrategyOpen(false);
+    }
   };
   const toggleVal = () => {
     const next = !valOpen;
     setValOpen(next);
-    if (next) setDeepOpen(false);
+    if (next) {
+      setDeepOpen(false);
+      setStrategyOpen(false);
+    }
+  };
+  const toggleStrategy = () => {
+    const next = !strategyOpen;
+    setStrategyOpen(next);
+    if (next) {
+      setDeepOpen(false);
+      setValOpen(false);
+    }
   };
 
   useEffect(() => {
@@ -75,10 +92,14 @@ export default function AiDeviceCenter({
   useEffect(() => {
     if (valOpen) valRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [valOpen]);
+  useEffect(() => {
+    if (strategyOpen) strategyRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [strategyOpen]);
   const zh = locale === "zh";
 
   const deepLabel = zh ? "AI 深度分析" : "AI Deep Analysis";
   const valLabel = zh ? "AI 智能估值" : "AI Valuation";
+  const strategyLabel = zh ? "AI 销售策略" : "AI Sales Strategy";
   const metaLabel = zh ? "豆包大模型 · 按量计费（每次消耗积分）" : "Doubao LLM · pay-per-use";
 
   return (
@@ -92,8 +113,8 @@ export default function AiDeviceCenter({
         </span>
       </div>
 
-      {/* 两个入口按钮（深度分析在前、估值在后） */}
-      <div className="grid grid-cols-2 gap-3 p-5">
+      {/* 三个入口按钮（深度分析 / 估值 / 销售策略，互斥手风琴） */}
+      <div className="grid grid-cols-2 gap-3 p-5 sm:grid-cols-3">
         <button
           onClick={toggleDeep}
           className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${
@@ -117,6 +138,18 @@ export default function AiDeviceCenter({
           <Calculator className="h-4 w-4" />
           {valLabel}
           <ChevronDown className={`h-4 w-4 transition-transform ${valOpen ? "rotate-180" : ""}`} />
+        </button>
+        <button
+          onClick={toggleStrategy}
+          className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${
+            strategyOpen
+              ? "border-emerald-400 bg-emerald-600 text-white shadow-sm"
+              : "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+          }`}
+        >
+          <Target className="h-4 w-4" />
+          {strategyLabel}
+          <ChevronDown className={`h-4 w-4 transition-transform ${strategyOpen ? "rotate-180" : ""}`} />
         </button>
       </div>
 
@@ -163,6 +196,27 @@ export default function AiDeviceCenter({
             condition={condition}
             sellerPrice={sellerPrice}
             deepAnalysis={deepStructured}
+          />
+        </div>
+      )}
+
+      {/* 展开区：AI 销售策略（第四个 AI 能力模块，LLM 生成 + 按量计费） */}
+      {strategyOpen && (
+        <div ref={strategyRef} className="px-5 pb-5 scroll-mt-20">
+          <AiSalesStrategyCard
+            productId={productId}
+            productName={productName}
+            category={category}
+            imageUrls={imageUrls}
+            videoUrls={videoUrls}
+            locale={locale}
+            isChineseBrand={isChineseBrand}
+            brandName={brandName}
+            modelName={modelName}
+            year={year}
+            enginePower={enginePower}
+            region={region}
+            sellerPrice={sellerPrice}
           />
         </div>
       )}
