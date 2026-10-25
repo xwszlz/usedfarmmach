@@ -31,6 +31,7 @@ function toPublic(row: {
   phone: string | null;
   wechat: string | null;
   email: string | null;
+  tags: string[] | null;
 }): DealerPublic {
   return {
     id: row.id,
@@ -39,6 +40,8 @@ function toPublic(row: {
     models: row.models ?? [],
     regions: row.regions ?? [],
     nature: row.nature,
+    // 备注解析标签（T5 分级依据之一）；旧库/测试 mock 可能缺省 → 兜底 []
+    tags: row.tags ?? [],
     grade: row.grade,
     sourceUrl: row.sourceUrl,
     partition: (row.partition === "cn" ? "cn" : "intl") as DealerPartition,
@@ -66,6 +69,7 @@ async function listByPartition(partition: "cn" | "intl"): Promise<DealerPublic[]
       phone: true,
       wechat: true,
       email: true,
+      tags: true,
     },
     orderBy: { createdAt: "asc" },
   });

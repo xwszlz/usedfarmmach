@@ -29,6 +29,11 @@ export interface DealerPublic {
   phoneMasked: string;
   wechatMasked: string;
   emailMasked: string;
+  /**
+   * 备注解析标签（补全 / 来源 / 同号关联 / 自家·禁外呼 / 电话占位）。
+   * T5 分级用（含「电话占位」「自家·禁外呼」→ C 级）。**可选**：旧数据与既有测试字面量无需提供。
+   */
+  tags?: string[];
 }
 
 /** 双站分区返回结构（dealers 路由契约） */
