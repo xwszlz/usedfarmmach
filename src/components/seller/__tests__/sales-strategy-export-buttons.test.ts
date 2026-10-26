@@ -267,6 +267,10 @@ describe("N03 · 向后兼容：策略为空不得抛错（验收 ③）", () =>
 describe("N03 · 源码层回归守卫：不得再出现白名单重建", () => {
   const CARD_PATH = join(process.cwd(), "src/components/product/ai-sales-strategy-card.tsx");
   const BUTTONS_PATH = join(process.cwd(), "src/components/seller/sales-strategy-export-buttons.tsx");
+  const ROUTE_PATH = join(
+    process.cwd(),
+    "src/app/api/agents/seller-helper/sales-strategy/route.ts"
+  );
 
   it("卡片侧整对象透传 `strategy={result}`，且不再有 strategy={{ ... }} 白名单字面量", () => {
     const source = readFileSync(CARD_PATH, "utf8");
@@ -286,5 +290,29 @@ describe("N03 · 源码层回归守卫：不得再出现白名单重建", () => 
     const source = readFileSync(CARD_PATH, "utf8");
     expect(source).toContain("webStatus={result.searchStatus}");
     expect(source).toContain("webNote={result.searchNote}");
+  });
+
+  /**
+   * ★ 跨层键名契约（真实事故回归）：生成接口响应体叫 `searchStatus / searchNote`（半公开契约，
+   * 小程序端也在读），导出按钮 props 叫 `webStatus / webNote`（N01 冻结），映射只允许在卡片侧做。
+   *
+   * 一旦有人在 route.ts 响应体里「顺手对齐」成 `webStatus / webNote`，两端会各自取到
+   * `undefined` —— **不报错、tsc 全绿、黄条与降级标注永久不出现**。本断言把这类静默失效挡在 CI。
+   */
+  it("跨层键名契约：route.ts 响应体发 searchStatus/searchNote，卡片读同名键", () => {
+    const routeSource = readFileSync(ROUTE_PATH, "utf8");
+
+    // 响应端必须保留半公开契约名
+    expect(routeSource).toContain("searchStatus: webStatus");
+    expect(routeSource).toMatch(/^\s*searchNote,\s*$/m);
+
+    // 反向断言：响应端不得出现导出层键名的裸键（跨层改名即静默失效）
+    expect(routeSource).not.toMatch(/^\s*webStatus,\s*$/m);
+    expect(routeSource).not.toMatch(/^\s*webNote,\s*$/m);
+
+    // 读取端与响应端必须同名（卡片读 search*，不再二次改名）
+    const cardSource = readFileSync(CARD_PATH, "utf8");
+    expect(cardSource).toContain("webStatus={result.searchStatus}");
+    expect(cardSource).not.toContain("webStatus={result.webStatus}");
   });
 });
