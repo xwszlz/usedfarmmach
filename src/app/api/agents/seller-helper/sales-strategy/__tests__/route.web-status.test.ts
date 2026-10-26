@@ -102,6 +102,10 @@ async function runSuccess(webEvidence?: unknown) {
   expect(res.status).toBe(200);
   const json: any = await res.json();
   expect(json.success).toBe(true);
+  // 显式契约：`ADEQUATE_STRATEGY` 达标 ⇒ 不得触发 rejected 重试。
+  // 否则一旦 adequacy 判定口径变严，fixture 会从"达标"滑成"不达标"，
+  // 测试静默变成 2 次 LLM 调用却仍然全绿（两次 mockResolvedValue 返回同值）。
+  expect(chatCompletionDoubao).toHaveBeenCalledTimes(1);
   return json.data as Record<string, unknown>;
 }
 
