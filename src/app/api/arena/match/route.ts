@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getImageUrl } from "@/lib/image-url";
+import { stripContactFields } from "@/lib/pii";
 import { rankCandidates } from "@/lib/arena/scoring-engine";
 import type { ArenaInput, ArenaMatchResult } from "@/lib/arena/types";
 
@@ -58,7 +59,8 @@ const SHOWCASE_INCLUDE = {
  */
 function normalizeProduct(p: any): any {
   return {
-    ...p,
+    // 联系方式只经 GET /api/products/[id]/contact（需登录）读取，候选响应里一律剥离
+    ...stripContactFields(p),
     source: "used" as const,
     showcaseId: null,
     modelName: p.modelName || p.title || "",
