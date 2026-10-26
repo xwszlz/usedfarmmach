@@ -272,10 +272,13 @@ interface PdfTexts {
   rejMarket: string;
   rejLevel: string;
   rejReason: string;
+  /** PRD §3.3 逐字原文（恒定告警条；emoji ⚠️ 由 stripEmoji 剥掉，改文本标记 `[告警]`） */
   noRejected: string;
-  /** PRD §3.3：每机型至少 1 条否决，缺几台就报几台 */
+  /** 缺口细节·第 1 行：完全没给否决建议的机型数（PRD §3.3「每机型至少 1 条」） */
+  rejectAllMissing: (total: number) => string;
+  /** 缺口细节·第 2 行：每机型至少 1 条否决，缺几台就报几台 */
   rejectPartial: (missing: number, total: number) => string;
-  /** PRD §3.3：全局至少 1 条 L2|L3，否则全是「最软档」 */
+  /** 缺口细节·第 3 行：全局至少 1 条 L2|L3，否则全是「最软档」 */
   rejectSoftOnly: string;
   notGenerated: string;
 
@@ -301,6 +304,12 @@ interface PdfTexts {
   callOrg: string;
   callPhone: string;
   callWhy: string;
+  /** 兜底口径说明（`todayCalls` 缺失、由 `channels` 自动生成时印在表格上方） */
+  callAutoNote: string;
+  callAutoUnlocked: string;
+  callAutoLocked: string;
+  callRoleDealer: string;
+  callRoleLead: string;
   noCallsToday: (n: number) => string;
   seeExcel: string;
 
@@ -387,10 +396,11 @@ const TEXTS_ZH: PdfTexts = {
   rejLevel: "档位",
   rejReason: "原因",
   noRejected: "[告警] 本次未生成否决建议，请谨慎决策并自行核实准入政策",
+  rejectAllMissing: (total) => `· ${total} 台机型均未给出否决建议（PRD §3.3 要求每台至少 1 条）`,
   rejectPartial: (missing, total) =>
-    `[告警] 本次 ${total} 台机型中有 ${missing} 台未给出任何否决建议，请谨慎决策并自行核实准入政策`,
+    `· ${total} 台机型中有 ${missing} 台未给出任何否决建议（PRD §3.3 要求每台至少 1 条）`,
   rejectSoftOnly:
-    "[告警] 本次否决措辞全部为最软档（无「不建议 / 禁入」级结论），请谨慎决策并自行核实准入政策",
+    "· 否决措辞全部为最软档（无「不建议 / 禁入」级结论，PRD §3.3 要求全局至少 1 条）",
   notGenerated: "（未生成）",
 
   rkRank: "排名",
@@ -412,6 +422,11 @@ const TEXTS_ZH: PdfTexts = {
   callOrg: "机构",
   callPhone: "电话（已脱敏）",
   callWhy: "为何今天打",
+  callAutoNote: "（本节由渠道清单自动生成：AI 未指定优先级，按解锁状态与可得性排序）",
+  callAutoUnlocked: "已解锁",
+  callAutoLocked: "未解锁",
+  callRoleDealer: "经销商",
+  callRoleLead: "线索",
   noCallsToday: (n) =>
     `今日无可用电话；见附件 Excel 全量名单（${n} 条），优先联系近 30 天有成交的二手商。`,
   seeExcel: "见附件 Excel",
@@ -495,10 +510,11 @@ const TEXTS_EN: PdfTexts = {
   rejLevel: "Level",
   rejReason: "Reason",
   noRejected: "[WARN] No rejection advice this round; decide with care and verify access rules",
+  rejectAllMissing: (total) => `· none of the ${total} equipment has any rejection advice (PRD 3.3: at least 1 each)`,
   rejectPartial: (missing, total) =>
-    `[WARN] ${missing} of ${total} equipment have no rejection advice; decide with care and verify access rules`,
+    `· ${missing} of ${total} equipment have no rejection advice (PRD 3.3: at least 1 each)`,
   rejectSoftOnly:
-    "[WARN] All rejections use the softest level (no 'not recommended / banned'); decide with care and verify access rules",
+    "· All rejections use the softest level (no 'not recommended / banned'; PRD 3.3: at least 1 L2/L3 overall)",
   notGenerated: "(not generated)",
 
   rkRank: "#",
@@ -520,6 +536,12 @@ const TEXTS_EN: PdfTexts = {
   callOrg: "Organisation",
   callPhone: "Phone (masked)",
   callWhy: "Why today",
+  callAutoNote:
+    "(Auto-generated from the channel list: no AI priority — ordered by unlock status and availability)",
+  callAutoUnlocked: "Unlocked",
+  callAutoLocked: "Locked",
+  callRoleDealer: "Dealer",
+  callRoleLead: "Lead",
   noCallsToday: (n) =>
     `No usable phone numbers today; see the attached Excel master list (${n} rows).`,
   seeExcel: "See attached Excel",
@@ -567,6 +589,12 @@ const COLOR_GRAY: RGBTuple = [0.55, 0.55, 0.55];
 const COLOR_WARN: RGBTuple = [0.68, 0.32, 0.04];
 const COLOR_OK: RGBTuple = [0.05, 0.42, 0.28];
 const COLOR_S_TIER: RGBTuple = [1, 0.9, 0.9];
+
+/**
+ * 第 5 章兜底行数上限（`todayCalls` 缺失时由 `channels` 自动生成）。
+ * 与黄金样板量级一致：样板「今天该打的电话」每次 5–8 条，取 8 既够用又不挤页。
+ */
+const CALLS_FALLBACK_MAX_ROWS = 8;
 
 /** `[绿]友好` 这类前缀不需要特殊渲染，仅作为可搜索标记 */
 
@@ -831,10 +859,24 @@ const REJECT_LEVEL_LABEL: Record<RejectLevel, string> = {
   L3: "禁入",
 };
 
-/** 否决充分性缺口（0–2 条）：`banner` 进第 3 章告警条，`question` 同步计入第 7 章 */
+/**
+ * 否决充分性缺口（0–2 条）。
+ *
+ * - `detail` 进第 3 章：作为 PRD §3.3 恒定告警条**下方**的灰字缺口说明（说清「缺什么」）；
+ * - `question` 同步计入第 7 章「待老板确认」（PRD §3.3 后半句）。
+ *
+ * ⚠️ 为什么不把原因拼进告警条本身：QA 侧按 PRD §3.3 **逐字原文**做字符串断言，
+ *    任何「本次 N 台中有 M 台…」这类改写都会让断言变红；而只印原文又丢掉「缺几台」。
+ *    ⇒ 拆成「恒定原文（[告警] 色）+ 缺口细节（灰字）」，两句都上纸，既不违逐字要求也不丢信息。
+ */
 interface RejectIssue {
-  banner: string;
+  detail: string;
   question: string;
+}
+
+/** PRD §3.3 原文（剥掉 `[告警]` / `[WARN]` 文本标记），供第 7 章问题描述复用 */
+function prdRejectSentence(t: PdfTexts): string {
+  return t.noRejected.replace("[告警] ", "").replace("[WARN] ", "");
 }
 
 /**
@@ -861,23 +903,24 @@ function collectRejectIssues(n: NormalizedStrategy, t: PdfTexts): RejectIssue[] 
   const rejected = n.bestDestinations.flatMap((d) => d.rejected);
 
   if (total > 0 && rejected.length === 0) {
-    // PRD §3.3 逐字原文（emoji ⚠️ 由 stripEmoji 剥掉，按本项目约定换成文本标记 [告警]）
+    // PRD §3.3 逐字原文由 `renderBestDestinations` 统一印一次（`t.noRejected`）；
+    // 这里只给「缺什么」的细节，避免把原文改写成带台数的句子（QA 按原文断言）。
     issues.push({
-      banner: t.noRejected,
-      question: `${t.noRejected.replace("[告警] ", "").replace("[WARN] ", "")}——是否仍需按本策略执行？`,
+      detail: t.rejectAllMissing(total),
+      question: `${prdRejectSentence(t)}——是否仍需按本策略执行？`,
     });
     return issues;
   }
 
   const missingPerEquipment = n.bestDestinations.filter((d) => d.rejected.length === 0).length;
   if (missingPerEquipment > 0) {
-    const banner = t.rejectPartial(missingPerEquipment, total);
-    issues.push({ banner, question: `${banner.replace("[告警] ", "").replace("[WARN] ", "")}` });
+    const detail = t.rejectPartial(missingPerEquipment, total);
+    issues.push({ detail, question: `${prdRejectSentence(t)}：${detail.replace("· ", "")}` });
   }
   const hasHardLevel = rejected.some((r) => r.level === "L2" || r.level === "L3");
   if (!hasHardLevel) {
-    const banner = t.rejectSoftOnly;
-    issues.push({ banner, question: `${banner.replace("[告警] ", "").replace("[WARN] ", "")}` });
+    const detail = t.rejectSoftOnly;
+    issues.push({ detail, question: `${prdRejectSentence(t)}：${detail.replace("· ", "")}` });
   }
   return issues;
 }
@@ -891,8 +934,14 @@ function renderBestDestinations(
 ): void {
   section(state, t.s3);
 
-  // PRD §3.3：不达标时**章顶部**显式告警，严禁静默通过（位置在标题之后、表格之前）
-  for (const issue of rejectIssues) warnNote(state, issue.banner);
+  // PRD §3.3：不达标时**章顶部**显式告警，严禁静默通过（位置在标题之后、表格之前）。
+  // 第 1 行 = PRD 逐字原文（QA 按此串断言，一个字都不许改）；
+  // 后续行 = 具体缺口（灰字，说明"缺什么/缺几台"），信息不丢也不改写原文。
+  if (rejectIssues.length > 0) {
+    warnNote(state, t.noRejected);
+    for (const issue of rejectIssues) note(state, issue.detail);
+    state.y -= 2;
+  }
 
   if (n.bestDestinations.length === 0) {
     para(state, t.notGenerated, { size: 9, color: COLOR_GRAY });
@@ -1057,10 +1106,54 @@ function renderTodayCalls(
     if (rows.length >= 15) break;
   }
 
+  // ── 兜底：`todayCalls` 缺失/为空，但 `channels` 有可拨号渠道 ──────────────
+  // ⚠️ 付费价值红线：用户花积分解锁的号码若一个字都不上纸，等于「买了没用」，
+  //    且完全静默（不报错、测试全绿）。故此处**必须**从 `channels` 回退渲染。
+  //    只动本函数：derive 的 `DecisionEnv`（N02 已冻结）与 prompt 都不碰。
+  let autoGenerated = false;
+  if (rows.length === 0 && channels.length > 0) {
+    const usable = channels.filter(
+      (c) =>
+        c != null &&
+        typeof c.phoneMasked === "string" &&
+        c.phoneMasked.trim() !== "" &&
+        c.phoneMasked.trim() !== "—"
+    );
+    if (usable.length > 0) {
+      autoGenerated = true;
+      // 已解锁优先，其余保持原数组顺序（显式带下标比较：不依赖 sort 稳定性，target ES2017）
+      const ordered = usable
+        .map((c, index) => ({ c, index }))
+        .sort(
+          (a, b) =>
+            Number(b.c.unlocked === true) - Number(a.c.unlocked === true) || a.index - b.index
+        )
+        .map((x) => x.c);
+      for (const c of ordered.slice(0, CALLS_FALLBACK_MAX_ROWS)) {
+        const unlocked = c.unlocked === true;
+        const plainPhone = typeof c.phone === "string" ? c.phone.trim() : "";
+        rows.push({
+          equipment: safeText(c.model, EMPTY_CELL),
+          role: safeText(c.role, c.type === "dealer" ? t.callRoleDealer : t.callRoleLead),
+          org: safeText(c.name, t.seeExcel),
+          // 已解锁 ⇒ 明文（没给明文时退回脱敏值，绝不印空）
+          phone: unlocked
+            ? safeText(plainPhone, safeText(c.phoneMasked, EMPTY_CELL))
+            : safeText(c.phoneMasked, EMPTY_CELL),
+          why: unlocked ? t.callAutoUnlocked : t.callAutoLocked,
+        });
+      }
+    }
+  }
+
   if (rows.length === 0) {
     para(state, t.noCallsToday(channels.length), { size: 9.5, color: COLOR_SUB });
     state.y -= 2;
     return;
+  }
+
+  if (autoGenerated) {
+    note(state, t.callAutoNote);
   }
 
   table(state, {
