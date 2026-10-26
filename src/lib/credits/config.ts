@@ -129,9 +129,17 @@ export async function getAiCostCoeff(): Promise<number> {
 /**
  * 单次成本护栏上限（积分）。
  * 单次请求实际成本超过此值 → 路由直接熔断返回（不扣费），防不可控高价检索/异常用量。
- * ⚠️ [商业机密·内部]：占位值 5000，真实值由老板后台配置（ai_cost_guardrail_credits）。
+ * ⚠️ [商业机密·内部]：占位值 30000，真实值由老板后台配置（ai_cost_guardrail_credits）。
+ *
+ * 为什么占位值从 5000 抬到 30000：
+ * 已知最大的单次 AI 调用是销售策略生成，其 maxTokens 上限为 SALES_STRATEGY_MAX_TOKENS = 8192，
+ * 按 cost = ceil(实际 token × 系数) 满打满算，即使系数取到 1.0，单次成本也只有 8192 积分。
+ * 5000 的护栏低于该合法上限，会让一次完全正常的请求被误熔断 —— 用户白等数十秒却拿到
+ * 「已熔断（未扣费）」的空结果，属于典型的可用性事故。
+ * 30000 约为该合法上限的 3.6 倍：既给异常用量（多轮重试、超长上下文、系数上调）留出余量，
+ * 又能继续拦住真正失控的计费（远高于正常水位）请求。
  */
 export async function getAiCostGuardrail(): Promise<number> {
-  const v = await getConfig<number>(CONFIG_KEYS.aiCostGuardrail, 5000);
-  return typeof v === "number" && Number.isFinite(v) && v > 0 ? v : 5000;
+  const v = await getConfig<number>(CONFIG_KEYS.aiCostGuardrail, 30000);
+  return typeof v === "number" && Number.isFinite(v) && v > 0 ? v : 30000;
 }
