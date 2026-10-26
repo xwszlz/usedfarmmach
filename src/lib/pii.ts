@@ -123,3 +123,34 @@ export function profileCompleteness(user: CompletenessInput): Completeness {
     pending: !!user.emailPending,
   };
 }
+
+/* ─────────────────── Product 卖家联系方式：公开接口出厂前必剥离 ─────────────────── */
+
+/**
+ * 卖家联系方式字段：只能经 GET /api/products/[id]/contact（需登录）读取。
+ * 任何公开、可缓存的接口在把 Product 行下发或写入缓存前，都必须先剥离这 4 个字段。
+ * ⚠️ 以后新增 contact* 字段时必须同步维护此清单，否则列表接口会重新泄漏。
+ */
+export const CONTACT_FIELDS = [
+  "contactName",
+  "contactPhone",
+  "contactWechat",
+  "contactEmail",
+] as const;
+
+export function stripContactFields<T>(row: T): T {
+  if (row && typeof row === "object") {
+    for (const field of CONTACT_FIELDS) {
+      delete (row as Record<string, unknown>)[field];
+    }
+  }
+  return row;
+}
+
+/** 列表接口用：批量原地剥离，返回同一数组 */
+export function stripContactFieldsFromList<T>(rows: T[]): T[] {
+  if (Array.isArray(rows)) {
+    for (const row of rows) stripContactFields(row);
+  }
+  return rows;
+}

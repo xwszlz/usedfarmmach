@@ -1,8 +1,12 @@
 /**
  * 网站端产品可见性口径（单一事实来源 / single source of truth）
  *
- * 口径：`status='active'` 且 非(小程序账号 ∧ 国产品牌)
- *   ≡ status='active' AND (sellerId <> 小程序账号id OR brand.isImported = true)
+ * 口径：`status='active'` 且 非(小程序渠道 ∧ 国产品牌)
+ *   ≡ status='active' AND (非小程序渠道 OR brand.isImported = true)
+ *
+ * 「小程序渠道」= 下列任一成立：
+ *   1) sellerId = 小程序系统账号 id（历史数据、cn-sync 同步数据仍归该账号）；
+ *   2) seller.miniOpenid IS NOT NULL（P0-4 起小程序发布绑定真实用户，sellerId 已不再固定）。
  *
  * 为何用 sellerId（标量）而非嵌套 relation 的 seller.email：
  *   1) `User.email` 为**可空列**（schema：`email String?`）。旧实现用
@@ -11,6 +15,9 @@
  *      该谓词在 SQL 三值逻辑下求值为 NULL（而非 TRUE）→ 产品被**静默丢弃**。
  *   2) `Product.sellerId` 为 **NOT NULL** 列，`sellerId <> $1` 只会是 TRUE/FALSE，
  *      不存在 NULL，彻底规避三值逻辑陷阱。
+ *   3) 新增的 `seller.miniOpenid IS NULL` 分支同样安全：`Product.seller` 为**必填**关系
+ *      → Prisma 生成 INNER JOIN → 关联行必然存在，且 `IS NULL` 本身是二值谓词，
+ *      不会出现 `seller.email = $1` 那种三值逻辑丢行。**改动本函数前请保留此约束。**
  *
  * 安全退化：若查不到小程序账号（dbSellerId 为 null）→ 不排除任何人（只保留 active）。
  *           原则：宁可多显示，也绝不静默丢产品。
@@ -28,7 +35,8 @@ export const MINIAPP_SELLER_EMAIL = "miniprogram@shendiao.com";
  * 构造「网站端」产品可见性 where。
  *
  * @param dbSellerId 小程序系统卖家账号的 `User.id`；**查不到时传 null**。
- * @returns Prisma `ProductWhereInput`：`{ status:'active', OR:[{sellerId:{not:id}},{brand:{isImported:true}}] }`；
+ * @returns Prisma `ProductWhereInput`：
+ *          `{ status:'active', OR:[{ sellerId:{not:id}, seller:{miniOpenid:null} }, { brand:{isImported:true} }] }`；
  *          当 `dbSellerId` 为 null 时退化为 `{ status:'active' }`（不排除任何人）。
  */
 export function buildWebsiteVisibleWhere(
@@ -41,9 +49,15 @@ export function buildWebsiteVisibleWhere(
   return {
     status: "active",
     OR: [
-      // 非小程序账号发布的 active 产品（含 .cn 网站新渠道）——sellerId 为 NOT NULL，无三值逻辑
-      { sellerId: { not: dbSellerId } },
-      // 小程序账号发布的国际品牌产品
+      // 非小程序渠道：
+      //   ① sellerId ≠ 系统账号 id —— 兜 .cn 网站渠道与历史数据（仍归系统账号的走另一支）
+      //   ② seller.miniOpenid IS NULL —— 兜小程序新注册用户（P0-4 后 sellerId 已是真实 userId）
+      // seller 为必填关系 → INNER JOIN，miniOpenid IS NULL 为二值谓词，无三值逻辑丢行风险
+      {
+        sellerId: { not: dbSellerId },
+        seller: { miniOpenid: null },
+      },
+      // 国际品牌产品：任何卖家都可上网站
       { brand: { isImported: true } },
     ],
   };

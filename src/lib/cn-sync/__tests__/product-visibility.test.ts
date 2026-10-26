@@ -78,31 +78,53 @@ function oldClauseSelects(sellerEmail: string | null, isImported: boolean): bool
 /**
  * 新口径（实测 Prisma 生成 SQL）：
  *   LEFT JOIN "Brand" AS j1 ON j1.id = Product.brandId
- *   WHERE (Product.status = $1 AND (Product.sellerId <> $2 OR (j1.isImported = $3 AND (j1.id IS NOT NULL))))
+ *   INNER JOIN "User" AS j2 ON j2.id = Product.sellerId      -- seller 为**必填**关系
+ *   WHERE (Product.status = $1 AND (
+ *            (Product.sellerId <> $2 AND (j2.miniOpenid IS NULL))
+ *            OR (j1.isImported = $3 AND (j1.id IS NOT NULL))
+ *          ))
  * Product.sellerId 为 NOT NULL 列 → `sellerId <> $2` 只会是 TRUE/FALSE，永不为 NULL。
+ * Product.seller 为必填关系 → INNER JOIN，关联行必然存在；`miniOpenid IS NULL` 是二值谓词，
+ * 因此不会出现 `seller.email = $1` 那种三值逻辑丢行。
  */
-function newClauseSelects(sellerIsMiniapp: boolean, isImported: boolean): boolean {
+function newClauseSelects(
+  sellerIsMiniapp: boolean,
+  sellerHasMiniOpenid: boolean,
+  isImported: boolean
+): boolean {
   const notMiniapp: Tri = !sellerIsMiniapp; // sellerId <> miniappId（NOT NULL → 二值）
-  return selected(triAnd(true /*status=active*/, triOr(notMiniapp, isImported)));
+  const noMiniOpenid: Tri = !sellerHasMiniOpenid; // seller.miniOpenid IS NULL（INNER JOIN → 二值）
+  const viaWebsiteChannel = triAnd(notMiniapp, noMiniOpenid);
+  return selected(triAnd(true /*status=active*/, triOr(viaWebsiteChannel, isImported)));
 }
 
 async function main(): Promise<void> {
   console.log("product-visibility 单元测试（scope-fix）");
 
-  // ── 1. 结构：使用 sellerId 标量比较，绝不再用嵌套 relation 的 seller.email ──
-  await it("buildWebsiteVisibleWhere(id)：= status active AND (sellerId≠id OR isImported)", () => {
+  // ── 1. 结构：sellerId 标量 + seller.miniOpenid 双条件，绝不依赖可空的 seller.email ──
+  await it("buildWebsiteVisibleWhere(id)：= active AND ((sellerId≠id AND seller.miniOpenid IS NULL) OR isImported)", () => {
     const w = buildWebsiteVisibleWhere("cmut_min_id");
     assert.deepEqual(w, {
       status: "active",
-      OR: [{ sellerId: { not: "cmut_min_id" } }, { brand: { isImported: true } }],
+      OR: [
+        { sellerId: { not: "cmut_min_id" }, seller: { miniOpenid: null } },
+        { brand: { isImported: true } },
+      ],
     });
   });
 
-  await it("buildWebsiteVisibleWhere(id)：序列化后不含 seller / email（无三值逻辑入口）", () => {
+  await it("buildWebsiteVisibleWhere(id)：用 sellerId 与 miniOpenid 判定，序列化后不含 email", () => {
     const json = JSON.stringify(buildWebsiteVisibleWhere("cmut_min_id"));
-    assert.ok(!/"seller"\s*:/.test(json), `where 不应再含 seller relation：${json}`);
-    assert.ok(!json.includes("email"), `where 不应再含 email 字段：${json}`);
+    assert.ok(!json.includes("email"), `where 不应再依赖可空的 email：${json}`);
     assert.ok(json.includes("sellerId"), `where 应使用 sellerId：${json}`);
+    assert.ok(
+      json.includes("miniOpenid"),
+      `where 应使用 miniOpenid 兜住小程序注册用户（P0-4 后 sellerId 已是真实 userId）：${json}`
+    );
+    assert.ok(
+      json.includes('"seller"'),
+      `seller 关系仅用于 miniOpenid 判定；Product.seller 为必填关系 → INNER JOIN，无三值逻辑：${json}`
+    );
   });
 
   // ── 2. 安全退化：查不到小程序账号 → 不排除任何人（绝不静默丢产品） ──
@@ -126,21 +148,29 @@ async function main(): Promise<void> {
   });
 
   await it("新口径：卖家 email=NULL 的进口品牌产品被正确纳入", () => {
-    assert.equal(newClauseSelects(false /*非小程序账号*/, true), true);
+    assert.equal(newClauseSelects(false /*非小程序账号*/, false /*无 miniOpenid*/, true), true);
   });
 
   // ── 4. 其余组合：新旧口径语义一致（三值逻辑修复不改判定语义） ──
-  await it("两类口径在 {小程序,进口} 组合上语义一致（唯一差异在 email=NULL 行）", () => {
-    // 小程序账号
+  await it("两类口径在 {系统账号, 普通卖家} × {进口, 国产} 上语义一致（唯一差异在 email=NULL 行）", () => {
+    // 小程序系统账号（无 miniOpenid）
     assert.equal(oldClauseSelects(MINIAPP_SELLER_EMAIL, true), true);
-    assert.equal(newClauseSelects(true, true), true);
+    assert.equal(newClauseSelects(true, false, true), true);
     assert.equal(oldClauseSelects(MINIAPP_SELLER_EMAIL, false), false);
-    assert.equal(newClauseSelects(true, false), false);
-    // 普通卖家（email 非空、非小程序）
+    assert.equal(newClauseSelects(true, false, false), false);
+    // 普通卖家（email 非空、非小程序、无 miniOpenid）
     assert.equal(oldClauseSelects("someone@example.com", true), true);
-    assert.equal(newClauseSelects(false, true), true);
+    assert.equal(newClauseSelects(false, false, true), true);
     assert.equal(oldClauseSelects("someone@example.com", false), true);
-    assert.equal(newClauseSelects(false, false), true);
+    assert.equal(newClauseSelects(false, false, false), true);
+  });
+
+  // ── 5. 回归护栏：P0-4 后 sellerId 变成真实 userId，国产机仍不得上网站 ──
+  await it("新口径：小程序注册用户（miniOpenid≠null）发布的国产机仍隐藏（口径未被 sellerId 失效破坏）", () => {
+    // 国产 + 小程序注册用户 → 必须隐藏（这正是 3349cf4 引入、本函数修复的回归）
+    assert.equal(newClauseSelects(false /*非系统账号*/, true /*miniOpenid 非空*/, false), false);
+    // 进口 + 小程序注册用户 → 可见（国际品牌任何卖家都可上网站）
+    assert.equal(newClauseSelects(false, true, true), true);
   });
 
   console.log(`\n结果：${passed} passed, ${failures.length} failed`);
