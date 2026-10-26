@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getImageUrl } from "@/lib/image-url";
 import { toSlug } from "@/lib/slug";
+import { stripContactFieldsFromList } from "@/lib/pii";
 
 export const dynamic = 'force-dynamic';
 
@@ -40,6 +41,8 @@ export async function GET(request: NextRequest) {
         ...p,
         images: p.images?.map(img => ({ ...img, url: getImageUrl(img.url) })) || [],
       }));
+
+      stripContactFieldsFromList(processedProducts);
 
       return NextResponse.json({
         success: true,

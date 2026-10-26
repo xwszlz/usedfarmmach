@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { verifyToken, getTokenFromHeaders } from "@/lib/auth";
 import { ArbitrageCalculator } from "@/lib/services/arbitrage-calculator";
 import { cache, cacheKey } from "@/lib/cache";
+import { stripContactFields } from "@/lib/pii";
 
 /**
  * 缓存 key 前缀（v2）：v1 时期详情响应曾把卖家联系方式一起缓存/下发，
@@ -11,26 +12,9 @@ import { cache, cacheKey } from "@/lib/cache";
  */
 const PRODUCT_CACHE_PREFIX = "product-v2";
 
-/**
- * 联系方式必须经 GET /api/products/[id]/contact（需登录）读取。
- * 详情接口是公开且可缓存的，P0-4 上线后 contact* 会有真实值，故写入缓存前与命中缓存后
- * 都做一次剥离，避免未鉴权泄露。
- */
-const CONTACT_FIELDS = [
-  "contactName",
-  "contactPhone",
-  "contactWechat",
-  "contactEmail",
-] as const;
-
-function stripContactFields<T>(row: T): T {
-  if (row && typeof row === "object") {
-    for (const field of CONTACT_FIELDS) {
-      delete (row as Record<string, unknown>)[field];
-    }
-  }
-  return row;
-}
+// 联系方式必须经 GET /api/products/[id]/contact（需登录）读取。
+// 详情接口是公开且可缓存的，P0-4 上线后 contact* 会有真实值，故写入缓存前与命中缓存后
+// 都做一次剥离（stripContactFields 已抽到 @/lib/pii，与列表接口共用同一份清单）。
 
 export async function GET(
   request: NextRequest,
