@@ -7,8 +7,8 @@
  *       SystemConfig 系数，护栏熔断）→ 写 UsageLog → 关联线索/经销商候选并脱敏联系方式 → 返回。
  *
  * 返回体：`...strategy` 展开透传（9 个老字段 + 12 个新增决策字段，arch §1.3）
- *         + channels（脱敏后覆盖）+ webStatus / webNote（字段名与 `export-types.ts` 冻结契约
- *         对齐，供前端黄条与 PDF/Excel 降级标注，PRD §6.5）。
+ *         + channels（脱敏后覆盖）+ searchStatus / searchNote（PRD §6.5：前端黄条 +
+ *         PDF/Excel 降级标注；前端卡片侧在传给导出按钮时映射为 `webStatus / webNote`）。
  *         ⚠️ 响应体**不**输出 rejectedAdequate：导出层 payload 无此字段、前端也不会透传
  *         ⇒ 会烂在 API 里。PDF 侧（T10）从 `bestDestinations[].rejected` 现算是纯函数，零成本。
  *
@@ -37,7 +37,6 @@ import {
   type StrategyLlmResult,
 } from "@/lib/sales-strategy/prompt";
 import { WEB_STATUS_NOTE } from "@/lib/sales-strategy/strategy-schema";
-import type { StrategyExportWebStatus } from "@/lib/sales-strategy/export-types";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 90;
@@ -262,12 +261,11 @@ export async function POST(request: NextRequest) {
       videoUrls: body.videoUrls,
     });
     const model = getArkModelId();
-    // 对外契约字段名与 `export-types.ts` 冻结的 `webStatus / webNote` 保持一致
-    // （`SalesStrategyExportButtons` 的 props 也是 webStatus?/webNote?；用 search* 命名告警条永远不显示）
-    const ctxWebStatus = pickWebStatus(ctx);
-    const webStatus: StrategyExportWebStatus = ctxWebStatus;
+    // 响应字段沿用已上线的 `searchStatus / searchNote`（半公开契约：小程序端也在打这个接口，
+    // 不改名以避开“静默破坏下游”）；前端卡片把它映射成导出层的 `webStatus / webNote`。
+    const webStatus = pickWebStatus(ctx);
     const webEvidence = pickWebEvidence(ctx);
-    const webNote = pickSearchNote(ctx, ctxWebStatus);
+    const searchNote = pickSearchNote(ctx, webStatus);
 
     /** 单次 LLM 调用的封装：统一 token 累计口径（重试的 token 也计入扣费） */
     const callLlm = async (
@@ -445,11 +443,11 @@ export async function POST(request: NextRequest) {
         responsibility: strategy.responsibility || null,
         scripts: strategy.scripts || [],
         listingChecklist: strategy.listingChecklist || [],
-        // ── 检索状态：字段名与导出层契约对齐（`webStatus / webNote`，export-types.ts 冻结）──
+        // ── 检索状态：沿用已上线的响应字段名 `searchStatus / searchNote`（半公开契约，不改名）──
         // 供前端顶部黄条与 PDF/Excel 的「外部证据未接入」标注（PRD §6.5）；
-        // ok 时 webNote 为空串，前端据此不渲染任何提示。
-        webStatus,
-        webNote,
+        // ok 时 searchNote 为空串，前端据此不渲染任何提示。
+        searchStatus: webStatus,
+        searchNote,
         model,
         estimatedCost,
         cost: deduction.cost,
