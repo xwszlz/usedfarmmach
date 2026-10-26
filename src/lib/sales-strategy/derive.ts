@@ -679,11 +679,32 @@ export function splitCountryCity(
 
   if (!parsed.country) return { ...empty };
 
-  // ④ 文本无国名但解析出 ISO code（如 "DE"）⇒ 反查中文名
+  // ④ 文本无国名但解析出 ISO code（如 "DE, Bavaria"）⇒ 反查中文名
   const hit = COUNTRY_MATCH_LIST.find((c) => c.code === parsed.country);
   if (!hit) return { ...empty };
 
+  // ⚠️ 硬要求：**ISO 两字母只允许「独立 token / 完全相等」，禁止子串**。
+  // 理由：`parseLocationText()` 内部是 `text.includes(country.code)`（location-data.ts），
+  // 于是 `"MINSK"` 会命中 `IN`、`"ALMATY"` 里也可能命中别的两字母码 ⇒ 会凭空造出一个国家。
+  // 该生产函数有其他消费者、本期冻结零 diff，故只能在这一层复核。
+  if (!hasStandaloneIsoCode(raw, hit.code)) return { ...empty };
+
   return { country: hit.nameZh, city: stripCountryName(raw, hit) };
+}
+
+/**
+ * 判断文本中是否存在**独立**（非单词内部）的 ISO 两字母国别码。
+ *
+ * @example hasStandaloneIsoCode("DE, Bavaria", "DE") → true
+ * @example hasStandaloneIsoCode("MINSK", "IN") → false   // 子串，不得命中
+ * @example hasStandaloneIsoCode("de", "DE") → false      // 小写不视为国别码（避 "Ferme de la Rue"）
+ *
+ * @param text 原始 location 文本
+ * @param code ISO 3166-1 alpha-2（大写）
+ */
+function hasStandaloneIsoCode(text: string, code: string): boolean {
+  if (!code) return false;
+  return new RegExp(`(^|[^A-Za-z])${code}([^A-Za-z]|$)`).test(text);
 }
 
 /**

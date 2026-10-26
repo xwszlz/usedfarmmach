@@ -353,6 +353,49 @@ describe("splitCountryCity — 国别/城市拆分（复用 parseLocationText）
       });
     });
   });
+
+  describe("N02b 验收补充（#77 指定用例 + ISO 两字母负向用例）", () => {
+    it("补充表更多国家可识别：瑞典 / 新西兰 / 智利 / 阿塞拜疆", () => {
+      expect(splitCountryCity("瑞典", "intl")).toEqual({ country: "瑞典", city: null });
+      expect(splitCountryCity("新西兰", "intl")).toEqual({ country: "新西兰", city: null });
+      expect(splitCountryCity("智利", "intl")).toEqual({ country: "智利", city: null });
+      expect(splitCountryCity("阿塞拜疆", "intl")).toEqual({ country: "阿塞拜疆", city: null });
+    });
+
+    it("前缀包含：印度 与 印度尼西亚 各自正确（短名不得抢长名）", () => {
+      expect(splitCountryCity("印度", "intl")).toEqual({ country: "印度", city: null });
+      expect(splitCountryCity("印度尼西亚", "intl")).toEqual({
+        country: "印度尼西亚",
+        city: null,
+      });
+    });
+
+    it("前缀包含 + 连写：印度尼西亚雅加达 ⇒ 先切长国名再取城市", () => {
+      expect(splitCountryCity("印度尼西亚雅加达", "intl")).toEqual({
+        country: "印度尼西亚",
+        city: "雅加达",
+      });
+    });
+
+    it("ISO 两字母禁子串：MINSK 不得被判成 IN（印度）", () => {
+      const r = splitCountryCity("MINSK", "intl");
+      expect(r.country).not.toBe("印度");
+      expect(r).toEqual({ country: null, city: null });
+    });
+
+    it("ISO 两字母独立 token 仍可命中：DE / DE, Bavaria", () => {
+      expect(splitCountryCity("DE", "intl")).toEqual({ country: "德国", city: null });
+      expect(splitCountryCity("DE Bavaria", "intl")).toEqual({
+        country: "德国",
+        city: "Bavaria",
+      });
+    });
+
+    it("「德国」这类只有国名的行：city 必须为 null（不是解析失败，是数据本身没城市）", () => {
+      expect(splitCountryCity("德国", "intl")).toEqual({ country: "德国", city: null });
+      expect(splitCountryCity("波兰", "intl")).toEqual({ country: "波兰", city: null });
+    });
+  });
 });
 
 // ═══════════════════════════════════════════════════════════
