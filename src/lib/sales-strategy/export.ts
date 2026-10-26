@@ -318,6 +318,8 @@ interface PdfTexts {
   oqQuestion: string;
   oqAffects: string;
   oqUrgency: string;
+  /** 由否决告警条转化而来的待确认项，「影响什么」列填此值 */
+  oqAffectsReject: string;
 
   // 附录
   dsName: string;
@@ -384,11 +386,11 @@ const TEXTS_ZH: PdfTexts = {
   rejMarket: "市场",
   rejLevel: "档位",
   rejReason: "原因",
-  noRejected: "[告警] 本轮未生成否决建议，请谨慎决策并自行核实准入政策",
+  noRejected: "[告警] 本次未生成否决建议，请谨慎决策并自行核实准入政策",
   rejectPartial: (missing, total) =>
-    `[告警] ${total} 台机型中有 ${missing} 台未给出任何否决建议（PRD §3.3 要求每台至少 1 条），请人工复核`,
+    `[告警] 本次 ${total} 台机型中有 ${missing} 台未给出任何否决建议，请谨慎决策并自行核实准入政策`,
   rejectSoftOnly:
-    "[告警] 否决措辞全部为最软档（无「不建议 / 禁入」级结论），请谨慎决策并自行核实准入政策",
+    "[告警] 本次否决措辞全部为最软档（无「不建议 / 禁入」级结论），请谨慎决策并自行核实准入政策",
   notGenerated: "（未生成）",
 
   rkRank: "排名",
@@ -426,6 +428,7 @@ const TEXTS_ZH: PdfTexts = {
   oqQuestion: "待确认问题",
   oqAffects: "影响什么",
   oqUrgency: "紧迫度",
+  oqAffectsReject: "否决建议 / 市场准入",
 
   dsName: "来源",
   dsRef: "引用",
@@ -491,11 +494,11 @@ const TEXTS_EN: PdfTexts = {
   rejMarket: "Market",
   rejLevel: "Level",
   rejReason: "Reason",
-  noRejected: "[WARN] No rejection advice generated this round; verify access rules yourself",
+  noRejected: "[WARN] No rejection advice this round; decide with care and verify access rules",
   rejectPartial: (missing, total) =>
-    `[WARN] ${missing} of ${total} equipment have no rejection advice (PRD §3.3 requires ≥1 each)`,
+    `[WARN] ${missing} of ${total} equipment have no rejection advice; decide with care and verify access rules`,
   rejectSoftOnly:
-    "[WARN] All rejections use the softest level (no 'not recommended / banned'); verify access rules yourself",
+    "[WARN] All rejections use the softest level (no 'not recommended / banned'); decide with care and verify access rules",
   notGenerated: "(not generated)",
 
   rkRank: "#",
@@ -533,6 +536,7 @@ const TEXTS_EN: PdfTexts = {
   oqQuestion: "Open question",
   oqAffects: "Affects",
   oqUrgency: "Urgency",
+  oqAffectsReject: "Rejections / market access",
 
   dsName: "Source",
   dsRef: "Reference",
@@ -827,13 +831,71 @@ const REJECT_LEVEL_LABEL: Record<RejectLevel, string> = {
   L3: "禁入",
 };
 
-/** 章 3：每台最优去向（含 rejected 三档 + 无 L3 告警） */
-function renderBestDestinations(state: RenderState, n: NormalizedStrategy, t: PdfTexts): void {
+/** 否决充分性缺口（0–2 条）：`banner` 进第 3 章告警条，`question` 同步计入第 7 章 */
+interface RejectIssue {
+  banner: string;
+  question: string;
+}
+
+/**
+ * PRD §3.3 否决充分性判定（纯函数，不依赖任何新字段）。
+ *
+ * ⚠️ 契约事实：`rejectedAdequate` **不会**出现在生成接口响应里（team-lead 已裁定删除），
+ *    故渲染层必须自己从 `bestDestinations[].rejected` 现算。
+ *
+ * 充分条件 = 「每个机型 ≥1 条」**且**「全局 ≥1 条为 `L2|L3`」，任一不满足即算不达标。
+ * ⇒ 用 `L2|L3` 而不是只看 `L3`：检索非 ok 时 `derive` 会把 L3 压成 L2，
+ *   若按「有无 L3」判定，降级场景会 100% 误报「措辞不足」。
+ *
+ * 与 route 侧 `isRejectedAdequate()` 同构（route 会先重试 1 次，重试后仍不达标才轮到本告警兜底）
+ * ⇒ 本告警正常情况下应极少出现，一旦出现即代表「两轮都没救回来」，是真的该让老板看见。
+ *
+ * @param n 归一化策略
+ * @returns 0–2 条缺口；空数组 = 达标
+ */
+function collectRejectIssues(n: NormalizedStrategy, t: PdfTexts): RejectIssue[] {
+  const issues: RejectIssue[] = [];
+  const total = n.bestDestinations.length;
+  // 一条最优去向都没有 ⇒ 第 3 章已渲染「（未生成）」，不再叠加"措辞最软档"这种错位告警
+  if (total === 0) return issues;
+  const rejected = n.bestDestinations.flatMap((d) => d.rejected);
+
+  if (total > 0 && rejected.length === 0) {
+    // PRD §3.3 逐字原文（emoji ⚠️ 由 stripEmoji 剥掉，按本项目约定换成文本标记 [告警]）
+    issues.push({
+      banner: t.noRejected,
+      question: `${t.noRejected.replace("[告警] ", "").replace("[WARN] ", "")}——是否仍需按本策略执行？`,
+    });
+    return issues;
+  }
+
+  const missingPerEquipment = n.bestDestinations.filter((d) => d.rejected.length === 0).length;
+  if (missingPerEquipment > 0) {
+    const banner = t.rejectPartial(missingPerEquipment, total);
+    issues.push({ banner, question: `${banner.replace("[告警] ", "").replace("[WARN] ", "")}` });
+  }
+  const hasHardLevel = rejected.some((r) => r.level === "L2" || r.level === "L3");
+  if (!hasHardLevel) {
+    const banner = t.rejectSoftOnly;
+    issues.push({ banner, question: `${banner.replace("[告警] ", "").replace("[WARN] ", "")}` });
+  }
+  return issues;
+}
+
+/** 章 3：每台最优去向（含 rejected 三档 + PRD §3.3 告警条） */
+function renderBestDestinations(
+  state: RenderState,
+  n: NormalizedStrategy,
+  t: PdfTexts,
+  rejectIssues: RejectIssue[]
+): void {
   section(state, t.s3);
+
+  // PRD §3.3：不达标时**章顶部**显式告警，严禁静默通过（位置在标题之后、表格之前）
+  for (const issue of rejectIssues) warnNote(state, issue.banner);
 
   if (n.bestDestinations.length === 0) {
     para(state, t.notGenerated, { size: 9, color: COLOR_GRAY });
-    warnNote(state, t.noRejected);
     return;
   }
 
@@ -858,7 +920,8 @@ function renderBestDestinations(state: RenderState, n: NormalizedStrategy, t: Pd
   );
   para(state, t.rejTitle, { size: 9.5, color: COLOR_TEXT, gap: 3 });
   if (rejected.length === 0) {
-    warnNote(state, t.noRejected);
+    // 告警条已在章顶部画过（PRD §3.3 要求位置在顶部，不是这里）
+    state.y -= 2;
     return;
   }
 
@@ -887,18 +950,8 @@ function renderBestDestinations(state: RenderState, n: NormalizedStrategy, t: Pd
     },
   });
 
-  // ── PRD §3.3 否决充分性判定（纯函数、就地现算）────────────────
-  // ⚠️ 契约事实：`rejectedAdequate` **不会**出现在生成接口响应里（team-lead 已裁定删除），
-  //    故渲染层必须自己从 `bestDestinations[].rejected` 现算，不依赖任何新字段。
-  //    PRD §3.3 的充分条件 = 「每机型至少 1 条」且「全局至少 1 条为 L2|L3」。
-  //    ⇒ 用 `L2|L3` 而不是只看 `L3`：检索非 ok 时 derive 会把 L3 压成 L2，
-  //      若按「有无 L3」判定，降级场景会 100% 误报「措辞不足」。
-  const missingPerEquipment = n.bestDestinations.filter((d) => d.rejected.length === 0).length;
-  const hasHardLevel = rejected.some((r) => r.level === "L2" || r.level === "L3");
-  if (missingPerEquipment > 0) {
-    warnNote(state, t.rejectPartial(missingPerEquipment, n.bestDestinations.length));
-  }
-  if (!hasHardLevel) warnNote(state, t.rejectSoftOnly);
+  // ── PRD §3.3 的充分性判定结果已在章顶部以告警条呈现（`collectRejectIssues`），
+  //    此处不再重复画，避免同一段话在章内出现两次。
   state.y -= 2;
 }
 
@@ -1066,8 +1119,19 @@ function renderComplianceTasks(
   state.y -= 2;
 }
 
-/** 章 7：待老板确认（derive 保证 ≥1 条「实际到手成本」） */
-function renderOpenQuestions(state: RenderState, n: NormalizedStrategy, t: PdfTexts): void {
+/**
+ * 章 7：待老板确认（derive 保证 ≥1 条「实际到手成本」）。
+ *
+ * PRD §3.3 后半句：「**告警条同时计入 `openQuestions`**」
+ * ⇒ 否决不达标时，除第 3 章顶部的告警条外，还要在**本表**里出现一条待确认项，
+ *    否则老板翻到第 7 章会以为没有遗留风险。
+ */
+function renderOpenQuestions(
+  state: RenderState,
+  n: NormalizedStrategy,
+  t: PdfTexts,
+  rejectIssues: RejectIssue[]
+): void {
   section(state, t.s7);
 
   const rows: TableRow[] = n.openQuestions.map((q) => ({
@@ -1075,6 +1139,11 @@ function renderOpenQuestions(state: RenderState, n: NormalizedStrategy, t: PdfTe
     affects: safeText(q.affects, EMPTY_CELL),
     urgency: safeText(q.urgency, EMPTY_CELL),
   }));
+
+  // PRD §3.3：不达标告警必须同时进本表（即使 openQuestions 原本为空，也要有这一条）
+  for (const issue of rejectIssues) {
+    rows.push({ question: issue.question, affects: t.oqAffectsReject, urgency: "立刻" });
+  }
 
   table(state, {
     columns: [
@@ -1225,11 +1294,14 @@ async function buildPdfV2(payload: StrategyExportPayload): Promise<Uint8Array> {
 
   // ── 0 / 0.5 / 1 / 2 / 3 / 4 / 4.5 / 5 / 6 / 7 / 附录 ────
   const rawTldrCount = Array.isArray(strategy.tldr) ? strategy.tldr.length : 0;
+  // PRD §3.3：否决充分性只算一次，第 3 章（告警条）+ 第 7 章（待确认项）共用同一份结论，
+  // 避免两处各自判定导致"第 3 章报警了、第 7 章却没这条"的口径分裂。
+  const rejectIssues = collectRejectIssues(n, t);
   renderTldr(state, n, t, rawTldrCount);
   renderKeyInsight(state, n, t);
   renderProfiles(state, n, t);
   renderAnchors(state, n, t);
-  renderBestDestinations(state, n, t);
+  renderBestDestinations(state, n, t, rejectIssues);
   renderRanking(state, n, t);
   renderTrafficLight(state, n, t);
   renderTodayCalls(state, n, t, channels);
@@ -1240,7 +1312,7 @@ async function buildPdfV2(payload: StrategyExportPayload): Promise<Uint8Array> {
     Array.isArray(strategy.complianceTasks) ? strategy.complianceTasks.length : 0,
     strategy.compliance
   );
-  renderOpenQuestions(state, n, t);
+  renderOpenQuestions(state, n, t, rejectIssues);
   renderDataSources(state, n, t, payload);
 
   // ── 降级留痕：**不上纸**（顶层告警条 + 各章内联 [告警] 已覆盖读者需要的信息；

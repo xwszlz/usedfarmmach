@@ -535,7 +535,7 @@ describe("T10 ⑦ · rejected 三档措辞（PRD §3.3）", () => {
     expect(allText(calls)).toContain("未给出任何否决建议");
   }, 120_000);
 
-  it("rejected 全空时追加「未生成否决建议」告警", async () => {
+  it("rejected 全空时追加「未生成否决建议」告警，且措辞与 PRD §3.3 逐字一致", async () => {
     const { calls } = await render(
       makePayload({
         bestDestinations: [
@@ -543,7 +543,35 @@ describe("T10 ⑦ · rejected 三档措辞（PRD §3.3）", () => {
         ],
       })
     );
-    expect(allText(calls)).toContain("未生成否决建议");
+    // PRD §3.3 逐字原文（原 emoji ⚠️ 由 stripEmoji 换成文本标记 [告警]）
+    expect(allText(calls)).toContain("本次未生成否决建议，请谨慎决策并自行核实准入政策");
+  }, 120_000);
+
+  it("PRD §3.3 后半句：告警条必须同时计入第 7 章 openQuestions", async () => {
+    const { calls } = await render(
+      makePayload({
+        bestDestinations: [
+          { equipment: "圆捆机A", market: ["荷兰"], basis: "净价最高", rejected: [] },
+        ],
+        openQuestions: [], // 即使原本为空，也必须出现这一条
+      })
+    );
+
+    const s7Index = calls.findIndex((c) => c.text === "7. 待老板确认");
+    expect(s7Index).toBeGreaterThanOrEqual(0);
+    const afterS7 = calls.slice(s7Index).map((c) => c.text);
+    expect(afterS7.join("\n")).toContain("本次未生成否决建议");
+    // 影响列标明这是否决/准入相关，紧迫度「立刻」
+    expect(afterS7).toContain("否决建议 / 市场准入");
+    expect(afterS7).toContain("立刻");
+  }, 120_000);
+
+  it("达标时第 7 章不出现否决相关待确认项", async () => {
+    const { calls } = await render(makePayload()); // 基座：L1/L2/L3 齐全
+    const s7Index = calls.findIndex((c) => c.text === "7. 待老板确认");
+    const afterS7 = calls.slice(s7Index).map((c) => c.text).join("\n");
+    expect(afterS7).not.toContain("本次未生成否决建议");
+    expect(afterS7).not.toContain("否决建议 / 市场准入");
   }, 120_000);
 });
 
