@@ -191,6 +191,13 @@ describe("N03 · PDF 请求体：12 个决策字段全量透传（验收 ①）"
     expect(wire.webStatus).toBe("partial");
     expect(wire.webNote).toBe("部分检索超时（3/5 成功）");
   });
+
+  it("webNote 为空串 / 纯空白时省略（生成接口 ok 时下发空串，不得渲染空行）", () => {
+    for (const blank of ["", "   "]) {
+      const wire = JSON.parse(JSON.stringify(buildPdfExportBody(makePdfInput({ webNote: blank }))));
+      expect(Object.keys(wire)).not.toContain("webNote");
+    }
+  });
 });
 
 describe("N03 · Excel 请求体：layout v2 + strategy（验收 ②）", () => {
@@ -273,5 +280,11 @@ describe("N03 · 源码层回归守卫：不得再出现白名单重建", () => 
     expect(source).toMatch(/\{\s*\.\.\.strategy\s*\}/);
     expect(source).not.toMatch(/summary:\s*strategy\./);
     expect(source).not.toMatch(/targetMarkets:\s*strategy\./);
+  });
+
+  it("卡片侧下传检索状态（PDF 黄条 / Excel 降级标注的唯一数据源）", () => {
+    const source = readFileSync(CARD_PATH, "utf8");
+    expect(source).toContain("webStatus={result.searchStatus}");
+    expect(source).toContain("webNote={result.searchNote}");
   });
 });

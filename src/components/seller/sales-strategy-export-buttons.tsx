@@ -93,20 +93,22 @@ export interface PdfExportBodyInput {
  *
  * 要点：`strategy` **全字段展开**（`{ ...strategy }`），12 个决策字段一个不丢；
  * `channels` 原样透传（脱敏由生成接口完成，本组件不加工）；
- * `webStatus` / `webNote` 缺省为 `undefined` ⇒ `JSON.stringify` 自动省略该键，
- * 后端视同 `"ok"`，与改造前的请求体逐字等价。
+ * `webStatus` 缺省为 `undefined` ⇒ `JSON.stringify` 自动省略该键，后端视同 `"ok"`；
+ * `webNote` 为空串时同样省略（生成接口在 `ok` 时下发空串，不能让它渲染成空行）；
+ * 缺省时的请求体与改造前逐字等价。
  *
  * @param input 组装请求体所需的全部字段
  * @returns 可直接 `JSON.stringify` 的请求体
  */
 export function buildPdfExportBody(input: PdfExportBodyInput): Record<string, unknown> {
+  const note = typeof input.webNote === "string" ? input.webNote.trim() : "";
   return {
     strategy: toExportableStrategy(input.strategy),
     product: input.product,
     channels: input.channels,
     locale: input.locale,
     webStatus: input.webStatus,
-    webNote: input.webNote,
+    webNote: note.length > 0 ? note : undefined,
   };
 }
 
