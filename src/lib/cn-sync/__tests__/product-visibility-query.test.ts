@@ -1,5 +1,5 @@
 /**
- * 可见性 × 搜索 组合单元测试（fix/product-visibility-followups）
+ * 可见性 × 搜索 组合单元测试（fix/product-visibility-followups / 2026-10-26 口径变更）
  *
  * 运行：npm run test:product-visibility-query
  *       （或 npm run test:cn-sync-scope —— 先跑 product-visibility.test.ts，再跑本文件）
@@ -9,9 +9,13 @@
  * - `buildWebsiteVisibleWhere` / `applySearchQueryToWhere` 均为**纯函数**（只依赖 @prisma/client 的**类型**）；
  * - 用一个零依赖的「内存 where 求值器」复现 Prisma 对 `AND` / `OR` / `contains` / `not` / 关系字段（brand）
  *   的匹配语义，进而在**纯内存夹具**上证明：
- *     ① 修复后：靠「可见性 OR 第二支（小程序账号 ∧ 国际品牌）」才可见的产品，带搜索参数时**仍被返回**；
- *     ② 修复后：本该隐藏的产品（小程序账号 ∧ 国产），带搜索参数时**仍被隐藏**；
- *     ③ 旧写法（把搜索条件**整体赋值**给 `where.OR`）会把 ② 泄漏出来 —— 复现被修掉的 bug。
+ *     ① 搜索条件必须以 **AND 子条件**叠加，不得覆盖调用方既有的 `AND`（brand / category / country …）；
+ *     ② `status='active'` 始终生效，draft 等非上架商品不会因搜索而泄漏；
+ *     ③ 2026-10-26 口径变更后，国产机（含小程序渠道）带搜索参数时仍**必须返回**。
+ *
+ * 📌 2026-10-26 业务变更：老板拍板「国产机也要上网站端」。可见性从
+ *    「active ∧ 非(小程序渠道 ∧ 国产品牌)」退化为「active」。
+ *    本文件原先「小程序账号 ∧ 国产必须隐藏」的断言已按新决策**反转**，勿再改回去。
  */
 import assert from "node:assert/strict";
 import {
@@ -111,6 +115,7 @@ interface Fixture {
   descriptionZh: string;
   descriptionEn: string;
   location: string;
+  country: string;
   brand: { isImported: boolean; nameZh: string; nameEn: string } | null;
   category: { nameZh: string; nameEn: string } | null;
 }
@@ -132,19 +137,18 @@ const active = (
   descriptionZh: "",
   descriptionEn: "",
   location: "河北 石家庄",
+  country: "CN",
   brand: { isImported, nameZh, nameEn },
   category: { nameZh: "拖拉机", nameEn: "Tractor" },
 });
 
 /** 全部 modelName 均含 "1204" → 用 "1204" 搜索时「搜索条件对所有夹具都命中」，从而单独暴露可见性差异 */
 const PRODUCTS: Fixture[] = [
-  active("cn-imported-miniapp", MINIAPP_ID, "6J-1204", true, "约翰迪尔", "John Deere"), // 靠可见性 OR 第二支可见
-  active("cn-domestic-miniapp", MINIAPP_ID, "东方红LX1204", false, "东方红", "Dongfanghong"), // 必须隐藏（系统账号）
-  active("cn-imported-other", OTHER_ID, "雷沃1204", true, "雷沃", "Lovol"), // 可见（OR 第一支）
-  active("cn-domestic-other", OTHER_ID, "五征1204", false, "五征", "Wuzheng"), // 可见（非小程序渠道）
-  // P0-4 回归护栏：小程序注册用户（miniOpenid≠null）发布的国产机，sellerId 已是真实 userId，必须隐藏
-  active("cn-domestic-miniappuser", MINIAPP_USER_ID, "泰山1204", false, "泰山", "Taishan", "oXyz_miniapp_openid"),
-  // 同一用户的进口机应可见
+  active("cn-imported-miniapp", MINIAPP_ID, "6J-1204", true, "约翰迪尔", "John Deere"),
+  active("cn-domestic-miniapp", MINIAPP_ID, "东方红LX1204", false, "东方红", "Dongfanghong"), // 2026-10-26 起必须可见
+  active("cn-imported-other", OTHER_ID, "雷沃1204", true, "雷沃", "Lovol"),
+  active("cn-domestic-other", OTHER_ID, "五征1204", false, "五征", "Wuzheng"),
+  active("cn-domestic-miniappuser", MINIAPP_USER_ID, "泰山1204", false, "泰山", "Taishan", "oXyz_miniapp_openid"), // 必须可见
   active("cn-imported-miniappuser", MINIAPP_USER_ID, "迪尔1204", true, "迪尔", "Deere", "oXyz_miniapp_openid"),
   { ...active("cn-draft-miniapp", MINIAPP_ID, "草稿1204", true, "凯斯", "Case IH"), status: "draft" }, // status 过滤
 ];
@@ -161,21 +165,18 @@ function selectIds(where: Json): string[] {
 
 /* ───────────────────────────── 测试 ───────────────────────────── */
 async function main(): Promise<void> {
-  console.log("product-visibility × search 组合单元测试（fix/product-visibility-followups）");
+  console.log("product-visibility × search 组合单元测试（2026-10-26 国产机放开口径）");
 
-  // ── A. 组合结构：搜索 OR 必须作为子条件进 AND，绝不覆盖可见性顶层 OR ──
-  await it("结构：applySearchQueryToWhere 保留可见性顶层 OR，把搜索 OR push 进 AND", () => {
+  // ── A. 组合结构：搜索 OR 必须作为子条件进 AND，不得触碰顶层其它条件 ──
+  await it("结构：可见性 where 只剩 status，搜索 OR 被 push 进 AND", () => {
     const w: Json = applySearchQueryToWhere(buildWebsiteVisibleWhere(MINIAPP_ID), "abc");
     assert.equal(w.status, "active");
-    assert.deepEqual(w.OR, [
-      { sellerId: { not: MINIAPP_ID }, seller: { miniOpenid: null } },
-      { brand: { isImported: true } },
-    ]);
+    assert.equal(w.OR, undefined, "顶层不应出现 OR（可见性已无 OR 分支）");
     assert.ok(Array.isArray(w.AND) && w.AND.length === 1, "应恰好新增 1 个 AND 子条件");
     assert.deepEqual(w.AND[0], { OR: buildSearchOrConditions("abc") });
   });
 
-  await it("结构：不覆盖 / 不丢失既有 AND 子条件（brand/category/province 等）", () => {
+  await it("结构：不覆盖 / 不丢失既有 AND 子条件（brand/category/country 等）", () => {
     const base: Json = { status: "active", AND: [{ country: "CN" }] };
     const merged: Json = applySearchQueryToWhere(base, "abc");
     assert.deepEqual(merged.AND, [
@@ -192,73 +193,72 @@ async function main(): Promise<void> {
     assert.equal(applySearchQueryToWhere(v, undefined), v);
   });
 
-  // ── B. 行为：修复后「可见性」与「搜索」同时生效 ──
+  // ── B. 行为：可见性（status）与搜索同时生效 ──
   const visible = buildWebsiteVisibleWhere(MINIAPP_ID);
   const combined1204 = applySearchQueryToWhere(visible, "1204");
 
-  await it("带搜索：靠 OR 第二支（小程序账号 ∧ 国际品牌）可见的产品仍被返回", () => {
+  await it("带搜索：2026-10-26 起国产机（含小程序渠道）全部返回", () => {
     const ids = selectIds(combined1204);
-    assert.ok(
-      ids.includes("cn-imported-miniapp"),
-      `应返回 cn-imported-miniapp，实际：${ids.join(", ")}`
-    );
+    for (const id of ["cn-domestic-miniapp", "cn-domestic-miniappuser", "cn-domestic-other"]) {
+      assert.ok(ids.includes(id), `应返回 ${id}，实际：${ids.join(", ")}`);
+    }
   });
 
-  await it("带搜索：应隐藏的产品（小程序账号 ∧ 国产）仍被隐藏", () => {
+  await it("带搜索：进口机与普通卖家的既有语义不变", () => {
     const ids = selectIds(combined1204);
-    assert.ok(
-      !ids.includes("cn-domestic-miniapp"),
-      `不应返回 cn-domestic-miniapp，实际：${ids.join(", ")}`
-    );
+    for (const id of ["cn-imported-miniapp", "cn-imported-other", "cn-imported-miniappuser"]) {
+      assert.ok(ids.includes(id), `应返回 ${id}，实际：${ids.join(", ")}`);
+    }
   });
 
-  await it("带搜索：非小程序渠道 / status≠active 的既有语义不变", () => {
-    const ids = selectIds(combined1204);
+  await it("带搜索：可见集合恰为全部 active（6 台），draft 仍被排除", () => {
+    const ids = selectIds(combined1204).slice().sort();
     assert.deepEqual(
-      ids.slice().sort(),
+      ids,
       [
+        "cn-domestic-miniapp",
+        "cn-domestic-miniappuser",
         "cn-domestic-other",
         "cn-imported-miniapp",
         "cn-imported-miniappuser",
         "cn-imported-other",
       ].sort(),
-      `可见集合应恰为 {国产普通卖家, 进口小程序系统账号, 进口小程序用户, 进口普通卖家}，实际：${ids.join(", ")}`
+      `实际：${ids.join(", ")}`
     );
     assert.ok(!ids.includes("cn-draft-miniapp"), "draft 产品不应可见");
   });
 
-  await it("带搜索：小程序注册用户（miniOpenid≠null）的国产机仍隐藏 —— P0-4 回归护栏", () => {
-    const ids = selectIds(combined1204);
-    assert.ok(
-      !ids.includes("cn-domestic-miniappuser"),
-      `sellerId 已变为真实 userId，国产机仍不得上网站，实际：${ids.join(", ")}`
-    );
-    assert.ok(
-      ids.includes("cn-imported-miniappuser"),
-      `同一用户的进口机应可见，实际：${ids.join(", ")}`
-    );
-  });
-
-  await it("带品牌名搜索（John Deere）：命中 OR 第二支产品，且不泄漏隐藏产品", () => {
+  await it("带品牌名搜索（John Deere）：命中目标且不泄漏 draft", () => {
     const w = applySearchQueryToWhere(visible, "John Deere");
-    assert.ok(evalWhere(w, byId("cn-imported-miniapp")), "品牌名命中的进口小程序产品应可见");
-    assert.ok(!evalWhere(w, byId("cn-domestic-miniapp")), "隐藏产品不应因搜索而泄漏");
+    assert.ok(evalWhere(w, byId("cn-imported-miniapp")), "品牌名命中的进口机应可见");
+    assert.ok(!evalWhere(w, byId("cn-draft-miniapp")), "draft 不应因搜索而泄漏");
   });
 
-  // ── C. 反证：复现旧写法（where.OR 整体赋值）的泄漏 bug ──
-  await it("旧写法（where.OR = 搜索条件）会把隐藏产品泄漏 —— 复现被修复的缺陷", () => {
-    const oldWhere: Json = { ...visible, OR: buildSearchOrConditions("1204") };
-    const ids = selectIds(oldWhere);
-    assert.ok(
-      ids.includes("cn-domestic-miniapp"),
-      "旧写法应泄漏 cn-domestic-miniapp（这正是修复动机）"
-    );
+  await it("带国产机型搜索（东方红）：口径放开后应命中", () => {
+    const w = applySearchQueryToWhere(visible, "东方红");
+    assert.ok(evalWhere(w, byId("cn-domestic-miniapp")), "国产机应可被搜索到");
   });
 
-  await it("新旧对照：新写法不泄漏，旧写法泄漏", () => {
-    const oldWhere: Json = { ...visible, OR: buildSearchOrConditions("1204") };
-    assert.ok(!selectIds(combined1204).includes("cn-domestic-miniapp"));
-    assert.ok(selectIds(oldWhere).includes("cn-domestic-miniapp"));
+  // ── C. 反证：「覆盖」而非「叠加」会丢调用方既有条件 ──
+  await it("反证：把搜索条件整体赋值给 where.AND（覆盖既有 AND）会丢掉 country", () => {
+    const base: Json = {
+      status: "active",
+      AND: [{ country: "CN" }],
+    };
+    const good: Json = applySearchQueryToWhere(base, "1204");
+    // 错误写法：直接覆盖 AND，只剩搜索条件 ⇒ country 过滤消失
+    const bad: Json = { ...base, AND: [{ OR: buildSearchOrConditions("1204") }] };
+    const seaProduct = { ...byId("cn-domestic-other"), id: "sea-1204", country: "SE" };
+    assert.equal(evalWhere(good, seaProduct), false, "正确写法应被 country 过滤掉");
+    assert.equal(evalWhere(bad, seaProduct), true, "覆盖写法会绕过 country（这正是必须用 AND 叠加的原因）");
+  });
+
+  await it("对照：applySearchQueryToWhere 与手写覆盖写法结果不同", () => {
+    const base: Json = { status: "active", AND: [{ country: "CN" }] };
+    const good: Json = applySearchQueryToWhere(base, "1204");
+    const bad: Json = { ...base, AND: [{ OR: buildSearchOrConditions("1204") }] };
+    const sea = { ...byId("cn-domestic-other"), country: "SE" };
+    assert.notEqual(evalWhere(good, sea), evalWhere(bad, sea));
   });
 
   console.log(`\n结果：${passed} passed, ${failures.length} failed`);
