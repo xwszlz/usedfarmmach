@@ -259,6 +259,109 @@ describe("A2 TL;DR 落在第 1 页（页级文本 + 坐标核对）", () => {
   });
 });
 
+// ═══════════════════════════════════════════════════════════
+// 章 5「今天该打的电话」兜底（修复 `42444bf`：付费解锁号码必须上纸）
+// ═══════════════════════════════════════════════════════════
+describe("章 5 todayCalls 缺失 ⇒ 从 channels 兜底（付费号码必须上纸）", () => {
+  const UNLOCKED_PHONE = "13800138000";
+  const UNLOCKED_MASKED = "138****8000";
+  const AUTO_NOTE = "本节由渠道清单自动生成";
+
+  /** 已解锁渠道：路由会把明文同时写进 `phoneMasked` 与 `phone`（T12 契约） */
+  const unlockedChannel = {
+    candidateId: "dealer_a",
+    type: "dealer" as const,
+    name: "已解锁B公司",
+    model: "东方红 YTO-1204",
+    unlocked: true,
+    phone: UNLOCKED_PHONE,
+    phoneMasked: UNLOCKED_PHONE,
+    wechatMasked: "微信:********",
+    emailMasked: "al***@corp.com",
+  };
+
+  it("① 兜底生效：无 todayCalls 时，已解锁明文上纸 + 出现自动生成说明 + 不再显示脱敏号", async () => {
+    const { all } = await extractPdfText(
+      await buildPdf({ ...V2_PAYLOAD, channels: [unlockedChannel] })
+    );
+
+    // 核心：用户花积分解锁的号码必须真的印在纸上
+    expect(all, "付费解锁的明文号码未上纸（兜底没生效）").toContain(UNLOCKED_PHONE);
+    expect(all).toContain(AUTO_NOTE);
+    // 已解锁行不应再出现脱敏形态
+    expect(all, "已解锁行仍显示脱敏号（覆盖逻辑漏了）").not.toContain(UNLOCKED_MASKED);
+    // 也不该退化成「今日无可用电话」
+    expect(all).not.toContain("今日无可用电话");
+  });
+
+  it("② 有 todayCalls 时不走兜底（分支没写反）", async () => {
+    const { all } = await extractPdfText(
+      await buildPdf({
+        ...V2_PAYLOAD,
+        strategy: {
+          ...V2_PAYLOAD.strategy,
+          todayCalls: [
+            {
+              equipment: "东方红 YTO-1204",
+              // ⚠️ 必须是 `DEALER_ROLES` 里的枚举值（"采购" 不在枚举内，会被 derive 归一成「终端」）
+              role: "进口商",
+              candidateIds: ["dealer_a"],
+              whyToday: "近 30 天有成交",
+            },
+          ],
+        },
+        channels: [unlockedChannel],
+      })
+    );
+
+    expect(all, "有 todayCalls 却仍标注「自动生成」").not.toContain(AUTO_NOTE);
+    // 命中渠道 ⇒ 显示渠道公司名（而不是「见附件 Excel」）
+    expect(all).toContain("已解锁B公司");
+    expect(all).toContain(UNLOCKED_PHONE);
+  });
+
+  it("③ 兜底排序：已解锁行必须排在未解锁行之前（不可按原数组顺序）", async () => {
+    const lockedA = {
+      candidateId: "dealer_l1",
+      type: "dealer" as const,
+      name: "未解锁A公司",
+      phone: "13900139000",
+      phoneMasked: "139****9000",
+      wechatMasked: "微信:********",
+      emailMasked: "a***@a.com",
+    };
+    const lockedC = {
+      candidateId: "dealer_l2",
+      type: "dealer" as const,
+      name: "未解锁C公司",
+      phone: "13700137000",
+      phoneMasked: "137****7000",
+      wechatMasked: "微信:********",
+      emailMasked: "c***@c.com",
+    };
+
+    // 原数组顺序：未解锁 A → 已解锁 B → 未解锁 C
+    const { all } = await extractPdfText(
+      await buildPdf({ ...V2_PAYLOAD, channels: [lockedA, unlockedChannel, lockedC] })
+    );
+
+    const atB = all.indexOf(UNLOCKED_PHONE);
+    const atA = all.indexOf("139****9000");
+    const atC = all.indexOf("137****7000");
+
+    expect(atB, "已解锁明文未上纸").toBeGreaterThan(-1);
+    expect(atA, "未解锁 A 的脱敏号未上纸").toBeGreaterThan(-1);
+    expect(atC, "未解锁 C 的脱敏号未上纸").toBeGreaterThan(-1);
+    // 已解锁优先：B 必须在 A 与 C 之前
+    expect(atB, "兜底未把已解锁行排到最前（排序缺失）").toBeLessThan(atA);
+    expect(atB, "兜底未把已解锁行排到最前（排序缺失）").toBeLessThan(atC);
+    // 三行都得在（不能只渲染 1 行）
+    expect(all).toContain("未解锁A公司");
+    expect(all).toContain("未解锁C公司");
+    expect(all).toContain("已解锁B公司");
+  });
+});
+
 describe("webStatus 降级语义（按 team-lead 口径两套期望，不断言「必须有 L3」）", () => {
   const BANNER_FRAGMENT = "本次策略未接入外部检索";
   const NO_REJECT_BANNER = "本次未生成否决建议";
