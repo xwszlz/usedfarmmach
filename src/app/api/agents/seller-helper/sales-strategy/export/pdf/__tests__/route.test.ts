@@ -15,6 +15,17 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { NextRequest } from "next/server";
 
 vi.mock("@/lib/auth", () => ({ getUserFromRequest: vi.fn() }));
+// T12 起本路由会在服务端查 PII 审计 / 经销商 / 线索（二段式解锁），必须 mock 掉 prisma：
+// 否则单测会真连 .env 里的 Neon，单个用例最慢 3s 打在 vitest 5s 超时上，CI 网络一抖即红。
+// 本文件 9 个用例断言的是鉴权/余额/计费顺序/文件头，不依赖任何 DB 数据 ⇒ 桩返回空数组即可；
+// 解锁与脱敏的字段级断言在 `__tests__/unlock.test.ts`。
+vi.mock("@/lib/db", () => ({
+  prisma: {
+    piiAuditLog: { findMany: vi.fn(async () => []) },
+    dealer: { findMany: vi.fn(async () => []) },
+    lead: { findMany: vi.fn(async () => []) },
+  },
+}));
 vi.mock("@/lib/credits/deduct", () => ({
   estimateAiCost: vi.fn(),
   deductAiUsage: vi.fn(),

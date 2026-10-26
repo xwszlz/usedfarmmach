@@ -2076,6 +2076,15 @@ model Dealer {
   product   Product? @relation("ProductDealer", fields: [productId], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  /// ── AI 销售策略 14 列 Excel additive 字段（T06：只追加，上方既有列语义零改动；尤其 grade 保持「联系可行性」语义）──
+  country        String? // 国家/地区（从 location 解析，如「德国」；境内行为「中国」）
+  city           String? // 城市/省州（从 location 解析掉国名后的剩余段，如「Drenthe」/「河北」）
+  contactPerson  String? // 联系人姓名（仅从 note 的 [联系人] 或「联系人：」显式标记提取；受 PII 门禁，未解锁渲染「已隐藏」）
+  role           String? // 渠道角色：原厂|进口商|授权经销|二手商|拍卖行|物流|政府|终端（从 nature/note 关键词映射，映射不到为 null）
+  priority       String? // 优先级 S|A|B|C（动作紧迫度，只由 LLM 判定或人工指定；与 grade 并存且语义不同，seed 恒不填）
+  suggestedPrice String? // 建议报价参考（含币种口径的自由文本，如「Kuhn VBP3165 FOB €45-55k」；seed 恒不填，禁编造）
+  followStatus   String  @default("未联系") // 跟进状态：未联系|已联系|已回复|已报价|已成交|已放弃（非空，老行 db push 自动填充默认值）
+  sourcePage     String? // 溯源页（如「w1_europe.md ①官网imprint」，来自 note 的 [来源] 标记；与 sourceUrl 语义不同）
 
   @@index([brands])
   @@index([regions])
@@ -2083,6 +2092,9 @@ model Dealer {
   @@index([models])
   @@index([partition])
   @@index([grade])
+  @@index([priority])
+  @@index([country])
+  @@index([role])
 }
 
 // ============================================================

@@ -15,6 +15,8 @@
 import { useState } from "react";
 import { Sparkles, Loader2, AlertCircle, Target, Unlock, Phone, Mail, Lock, CheckCircle2 } from "lucide-react";
 import SalesStrategyExportButtons from "@/components/seller/sales-strategy-export-buttons";
+import type { StrategyDecisionFields } from "@/lib/sales-strategy/strategy-schema";
+import type { StrategyExportWebStatus } from "@/lib/sales-strategy/export";
 
 interface AiSalesStrategyCardProps {
   productId?: string;
@@ -45,7 +47,15 @@ interface StrategyChannel {
   emailMasked: string;
 }
 
-interface StrategyResult {
+/**
+ * 生成接口响应体（`setResult(data.data)` 原样保存）。
+ *
+ * N02 追加的 12 个决策字段通过 `Partial<StrategyDecisionFields>` 并进来：
+ * 服务端早已返回这些字段，只是过去本类型没有声明、导出时又被字面量白名单裁掉。
+ * 声明在此处的作用是让「整对象透传 `strategy={result}`」在类型上成立，
+ * 任何人再想改回白名单重建，都会立刻在 tsc 阶段丢掉 12 个字段。
+ */
+interface StrategyResult extends Partial<StrategyDecisionFields> {
   summary: string;
   targetMarkets: Array<{ market: string; priority: string; rationale: string; priceBand?: string; channels?: string }>;
   priceRange: { suggestedMinCny?: number; suggestedMaxCny?: number; currencyNote?: string; basis?: string } | null;
@@ -63,6 +73,14 @@ interface StrategyResult {
   balance: number;
   realtimeExternal: boolean;
   dataDate: string | null;
+  /**
+   * 本次策略的外部检索状态（T08 生成接口下发，契约：`ok | partial | timeout | disabled`）。
+   *
+   * 缺省视同 `ok`：PDF 顶部黄条与 Excel Sheet2「备注」降级标注只在非 `ok` 时出现。
+   */
+  searchStatus?: StrategyExportWebStatus;
+  /** 检索状态补充说明；**`ok` 时为空串**（空串与非 ok 一样不下传，避免出现空行提示） */
+  searchNote?: string;
 }
 
 const priorityColors: Record<string, string> = {
@@ -284,6 +302,26 @@ export default function AiSalesStrategyCard({
       {/* 结果区 */}
       {result && (
         <div className="mt-4 space-y-4">
+          {/*
+           * 外部检索降级黄条（PRD §6.5）：仅非 ok 时渲染。
+           * 服务端契约：`searchStatus` 四档（ok/partial/timeout/disabled），`searchNote` 在 ok 时为空串
+           * ⇒ 这里双条件兜住「status 缺失（老响应）」与「note 为空」两种情况，正常态不制造噪音。
+           * 语气原则（PRD §6.5）：只陈述事实给下一步动作，不道歉、不放进错误弹窗 —— 策略本身是成功的。
+           */}
+          {result.searchStatus && result.searchStatus !== "ok" && (
+            <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800">
+              <div className="flex items-start gap-1.5">
+                <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <span>
+                  {result.searchNote ||
+                    (zh
+                      ? "本次策略未接入外部检索（检索超时/未启用）。下列价格与准入结论仅基于站内数据；标注「推算」的数字请务必电话核实。"
+                      : "External search was unavailable for this strategy. Prices and access conclusions are based on in-site data only; verify any estimated figure by phone.")}
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* 摘要 */}
           {result.summary && (
             <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-3 text-sm text-gray-700">
@@ -440,18 +478,24 @@ export default function AiSalesStrategyCard({
           )}
 
           {/* 导出（T2 PDF 作战手册 / T3 Excel 联系表） */}
+          {/*
+           * N03 补丁（关键，勿改回白名单）：**整对象透传** `strategy={result}`。
+           * 旧代码在此用字面量白名单重建（只挑 summary / targetMarkets / priceRange /
+           * compliance / actionChecklist / responsibility / scripts / listingChecklist），
+           * 导致 N02 的 12 个决策字段（tldr / keyInsight / equipmentProfiles / marketAnchors /
+           * readout / bestDestinations / marketRanking / accessTrafficLight / todayCalls /
+           * complianceTasks / openQuestions / dataSources）在浏览器端就被丢光 ——
+           * 生成接口再全、PDF 8 章渲染器再强，也拿不到数据。
+           * `result` 即服务端响应体（`setResult(data.data)` 原样保存），12 字段本就在其中。
+           * 空值保护在 `SalesStrategyExportButtons.toExportableStrategy()` 内完成
+           * （null / 非对象 ⇒ `{}`，Excel 不发 layout 回落 legacy），此处无需再包一层。
+           */}
           <SalesStrategyExportButtons
-            strategy={{
-              summary: result.summary,
-              targetMarkets: result.targetMarkets,
-              priceRange: result.priceRange,
-              compliance: result.compliance,
-              actionChecklist: result.actionChecklist,
-              responsibility: result.responsibility,
-              scripts: result.scripts,
-              listingChecklist: result.listingChecklist,
-            }}
+            strategy={result}
             channels={result.channels}
+            /* N03 最后一跳：检索状态一起下传，PDF 顶部黄条 / Excel Sheet2 降级标注才有数据源 */
+            webStatus={result.searchStatus}
+            webNote={result.searchNote}
             product={{
               brandName,
               modelName,
