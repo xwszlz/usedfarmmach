@@ -7,11 +7,25 @@
 #       本工作流补足 .cn 的定时刷新，与 .com Vercel Cron（vercel.json: "0 2 * * *"）
 #       对齐同一 UTC 时刻，避免两侧汇率漂移。
 #
-# 鉴权：端点接受 CRON_API_KEY 或 INTERNAL_API_KEY（fail-closed，env 缺失即 401）。
-#       此处复用 GitHub secret INTERNAL_API_KEY（与 .com vercel.json 同源），
-#       其值须与 ECS /opt/cn/.env.cn 内的 INTERNAL_API_KEY 一致。
+# 鉴权：端点接受 CRON_API_KEY / INTERNAL_API_KEY（及过渡期 INTERNAL_API_KEY_PREVIOUS）/ CRON_SECRET，
+#       fail-closed（env 缺失即 401）。实现见
+#       src/app/api/cron/update-exchange-rates/route.ts → isValidToken()。
+#       .cn 侧取值须与 ECS /opt/cn/.env.cn 内的 INTERNAL_API_KEY 逐字节一致（包含不可见字符）。
 #
-# ⚠️ 安全：token 以 GitHub secret 引用注入，绝不硬编码明文。
+# ⚠️ 安全：token 以 GitHub secret 引用注入，绝不硬编码明文，也绝不打印明文
+#          （只打印「长度」与「sha256 前 8 位」这两个非敏感指纹，便于未来比对）。
+#
+# 📌 2026-10 故障复盘（本次修改的根因，避免下次重复踩坑）：
+#   运行 #8 ~ #16 连续 9 次失败，失败步骤日志只有一行 `##[error]Process completed with exit code 3`，
+#   连 `HTTP 状态码:` 都没打出来。curl exit 3 = URL 格式非法 ⇒ 请求根本没被发出。
+#   实测复现：干净 URL → http=401 / exit=0（站点、DNS、TLS 全通，端点正常返回 401）；
+#            URL 末尾加一个空格 → http=000 / exit=3（与 CI 完全一致）；
+#            URL 末尾加换行 → curl 自动剥离，仍 http=401 / exit=0（换行不是原因）。
+#   ⇒ GitHub secret INTERNAL_API_KEY 的值首尾带了空白字符（该 secret 更新于 2026-10-17T12:05:36Z，
+#     正好卡在最后一次成功 #7 与首次失败 #8 之间），拼进 query 后 curl 判 URL 非法。
+#   另一个叠加原因：`set -e` 让 `HTTP_CODE=$(curl ...)` 的非零退出直接终止脚本，
+#   把后面所有诊断 echo 全部吞掉 —— 这才是"日志只剩一行"的第二个原因。
+#   本次修改同时修掉这两点，并补上分层诊断与非敏感指纹。
 
 name: CN Exchange Rate Daily Sync
 
@@ -29,41 +43,145 @@ jobs:
       - name: Trigger .cn exchange rate refresh endpoint
         env:
           CN_FX_URL: "https://www.usedfarmmach.cn/api/cron/update-exchange-rates"
-          INTERNAL_API_KEY: ${{ secrets.INTERNAL_API_KEY }}
+          # 合规要求：.cn 与 .com 的 INTERNAL_API_KEY 必须是两个不同的值。
+          # 因此 .cn 侧应优先使用独立 secret `INTERNAL_API_KEY_CN`；
+          # 未配置时回退到旧的 `INTERNAL_API_KEY`（GitHub Actions 表达式的 `||` 会在
+          # 左侧为空/未配置时取右侧），以免本次改造直接把定时任务断掉。
+          # 注意：这里刻意命名为 RAW_TOKEN，避免脚本内的清洗变量与 secret 同名而混淆。
+          RAW_TOKEN: ${{ secrets.INTERNAL_API_KEY_CN || secrets.INTERNAL_API_KEY }}
         run: |
           set -euo pipefail
-          if [ -z "$INTERNAL_API_KEY" ]; then
-            echo "❌ GitHub secret INTERNAL_API_KEY 未配置，无法触发 .cn 汇率刷新"
+
+          # ── 步骤 1：取原始 secret 并剥除「全部」空白字符 ──────────────────────
+          # 为什么必须剥除：GitHub secret 在网页/API 录入时极易带上尾随空格、换行或 Tab。
+          # 这些字符拼进 URL query 会让 curl 判定 URL 非法（exit 3），请求根本不会发出，
+          # 表现为日志里连 HTTP 状态码都看不到 —— 正是本次连续 9 天失败的根因。
+          # 容错说明：`set -euo pipefail` 下命令替换若失败会直接退出脚本，
+          # 因此这里的清洗用 `|| KEY=""` 兜底，保证清洗步骤本身不会把脚本打死。
+          RAW_TOKEN="${RAW_TOKEN:-}"
+          RAW_LEN=${#RAW_TOKEN}
+          KEY="$(printf '%s' "$RAW_TOKEN" | tr -d '[:space:]')" || KEY=""
+          KEY_LEN=${#KEY}
+          STRIPPED=$((RAW_LEN - KEY_LEN))
+
+          if [ "$KEY_LEN" -eq 0 ]; then
+            echo "❌ secret INTERNAL_API_KEY 清洗后为空"
+            echo "   （若已配置 INTERNAL_API_KEY_CN，则该 secret 同样为空或仅含空白字符）"
+            echo "   取值优先级：secrets.INTERNAL_API_KEY_CN → secrets.INTERNAL_API_KEY"
             exit 1
           fi
-          FULL_URL="${CN_FX_URL}?token=${INTERNAL_API_KEY}"
+
+          # ── 步骤 2：打印非敏感指纹（长度 + sha256 前 8 位）────────────────────
+          # 用途：未来 GitHub secret 与 ECS /opt/cn/.env.cn 对不上时，直接比对这两个指纹即可定位，
+          #       且完全不泄漏密钥。绝对不打印密钥明文、前几位或后几位。
+          # 说明：KEY_LEN 与 RAW_LEN 的差值等于被剥除的空白字符个数，
+          #       差值 > 0 即证明 secret 确实带了空白字符（本次故障的自证材料）。
+          KEY_SHA8="$(printf '%s' "$KEY" | sha256sum | cut -c1-8)" || KEY_SHA8="????????"
+          echo "密钥长度=${KEY_LEN}（原始长度=${RAW_LEN}，已剥除空白字符 ${STRIPPED} 个）"
+          echo "密钥 sha256 前 8 位=${KEY_SHA8}"
+          echo "🔒 密钥明文不打印。若需与 ECS 侧比对，在 ECS 上执行（输出应与上一行完全一致）："
+          echo "   awk -F= '/^INTERNAL_API_KEY=/{print \$2}' /opt/cn/.env.cn | tr -d '[:space:]' | sha256sum | cut -c1-8"
+
           echo "触发 .cn 汇率刷新端点：${CN_FX_URL}?token=***"
           ATTEMPT=0
           MAX=3
+          LAST_REASON="未知"
           while [ "$ATTEMPT" -lt "$MAX" ]; do
             ATTEMPT=$((ATTEMPT + 1))
             echo "── 第 ${ATTEMPT}/${MAX} 次尝试 ──"
-            HTTP_CODE=$(curl -s -o /tmp/cn_fx_resp.json -w "%{http_code}" -m 120 "$FULL_URL")
-            CURL_EXIT=$?
+
+            # 每次尝试前清掉上一次的响应体，避免 curl 未写入时把上一轮的旧 body 当成本轮结果打印。
+            rm -f /tmp/cn_fx_resp.json
+            HTTP_CODE="000"
+            CURL_EXIT=0
+
+            # 修法 A：不再手工拼 query，改用 `-G --data-urlencode "token=$KEY"`。
+            #   理由：密钥若含 `+` `/` `=` 等字符，直接拼进 query 会被服务端按
+            #   application/x-www-form-urlencoded 解码（例如 `+` 会被解成空格），
+            #   服务端拿到的值与 secret 不一致 → 401。`--data-urlencode` 会对这些字符
+            #   全部正确转义，是唯一安全的做法。`-w "%{http_code}"` 与 `-o` 保留不变。
+            # 修法 B：`HTTP_CODE=$(...) || CURL_EXIT=$?`
+            #   原写法 `HTTP_CODE=$(curl ...)` 在 `set -e` 下遇到 curl 非零退出会立刻终止脚本，
+            #   后面所有诊断 echo 全被吞掉，日志只剩 `exit code 3`。
+            #   改成 `|| CURL_EXIT=$?` 后，curl 失败也会继续往下走，能打印完整分层诊断。
+            HTTP_CODE=$(curl -s -o /tmp/cn_fx_resp.json -w "%{http_code}" -m 120 \
+              -G --data-urlencode "token=${KEY}" "$CN_FX_URL") || CURL_EXIT=$?
+            echo "curl_exit=${CURL_EXIT}  HTTP=${HTTP_CODE}"
+
+            BODY="$(head -c 4000 /tmp/cn_fx_resp.json 2>/dev/null || true)"
+            SUCCESS="unknown"
+            if [ -s /tmp/cn_fx_resp.json ]; then
+              SUCCESS=$(python3 -c "import json;d=json.load(open('/tmp/cn_fx_resp.json',encoding='utf-8'));print('true' if d.get('success') is True else 'false')" 2>/dev/null) || SUCCESS="unknown"
+            fi
+
+            # ── 步骤 3：分层诊断 ────────────────────────────────────────────
+            # 每一档都写清「什么含义 / 该找谁改」，让下次失败不用再靠猜。
             if [ "$CURL_EXIT" -ne 0 ]; then
-              # 连接层失败诊断：28=超时 6=DNS解析失败 35/60=TLS握手失败 7=拒绝连接
-              echo "⚠️ curl 连接失败 exit=${CURL_EXIT}（28=超时 6=DNS 7=拒绝连接 35/60=TLS），未收到 HTTP 响应"
-            fi
-            echo "HTTP 状态码: ${HTTP_CODE}"
-            BODY="$(cat /tmp/cn_fx_resp.json 2>/dev/null || echo '')"
-            echo "响应体: ${BODY}"
-            if [ "$HTTP_CODE" = "200" ]; then
-              # 进一步确认业务成功（防止端点返回 200 但 success=false 的假绿）
-              SUCCESS=$(echo "$BODY" | python3 -c "import sys,json;d=json.load(sys.stdin);print('true' if d.get('success') is True else 'false')" 2>/dev/null || echo "unknown")
-              if [ "$SUCCESS" = "true" ]; then
-                echo "✅ .cn 汇率刷新成功（HTTP=200, success=true）"
-                exit 0
-              fi
-              echo "⚠️ HTTP=200 但 success!=true，重试"
+              case "$CURL_EXIT" in
+                3)
+                  echo "❌ curl exit=3 —— 密钥含非法字符（空白 / 控制字符）或 URL 拼接错误，请求未发出"
+                  echo "   本脚本已自动剥除全部空白字符仍然失败，说明 secret 里含其它不可见字符"
+                  echo "   （如 \r、\t、零宽空格 U+200B、全角空格 U+3000、BOM 等）。"
+                  echo "   处理：到 GitHub → Settings → Secrets 重新粘贴 secret，粘贴后手动删掉行尾。"
+                  LAST_REASON="curl exit=3（URL 非法，请求未发出）"
+                  ;;
+                6)
+                  echo "❌ curl exit=6 —— DNS 解析失败：无法解析 www.usedfarmmach.cn"
+                  echo "   处理：确认 .cn 域名解析与阿里云 DNS 正常；GitHub runner 侧 DNS 偶发抖动可重试。"
+                  LAST_REASON="curl exit=6（DNS 解析失败）"
+                  ;;
+                7)
+                  echo "❌ curl exit=7 —— 连接被拒绝：目标端口未监听或被防火墙/安全组拦截"
+                  echo "   处理：确认 ECS 上 nginx 容器存活、443 端口在安全组放行。"
+                  LAST_REASON="curl exit=7（连接被拒绝）"
+                  ;;
+                28)
+                  echo "❌ curl exit=28 —— 请求超时（-m 120 秒内未完成）"
+                  echo "   处理：多为跨境链路拥塞或 refreshAllRates 卡在外部汇率源；观察是否是单次抖动。"
+                  LAST_REASON="curl exit=28（超时）"
+                  ;;
+                35 | 60)
+                  echo "❌ curl exit=${CURL_EXIT} —— TLS 握手失败（35=握手错误 60=证书校验失败）"
+                  echo "   处理：检查 .cn 证书是否过期（deploy/watchdog-cn-cert.sh 会告警）。"
+                  LAST_REASON="curl exit=${CURL_EXIT}（TLS 握手/证书失败）"
+                  ;;
+                *)
+                  echo "❌ curl exit=${CURL_EXIT} —— 其它传输层错误，未收到 HTTP 响应"
+                  echo "   处理：按 curl 退出码表排查；必要时手动 workflow_dispatch 复跑确认是否瞬时故障。"
+                  LAST_REASON="curl exit=${CURL_EXIT}（传输层错误）"
+                  ;;
+              esac
+              echo "响应体: ${BODY:-<空>}"
+            elif [ "$HTTP_CODE" = "200" ] && [ "$SUCCESS" = "true" ]; then
+              echo "响应体: ${BODY:-<空>}"
+              echo "✅ .cn 汇率刷新成功（HTTP=200, success=true）"
+              exit 0
+            elif [ "$HTTP_CODE" = "401" ]; then
+              echo "响应体: ${BODY:-<空>}"
+              echo "❌ HTTP=401 —— 鉴权失败：GitHub secret 与 .cn 侧 /opt/cn/.env.cn 的 INTERNAL_API_KEY 不一致"
+              echo "   注意：按合规要求 .cn 与 .com 必须是两个不同的 INTERNAL_API_KEY 值，"
+              echo "        因此本 job 优先读 secret INTERNAL_API_KEY_CN，未配置时才回退 INTERNAL_API_KEY。"
+              echo "   排查：把上面打印的『密钥 sha256 前 8 位』与 ECS 上同一命令的输出比对，"
+              echo "        不一致即 secret 值错了；一致但仍 401 则说明 .cn 容器未加载 .env.cn（需重启 app）。"
+              LAST_REASON="HTTP=401（鉴权失败：secret 与 ECS 不一致）"
+            elif [ "$HTTP_CODE" = "502" ]; then
+              echo "响应体: ${BODY:-<空>}"
+              echo "❌ HTTP=502 —— 端点鉴权通过但业务失败（refreshAllRates 返回 error，success=false）"
+              echo "   含义：token 是对的，问题在汇率抓取本身（外部源不可达 / 返回结构变化 / 落库失败）。"
+              echo "   排查：看响应体里的 error 字段，以及 ECS 上 docker compose logs app。"
+              LAST_REASON="HTTP=502（业务失败：refreshAllRates 返回 error）"
+            elif [ "$HTTP_CODE" = "200" ]; then
+              echo "响应体: ${BODY:-<空>}"
+              echo "⚠️ HTTP=200 但 success!=true（success=${SUCCESS}），按失败处理并重试"
+              LAST_REASON="HTTP=200 但 success!=true"
             else
-              echo "⚠️ HTTP=${HTTP_CODE}（非 200），重试"
+              echo "响应体: ${BODY:-<空>}"
+              echo "⚠️ HTTP=${HTTP_CODE} —— 未预期的状态码（非 200/401/502），重试"
+              echo "   处理：查看响应体与 ECS nginx / app 日志；若为 5xx 多为上游不可用。"
+              LAST_REASON="HTTP=${HTTP_CODE}（未预期状态码）"
             fi
+
             sleep 10
           done
-          echo "❌ .cn 汇率刷新在 ${MAX} 次尝试后仍失败"
+          echo "❌ .cn 汇率刷新在 ${MAX} 次尝试后仍失败；最后一次失败原因：${LAST_REASON}"
           exit 1
