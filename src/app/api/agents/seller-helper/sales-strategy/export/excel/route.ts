@@ -18,6 +18,8 @@ import { prisma } from "@/lib/db";
 import { estimateAiCost, deductAiUsage, EXPORT_ESTIMATED_TOKENS } from "@/lib/credits/deduct";
 import { retrieveDealers } from "@/lib/sales-strategy/dealers";
 import { buildExcel, type ExcelDealerInput } from "@/lib/sales-strategy/export";
+import { splitCountryCity } from "@/lib/sales-strategy/derive";
+import type { StrategyLlmResult } from "@/lib/sales-strategy/prompt";
 import type { DealerPartitionQuery } from "@/lib/sales-strategy/types";
 
 export const dynamic = "force-dynamic";
@@ -90,11 +92,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = (await request.json().catch(() => ({}))) as { partition?: string; locale?: string };
+    const body = (await request.json().catch(() => ({}))) as {
+      partition?: string;
+      locale?: string;
+      /**
+       * 版式开关（T11）：`"v2"` / `2` / `"2"` ⇒ 三 Sheet（渠道联系总表 14 列 /
+       * 机型价格速查 7 列 / 必办清单 5 列）；其余任何值（含缺省）⇒ legacy 11 列单 Sheet。
+       *
+       * 前端线上发的是**字符串** `"v2"`（`sales-strategy-export-buttons.tsx` 的
+       * `EXCEL_LAYOUT_V2 = "v2"`），但手搓 body 的调用方可能传数字 ⇒ 三种写法一律容忍，
+       * 避免「传数字就静默降级」这种最难排查的故障。
+       */
+      layout?: string | number;
+      /** 策略对象（Sheet2/Sheet3 的唯一数据源）；缺省则两 Sheet 走降级文案 */
+      strategy?: StrategyLlmResult | null;
+      /** 外部检索状态；非 `ok` 时 Sheet2「备注」标注「外部检索未接入」 */
+      webStatus?: string;
+    };
     const partition: DealerPartitionQuery =
       typeof body.partition === "string" && PARTITIONS.has(body.partition as DealerPartitionQuery)
         ? (body.partition as DealerPartitionQuery)
         : "all";
+
+    /** 版式归一：`"v2"` / `2` / `"2"` → `2`；其余（含缺省、`"1"`、垃圾值）→ `1` */
+    const layoutOpt: 1 | 2 =
+      body.layout === "v2" || body.layout === 2 || body.layout === "2" ? 2 : 1;
+    const strategy =
+      body.strategy && typeof body.strategy === "object" ? (body.strategy as StrategyLlmResult) : null;
+    const webStatus = typeof body.webStatus === "string" ? body.webStatus : undefined;
 
     // ── 余额预检（名义）──
     const est = await estimateAiCost(EXPORT_ESTIMATED_TOKENS);
@@ -122,7 +147,22 @@ export async function POST(request: NextRequest) {
       ids.length > 0
         ? await prisma.dealer.findMany({
             where: { id: { in: ids } },
-            select: { id: true, phone: true, wechat: true, email: true },
+            select: {
+              id: true,
+              phone: true,
+              wechat: true,
+              email: true,
+              // ── T11：14 列版式所需的 additive 列（T06 已建列；老库 null ⇒ 渲染层统一 —）──
+              location: true,
+              country: true,
+              city: true,
+              contactPerson: true,
+              role: true,
+              priority: true,
+              suggestedPrice: true,
+              followStatus: true,
+              sourcePage: true,
+            },
           })
         : [];
     const plainMap = new Map(plainRows.map((r) => [r.id, r]));
@@ -137,6 +177,9 @@ export async function POST(request: NextRequest) {
     // ── 组装 Excel 输入（带明文，由 buildExcel 按门禁脱敏）──
     const inputs: ExcelDealerInput[] = allDealers.map((d) => {
       const plain = plainMap.get(d.id);
+      const part = d.partition === "cn" ? "cn" : "intl";
+      // 国家/城市：`Dealer.country/city` → 回落 `location` 解析 → 渲染层统一 `—`（PRD §4.1 第 4/5 列）
+      const fromLocation = splitCountryCity(plain?.location ?? null, part);
       return {
         id: d.id,
         partition: d.partition,
@@ -150,11 +193,27 @@ export async function POST(request: NextRequest) {
         wechat: plain?.wechat ?? null,
         email: plain?.email ?? null,
         sourceUrl: d.sourceUrl,
+        // ── 14 列版式新增字段（additive；缺失一律 null，渲染层统一 —）──
+        country: plain?.country ?? fromLocation.country,
+        city: plain?.city ?? fromLocation.city,
+        contactPerson: plain?.contactPerson ?? null,
+        role: plain?.role ?? null,
+        priority: plain?.priority ?? null,
+        suggestedPrice: plain?.suggestedPrice ?? null,
+        followStatus: plain?.followStatus ?? null,
+        sourcePage: plain?.sourcePage ?? null,
       };
     });
 
     // ── 先 build 成功再扣费（build 失败 → 500 且不扣费）──
-    const buf = await buildExcel(inputs, unlockedSet, locale);
+    // layout 1 时传 `undefined`（而非 `{ layout: 1 }`）：与改造前的三参调用逐字等价，
+    // 保证 legacy 路径连「多传一个参数」这种差异都不引入。
+    const buf = await buildExcel(
+      inputs,
+      unlockedSet,
+      locale,
+      layoutOpt === 2 ? { layout: 2, strategy, webStatus } : undefined
+    );
 
     const deduction = await deductAiUsage({
       userId: user.id,
