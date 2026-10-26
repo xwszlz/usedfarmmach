@@ -1,0 +1,29 @@
+# Git 属性契约（仓库级）
+# ─────────────────────────────────────────────────────────────
+# 背景：本仓此前无 .gitattributes，二进制判定完全依赖 git 的 NUL 字节启发式 +
+# 各人本机 core.autocrlf（Windows 默认 true、Linux/CI 通常 false）。
+# 后果：不含 NUL 的二进制资产（部分压缩格式、样板文件）会被当文本做 EOL 转换，
+#      同一 blob 在不同机器 checkout 出不同字节 ⇒「本地全绿、远端必炸」。
+#
+# 本文件**只钉死二进制类型**，不引入 `* text=auto eol=lf` 这类全局 EOL 规则 ——
+# 原因是本仓有若干文件的行尾被刻意保留为 CRLF（deploy-cn.yml / messages/*.json /
+# middleware.ts 等），全局规则会在下次 checkout 时把它们整体改写成 LF，
+# 产生一次数万行的无意义 diff，并可能破坏按字节比对的断言。
+#
+# 需要新增二进制类型时，在下面追加一行即可。
+
+*.ttf   binary
+*.otf   binary
+*.woff  binary
+*.woff2 binary
+*.pdf   binary
+*.xlsx  binary
+*.xls   binary
+*.zip   binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.ico   binary
+*.mp4   binary
