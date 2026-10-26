@@ -1,0 +1,317 @@
+/**
+ * T13 验收（A1 / A2 / G16）— **真实产物字节 + 独立文本抽取**，不依赖 drawText mock
+ * ─────────────────────────────────────────────────────────
+ * 与工程师既有 `export-pdf-v2.test.ts`（原型级拦截 drawText）的关键区别：
+ *   本文件先用 `buildPdf` 出**真实 PDF 字节**，再用 `./pdf-text` 从字节里解出
+ *   ToUnicode CMap + 内容流，还原「纸上到底写了什么、在第几页、什么坐标」。
+ *   ⇒ 若渲染层根本没调用 drawText（或调用后没写进内容流），这里会 FAIL，拦截式断言不会。
+ *
+ * 覆盖：
+ *   A1 双版式选路：空 strategy → legacy 5 模块（且不含 v2 章节）；有 tldr → v2 10 段标题按序。
+ *   A2 TL;DR 位于**第 1 页**（页级文本 + 真实坐标 y，配合 `getSize().height` 核对）。
+ *   G16 `compliance` / `responsibility` / `actionChecklist`（+ scripts / listingChecklist）真上纸。
+ *
+ * 口径澄清（避免误判为 bug，见 team-lead 预警）：
+ *   ① `webStatus !== "ok"` 时 deleted/L3 档由 prompt 层强制降级 ⇒ 本文件**不断言**「必须有 L3」；
+ *   ② R2 价格倒挂只断言「trigger→level 一致性」，不断言「R2 命中必进 rejected」；
+ *   ③ 空数组同样触发 v2（`!= null` 判定），属设计取舍，本文件仅记录不判错。
+ */
+import { describe, it, expect } from "vitest";
+import { buildPdf } from "../export";
+import { extractPdfText, inspectPdf } from "./pdf-text";
+import type { StrategyExportPayload } from "../export-types";
+
+// ── 夹具 ────────────────────────────────────────────────────
+const PRODUCT = { brandName: "东方红", modelName: "YTO-1204", year: 2019 };
+
+/** legacy 判定用的 5 模块特征串 */
+const LEGACY_MARKERS = [
+  "① 经销商清单（联系方式已脱敏）",
+  "② 价格基准",
+  "③ 全渠道打法",
+  "④ 话术",
+  "⑤ 上架清单",
+];
+
+/** v2 的固定章节标题（顺序即验收口径）。0.5 章按 `keyInsight` 存在性整段省略，单独断言 */
+const V2_SECTIONS_MANDATORY = [
+  "0. 一页结论 TL;DR",
+  "1. 机型画像对比",
+  "2. 全球价格锚点矩阵",
+  "3. 每台最优去向",
+  "4. 四因子市场排名",
+  "4.5 准入红绿灯",
+  "5. 今天该打的电话",
+  "6. 合规前置清单",
+  "7. 待老板确认",
+];
+const V2_SECTION_05 = "0.5 与上一单的关键反转";
+const V2_APPENDIX = "附录 · 数据来源";
+
+const V2_PAYLOAD: StrategyExportPayload = {
+  strategy: {
+    tldr: [
+      {
+        equipment: "东方红 YTO-1204",
+        bestChannel: "塔什干二手商",
+        expectedPriceCny: "¥98万",
+        why: "当地二手机溢价高",
+      },
+    ],
+    keyInsight: { headline: "反转标题SENTINEL-KI-H", body: "反转正文SENTINEL-KI-B" },
+    compliance: {
+      dataExport: "境内数据不出境SENTINEL-DE",
+      crossBorder: "跨境买家自担SENTINEL-CB",
+      notes: "保留报关单SENTINEL-NT",
+    },
+    actionChecklist: [{ step: 1, action: "打电话给老王SENTINEL-ACT", owner: "老板", eta: "今天" }],
+    responsibility: {
+      seller: "卖家责任SENTINEL-SELLER",
+      platform: "平台边界SENTINEL-PLATFORM",
+      disclaimer: "免责声明SENTINEL-DISC",
+    },
+    scripts: [{ scenario: "首次触达SENTINEL-SC", line: "您好有话术SENTINEL-LINE" }],
+    listingChecklist: [{ step: 1, item: "补车况卡SENTINEL-LC" }],
+  },
+  product: PRODUCT,
+  channels: [],
+  locale: "zh",
+};
+
+// ═══════════════════════════════════════════════════════════
+// A1 双版式选路（真实字节 ⇒ 抽文本判版式）
+// ═══════════════════════════════════════════════════════════
+describe("A1 双版式选路（真实 PDF 字节抽文本）", () => {
+  it("空 strategy + 空 channels ⇒ legacy 5 模块全在，且不含 v2「0. 一页结论」/附录", async () => {
+    const bytes = await buildPdf({ strategy: {}, product: PRODUCT, channels: [], locale: "zh" });
+    const { all } = await extractPdfText(bytes);
+
+    for (const marker of LEGACY_MARKERS) {
+      expect(all, `legacy 缺特征串「${marker}」`).toContain(marker);
+    }
+    expect(all).not.toContain("0. 一页结论");
+    expect(all).not.toContain(V2_APPENDIX);
+    expect(all).not.toContain("1. 机型画像对比");
+  });
+
+  it("仅 tldr 一个字段 ⇒ v2：9 段必现标题按序，且不含 legacy「① 经销商清单」", async () => {
+    const bytes = await buildPdf({
+      strategy: { tldr: V2_PAYLOAD.strategy.tldr },
+      product: PRODUCT,
+      channels: [],
+      locale: "zh",
+    });
+    const { all } = await extractPdfText(bytes);
+
+    let cursor = -1;
+    for (const title of V2_SECTIONS_MANDATORY) {
+      const at = all.indexOf(title);
+      expect(at, `v2 缺章节标题「${title}」（解出全文见下）\n${all.slice(0, 1200)}`).toBeGreaterThan(-1);
+      expect(at, `章节「${title}」顺序错位（应在上一个标题之后）`).toBeGreaterThan(cursor);
+      cursor = at;
+    }
+    expect(all).toContain(V2_APPENDIX);
+    expect(all).not.toContain("① 经销商清单");
+    // 0.5 章在无 keyInsight 时应整段省略（连标题一起不画）
+    expect(all).not.toContain(V2_SECTION_05);
+  });
+
+  it("有 keyInsight ⇒ 0.5 章上纸，且位置在 0 与 1 之间", async () => {
+    const { all } = await extractPdfText(await buildPdf(V2_PAYLOAD));
+    const at0 = all.indexOf("0. 一页结论 TL;DR");
+    const at05 = all.indexOf(V2_SECTION_05);
+    const at1 = all.indexOf("1. 机型画像对比");
+    expect(at05, "有 keyInsight 却未渲染 0.5 章").toBeGreaterThan(-1);
+    expect(at05).toBeGreaterThan(at0);
+    expect(at05).toBeLessThan(at1);
+    expect(all).toContain("反转标题SENTINEL-KI-H");
+  });
+
+  it("11 个 V2 触发键逐个单独存在 ⇒ 都走 v2（不是只看 tldr）", async () => {
+    const triggers: Array<[string, unknown]> = [
+      ["tldr", []],
+      ["keyInsight", {}],
+      ["equipmentProfiles", []],
+      ["marketAnchors", []],
+      ["bestDestinations", []],
+      ["marketRanking", []],
+      ["accessTrafficLight", {}],
+      ["todayCalls", []],
+      ["complianceTasks", []],
+      ["openQuestions", []],
+      ["dataSources", []],
+    ];
+
+    for (const [key, value] of triggers) {
+      const bytes = await buildPdf({
+        strategy: { [key]: value } as any,
+        product: PRODUCT,
+        channels: [],
+        locale: "zh",
+      });
+      const { all } = await extractPdfText(bytes);
+      expect(all, `触发键 ${key} 未走 v2`).toContain("0. 一页结论");
+      expect(all, `触发键 ${key} 误走 legacy`).not.toContain("① 经销商清单");
+    }
+  });
+
+  it("12 个新字段全为显式 null ⇒ 仍走 legacy（`!= null` 判定，null 不算「有字段」）", async () => {
+    const allNull = {
+      tldr: null,
+      keyInsight: null,
+      equipmentProfiles: null,
+      marketAnchors: null,
+      bestDestinations: null,
+      marketRanking: null,
+      accessTrafficLight: null,
+      todayCalls: null,
+      complianceTasks: null,
+      openQuestions: null,
+      dataSources: null,
+    };
+    const { all } = await extractPdfText(
+      await buildPdf({ strategy: allNull as any, product: PRODUCT, channels: [], locale: "zh" })
+    );
+    expect(all).toContain("① 经销商清单");
+    expect(all).not.toContain("0. 一页结论");
+  });
+
+  it("locale=en ⇒ 走 legacy 英文 5 模块（不串中文标题）", async () => {
+    const bytes = await buildPdf({ strategy: {}, product: PRODUCT, channels: [], locale: "en" });
+    const { all } = await extractPdfText(bytes);
+    expect(all).toContain("① Dealer List (masked)");
+    expect(all).not.toContain("① 经销商清单");
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+// A2 TL;DR 必须在第 1 页（页级文本 + 真实坐标）
+// ═══════════════════════════════════════════════════════════
+describe("A2 TL;DR 落在第 1 页（页级文本 + 坐标核对）", () => {
+  it("TL;DR 标题与首行数据都在第 1 页，且在页面纵向可打印区内", async () => {
+    const bytes = await buildPdf(V2_PAYLOAD);
+    const { pages, runs } = await extractPdfText(bytes);
+    const meta = await inspectPdf(bytes);
+
+    // 事实基础：A4 尺寸从产物读出（595 x 842）
+    expect(meta.sizes[0].width).toBeCloseTo(595, 0);
+    const pageHeight = meta.sizes[0].height;
+    expect(pageHeight).toBeCloseTo(842, 0);
+
+    // ① 页级断言：标题只出现在第 1 页
+    expect(pages[0]).toContain("0. 一页结论 TL;DR");
+    for (let i = 1; i < pages.length; i++) {
+      expect(pages[i], `TL;DR 标题出现在第 ${i + 1} 页（应在第 1 页）`).not.toContain(
+        "0. 一页结论 TL;DR"
+      );
+    }
+
+    // ② 坐标断言：标题 y 在页面上半部，表格首行 y 在标题之下且仍在可打印区内
+    const titleRun = runs[0].find((r) => r.text === "0. 一页结论 TL;DR");
+    expect(titleRun, "第 1 页找不到 TL;DR 标题的绘制记录").toBeDefined();
+    const titleY = titleRun!.y;
+    expect(titleY).toBeGreaterThan(pageHeight / 2); // 上半部
+    expect(titleY).toBeLessThanOrEqual(pageHeight); // 不越界
+
+    const rowRun = runs[0].find((r) => r.text === "塔什干二手商");
+    expect(rowRun, "第 1 页找不到 TL;DR 首行数据的绘制记录").toBeDefined();
+    expect(rowRun!.y).toBeLessThan(titleY); // 表格在标题下方
+    expect(rowRun!.y).toBeGreaterThan(40); // 不低于页脚边距 MARGIN=40
+    expect(rowRun!.x).toBeGreaterThanOrEqual(40);
+  });
+
+  it("8 行 TL;DR（长表）仍完整落在第 1 页可打印区内（不静默截断）", async () => {
+    const rows = Array.from({ length: 8 }, (_, i) => ({
+      equipment: `机型${i + 1}号`,
+      bestChannel: `去向${i + 1}`,
+      expectedPriceCny: `¥${90 + i}万`,
+      why: `理由${i + 1}`,
+    }));
+    const bytes = await buildPdf({
+      ...V2_PAYLOAD,
+      strategy: { ...V2_PAYLOAD.strategy, tldr: rows },
+    });
+    const { pages, runs } = await extractPdfText(bytes);
+    const meta = await inspectPdf(bytes);
+
+    // 8 行全部可检出（不丢行）
+    for (let i = 1; i <= 8; i++) {
+      expect(pages[0], `第 ${i} 行「机型${i}号」未落在第 1 页`).toContain(`机型${i}号`);
+    }
+
+    // ⚠️ 同一机型名还会在「1. 机型画像对比」章出现（derive 由 tldr 自动派生 profiles，
+    //    属「数据不白丢」的正向行为）⇒ 必须按 y 轴切出**TL;DR 表**那一段再断言，不能数总次数。
+    const profileTitle = runs[0].find((r) => r.text === "1. 机型画像对比");
+    expect(profileTitle, "第 1 页找不到「1. 机型画像对比」标题").toBeDefined();
+    const tldrYs = runs[0]
+      .filter((r) => /^机型\d号$/.test(r.text) && r.y > profileTitle!.y)
+      .map((r) => r.y);
+
+    expect(tldrYs).toHaveLength(8);
+    for (const y of tldrYs) {
+      expect(y).toBeGreaterThan(40); // 高于页脚边距
+      expect(y).toBeLessThan(meta.sizes[0].height); // 不越出页面
+    }
+    // 行间严格递减（自上而下，不重叠、不跳行）
+    for (let i = 1; i < tldrYs.length; i++) {
+      expect(tldrYs[i]).toBeLessThan(tldrYs[i - 1]);
+    }
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+// G16 老字段必须真上纸（改前「生成了却从不渲染」= 数据白丢）
+// ═══════════════════════════════════════════════════════════
+describe("G16 compliance / responsibility / actionChecklist 真上纸", () => {
+  it("compliance 三字段逐条上纸（带标签前缀，可定位）", async () => {
+    const { all } = await extractPdfText(await buildPdf(V2_PAYLOAD));
+    expect(all).toContain("数据出境：境内数据不出境SENTINEL-DE");
+    expect(all).toContain("跨境合规：跨境买家自担SENTINEL-CB");
+    expect(all).toContain("补充提示：保留报关单SENTINEL-NT");
+  });
+
+  it("responsibility 三字段上纸（含免责声明）", async () => {
+    const { all } = await extractPdfText(await buildPdf(V2_PAYLOAD));
+    expect(all).toContain("卖家责任SENTINEL-SELLER");
+    expect(all).toContain("平台边界SENTINEL-PLATFORM");
+    expect(all).toContain("免责声明SENTINEL-DISC");
+    // 免责声明在「[P1] 责任划分与免责」小节内
+    expect(all.indexOf("[P1] 责任划分与免责")).toBeGreaterThan(-1);
+    expect(all.indexOf("[P1] 责任划分与免责")).toBeLessThan(
+      all.indexOf("免责声明SENTINEL-DISC")
+    );
+  });
+
+  it("actionChecklist 上纸（步骤/动作/负责人/时限 四要素齐全）", async () => {
+    const { all } = await extractPdfText(await buildPdf(V2_PAYLOAD));
+    expect(all).toContain("打电话给老王SENTINEL-ACT");
+    expect(all).toContain("老板");
+    expect(all).toContain("今天");
+    expect(all).toContain("[P1] 执行分工与时限");
+  });
+
+  it("scripts / listingChecklist 上纸（P1 区，改造前同样从未渲染）", async () => {
+    const { all } = await extractPdfText(await buildPdf(V2_PAYLOAD));
+    expect(all).toContain("[P1] 销售话术");
+    expect(all).toContain("首次触达SENTINEL-SC");
+    expect(all).toContain("您好有话术SENTINEL-LINE");
+    expect(all).toContain("[P1] 上架清单");
+    expect(all).toContain("补车况卡SENTINEL-LC");
+  });
+
+  it("三个老字段都为 null/缺省时不上纸、也不抛错（不留 `` null / undefined 字面量）", async () => {
+    const bytes = await buildPdf({
+      strategy: { tldr: V2_PAYLOAD.strategy.tldr },
+      product: PRODUCT,
+      channels: [],
+      locale: "zh",
+    });
+    const { all } = await extractPdfText(bytes);
+    expect(all).not.toContain("数据出境：");
+    expect(all).not.toContain("[P1] 责任划分与免责");
+    expect(all).not.toContain("[P1] 执行分工与时限");
+    // 绝不把 null / undefined 画到纸上
+    expect(all).not.toMatch(/\bnull\b/);
+    expect(all).not.toMatch(/\bundefined\b/);
+  });
+});
