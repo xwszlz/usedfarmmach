@@ -529,4 +529,30 @@ describe("layout 1（legacy）行为不变", () => {
     const b = await load(await buildExcel([], new Set(), "en"));
     expect(b.worksheets[0].name).toBe("Dealer Contacts");
   });
+
+  it("🔴 回归（T11 安全修复）：legacy 多邮箱未解锁行也必须逐地址脱敏", async () => {
+    // 修复前 `maskEmail("info@e-farm.com / sales@e-farm.com")` 只脱第一个 `@`，
+    // 产出 "in***@e-farm.com / sales@e-farm.com" —— 第二个地址完全明文。
+    const wb = await load(await buildExcel(DEALERS, UNLOCKED, "zh"));
+    const ws = wb.worksheets[0];
+    const cellTexts: string[] = [];
+    ws.eachRow((row) => row.eachCell((c) => cellTexts.push(cellText(c))));
+    const joined = cellTexts.join("\u0001");
+
+    // 必须等于「逐地址脱敏后以 ` / ` 连接」
+    expect(cellTexts).toContain(`${maskEmail("info@e-farm.com")} / ${maskEmail("sales@e-farm.com")}`);
+    // 第二个地址的本地部分 + 域名都不得明文出现
+    expect(joined).not.toContain("sales@e-farm.com");
+    expect(joined).not.toContain("sales@");
+    // 单邮箱行的输出与修复前逐字相同（不许顺手改了强约束路径）
+    expect(cellTexts).toContain(maskEmail(LOCKED_CN_EMAIL));
+  });
+
+  it("legacy 空邮箱仍为空串（不改单元格口径）", async () => {
+    const wb = await load(
+      await buildExcel([dealer({ id: "d_empty", phone: null, email: null, wechat: null })], new Set(), "zh")
+    );
+    const ws = wb.worksheets[0];
+    expect(cellText(ws.getRow(2).getCell(10))).toBe(""); // 邮箱列 = 空串，不是 `—`
+  });
 });

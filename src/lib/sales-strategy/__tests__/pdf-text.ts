@@ -24,11 +24,20 @@ import {
   decodePDFRawStream,
 } from "pdf-lib";
 
+/** 一段被绘制的文本 + 其绘制坐标（来自内容流 `Tm` / `Td`） */
+export interface TextRun {
+  text: string;
+  x: number;
+  y: number;
+}
+
 export interface PdfTextResult {
   /** 逐页文本（页序即 PDF 页序，索引 0 = 第 1 页） */
   pages: string[];
   /** 全文（页间以 \n\n 连接），便于做「全文任何位置都不得出现 X」这类断言 */
   all: string;
+  /** 逐页文本段（含坐标），用于「TL;DR 落在第 1 页的哪个位置」这类版面断言 */
+  runs: TextRun[][];
 }
 
 // ── 字节流解码 ───────────────────────────────────────────────
@@ -138,16 +147,20 @@ function collectFontCMaps(ctx: any, page: any): FontCmaps {
 // ── 内容流文本算子解析 ──────────────────────────────────────
 const OPERATOR_RE = new RegExp(
   [
-    // /F1 9 Tf  → 切换当前字体
+    // /F1 9 Tf  → 切换当前字体（组 1）
     String.raw`\/([A-Za-z0-9._+-]+)\s+[-\d.]+\s+Tf`,
-    // <hex> Tj
+    // <hex> Tj（组 2）
     String.raw`<([0-9A-Fa-f\s]*)>\s*Tj`,
-    // (literal) Tj
+    // (literal) Tj（组 3）
     String.raw`\(((?:\\.|[^\\()])*)\)\s*Tj`,
-    // [ ... ] TJ
+    // [ ... ] TJ（组 4）
     String.raw`\[((?:[^\[\]\\]|\\.)*)\]\s*TJ`,
-    // 换行类算子：Td / TD / T* / Tm
-    String.raw`(?:[-\d.]+\s+[-\d.]+\s+Td)|(?:[-\d.]+\s+[-\d.]+\s+TD)|(?:T\*)|(?:[-\d.]+\s+[-\d.]+\s+[-\d.]+\s+[-\d.]+\s+[-\d.]+\s+[-\d.]+\s+Tm)`,
+    // a b c d e f Tm（组 5-10；e=x 组 9，f=y 组 10）
+    String.raw`([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+Tm`,
+    // tx ty Td（组 11-12，相对位移）
+    String.raw`([-\d.]+)\s+([-\d.]+)\s+Td`,
+    // T*（组 13 命中即换行）
+    String.raw`T\*`,
   ].join("|"),
   "g"
 );
@@ -192,9 +205,21 @@ function decodeLiteral(raw: string, cmap: Map<number, string> | undefined): stri
   return out;
 }
 
-function extractTextFromContent(content: string, cmaps: FontCmaps): string {
+function extractTextFromContent(
+  content: string,
+  cmaps: FontCmaps
+): { text: string; runs: TextRun[] } {
   let current: Map<number, string> | undefined;
+  let x = 0;
+  let y = 0;
   let out = "";
+  const runs: TextRun[] = [];
+  const push = (t: string) => {
+    if (!t) return;
+    out += t;
+    runs.push({ text: t, x, y });
+  };
+
   OPERATOR_RE.lastIndex = 0;
   let m: RegExpExecArray | null;
   while ((m = OPERATOR_RE.exec(content)) !== null) {
@@ -203,11 +228,11 @@ function extractTextFromContent(content: string, cmaps: FontCmaps): string {
       continue;
     }
     if (m[2] !== undefined) {
-      out += decodeHexRun(m[2], current);
+      push(decodeHexRun(m[2], current));
       continue;
     }
     if (m[3] !== undefined) {
-      out += decodeLiteral(m[3], current);
+      push(decodeLiteral(m[3], current));
       continue;
     }
     if (m[4] !== undefined) {
@@ -215,14 +240,26 @@ function extractTextFromContent(content: string, cmaps: FontCmaps): string {
       const pieceRe = /<([0-9A-Fa-f\s]*)>|\(((?:\\.|[^\\()])*)\)/g;
       let p: RegExpExecArray | null;
       while ((p = pieceRe.exec(inner)) !== null) {
-        out += p[1] !== undefined ? decodeHexRun(p[1], current) : decodeLiteral(p[2], current);
+        push(p[1] !== undefined ? decodeHexRun(p[1], current) : decodeLiteral(p[2], current));
       }
       continue;
     }
-    // 换行算子 → 文本以换行分隔（便于人工阅读与「同段连续」断言）
+    if (m[9] !== undefined) {
+      // Tm：绝对定位
+      x = Number(m[9]);
+      y = Number(m[10]);
+      continue;
+    }
+    if (m[11] !== undefined) {
+      // Td：相对位移
+      x += Number(m[11]);
+      y += Number(m[12]);
+      continue;
+    }
+    // T* / 其它换行算子 → 文本以换行分隔（便于人工阅读与「同段连续」断言）
     out += "\n";
   }
-  return out;
+  return { text: out, runs };
 }
 
 function pageContentStrings(ctx: any, page: any): string[] {
@@ -246,15 +283,24 @@ export async function extractPdfText(bytes: Uint8Array): Promise<PdfTextResult> 
   const doc = await PDFDocument.load(bytes as any, { updateMetadata: false });
   const ctx = doc.context;
   const pages: string[] = [];
+  const runs: TextRun[][] = [];
 
   for (let i = 0; i < doc.getPageCount(); i++) {
     const page = doc.getPage(i);
     const cmaps = collectFontCMaps(ctx, page);
     const contentTexts = pageContentStrings(ctx, page);
-    pages.push(contentTexts.map((c) => extractTextFromContent(c, cmaps)).join("\n"));
+    const pageRuns: TextRun[] = [];
+    const pageText: string[] = [];
+    for (const c of contentTexts) {
+      const r = extractTextFromContent(c, cmaps);
+      pageText.push(r.text);
+      pageRuns.push(...r.runs);
+    }
+    pages.push(pageText.join("\n"));
+    runs.push(pageRuns);
   }
 
-  return { pages, all: pages.join("\n\n") };
+  return { pages, all: pages.join("\n\n"), runs };
 }
 
 /** PDF 页数与页面尺寸（从产物字节读，验证「第 1 页」类断言的事实基础） */
