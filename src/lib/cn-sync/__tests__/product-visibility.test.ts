@@ -1,5 +1,5 @@
 /**
- * 网站端可见性单元测试（scope-fix）
+ * 网站端可见性单元测试（scope-fix / 2026-10-26 口径变更）
  *
  * 运行：npm run test:cn-sync-scope
  *       （等价：npx tsx src/lib/cn-sync/__tests__/product-visibility.test.ts）
@@ -8,7 +8,12 @@
  * ⚠️ 本测试**不触碰任何数据库 / 网络**：
  * - `buildWebsiteVisibleWhere` 为纯函数（只依赖 @prisma/client 的**类型**），直接断言其输出结构；
  * - 「SQL 三值逻辑」用零依赖的纯 TS 三值求值器复现（AND/OR/NOT 在 NULL 上的传播），
- *   并对照下方注释中**实测得到的 Prisma 生成 SQL**，证明旧口径会静默丢行、新口径不会。
+ *   并对照下方注释中**实测得到的 Prisma 生成 SQL**，留档旧口径为何会静默丢行。
+ *
+ * 📌 2026-10-26 业务变更：老板拍板「国产机也要上网站端」。
+ *    可见性口径从「active ∧ 非(小程序渠道 ∧ 国产品牌)」退化为「active」。
+ *    本文件原先的 P0-4 回归护栏（断言小程序渠道的国产机**必须隐藏**）已**按新决策反转**，
+ *    改为断言「任何渠道的国产机都必须可见」——它不是 bug 修复，是口径变更，勿再改回去。
  */
 import assert from "node:assert/strict";
 import {
@@ -65,6 +70,7 @@ function selected(v: Tri): boolean {
  *                          AND (j3.isImported = $5 AND (j3.id IS NOT NULL)))
  *   )
  * 当卖家 email 为 NULL 时：j1.email = $2 → NULL；NULL AND TRUE → NULL；NOT NULL → NULL。
+ * ⚠️ 该实现早已被替换（改用 sellerId 标量），此处仅为「三值逻辑丢行」留证。
  */
 function oldClauseSelects(sellerEmail: string | null, isImported: boolean): boolean {
   const MINIAPP = MINIAPP_SELLER_EMAIL;
@@ -76,101 +82,82 @@ function oldClauseSelects(sellerEmail: string | null, isImported: boolean): bool
 }
 
 /**
- * 新口径（实测 Prisma 生成 SQL）：
- *   LEFT JOIN "Brand" AS j1 ON j1.id = Product.brandId
- *   INNER JOIN "User" AS j2 ON j2.id = Product.sellerId      -- seller 为**必填**关系
- *   WHERE (Product.status = $1 AND (
- *            (Product.sellerId <> $2 AND (j2.miniOpenid IS NULL))
- *            OR (j1.isImported = $3 AND (j1.id IS NOT NULL))
- *          ))
- * Product.sellerId 为 NOT NULL 列 → `sellerId <> $2` 只会是 TRUE/FALSE，永不为 NULL。
- * Product.seller 为必填关系 → INNER JOIN，关联行必然存在；`miniOpenid IS NULL` 是二值谓词，
- * 因此不会出现 `seller.email = $1` 那种三值逻辑丢行。
+ * 2026-10-26 起的现口径（生成 SQL 极简）：
+ *   WHERE Product.status = 'active'
+ * 不再有 channel / brand 判定 ⇒ 不存在任何三值逻辑入口，也不存在"静默丢产品"的路径。
+ * 保留这两个入参只为让下面的真值表对照测试仍然可读（取值已被忽略）。
  */
 function newClauseSelects(
-  sellerIsMiniapp: boolean,
-  sellerHasMiniOpenid: boolean,
-  isImported: boolean
+  _sellerIsMiniapp: boolean,
+  _sellerHasMiniOpenid: boolean,
+  _isImported: boolean
 ): boolean {
-  const notMiniapp: Tri = !sellerIsMiniapp; // sellerId <> miniappId（NOT NULL → 二值）
-  const noMiniOpenid: Tri = !sellerHasMiniOpenid; // seller.miniOpenid IS NULL（INNER JOIN → 二值）
-  const viaWebsiteChannel = triAnd(notMiniapp, noMiniOpenid);
-  return selected(triAnd(true /*status=active*/, triOr(viaWebsiteChannel, isImported)));
+  return selected(true /* status = active */);
 }
 
 async function main(): Promise<void> {
-  console.log("product-visibility 单元测试（scope-fix）");
+  console.log("product-visibility 单元测试（2026-10-26 国产机放开口径）");
 
-  // ── 1. 结构：sellerId 标量 + seller.miniOpenid 双条件，绝不依赖可空的 seller.email ──
-  await it("buildWebsiteVisibleWhere(id)：= active AND ((sellerId≠id AND seller.miniOpenid IS NULL) OR isImported)", () => {
+  // ── 1. 结构：只剩 status，不再排除任何卖家 / 品牌 ──
+  await it("buildWebsiteVisibleWhere(id)：= { status: 'active' }（不再按渠道/产地过滤）", () => {
     const w = buildWebsiteVisibleWhere("cmut_min_id");
-    assert.deepEqual(w, {
-      status: "active",
-      OR: [
-        { sellerId: { not: "cmut_min_id" }, seller: { miniOpenid: null } },
-        { brand: { isImported: true } },
-      ],
-    });
-  });
-
-  await it("buildWebsiteVisibleWhere(id)：用 sellerId 与 miniOpenid 判定，序列化后不含 email", () => {
-    const json = JSON.stringify(buildWebsiteVisibleWhere("cmut_min_id"));
-    assert.ok(!json.includes("email"), `where 不应再依赖可空的 email：${json}`);
-    assert.ok(json.includes("sellerId"), `where 应使用 sellerId：${json}`);
-    assert.ok(
-      json.includes("miniOpenid"),
-      `where 应使用 miniOpenid 兜住小程序注册用户（P0-4 后 sellerId 已是真实 userId）：${json}`
-    );
-    assert.ok(
-      json.includes('"seller"'),
-      `seller 关系仅用于 miniOpenid 判定；Product.seller 为必填关系 → INNER JOIN，无三值逻辑：${json}`
-    );
-  });
-
-  // ── 2. 安全退化：查不到小程序账号 → 不排除任何人（绝不静默丢产品） ──
-  await it("buildWebsiteVisibleWhere(null)：安全退化为 { status:'active' }（不排除任何人）", () => {
-    const w = buildWebsiteVisibleWhere(null);
     assert.deepEqual(w, { status: "active" });
-    const json = JSON.stringify(w);
-    assert.ok(!json.includes("sellerId"), "退化时不应存在 sellerId 排除条件");
-    assert.ok(!json.includes("OR"), "退化时不应存在 OR 排除条件");
   });
 
-  await it("buildWebsiteVisibleWhere(\"\")：空串同样安全退化", () => {
-    assert.deepEqual(buildWebsiteVisibleWhere(""), { status: "active" });
+  await it("buildWebsiteVisibleWhere(id)：序列化后不含 sellerId / seller / miniOpenid / OR", () => {
+    const json = JSON.stringify(buildWebsiteVisibleWhere("cmut_min_id"));
+    for (const forbidden of ["sellerId", "miniOpenid", '"seller"', "OR", "email", "isImported"]) {
+      assert.ok(!json.includes(forbidden), `where 不应再含 ${forbidden}：${json}`);
+    }
   });
 
-  // ── 3. SQL 三值逻辑：证明旧口径丢弃 email IS NULL 的产品、新口径不丢 ──
-  await it("旧口径：卖家 email=NULL 的进口品牌产品被静默丢弃（NULL 非 TRUE）", () => {
-    // 这正是 .cn 上 19 台「卖家非小程序账号」产品从可见集消失的机制
+  await it("入参不影响结果：任意 dbSellerId（含 null / 空串）输出完全一致", () => {
+    const a = buildWebsiteVisibleWhere("cmut_min_id");
+    const b = buildWebsiteVisibleWhere(null);
+    const c = buildWebsiteVisibleWhere("");
+    const d = buildWebsiteVisibleWhere("another_id");
+    assert.deepEqual(a, b);
+    assert.deepEqual(a, c);
+    assert.deepEqual(a, d);
+  });
+
+  // ── 2. 业务口径：任何渠道 × 国产/进口 组合都必须可见（2026-10-26 决策） ──
+  await it("口径：{系统账号, 小程序用户, 普通卖家} × {国产, 进口} 全部可见", () => {
+    const combos: Array<[boolean, boolean, boolean]> = [
+      [true, false, false], // 系统账号 + 国产 → 早期被隐藏，现必须可见
+      [true, false, true],
+      [false, true, false], // 小程序注册用户 + 国产 → P0-4 曾被隐藏，现必须可见
+      [false, true, true],
+      [false, false, false],
+      [false, false, true],
+    ];
+    for (const [isMiniapp, hasMiniOpenid, isImported] of combos) {
+      assert.equal(
+        newClauseSelects(isMiniapp, hasMiniOpenid, isImported),
+        true,
+        `组合 (miniapp=${isMiniapp}, miniOpenid=${hasMiniOpenid}, imported=${isImported}) 应可见`
+      );
+    }
+  });
+
+  await it("回归护栏（反向）：国产机 + 小程序渠道 必须可见 —— 2026-10-26 口径变更", () => {
+    // ⚠️ 与旧版断言相反：旧版要求隐藏，老板 2026-10-26 决定放开。
+    // 若有人把口径改回「隐藏国产机」，这条会立刻失败 —— 这是有意的。
+    assert.equal(newClauseSelects(true, false, false), true, "系统账号发布的国产机应可见");
+    assert.equal(newClauseSelects(false, true, false), true, "小程序用户发布的国产机应可见");
+  });
+
+  // ── 3. 留档：旧 email 口径的三值逻辑缺陷（与本次口径变更无关，纯历史证据） ──
+  await it("历史缺陷：旧 email 口径下卖家 email=NULL 的进口产品被静默丢弃（NULL 非 TRUE）", () => {
     assert.equal(oldClauseSelects(null, true), false, "email=NULL 时旧口径不应命中");
     assert.equal(oldClauseSelects(null, false), false);
   });
 
-  await it("新口径：卖家 email=NULL 的进口品牌产品被正确纳入", () => {
-    assert.equal(newClauseSelects(false /*非小程序账号*/, false /*无 miniOpenid*/, true), true);
-  });
-
-  // ── 4. 其余组合：新旧口径语义一致（三值逻辑修复不改判定语义） ──
-  await it("两类口径在 {系统账号, 普通卖家} × {进口, 国产} 上语义一致（唯一差异在 email=NULL 行）", () => {
-    // 小程序系统账号（无 miniOpenid）
-    assert.equal(oldClauseSelects(MINIAPP_SELLER_EMAIL, true), true);
-    assert.equal(newClauseSelects(true, false, true), true);
-    assert.equal(oldClauseSelects(MINIAPP_SELLER_EMAIL, false), false);
-    assert.equal(newClauseSelects(true, false, false), false);
-    // 普通卖家（email 非空、非小程序、无 miniOpenid）
-    assert.equal(oldClauseSelects("someone@example.com", true), true);
+  await it("历史缺陷对照：email=NULL 在旧口径丢失，新口径（只看 status）不再依赖 email", () => {
+    // 新口径根本不含 email 条件 ⇒ 该行是否丢失与 email 无关
     assert.equal(newClauseSelects(false, false, true), true);
-    assert.equal(oldClauseSelects("someone@example.com", false), true);
-    assert.equal(newClauseSelects(false, false, false), true);
-  });
-
-  // ── 5. 回归护栏：P0-4 后 sellerId 变成真实 userId，国产机仍不得上网站 ──
-  await it("新口径：小程序注册用户（miniOpenid≠null）发布的国产机仍隐藏（口径未被 sellerId 失效破坏）", () => {
-    // 国产 + 小程序注册用户 → 必须隐藏（这正是 3349cf4 引入、本函数修复的回归）
-    assert.equal(newClauseSelects(false /*非系统账号*/, true /*miniOpenid 非空*/, false), false);
-    // 进口 + 小程序注册用户 → 可见（国际品牌任何卖家都可上网站）
-    assert.equal(newClauseSelects(false, true, true), true);
+    const json = JSON.stringify(buildWebsiteVisibleWhere("x"));
+    assert.ok(!json.includes("email"), "新口径不得依赖可空的 email");
   });
 
   console.log(`\n结果：${passed} passed, ${failures.length} failed`);
