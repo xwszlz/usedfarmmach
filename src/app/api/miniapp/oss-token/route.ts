@@ -12,6 +12,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { matchInternalApiKey } from "@/lib/internal-api-key-auth";
+import { verifyToken, getTokenFromHeaders } from "@/lib/auth";
 import crypto from "crypto";
 
 // Vercel Serverless Function 超时延长至30秒（默认10秒）
@@ -52,16 +53,25 @@ function getOSSCredentials(): { accessKeyId: string; accessKeySecret: string } {
 
 // 统一使用 INTERNAL_API_KEY 认证（与 /api/internal/products 一致）。
 // 双值匹配：同时接受当前 INTERNAL_API_KEY 与过渡期 INTERNAL_API_KEY_PREVIOUS（fail-closed）。
+// 另放行小程序登录用户：Authorization: Bearer <JWT>（wx.login → code2session 签发）。
 function requireAuth(req: NextRequest): boolean {
   const header = req.headers.get("x-api-key");
-  if (!header) return false;
-  if (!process.env.INTERNAL_API_KEY && !process.env.INTERNAL_API_KEY_PREVIOUS) {
-    // ⚠️ fail-closed：未配置密钥时必须拒绝，绝不跳过认证。
-    // 原实现返回 true（放行），任何人都能拿到云存储直传凭证。
-    console.error("[oss-token] INTERNAL_API_KEY / INTERNAL_API_KEY_PREVIOUS 均未配置，拒绝所有请求");
-    return false;
+  if (header) {
+    if (!process.env.INTERNAL_API_KEY && !process.env.INTERNAL_API_KEY_PREVIOUS) {
+      // ⚠️ fail-closed：未配置密钥时必须拒绝，绝不跳过认证。
+      // 原实现返回 true（放行），任何人都能拿到云存储直传凭证。
+      console.error("[oss-token] INTERNAL_API_KEY / INTERNAL_API_KEY_PREVIOUS 均未配置，拒绝所有请求");
+    } else if (matchInternalApiKey(header) !== null) {
+      return true;
+    }
   }
-  return matchInternalApiKey(header) !== null;
+  // 小程序用户态：Authorization: Bearer <JWT>
+  const token = getTokenFromHeaders(req.headers);
+  if (token) {
+    const payload = verifyToken(token);
+    if (payload?.userId) return true;
+  }
+  return false;
 }
 
 export async function POST(request: NextRequest) {

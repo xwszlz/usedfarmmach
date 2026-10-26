@@ -26,7 +26,7 @@ import { prisma } from "@/lib/db";
 
 import { uploadBufferToOSS } from "@/lib/oss-upload";
 
-import { hashPassword } from "@/lib/auth";
+import { hashPassword, verifyToken, getTokenFromHeaders } from "@/lib/auth";
 
 import { matchPortByLocation } from "@/lib/port-matcher";
 
@@ -175,6 +175,21 @@ function requireApiKey(req: NextRequest): true | null {
   const key = getApiKey(req);
   // 双值匹配：同时接受当前 INTERNAL_API_KEY 与过渡期 INTERNAL_API_KEY_PREVIOUS（fail-closed）。
   return matchInternalApiKey(key) !== null ? true : null;
+}
+
+/**
+ * 发布鉴权：兼容两类调用方
+ *  1) 服务端任务：x-api-key（INTERNAL_API_KEY / PREVIOUS）——保持原行为，不绑定用户
+ *  2) 小程序：Authorization: Bearer <JWT>（wx.login → code2session 签发）——绑定真实用户
+ */
+function getPublisherAuth(req: NextRequest): { ok: boolean; userId?: string } {
+  if (requireApiKey(req)) return { ok: true };
+  const token = getTokenFromHeaders(req.headers);
+  if (token) {
+    const payload = verifyToken(token);
+    if (payload?.userId) return { ok: true, userId: payload.userId };
+  }
+  return { ok: false };
 }
 
 
@@ -475,7 +490,10 @@ export async function POST(request: NextRequest) {
 
 
 
-  if (!requireApiKey(request)) {
+  // 鉴权：x-api-key（服务端任务）或 Bearer JWT（小程序登录用户）
+  const auth = getPublisherAuth(request);
+
+  if (!auth.ok) {
 
     return NextResponse.json(
 
@@ -817,7 +835,8 @@ export async function POST(request: NextRequest) {
 
     // ── 确定卖家 ──
 
-    const finalSellerId = sellerId || (await getOrCreateDefaultSeller());
+    // JWT 登录用户优先（防 body 伪造 sellerId）；x-api-key 调用方无 userId，行为不变
+    const finalSellerId = auth.userId || sellerId || (await getOrCreateDefaultSeller());
 
 
 
