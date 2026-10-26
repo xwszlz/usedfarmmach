@@ -106,6 +106,7 @@ const { PAGE_W, PAGE_H, MARGIN, CONTENT_W } = A4_LAYOUT;
  * ⚠️ 该导出仅为单测验证「委派等价」而存在（`export-pdf-v2.test.ts` 断言两者逐元素相等），
  *    业务代码请直接用 `pdf-table.ts` 的 `wrapCjk`。
  */
+/** @internal 仅供单测断言委派等价，勿在业务代码中直接调用 */
 export function wrapText(text: string, font: PDFFont, size: number, maxWidth: number): string[] {
   return wrapCjk(text, font, size, maxWidth);
 }
@@ -630,7 +631,10 @@ function buildEnv(payload: StrategyExportPayload, zh: boolean): DecisionEnv {
   const product = payload.product ?? null;
   const pr = s.priceRange ?? null;
   const rawStatus = payload.webStatus ?? "ok";
-  // `StrategyExportWebStatus` 多一个 "error"，`WebEvidenceStatus` 没有 ⇒ 归到 disabled（同为「未接入」）
+  // `StrategyExportWebStatus` 多一个 "error"，`WebEvidenceStatus` 没有 ⇒ 在此归到 disabled。
+  // ⚠️ **仅在「派生意」上折叠**（derive 只判断「有无外部证据」，出错与未接入同义）；
+  //    **展示层仍用原值 `payload.webStatus`**（见 buildPdfV2 的告警条分支，
+  //    `error` 与 `disabled` 的告警文案可区分），故不丢信息。
   const webStatus = rawStatus === "error" ? "disabled" : rawStatus;
   const priceText =
     pr && (pr.suggestedMinCny != null || pr.suggestedMaxCny != null)
@@ -1211,8 +1215,12 @@ async function buildPdfV2(payload: StrategyExportPayload): Promise<Uint8Array> {
 
   // ── 降级留痕：**不上纸**（顶层告警条 + 各章内联 [告警] 已覆盖读者需要的信息；
   //     在文末堆一屏「系统降级说明」既挤页又制造近乎空白的尾页），只进服务端日志供 QA/排障。
+  // 日志前缀固定为 `[pdf-v2] degraded-banner suppressed:`，方便线上按串 grep 定位。
   if (n.warnings.length > 0) {
-    console.warn(`[export] PDF V2 降级 ${n.warnings.length} 处：\n· ${n.warnings.join("\n· ")}`);
+    console.warn(
+      `[pdf-v2] degraded-banner suppressed: 尾页「系统降级说明」块不上纸，改由本日志留痕；` +
+        `共 ${n.warnings.length} 处降级：\n· ${n.warnings.join("\n· ")}`
+    );
   }
 
   const bytes = await doc.save();
