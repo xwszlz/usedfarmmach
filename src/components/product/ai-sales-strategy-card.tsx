@@ -15,6 +15,7 @@
 import { useState } from "react";
 import { Sparkles, Loader2, AlertCircle, Target, Unlock, Phone, Mail, Lock, CheckCircle2 } from "lucide-react";
 import SalesStrategyExportButtons from "@/components/seller/sales-strategy-export-buttons";
+import type { StrategyDecisionFields } from "@/lib/sales-strategy/strategy-schema";
 
 interface AiSalesStrategyCardProps {
   productId?: string;
@@ -45,7 +46,15 @@ interface StrategyChannel {
   emailMasked: string;
 }
 
-interface StrategyResult {
+/**
+ * 生成接口响应体（`setResult(data.data)` 原样保存）。
+ *
+ * N02 追加的 12 个决策字段通过 `Partial<StrategyDecisionFields>` 并进来：
+ * 服务端早已返回这些字段，只是过去本类型没有声明、导出时又被字面量白名单裁掉。
+ * 声明在此处的作用是让「整对象透传 `strategy={result}`」在类型上成立，
+ * 任何人再想改回白名单重建，都会立刻在 tsc 阶段丢掉 12 个字段。
+ */
+interface StrategyResult extends Partial<StrategyDecisionFields> {
   summary: string;
   targetMarkets: Array<{ market: string; priority: string; rationale: string; priceBand?: string; channels?: string }>;
   priceRange: { suggestedMinCny?: number; suggestedMaxCny?: number; currencyNote?: string; basis?: string } | null;
@@ -440,17 +449,20 @@ export default function AiSalesStrategyCard({
           )}
 
           {/* 导出（T2 PDF 作战手册 / T3 Excel 联系表） */}
+          {/*
+           * N03 补丁（关键，勿改回白名单）：**整对象透传** `strategy={result}`。
+           * 旧代码在此用字面量白名单重建（只挑 summary / targetMarkets / priceRange /
+           * compliance / actionChecklist / responsibility / scripts / listingChecklist），
+           * 导致 N02 的 12 个决策字段（tldr / keyInsight / equipmentProfiles / marketAnchors /
+           * readout / bestDestinations / marketRanking / accessTrafficLight / todayCalls /
+           * complianceTasks / openQuestions / dataSources）在浏览器端就被丢光 ——
+           * 生成接口再全、PDF 8 章渲染器再强，也拿不到数据。
+           * `result` 即服务端响应体（`setResult(data.data)` 原样保存），12 字段本就在其中。
+           * 空值保护在 `SalesStrategyExportButtons.toExportableStrategy()` 内完成
+           * （null / 非对象 ⇒ `{}`，Excel 不发 layout 回落 legacy），此处无需再包一层。
+           */}
           <SalesStrategyExportButtons
-            strategy={{
-              summary: result.summary,
-              targetMarkets: result.targetMarkets,
-              priceRange: result.priceRange,
-              compliance: result.compliance,
-              actionChecklist: result.actionChecklist,
-              responsibility: result.responsibility,
-              scripts: result.scripts,
-              listingChecklist: result.listingChecklist,
-            }}
+            strategy={result}
             channels={result.channels}
             product={{
               brandName,
