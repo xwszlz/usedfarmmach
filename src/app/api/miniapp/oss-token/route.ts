@@ -23,6 +23,13 @@ const OSS_REGION = "oss-cn-beijing";
 const OSS_HOST = `https://${OSS_BUCKET}.${OSS_REGION}.aliyuncs.com`;
 
 /**
+ * 小程序可用的上传目录白名单（仅约束 Bearer JWT 调用方）。
+ * ⚠️ 与小程序历史版本调用值严格对齐（products / ai-recognize / ai-analysis），
+ *    新增上传用途必须先扩白名单再发版，否则新版客户端会拿到 400。
+ */
+const OSS_FOLDER_WHITELIST = ["products", "ai-recognize", "ai-analysis"] as const;
+
+/**
  * 读取 OSS 凭据。
  *
  * 🔒 安全（2026-09-13）：移除历史遗留的 Base64 硬编码 FALLBACK_OSS 凭据与
@@ -54,7 +61,8 @@ function getOSSCredentials(): { accessKeyId: string; accessKeySecret: string } {
 // 统一使用 INTERNAL_API_KEY 认证（与 /api/internal/products 一致）。
 // 双值匹配：同时接受当前 INTERNAL_API_KEY 与过渡期 INTERNAL_API_KEY_PREVIOUS（fail-closed）。
 // 另放行小程序登录用户：Authorization: Bearer <JWT>（wx.login → code2session 签发）。
-function requireAuth(req: NextRequest): boolean {
+// 返回值区分调用方来源：apikey（服务端任务/历史版本）不校验目录，jwt（小程序登录用户）受白名单约束。
+function requireAuth(req: NextRequest): "apikey" | "jwt" | null {
   const header = req.headers.get("x-api-key");
   if (header) {
     if (!process.env.INTERNAL_API_KEY && !process.env.INTERNAL_API_KEY_PREVIOUS) {
@@ -62,25 +70,37 @@ function requireAuth(req: NextRequest): boolean {
       // 原实现返回 true（放行），任何人都能拿到云存储直传凭证。
       console.error("[oss-token] INTERNAL_API_KEY / INTERNAL_API_KEY_PREVIOUS 均未配置，拒绝所有请求");
     } else if (matchInternalApiKey(header) !== null) {
-      return true;
+      return "apikey";
     }
   }
   // 小程序用户态：Authorization: Bearer <JWT>
   const token = getTokenFromHeaders(req.headers);
   if (token) {
     const payload = verifyToken(token);
-    if (payload?.userId) return true;
+    if (payload?.userId) return "jwt";
   }
-  return false;
+  return null;
 }
 
 export async function POST(request: NextRequest) {
-  if (!requireAuth(request)) {
+  const source = requireAuth(request);
+  if (!source) {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
 
   try {
     const { folder, ext } = await request.json().catch(() => ({}));
+
+    // 仅约束小程序 JWT 调用方：folder 必须显式命中白名单（缺省/空串一律拒绝，
+    // 不回落 "miniapp"，避免"看似通过实则写到非白名单目录"）。
+    // x-api-key 分支（历史版本 / 服务端任务）不校验，下方拼接逻辑保持原样。
+    const isAllowedFolder =
+      typeof folder === "string" && (OSS_FOLDER_WHITELIST as readonly string[]).includes(folder);
+
+    if (source === "jwt" && !isAllowedFolder) {
+      return NextResponse.json({ success: false, error: "非法上传目录" }, { status: 400 });
+    }
+
     // 从环境变量读取 OSS 凭据（缺失时 getOSSCredentials 抛错 → 走下方 catch 返回 500）
     const { accessKeyId, accessKeySecret } = getOSSCredentials();
 
