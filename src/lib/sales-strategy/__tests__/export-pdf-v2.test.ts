@@ -484,7 +484,7 @@ describe("T10 ⑦ · rejected 三档措辞（PRD §3.3）", () => {
     expect(cellTexts).toContain("禁入");
   }, 120_000);
 
-  it("无任一 L3 时追加「未给出禁入判定」告警", async () => {
+  it("无任一 L2/L3（全是 L1）时追加「最软档」告警（PRD §3.3 用 L2|L3 判定，不是只看 L3）", async () => {
     const { calls } = await render(
       makePayload({
         bestDestinations: [
@@ -497,7 +497,42 @@ describe("T10 ⑦ · rejected 三档措辞（PRD §3.3）", () => {
         ],
       })
     );
-    expect(allText(calls)).toContain("未给出禁入判定");
+    expect(allText(calls)).toContain("否决措辞全部为最软档");
+  }, 120_000);
+
+  it("只有 L2（无 L3）视为**充分**，不报措辞告警 —— 检索降级时 derive 会把 L3 压成 L2", async () => {
+    const { calls } = await render(
+      makePayload({
+        bestDestinations: [
+          {
+            equipment: "圆捆机A",
+            market: ["荷兰"],
+            basis: "净价最高",
+            rejected: [{ market: "埃及", reason: "回款慢", level: "L2", trigger: "R2" }],
+          },
+        ],
+      })
+    );
+    const text = allText(calls);
+    expect(text).not.toContain("否决措辞全部为最软档");
+    expect(text).not.toContain("未生成否决建议");
+  }, 120_000);
+
+  it("部分机型缺否决建议 → 按台数报警（PRD §3.3「每台至少 1 条」）", async () => {
+    const { calls } = await render(
+      makePayload({
+        bestDestinations: [
+          {
+            equipment: "圆捆机A",
+            market: ["荷兰"],
+            basis: "净价最高",
+            rejected: [{ market: "伊朗", reason: "制裁", level: "L3" }],
+          },
+          { equipment: "打捆机B", market: ["埃及"], basis: "回款快", rejected: [] },
+        ],
+      })
+    );
+    expect(allText(calls)).toContain("未给出任何否决建议");
   }, 120_000);
 
   it("rejected 全空时追加「未生成否决建议」告警", async () => {
@@ -509,6 +544,72 @@ describe("T10 ⑦ · rejected 三档措辞（PRD §3.3）", () => {
       })
     );
     expect(allText(calls)).toContain("未生成否决建议");
+  }, 120_000);
+});
+
+// ═══════════════════════════════════════════════════════════
+// ⑨ tldr 两列是自由文本（T08 System Prompt 红线 15/16）
+// ═══════════════════════════════════════════════════════════
+
+describe("T10 ⑨ · tldr 自由文本不得被解析/切分/改名", () => {
+  it("bestChannel 双去向原样上纸（不按 + · 、 切分，不取第一个）", async () => {
+    const duals = ["国内（唯一正解）", "国内优先 + 中亚走量", "国内为主 + 中亚兜底"];
+    const { calls } = await render(
+      makePayload({
+        tldr: duals.map((bestChannel, i) => ({
+          equipment: `圆捆机${i + 1}`,
+          bestChannel,
+          expectedPriceCny: "¥128,000",
+          why: "当地缺口大",
+        })),
+        equipmentProfiles: duals.map((_, i) => ({
+          name: `圆捆机${i + 1}`,
+          brandCountry: "中国",
+          type: "打捆机",
+          spec: "1.2m",
+          power: "90hp",
+          condition: "二手",
+          positioning: "中端",
+        })),
+      })
+    );
+    const cellTexts = calls.map((c) => c.text);
+    for (const dual of duals) {
+      // 整串一次画出 ⇒ 说明没被切分、没被降级成兜底文案
+      expect(cellTexts).toContain(dual);
+    }
+  }, 120_000);
+
+  it("expectedPriceCny 多市场多口径原样上纸（不抓首个数字、不要求含 ¥/万、不被 anchors 覆盖）", async () => {
+    const price = "国内 50–70 万 / 中亚 FOB ≈35–43 万";
+    const { calls } = await render(
+      makePayload({
+        tldr: [
+          {
+            equipment: "圆捆机A",
+            bestChannel: "国内 + 中亚并行",
+            expectedPriceCny: price,
+            why: "国内缺口大",
+          },
+        ],
+        // anchors 另给一格「完全不同的价」，用来证明 tldr 没有被 anchors 反推覆盖
+        marketAnchors: [
+          {
+            equipment: "圆捆机A",
+            axis: "欧洲",
+            market: "荷兰",
+            priceText: "€99,999",
+            priceCny: 999999,
+            basisType: "欧洲二手净价",
+          },
+        ],
+      })
+    );
+    const cellTexts = calls.map((c) => c.text);
+    expect(cellTexts).toContain(price);
+    expect(allText(calls)).toContain("€99,999"); // anchors 自己那格仍在
+    // 价格列宽必须够（实测该串 8.5pt ≈ 139.6pt）：单行容下 ⇒ 行高不翻倍，A2 一页可容纳 8 机型
+    expect(cellTexts.filter((x) => x.includes("中亚 FOB")).length).toBe(1);
   }, 120_000);
 });
 

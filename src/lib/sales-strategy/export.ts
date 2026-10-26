@@ -273,7 +273,10 @@ interface PdfTexts {
   rejLevel: string;
   rejReason: string;
   noRejected: string;
-  noL3Warn: string;
+  /** PRD §3.3：每机型至少 1 条否决，缺几台就报几台 */
+  rejectPartial: (missing: number, total: number) => string;
+  /** PRD §3.3：全局至少 1 条 L2|L3，否则全是「最软档」 */
+  rejectSoftOnly: string;
   notGenerated: string;
 
   // 第 4 章
@@ -382,7 +385,10 @@ const TEXTS_ZH: PdfTexts = {
   rejLevel: "档位",
   rejReason: "原因",
   noRejected: "[告警] 本轮未生成否决建议，请谨慎决策并自行核实准入政策",
-  noL3Warn: "[告警] 本轮未给出禁入判定（无 L3），高危市场请人工二次核实",
+  rejectPartial: (missing, total) =>
+    `[告警] ${total} 台机型中有 ${missing} 台未给出任何否决建议（PRD §3.3 要求每台至少 1 条），请人工复核`,
+  rejectSoftOnly:
+    "[告警] 否决措辞全部为最软档（无「不建议 / 禁入」级结论），请谨慎决策并自行核实准入政策",
   notGenerated: "（未生成）",
 
   rkRank: "排名",
@@ -486,7 +492,10 @@ const TEXTS_EN: PdfTexts = {
   rejLevel: "Level",
   rejReason: "Reason",
   noRejected: "[WARN] No rejection advice generated this round; verify access rules yourself",
-  noL3Warn: "[WARN] No outright ban (L3) issued this round; double-check high-risk markets",
+  rejectPartial: (missing, total) =>
+    `[WARN] ${missing} of ${total} equipment have no rejection advice (PRD §3.3 requires ≥1 each)`,
+  rejectSoftOnly:
+    "[WARN] All rejections use the softest level (no 'not recommended / banned'); verify access rules yourself",
   notGenerated: "(not generated)",
 
   rkRank: "#",
@@ -677,11 +686,22 @@ function renderTldr(
 ): void {
   section(state, t.s0);
 
+  // ⚠️ `bestChannel` / `expectedPriceCny` 都是**自由文本，不是结构化字段**（T08 System Prompt 红线 15/16）：
+  //    - `bestChannel` 允许双去向：`国内（唯一正解）` / `国内优先 + 中亚走量` / `国内 + 中亚并行` /
+  //      `国内为主 + 中亚兜底` —— 其中「优先/为主/兜底」本身就是决策信息，
+  //      **禁止**按 `+` `·` `、` 切分后取第一个（会丢掉主次），也禁止把含 `+` 判为异常走兜底；
+  //    - `expectedPriceCny` 允许多市场多口径：`国内 50–70 万 / 中亚 FOB ≈35–43 万`
+  //      —— **禁止**只抓第一个 `\d+`、禁止强校验必须含 `¥/万`、**禁止**用 `marketAnchors` 反推覆盖。
+  //    故此处只做 `safeText` 透传 + `wrapCjk` 换行，不做任何解析。
+  //
+  // 列宽按黄金样板真实串实测（8.5pt，见 T10 探针）：价格列必须 ≥142pt 才能单行容下
+  // `国内 50–70 万 / 中亚 FOB ≈35–43 万`（实测 139.6pt）。给 150pt 后 4 列全部单行，
+  // 行高从 29pt（2 行）降到 17.5pt，8 机型时整章仍稳稳落在第 1 页（A2）。
   const columns: TableColumn[] = [
-    { key: "equipment", header: t.hEquipment, width: 150 },
-    { key: "bestChannel", header: t.hBestChannel, width: 130 },
-    { key: "expectedPriceCny", header: t.hPrice, width: 95 },
-    { key: "why", header: t.hWhy, width: 140 },
+    { key: "equipment", header: t.hEquipment, width: 120 },
+    { key: "bestChannel", header: t.hBestChannel, width: 115 },
+    { key: "expectedPriceCny", header: t.hPrice, width: 150 },
+    { key: "why", header: t.hWhy, width: 130 },
   ];
   const rows: TableRow[] = n.tldr.map((r) => ({
     equipment: safeText(r.equipment),
@@ -867,8 +887,18 @@ function renderBestDestinations(state: RenderState, n: NormalizedStrategy, t: Pd
     },
   });
 
-  const hasL3 = rejected.some((r) => r.level === "L3");
-  if (!hasL3) warnNote(state, t.noL3Warn);
+  // ── PRD §3.3 否决充分性判定（纯函数、就地现算）────────────────
+  // ⚠️ 契约事实：`rejectedAdequate` **不会**出现在生成接口响应里（team-lead 已裁定删除），
+  //    故渲染层必须自己从 `bestDestinations[].rejected` 现算，不依赖任何新字段。
+  //    PRD §3.3 的充分条件 = 「每机型至少 1 条」且「全局至少 1 条为 L2|L3」。
+  //    ⇒ 用 `L2|L3` 而不是只看 `L3`：检索非 ok 时 derive 会把 L3 压成 L2，
+  //      若按「有无 L3」判定，降级场景会 100% 误报「措辞不足」。
+  const missingPerEquipment = n.bestDestinations.filter((d) => d.rejected.length === 0).length;
+  const hasHardLevel = rejected.some((r) => r.level === "L2" || r.level === "L3");
+  if (missingPerEquipment > 0) {
+    warnNote(state, t.rejectPartial(missingPerEquipment, n.bestDestinations.length));
+  }
+  if (!hasHardLevel) warnNote(state, t.rejectSoftOnly);
   state.y -= 2;
 }
 
