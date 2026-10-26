@@ -26,7 +26,7 @@ import { prisma } from "@/lib/db";
 
 import { uploadBufferToOSS } from "@/lib/oss-upload";
 
-import { hashPassword } from "@/lib/auth";
+import { hashPassword, verifyToken, getTokenFromHeaders } from "@/lib/auth";
 
 import { matchPortByLocation } from "@/lib/port-matcher";
 
@@ -175,6 +175,29 @@ function requireApiKey(req: NextRequest): true | null {
   const key = getApiKey(req);
   // 双值匹配：同时接受当前 INTERNAL_API_KEY 与过渡期 INTERNAL_API_KEY_PREVIOUS（fail-closed）。
   return matchInternalApiKey(key) !== null ? true : null;
+}
+
+/**
+ * 发布鉴权：兼容两类调用方
+ *  1) 服务端任务：x-api-key（INTERNAL_API_KEY / PREVIOUS）——保持原行为，不绑定用户
+ *  2) 小程序：Authorization: Bearer <JWT>（wx.login → code2session 签发）——绑定真实用户
+ *
+ * hadInvalidToken：客户端确实带了 Bearer 但校验失败（过期/无效），
+ * 仅用于让小程序拿到「请重新登录」文案；无凭证与 x-api-key 不匹配时保持原响应体。
+ */
+function getPublisherAuth(req: NextRequest): {
+  ok: boolean;
+  userId?: string;
+  hadInvalidToken?: boolean;
+} {
+  if (requireApiKey(req)) return { ok: true };
+  const token = getTokenFromHeaders(req.headers);
+  if (token) {
+    const payload = verifyToken(token);
+    if (payload?.userId) return { ok: true, userId: payload.userId };
+    return { ok: false, hadInvalidToken: true };
+  }
+  return { ok: false };
 }
 
 
@@ -475,11 +498,18 @@ export async function POST(request: NextRequest) {
 
 
 
-  if (!requireApiKey(request)) {
+  // 鉴权：x-api-key（服务端任务）或 Bearer JWT（小程序登录用户）
+  const auth = getPublisherAuth(request);
 
+  if (!auth.ok) {
+
+    // 小程序带了 Bearer 但已失效 → 中文文案（publish.js 会直接 toast res.data.error）；
+    // 其余情况（无凭证 / x-api-key 不匹配）保持原响应体不变。
     return NextResponse.json(
 
-      { success: false, error: "Unauthorized", code: "UNAUTHORIZED" },
+      auth.hadInvalidToken
+        ? { success: false, error: "请重新登录", code: "UNAUTHORIZED" }
+        : { success: false, error: "Unauthorized", code: "UNAUTHORIZED" },
 
       { status: 401 }
 
@@ -573,6 +603,20 @@ export async function POST(request: NextRequest) {
 
       location,
 
+      // P0-4：结构化产地（国内 province/city，国际仅 country）
+      country,
+      province,
+      city,
+
+      // P0-4：工作小时（发布者填写，0 合法）
+      workingHours,
+
+      // P0-4：卖家自留联系方式（替代平台统一号码，登录买家可见）
+      contactName,
+      contactPhone,
+      contactWechat,
+      contactEmail,
+
       // 地图选点坐标（wx.chooseLocation），用于物流与地图展示
 
       latitude,
@@ -642,6 +686,18 @@ export async function POST(request: NextRequest) {
     const finalMainConfig = mainConfig ?? descHeader ?? null;
 
     const finalNetWeight = netWeight ?? null;
+
+    // P0-4：工时由发布者填写，0 合法；空/非数字落 null（不能把 0 当空值丢掉）
+    const finalWorkingHours =
+      workingHours === undefined || workingHours === null || workingHours === ""
+        ? null
+        : Number.isFinite(Number(workingHours))
+          ? Math.max(0, Math.round(Number(workingHours)))
+          : null;
+
+    // P0-4：结构化产地与联系方式统一清洗（空串落 null，避免 DB 里出现 ""）
+    const asOptionalText = (v: unknown): string | null =>
+      typeof v === "string" && v.trim() !== "" ? v.trim() : null;
 
 
 
@@ -817,7 +873,8 @@ export async function POST(request: NextRequest) {
 
     // ── 确定卖家 ──
 
-    const finalSellerId = sellerId || (await getOrCreateDefaultSeller());
+    // JWT 登录用户优先（防 body 伪造 sellerId）；x-api-key 调用方无 userId，行为不变
+    const finalSellerId = auth.userId || sellerId || (await getOrCreateDefaultSeller());
 
 
 
@@ -877,7 +934,7 @@ export async function POST(request: NextRequest) {
 
         // 可区分特征：只要有任一不同即为另一台设备，放行发布
 
-        // 小程序不采集 workingHours（DB 恒为 null），故不参与比对
+        // 工时已可填（P0-4）：同品牌/型号/年份/价格但工时差异大的是两台不同设备，必须参与比对
 
         signature: {
 
@@ -886,6 +943,8 @@ export async function POST(request: NextRequest) {
           priceCny: priceCny ? Number(priceCny) : null,
 
           enginePower: finalEnginePower ? Number(finalEnginePower) : null,
+
+          workingHours: finalWorkingHours,
 
         },
 
@@ -979,7 +1038,8 @@ export async function POST(request: NextRequest) {
 
         year: finalYear,
 
-        workingHours: null,
+        // P0-4：工时按发布者填写值落库（旧实现恒为 null，导致详情页显示「--」）
+        workingHours: finalWorkingHours,
 
         condition,
 
@@ -988,6 +1048,24 @@ export async function POST(request: NextRequest) {
         priceUsd: cnyToUsd(Number(priceCny), await getUsdPerCny()),
 
         location: location || "",
+
+        // P0-4：结构化产地（国内 province/city；国际仅 country，取 ISO 码）
+
+        country: asOptionalText(country),
+
+        province: asOptionalText(province),
+
+        city: asOptionalText(city),
+
+        // P0-4：卖家自留联系方式（替代平台统一号码）
+
+        contactName: asOptionalText(contactName),
+
+        contactPhone: asOptionalText(contactPhone),
+
+        contactWechat: asOptionalText(contactWechat),
+
+        contactEmail: asOptionalText(contactEmail),
 
         descriptionZh,
 
@@ -1454,7 +1532,8 @@ export async function POST(request: NextRequest) {
           // 但本「用户优先 > AI补空」合并名单此前遗漏了它 —— 识别结果被丢弃，DB 恒为 null。
           // 工时是工时折旧曲线的唯一真实输入（CATEGORY_ANNUAL_HOURS / HOURS_DEPRECIATION_CURVE）；
           // 缺这一行时，缺工时的机器只能走 age × A 合成工时，单机误差可达 ±40%。
-          if (recognizedData.workingHours != null && Number(recognizedData.workingHours) > 0) {
+          // 用户已填工时则不被 AI 覆盖（P0-4）：否则 1200h 会被识别成 800h 冲掉
+          if (finalWorkingHours == null && recognizedData.workingHours != null && Number(recognizedData.workingHours) > 0) {
             mergedUpdate.workingHours = Math.round(Number(recognizedData.workingHours));
           }
 

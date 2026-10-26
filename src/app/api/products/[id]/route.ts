@@ -5,6 +5,33 @@ import { verifyToken, getTokenFromHeaders } from "@/lib/auth";
 import { ArbitrageCalculator } from "@/lib/services/arbitrage-calculator";
 import { cache, cacheKey } from "@/lib/cache";
 
+/**
+ * 缓存 key 前缀（v2）：v1 时期详情响应曾把卖家联系方式一起缓存/下发，
+ * bump 前缀可让已存在的脏缓存一次性作废（旧键最多再活 300s 后自然过期）。
+ */
+const PRODUCT_CACHE_PREFIX = "product-v2";
+
+/**
+ * 联系方式必须经 GET /api/products/[id]/contact（需登录）读取。
+ * 详情接口是公开且可缓存的，P0-4 上线后 contact* 会有真实值，故写入缓存前与命中缓存后
+ * 都做一次剥离，避免未鉴权泄露。
+ */
+const CONTACT_FIELDS = [
+  "contactName",
+  "contactPhone",
+  "contactWechat",
+  "contactEmail",
+] as const;
+
+function stripContactFields<T>(row: T): T {
+  if (row && typeof row === "object") {
+    for (const field of CONTACT_FIELDS) {
+      delete (row as Record<string, unknown>)[field];
+    }
+  }
+  return row;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -19,11 +46,13 @@ export async function GET(
 
     // 缓存 key：按产品ID + 是否含套利，TTL 300 秒
     const cacheKeyString = cacheKey(
-      "product",
+      PRODUCT_CACHE_PREFIX,
       `${id}${includeArbitrage ? ":arbitrage" : ""}`
     );
     const cached = await cache.get(cacheKeyString);
     if (cached) {
+      // 命中缓存同样剥离一次：确保 v1 时期可能写入的脏数据（含联系方式）不会流出
+      stripContactFields((cached as { data?: unknown } | null)?.data);
       return NextResponse.json(cached);
     }
 
@@ -85,6 +114,9 @@ export async function GET(
         };
       }
     }
+
+    // 写入缓存之前剥离联系方式：缓存里存的必须是干净数据（登录态/匿名态不会串味）
+    stripContactFields(responseData);
 
     const detailResponse = { 
       success: true, 
@@ -197,9 +229,9 @@ export async function DELETE(
       prisma.product.delete({ where: { id } }),
     ]);
 
-    // 清除缓存
-    await cache.del(cacheKey("product", id));
-    await cache.del(cacheKey("product", `${id}:arbitrage`));
+    // 清除缓存（必须用与 GET 相同的 key 前缀，否则失效逻辑会打空）
+    await cache.del(cacheKey(PRODUCT_CACHE_PREFIX, id));
+    await cache.del(cacheKey(PRODUCT_CACHE_PREFIX, `${id}:arbitrage`));
 
     return NextResponse.json({
       success: true,
@@ -303,8 +335,8 @@ export async function PATCH(
       data: updateData,
     });
 
-    await cache.del(cacheKey("product", id));
-    await cache.del(cacheKey("product", `${id}:arbitrage`));
+    await cache.del(cacheKey(PRODUCT_CACHE_PREFIX, id));
+    await cache.del(cacheKey(PRODUCT_CACHE_PREFIX, `${id}:arbitrage`));
 
     return NextResponse.json({ success: true, data: updated });
   } catch (error) {

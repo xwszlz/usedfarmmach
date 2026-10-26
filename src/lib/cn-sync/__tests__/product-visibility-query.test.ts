@@ -88,7 +88,7 @@ function evalWhere(where: Json, p: Json): boolean {
     } else if (key === "NOT") {
       const arr = Array.isArray(val) ? val : [val];
       if (arr.every((w: Json) => evalWhere(w, p))) return false; // NOT(a AND b)
-    } else if (key === "brand" || key === "category") {
+    } else if (key === "brand" || key === "category" || key === "seller") {
       if (!matchRelation(p[key], val)) return false;
     } else if (!matchScalar(p[key], val)) {
       return false;
@@ -100,11 +100,13 @@ function evalWhere(where: Json, p: Json): boolean {
 /* ───────────────────────────── 内存夹具 ───────────────────────────── */
 const MINIAPP_ID = "cmut_miniapp_seller_id"; // 由 MINIAPP_SELLER_EMAIL 解析而来的小程序系统账号 id
 const OTHER_ID = "cmut_other_seller_id";
+const MINIAPP_USER_ID = "cmut_miniapp_registered_user_id"; // P0-4 后：小程序注册用户（有 miniOpenid）
 
 interface Fixture {
   id: string;
   status: string;
   sellerId: string;
+  seller: { miniOpenid: string | null };
   modelName: string;
   descriptionZh: string;
   descriptionEn: string;
@@ -119,11 +121,13 @@ const active = (
   modelName: string,
   isImported: boolean,
   nameZh: string,
-  nameEn: string
+  nameEn: string,
+  miniOpenid: string | null = null
 ): Fixture => ({
   id,
   status: "active",
   sellerId,
+  seller: { miniOpenid },
   modelName,
   descriptionZh: "",
   descriptionEn: "",
@@ -135,9 +139,13 @@ const active = (
 /** 全部 modelName 均含 "1204" → 用 "1204" 搜索时「搜索条件对所有夹具都命中」，从而单独暴露可见性差异 */
 const PRODUCTS: Fixture[] = [
   active("cn-imported-miniapp", MINIAPP_ID, "6J-1204", true, "约翰迪尔", "John Deere"), // 靠可见性 OR 第二支可见
-  active("cn-domestic-miniapp", MINIAPP_ID, "东方红LX1204", false, "东方红", "Dongfanghong"), // 必须隐藏
+  active("cn-domestic-miniapp", MINIAPP_ID, "东方红LX1204", false, "东方红", "Dongfanghong"), // 必须隐藏（系统账号）
   active("cn-imported-other", OTHER_ID, "雷沃1204", true, "雷沃", "Lovol"), // 可见（OR 第一支）
-  active("cn-domestic-other", OTHER_ID, "五征1204", false, "五征", "Wuzheng"), // 可见（非小程序账号）
+  active("cn-domestic-other", OTHER_ID, "五征1204", false, "五征", "Wuzheng"), // 可见（非小程序渠道）
+  // P0-4 回归护栏：小程序注册用户（miniOpenid≠null）发布的国产机，sellerId 已是真实 userId，必须隐藏
+  active("cn-domestic-miniappuser", MINIAPP_USER_ID, "泰山1204", false, "泰山", "Taishan", "oXyz_miniapp_openid"),
+  // 同一用户的进口机应可见
+  active("cn-imported-miniappuser", MINIAPP_USER_ID, "迪尔1204", true, "迪尔", "Deere", "oXyz_miniapp_openid"),
   { ...active("cn-draft-miniapp", MINIAPP_ID, "草稿1204", true, "凯斯", "Case IH"), status: "draft" }, // status 过滤
 ];
 
@@ -160,7 +168,7 @@ async function main(): Promise<void> {
     const w: Json = applySearchQueryToWhere(buildWebsiteVisibleWhere(MINIAPP_ID), "abc");
     assert.equal(w.status, "active");
     assert.deepEqual(w.OR, [
-      { sellerId: { not: MINIAPP_ID } },
+      { sellerId: { not: MINIAPP_ID }, seller: { miniOpenid: null } },
       { brand: { isImported: true } },
     ]);
     assert.ok(Array.isArray(w.AND) && w.AND.length === 1, "应恰好新增 1 个 AND 子条件");
@@ -204,14 +212,31 @@ async function main(): Promise<void> {
     );
   });
 
-  await it("带搜索：非小程序账号 / status≠active 的既有语义不变", () => {
+  await it("带搜索：非小程序渠道 / status≠active 的既有语义不变", () => {
     const ids = selectIds(combined1204);
     assert.deepEqual(
       ids.slice().sort(),
-      ["cn-domestic-other", "cn-imported-miniapp", "cn-imported-other"].sort(),
-      `可见集合应恰为 {国产普通卖家, 进口小程序, 进口普通卖家}，实际：${ids.join(", ")}`
+      [
+        "cn-domestic-other",
+        "cn-imported-miniapp",
+        "cn-imported-miniappuser",
+        "cn-imported-other",
+      ].sort(),
+      `可见集合应恰为 {国产普通卖家, 进口小程序系统账号, 进口小程序用户, 进口普通卖家}，实际：${ids.join(", ")}`
     );
     assert.ok(!ids.includes("cn-draft-miniapp"), "draft 产品不应可见");
+  });
+
+  await it("带搜索：小程序注册用户（miniOpenid≠null）的国产机仍隐藏 —— P0-4 回归护栏", () => {
+    const ids = selectIds(combined1204);
+    assert.ok(
+      !ids.includes("cn-domestic-miniappuser"),
+      `sellerId 已变为真实 userId，国产机仍不得上网站，实际：${ids.join(", ")}`
+    );
+    assert.ok(
+      ids.includes("cn-imported-miniappuser"),
+      `同一用户的进口机应可见，实际：${ids.join(", ")}`
+    );
   });
 
   await it("带品牌名搜索（John Deere）：命中 OR 第二支产品，且不泄漏隐藏产品", () => {
