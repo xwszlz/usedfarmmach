@@ -129,17 +129,25 @@ export async function getAiCostCoeff(): Promise<number> {
 /**
  * 单次成本护栏上限（积分）。
  * 单次请求实际成本超过此值 → 路由直接熔断返回（不扣费），防不可控高价检索/异常用量。
- * ⚠️ [商业机密·内部]：占位值 30000，真实值由老板后台配置（ai_cost_guardrail_credits）。
+ * ⚠️ [商业机密·内部]：占位值 3000，真实值由老板后台配置（ai_cost_guardrail_credits）。
  *
- * 为什么占位值从 5000 抬到 30000：
- * 已知最大的单次 AI 调用是销售策略生成，其 maxTokens 上限为 SALES_STRATEGY_MAX_TOKENS = 8192，
- * 按 cost = ceil(实际 token × 系数) 满打满算，即使系数取到 1.0，单次成本也只有 8192 积分。
- * 5000 的护栏低于该合法上限，会让一次完全正常的请求被误熔断 —— 用户白等数十秒却拿到
- * 「已熔断（未扣费）」的空结果，属于典型的可用性事故。
- * 30000 约为该合法上限的 3.6 倍：既给异常用量（多轮重试、超长上下文、系数上调）留出余量，
- * 又能继续拦住真正失控的计费（远高于正常水位）请求。
+ * 3000 是怎么算出来的（计费账本口径）：
+ * 单次成本公式：cost(积分) = ceil(实际 token × ai_cost_coeff)。
+ * 已知最大的单次 AI 调用是销售策略生成，其 maxTokens 上限为
+ * SALES_STRATEGY_MAX_TOKENS = 8192（见 sales-strategy/route.ts）。
+ * 配套定价把 ai_cost_coeff 下调到 0.2，故一次合法请求的最大成本为
+ * 8192 × 0.2 = 1638.4 → ceil ≈ 1639 积分。
+ * 3000 ≈ 该合法上限的 1.8 倍：正常请求（含重试累加的 token）畅通，
+ * 失控计费（异常超长上下文、循环重试、系数被误调高）能及时熔断。
+ *
+ * ⚠️ 本护栏与 ai_cost_coeff 必须联动标定，改任一个都要重算另一个：
+ * - 旧的 5000 是在 coeff = 1.0 的旧定价下标定的，系数下调后沿用会失去防护意义
+ *   （合法上限降到 ~1639，护栏却仍在 5000，异常时单次可扣近 5000 分才熔断）；
+ * - 反过来说，若 ai_cost_coeff 调回 1.0，合法上限回到 8192 > 3000，
+ *   正常请求会被本护栏误熔断 —— 届时护栏必须同步上调。
+ * 本文件只改护栏，coeff 的 fallback（1.0）与真实值由老板另行拍板，不在本轮改动范围。
  */
 export async function getAiCostGuardrail(): Promise<number> {
-  const v = await getConfig<number>(CONFIG_KEYS.aiCostGuardrail, 30000);
-  return typeof v === "number" && Number.isFinite(v) && v > 0 ? v : 30000;
+  const v = await getConfig<number>(CONFIG_KEYS.aiCostGuardrail, 3000);
+  return typeof v === "number" && Number.isFinite(v) && v > 0 ? v : 3000;
 }
