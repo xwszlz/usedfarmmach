@@ -212,6 +212,18 @@ describe("N03 · Excel 请求体：layout v2 + strategy（验收 ②）", () => 
     expect(buildExcelExportBody("cn", "en", makeFullStrategy()).partition).toBe("cn");
     expect(buildExcelExportBody("intl", "en", makeFullStrategy()).locale).toBe("en");
   });
+
+  it("webStatus 有值时下发（T11 route 用它给 Sheet2「备注」标注降级），缺省则省略键", () => {
+    const withStatus = buildExcelExportBody("all", "zh", makeFullStrategy(), "timeout");
+    expect(withStatus.webStatus).toBe("timeout");
+
+    const withoutStatus = buildExcelExportBody("all", "zh", makeFullStrategy());
+    expect(Object.keys(withoutStatus)).not.toContain("webStatus");
+
+    // 线上真实形态：undefined 键在 JSON 序列化时被丢弃
+    const wire = JSON.parse(JSON.stringify(withStatus));
+    expect(wire.webStatus).toBe("timeout");
+  });
 });
 
 describe("N03 · 向后兼容：策略为空不得抛错（验收 ③）", () => {

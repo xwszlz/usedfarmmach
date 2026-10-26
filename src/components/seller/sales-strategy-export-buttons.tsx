@@ -117,23 +117,30 @@ export function buildPdfExportBody(input: PdfExportBodyInput): Record<string, un
  *   （Sheet2「机型价格速查」读 `strategy.marketAnchors`、Sheet3「必办清单」读
  *   `strategy.complianceTasks`）；
  * - 策略为空：`{ partition, locale }`，与改造前的请求体**逐字等价**
- *   （不发 `layout` ⇒ 后端回落 legacy 1-Sheet，见 N01 `opts?.layout === 2 ? 2 : 1`）。
+ *   （不发 `layout` ⇒ 后端回落 legacy 1-Sheet，见 N01 `opts?.layout === 2 ? 2 : 1`）；
+ * - `webStatus` 有值时一并下发（T11 的 route 用它给 Sheet2「备注」标注「外部检索未接入」），
+ *   缺省则省略该键（JSON 自动丢弃 `undefined`），不影响兼容性。
  *
  * @param partition 分区口径
  * @param locale 语言
  * @param strategy 策略对象（可空）
+ * @param webStatus 外部检索状态（可空；缺省即不下发）
  * @returns 可直接 `JSON.stringify` 的请求体
  */
 export function buildExcelExportBody(
   partition: "all" | "cn" | "intl",
   locale: string,
-  strategy: StrategyLlmResult | null | undefined
+  strategy: StrategyLlmResult | null | undefined,
+  webStatus?: StrategyExportWebStatus
 ): Record<string, unknown> {
   const exportStrategy = toExportableStrategy(strategy);
   const body: Record<string, unknown> = { partition, locale };
   if (hasStrategyContent(exportStrategy)) {
     body.layout = EXCEL_LAYOUT_V2;
     body.strategy = exportStrategy;
+    if (typeof webStatus === "string" && webStatus.length > 0) {
+      body.webStatus = webStatus;
+    }
   }
   return body;
 }
@@ -278,7 +285,7 @@ export default function SalesStrategyExportButtons({
     // 与 Sheet3「必办清单」（strategy.complianceTasks）取数。
     // 只有显式传 layout 才走三 Sheet 新版式（N01：`opts?.layout === 2 ? 2 : 1`）；
     // 策略为空时不发 layout，请求体与改造前逐字等价。
-    const body = buildExcelExportBody(partition, locale, strategy);
+    const body = buildExcelExportBody(partition, locale, strategy, webStatus);
     return handleExport(
       "/api/agents/seller-helper/sales-strategy/export/excel",
       body,
