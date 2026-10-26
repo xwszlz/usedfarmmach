@@ -183,3 +183,37 @@ docker compose -f /opt/cn/docker-compose.yml logs -f nginx
 - [ ] SSL 证书已就位 `deploy/nginx/ssl/cn/`
 - [ ] footer 备案号链接 `https://beian.miit.gov.cn` 正常渲染
 - [ ] 运行时密钥仅存 `/opt/cn/.env.cn`，未进入 git/CI 日志
+
+---
+
+## 🔴 修改 `/opt/cn/.env.cn` 的唯一允许方式（2026-10-26 事故后新增）
+
+**事故经过**：2026-10-26 有一次运维操作执行了
+
+```bash
+echo '<ARK_API_KEY 的值>' | sudo tee /opt/cn/.env.cn > /dev/null
+```
+
+`tee` **少了 `-a`**，把 37 行的配置整体截断成 **47 字节**（只有那个裸值、零个 `KEY=`）。后果：
+
+- `.cn` 全站 502 约半小时（app 容器拿不到 `DATABASE_URL_CN`，每请求抛错）；
+- 连续 4 次部署失败，且 **CI 日志看不到任何根因** —— `grep '^DATABASE_URL_CN='` 取空后
+  被 `set -o pipefail` 判为失败，脚本在打印提示之前就零输出退出；
+- 脚本死在 `up -d --force-recreate app` 之后、`nginx -s reload` 之前，而 nginx 的
+  `upstream` 只在启动/reload 时解析 app 的 IP ⇒ **nginx 死盯旧 IP，连静态资源也 502**。
+
+**铁律**：
+
+1. **禁止**用 `tee`（不带 `-a`）、`>`、`printf >`、`echo >` 直接写 `.env.cn`。
+2. **改已有键**：`sed -i` 行锚定替换（`s|^KEY=.*|KEY=值|`），改完立刻 `ls -l /opt/cn/.env.cn`
+   确认属主为 `deploy:deploy`、权限 `600`。
+3. **加新键**：只用 `>>` 或 `tee -a`。
+4. **任何写操作前先备份**：`cp /opt/cn/.env.cn /opt/cn/.env.cn.bak.$(date +%Y%m%d%H%M%S)`。
+5. **禁止**从历史 `.bak*` 整文件覆盖回去 —— 历史备份里存在「多键挤在一行 / PEM 被硬折行」
+   的坏格式，覆盖回去会立刻重现部署失败。
+6. **写后自检**：`grep -cE '^[A-Za-z_][A-Za-z0-9_]*=' /opt/cn/.env.cn` 应 ≥ 30（当前 37）；
+   `docker compose -f /opt/cn/docker-compose.yml --env-file /opt/cn/.env.cn config --services`
+   应无报错。
+
+> 以上第 1 条与第 6 条已由 `deploy/deploy-cn.sh` 开头的新增「环境体检」兜住：键数不足或
+> 必需变量缺失时，脚本会在动任何容器之前打印体检结果并以非零码退出。

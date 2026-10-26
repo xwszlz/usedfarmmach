@@ -250,6 +250,14 @@ jobs:
             # 与上传阶段一致的 commit SHA：脚本据此推导对象名 cn-app-<sha>.tar.gz 与镜像 tag
             export CN_IMAGE_REF="${{ github.sha }}"
             # AK 轮换幂等迁移：secrets 覆盖 .env.cn 的 OSS key（app/scout env_file 同步生效）
+            # 2026-10-26 新增：sed -i 是「临时文件 + rename」，执行用户会成为新属主。本步骤固定以
+            # deploy 运行，正常情况属主不变；但若 .env.cn 曾被人用 root 覆盖（实测发生过），
+            # 这里给出可读报错与修复命令，而不是留一句笼统的 Permission denied。
+            if [ ! -w /opt/cn/.env.cn ]; then
+              echo "ERROR: /opt/cn/.env.cn 对 $(id -un) 不可写（当前属主 $(stat -c '%U:%G' /opt/cn/.env.cn 2>/dev/null || echo unknown)）" >&2
+              echo "       修复：sudo chown deploy:deploy /opt/cn/.env.cn && sudo chmod 600 /opt/cn/.env.cn" >&2
+              exit 1
+            fi
             sed -i "s|^OSS_ACCESS_KEY_ID=.*|OSS_ACCESS_KEY_ID=${OSS_ACCESS_KEY_ID}|" /opt/cn/.env.cn
             sed -i "s|^OSS_ACCESS_KEY_SECRET=.*|OSS_ACCESS_KEY_SECRET=${OSS_ACCESS_KEY_SECRET}|" /opt/cn/.env.cn
             cd /opt/cn

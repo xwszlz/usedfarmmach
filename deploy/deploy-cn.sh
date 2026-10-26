@@ -33,6 +33,52 @@ fi
 COMPOSE_FILE="$DEPLOY_DIR/docker-compose.yml"
 ENV_FILE="$DEPLOY_DIR/.env.cn"
 
+# ------------------------------------------------------------
+# 环境体检 + 失败兜底（2026-10-26 新增）
+# 事故背景：/opt/cn/.env.cn 被误写成 47 字节单行（内含 0 个 KEY=），随后
+#   `grep '^DATABASE_URL_CN='` 在 set -o pipefail 下直接令脚本零输出退出 —— CI 日志
+#   看不到任何根因；更致命的是脚本死在 `up -d --force-recreate app` 之后、
+#   `nginx -s reload` 之前，而 nginx 的 upstream 只在启动/reload 时解析 app 的 IP
+#   ⇒ nginx 死盯旧 IP ⇒ 全站 502（含静态资源）持续半小时。
+# 对策：① 动容器前先体检 .env.cn，坏配置变成一条可读报错；
+#       ② 任何异常退出都兜底 reload 一次 nginx。
+# ------------------------------------------------------------
+ENV_KEYS_MIN=30
+ENV_REQUIRED_KEYS="SITE DATABASE_URL_CN JWT_SECRET INTERNAL_API_KEY"
+
+if [ ! -f "$ENV_FILE" ]; then
+  echo "ERROR: 缺少 $ENV_FILE" >&2
+  exit 1
+fi
+
+ENV_KEY_COUNT="$(grep -cE '^[A-Za-z_][A-Za-z0-9_]*=' "$ENV_FILE" || true)"
+if [ "${ENV_KEY_COUNT:-0}" -lt "$ENV_KEYS_MIN" ]; then
+  echo "ERROR: $ENV_FILE 只有 ${ENV_KEY_COUNT:-0} 个 KEY=VALUE（预期 ≥ $ENV_KEYS_MIN）" >&2
+  echo "       常见成因：被 tee/重定向整文件覆盖（如 echo \$V | tee .env.cn 少了 -a）" >&2
+  echo "       排查: ls -l $ENV_FILE && head -c 200 $ENV_FILE" >&2
+  exit 1
+fi
+
+for _k in $ENV_REQUIRED_KEYS; do
+  if ! grep -qE "^${_k}=" "$ENV_FILE"; then
+    echo "ERROR: $ENV_FILE 缺少必需变量 ${_k}" >&2
+    exit 1
+  fi
+done
+echo "==> 环境体检通过（${ENV_KEY_COUNT} 个键，必需项齐全）"
+
+# 失败兜底：任何一步非零退出时，确保 nginx 至少 reload 一次，
+# 避免「app 已换 IP、nginx 仍指旧 IP」→ 全站 502。
+_nginx_reload_on_exit() {
+  local _rc=$?
+  if [ "$_rc" -ne 0 ]; then
+    echo "WARN: 部署在第 ${_rc} 步退出，兜底 reload nginx" >&2
+    docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T nginx nginx -s reload >/dev/null 2>&1 || \
+      docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" restart nginx >/dev/null 2>&1 || true
+  fi
+}
+trap _nginx_reload_on_exit EXIT
+
 # OSS 常量（与 .env.cn 中 OSS_REGION/OSS_BUCKET/OSS_ENDPOINT 对齐；与 ECS 同地域）
 OSS_BUCKET="usedfarmmach-oss"
 OSS_ENDPOINT="oss-cn-beijing.aliyuncs.com"
@@ -169,8 +215,16 @@ echo "==> 拉起 app + scout 容器（首次拉起，表结构尚未初始化）
 echo "    scout 为 #1 卖方采集定时 sidecar（每日 07:10 北京时间跑爬虫->入库 cn-postgres）"
 docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d --force-recreate app scout
 
+# 重建 app 会给容器分配新 IP，而 nginx 的 upstream 只在启动/reload 时解析域名。
+# 后续任何一步失败（2026-10-26 就是 db push 前的 grep 取空）都会跳过结尾的 reload
+# ⇒ nginx 死盯旧 IP ⇒ 全站 502。故此处先 reload 一次，把风险窗口压到最小。
+echo "==> 提前 reload nginx（重新解析 app 的新 IP）"
+docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T nginx nginx -s reload 2>/dev/null || \
+  docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" restart nginx || \
+  echo "WARN: 提前 reload nginx 失败（结尾仍会再 reload 一次，继续执行）"
+
 echo "==> 初始化数据库表结构（prisma db push，幂等；schema 未变则跳过）"
-DB_URL_CN="$(grep -E '^DATABASE_URL_CN=' "$ENV_FILE" | head -1 | cut -d= -f2-)"
+DB_URL_CN="$(grep -E '^DATABASE_URL_CN=' "$ENV_FILE" | head -1 | cut -d= -f2- || true)"
 if [ -z "$DB_URL_CN" ]; then
   echo "ERROR: .env.cn 缺少 DATABASE_URL_CN，无法初始化数据库" >&2
   exit 1
@@ -219,7 +273,7 @@ for i in $(seq 1 30); do
 done
 
 echo "==> 导入今日文章与市场情报到 cn-postgres（幂等，失败不阻塞部署）"
-DB_URL_CN="$(grep -E '^DATABASE_URL_CN=' "$ENV_FILE" | head -1 | cut -d= -f2-)"
+DB_URL_CN="$(grep -E '^DATABASE_URL_CN=' "$ENV_FILE" | head -1 | cut -d= -f2- || true)"
 if [ -z "$DB_URL_CN" ]; then
   echo "WARN: .env.cn 缺少 DATABASE_URL_CN，跳过内容导入"
 else
@@ -253,6 +307,34 @@ docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d --no-deps nginx
 echo "==> reload nginx（应用最新证书 / 配置）"
 docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T nginx nginx -s reload || \
   docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" restart nginx
+
+# ------------------------------------------------------------
+# 部署后自检（2026-10-26 新增）
+# 此前只有证书看门狗，站点 502 与 PII 回潮都没人告警。这里加两条硬断言，
+# 失败即让 job 标红，避免"部署成功但站点是坏的 / 在漏联系方式"。
+# 走 127.0.0.1 回环 + Host 头，避免公网 DNS / hairpin NAT 干扰。
+# ------------------------------------------------------------
+echo "==> 部署后自检（回环探测，避免 hairpin NAT）"
+SELF_CHECK_FAILED=0
+if command -v curl >/dev/null 2>&1; then
+  HTTP_CODE="$(curl -sk -o /dev/null -w '%{http_code}' --max-time 20 -H 'Host: usedfarmmach.cn' https://127.0.0.1/zh || echo 000)"
+  if [ "$HTTP_CODE" != "200" ]; then
+    echo "ERROR: 自检失败 —— https://127.0.0.1/zh 返回 ${HTTP_CODE}" >&2
+    SELF_CHECK_FAILED=1
+  fi
+  API_BODY="$(curl -sk --max-time 20 -H 'Host: usedfarmmach.cn' "https://127.0.0.1/api/products?pageSize=1&_cb=$(date +%s)" || true)"
+  if printf '%s' "$API_BODY" | grep -q '"contactPhone"'; then
+    echo "ERROR: 自检失败 —— /api/products 仍下发 contactPhone（PII 剥离回潮）" >&2
+    SELF_CHECK_FAILED=1
+  fi
+else
+  echo "WARN: 主机无 curl，跳过部署后自检"
+fi
+if [ "$SELF_CHECK_FAILED" -ne 0 ]; then
+  echo "ERROR: 部署后自检未通过，本次部署标记失败" >&2
+  exit 1
+fi
+echo "==> 部署后自检通过"
 
 # ------------------------------------------------------------
 # 部署后清理（best-effort，失败不阻塞部署结果）
