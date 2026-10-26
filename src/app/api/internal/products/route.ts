@@ -181,13 +181,21 @@ function requireApiKey(req: NextRequest): true | null {
  * 发布鉴权：兼容两类调用方
  *  1) 服务端任务：x-api-key（INTERNAL_API_KEY / PREVIOUS）——保持原行为，不绑定用户
  *  2) 小程序：Authorization: Bearer <JWT>（wx.login → code2session 签发）——绑定真实用户
+ *
+ * hadInvalidToken：客户端确实带了 Bearer 但校验失败（过期/无效），
+ * 仅用于让小程序拿到「请重新登录」文案；无凭证与 x-api-key 不匹配时保持原响应体。
  */
-function getPublisherAuth(req: NextRequest): { ok: boolean; userId?: string } {
+function getPublisherAuth(req: NextRequest): {
+  ok: boolean;
+  userId?: string;
+  hadInvalidToken?: boolean;
+} {
   if (requireApiKey(req)) return { ok: true };
   const token = getTokenFromHeaders(req.headers);
   if (token) {
     const payload = verifyToken(token);
     if (payload?.userId) return { ok: true, userId: payload.userId };
+    return { ok: false, hadInvalidToken: true };
   }
   return { ok: false };
 }
@@ -495,9 +503,13 @@ export async function POST(request: NextRequest) {
 
   if (!auth.ok) {
 
+    // 小程序带了 Bearer 但已失效 → 中文文案（publish.js 会直接 toast res.data.error）；
+    // 其余情况（无凭证 / x-api-key 不匹配）保持原响应体不变。
     return NextResponse.json(
 
-      { success: false, error: "Unauthorized", code: "UNAUTHORIZED" },
+      auth.hadInvalidToken
+        ? { success: false, error: "请重新登录", code: "UNAUTHORIZED" }
+        : { success: false, error: "Unauthorized", code: "UNAUTHORIZED" },
 
       { status: 401 }
 
