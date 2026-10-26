@@ -420,7 +420,7 @@ const TEXTS_ZH: PdfTexts = {
 
   callRole: "角色",
   callOrg: "机构",
-  callPhone: "电话（已脱敏）",
+  callPhone: "电话",
   callWhy: "为何今天打",
   callAutoNote: "（本节由渠道清单自动生成：AI 未指定优先级，按解锁状态与可得性排序）",
   callAutoUnlocked: "已解锁",
@@ -534,7 +534,7 @@ const TEXTS_EN: PdfTexts = {
 
   callRole: "Role",
   callOrg: "Organisation",
-  callPhone: "Phone (masked)",
+  callPhone: "Phone",
   callWhy: "Why today",
   callAutoNote:
     "(Auto-generated from the channel list: no AI priority — ordered by unlock status and availability)",

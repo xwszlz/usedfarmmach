@@ -972,6 +972,17 @@ export async function retrieveWebEvidence(
       viaProxy: env.arkResponsesViaProxy,
     });
     const proxyRejected = env.site === "cn" && endpoint.proxyRejected;
+    // 配置 fail-loud：`.cn` 配了 ARK_PROXY_URL 时我们**拒绝走代理**、改境内直连
+    // （合规目的是零出境，已由 endpoint.domestic 的 host 断言达成）。
+    // 但这个拒绝必须在服务端留下可 grep 的痕迹，否则运维不知道 env 配错了、
+    // 只会看到"检索能用"，永远发现不了代理配置被静默忽略。
+    if (proxyRejected) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        "[web-evidence] proxy-rejected: .cn 站已拒绝 ARK_PROXY_URL，改走境内直连",
+        { site: env.site, host: endpoint.host }
+      );
+    }
     if (env.site === "cn" && !endpoint.domestic) {
       return disabledEvidence(
         null,
