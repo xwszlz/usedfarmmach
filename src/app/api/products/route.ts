@@ -4,6 +4,7 @@ import { productQuerySchema } from "@/lib/validators";
 import { getImageUrl } from "@/lib/image-url";
 import { sortByDailyRank } from "@/config/daily-report-ranking";
 import { cache, cacheKey } from "@/lib/cache";
+import { stripContactFieldsFromList } from "@/lib/pii";
 import {
   buildWebsiteVisibleWhere,
   applySearchQueryToWhere,
@@ -32,6 +33,10 @@ export async function GET(request: NextRequest) {
     // 小程序模式不缓存（待审核产品变化快）
     const cached = includeMiniapp ? null : await cache.get(cacheKeyString);
     if (cached) {
+      // 命中缓存同样剥离：确保本次改动之前写入的脏数据不会流出
+      stripContactFieldsFromList(
+        ((cached as { data?: { data?: unknown[] } })?.data?.data ?? [])
+      );
       return NextResponse.json(cached);
     }
 
@@ -214,6 +219,8 @@ export async function GET(request: NextRequest) {
         })) || []
       }));
       
+      stripContactFieldsFromList(processedData);
+      
       const rankResponse = {
         success: true,
         data: {
@@ -321,6 +328,8 @@ export async function GET(request: NextRequest) {
         })) || []
       };
     });
+
+    stripContactFieldsFromList(processedData);
 
     const listResponse = {
       success: true,
