@@ -133,7 +133,7 @@ const TEXTS: Record<string, TianjinTexts> = {
     ],
     faqTitle: "常见问题",
     ctaTitle: "现场展位 3 天，线上展台常年展示",
-    ctaSub: "无需申请审批：注册后即可自主发布，机器立即常年在线。需要我们协助？填写以下信息，顾问帮你操作。",
+    ctaSub: "无需申请审批：点击下方按钮进入发布页，2 分钟自主上线，机器立即常年在线。",
     secondaryCta: "先看看线上展厅",
     showcase: {
       title: "自主发布后 · 惊艳展示示例",
@@ -218,7 +218,7 @@ const TEXTS: Record<string, TianjinTexts> = {
     ],
     faqTitle: "FAQ",
     ctaTitle: "An on-site booth lasts 3 days. Your online booth stays up year-round.",
-    ctaSub: "No application or approval needed — register and publish yourself; your machine goes live year-round. Need a hand? Fill in the form and an advisor will help.",
+    ctaSub: "No application or approval needed — click the button below to open the publish page and go live in 2 minutes; your machine stays online year-round.",
     secondaryCta: "Browse the online showroom first",
     showcase: {
       title: "Self-published · a stunning showcase",
@@ -303,7 +303,7 @@ const TEXTS: Record<string, TianjinTexts> = {
     ],
     faqTitle: "Вопросы и ответы",
     ctaTitle: "Офлайн-стенд — 3 дня. Онлайн-стенд — круглый год.",
-    ctaSub: "Без заявок и согласований: зарегистрируйтесь и опубликуйте технику сами — она сразу в сети круглый год. Нужна помощь? Заполните форму, и консультант всё сделает с вами.",
+    ctaSub: "Без заявок и согласований: нажмите кнопку ниже, чтобы перейти на страницу публикации и разместить технику за 2 минуты — она сразу в сети круглый год.",
     secondaryCta: "Сначала посмотреть онлайн-шоурум",
     showcase: {
       title: "После самостоятельной публикации · эффектный пример",
@@ -388,7 +388,7 @@ const TEXTS: Record<string, TianjinTexts> = {
     ],
     faqTitle: "Preguntas frecuentes",
     ctaTitle: "Un stand presencial dura 3 días. Tu stand online, todo el año.",
-    ctaSub: "Sin solicitudes ni aprobaciones: regístrate y publica tú mismo; tu máquina queda en línea todo el año. ¿Necesitas ayuda? Rellena el formulario y un asesor te asistirá.",
+    ctaSub: "Sin solicitudes ni aprobaciones: pulsa el botón de abajo para abrir la página de publicación y estar en línea en 2 minutos; tu máquina queda en línea todo el año.",
     secondaryCta: "Ver primero la sala de exposiciones online",
     showcase: {
       title: "Publicado por ti mismo · un ejemplo espectacular",
@@ -473,7 +473,7 @@ const TEXTS: Record<string, TianjinTexts> = {
     ],
     faqTitle: "Perguntas frequentes",
     ctaTitle: "Um estande presencial dura 3 dias. O seu estande online, o ano inteiro.",
-    ctaSub: "Sem solicitação nem aprovação: cadastre-se e publique você mesmo; sua máquina fica online o ano inteiro. Precisa de ajuda? Preencha o formulário e um consultor irá auxiliá-lo.",
+    ctaSub: "Sem solicitação nem aprovação: clique no botão abaixo para abrir a página de publicação e ficar online em 2 minutos; sua máquina permanece online o ano inteiro.",
     secondaryCta: "Ver primeiro o showroom online",
     showcase: {
       title: "Publicado por você · um exemplo impressionante",
@@ -558,7 +558,7 @@ const TEXTS: Record<string, TianjinTexts> = {
     ],
     faqTitle: "الأسئلة الشائعة",
     ctaTitle: "الجناح الحضوري يدوم 3 أيام. جناحك الإلكتروني يدوم طوال العام.",
-    ctaSub: "دون طلب أو موافقة: سجّل وانشر بنفسك، وستبقى آلاتك على الإنترنت طوال العام. تحتاج مساعدة؟ املأ النموذج وسيتواصل معك مستشار.",
+    ctaSub: "دون طلب أو موافقة: اضغط الزر أدناه للدخول إلى صفحة النشر والظهور خلال دقيقتين، وستبقى آلاتك على الإنترنت طوال العام.",
     secondaryCta: "تصفّح صالة العرض الإلكترونية أولًا",
     showcase: {
       title: "بعد النشر الذاتي · مثال مبهر",
@@ -643,7 +643,7 @@ const TEXTS: Record<string, TianjinTexts> = {
     ],
     faqTitle: "Questions fréquentes",
     ctaTitle: "Un stand physique dure 3 jours. Votre stand en ligne, toute l'année.",
-    ctaSub: "Sans dossier ni validation : inscrivez-vous et publiez vous-même ; votre machine reste en ligne toute l'année. Besoin d'aide ? Remplissez le formulaire, un conseiller vous accompagne.",
+    ctaSub: "Sans dossier ni validation : cliquez sur le bouton ci-dessous pour ouvrir la page de publication et être en ligne en 2 minutes ; votre machine reste en ligne toute l'année.",
     secondaryCta: "D'abord parcourir le showroom en ligne",
     showcase: {
       title: "Publié par vous-même · un aperçu saisissant",
@@ -728,7 +728,7 @@ const TEXTS: Record<string, TianjinTexts> = {
     ],
     faqTitle: "सामान्य प्रश्न",
     ctaTitle: "स्थल पर स्टॉल 3 दिन। आपका ऑनलाइन स्टॉल पूरा साल।",
-    ctaSub: "बिना आवेदन या मंज़ूरी: पंजीकरण करें और स्वयं प्रकाशित करें — आपकी मशीन पूरे साल ऑनलाइन रहेगी। मदद चाहिए? फ़ॉर्म भरें, सलाहकार आपकी सहायता करेगा।",
+    ctaSub: "बिना आवेदन या मंज़ूरी: नीचे दिए बटन से प्रकाशन पेज खोलें और 2 मिनट में ऑनलाइन हो जाएँ — आपकी मशीन पूरे साल ऑनलाइन रहेगी।",
     secondaryCta: "पहले ऑनलाइन शोरूम देखें",
     showcase: {
       title: "स्वयं प्रकाशित · एक शानदार उदाहरण",
@@ -880,6 +880,13 @@ export function TianjinLanding({ locale }: { locale: string }) {
           <p className="mt-3 text-sm text-blue-200">{t.disclaimer}</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link
+              href={`/${locale}/seller/publish-new`}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-400 px-6 py-3 font-semibold text-gray-900 transition hover:bg-amber-300"
+            >
+              {t.showcase.cta}
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
               href={`/${locale}/expo/showroom`}
               className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/40 bg-white/10 px-6 py-3 font-semibold backdrop-blur-sm transition hover:bg-white/20"
             >
@@ -985,6 +992,15 @@ export function TianjinLanding({ locale }: { locale: string }) {
             </li>
           ))}
         </ol>
+        <div className="mt-8 text-center">
+          <Link
+            href={`/${locale}/seller/publish-new`}
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white transition hover:bg-blue-700"
+          >
+            {t.showcase.cta}
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
       </section>
 
       {/* 神雕农机是谁（展会核心推介） */}
@@ -1163,6 +1179,21 @@ export function TianjinLanding({ locale }: { locale: string }) {
         <p className="mx-auto mt-6 max-w-3xl text-center text-xs leading-relaxed text-gray-500 dark:text-gray-400">
           {t.showcase.note}
         </p>
+      </section>
+
+      {/* 收尾 CTA */}
+      <section className="bg-gradient-to-br from-blue-700 to-indigo-700 py-16 text-white">
+        <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
+          <h2 className="text-2xl font-bold sm:text-3xl">{t.ctaTitle}</h2>
+          <p className="mt-4 text-blue-100">{t.ctaSub}</p>
+          <Link
+            href={`/${locale}/seller/publish-new`}
+            className="mt-8 inline-flex items-center gap-2 rounded-lg bg-amber-400 px-8 py-4 font-bold text-gray-900 hover:bg-amber-300"
+          >
+            {t.showcase.cta}
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
       </section>
 
       {/* FAQ */}
