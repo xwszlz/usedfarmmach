@@ -603,6 +603,20 @@ export async function POST(request: NextRequest) {
 
       location,
 
+      // P0-4：结构化产地（国内 province/city，国际仅 country）
+      country,
+      province,
+      city,
+
+      // P0-4：工作小时（发布者填写，0 合法）
+      workingHours,
+
+      // P0-4：卖家自留联系方式（替代平台统一号码，登录买家可见）
+      contactName,
+      contactPhone,
+      contactWechat,
+      contactEmail,
+
       // 地图选点坐标（wx.chooseLocation），用于物流与地图展示
 
       latitude,
@@ -672,6 +686,18 @@ export async function POST(request: NextRequest) {
     const finalMainConfig = mainConfig ?? descHeader ?? null;
 
     const finalNetWeight = netWeight ?? null;
+
+    // P0-4：工时由发布者填写，0 合法；空/非数字落 null（不能把 0 当空值丢掉）
+    const finalWorkingHours =
+      workingHours === undefined || workingHours === null || workingHours === ""
+        ? null
+        : Number.isFinite(Number(workingHours))
+          ? Math.max(0, Math.round(Number(workingHours)))
+          : null;
+
+    // P0-4：结构化产地与联系方式统一清洗（空串落 null，避免 DB 里出现 ""）
+    const asOptionalText = (v: unknown): string | null =>
+      typeof v === "string" && v.trim() !== "" ? v.trim() : null;
 
 
 
@@ -908,7 +934,7 @@ export async function POST(request: NextRequest) {
 
         // 可区分特征：只要有任一不同即为另一台设备，放行发布
 
-        // 小程序不采集 workingHours（DB 恒为 null），故不参与比对
+        // 工时已可填（P0-4）：同品牌/型号/年份/价格但工时差异大的是两台不同设备，必须参与比对
 
         signature: {
 
@@ -917,6 +943,8 @@ export async function POST(request: NextRequest) {
           priceCny: priceCny ? Number(priceCny) : null,
 
           enginePower: finalEnginePower ? Number(finalEnginePower) : null,
+
+          workingHours: finalWorkingHours,
 
         },
 
@@ -1010,7 +1038,8 @@ export async function POST(request: NextRequest) {
 
         year: finalYear,
 
-        workingHours: null,
+        // P0-4：工时按发布者填写值落库（旧实现恒为 null，导致详情页显示「--」）
+        workingHours: finalWorkingHours,
 
         condition,
 
@@ -1019,6 +1048,24 @@ export async function POST(request: NextRequest) {
         priceUsd: cnyToUsd(Number(priceCny), await getUsdPerCny()),
 
         location: location || "",
+
+        // P0-4：结构化产地（国内 province/city；国际仅 country，取 ISO 码）
+
+        country: asOptionalText(country),
+
+        province: asOptionalText(province),
+
+        city: asOptionalText(city),
+
+        // P0-4：卖家自留联系方式（替代平台统一号码）
+
+        contactName: asOptionalText(contactName),
+
+        contactPhone: asOptionalText(contactPhone),
+
+        contactWechat: asOptionalText(contactWechat),
+
+        contactEmail: asOptionalText(contactEmail),
 
         descriptionZh,
 
@@ -1485,7 +1532,8 @@ export async function POST(request: NextRequest) {
           // 但本「用户优先 > AI补空」合并名单此前遗漏了它 —— 识别结果被丢弃，DB 恒为 null。
           // 工时是工时折旧曲线的唯一真实输入（CATEGORY_ANNUAL_HOURS / HOURS_DEPRECIATION_CURVE）；
           // 缺这一行时，缺工时的机器只能走 age × A 合成工时，单机误差可达 ±40%。
-          if (recognizedData.workingHours != null && Number(recognizedData.workingHours) > 0) {
+          // 用户已填工时则不被 AI 覆盖（P0-4）：否则 1200h 会被识别成 800h 冲掉
+          if (finalWorkingHours == null && recognizedData.workingHours != null && Number(recognizedData.workingHours) > 0) {
             mergedUpdate.workingHours = Math.round(Number(recognizedData.workingHours));
           }
 
