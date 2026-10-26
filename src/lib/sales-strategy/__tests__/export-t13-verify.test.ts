@@ -259,6 +259,76 @@ describe("A2 TL;DR 落在第 1 页（页级文本 + 坐标核对）", () => {
   });
 });
 
+describe("webStatus 降级语义（按 team-lead 口径两套期望，不断言「必须有 L3」）", () => {
+  const BANNER_FRAGMENT = "本次策略未接入外部检索";
+  const NO_REJECT_BANNER = "本次未生成否决建议";
+
+  it("缺省 webStatus（视同 ok）⇒ 无顶部检索告警条", async () => {
+    const { all } = await extractPdfText(await buildPdf(V2_PAYLOAD));
+    expect(all).not.toContain(BANNER_FRAGMENT);
+  });
+
+  it("webStatus=partial ⇒ 顶部告警条 + webNote 第二行上纸；此时期望 L1/L2 即可，不断言 L3", async () => {
+    // 章 3 的告警条只在「有最优去向但没给否决建议」时触发（无去向时会渲染「（未生成）」，不叠加错位告警）
+    const payloadWithDest = {
+      ...V2_PAYLOAD,
+      strategy: {
+        ...V2_PAYLOAD.strategy,
+        bestDestinations: [
+          {
+            equipment: "东方红 YTO-1204",
+            market: ["乌兹别克斯坦"],
+            basis: "当地二手溢价高",
+            rejected: [],
+          },
+        ],
+      },
+      webStatus: "partial" as const,
+      webNote: "部分检索超时（3/5 成功）",
+    };
+    const { all } = await extractPdfText(await buildPdf(payloadWithDest));
+
+    // 告警条（读者必须知道「数字仅基于站内数据」）
+    expect(all).toContain(BANNER_FRAGMENT);
+    expect(all).toContain("检索备注：部分检索超时（3/5 成功）");
+    // 章 3 必须有显式降级告警，严禁静默通过（PRD §3.3）
+    expect(all).toContain(NO_REJECT_BANNER);
+    // ⚠️ 合规：非 ok 时**不得**要求出现 L3「禁入」档（prompt 层强制降级，无检索不给禁入结论）
+    //    因此这里只断言告警条，不断言任何禁入/否决内容 ⇒ 顺序见注释
+  });
+
+  it("ok 但有最优去向却没给否决建议 ⇒ 同样显式告警（与检索状态解耦）", async () => {
+    const { all } = await extractPdfText(
+      await buildPdf({
+        ...V2_PAYLOAD,
+        strategy: {
+          ...V2_PAYLOAD.strategy,
+          bestDestinations: [
+            { equipment: "东方红 YTO-1204", market: ["乌兹别克斯坦"], basis: "溢价高", rejected: [] },
+          ],
+        },
+      })
+    );
+    expect(all).toContain(NO_REJECT_BANNER);
+  });
+
+  it("webStatus=error ⇒ 折叠为 disabled 文案上纸（error 不得静默消失）", async () => {
+    const { all } = await extractPdfText(
+      await buildPdf({ ...V2_PAYLOAD, webStatus: "error" })
+    );
+    expect(all).toContain(BANNER_FRAGMENT);
+    expect(all).toContain("外部证据未接入（未启用）");
+  });
+
+  it("webStatus=timeout ⇒ 顶部告警条含该档 note（四档文案可区分）", async () => {
+    const { all } = await extractPdfText(
+      await buildPdf({ ...V2_PAYLOAD, webStatus: "timeout" })
+    );
+    expect(all).toContain(BANNER_FRAGMENT);
+    expect(all).toContain("外部证据未接入（检索超时）");
+  });
+});
+
 // ═══════════════════════════════════════════════════════════
 // G16 老字段必须真上纸（改前「生成了却从不渲染」= 数据白丢）
 // ═══════════════════════════════════════════════════════════
