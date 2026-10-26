@@ -360,6 +360,35 @@ describe("章 5 todayCalls 缺失 ⇒ 从 channels 兜底（付费号码必须�
     expect(all).toContain("未解锁C公司");
     expect(all).toContain("已解锁B公司");
   });
+
+  // `75fbab6` 把列头从「电话（已脱敏）」改成中性「电话」（en: Phone）。
+  // 这是纯文案修复 ⇒ 没有断言守就会被人改回去，故锁死：**行内是明文号时，标签不许再声称已脱敏**。
+  it("④ 列头中性化回归锁：行内是明文号时不得再挂「已脱敏」标签", async () => {
+    const { all, runs } = await extractPdfText(
+      await buildPdf({ ...V2_PAYLOAD, channels: [unlockedChannel] })
+    );
+
+    // 前提校验：确认走的确实是兜底表格（否则下面的「无标签」会退化成空断言）
+    expect(all).toContain(UNLOCKED_PHONE);
+    expect(all).toContain(AUTO_NOTE);
+
+    const flat = runs.flat();
+    expect(flat.some((r) => r.text.trim() === "电话"), "兜底表格缺少中性「电话」列头").toBe(true);
+    expect(
+      flat.some((r) => r.text.includes("已脱敏")),
+      "章 5 仍出现「已脱敏」字样 —— 明文行与列头自相矛盾"
+    ).toBe(false);
+    expect(all).not.toContain("电话（已脱敏）");
+  });
+
+  it("⑤ en 版式同一口径：Phone 而不是 Phone (masked)", async () => {
+    const { all } = await extractPdfText(
+      await buildPdf({ ...V2_PAYLOAD, locale: "en", channels: [unlockedChannel] })
+    );
+
+    expect(all, "en 下章 5 兜底未生效").toContain(UNLOCKED_PHONE);
+    expect(all, "en 列头仍声称 masked").not.toContain("Phone (masked)");
+  });
 });
 
 describe("webStatus 降级语义（按 team-lead 口径两套期望，不断言「必须有 L3」）", () => {

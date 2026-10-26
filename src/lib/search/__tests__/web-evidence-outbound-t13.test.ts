@@ -197,3 +197,58 @@ describe("对照组：.com 站允许第三方源（证明闸门是按站点、�
     }
   });
 });
+
+// ═══════════════════════════════════════════════════════════
+// 配置 fail-loud：代理被拒必须留下**可 grep 的服务端日志**（`75fbab6`）
+// ───────────────────────────────────────────────────────────
+// 为什么单列一组：`proxyRejected` 只进返回值时，运维视角是「检索一切正常」，
+// 永远发现不了 `ARK_PROXY_URL` 被静默忽略。零出境本身已由闸③的 host 断言保证，
+// 这一组守的是**可观测性**：日志前缀必须固定、只打一次、且不是无条件噪音。
+// ═══════════════════════════════════════════════════════════
+describe("配置 fail-loud：proxyRejected 的服务端日志可 grep", () => {
+  const LOG_PREFIX = "[web-evidence] proxy-rejected";
+
+  function spyWarn() {
+    return vi.spyOn(console, "warn").mockImplementation(() => {});
+  }
+
+  it(".cn + ARK_PROXY_URL ⇒ 恰好 1 条带固定前缀的 warn，且载荷含境内 host", async () => {
+    const warn = spyWarn();
+    try {
+      const ev = await retrieveWebEvidence(BASE_INPUT, {
+        runtime: { site: "cn", arkApiKey: "ark-key", arkProxyUrl: PROXY_URL },
+        cacheTtlMs: 0,
+      });
+
+      expect(ev.proxyRejected).toBe(true);
+
+      const hits = warn.mock.calls.filter((c) => String(c[0]).startsWith(LOG_PREFIX));
+      expect(
+        hits.length,
+        `未找到前缀为「${LOG_PREFIX}」的日志（不可 grep）；实际 warn 调用：${JSON.stringify(
+          warn.mock.calls.map((c) => String(c[0]))
+        )}`
+      ).toBe(1); // 每次 retrieveWebEvidence 只打 1 条，避免多 query 时刷屏
+
+      // 载荷要能定位「哪台 host 被改用了」，否则只看到一句话仍无法排障
+      expect(JSON.stringify(hits[0][1] ?? {})).toContain(DOMESTIC_HOST);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("对照组：.com + ARK_PROXY_URL ⇒ 不打该日志（证明不是无条件噪音）", async () => {
+    const warn = spyWarn();
+    try {
+      await retrieveWebEvidence(BASE_INPUT, {
+        runtime: { site: "com", arkApiKey: "ark-key", arkProxyUrl: PROXY_URL },
+        cacheTtlMs: 0,
+      });
+
+      const hits = warn.mock.calls.filter((c) => String(c[0]).startsWith(LOG_PREFIX));
+      expect(hits, ".com 站并未拒用代理，却打了 proxy-rejected 日志").toHaveLength(0);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+});
