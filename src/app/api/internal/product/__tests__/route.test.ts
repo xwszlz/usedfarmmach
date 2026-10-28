@@ -79,4 +79,36 @@ describe("合法调用行为不变", () => {
     expect(res.status).toBe(201);
     await expect(res.json()).resolves.toEqual({ success: true, productId: "p1" });
   });
+
+  /**
+   * 反向用例（删掉转发里的 `...(auth ? { authorization: auth } : {})` 必红）。
+   *
+   * 下游 `/api/internal/products` 的鉴权是「x-api-key 匹配 **或** Bearer JWT 有效」。
+   * 旧实现只转 content-type / x-api-key / x-miniapp-key ⇒ 只带 JWT 的早期小程序
+   * 走这条兼容路径时 JWT 被丢、必然判 401 —— 也就是说这条兼容路由对"它要兼容的那批
+   * 客户端"从来没生效过。这条用例把那个行为钉死。
+   */
+  it("Authorization: Bearer <jwt> 必须原样转发到下游", async () => {
+    await POST(
+      makeRequest(`${SITE_ORIGIN}/api/internal/product`, {
+        host: new URL(SITE_ORIGIN).host,
+        authorization: "Bearer test-jwt",
+      })
+    );
+
+    const headers = (fetchMock.mock.calls[0][1] as RequestInit).headers as Record<string, string>;
+    expect(headers.authorization).toBe("Bearer test-jwt");
+  });
+
+  it("没有 Authorization 时不塞空字符串（空 Authorization 是非法值，部分代理会 400）", async () => {
+    await POST(
+      makeRequest(`${SITE_ORIGIN}/api/internal/product`, {
+        host: new URL(SITE_ORIGIN).host,
+        "x-api-key": "k1",
+      })
+    );
+
+    const headers = (fetchMock.mock.calls[0][1] as RequestInit).headers as Record<string, string>;
+    expect("authorization" in headers).toBe(false);
+  });
 });

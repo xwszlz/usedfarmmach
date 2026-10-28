@@ -38,28 +38,13 @@ function getCredentials(): { accessKeyId: string; accessKeySecret: string } {
   return { accessKeyId, accessKeySecret };
 }
 
-/** 本桶的 OSS 主机名（**不含 scheme**）—— 判"是不是我们自己的 OSS 地址"必须用它做精确比较 */
-export const OSS_BUCKET_HOSTNAME = "usedfarmmach-oss.oss-cn-beijing.aliyuncs.com";
-
 /**
- * 判断 URL 是否指向我们自己的 OSS 桶。
- *
- * 为什么不用 `url.startsWith("https://" + OSS_BUCKET_HOSTNAME)`：
- *   前缀比较对 `https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com.evil.tld/x` 同样成立，
- *   攻击者可以拿任意外部地址冒充"自有 OSS 直传产物"，从而绕过"下载后重传 OSS"的清洗环节
- *   （该环节同时也是 SSRF 守卫的唯一入口，绕过后恶意地址会被原样写进 productImage）。
- *   必须解析后比 hostname：hostname 由 URL 解析器给出，不含 userinfo / path / 后缀域名。
+ * 「自有 OSS 地址」的常量与判定已下沉到 `@/lib/net/oss-host`（零依赖纯模块），
+ * 目的是让 `net/ssrf-guard.ts` 不必反向依赖这个业务模块（否则 `ali-oss` 的加载
+ * 会变成全站图片链路的隐式前置条件）。这里 re-export，保证
+ * `import { OSS_BUCKET_HOSTNAME } from "@/lib/oss-upload"` 的既有调用方一行都不用改。
  */
-export function isOwnOssUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url);
-    // 保留原实现的 https 约束：小程序直传产物一定是 https，放宽到 http 会让
-    // "自有 OSS 地址"这条信任判断多出一种弱协议形态（混合内容风险）。
-    return parsed.protocol === "https:" && parsed.hostname === OSS_BUCKET_HOSTNAME;
-  } catch {
-    return false;
-  }
-}
+export { OSS_BUCKET_HOSTNAME, isOwnOssUrl } from "@/lib/net/oss-host";
 
 /** 创建 ali-oss 客户端 */
 function createClient() {

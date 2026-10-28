@@ -27,7 +27,10 @@
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
 
-import { isOwnOssUrl } from "@/lib/oss-upload";
+// ⚠️ 只 import `net/oss-host`（零依赖纯函数 + 字面量），**不要**改回 `@/lib/oss-upload`：
+//    后者是业务模块（上传），一旦它顶层 import 了 `ali-oss`，守卫作为全站图片链路的公共底座
+//    就会把"加载阿里云 SDK"变成每张图片的隐式前置条件。
+import { isOwnOssUrl } from "@/lib/net/oss-host";
 
 /** 单张图片允许的最大字节数（12MB）。超过直接判失败，不进入视觉模型（也避免把内存打满） */
 export const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
@@ -55,8 +58,45 @@ const BLOCKED_HOSTNAMES = new Set(["localhost", "localhost.localdomain", "ip6-lo
 /** 内部用途的主机名后缀（metadata.google.internal / *.local mDNS / *.localhost 等） */
 const BLOCKED_HOST_SUFFIXES = [".localhost", ".local", ".internal", ".localdomain", ".home.arpa"];
 
-/** 最大重定向跳数（每一跳都会重新做完整校验） */
+/**
+ * 最大重定向跳数：3。
+ *
+ * ⚠️ 这个数字是**拍的，不是量的** —— 实测自有 OSS / 微信 CDN / 常见图床都是 0~1 跳，
+ *    3 有充足余量，但没有一条"为什么不是 2 或 4"的实测依据。
+ *
+ * 为什么不再放宽到 5（axios 默认值）：
+ *   安全性上 3 与 5 是**等价**的 —— 每一跳都重跑 `assertSafeImageUrl`，
+ *   第 4、5 跳不会比第 1 跳更危险，多的只是两次"已校验"的出站请求。
+ *   但"等价"只对安全成立，对**暴露面**不成立：跳数越多，落在守卫之外的
+ *   （DNS 解析时序、连接建立、重定向体读取）的机会窗口越多，收益为零、代价非零，就不做。
+ *
+ * 代价与对冲：3 跳对 >3 跳的图会造成"静默功能差"——图取不到时不报错，只是**视觉输入变薄**
+ *   （"这台机器的分析为什么比别家薄"），没人查得出来。所以到顶必须留一条可 grep 的日志
+ *   （`[ssrf-guard] redirect-limit`，带跳数与最终 host、不带完整 URL 以免泄露签名参数）：
+ *   将来真有用户图床链 4 跳，线上会露出来，届时**拿证据放宽**，而不是拿感觉放宽。
+ */
 const MAX_REDIRECTS = 3;
+
+/**
+ * 拒绝路径的统一出口：**先打一条可 grep 的日志，再抛错**。
+ *
+ * 为什么必须留痕：守卫的拒绝本身不是问题，"拒绝了却没有任何痕迹"才是问题 ——
+ * 线上很难区分"这张图本来就不存在"和"守卫把它误杀了"。日志前缀固定为
+ * `[ssrf-guard] reject:`，配 `host=` 便于按域名聚合排查（例如某天自有 CDN 换域名后批量被拒）。
+ */
+function rejectImageUrl(reason: string, host: string, message: string): never {
+  console.warn(`[ssrf-guard] reject: ${reason} host=${host || "-"}`);
+  throw new Error(message);
+}
+
+/** 尽力取出 URL 的 hostname 用于日志（永不抛错） */
+function safeHostOf(url: string): string {
+  try {
+    return normalizeHostname(new URL(url).hostname);
+  } catch {
+    return "";
+  }
+}
 
 /** 把 URL 主机名归一化：小写、去首尾方括号（IPv6 字面量）、去尾部点 */
 function normalizeHostname(hostname: string): string {
@@ -187,21 +227,25 @@ function isBlockedAddress(address: string, family: number): boolean {
  */
 export async function assertSafeImageUrl(imageUrl: string): Promise<URL> {
   const raw = typeof imageUrl === "string" ? imageUrl.trim() : "";
-  if (!raw) throw new Error("图片地址为空");
+  if (!raw) rejectImageUrl("empty-url", "", "图片地址为空");
 
   let parsed: URL;
   try {
     parsed = new URL(raw);
   } catch {
-    throw new Error(`图片地址不是合法 URL: ${raw.slice(0, 120)}`);
+    rejectImageUrl("invalid-url", "", `图片地址不是合法 URL: ${raw.slice(0, 120)}`);
   }
 
   if (!ALLOWED_PROTOCOLS.has(parsed.protocol)) {
-    throw new Error(`图片地址协议不允许（只支持 http/https）: ${parsed.protocol}`);
+    rejectImageUrl(
+      `scheme-not-allowed(${parsed.protocol})`,
+      parsed.hostname,
+      `图片地址协议不允许（只支持 http/https）: ${parsed.protocol}`
+    );
   }
 
   const hostname = normalizeHostname(parsed.hostname);
-  if (!hostname) throw new Error("图片地址缺少主机名");
+  if (!hostname) rejectImageUrl("missing-host", "", "图片地址缺少主机名");
 
   // 自有 OSS：已知可信源，直接放行，**跳过 DNS 解析与网段判断**。
   // 为什么必须短路：容器内 DNS 是这条链上最不必要、也最脆的一环 —— 它一抖，
@@ -215,14 +259,14 @@ export async function assertSafeImageUrl(imageUrl: string): Promise<URL> {
   }
 
   if (BLOCKED_HOSTNAMES.has(hostname) || BLOCKED_HOST_SUFFIXES.some((suffix) => hostname.endsWith(suffix))) {
-    throw new Error(`图片地址指向内部主机名: ${hostname}`);
+    rejectImageUrl("blocked-hostname", hostname, `图片地址指向内部主机名: ${hostname}`);
   }
 
   // 裸 IP 字面量：跳过 DNS，直接按网段判（否则会被 lookup 当成域名解析）
   const literalFamily = isIP(hostname);
   if (literalFamily === 4 || literalFamily === 6) {
     if (isBlockedAddress(hostname, literalFamily)) {
-      throw new Error(`图片地址指向内网 IP: ${hostname}`);
+      rejectImageUrl("blocked-ip-literal", hostname, `图片地址指向内网 IP: ${hostname}`);
     }
     return parsed;
   }
@@ -232,16 +276,20 @@ export async function assertSafeImageUrl(imageUrl: string): Promise<URL> {
     // all:true —— 一个域名可能有多个 A/AAAA，任何一个落在内网都算拒绝（避免挑到"干净"记录就放行）
     addresses = await lookup(hostname, { all: true });
   } catch {
-    throw new Error(`图片地址域名解析失败: ${hostname}`);
+    rejectImageUrl("dns-failed", hostname, `图片地址域名解析失败: ${hostname}`);
   }
 
   if (!addresses || addresses.length === 0) {
-    throw new Error(`图片地址域名无解析结果: ${hostname}`);
+    rejectImageUrl("dns-empty", hostname, `图片地址域名无解析结果: ${hostname}`);
   }
 
   for (const entry of addresses) {
     if (isBlockedAddress(entry.address, entry.family)) {
-      throw new Error(`图片地址解析到内网地址: ${hostname} -> ${entry.address}`);
+      rejectImageUrl(
+        "resolved-to-blocked-ip",
+        hostname,
+        `图片地址解析到内网地址: ${hostname} -> ${entry.address}`
+      );
     }
   }
 
@@ -289,11 +337,25 @@ export async function fetchGuardedImage(imageUrl: string): Promise<Response> {
     if (!isRedirect) return resp;
 
     const location = resp.headers?.get?.("location") || "";
-    if (!location) throw new Error(`图片重定向缺少 Location（状态码 ${status}）`);
-    if (hop === MAX_REDIRECTS) break;
-    current = new URL(location, current).toString();
+    if (!location) {
+      rejectImageUrl("redirect-without-location", safeHostOf(current), `图片重定向缺少 Location（状态码 ${status}）`);
+    }
+
+    // 先算出下一跳地址，再判跳数上限：日志里要记的是**链路终点**的 host
+    // （"哪家图床需要更多跳"才是将来放宽上限的依据），不是我们停在半路的那一跳。
+    const nextHref = new URL(location, current).toString();
+
+    if (hop === MAX_REDIRECTS) {
+      // 到顶必须留痕：否则"需要更多跳才能取到的图"会变成静默变薄的分析结果。
+      // 只打 host，不打完整 URL —— 图床地址常带签名参数，日志会被转存/外发。
+      console.warn(`[ssrf-guard] redirect-limit: hops=${MAX_REDIRECTS} host=${safeHostOf(nextHref)}`);
+      throw new Error("图片重定向次数过多");
+    }
+    current = nextHref;
   }
 
+  // 兜底（正常流程走不到：上面循环的最后一次迭代必然 return 或 throw）
+  console.warn(`[ssrf-guard] redirect-limit: hops=${MAX_REDIRECTS} host=${safeHostOf(current)}`);
   throw new Error("图片重定向次数过多");
 }
 
@@ -311,6 +373,7 @@ export async function readBodyWithLimit(resp: Response, maxBytes: number = MAX_I
     // 此时没有可流式拉取的字节，退化读取不会带来内存放大，仅补一次大小校验兜底。
     const fallback = Buffer.from(await resp.arrayBuffer());
     if (fallback.byteLength > maxBytes) {
+      console.warn(`[ssrf-guard] reject: size-limit(${maxBytes}) host=-`);
       throw new Error(`图片体积超过上限（${maxBytes} 字节）`);
     }
     return fallback;
@@ -330,6 +393,7 @@ export async function readBodyWithLimit(resp: Response, maxBytes: number = MAX_I
       if (total > maxBytes) {
         // 先中止再抛错：不 cancel 的话底层连接会继续把剩余字节推进缓冲区
         await reader.cancel().catch(() => undefined);
+        console.warn(`[ssrf-guard] reject: size-limit(${maxBytes}) host=-`);
         throw new Error(`图片体积超过上限（${maxBytes} 字节）`);
       }
       chunks.push(Buffer.from(value));

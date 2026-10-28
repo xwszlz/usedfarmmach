@@ -135,6 +135,52 @@ describe("SSRF：重定向不能成为绕过通道", () => {
   });
 });
 
+describe("重定向跳数上限：3 跳（到顶必须留痕，不能静默变薄）", () => {
+  /** 造一条"永远 302 到下一跳"的响应；location 故意带签名参数，用来验证日志只打 host */
+  function redirectTo(host: string): Response {
+    return new Response(null, {
+      status: 302,
+      headers: { location: `https://${host}/a.jpg?Expires=1&Signature=secret` },
+    });
+  }
+
+  it("正好 3 跳 ⇒ 放行（第 4 次 fetch 拿到正常图片）", async () => {
+    let n = 0;
+    fetchMock = vi.fn(async () => {
+      n += 1;
+      return n <= 3 ? redirectTo(`cdn${n}.example.com`) : imageResponse();
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const resp = await fetchGuardedImage("https://cdn0.example.com/a.jpg");
+    expect(resp.ok).toBe(true);
+    // 起始那一枪 + 3 跳 = 4 次抓取
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+  });
+
+  it("超过 3 跳 ⇒ 拒绝，并打一条带 hops 与最终 host 的 redirect-limit 日志", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    let n = 0;
+    fetchMock = vi.fn(async () => {
+      n += 1;
+      return redirectTo(`cdn${n}.example.com`);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(fetchGuardedImage("https://cdn0.example.com/a.jpg")).rejects.toThrow(/重定向次数过多/);
+
+    const logged = warn.mock.calls.map((args) => args.join(" ")).join("\n");
+    expect(logged).toContain("redirect-limit");
+    expect(logged).toContain("hops=3");
+    // 记录的是链路终点的 host（哪家图床要更多跳，才是将来放宽上限的依据）
+    expect(logged).toContain("host=cdn4.example.com");
+    // 绝不能把完整 URL 打进日志：图床地址常带签名参数，日志会被转存/外发
+    expect(logged).not.toContain("Signature");
+
+    warn.mockRestore();
+  });
+});
+
 describe("公网图片放行（normal path 回归）", () => {
   /**
    * 反向用例：**防止将来有人"顺手"把整个 100.0.0.0/8 封掉**。

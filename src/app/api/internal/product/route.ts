@@ -4,9 +4,13 @@
  * 早期版本的小程序可能调用了单数路径 /api/internal/product，
  * 此路由将其透明转发到正确的复数路径，避免 404 导致的"假超时"。
  *
- * 同时支持两种认证方式：
+ * 同时支持三种认证方式（与下游 `/api/internal/products` 的鉴权口径保持一致）：
  *   - x-miniapp-key（小程序直连）
  *   - x-api-key（内部API/云函数）
+ *   - Authorization: Bearer <JWT>（已登录的小程序用户）
+ *
+ * ⚠️ 凭据必须**逐个原样转发**：下游鉴权是「x-api-key **或** Bearer JWT」，
+ *    少转一个头，对应那批客户端就会被误判 401。
  *
  * ⚠️ R6 增强：
  *   - 记录转发 payload 大小，便于排查大体积 base64 数据问题
@@ -45,6 +49,17 @@ export async function POST(request: NextRequest) {
     // 换成 canonical origin 对合法调用方完全等价（小程序本来就打 canonical 域名）。
     const internalUrl = new URL("/api/internal/products", SITE_ORIGIN);
 
+    // ⚠️ Authorization 必须转发：下游 `/api/internal/products` 的鉴权是
+    //    「x-api-key 匹配 **或** Bearer JWT 有效」二者之一。
+    //    旧实现只转了 content-type / x-api-key / x-miniapp-key，已登录的用户
+    //    （只带 JWT、不带 x-api-key 的早期小程序版本）走这条兼容路径时 JWT 被丢，
+    //    必然被判 401 —— 也就是说这条兼容路由对"它要兼容的那批客户端"从没生效过；
+    //    更糟的是下游在"无凭证"分支里返回的是"请重新登录"的文案，正常登录用户被推进了错误分支。
+    //
+    // 用 `...(auth ? {...} : {})` 而不是 `authorization: auth || ""`：
+    // 空字符串的 Authorization 是非法值，部分代理/网关会直接 400。
+    const auth = request.headers.get("authorization");
+
     // 转发请求到正确的端点
     const response = await fetch(internalUrl.toString(), {
       method: "POST",
@@ -53,6 +68,7 @@ export async function POST(request: NextRequest) {
         // 转发所有认证头
         "x-api-key": request.headers.get("x-api-key") || "",
         "x-miniapp-key": request.headers.get("x-miniapp-key") || "",
+        ...(auth ? { authorization: auth } : {}),
       },
       body: bodyStr,
       // 🔍 R6 修复：设置内部 fetch 超时，防止无限等待（Vercel→OSS 可能慢）

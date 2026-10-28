@@ -776,6 +776,18 @@ export async function POST(request: NextRequest) {
 
     );
 
+    // 合规缺口可观测化（不改过滤逻辑）：http:// 图片会被整段跳过微信内容安全检测。
+    // 之所以只打日志而不放行 http：把 http 图推给微信可能被拒，属行为风险；
+    // 但"跳过"这件事必须留下痕迹，否则将来要决策"是否禁用 http 图片"时没有任何数据。
+    const skippedByScheme = (images || []).filter(
+      (src: string) => typeof src === "string" && src.length > 0 && !src.startsWith("https://")
+    ).length;
+    if (skippedByScheme > 0) {
+      console.warn(
+        `[internal/products] sec-check skipped non-https images: count=${skippedByScheme} total=${(images || []).length}`
+      );
+    }
+
 
 
     try {
