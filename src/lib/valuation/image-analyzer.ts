@@ -20,6 +20,7 @@
 import { chatCompletionDoubao, getArkVisionModelId } from "@/lib/ai/ark-client";
 import { recordUsage, ESTIMATED_TOKENS } from "@/lib/credits/usage-collector";
 import { withLanguage, type AiLocale } from "@/lib/i18n/ai-locale";
+import { fetchGuardedImage, readBodyWithLimit } from "@/lib/valuation/ssrf-guard";
 
 /** 成色代码：英文枚举，**不翻译**（下游按字面量匹配） */
 export type ConditionCode = "excellent" | "good" | "fair" | "poor";
@@ -182,17 +183,27 @@ export function conditionCodeLabelText(code: ConditionCode | null | undefined, l
  * - data URI：**原样透传**。前端 `canvas.toDataURL("image/jpeg", 0.82)` 已给出压缩后的 base64，
  *   再 `fetch()` 一次纯属浪费；且超长 data URI 在部分 runtime 下 fetch 行为不确定。
  * - http(s) URL：下载后 base64，mime 取响应 `content-type`（非 image/* 一律按 jpeg 兜底）。
+ *   下载**必须**走出网守卫（`@/lib/valuation/ssrf-guard`）：`imageUrls` 来自请求体，
+ *   若不校验就是可直接把服务器当跳板打内网/云元数据的 SSRF；同时受 12MB 体积上限与 20s 超时约束。
  *
  * 为什么必须支持 data URI：估值页 / 深度分析上传的都是本地压缩图（不上传到 CDN），
  * 只传 data URI；若此处不支持，国产渠道（.cn）估值的图片分析会被静默跳过 ⇒ 零 token ⇒ 零收费。
  */
 async function fetchImageAsBase64(imageUrl: string): Promise<string> {
   const raw = typeof imageUrl === "string" ? imageUrl.trim() : "";
+  // data URI 必须只在这里截走：`imageUrls` 来自请求体，其余一切协议（含 data:text/html）
+  // 都会落到下面的出网守卫被 scheme 白名单拒绝。
   if (DATA_URI_RE.test(raw)) return raw;
 
-  const resp = await fetch(raw);
+  // 出网守卫（SSRF 缓解）：scheme 白名单 + 主机/解析结果判段 + 每一跳重定向复核。
+  // 校验失败直接抛错，由 analyzeProductImage 既有的 catch 走降级路径并打日志 ——
+  // 绝不能静默放行：那会让用户看到"没报错但图片也没被分析"，比报错更难排查。
+  const resp = await fetchGuardedImage(raw);
   if (!resp.ok) throw new Error(`图片下载失败: ${resp.status}`);
-  const buf = Buffer.from(await resp.arrayBuffer());
+
+  // 流式读取 + 12MB 上限：`resp.arrayBuffer()` 会先把整个响应吃进内存再判大小，
+  // 一个超大响应就能把实例内存打满，所以此处必须按块累加、超限提前 cancel。
+  const buf = await readBodyWithLimit(resp);
   // 用可选链读 content-type：部分运行环境/测试桩的 Response 没有 headers，
   // 这里绝不能因此抛错（否则整条视觉分析会被降级成默认分，估值失真）。
   const header = (resp.headers?.get?.("content-type") || "").split(";")[0].trim().toLowerCase();
