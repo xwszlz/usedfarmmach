@@ -10,7 +10,12 @@ import {
 import Link from "next/link";
 import { PublishCta } from "@/components/valuation/publish-cta";
 import AnalysisReportView from "@/components/valuation/analysis-report-view";
-import ValuationReportSection from "@/components/valuation/valuation-report-section";
+import ValuationReportSection, {
+  type ValuationReportResult,
+  type ValuationVisualInfo,
+  type ValuationNarrative,
+} from "@/components/valuation/valuation-report-section";
+import { isCnSite } from "@/config/site";
 import ValuationResultGate, { type BlurredValuation } from "@/components/valuation/valuation-result-gate";
 import {
   DOMESTIC_HP_REGRESSION,
@@ -30,6 +35,111 @@ import ValuationReportPro from "@/components/valuation/valuation-report-pro";
 // ============================================================
 
 type Channel = "domestic" | "international" | "export";
+
+/**
+ * /api/valuation 返回的 data 里前端真正要读的字段。
+ *
+ * 后端返回的是完整 ValuationResult（route.ts 的 `data: result`），以前页面只挑了
+ * value / confidence / breakdown / formula / warnings / channelPrices 六项，
+ * 视觉成色、折旧率、规格因子、市场锚点等全部丢弃 ⇒ 报告内容单薄。
+ * 这里把需要的字段显式列出，全部可选，后端字段未上线时不会抛错。
+ */
+interface RawValuationPayload {
+  estimatedValue?: number;
+  confidence?: number;
+  details?: Array<{ label?: string; value?: string; impact?: string; description?: string }>;
+  channelPrices?: Record<string, number>;
+  // V4 视觉成色
+  visualConditionScore?: number | null;
+  visualConditionAnalysis?: string | null;
+  imageConfidence?: number | null;
+  usedV4Condition?: boolean;
+  imageCount?: number;
+  videoCount?: number;
+  // V4 规格因子 / 折旧 / 区间
+  specDetails?: Array<{ field?: string; value?: string; weight?: number; score?: number }>;
+  depreciationPercent?: number;
+  priceRange?: { low?: number; mid?: number; high?: number };
+  basePrice?: number;
+  isGoodDeal?: boolean;
+  priceDiffPercent?: number;
+  // 后端新增（可能尚未上线）
+  visual?: {
+    score?: number | null;
+    label?: string | null;
+    labelText?: string | null;
+    perImage?: Array<{ score?: number; label?: string; analysis?: string; confidence?: number }>;
+    imageCount?: number;
+    confidence?: number | null;
+  } | null;
+  narrative?: ValuationNarrative | null;
+}
+
+/**
+ * 把 /api/valuation 里「后端已算好、前端以前完全没用」的字段透传进报告对象，
+ * 供报告页的「AI 结论 / AI 视觉成色 / 折旧拆解」三块卡片渲染。
+ * 纯映射、无副作用、无新增请求；所有字段可选链兜底。
+ */
+function pickRichFields(r: RawValuationPayload): Partial<ValuationReportResult> {
+  const rawVisual = r.visual ?? null;
+  const perImage = Array.isArray(rawVisual?.perImage)
+    ? rawVisual!.perImage!.map((img) => ({
+        score: typeof img?.score === "number" && Number.isFinite(img.score) ? img.score : 0,
+        label: img?.label ?? "",
+        analysis: img?.analysis ?? "",
+        confidence: typeof img?.confidence === "number" ? img.confidence : 0,
+      }))
+    : [];
+
+  const visual: ValuationVisualInfo | null = rawVisual
+    ? {
+        score:
+          typeof rawVisual.score === "number" && Number.isFinite(rawVisual.score)
+            ? rawVisual.score
+            : null,
+        label: rawVisual.label ?? null,
+        labelText: rawVisual.labelText ?? null,
+        perImage,
+        imageCount: rawVisual.imageCount ?? r.imageCount ?? perImage.length,
+        confidence: rawVisual.confidence ?? r.imageConfidence ?? null,
+      }
+    : null;
+
+  return {
+    visualConditionScore: r.visualConditionScore ?? null,
+    visualConditionAnalysis: r.visualConditionAnalysis ?? null,
+    imageConfidence: r.imageConfidence ?? null,
+    usedV4Condition: r.usedV4Condition === true,
+    imageCount: r.imageCount,
+    videoCount: r.videoCount,
+    specDetails: Array.isArray(r.specDetails)
+      ? r.specDetails.map((s) => ({
+          field: String(s?.field ?? ""),
+          value: String(s?.value ?? ""),
+          weight: typeof s?.weight === "number" ? s.weight : undefined,
+          score: typeof s?.score === "number" ? s.score : undefined,
+        }))
+      : undefined,
+    depreciationPercent: r.depreciationPercent,
+    priceRange:
+      r.priceRange && typeof r.priceRange === "object"
+        ? { low: r.priceRange.low, mid: r.priceRange.mid, high: r.priceRange.high }
+        : undefined,
+    basePrice: r.basePrice,
+    isGoodDeal: r.isGoodDeal,
+    priceDiffPercent: r.priceDiffPercent,
+    narrative: r.narrative ?? null,
+    visual,
+  };
+}
+
+/** 国产成色 key → 报告展示文案（中英各一套，避免英文站出现中文「良好」） */
+const DOMESTIC_CONDITION_I18N: Record<string, { zh: string; en: string }> = {
+  excellent: { zh: "优秀", en: "Excellent" },
+  good: { zh: "良好", en: "Good" },
+  fair: { zh: "一般", en: "Fair" },
+  poor: { zh: "较差", en: "Poor" },
+};
 
 // 国产品类
 const DOMESTIC_CATEGORIES = [
@@ -619,10 +729,13 @@ function AIRecognizeSection({
 function DeepAnalysisSection({
   prefillData,
   images = [],
+  isChineseBrand = false,
   onComplete,
 }: {
   prefillData: { brand?: string; category?: string; year?: number; horsepower?: number };
   images?: string[];
+  /** 当前设备品牌是否为国产（父级按渠道/识别结果判定），决定后端走国内版还是国际版 prompt */
+  isChineseBrand?: boolean;
   onComplete?: (structured: Record<string, any> | null) => void;
 }) {
   const [loading, setLoading] = useState(false);
@@ -633,6 +746,8 @@ function DeepAnalysisSection({
   const [insufficientCredits, setInsufficientCredits] = useState(false);
   // 本次深度分析的 token 计费摘要（API 返回 pointsCharged / creditsBalance）
   const [consumption, setConsumption] = useState<{ points: number; balance?: number } | null>(null);
+  // 本次分析实际走的语种/品牌归属（用于渲染时给报告组件传一致的 props）
+  const [reportIsChineseBrand, setReportIsChineseBrand] = useState(isChineseBrand);
   const locale = useLocale();
 
   const runDeepAnalysis = async () => {
@@ -643,6 +758,11 @@ function DeepAnalysisSection({
     setLocked(false);
     setInsufficientCredits(false);
     setConsumption(null);
+    // 站点门控（关键修复）：.com 是国际站，永远走国际版 prompt；
+    // 只有 .cn 站才按品牌国籍决定。以前这里写死 true 且无站点门控，
+    // 导致 .com 的 /en/services/valuation 点深度分析 100% 输出「国内主流品牌/各省补贴」。
+    const effectiveIsChineseBrand = isCnSite() ? isChineseBrand : false;
+    setReportIsChineseBrand(effectiveIsChineseBrand);
     try {
       const res = await fetch("/api/agents/seller-helper/deep-analysis", {
         method: "POST",
@@ -653,7 +773,9 @@ function DeepAnalysisSection({
           category: prefillData.category,
           year: prefillData.year,
           enginePower: prefillData.horsepower ? String(prefillData.horsepower) : undefined,
-          isChineseBrand: true,
+          isChineseBrand: effectiveIsChineseBrand,
+          // 语言透传：报告语种跟随站点 locale
+          locale,
           // 复用上方 AI 识别区已上传的图片（压缩后的 dataURI），报告可结合照片分析
           imageDataUris: images.slice(0, 3),
         }),
@@ -740,10 +862,10 @@ function DeepAnalysisSection({
           <AnalysisReportView
             report={report}
             structured={structured}
-            isChineseBrand={true}
+            isChineseBrand={reportIsChineseBrand}
             brandName={prefillData.brand}
             categoryName={prefillData.category}
-            locale="zh"
+            locale={locale}
             locked={locked}
             onUnlock={() => setLocked(false)}
           />
@@ -798,6 +920,9 @@ export default function ValuationPage() {
   // 识别到品牌库未收录品牌（如"铁牛"）时动态加入下拉选项；估值走通用兜底模型
   const [extraDBrands, setExtraDBrands] = useState<string[]>([]);
   const [extraIBrands, setExtraIBrands] = useState<string[]>([]);
+  // AI 识别给出的「品牌是否国产」结论（null = 用户没走过识别，按渠道兜底判断）。
+  // 用于深度分析的 prompt 选路：.cn 站按品牌真实国籍选国内版/国际版 prompt。
+  const [recognizedIsChineseBrand, setRecognizedIsChineseBrand] = useState<boolean | null>(null);
 
   // 国际参数
   const [iBrand, setIBrand] = useState("John Deere");
@@ -818,14 +943,9 @@ export default function ValuationPage() {
   const [eTariff, setETariff] = useState(0.15);
 
   // 结果
-  const [result, setResult] = useState<{
-    value: number;
-    confidence: number;
-    breakdown: { label: string; value: string; detail: string }[];
-    formula: string;
-    warnings: string[];
-    channelPrices?: Record<string, number>;
-  } | null>(null);
+  // 直接复用报告组件的 ValuationReportResult 类型（含 visual / narrative / 折旧 / 规格等
+  // 后端已返回但历史上前端丢弃的字段），避免两处类型漂移。
+  const [result, setResult] = useState<ValuationReportResult | null>(null);
 
   // 顶真实交易情报（/api/valuation 返回，服务端按 品牌/品类/型号/省份 切片）
   const [intel, setIntel] = useState<ValuationIntelligence | null>(null);
@@ -883,6 +1003,8 @@ export default function ValuationPage() {
             // 国产渠道同样要传图：不传 = 后端跳过视觉分析 = 估值永远零收费（修通计费的关键一处）
             skipImageAnalysis: !hasUploadedImages,
             imageDataUris: hasUploadedImages ? uploadedImages : [],
+            // 语言透传：后端 narrative / 视觉分析文案按站点语言生成（.com 出英文）
+            locale,
           }),
         });
 
@@ -926,14 +1048,20 @@ export default function ValuationPage() {
           setResult({
             value: r.estimatedValue,
             confidence: r.confidence || calcConfidence(channel, dBrand, dHP, hasImage, dYears),
-            breakdown: (r.details || []).map((d: { label: string; impact: string; description: string }) => ({
+            // 修复：以前这里取 d.impact（只有 positive/neutral/negative 三个定性词），
+            // 导致「计算过程」整列的数值被顶成 positive/neutral/negative，信息量归零。
+            // 后端 details[].value 才是真实数值（如 "115%" / "工时折旧 55%" / "7.5/10分"）。
+            breakdown: (r.details || []).map((d: { label?: string; value?: string; description?: string }) => ({
               label: d.label || "",
-              value: d.impact || "",
+              value: d.value || "",
               detail: d.description || "",
             })),
             formula: `基准价(${formatMoney(previewBasePrice)}) × 折旧(${calcDomesticDepreciation(dYears).toFixed(2)}) × 地区(${getRegionalFactor(dRegion).toFixed(2)}) × 补贴趋势(${getSubsidyTrendFactor(dYear).toFixed(2)})`,
-            warnings: [],
+            // 修复：以前恒传 []，国内路径的风险提示永远为空
+            warnings: generateWarnings(),
             channelPrices: (r as { channelPrices?: Record<string, number> }).channelPrices,
+            // 补齐后端已返回、前端以前丢弃的字段（视觉成色 / 折旧拆解 / AI 结论）
+            ...pickRichFields(r as RawValuationPayload),
           });
           // token 计费可见化：本次估值按 LLM 真实用量扣了多少积分（无 LLM 用量时后端不返回）
           const billing = (data as { billing?: { points?: number; balance?: number } }).billing;
@@ -965,6 +1093,8 @@ export default function ValuationPage() {
               useV4: true,
               skipImageAnalysis: !hasUploadedImages,
               imageDataUris: hasUploadedImages ? uploadedImages : [],
+              // 语言透传：后端 narrative / 视觉分析文案按站点语言生成（.com 出英文）
+              locale,
             }),
           });
           const data = await res.json().catch(() => null);
@@ -975,14 +1105,17 @@ export default function ValuationPage() {
             setResult({
               value: v4Value,
               confidence: r.confidence || calcConfidence(channel, iBrand, iHP, hasImage, Math.round(iHours / 500)),
-              breakdown: (r.details || []).map((d: { label: string; impact: string; description: string }) => ({
+              // 同国产路径：取真实数值 d.value，不取 d.impact 定性词
+              breakdown: (r.details || []).map((d: { label?: string; value?: string; description?: string }) => ({
                 label: d.label || "",
-                value: d.impact || "",
+                value: d.value || "",
                 detail: d.description || "",
               })),
               formula: "V4 引擎（与产品页/国产渠道同源）",
               warnings: generateWarnings(),
               channelPrices: (r as { channelPrices?: Record<string, number> }).channelPrices,
+              // 补齐后端已返回、前端以前丢弃的字段
+              ...pickRichFields(r as RawValuationPayload),
             });
             // token 计费可见化（与国际/出口、国产渠道同源）：后端 billing 字段
             const intlBilling = (data as { billing?: { points?: number; balance?: number } }).billing;
@@ -1212,6 +1345,7 @@ export default function ValuationPage() {
 
     if (data.isChineseBrand !== undefined) {
       setChannel(data.isChineseBrand ? "domestic" : "international");
+      setRecognizedIsChineseBrand(data.isChineseBrand === true);
     }
 
     if (filled > 0 || brandSkipped) {
@@ -1292,6 +1426,10 @@ export default function ValuationPage() {
               year: channel === "domestic" ? dYear - dYears : iYear,
               horsepower: channel === "domestic" ? dHP : iHP,
             }}
+            // 品牌真实国籍：优先用 AI 识别结论，未识别过则按当前渠道兜底
+            // （.cn 站：国产机→国内版 prompt 拿补贴政策，进口机→国际版；
+            //   .com 站：组件内部强制降为 false，国际站永远走国际版 prompt）
+            isChineseBrand={recognizedIsChineseBrand ?? channel === "domestic"}
             images={uploadedImages}
             onComplete={setDeepStructured}
           />
@@ -1756,7 +1894,12 @@ export default function ValuationPage() {
                   horsepower: channel === "domestic" ? dHP : iHP,
                   hours: channel === "domestic" ? (dHours && dHours > 0 ? dHours : undefined) : iHours,
                   region: channel === "domestic" ? dRegion : iRegion,
-                  condition: channel === "domestic" ? "良好" : iCondition,
+                  // 修复：以前写死 "良好"，用户在表单选「较差」时报告里仍写「良好」。
+                  // 现在按表单 dCondition 映射（并按站点语言出中/英文案）
+                  condition:
+                    channel === "domestic"
+                      ? DOMESTIC_CONDITION_I18N[dCondition]?.[locale === "zh" ? "zh" : "en"] ?? dCondition
+                      : iCondition,
                   emission: channel !== "domestic" ? iEmission : undefined,
                   newBasePrice: previewBasePrice,
                   sellerPrice: channel === "domestic" && dSellerPrice ? Number(dSellerPrice) : null,
@@ -1765,6 +1908,8 @@ export default function ValuationPage() {
                 result={result}
                 intelligence={intel}
                 deepAnalysis={deepStructured}
+                // 修复：以前没传 locale，组件内部默认 "zh"，.com 英文站也出中文报告
+                locale={locale}
               />
 
               {/* ── 顶级数据报告：基于 866 万条真实补贴交易，recharts 8 大模块 ── */}
@@ -1779,7 +1924,11 @@ export default function ValuationPage() {
                   horsepower: channel === "domestic" ? dHP : iHP,
                   hours: channel === "domestic" ? (dHours && dHours > 0 ? dHours : undefined) : iHours,
                   region: channel === "domestic" ? dRegion : iRegion,
-                  condition: channel === "domestic" ? "良好" : iCondition,
+                  // 同上：成色按表单实际选择 + 站点语言输出
+                  condition:
+                    channel === "domestic"
+                      ? DOMESTIC_CONDITION_I18N[dCondition]?.[locale === "zh" ? "zh" : "en"] ?? dCondition
+                      : iCondition,
                   emission: channel !== "domestic" ? iEmission : undefined,
                   newBasePrice: previewBasePrice,
                   sellerPrice: channel === "domestic" && dSellerPrice ? Number(dSellerPrice) : null,

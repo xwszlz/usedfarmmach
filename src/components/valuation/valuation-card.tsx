@@ -264,8 +264,16 @@ export function ValuationCard({ productId, productName, locale, autoLoad = false
                 </div>
                 <div className="text-right">
                   <div className="font-semibold text-gray-900">
-                    {/* ValuationDetail 无 value 字段，右侧按 impact 显示中文定性 */}
-                    {d.impact === "positive" ? (zh ? "加分" : "+") : d.impact === "negative" ? (zh ? "减分" : "-") : (zh ? "中性" : "~")}
+                    {/* ValuationDetail 有 value 字段（真实数值，如 "115%" / "工时折旧 55%" / "7.5/10分"），
+                        右侧显示该数值；只有后端确实没给 value 时才回退到 impact 的中文定性，
+                        否则整列只会显示「加分/减分/中性」，信息量归零。 */}
+                    {typeof d.value === "string" && d.value.trim()
+                      ? d.value
+                      : d.impact === "positive"
+                        ? (zh ? "加分" : "+")
+                        : d.impact === "negative"
+                          ? (zh ? "减分" : "-")
+                          : (zh ? "中性" : "~")}
                   </div>
                   {d.description && <div className="text-[10px] text-gray-400">{d.description}</div>}
                 </div>
