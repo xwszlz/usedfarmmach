@@ -30,7 +30,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { chatCompletionDoubao, getArkModelId } from "@/lib/ai/ark-client";
+import { chatCompletionDoubao, getArkCircuitState, getArkModelId } from "@/lib/ai/ark-client";
 import { computeAiCost, deductCredits } from "@/lib/credits/spend";
 import { getAiCostGuardrail } from "@/lib/credits/config";
 import { maskPhone, maskEmail } from "@/lib/pii";
@@ -560,7 +560,20 @@ export async function POST(request: NextRequest) {
         }
       }
     } catch (err: any) {
-      console.error("[SalesStrategy] LLM 调用失败:", err?.message);
+      // 可观测性：旧版只打 err.message ⇒ 线上永远只看到同一句 LLM_FAILED，
+      // 分不清是「熔断短路」「401 鉴权」「参数越界」还是「超时」。补齐可判别字段。
+      // 只打响应体前 300 字符且不含任何凭据（Bearer 已由 axios 放在请求头，不在 body 里）。
+      console.error("[SalesStrategy] LLM 调用失败:", {
+        message: err?.message,
+        code: err?.code,
+        status: err?.response?.status,
+        body:
+          typeof err?.response?.data === "string"
+            ? err.response.data.slice(0, 300)
+            : undefined,
+        circuit: getArkCircuitState(),
+        llmCalls,
+      });
       return NextResponse.json(
         {
           success: false,

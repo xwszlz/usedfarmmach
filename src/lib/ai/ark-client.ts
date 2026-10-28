@@ -276,7 +276,8 @@ export function resolveArkResponsesEndpoint(opts: ArkEndpointOptions = {}): ArkE
  *
  * 为什么不在这里重试：检索层的重试必须服从「总预算 20s」（PRD §6.2）。
  * 若这里再重试一次，等于 2×2 次尝试，预算不可控 ⇒ 重试统一由 `web-evidence.ts` 调度。
- * 熔断计数与 `chatCompletionDoubao` 共享（同一个模块级 `circuitFailures`）。
+ * 熔断计数与 `chatCompletionDoubao` 共享（同一个模块级 `circuitFailures`），**但只对 429/5xx
+ * 与网络错计数**：4xx 属调用方/配置问题，计进去会让「某个子功能没开通」连坐同账号的主链路生成。
  */
 async function postWithResilience(
   url: string,
@@ -304,9 +305,19 @@ async function postWithResilience(
     const raw = typeof resp.data === "string" ? resp.data : JSON.stringify(resp.data ?? "");
     const contentType = String(resp.headers?.["content-type"] ?? "");
     if (status < 200 || status >= 300) {
-      circuitFailures += 1;
-      if (circuitFailures >= CIRCUIT_THRESHOLD) {
-        circuitOpenUntil = Date.now() + CIRCUIT_COOLDOWN_MS;
+      // 4xx 一律不计入熔断（2026-10-28 线上 P0 根因修复）。
+      //   事故链条：方舟账号未开通 web_search 插件 → 检索 5 个 query 全 403 →
+      //   旧代码在此**无条件** += 1，恰好把与对话调用共享的计数器喂到阈值 5 →
+      //   紧随其后的 chatCompletionDoubao 被熔断短路 → 销售策略 100% LLM_FAILED。
+      //   判定依据：4xx 是「请求/权限/功能未开通」类错误，不代表 ARK 端点本身不健康；
+      //   且必须与 chatCompletionDoubao(:161-162) 的既有口径对齐 —— 那里 401/403/402
+      //   是 `throw err` 且发生在计数之前，本来就不计数。此处补齐对称性。
+      //   只有 429（限流）与 5xx（服务端故障）才代表端点真的不可用，才计熔断。
+      if (status === 429 || status >= 500) {
+        circuitFailures += 1;
+        if (circuitFailures >= CIRCUIT_THRESHOLD) {
+          circuitOpenUntil = Date.now() + CIRCUIT_COOLDOWN_MS;
+        }
       }
       throw Object.assign(new Error(`[ARK] /responses HTTP ${status}: ${raw.slice(0, 200)}`), {
         status,
@@ -433,4 +444,23 @@ export async function arkWebSearch(opts: ArkWebSearchOptions): Promise<ArkWebSea
   );
   const { text, urls } = extractResponsesText(raw);
   return { text, urls, raw, contentType, endpoint };
+}
+
+/**
+ * 熔断状态快照（纯只读，供调用方在错误日志里判别「是熔断短路还是真调用失败」）。
+ *
+ * 为什么需要：线上 `LLM_FAILED` 只有一个错误码，旧日志只打 `err.message`，
+ * 排障时分不清是熔断、401 鉴权、参数越界还是超时 —— 2026-10-28 那次事故就是靠人肉
+ * 探针才定位的。暴露计数本身不含任何凭据，无泄漏风险。
+ */
+export function getArkCircuitState(): {
+  failures: number;
+  openUntil: number;
+  open: boolean;
+} {
+  return {
+    failures: circuitFailures,
+    openUntil: circuitOpenUntil,
+    open: Date.now() < circuitOpenUntil,
+  };
 }
