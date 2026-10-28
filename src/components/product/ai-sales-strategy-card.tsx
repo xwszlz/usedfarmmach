@@ -36,6 +36,7 @@ import {
   translateDealerRole,
   translateRejectLevel,
 } from "@/lib/sales-strategy/enum-labels";
+import { resolveChannelContactDisplay } from "@/lib/sales-strategy/contact-display";
 
 interface AiSalesStrategyCardProps {
   productId?: string;
@@ -628,6 +629,18 @@ export default function AiSalesStrategyCard({
               <div className="space-y-2">
                 {result.channels.map((c) => {
                   const full = unlocked[c.candidateId];
+                  /*
+                   * 联系方式三段文本一律走 `resolveChannelContactDisplay`（纯函数）。
+                   *
+                   * ⚠️ 历史坑（2026-10 hotfix）：这里原本写成
+                   *   `{full ? full.phone || zh ? "无" : "—" : c.phoneMasked || zh ? "无电话" : "—"}`
+                   * `||` 优先级高于 `?:`，实际被解析成
+                   *   `full ? ((full.phone || zh) ? "无" : "—") : ((c.phoneMasked || zh) ? "无电话" : "—")`
+                   * ⇒ 已解锁有号码显示「无」、未解锁有掩码显示「无电话」，电话/邮箱两列全坏。
+                   * 现在取值与占位口径收敛到纯函数，并由
+                   * `src/lib/sales-strategy/__tests__/contact-display.test.ts` 锁死。
+                   */
+                  const contact = resolveChannelContactDisplay(full, c, zh);
                   return (
                     <div key={c.candidateId} className="rounded-lg border border-gray-100 bg-gray-50/60 p-2.5">
                       <div className="flex items-center justify-between">
@@ -643,13 +656,13 @@ export default function AiSalesStrategyCard({
                       <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-600">
                         <span className="flex items-center gap-1">
                           <Phone className="h-3 w-3" />
-                          {full ? full.phone || zh ? "无" : "—" : c.phoneMasked || zh ? "无电话" : "—"}
+                          {contact.phone}
                         </span>
                         <span className="flex items-center gap-1">
                           <Mail className="h-3 w-3" />
-                          {full ? full.email || zh ? "无" : "—" : c.emailMasked || zh ? "无邮箱" : "—"}
+                          {contact.email}
                         </span>
-                        {c.wechatMasked && <span>{full?.wechat || c.wechatMasked}</span>}
+                        {contact.wechat && <span>{contact.wechat}</span>}
                       </div>
                       {/* 解锁按钮 / 二次确认 */}
                       <div className="mt-2">
