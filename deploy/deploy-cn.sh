@@ -250,9 +250,32 @@ fi
 echo "==> 对齐 nginx 容器配置（幂等：仅在 compose 配置漂移时重建）"
 docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d --no-deps nginx
 
-echo "==> reload nginx（应用最新证书 / 配置）"
-docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T nginx nginx -s reload || \
-  docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" restart nginx
+# ------------------------------------------------------------
+# nginx 配置校验闸门（2026-10-28 新增）
+# 背景：上一版是 `nginx -s reload || docker compose restart nginx`。
+#   这条兜底看起来很稳，实际会把「配置写错」升级成「整站宕机」：
+#     - conf 有语法错时，`nginx -s reload` 会失败，但【运行中的 nginx 保持旧配置继续服务】，
+#       站点此刻是【好的】；
+#     - 于是 `||` 分支被触发，`restart nginx` 把容器停掉重启，而带错的 conf 让新进程
+#       起不来（nginx 启动即 [emerg] 退出）⇒ 443 直接黑洞 ⇒ .cn 全站 502。
+#   也就是说：旧兜底把一个「CI 应该变红」的小问题，放大成了「用户全部不可用」。
+# 做法：先 `nginx -t` 校验，校验不过就只报错退出，绝不碰运行中的进程。
+#   语法错 ⇒ 站点不受影响（继续跑旧配置），只是本次部署失败、CI 变红。
+# 为什么 `exit 1` 是【故意的】：宁可让部署失败（CI 红、人来修 conf），
+#   也绝不让 .cn 站宕机。CI 红是给工程师看的信号；502 是给客户看的。
+# 注意：`nginx -t` 与 `nginx -s reload` 必须用完全相同的
+#   `docker compose -f ... --env-file ... exec -T nginx` 前缀，
+#   保证校验的和 reload 的是同一个容器（多实例 / 多 compose 项目下前缀不一致会校验错对象）。
+# 补充：`nginx -t` 位于 `if` 条件位置，不会被 `set -e` 直接打断，因此能走到 else 分支打出可读原因。
+# ------------------------------------------------------------
+echo "==> 校验 nginx 配置（语法错则保持旧配置运行，绝不重启）"
+if docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T nginx nginx -t; then
+  echo "==> reload nginx（应用最新证书 / 配置）"
+  docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T nginx nginx -s reload
+else
+  echo "❌ nginx 配置校验失败：已保持当前运行配置不变（站点不受影响），请修好 cn.conf 后重新部署" >&2
+  exit 1
+fi
 
 # ------------------------------------------------------------
 # 部署后清理（best-effort，失败不阻塞部署结果）
