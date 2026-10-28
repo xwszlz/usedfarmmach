@@ -642,3 +642,73 @@ describe("retrieval 装配（T07 增量块）", () => {
     expect(ctx.benchmarkDetail?.byBrand[0].matchScope).toBe("brand");
   });
 });
+
+// ═══════════════════════════════════════════════════════════
+// ⑥ 全失败时的 note：必须区分「不可用」与「超时」
+// ─────────────────────────────────────────────────────────
+// 背景（2026-10-28）：方舟账号未开通 web_search 插件 ⇒ 5 个 query 全 403。
+// 旧实现 `timeoutEvidence()` 把 status 与 note **同时**写死成 timeout 档，
+// 于是前端黄条显示"外部证据未接入（检索超时）"——老板照着"超时"去查网络与超时预算，
+// 而真因是"插件没开通"，排障方向被文案带偏。
+// 修复口径：status 不动（半公开契约，四值），只让 note 反映真因。
+// ═══════════════════════════════════════════════════════════
+describe("successQueries===0 的 note：区分「不可用」与「超时」", () => {
+  const runtime = { site: "com" as const, arkApiKey: "ark-key" };
+
+  /** 与 `arkWebSearch` 真实抛出形状一致：message 内含 `HTTP 403`，且带 status（4xx 不重试） */
+  function http403(): Error {
+    return Object.assign(
+      new Error(
+        '[ARK] /responses HTTP 403: {"code":"AccessDenied","message":"Access denied for web search. Please go to the Volcano Ark Console to verify the activation status."}'
+      ),
+      { status: 403, response: { status: 403 } }
+    );
+  }
+
+  it("403 × 5 ⇒ status 仍为 timeout（契约不变），但 note 是「检索不可用：HTTP 403」", async () => {
+    arkWebSearchMock.mockImplementation(async () => {
+      throw http403();
+    });
+
+    const ev = await retrieveWebEvidence(input(), { runtime, retry: 0 });
+
+    // 契约：四值枚举不变，消费方（前端卡片 / PDF·Excel / pickWebStatus）无感
+    expect(ev.status).toBe("timeout");
+    // 但 reason 明确是 error —— 真因不是超时
+    expect(ev.reason).toBe("error");
+    // 核心断言：文案不得再出现"超时"，且要能看出是 403
+    expect(ev.note).not.toContain("超时");
+    expect(ev.note).toContain("403");
+    expect(ev.note).toBe("外部证据未接入（检索不可用：HTTP 403）");
+    expect(ev.dataSources[0].note).toBe(ev.note);
+    // 排障要用的完整原文必须保留（不能被短路成短因）
+    expect(ev.errorDetail).toContain("HTTP 403");
+    expect(ev.errorDetail).toContain("Access denied for web search");
+    // 4xx 不重试 ⇒ 5 个 query 各 1 次
+    expect(arkWebSearchMock).toHaveBeenCalledTimes(5);
+  });
+
+  it("全部真超时 ⇒ note 仍是「检索超时」（不得把这一档的文案改坏）", async () => {
+    arkWebSearchMock.mockImplementation(
+      (opts: { signal?: AbortSignal }) =>
+        new Promise((_resolve, reject) => {
+          opts.signal?.addEventListener("abort", () => {
+            reject(Object.assign(new Error("aborted"), { name: "AbortError" }));
+          });
+        })
+    );
+
+    const ev = await retrieveWebEvidence(input(), {
+      runtime,
+      timeoutMs: 40,
+      budgetMs: 200,
+      retry: 0,
+    });
+
+    expect(ev.status).toBe("timeout");
+    expect(ev.reason).toBe("timeout");
+    expect(ev.note).toContain("超时");
+    expect(ev.note).toBe("外部证据未接入（检索超时）");
+    expect(ev.dataSources[0].note).toBe(ev.note);
+  });
+});

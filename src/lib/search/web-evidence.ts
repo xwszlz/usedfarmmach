@@ -826,6 +826,19 @@ async function runQueries(queries: string[], ctx: RunContext, maxConcurrency: nu
 // 8. 结果组装（四档 status + dataSources 必产一条）
 // ═══════════════════════════════════════════════════════════
 
+/**
+ * 「检索不可用」短因（`successQueries === 0` 且**不是**全超时时使用）。
+ *
+ * 为什么只抽 HTTP 状态码、不原样带 `errorDetail`：note 会直接渲染进前端黄条与 PDF/Excel
+ * 单元格，而 `errorDetail` 是「query:错误原文 | query:错误原文 …」拼到 200 字符的串，
+ * 塞进去既装不下也没可读性。状态码足以区分最常见的三类真因：
+ * 403 = 插件/权限未开通、401 = key 失效、5xx = 服务端故障。
+ */
+function unavailableNote(errorDetail: string): string {
+  const m = /HTTP\s+(\d{3})/.exec(errorDetail);
+  return `外部证据未接入（检索不可用：${m ? `HTTP ${m[1]}` : "未知原因"}）`;
+}
+
 /** `partial` 档的 note 必须带 N/M 成功数（PRD §6.3，可断言） */
 function partialNote(success: number, total: number): string {
   return `部分检索超时（${success}/${total} 成功）`;
@@ -1049,13 +1062,19 @@ export async function retrieveWebEvidence(
     // ── 四档分档（PRD §6.3） ──
     if (successQueries === 0) {
       const allTimeout = outcomes.every((o) => o.status === "timeout");
+      const detail = errorDetail || (allTimeout ? "全部检索超时" : "全部检索失败");
+      // `status` 仍是 "timeout"（半公开契约：前端卡片 / PDF·Excel 导出 / `pickWebStatus`
+      // 都只认 ok|partial|timeout|disabled 四值，新增枚举会波及所有消费方），
+      // 但 note 必须反映真因：403「插件/权限没开通」被显示成"检索超时"，会把排障方向
+      // 直接带偏（2026-10-28：线上看到"超时"去查网络与超时预算，真因是方舟 web_search
+      // 未开通）。全超时那一档文案本来就对，保持原样。
       return timeoutEvidence(
         provider,
         totalQueries,
         allTimeout ? "timeout" : "error",
-        errorDetail || (allTimeout ? "全部检索超时" : "全部检索失败"),
+        detail,
         elapsedMs,
-        { proxyRejected }
+        allTimeout ? { proxyRejected } : { proxyRejected, note: unavailableNote(detail) }
       );
     }
 
