@@ -14,6 +14,8 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 
+import { SITE_ORIGIN } from "@/lib/site-url";
+
 // Vercel Serverless Function 超时延长至60秒
 export const maxDuration = 60;
 
@@ -34,8 +36,14 @@ export async function POST(request: NextRequest) {
       `images=${imagesCount}, video=${hasVideo}`
     );
 
-    // 构建内部请求URL（使用相对路径，Next.js内部转发）
-    const internalUrl = new URL("/api/internal/products", request.url);
+    // 构建内部请求 URL —— base **必须是服务端常量**，不能用 `request.url`。
+    //
+    // 为什么：`request.url` 的 origin 由请求的 Host 头推导，而 nginx 传的是 `$host`
+    // （客户端可控），本路由又不校验任何凭据、只是把调用方的 x-api-key / x-miniapp-key
+    // 往下转发，最后还把响应 json 原样回吐给调用方 —— 三者叠加就是
+    // 「匿名可达 + 目标主机完全可控 + 完整读回响应」的 POST 型 SSRF（内网探测/请求转发器）。
+    // 换成 canonical origin 对合法调用方完全等价（小程序本来就打 canonical 域名）。
+    const internalUrl = new URL("/api/internal/products", SITE_ORIGIN);
 
     // 转发请求到正确的端点
     const response = await fetch(internalUrl.toString(), {

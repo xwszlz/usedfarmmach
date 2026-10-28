@@ -27,8 +27,21 @@
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
 
+import { isOwnOssUrl } from "@/lib/oss-upload";
+
 /** 单张图片允许的最大字节数（12MB）。超过直接判失败，不进入视觉模型（也避免把内存打满） */
 export const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
+
+/**
+ * 「落盘 / 送第三方审核」场景的上限（30MB）。
+ *
+ * 为什么不能一个常量打天下：12MB 是**送模型**的口径（大图只是白烧 token），
+ * 但 `internal/products` 的图片是"下载后转存 OSS 当商品图"、`wechat-sec-check` 是"原样转给微信"，
+ * 二者对体积的容忍度与模型链路不同。旧实现完全没有上限，一刀切 12MB 会让
+ * 「旧模式外部 URL 的大图」变成建品失败（且全部失败会回滚整个建品，用户感知为"发布失败"）。
+ * 所以这里显式区分两个场景，并让每个调用点自己指定（见 downloadGuardedImage 的 maxBytes）。
+ */
+export const MAX_UPLOAD_IMAGE_BYTES = 30 * 1024 * 1024;
 
 /** 图片下载超时（20s）。与视觉模型自身的超时相互独立 */
 export const IMAGE_FETCH_TIMEOUT_MS = 20_000;
@@ -189,6 +202,17 @@ export async function assertSafeImageUrl(imageUrl: string): Promise<URL> {
 
   const hostname = normalizeHostname(parsed.hostname);
   if (!hostname) throw new Error("图片地址缺少主机名");
+
+  // 自有 OSS：已知可信源，直接放行，**跳过 DNS 解析与网段判断**。
+  // 为什么必须短路：容器内 DNS 是这条链上最不必要、也最脆的一环 —— 它一抖，
+  // "全站自有商品图的下载"就全部失败；而部分调用方（如 wechat-sec-check）把异常
+  // 当非阻塞吞掉，于是失败还是**静默**的（功能看着正常，合规却漏检）。
+  // 自有 OSS 的地址不需要解析就能确定它不是内网，因此这里按 hostname 精确判定后直接返回。
+  // 判定复用 isOwnOssUrl（protocol=https + hostname 精确相等），避免这里再写一遍规则
+  // 造成两处漂移；带 query 的 OSS 处理参数（x-oss-process=...）同样会被放行。
+  if (isOwnOssUrl(parsed.href)) {
+    return parsed;
+  }
 
   if (BLOCKED_HOSTNAMES.has(hostname) || BLOCKED_HOST_SUFFIXES.some((suffix) => hostname.endsWith(suffix))) {
     throw new Error(`图片地址指向内部主机名: ${hostname}`);

@@ -20,7 +20,8 @@
 import { chatCompletionDoubao, getArkVisionModelId } from "@/lib/ai/ark-client";
 import { recordUsage, ESTIMATED_TOKENS } from "@/lib/credits/usage-collector";
 import { withLanguage, type AiLocale } from "@/lib/i18n/ai-locale";
-import { fetchGuardedImage, readBodyWithLimit } from "@/lib/net/ssrf-guard";
+import { downloadGuardedImage } from "@/lib/net/download-image";
+import { MAX_IMAGE_BYTES } from "@/lib/net/ssrf-guard";
 
 /** 成色代码：英文枚举，**不翻译**（下游按字面量匹配） */
 export type ConditionCode = "excellent" | "good" | "fair" | "poor";
@@ -198,17 +199,12 @@ async function fetchImageAsBase64(imageUrl: string): Promise<string> {
   // 出网守卫（SSRF 缓解）：scheme 白名单 + 主机/解析结果判段 + 每一跳重定向复核。
   // 校验失败直接抛错，由 analyzeProductImage 既有的 catch 走降级路径并打日志 ——
   // 绝不能静默放行：那会让用户看到"没报错但图片也没被分析"，比报错更难排查。
-  const resp = await fetchGuardedImage(raw);
-  if (!resp.ok) throw new Error(`图片下载失败: ${resp.status}`);
-
-  // 流式读取 + 12MB 上限：`resp.arrayBuffer()` 会先把整个响应吃进内存再判大小，
-  // 一个超大响应就能把实例内存打满，所以此处必须按块累加、超限提前 cancel。
-  const buf = await readBodyWithLimit(resp);
-  // 用可选链读 content-type：部分运行环境/测试桩的 Response 没有 headers，
-  // 这里绝不能因此抛错（否则整条视觉分析会被降级成默认分，估值失真）。
-  const header = (resp.headers?.get?.("content-type") || "").split(";")[0].trim().toLowerCase();
+  // 送模型场景：12MB 上限（大图只是白烧 token，且不能让一个超大响应把内存打满）
+  const { buffer, contentType } = await downloadGuardedImage(raw, { maxBytes: MAX_IMAGE_BYTES });
+  // content-type 非 image/* 一律按 jpeg 兜底（既有行为）；下载层保证不会因缺 headers 抛错
+  const header = contentType.split(";")[0].trim().toLowerCase();
   const mime = header.startsWith("image/") ? header : "image/jpeg";
-  return `data:${mime};base64,${buf.toString("base64")}`;
+  return `data:${mime};base64,${buffer.toString("base64")}`;
 }
 
 /**

@@ -25,7 +25,8 @@ import { cnyToUsd, getUsdPerCny } from "@/lib/exchange-rate";
 import { prisma } from "@/lib/db";
 
 import { uploadBufferToOSS, isOwnOssUrl } from "@/lib/oss-upload";
-import { fetchGuardedImage, readBodyWithLimit } from "@/lib/net/ssrf-guard";
+import { downloadGuardedImage } from "@/lib/net/download-image";
+import { MAX_IMAGE_BYTES, MAX_UPLOAD_IMAGE_BYTES } from "@/lib/net/ssrf-guard";
 
 import { hashPassword, verifyToken, getTokenFromHeaders } from "@/lib/auth";
 
@@ -326,33 +327,6 @@ async function resolveCategory(categoryId?: string, categoryName?: string) {
 
 
 
-/**
-
- * 从 HTTPS URL 下载文件到 Buffer（仅支持 URL，不支持 Data URI）
-
- */
-
-async function downloadBuffer(url: string): Promise<{ buffer: Buffer; contentType: string }> {
-
-  // 出网守卫：scheme 白名单 + 主机/DNS 解析结果判段 + 每跳重定向复核。
-  // 原来这里是裸 fetch + redirect:"follow" —— 任意登录用户传内网地址即可让服务器代取，
-  // 且响应会经 uploadBufferToOSS 落成公开链接，等于一个可完整回显的内网代理。
-  const res = await fetchGuardedImage(url);
-
-  if (!res.ok) {
-
-    throw new Error(`Download failed (${res.status}): ${url}`);
-
-  }
-
-  const buffer = await readBodyWithLimit(res);
-
-  const contentType = res.headers.get("content-type") || "application/octet-stream";
-
-  return { buffer, contentType };
-
-}
-
 
 
 /**
@@ -393,9 +367,13 @@ async function getDataUriBuffer(src: string): Promise<{ buffer: Buffer; contentT
 
   }
 
-  // HTTPS URL 回退到 downloadBuffer
-
-  return await downloadBuffer(src);
+  // HTTPS URL 回退到带守卫的下载（商品图要落 OSS，按 30MB 的落盘口径，而不是送模型的 12MB）。
+  // 原来这里是裸 fetch + redirect:"follow"：任意登录用户传内网地址即可让服务器代取，
+  // 且响应会经 uploadBufferToOSS 固化成公开可访问对象（可下载/分享/被索引/长期留存）。
+  return await downloadGuardedImage(src, {
+    maxBytes: MAX_UPLOAD_IMAGE_BYTES,
+    defaultContentType: "application/octet-stream",
+  });
 
 }
 
@@ -1457,11 +1435,12 @@ export async function POST(request: NextRequest) {
                   try {
                     // 同一批 images[] 的第二出口（入库后回读做 AI 识别）：必须同样过守卫，
                     // 否则第一处堵住、这里仍会把内网响应解成 base64 送进模型。
-                    const resp = await fetchGuardedImage(url);
-                    if (!resp.ok) throw new Error(`图片下载失败: ${resp.status}`);
-                    const buf = await readBodyWithLimit(resp);
-                    const mime = (resp.headers?.get?.("content-type") || "image/jpeg").split(";")[0];
-                    const b64 = buf.toString("base64");
+                    // 送模型口径 12MB（大图对识别无增益，只是白烧 token）。
+                    const { buffer: imgBuf, contentType: imgType } = await downloadGuardedImage(url, {
+                      maxBytes: MAX_IMAGE_BYTES,
+                    });
+                    const mime = imgType.split(";")[0];
+                    const b64 = imgBuf.toString("base64");
                     return { type: "image_url" as const, image_url: { url: `data:${mime};base64,${b64}` } };
                   } catch {
                     return null;

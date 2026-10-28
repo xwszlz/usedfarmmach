@@ -15,7 +15,8 @@
  */
 
 import { getAccessToken } from "./wechat-miniprogram";
-import { fetchGuardedImage, readBodyWithLimit } from "@/lib/net/ssrf-guard";
+import { downloadGuardedImage } from "@/lib/net/download-image";
+import { MAX_UPLOAD_IMAGE_BYTES } from "@/lib/net/ssrf-guard";
 
 const MSG_SEC_CHECK_URL = "https://api.weixin.qq.com/wxa/msgseccheck";
 const IMG_SEC_CHECK_URL = "https://api.weixin.qq.com/wxa/imgseccheck";
@@ -105,12 +106,10 @@ export async function checkImage(imageUrl: string): Promise<ImageCheckResult> {
   // 1. 下载图片 —— 必须在这一层过出网守卫，不要只在上游过滤：
   //    本函数有两个上游（internal/products、seller/products），上游各写一份过滤必然漏一个；
   //    不过守卫的话，传一个内网地址就能让服务器代取内网响应、再 POST 给微信接口（等于外带）。
-  const downloadRes = await fetchGuardedImage(imageUrl);
-  if (!downloadRes.ok) {
-    throw new Error(`下载图片失败 (${downloadRes.status}): ${imageUrl}`);
-  }
-  const buffer = await readBodyWithLimit(downloadRes);
-  const contentType = downloadRes.headers.get("content-type") || "image/jpeg";
+  // 送第三方审核场景：30MB 上限（旧实现无上限；12MB 会误伤大图商户照）
+  const { buffer, contentType } = await downloadGuardedImage(imageUrl, {
+    maxBytes: MAX_UPLOAD_IMAGE_BYTES,
+  });
 
   // 2. 构造 multipart/form-data
   const boundary = "----WebKitFormBoundary" + Math.random().toString(36).slice(2);
