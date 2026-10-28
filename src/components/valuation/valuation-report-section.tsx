@@ -749,11 +749,23 @@ export default function ValuationReportSection({
           ? Number(result.visualConditionScore)
           : null;
     const analysis = raw?.analysis ?? result.visualConditionAnalysis ?? null;
+    /**
+     * 置信度只认一个权威口径：后端 visual.confidence（0~1）。
+     * 语义要点 —— 视觉全失败时后端给的是 `null` 而不是 `0`，因为 `0` 会被渲染成
+     * 「置信度 0%」，那是错误信息（真实含义是「没看图」）。所以这里：
+     *   - visual.confidence 明确给值（>0）→ 用它；
+     *   - visual.confidence 明确为 null → 视为「没有置信度」，**不再**掉回扁平字段；
+     *   - 后端还没下发该字段（undefined，老响应）→ 才回退扁平 imageConfidence，同样要求 >0。
+     */
+    const rawConf = raw?.confidence;
+    const flatConf = result.imageConfidence;
     const confidence =
-      raw && raw.confidence !== undefined && raw.confidence !== null
-        ? Number(raw.confidence)
-        : result.imageConfidence !== undefined && result.imageConfidence !== null
-          ? Number(result.imageConfidence)
+      rawConf !== undefined && rawConf !== null
+        ? typeof rawConf === "number" && rawConf > 0
+          ? rawConf
+          : null
+        : typeof flatConf === "number" && flatConf > 0
+          ? flatConf
           : null;
     const imageCount = raw?.imageCount ?? result.imageCount ?? perImage.length;
 

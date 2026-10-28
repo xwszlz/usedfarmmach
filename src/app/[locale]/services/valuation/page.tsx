@@ -161,6 +161,14 @@ type ValuationApiData = RawValuationPayload & {
 const DEGRADED_NOTICE =
   "当前为本地粗算结果（未调用 AI 引擎），精度明显低于 AI 估值。请点「开始估值」重试。";
 
+/**
+ * 单次估值/深度分析可携带的图片上限 —— 全页唯一口径。
+ *
+ * 历史教训：上传侧截 5 张、AI 识别看 5 张，但深度分析请求体写死 `slice(0, 3)`，
+ * 用户传 5 张时深度分析报告永远只基于前 3 张，而用户完全看不出来。三处必须同源。
+ */
+const MAX_IMAGES = 5;
+
 // 国产品类
 const DOMESTIC_CATEGORIES = [
   "轮式拖拉机", "谷物联合收割机", "玉米收获机", "插秧机",
@@ -493,7 +501,7 @@ function AIRecognizeSection({
   onImagesChange?: (images: string[]) => void;
   channel: Channel;
 }) {
-  const MAX_IMAGES = 5;
+  // 图片上限统一用模块级 MAX_IMAGES（上传 / 识别 / 深度分析 / 估值四处同源）
   const locale = useLocale();
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -769,6 +777,7 @@ function DeepAnalysisSection({
   // 本次分析实际走的语种/品牌归属（用于渲染时给报告组件传一致的 props）
   const [reportIsChineseBrand, setReportIsChineseBrand] = useState(isChineseBrand);
   const locale = useLocale();
+  const zh = locale === "zh";
 
   const runDeepAnalysis = async () => {
     setLoading(true);
@@ -796,11 +805,53 @@ function DeepAnalysisSection({
           isChineseBrand: effectiveIsChineseBrand,
           // 语言透传：报告语种跟随站点 locale
           locale,
-          // 复用上方 AI 识别区已上传的图片（压缩后的 dataURI），报告可结合照片分析
-          imageDataUris: images.slice(0, 3),
+          // 复用上方 AI 识别区已上传的图片（压缩后的 dataURI，长边 1280 JPEG），报告可结合照片分析。
+          // 上限与上传侧同源（MAX_IMAGES=5）：以前写死 3，导致「上传 5 张、报告只基于前 3 张」
+          // 且用户完全无从察觉；按实测单张 data URI 最坏 351KB，5 张 ≈1.75MB，远低于 .com
+          // 网关 4.5MB 请求体上限。
+          imageDataUris: images.slice(0, MAX_IMAGES),
         }),
       });
-      const data = await res.json();
+
+      // 非 2xx 一律显式报错：413 是 Vercel 的 HTML 错误页（FUNCTION_PAYLOAD_TOO_LARGE），
+      // 504/502 是 nginx 的 HTML 页；直接 res.json() 会抛错并被下面的 catch 误报成「网络错误」。
+      if (!res.ok || res.status === 413) {
+        const serverMsg = await readServerErrorMessage(res);
+        if (res.status === 413) {
+          setError(
+            zh
+              ? "上传图片总容量过大（服务端限制 4.5MB），请减少张数或降低画质后重试"
+              : "Image payload too large (server limit 4.5MB). Reduce the number of photos or lower image quality."
+          );
+        } else {
+          setError(describeValuationHttpError(res.status, serverMsg));
+        }
+        return;
+      }
+
+      const rawText = await res.text().catch(() => "");
+      let data: {
+        success?: boolean;
+        code?: string;
+        error?: string;
+        data?: {
+          analysis?: string;
+          structured?: Record<string, any> | null;
+          pointsCharged?: number;
+          creditsBalance?: number;
+          loginUrl?: string;
+        } | null;
+      } | null = null;
+      try {
+        data = rawText ? JSON.parse(rawText) : null;
+      } catch {
+        data = null;
+      }
+      if (!data) {
+        setError(zh ? "服务端返回了无法解析的响应，请重试" : "Unreadable response from server, please retry");
+        return;
+      }
+
       if (data.success) {
         const s = data.data?.structured || null;
         setReport(data.data?.analysis || "");
