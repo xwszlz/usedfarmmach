@@ -2,7 +2,7 @@
  * 图片抓取出网守卫（SSRF）单元测试
  *
  * 背景：`imageUrls` 来自估值接口请求体，攻击者可传内网地址让服务器代其出网
- * （`.cn` 在阿里云 ECS 上，`100.0.0.200/latest/meta-data/` 即实例元数据）。
+ * （`.cn` 在阿里云 ECS 上，`100.100.100.200/latest/meta-data/` 即实例元数据）。
  *
  * 覆盖：scheme 白名单、特殊主机名、裸 IP 字面量判段、域名解析结果判段、
  *       公网地址放行、12MB 流式上限（提前 cancel，不整包读进内存）、
@@ -57,9 +57,9 @@ afterEach(() => {
 });
 
 describe("SSRF：内网地址一律拒绝", () => {
-  it("阿里云 ECS 元数据地址 100.0.0.200 ⇒ 拒绝，且根本不发起 fetch", async () => {
-    await expect(assertSafeImageUrl("http://100.0.0.200/latest/meta-data/")).rejects.toThrow(/内网/);
-    await expect(fetchGuardedImage("http://100.0.0.200/latest/meta-data/")).rejects.toThrow(/内网/);
+  it("阿里云 ECS 元数据地址 100.100.100.200 ⇒ 拒绝，且根本不发起 fetch", async () => {
+    await expect(assertSafeImageUrl("http://100.100.100.200/latest/meta-data/")).rejects.toThrow(/内网/);
+    await expect(fetchGuardedImage("http://100.100.100.200/latest/meta-data/")).rejects.toThrow(/内网/);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -72,6 +72,7 @@ describe("SSRF：内网地址一律拒绝", () => {
     ["私网 10/8", "http://10.1.2.3/x"],
     ["私网 172.16/12", "http://172.20.0.1/x"],
     ["CGNAT 100.64/10", "http://100.64.0.1/x"],
+    ["CGNAT 上界 100.127.255.255", "http://100.127.255.255/x"],
     ["0.0.0.0", "http://0.0.0.0/x"],
     ["组播/保留 >=224", "http://239.1.1.1/x"],
   ])("裸 IP 字面量：%s 拒绝", async (_label, url) => {
@@ -123,7 +124,7 @@ describe("SSRF：重定向不能成为绕过通道", () => {
   it("公网地址 302 到内网 ⇒ 第二跳被拦下", async () => {
     fetchMock = vi.fn(async () => new Response(null, {
       status: 302,
-      headers: { location: "http://100.0.0.200/latest/meta-data/" },
+      headers: { location: "http://100.100.100.200/latest/meta-data/" },
     }));
     vi.stubGlobal("fetch", fetchMock);
 
@@ -134,6 +135,29 @@ describe("SSRF：重定向不能成为绕过通道", () => {
 });
 
 describe("公网图片放行（normal path 回归）", () => {
+  /**
+   * 反向用例：**防止将来有人"顺手"把整个 100.0.0.0/8 封掉**。
+   *
+   * 缘由（别删这段注释，它是这条用例存在的唯一理由）：
+   *   - 100.64.0.0/10 是 RFC 6598 的 CGNAT 段，阿里云元数据 100.100.100.200 落在这里 ⇒ 必须封；
+   *   - 但 100.0.0.0/8 的**其余部分**是 ARIN 2012 年拿到的真实公网分配段，与内网无关。
+   * 曾有一版实现为了让"100.0.0.200"这个地址被拒而整段封 100/8（那是笔误，真实元数据是
+   * 100.100.100.200）。那种过度封禁不会让任何"必须拒绝"的用例变红，因此**只有这条放行用例**
+   * 能发现它，一旦有人把范围放大，这条会立刻红。
+   */
+  it("100.1.2.3（100/8 内、CGNAT 之外，ARIN 公网段）⇒ 必须放行", async () => {
+    const url = await assertSafeImageUrl("http://100.1.2.3/a.jpg");
+    expect(url.hostname).toBe("100.1.2.3");
+
+    const resp = await fetchGuardedImage("http://100.1.2.3/a.jpg");
+    expect(resp.ok).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    // 边界：100.63.255.255 在 CGNAT 之下（放行），100.128.0.1 在其之上（放行）
+    await expect(assertSafeImageUrl("http://100.63.255.255/a.jpg")).resolves.toBeInstanceOf(URL);
+    await expect(assertSafeImageUrl("http://100.128.0.1/a.jpg")).resolves.toBeInstanceOf(URL);
+  });
+
   it("https 公网图片：解析域名 → 抓取 → 读出字节", async () => {
     const bytes = new Uint8Array([9, 8, 7, 6, 5]);
     fetchMock = vi.fn(async () => imageResponse(bytes));
@@ -194,7 +218,7 @@ describe("体积上限：12MB 流式截断（不能先 arrayBuffer 再判）", (
 
 describe("失败语义：抛错并由 analyzeProductImage 既有降级路径接手", () => {
   it("内网 URL ⇒ 视觉分析降级为默认结果（有日志、不静默、也不发请求）", async () => {
-    const result = await analyzeProductImage("http://100.0.0.200/latest/meta-data/");
+    const result = await analyzeProductImage("http://100.100.100.200/latest/meta-data/");
     expect(result.isDefault).toBe(true);
     expect(fetchMock).not.toHaveBeenCalled();
   });
