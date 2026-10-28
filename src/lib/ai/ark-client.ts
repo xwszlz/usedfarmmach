@@ -99,6 +99,8 @@ export async function chatCompletionDoubao(opts: ChatCompletionOptions): Promise
   const model = opts.model || ARK_MODEL_ID;
   const base = isComSite() && ARK_PROXY_URL ? ARK_PROXY_URL : ARK_BASE_URL;
   const url = `${base.replace(/\/$/, "")}/chat/completions`;
+  // 闸③对称实现：`.cn` 只许打境内 ARK（.com 不限）。放在发请求之前，不能靠"发出去再判"。
+  assertChatEndpointDomestic(base);
 
   // 熔断开启 → 快速失败（避免雪崩）
   if (Date.now() < circuitOpenUntil) {
@@ -202,6 +204,64 @@ export async function chatCompletionDoubao(opts: ChatCompletionOptions): Promise
 
 /** 境内 ARK 主机（`.cn` 端点断言用；境内服务不许走境外代理） */
 const ARK_DOMESTIC_HOST = "ark.cn-beijing.volces.com";
+
+/**
+ * 取 base 的 hostname；解析失败返回 `null`（调用方一律按「非境内」处理，即 fail closed）。
+ *
+ * 为什么 fail closed：这道闸守的是「数据不出境」硬红线，配置写错时**必须**当成违规拒绝，
+ * 而不是"解析不了就先放行"。放行一次就可能是用户照片与卖家正文的一次静默出境。
+ */
+function parseArkBaseHost(base: string): string | null {
+  try {
+    return new URL(base).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 聊天通道（`/chat/completions`）的境内端点闸 —— 闸③在检索通道上的对称实现。
+ *
+ * 为什么必须有：`arkWebSearch` 早有 `site === "cn" && !endpoint.domestic ⇒ throw` 的硬闸，
+ * 但**真正承载用户照片、卖家自由文本、RawListing 摘要的主出口**（本函数被 5 个 AI 路由调用）
+ * 过去完全没有这层校验：`.cn` 恒用 `ARK_BASE_URL`，却从不验证它的 host 是不是境内。
+ * 一次误配（照抄 `.com` 配置、或填了海外代理）就会让 `.cn` 的全部 AI 正文静默出境，
+ * 无日志、无报错、健康检查照样绿灯 —— 违反「数据不出境」硬红线（风控审计 R8-1）。
+ *
+ * `.com` 不做任何限制：B 通道（`ARK_PROXY_URL`）与直连都是合法路径。
+ */
+function assertChatEndpointDomestic(base: string): void {
+  if (isComSite()) return;
+  const host = parseArkBaseHost(base);
+  if (host === null) {
+    // 报错里不带完整 base：base 可能含 user:pass@ 形式的凭据，日志会进平台可搜索区
+    throw new Error(
+      `[ARK] 境内站聊天端点必须是 ${ARK_DOMESTIC_HOST}，已拒绝请求（base 无法解析：${String(
+        base
+      )
+        .replace(/\/\/[^/@]*@/, "//***@")
+        .slice(0, 60)}）`
+    );
+  }
+  if (host !== ARK_DOMESTIC_HOST) {
+    throw new Error(
+      `[ARK] 境内站聊天端点必须是 ${ARK_DOMESTIC_HOST}，已拒绝请求（host=${host}）`
+    );
+  }
+}
+
+// ── 模块加载期自检（**只告警，不抛错**）──
+// 为什么不在这里抛：本模块在构建期（`next build` 收集路由）与单测里也会被加载，
+// 抛错会把构建/测试一起炸掉，逼着人临时注释掉这道闸 —— 反而更不安全。
+// 运行期的强拦截交给 `assertChatEndpointDomestic()`（每次真实调用前执行，fail closed），
+// 这里只负责让误配在启动日志里**第一时间可见**。
+if (!isComSite() && parseArkBaseHost(ARK_BASE_URL) !== ARK_DOMESTIC_HOST) {
+  console.warn(
+    `[ARK] 境内站 ARK_BASE_URL 不是境内端点（host=${
+      parseArkBaseHost(ARK_BASE_URL) ?? "无法解析"
+    }），聊天请求将在运行期被拒绝，请检查 .env.cn 的 ARK_BASE_URL`
+  );
+}
 
 /** `/responses` 端点解析入参（全部可覆盖，便于测试与多站注入） */
 export interface ArkEndpointOptions {
