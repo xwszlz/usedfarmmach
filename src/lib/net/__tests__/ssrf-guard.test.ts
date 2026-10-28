@@ -29,6 +29,7 @@ vi.mock("node:dns/promises", () => ({
 
 import {
   assertSafeImageUrl,
+  assertSafeImageUrls,
   fetchGuardedImage,
   readBodyWithLimit,
   MAX_IMAGE_BYTES,
@@ -213,6 +214,36 @@ describe("体积上限：12MB 流式截断（不能先 arrayBuffer 再判）", (
     const resp = new Response(bytes, { status: 200, headers: { "content-type": "image/jpeg" } });
     const buf = await readBodyWithLimit(resp);
     expect(buf.byteLength).toBe(bytes.byteLength);
+  });
+});
+
+describe("写侧校验：assertSafeImageUrls（落库前，用于断二阶 SSRF）", () => {
+  it("公网图片批量通过，且不发起任何下载", async () => {
+    await expect(
+      assertSafeImageUrls(["https://cdn.example.com/a.jpg", "https://cdn.example.com/b.jpg"])
+    ).resolves.toBeUndefined();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("列表里混入一个内网地址 ⇒ 整批拒绝（卖家会收到 400，而不是静默少图）", async () => {
+    await expect(
+      assertSafeImageUrls([
+        "https://cdn.example.com/a.jpg",
+        "http://100.100.100.200/latest/meta-data/",
+      ])
+    ).rejects.toThrow(/内网/);
+  });
+
+  it.each([
+    ["data URI", "data:image/jpeg;base64,AAAA"],
+    ["空串", ""],
+    ["非 URL", "not a url"],
+  ])("%s ⇒ 拒绝（写侧只接受 http(s)）", async (_label, url) => {
+    await expect(assertSafeImageUrls([url])).rejects.toThrow();
+  });
+
+  it("空数组 ⇒ 通过（没有图片是合法状态）", async () => {
+    await expect(assertSafeImageUrls([])).resolves.toBeUndefined();
   });
 });
 

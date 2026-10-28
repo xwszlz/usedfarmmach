@@ -10,6 +10,7 @@ import { cnyToUsd, getUsdPerCny } from "@/lib/exchange-rate";
 import { prisma } from "@/lib/db";
 import { verifyToken, getTokenFromHeaders } from "@/lib/auth";
 import { uploadFileToOSS } from "@/lib/oss-upload";
+import { assertSafeImageUrls } from "@/lib/net/ssrf-guard";
 import { buildLocationText } from "@/lib/location-parser";
 import { checkContent, isBlocked } from "@/lib/wechat-sec-check";
 import { checkDuplicateProduct, fireVideoModeration, MAX_VIDEOS_PER_PRODUCT, MAX_VIDEO_DURATION_SECONDS, MAX_VIDEO_FILE_SIZE_BYTES } from "@/lib/content-moderation";
@@ -196,6 +197,27 @@ export async function POST(request: NextRequest) {
         uploadedImageUrls = JSON.parse(directImageUrls);
       } catch {
         return NextResponse.json({ success: false, error: "imageUrls 格式错误" }, { status: 400 });
+      }
+
+      // 写侧出网校验（断二阶 SSRF 的根）：
+      // 这批 URL 会原样落库成 product.images，而读侧有零鉴权的 GET /api/valuation?productId=X
+      // 会把它们交给服务端去抓 ⇒ 卖家只需写一次内网地址，之后任何人（含未登录爬虫）都能
+      // 反复触发服务端出网，且这串 URL 长期留在库里。只在读侧打补丁挡不住这种链。
+      // 拒绝语义：明确 400（绝不能静默过滤 —— 卖家会以为图已经传上去了）。
+      if (!Array.isArray(uploadedImageUrls) || uploadedImageUrls.some((u) => typeof u !== "string")) {
+        return NextResponse.json(
+          { success: false, error: "imageUrls 必须是字符串数组", code: "INVALID_IMAGE_URL" },
+          { status: 400 }
+        );
+      }
+      try {
+        await assertSafeImageUrls(uploadedImageUrls);
+      } catch (err) {
+        const reason = err instanceof Error ? err.message : String(err);
+        return NextResponse.json(
+          { success: false, error: `图片地址不被接受：${reason}`, code: "INVALID_IMAGE_URL" },
+          { status: 400 }
+        );
       }
     } else {
       // 旧方案：从 FormData 获取文件并上传到 OSS

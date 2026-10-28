@@ -225,6 +225,24 @@ export async function assertSafeImageUrl(imageUrl: string): Promise<URL> {
 }
 
 /**
+ * 批量校验「即将落库的图片 URL」（写侧校验）。
+ *
+ * 为什么写侧也要校验：读侧守卫只能保证"这一次不发内网请求"，但 `product.images` 里
+ * 一旦能存进任意 URL，二阶 SSRF 就一直成立 —— 今天堵了 GET 估值，明天换个会渲染图片的
+ * 出口（PDF 导出 / OG 图 / 小程序接口）就又能用，而且那串 URL 会长期留在库里。
+ * 所以落库前要把非 http(s) / 内网地址直接拒掉，从根上断链。
+ *
+ * 抛错语义：与 {@link assertSafeImageUrl} 一致（抛，不返回 boolean）——
+ * 调用方必须把失败变成**明确的用户可见报错**（如 400），不能静默过滤掉这张图：
+ * 静默过滤会让卖家以为图已经传上去了。
+ */
+export async function assertSafeImageUrls(urls: string[]): Promise<void> {
+  for (const url of urls) {
+    await assertSafeImageUrl(url);
+  }
+}
+
+/**
  * 带守卫生效的抓取。
  *
  * 为什么手动跟随重定向（`redirect: "manual"`）：如果让 fetch 自动跟随，攻击者只要提供一个
