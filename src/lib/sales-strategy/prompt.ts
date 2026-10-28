@@ -16,8 +16,16 @@
  * 产品依据：AI销售策略-增量PRD-2026-10-25.md §2 / §3 / §6.4
  */
 import type { StrategyContext } from "./retrieval";
-import type { StrategyDecisionFields, WebEvidenceStatus } from "./strategy-schema";
+import type {
+  DealerRole,
+  RejectLevel,
+  RejectTrigger,
+  StrategyDecisionFields,
+  WebEvidenceStatus,
+} from "./strategy-schema";
 import { WEB_STATUS_NOTE } from "./strategy-schema";
+import { buildDoubaoContent } from "@/lib/ai/multimodal";
+import { normalizeAiLocale, withLanguage, type AiLocale } from "@/lib/i18n/ai-locale";
 
 // T08 契约：让 export.ts / route.ts / sales-strategy-export-buttons.tsx 三处
 // 既有的 `import type { StrategyLlmResult } from ".../prompt"` 零改动即编译通过。
@@ -306,6 +314,55 @@ export function buildStrategySystemPrompt(status: WebEvidenceStatus = "disabled"
   return `${STRATEGY_SYSTEM_PROMPT}\n\n${buildWebStatusPrompt(status)}`;
 }
 
+/**
+ * 枚举字段锁定段（多语种输出时的**硬约束**，本次最容易翻车的点）。
+ *
+ * 为什么必须写死在 prompt 里：`.com` 站接入 8 语种输出后，模型一旦"顺手"把
+ * `axis: "国内"` 翻成 `"Domestic"`、把 `basisType: "FOB建议"` 翻成 `"FOB estimate"`、
+ * 把 `urgency: "立刻"` 翻成 `"Immediately"`，下游三处按字面量精确匹配的逻辑会**静默失效**：
+ *   ① `derive.ts` 的 `MARKET_AXIS` 归桶（翻错 → 落「其他」桶 → 美国的价格跑进非洲列）；
+ *   ② `pdf-table.ts` 的 Sheet2 五列排序（翻错 → 列头与内容不符）；
+ *   ③ `export-excel.ts` 的 basisType 着色（翻错 → 全表单色）。
+ * 因此**只有面向买家的说明性文字**允许按目标语言撰写，枚举取值必须原样照抄。
+ *
+ * ⚠️ 本段只是"要求模型别翻"；真正的兜底在 `derive.ts` 的字面量匹配（翻错即降级），
+ *    以及前端那一层「枚举值 → 本地化显示文案」的字典。**不要**为了"支持外语"去改
+ *    `MARKET_AXIS` / `PRICE_BASIS_TYPES` 的字面量 —— 那是数据契约，不是文案。
+ */
+export const STRATEGY_ENUM_LOCK_PROMPT = `【枚举字段不可翻译（最高优先级约束，优先于任何语言指令）】
+以下字段的取值是**系统枚举**，下游 PDF/Excel 导出按字面量精确匹配，必须原样使用本 prompt 中给定的固定字面量，
+严禁翻译、严禁改写、严禁补空格或换大小写：
+- marketAnchors[].axis      （只能取「国内 / 欧洲 / 中亚 / 非洲中东澳新 / 新机对标」之一）
+- marketAnchors[].basisType （只能取「新机对标 / 欧洲二手净价 / FOB建议 / 国内二手估 / 推算」之一）
+- bestDestinations[].rejected[].level   （只能取「L1 / L2 / L3」）
+- bestDestinations[].rejected[].trigger （只能取「R1 / R2 / R3 / R4 / R5 / R6」）
+- bestDestinations[].rejected[].level 对应的措辞仍按三档中文关键词判定（L1 不建议 / L2 千万别 / L3 禁入）
+- complianceTasks[].owner / complianceTasks[].status
+- openQuestions[].urgency   （只能取「立刻 / 本周 / 出口前」）
+- todayCalls[].role、dataSources[].name、targetMarkets[].priority（高|中|低）、marketRanking[].stars（1-5）
+- JSON 的**键名**（summary / tldr / marketAnchors …）同样保持英文原样，不翻译。
+
+**只有「面向买家的说明性文字」字段**才按目标语言撰写，例如：
+tldr[].why、keyInsight.headline / body、readout、bestDestinations[].basis / calcChain /
+rejected[].reason、equipmentProfiles 的定位与规格描述、openQuestions[].question、
+dataSources[].note、summary、compliance 与 responsibility 的说明文字、scripts[].line。
+一句话原则：**枚举与键名照抄，解释性文字才翻译。**`;
+
+/**
+ * 组装带枚举锁的 System Prompt（多语种场景的唯一入口）。
+ *
+ * @param status 外部检索状态（决定降级段）
+ */
+export function buildStrategySystemPromptLocked(status: WebEvidenceStatus = "disabled"): string {
+  return `${buildStrategySystemPrompt(status)}\n\n${STRATEGY_ENUM_LOCK_PROMPT}`;
+}
+
+/** LLM 消息（`content` 允许是多模态数组，`ark-client` 的 `content: unknown` 已支持） */
+export interface StrategyMessage {
+  role: string;
+  content: unknown;
+}
+
 export interface BuildStrategyMessagesInput {
   ctx: StrategyContext;
   text?: string;
@@ -445,8 +502,29 @@ function buildPriorStrategyBlock(extras: StrategyContextExtras): string {
   return `${prior.summary ?? "（无摘要）"}\n上次推荐市场:${asArray(prior.targetMarkets).join("、") || "未找到"}`;
 }
 
-export function buildStrategyMessages(input: BuildStrategyMessagesInput): Array<{ role: string; content: string }> {
+/**
+ * 组装送给豆包的消息（system + user）。
+ *
+ * 三件必须做到的事（此前全缺，是「.com 上策略不能用」的直接成因之一）：
+ *   ① **图片/视频真的送进模型**：路由的空内容守卫允许「只传图不传文字」通过，
+ *      但旧实现完全没用 `imageUrls / videoUrls` ⇒ 用户不写补充说明时 prompt 里几乎是空的，
+ *      模型只能编，还照扣 250 积分。这里用 `buildDoubaoContent` 把图文拼成多模态 content。
+ *   ② **输出语种**：system prompt 经 `withLanguage()` 追加语言指令（8 语种，`.cn` 收敛到 zh/en）。
+ *   ③ **枚举不翻译**：语言指令只放开"说明性文字"，枚举取值由 `STRATEGY_ENUM_LOCK_PROMPT` 锁死。
+ *
+ * 返回的是 `Promise`（图片需要服务端下载转 base64），调用方必须 `await`。
+ *
+ * @param input 上下文 / 卖家补充文字 / 语种 / 图片与视频 URL
+ * @returns 两条消息；`user.content` 在有图片或视频时是**多模态数组**，否则是纯字符串
+ */
+export async function buildStrategyMessages(
+  input: BuildStrategyMessagesInput
+): Promise<StrategyMessage[]> {
   const { ctx, text } = input;
+  const imageUrls = asArray(input.imageUrls).filter((u): u is string => typeof u === "string" && !!u);
+  const videoUrls = asArray(input.videoUrls).filter((u): u is string => typeof u === "string" && !!u);
+  // 语种兜底：调用方（route）已用 resolveAiLocale 决策，这里再归一化一次防止旧调用方传怪值
+  const locale: AiLocale = normalizeAiLocale(input.locale) ?? "zh";
   const p = ctx.product;
   const extras = readCtxExtras(ctx);
   const webStatus = resolveWebStatus(ctx);
@@ -459,7 +537,7 @@ export function buildStrategyMessages(input: BuildStrategyMessagesInput): Array<
 
   const productBlock = p
     ? `品牌:${p.brandName}\n型号:${p.modelName}\n年份:${p.year ?? "—"}\n品类:${p.categoryName}\n国内售价(¥):${p.priceCny ?? "—"}\n地区:${p.location ?? "—"}\n成色:${p.condition ?? "—"}\n工时:${p.workingHours ?? "—"}\n是否国产:${p.isChineseBrand ? "是" : "否"}`
-    : "（未提供产品，按文本自由分析）";
+    : "（未提供产品，按文本 / 图片 / 视频自由分析）";
 
   const similarBlock = ctx.similarProducts.length
     ? ctx.similarProducts
@@ -495,8 +573,15 @@ export function buildStrategyMessages(input: BuildStrategyMessagesInput): Array<
       `即时事件:${ctx.dailyReport.upcomingEvent ? `${ctx.dailyReport.upcomingEvent.name} ${ctx.dailyReport.upcomingEvent.countdown}` : "无"}`
     : "无日报数据";
 
+  // 媒体段：把「收到几张图/几段视频」明写进文字部分，让模型知道去看图而不是纯靠猜
+  const mediaBlock =
+    imageUrls.length || videoUrls.length
+      ? `图片 ${imageUrls.length} 张、视频 ${videoUrls.length} 段（随本消息一同提供，请先识别设备并核对型号/成色/工时，再据此给出策略）`
+      : "无（仅凭文字与站内数据）";
+
   const userText =
     `【本品信息】\n${productBlock}\n\n` +
+    `【随附媒体】\n${mediaBlock}\n\n` +
     `【历史策略基线（仅 keyInsight.contrastWithPrior 可用）】\n${priorStrategyBlock}\n\n` +
     `【同品类在售】\n${similarBlock}\n\n` +
     `【站内实时在售（RawListing）】\n${rawListingBlock}\n\n` +
@@ -511,28 +596,398 @@ export function buildStrategyMessages(input: BuildStrategyMessagesInput): Array<
     `【卖家补充】${text || "（无）"}\n\n` +
     `请严格按系统指令只输出 JSON。`;
 
+  // 语种指令永远追加到最末（离模型最近，遵从度最高）；枚举锁在语言指令之前，
+  // 语义上被语言指令"优先于语言要求"覆盖（两条指令里都写了优先级，互为兜底）。
+  const systemPrompt = withLanguage(buildStrategySystemPromptLocked(webStatus), locale);
+
+  // 有媒体才走多模态：无媒体时保持纯字符串 content（省掉一次数组序列化，也便于排障对日志）
+  const userContent: unknown =
+    imageUrls.length || videoUrls.length
+      ? await buildDoubaoContent(imageUrls, videoUrls, userText)
+      : userText;
+
   return [
-    { role: "system", content: buildStrategySystemPrompt(webStatus) },
-    { role: "user", content: userText },
+    { role: "system", content: systemPrompt },
+    { role: "user", content: userContent },
   ];
 }
 
-/** 从 LLM 文本中稳健解析策略 JSON（兼容 ```json 围栏 / 裸 JSON / 前后杂文） */
-export function parseStrategyResult(text: string): StrategyLlmResult {
-  if (!text) return {};
-  let jsonStr = text.trim();
-  const fence = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (fence) {
-    jsonStr = fence[1].trim();
-  } else {
-    const s = jsonStr.indexOf("{");
-    const e = jsonStr.lastIndexOf("}");
-    if (s >= 0 && e > s) jsonStr = jsonStr.slice(s, e + 1);
-  }
-  if (!jsonStr) return {};
-  try {
-    return JSON.parse(jsonStr) as StrategyLlmResult;
-  } catch {
-    return {};
-  }
+// ═══════════════════════════════════════════════════════════
+// 解析（含截断补全） / 类型清洗 / 空结果判定
+// ═══════════════════════════════════════════════════════════
+
+/** 判定「纯对象」（排除 null / 数组 / 基本类型） */
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
+
+/** 从 `start`（必须是 `{`）开始做括号配平扫描：返回配对的闭合下标，未闭合返回 `null` */
+function findMatchingBrace(text: string, start: number): number | null {
+  const stack: string[] = [];
+  let inString = false;
+  let escaped = false;
+  for (let i = start; i < text.length; i += 1) {
+    const ch = text[i];
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (ch === "\\") {
+        escaped = true;
+      } else if (ch === '"') {
+        inString = false;
+      }
+      continue;
+    }
+    if (ch === '"') {
+      inString = true;
+      continue;
+    }
+    if (ch === "{" || ch === "[") {
+      stack.push(ch);
+      continue;
+    }
+    if (ch === "}" || ch === "]") {
+      stack.pop();
+      if (!stack.length) return i;
+    }
+  }
+  return null;
+}
+
+/** 括号配平扫描的附带信息（供补全使用） */
+interface BraceScan {
+  /** 尚未闭合的括号栈（自底向上） */
+  stack: string[];
+  /** 扫描结束时是否仍处于字符串内部 */
+  inString: boolean;
+  /** 是否遇到了奇数个转义（字符串内结尾悬挂 `\`） */
+  danglingEscape: boolean;
+  /** 顶层最后一个「干净的」成员分隔符（`,`）的位置；找不到为 -1 */
+  lastCommaAtDepth: number;
+}
+
+/**
+ * 单趟扫描并收集补全所需信息。
+ *
+ * `lastCommaAtDepth` 记录的是**任意深度**最后一个位于字符串外的 `,`，
+ * 补全失败时用它逐层回退（砍掉最后一个不完整成员再试）。
+ */
+function scanForRepair(text: string): BraceScan {
+  const stack: string[] = [];
+  let inString = false;
+  let escaped = false;
+  let lastCommaAtDepth = -1;
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (ch === "\\") escaped = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') {
+      inString = true;
+      continue;
+    }
+    if (ch === "{" || ch === "[") {
+      stack.push(ch);
+      continue;
+    }
+    if (ch === "}" || ch === "]") {
+      stack.pop();
+      continue;
+    }
+    if (ch === ",") lastCommaAtDepth = i;
+  }
+  return { stack, inString, danglingEscape: escaped, lastCommaAtDepth };
+}
+
+/**
+ * 把「被 max_tokens 从中间截断」的 JSON 补成可解析形态。
+ *
+ * 做法：① 未闭合字符串补 `"`；② 去掉结尾悬挂的 `,` / `:`；
+ *      ③ 按未闭合栈逆序补 `}` / `]`。
+ * 单趟补全解析不出来时，由 `parseStrategyResultDetailed` 逐层回退（砍最后一个成员）重试。
+ */
+function closePartialJson(text: string): string {
+  const scan = scanForRepair(text);
+  let out = text;
+  if (scan.inString) {
+    if (scan.danglingEscape) out = out.slice(0, -1); // 尾巴是单个 `\`，去掉避免转义掉补的引号
+    out += '"';
+  }
+  // 去掉悬挂的分隔符（`{"a":1,` → `{"a":1`；`{"a":` → `{"a"` 前面已被上面处理）
+  out = out.replace(/[,:]\s*$/, "");
+  for (let i = scan.stack.length - 1; i >= 0; i -= 1) {
+    out += scan.stack[i] === "{" ? "}" : "]";
+  }
+  return out;
+}
+
+/** 明细解析结果（`truncated` / `repaired` 供路由写日志与响应） */
+export interface ParsedStrategyOutcome {
+  /** 解析结果；真失败时是 `{}`（由调用方判空后返回 502，**不得**当成成功） */
+  strategy: StrategyLlmResult;
+  /** 原文 JSON 未闭合（被 max_tokens 截断） */
+  truncated: boolean;
+  /** 经 `closePartialJson` 补全后才解析成功 */
+  repaired: boolean;
+}
+
+/** 单体 JSON 解析：先直解，失败则尝试补全 + 逐层回退 */
+function parseWithRepair(jsonStr: string): { value: unknown; repaired: boolean } | null {
+  try {
+    return { value: JSON.parse(jsonStr), repaired: false };
+  } catch {
+    /* 走补全 */
+  }
+  // 补全最多回退 MAX_REPAIR_ROUNDS 次：每次砍掉最后一个不完整成员后重试。
+  // 6000 token 的输出最多几百个成员，100 次足以覆盖，且失败路径才走，不影响正常耗时。
+  const MAX_REPAIR_ROUNDS = 100;
+  let work = jsonStr;
+  for (let round = 0; round < MAX_REPAIR_ROUNDS; round += 1) {
+    if (!work.trim()) return null;
+    const closed = closePartialJson(work);
+    try {
+      const value = JSON.parse(closed);
+      return { value, repaired: true };
+    } catch {
+      /* 继续回退 */
+    }
+    const scan = scanForRepair(work);
+    if (scan.lastCommaAtDepth <= 0) return null;
+    work = work.slice(0, scan.lastCommaAtDepth);
+  }
+  return null;
+}
+
+/**
+ * 从 LLM 文本中稳健解析策略 JSON，并对「截断」做补全。
+ *
+ * 与其他链路一致的三段式：先认 ```json 围栏，再认裸 JSON，最后认前后杂文。
+ * 与前版的差异（T14 修复）：**截断的输出不再直接丢成 `{}`。**
+ * 旧行为 `catch { return {} }` 让「JSON 少了一个 `}`」变成「全字段空 + 照扣 250 积分」，
+ * 这是 `.com` 上"策略不能用"的第二个静默根因。现在的顺序是：
+ *   ① 直解成功 → 原样返回；
+ *   ② 未闭合 → `closePartialJson` 补括号 + 逐层回退成员，解析成功即返回（`repaired: true`）；
+ *   ③ 仍失败 → 返回 `{}`，由路由 `isStrategyEmpty()` 判空后返回 502 且**不扣费**。
+ *
+ * ⚠️ 补全**不能掩盖真失败**：只补结构性括号，绝不凭空造字段值；补完还解析不出就是 `{}`。
+ */
+export function parseStrategyResultDetailed(text: string): ParsedStrategyOutcome {
+  const fail: ParsedStrategyOutcome = { strategy: {}, truncated: false, repaired: false };
+  const raw = typeof text === "string" ? text.trim() : "";
+  if (!raw) return fail;
+
+  let candidate = "";
+  let truncated = false;
+
+  const fence = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fence) {
+    candidate = fence[1].trim();
+    const braceStart = candidate.indexOf("{");
+    if (braceStart >= 0 && findMatchingBrace(candidate, braceStart) === null) truncated = true;
+  } else {
+    const start = raw.indexOf("{");
+    if (start < 0) return fail;
+    const end = findMatchingBrace(raw, start);
+    if (end === null) {
+      // 没有配对的 `}` ⇒ 被截断：从第一个 `{` 一直取到末尾（旧实现取到最后一个 `}`，
+      // 会把嵌套子对象当成结尾，直接丢掉后半段内容）
+      candidate = raw.slice(start);
+      truncated = true;
+    } else {
+      candidate = raw.slice(start, end + 1);
+    }
+  }
+
+  if (!candidate) return fail;
+  const parsed = parseWithRepair(candidate);
+  if (!parsed) return { strategy: {}, truncated, repaired: false };
+  if (!isPlainObject(parsed.value)) return { strategy: {}, truncated, repaired: parsed.repaired };
+  return {
+    strategy: parsed.value as StrategyLlmResult,
+    truncated,
+    repaired: parsed.repaired,
+  };
+}
+
+/** 兼容既有调用方：只要解析结果（`{}` 表示解析失败，调用方必须判空） */
+export function parseStrategyResult(text: string): StrategyLlmResult {
+  return parseStrategyResultDetailed(text).strategy;
+}
+
+// ═══════════════════════════════════════════════════════════
+// 字段类型清洗（防白屏）
+// ═══════════════════════════════════════════════════════════
+
+/** 数组型字段（元素必须是纯对象，否则前端 `.map(x => x.foo)` 会拿到 undefined 链） */
+const ARRAY_FIELDS = [
+  // 老 9 字段中的 5 个数组
+  "targetMarkets",
+  "channels",
+  "actionChecklist",
+  "scripts",
+  "listingChecklist",
+  // 新 12 字段中的 8 个数组
+  "tldr",
+  "equipmentProfiles",
+  "marketAnchors",
+  "bestDestinations",
+  "marketRanking",
+  "todayCalls",
+  "complianceTasks",
+  "openQuestions",
+  "dataSources",
+] as const;
+
+/** 字符串型字段 */
+const STRING_FIELDS = ["summary", "readout"] as const;
+
+/** 对象型字段（可为 null） */
+const OBJECT_FIELDS = [
+  "priceRange",
+  "compliance",
+  "responsibility",
+  "keyInsight",
+  "accessTrafficLight",
+] as const;
+
+/** 取纯对象数组（非对象元素一律丢弃，绝不把字符串塞进 `for...of` / `.map`） */
+function toObjectArray(value: unknown): Array<Record<string, unknown>> {
+  if (!Array.isArray(value)) return [];
+  return value.filter(isPlainObject);
+}
+
+/** 取字符串数组 */
+function toStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((v): v is string => typeof v === "string");
+}
+
+/**
+ * 深度清洗 `bestDestinations`：`market` / `channelIds` 必须是字符串数组，`rejected` 必须是对象数组。
+ *
+ * 为什么单独洗：前端与 PDF 都会 `market.join(" / ")`、`rejected.map(...)`，
+ * 模型偶尔把 `market` 返回成字符串 `"乌兹别克"` ⇒ `join is not a function` ⇒ 整页白屏。
+ */
+function sanitizeBestDestinations(value: unknown): StrategyDecisionFields["bestDestinations"] {
+  return toObjectArray(value).map((item) => ({
+    equipment: typeof item.equipment === "string" ? item.equipment : "",
+    market: toStringArray(item.market),
+    basis: typeof item.basis === "string" ? item.basis : "",
+    calcChain: typeof item.calcChain === "string" ? item.calcChain : undefined,
+    channelIds: toStringArray(item.channelIds),
+    rejected: toObjectArray(item.rejected).map((r) => ({
+      market: typeof r.market === "string" ? r.market : "",
+      reason: typeof r.reason === "string" ? r.reason : "",
+      level: typeof r.level === "string" ? (r.level as RejectLevel) : undefined,
+      trigger: typeof r.trigger === "string" ? (r.trigger as RejectTrigger) : undefined,
+    })),
+  }));
+}
+
+/** 深度清洗 `todayCalls`（`candidateIds` 必须是字符串数组，前端据此回填线索） */
+function sanitizeTodayCalls(value: unknown): StrategyDecisionFields["todayCalls"] {
+  return toObjectArray(value).map((item) => ({
+    equipment: typeof item.equipment === "string" ? item.equipment : "",
+    candidateIds: toStringArray(item.candidateIds),
+    // role 缺失 / 非字符串时落「终端」（枚举全集里语义最中性的一档，渲染层不会崩）
+    role: (typeof item.role === "string" && item.role ? item.role : "终端") as DealerRole,
+    whyToday: typeof item.whyToday === "string" ? item.whyToday : "",
+  }));
+}
+
+/** 深度清洗 `accessTrafficLight`（三灯必须都是字符串数组，否则渲染层 `.map` 直接抛错） */
+function sanitizeAccessTrafficLight(
+  value: unknown
+): StrategyDecisionFields["accessTrafficLight"] {
+  if (!isPlainObject(value)) return undefined;
+  return {
+    friendly: toStringArray(value.friendly),
+    needPermit: toStringArray(value.needPermit),
+    forbidden: toStringArray(value.forbidden),
+  };
+}
+
+/**
+ * 按类型白名单清洗 LLM 输出（**防白屏**的最后一道闸）。
+ *
+ * 背景：模型偶尔把 `targetMarkets` 返回成字符串、把 `channels` 返回成对象、
+ * 把 `bestDestinations[].market` 返回成标量。前端直接 `.map()` / `for...of` 会抛错白屏，
+ * 而路由此前是 `...strategy` 原样透传。这里逐字段按类型收敛：
+ * 数组字段落 `[]`（非对象元素丢弃）、字符串落 `""`、对象字段非法落 `undefined`（渲染层按空处理）。
+ *
+ * ⚠️ 本函数**只做类型收敛，不做业务降级**：真正的「缺字段怎么补」在 `derive.ts` 的
+ *    `normalizeDecisionFields`（PDF/Excel 唯一降级入口）。这里只保证不崩。
+ *
+ * @param input `parseStrategyResult` 的结果（可能带任意脏类型）
+ * @returns 字段类型全部合法的策略对象（永不为 null）
+ */
+export function sanitizeStrategy(input: unknown): StrategyLlmResult {
+  const src: Record<string, unknown> = isPlainObject(input) ? input : {};
+  const out: Record<string, unknown> = {};
+
+  for (const key of ARRAY_FIELDS) {
+    out[key] = toObjectArray(src[key]);
+  }
+  for (const key of STRING_FIELDS) {
+    const value = src[key];
+    out[key] = typeof value === "string" ? value : "";
+  }
+  for (const key of OBJECT_FIELDS) {
+    const value = src[key];
+    out[key] = isPlainObject(value) ? value : undefined;
+  }
+
+  // 三处需要下钻的字段（前端有直接的数组方法调用，是白屏高发点）
+  out.bestDestinations = sanitizeBestDestinations(src.bestDestinations);
+  out.todayCalls = sanitizeTodayCalls(src.todayCalls);
+  const light = sanitizeAccessTrafficLight(src.accessTrafficLight);
+  out.accessTrafficLight = light;
+
+  return out as StrategyLlmResult;
+}
+
+/**
+ * 判定「解析结果实质为空」。
+ *
+ * 用于路由在**扣费之前**拦住「模型什么都没给」的情形：
+ * 旧实现把解析失败的 `{}` 展开成空策略，返回 `success: true` 并照扣 250 积分 ——
+ * 用户花钱买到一张空表，这是本次必须消灭的最恶劣行为。
+ *
+ * 判空口径：21 个业务字段（9 老 + 12 新）**全部**为空（数组空、字符串空、对象缺失）即为空。
+ *
+ * @param strategy 解析（并清洗）后的策略对象
+ */
+export function isStrategyEmpty(strategy: unknown): boolean {
+  if (!isPlainObject(strategy)) return true;
+  const keys = Object.keys(strategy);
+  if (!keys.length) return true;
+
+  for (const key of ARRAY_FIELDS) {
+    if (toObjectArray(strategy[key]).length > 0) return false;
+  }
+  for (const key of STRING_FIELDS) {
+    const value = strategy[key];
+    if (typeof value === "string" && value.trim()) return false;
+  }
+  for (const key of OBJECT_FIELDS) {
+    const value = strategy[key];
+    // `accessTrafficLight` 只有空数组时不算内容；其余对象只要真是对象就算有内容
+    if (!isPlainObject(value)) continue;
+    if (key === "accessTrafficLight") {
+      if (
+        toStringArray(value.friendly).length ||
+        toStringArray(value.needPermit).length ||
+        toStringArray(value.forbidden).length
+      ) {
+        return false;
+      }
+      continue;
+    }
+    if (Object.keys(value).length > 0) return false;
+  }
+  return true;
+}
+

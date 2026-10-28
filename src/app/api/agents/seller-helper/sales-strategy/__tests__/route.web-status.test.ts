@@ -37,16 +37,24 @@ vi.mock("@/lib/sales-strategy/retrieval", () => ({
   retrieveStrategyContext: vi.fn(),
   fetchLeadDealerContact: vi.fn(),
 }));
-vi.mock("@/lib/sales-strategy/prompt", () => ({
-  buildStrategyMessages: vi.fn(() => []),
-  parseStrategyResult: vi.fn(),
-}));
+/**
+ * 提示词层：保留真实的 `sanitizeStrategy` / `isStrategyEmpty`（路由的防白屏与判空防线），
+ * 只替换 `buildStrategyMessages`（不需要下载图片）与 `parseStrategyResultDetailed`。
+ */
+vi.mock("@/lib/sales-strategy/prompt", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/sales-strategy/prompt")>();
+  return {
+    ...actual,
+    buildStrategyMessages: vi.fn(async () => []),
+    parseStrategyResultDetailed: vi.fn(),
+  };
+});
 
 import { getUserFromRequest } from "@/lib/auth";
 import { chatCompletionDoubao } from "@/lib/ai/ark-client";
 import { deductCredits } from "@/lib/credits/spend";
 import { retrieveStrategyContext } from "@/lib/sales-strategy/retrieval";
-import { parseStrategyResult } from "@/lib/sales-strategy/prompt";
+import { parseStrategyResultDetailed } from "@/lib/sales-strategy/prompt";
 import { WEB_STATUS_NOTE } from "@/lib/sales-strategy/strategy-schema";
 import { POST } from "@/app/api/agents/seller-helper/sales-strategy/route";
 
@@ -95,7 +103,11 @@ async function runSuccess(webEvidence?: unknown) {
     text: "{}",
     usage: { prompt_tokens: 100, completion_tokens: 200 },
   });
-  (parseStrategyResult as any).mockReturnValue(ADEQUATE_STRATEGY);
+  (parseStrategyResultDetailed as any).mockReturnValue({
+    strategy: ADEQUATE_STRATEGY,
+    truncated: false,
+    repaired: false,
+  });
   (deductCredits as any).mockResolvedValue({ ok: true, credits: 99989, required: 250 });
 
   const res = await POST(makeReq());
