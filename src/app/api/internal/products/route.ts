@@ -24,7 +24,8 @@ import { cnyToUsd, getUsdPerCny } from "@/lib/exchange-rate";
 
 import { prisma } from "@/lib/db";
 
-import { uploadBufferToOSS } from "@/lib/oss-upload";
+import { uploadBufferToOSS, isOwnOssUrl } from "@/lib/oss-upload";
+import { fetchGuardedImage, readBodyWithLimit } from "@/lib/net/ssrf-guard";
 
 import { hashPassword, verifyToken, getTokenFromHeaders } from "@/lib/auth";
 
@@ -42,7 +43,6 @@ import { drainUsage } from "@/lib/credits/usage-collector";
 
 import { getDetailImageUrl, getVideoUrl } from "@/lib/image-url";
 
-import axios from "axios";
 
 import crypto from "crypto";
 
@@ -67,7 +67,9 @@ export const maxDuration = 300;
 
 // 已经是最终地址，后端无需再下载重传
 
-const OSS_HOST = "https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com";
+// 判断"是否自有 OSS 地址"已改用 isOwnOssUrl()（解析后精确比 hostname）。
+// 原来这里存的是带 scheme 的整条前缀，配 startsWith 使用 —— 可被
+// `https://<host>.evil.tld/x` 这类地址绕过，把外部 URL 冒充成小程序直传产物。
 
 
 
@@ -332,7 +334,10 @@ async function resolveCategory(categoryId?: string, categoryName?: string) {
 
 async function downloadBuffer(url: string): Promise<{ buffer: Buffer; contentType: string }> {
 
-  const res = await fetch(url, { redirect: "follow" });
+  // 出网守卫：scheme 白名单 + 主机/DNS 解析结果判段 + 每跳重定向复核。
+  // 原来这里是裸 fetch + redirect:"follow" —— 任意登录用户传内网地址即可让服务器代取，
+  // 且响应会经 uploadBufferToOSS 落成公开链接，等于一个可完整回显的内网代理。
+  const res = await fetchGuardedImage(url);
 
   if (!res.ok) {
 
@@ -340,11 +345,11 @@ async function downloadBuffer(url: string): Promise<{ buffer: Buffer; contentTyp
 
   }
 
-  const arrayBuffer = await res.arrayBuffer();
+  const buffer = await readBodyWithLimit(res);
 
   const contentType = res.headers.get("content-type") || "application/octet-stream";
 
-  return { buffer: Buffer.from(arrayBuffer), contentType };
+  return { buffer, contentType };
 
 }
 
@@ -1143,7 +1148,7 @@ export async function POST(request: NextRequest) {
 
 
 
-        if (src.startsWith(OSS_HOST)) {
+        if (isOwnOssUrl(src)) {
 
           // ✅ 小程序直传产物：直接复用 OSS URL
 
@@ -1450,9 +1455,13 @@ export async function POST(request: NextRequest) {
               await Promise.all(
                 imageFullUrls.slice(0, 8).map(async (url: string) => {
                   try {
-                    const resp = await axios.get(url, { responseType: "arraybuffer", timeout: 20000 });
-                    const mime = (resp.headers["content-type"] || "image/jpeg").split(";")[0];
-                    const b64 = Buffer.from(resp.data as ArrayBuffer).toString("base64");
+                    // 同一批 images[] 的第二出口（入库后回读做 AI 识别）：必须同样过守卫，
+                    // 否则第一处堵住、这里仍会把内网响应解成 base64 送进模型。
+                    const resp = await fetchGuardedImage(url);
+                    if (!resp.ok) throw new Error(`图片下载失败: ${resp.status}`);
+                    const buf = await readBodyWithLimit(resp);
+                    const mime = (resp.headers?.get?.("content-type") || "image/jpeg").split(";")[0];
+                    const b64 = buf.toString("base64");
                     return { type: "image_url" as const, image_url: { url: `data:${mime};base64,${b64}` } };
                   } catch {
                     return null;
