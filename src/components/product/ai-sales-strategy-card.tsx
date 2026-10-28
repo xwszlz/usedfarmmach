@@ -9,8 +9,9 @@
  * 输入：复用产品页已上传的图片/视频（与发布页「三件套」：封面图 + 介绍视频 + 实机作业视频
  *       同源媒体），并支持一段补充说明文本；策略核心依据来自产品已识别属性 + 检索层。
  * 输出（6 字段 + 摘要）：targetMarkets / priceRange / channels(脱敏) / compliance /
- *       actionChecklist / responsibility；channels 中联系方式默认脱敏，付费解锁明文。
- * 计费：按豆包实际 token 消耗 × SystemConfig 系数（决策 B），扣前展示预估、扣后展示成本+余额。
+ *       actionChecklist / responsibility；channels 中联系方式默认脱敏，解锁后给明文（2026-10-28 起免费）。
+ * 计费：生成按豆包实际 token 消耗走「成本加成」口径（computeAiCost），扣后展示成本+余额；
+ *       解锁联系方式免费，不计费。
  */
 import { useState } from "react";
 import { Sparkles, Loader2, AlertCircle, Target, Unlock, Phone, Mail, Lock, CheckCircle2 } from "lucide-react";
@@ -178,16 +179,12 @@ export default function AiSalesStrategyCard({
       });
       const data: any = await res.json().catch(() => ({}));
       if (!res.ok || !data.success) {
-        if (data.code === "INSUFFICIENT_CREDITS") {
-          setError(
-            zh
-              ? `积分不足（需 ${data.required ?? "?"}，当前 ${data.balance ?? 0}），无法解锁。`
-              : `Insufficient credits (need ${data.required ?? "?"}, have ${data.balance ?? 0}).`
-          );
-        } else if (data.code === "RESPONSIBILITY_REQUIRED") {
+        if (data.code === "RESPONSIBILITY_REQUIRED") {
           setError(zh ? "请先确认责任声明再解锁" : "Confirm responsibility first");
         } else if (data.code === "NOT_FOUND") {
           setError(zh ? "该线索不存在或已失效" : "Lead not found");
+        } else if (data.code === "LOGIN_REQUIRED") {
+          setError(zh ? "请先登录后再解锁联系方式" : "Please sign in to unlock contacts");
         } else {
           setError(data.error || (zh ? "解锁失败" : "Unlock failed"));
         }
@@ -197,7 +194,8 @@ export default function AiSalesStrategyCard({
         ...prev,
         [candidateId]: { phone: data.data.phone || "", wechat: data.data.wechat || "", email: data.data.email || "" },
       }));
-      setNote(zh ? `已解锁，本次消耗 ${data.data.cost} 积分，剩余 ${data.data.balance}` : `Unlocked. Cost ${data.data.cost}, balance ${data.data.balance}`);
+      // 解锁免费（2026-10-28 口径）：只提示成功，不再展示消耗积分
+      setNote(zh ? "已解锁联系方式（免费）" : "Contact unlocked (free)");
     } catch {
       setError(zh ? "网络错误，解锁失败" : "Network error, unlock failed");
     } finally {
@@ -426,7 +424,7 @@ export default function AiSalesStrategyCard({
                             className="inline-flex items-center gap-1 rounded-md border border-emerald-300 px-3 py-1.5 text-xs font-medium text-emerald-600 hover:bg-emerald-50 disabled:opacity-50"
                           >
                             <Lock className="h-3 w-3" />
-                            {zh ? "付费解锁联系方式" : "Unlock contact"}
+                            {zh ? "解锁联系方式（免费）" : "Unlock contact (free)"}
                           </button>
                         )}
                       </div>

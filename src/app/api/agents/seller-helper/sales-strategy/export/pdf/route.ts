@@ -113,7 +113,8 @@ async function withDbTimeout<T>(p: Promise<T>, ms: number = DB_TIMEOUT_MS): Prom
  *   当前不抽：`export/excel/route.ts` 正由 T11 修改，此时抽取必冲突。
  *
  * 本路由额外识别 `"unlock:lead_"`，因为 `unlock-contact` 路由对所有 candidateId
- * 统一写 `field = "unlock:<candidateId>"`，线索解锁同样付过费，PDF 也必须给明文。
+ * 统一写 `field = "unlock:<candidateId>"`，线索解锁同样留过 PiiAuditLog，PDF 也必须给明文
+ * （解锁自 2026-10-28 起免费，但审计记录照旧写入，故本判定口径不变）。
  */
 function buildUnlockedSets(fields: Array<{ field: string }>): {
   dealers: Set<string>;

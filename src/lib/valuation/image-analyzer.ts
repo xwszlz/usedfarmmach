@@ -55,14 +55,31 @@ export interface VisualValuationResult {
   usedV4Condition: boolean;       // 是否使用了V4视觉成色
 }
 
+/** data URI 前缀（`data:image/jpeg;base64,`）—— 命中即为前端已压缩好的 base64 载荷 */
+const DATA_URI_RE = /^data:(image\/[a-z0-9.+-]+);base64,/i;
+
 /**
- * 获取图片并转换为 base64（豆包视觉以 image_url/data 传入）
+ * 把「图片 URL / data URI」统一转成可直接喂给豆包视觉的 data URL。
+ *
+ * - data URI：**原样透传**。前端 `canvas.toDataURL("image/jpeg", 0.82)` 已给出压缩后的 base64，
+ *   再 `fetch()` 一次纯属浪费；且超长 data URI 在部分 runtime 下 fetch 行为不确定。
+ * - http(s) URL：下载后 base64，mime 取响应 `content-type`（非 image/* 一律按 jpeg 兜底）。
+ *
+ * 为什么必须支持 data URI：估值页 / 深度分析上传的都是本地压缩图（不上传到 CDN），
+ * 只传 data URI；若此处不支持，国产渠道（.cn）估值的图片分析会被静默跳过 ⇒ 零 token ⇒ 零收费。
  */
 async function fetchImageAsBase64(imageUrl: string): Promise<string> {
-  const resp = await fetch(imageUrl);
+  const raw = typeof imageUrl === "string" ? imageUrl.trim() : "";
+  if (DATA_URI_RE.test(raw)) return raw;
+
+  const resp = await fetch(raw);
   if (!resp.ok) throw new Error(`图片下载失败: ${resp.status}`);
   const buf = Buffer.from(await resp.arrayBuffer());
-  return buf.toString("base64");
+  // 用可选链读 content-type：部分运行环境/测试桩的 Response 没有 headers，
+  // 这里绝不能因此抛错（否则整条视觉分析会被降级成默认分，估值失真）。
+  const header = (resp.headers?.get?.("content-type") || "").split(";")[0].trim().toLowerCase();
+  const mime = header.startsWith("image/") ? header : "image/jpeg";
+  return `data:${mime};base64,${buf.toString("base64")}`;
 }
 
 /**
@@ -72,7 +89,7 @@ export async function analyzeProductImage(
   imageUrl: string
 ): Promise<ImageAnalysisResult> {
   try {
-    const base64Image = await fetchImageAsBase64(imageUrl);
+    const imageDataUrl = await fetchImageAsBase64(imageUrl);
     const model = getArkVisionModelId();
 
     const result = await chatCompletionDoubao({
@@ -83,7 +100,7 @@ export async function analyzeProductImage(
           role: "user",
           content: [
             { type: "text", text: IMAGE_PROMPT },
-            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } },
+            { type: "image_url", image_url: { url: imageDataUrl } },
           ],
         },
       ],

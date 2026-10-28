@@ -176,6 +176,8 @@ function toBlurredValuation(result: ValuationResult) {
 
  *   - imageUrls?: string[]   产品图片URL列表
 
+ *   - imageDataUris?: string[] 本地压缩图（`data:image/...;base64,...`），直传视觉模型
+
  *   - videoUrls?: string[]   产品视频URL列表
 
  *   
@@ -298,6 +300,18 @@ export async function POST(request: NextRequest) {
     const imageUrls: string[] = body.imageUrls || [];
 
     const videoUrls: string[] = body.videoUrls || [];
+
+    // 前端上传的本地压缩图以 data URI 直传（不上 CDN）。只放行 `data:image/*`，
+    // 其余字符串一律丢弃，避免把任意内容当图片喂给视觉模型。
+    const imageDataUris: string[] = Array.isArray(body.imageDataUris)
+      ? (body.imageDataUris as unknown[]).filter(
+          (u): u is string => typeof u === "string" && u.startsWith("data:image/")
+        )
+      : [];
+
+    // 合并后的图片列表：data URI 在前（用户刚拍的实机照片），远程 URL 在后。
+    // ⚠️ 国产渠道（.cn）只传 data URI，若此处不合并 ⇒ 图片分析被跳过 ⇒ 零 token ⇒ 估值零收费。
+    const mergedImageUrls: string[] = [...imageDataUris, ...imageUrls];
 
     const enginePower = body.enginePower ? Number(body.enginePower) : undefined;
 
@@ -424,7 +438,7 @@ export async function POST(request: NextRequest) {
 
         // V4: 从数据库读取图片和视频
 
-        imageUrls: imageUrls.length > 0 ? imageUrls : product.images?.map((img: any) => img.url) || [],
+        imageUrls: mergedImageUrls.length > 0 ? mergedImageUrls : product.images?.map((img: any) => img.url) || [],
 
         videoUrls: videoUrls.length > 0 ? videoUrls : product.videos?.map((vid: any) => vid.url) || [],
 
@@ -482,7 +496,7 @@ export async function POST(request: NextRequest) {
 
         // V4 新增字段
 
-        imageUrls,
+        imageUrls: mergedImageUrls,
 
         videoUrls,
 
@@ -540,7 +554,12 @@ export async function POST(request: NextRequest) {
 
         imageUrlsCount: input.imageUrls?.length || 0,
 
-        imageUrls: input.imageUrls?.slice(0, 2), // 只打印前2个URL
+        // 只打印前 2 个远程 URL；data URI（本地压缩图）只记数量，绝不打印 base64 正文
+        imageUrls: (input.imageUrls || [])
+          .filter((u) => !u.startsWith("data:"))
+          .slice(0, 2),
+
+        imageDataUriCount: (input.imageUrls || []).filter((u) => u.startsWith("data:")).length,
 
       });
 
@@ -646,6 +665,11 @@ export async function POST(request: NextRequest) {
     // 只扣一次：把全部记录按模型分组算成本后求和，再一次 deductCredits。
     // 无论如何都要 drain：模块级数组是本进程的，游客/异常分支不 drain 会跨请求串账。
     const usage = drainUsage();
+    /**
+     * 本次估值的计费摘要，登录用户成功响应里以 `billing` 字段返回（前端 page.tsx 读 `billing.points` / `billing.balance`）。
+     * 无 LLM 用量（如 skipImageAnalysis）时为 null —— 不返回「扣 0 分」的噪音。
+     */
+    let billing: { points: number; balance: number } | null = null;
     if (authUserId) {
       const billingCountry = await getBillingCountry(authUserId);
       const perModel: AiCostBreakdown[] = usage.map((u) =>
@@ -678,9 +702,20 @@ export async function POST(request: NextRequest) {
       // 扣分失败（多为并发下余额被别处扣掉）：仍然返回结果，但带上计费失败标记，
       // 不阻断用户已算出来的结果（LLM 已消耗，结果已产出）。
       if (!deduction.ok) {
-        console.error(
-          `[Valuation] 计费失败 user=${authUserId} required=${deduction.required} balance=${deduction.credits}`
+        // watchdog：计费失守必须能被运维 grep 到（含模型用量，便于核对是否 LLM 真被调用过）
+        console.warn(
+          `[Valuation][WATCHDOG] 计费失败 user=${authUserId} required=${deduction.required} balance=${deduction.credits} usage=${usage.length} images=${mergedImageUrls.length}`
         );
+      } else if (totalPoints > 0 && (deduction.credits ?? 0) === 0) {
+        // 扣分成功但余额归零：提示运营关注（下一单会被 402 拦住，属预期行为，但要可见）
+        console.warn(
+          `[Valuation][WATCHDOG] 余额归零 user=${authUserId} points=${totalPoints} usage=${usage.length}`
+        );
+      }
+
+      // 只在实际产生费用时回传，避免前端每次都弹「本次消耗 0 积分」
+      if (totalPoints > 0) {
+        billing = { points: totalPoints, balance: deduction.credits ?? 0 };
       }
     }
 
@@ -727,6 +762,10 @@ export async function POST(request: NextRequest) {
       version: result.version,
 
       data: result,
+
+      // 计费可见化：本次估值按 LLM 真实用量扣了多少积分 + 扣后余额（无用量时为 null）
+      // 字段名严格为 billing.points / billing.balance —— 前端 page.tsx 直接读这两个键。
+      billing,
 
 
 

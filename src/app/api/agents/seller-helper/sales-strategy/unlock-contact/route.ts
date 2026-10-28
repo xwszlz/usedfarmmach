@@ -1,18 +1,18 @@
 /**
  * POST /api/agents/seller-helper/sales-strategy/unlock-contact
- * 付费解锁线索/经销商明文联系方式（决策 B：viewcontact_cost 计费）
+ * 解锁线索/经销商明文联系方式（2026-10-28 口径：**免费**，不再按积分收费）
  *
- * 计费：单次固定预估 token（UNLOCK_ESTIMATED_TOKENS）× SystemConfig 系数；
- *       系数/护栏只从 SystemConfig 读取（[商业机密·内部]），代码不持有明文倍数。
- * 合规：明文联系方式仅在付费解锁后返回，并写 PiiAuditLog 留痕；
- *       responsibilityConfirmed 必须为真（二次确认责任声明）。
+ * 计费：无。历史上按 viewcontact_cost 固定名义 token 计费（800），现已取消：
+ *       联系方式是成交的最后一公里，收费挡的是付费用户，收益远小于流失。
+ *       如需恢复收费，改回 deductAiUsage（模块仍在，未删除，见 src/lib/credits/deduct.ts）。
+ * 合规：明文联系方式仍强制「责任声明二次确认」后返回，并写 PiiAuditLog 留痕
+ *       （免费 ≠ 无审计：谁、何时、读了哪个线索的哪个字段，必须可追溯）。
  *
  * Body: { candidateId: "lead_xxx" | "dealer_xxx", responsibilityConfirmed: true }
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { deductAiUsage, estimateAiCost, UNLOCK_ESTIMATED_TOKENS } from "@/lib/credits/deduct";
 import { fetchLeadDealerContact } from "@/lib/sales-strategy/retrieval";
 
 export const dynamic = "force-dynamic";
@@ -22,23 +22,6 @@ function getLocaleFromRequest(request: NextRequest): string {
   const m = referer.match(/\/([a-z]{2})\b/) || referer.match(/\/([a-z]{2})$/);
   if (m && ["zh", "en", "ru", "es", "pt", "fr", "hi", "ar"].includes(m[1])) return m[1];
   return "zh";
-}
-
-function rechargeResp(locale: string, required: number, balance: number, status: number, code: string) {
-  return NextResponse.json(
-    {
-      success: false,
-      error:
-        locale === "zh"
-          ? "积分不足，请先充值后再解锁联系方式"
-          : "Insufficient credits. Please recharge first.",
-      code,
-      rechargeUrl: `/${locale}/credits`,
-      required,
-      balance,
-    },
-    { status }
-  );
 }
 
 export async function POST(request: NextRequest) {
@@ -83,11 +66,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 余额预检（按固定预估 token）
-    const est = await estimateAiCost(UNLOCK_ESTIMATED_TOKENS);
-    if (user.credits < est) {
-      return rechargeResp(locale, est, user.credits, 402, "INSUFFICIENT_CREDITS");
-    }
+    // 已取消积分预检与扣费：解锁免费（余额为 0 也可解锁），故这里不再有任何余额门槛。
+    // 保留 user.credits 仅用于响应里回报当前余额，供前端展示。
+    const balance = user.credits ?? 0;
 
     const contact = await fetchLeadDealerContact(body.candidateId);
     if (!contact) {
@@ -97,31 +78,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ── 按量扣费（决策 B）──
-    const deduction = await deductAiUsage({
-      userId: user.id,
-      action: "unlockContact",
-      estimatedTokens: UNLOCK_ESTIMATED_TOKENS,
-      reason: "解锁销售线索联系方式",
-      breakdown: { candidateId: body.candidateId, type: contact.type, productId: contact.productId },
-    });
-    if (!deduction.ok) {
-      if (deduction.code === "GUARDRAIL") {
-        return NextResponse.json(
-          {
-            success: false,
-            error:
-              locale === "zh"
-                ? "本次解锁成本超出单次上限，已熔断（未扣费）"
-                : "Unlock cost exceeded single-request cap; circuit-broken (no charge).",
-            code: "GUARDRAIL",
-            balance: deduction.balance,
-          },
-          { status: 429 }
-        );
-      }
-      return rechargeResp(locale, deduction.cost, deduction.balance, 402, "INSUFFICIENT_CREDITS");
-    }
+    // ── 免费解锁（2026-10-28 口径）：不扣分、不写 CreditTransaction ──
+    // 旧实现此处调 deductAiUsage(action="unlockContact")，按 800 名义 token 扣费；
+    // 现已取消。deduct.ts 仍保留（导出/其它动作可能复用），但本路由不再依赖它。
 
     // ── PII 审计留痕（谁、何时、读了哪个线索的哪个字段、用途）──
     try {
@@ -147,8 +106,10 @@ export async function POST(request: NextRequest) {
         phone: contact.phone,
         wechat: contact.wechat,
         email: contact.email,
-        cost: deduction.cost,
-        balance: deduction.balance,
+        // 免费：cost 恒为 0（保留字段名以兼容既有前端与日志解析）
+        cost: 0,
+        balance,
+        free: true,
       },
     });
   } catch (error: any) {

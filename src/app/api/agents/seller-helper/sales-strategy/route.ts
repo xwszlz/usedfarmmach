@@ -25,7 +25,7 @@
  *         isChineseBrand?, text?, imageUrls?, videoUrls? }
  *
  * 合规：.cn 数据不出境 —— 仅调用国行火山方舟豆包；Lead/Dealer 联系方式默认脱敏，
- *       明文仅在 unlock-contact 路由按积分解锁。
+ *       明文仅在 unlock-contact 路由解锁（2026-10-28 起免费，仍需责任确认 + PiiAuditLog 留痕）。
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/auth";

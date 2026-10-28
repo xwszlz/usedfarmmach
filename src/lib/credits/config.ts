@@ -122,9 +122,10 @@ export async function getPlanBySku(sku: string): Promise<PlanSku | null> {
  *    代码中绝不出现明文倍数值；未知/非法值回落占位 1.0。
  *
  * @deprecated 销售策略已统一到「成本加成」口径（`computeAiCost`，见 spend.ts），
- *   不再读取本系数。保留函数与 `CONFIG_KEYS.aiCostCoeff` 仅为兼容仍在用
- *   `deductAiUsage` 的导出/解锁类动作（unlock-contact），避免破坏性变更；
- *   新代码请勿再引入。彻底下线需另行评估存量 SystemConfig 数据与调用方。
+ *   不再读取本系数。2026-10-28 起导出与 `unlock-contact` 均改为免费，`deductAiUsage`
+ *   已无生产调用方（仅单测覆盖），本函数随之无实际读取点；保留函数与
+ *   `CONFIG_KEYS.aiCostCoeff` 仅为兼容存量 SystemConfig 数据，避免破坏性变更。
+ *   新代码请勿再引入。彻底下线需另行评估存量配置与调用方。
  */
 export async function getAiCostCoeff(): Promise<number> {
   const v = await getConfig<number>(CONFIG_KEYS.aiCostCoeff, 1.0);

@@ -852,6 +852,11 @@ export default function ValuationPage() {
     ? calcDomesticBasePrice(dBrand, dHP)
     : iNewPrice;
 
+  // 是否有「已上传的本地压缩图」。用图片数组判定而非 hasImage：
+  // hasImage 只在 AI 识别回调成功后才置真，识别失败/超时时会漏传 data URI ⇒
+  // 后端跳过视觉分析 ⇒ 零 token ⇒ 估值零收费。两者必须同源。
+  const hasUploadedImages = uploadedImages.length > 0;
+
   // 执行估值
   const doValuation = async () => {
     setLoading(true);
@@ -875,7 +880,9 @@ export default function ValuationPage() {
             priceCny: dSellerPrice ? Number(dSellerPrice) : undefined,
             region: dRegion,
             useV4: true,
-            skipImageAnalysis: !hasImage,
+            // 国产渠道同样要传图：不传 = 后端跳过视觉分析 = 估值永远零收费（修通计费的关键一处）
+            skipImageAnalysis: !hasUploadedImages,
+            imageDataUris: hasUploadedImages ? uploadedImages : [],
           }),
         });
 
@@ -956,8 +963,8 @@ export default function ValuationPage() {
               region: iRegion,
               tradeChannel: channel === "export" ? "export" : undefined,
               useV4: true,
-              skipImageAnalysis: !hasImage,
-              imageDataUris: hasImage ? uploadedImages : [],
+              skipImageAnalysis: !hasUploadedImages,
+              imageDataUris: hasUploadedImages ? uploadedImages : [],
             }),
           });
           const data = await res.json().catch(() => null);
@@ -977,6 +984,11 @@ export default function ValuationPage() {
               warnings: generateWarnings(),
               channelPrices: (r as { channelPrices?: Record<string, number> }).channelPrices,
             });
+            // token 计费可见化（与国际/出口、国产渠道同源）：后端 billing 字段
+            const intlBilling = (data as { billing?: { points?: number; balance?: number } }).billing;
+            if (intlBilling && typeof intlBilling.points === "number" && intlBilling.points > 0) {
+              setValuationBilling({ points: intlBilling.points, balance: intlBilling.balance });
+            }
             if (channel === "export") {
               const arb = calcExportArbitrage(v4Value, eTargetCountry, eShipping, eTariff);
               setArbitrage(arb);

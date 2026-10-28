@@ -1,10 +1,13 @@
 /**
  * 按量计费服务（导出/解锁类动作） —— 决策 B 落地
  *
- * ⚠️ 适用范围（2026-10-28 起收窄）：AI 销售策略**生成**已统一到「成本加成」口径
- *   （`computeAiCost` + `deductCredits`，见 spend.ts 与 sales-strategy/route.ts），
- *   不再走本模块。本模块现仅服务 `unlock-contact`（解锁 PII 的固定名义 token 计费）。
- *   保留本文件而非删除：解锁动作仍有防爬价值与独立定价，且删除属破坏性变更，需另议。
+ * ⚠️ 现状（2026-10-28）：**本模块已无生产调用方**（保留不删，属破坏性变更需另议）。
+ *   - AI 销售策略**生成** → 已统一到「成本加成」口径（`computeAiCost` + `deductCredits`，
+ *     见 spend.ts 与 sales-strategy/route.ts）。
+ *   - 导出 PDF/Excel → 已改为免费，不再计费。
+ *   - `unlock-contact` → 已改为免费解锁（见该路由头部注释），不再调 `deductAiUsage`。
+ *   故 `deductAiUsage` / `estimateAiCost` 目前仅被单测（deduct.test.ts）覆盖；
+ *   若将来恢复「解锁/导出」收费，直接复用本模块即可（计费口径与护栏仍在）。
  *
  * 单次成本 = 实际 token 消耗 × 计费系数。
  *   - 计费系数【仅存 SystemConfig】（`ai_cost_coeff`），代码只读取、不写明文倍数，
