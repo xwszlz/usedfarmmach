@@ -41,6 +41,17 @@ export const CONDITION_CODES: readonly ConditionCode[] = ["excellent", "good", "
  *      否则用户传 18 张就会烧 18 次；5 张是「够覆盖验机所需角度」与「成本可控」的交点。
  *
  * ⚠️ 前端与后端两处上限必须同步（本常量 export 出来就是为了让前端/测试引用同一个数）。
+ *
+ * ⏱ 时延尾巴（给下一个动这里的人，省得重推一遍）：
+ *   本模块用 `Promise.all` **并行**发起全部 N 张调用（N ≤ MAX_ANALYZE_IMAGES），
+ *   所以常路径不随张数增长：实测 3 张 5~8s、5 张约 9s（并行取最慢那张）。
+ *   理论最坏 ≈ N × 76s（单张 75s 超时 + 429 退避 1s 重试一次）—— 5 张即 ≈380s，
+ *   这个尾巴的后果是 **`route` 的总预算（200s）被吃光 ⇒ 结论层 narrative 降级为 null**，
+ *   而不是报错或返回错数据（`route.ts` 的 `NARRATIVE_MIN_BUDGET_MS` 会先跳过它）。
+ *   若线上真观测到 ARK 视觉 429 成串出现（把并行压成串行），再考虑「分批 2 路并发」；
+ *   届时**必须先补两类测试**：① `perImage` 顺序仍与入参严格一致；
+ *   ② 批次失败语义（一批全失败时 `usedV4Condition`/`visualConditionScore` 怎么算、
+ *   `recordUsage` 归集顺序是否影响计费）。这三件事都不许顺手改。
  */
 export const MAX_ANALYZE_IMAGES = 5;
 
