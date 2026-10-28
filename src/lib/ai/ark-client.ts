@@ -8,6 +8,9 @@
  *   - API Key（ARK_API_KEY）只存在于服务端 env，绝不进前端 / 入 git；.com 不持有 ARK key，
  *     仅持 ARK_PROXY_URL + 代理鉴权 token（纵深防御，见部署文档）。
  *   - 超时 / 重试 / 熔断：75s 超时；429/5xx 重试 1 次指数退避；连续失败达阈值开启熔断，快速失败。
+ *     熔断**只对 429/5xx 与网络错计数**；4xx 属调用方/配置问题（参数越界、权限未开通、
+ *     路由不存在），端点已正常应答，不构成端点不可用的证据 —— 且计数全站共享，
+ *     计进去会让一个子功能的 4xx 连坐深度分析/估值/销售策略全部熔断（2026-10-28 P0）。
  *
  * 合规灰区（§3.6 / E-1）：.com 海外输入经代理进入国行节点处理属合规灰区，
  * 由部署/法务侧决策留痕；本客户端仅保证数据最小化（只转发 AI 必需内容）与错误不泄漏明文。
@@ -159,9 +162,18 @@ export async function chatCompletionDoubao(opts: ChatCompletionOptions): Promise
       const status = (err as { response?: { status?: number } })?.response?.status;
       // 鉴权/参数类错误不重试，直接抛出
       if (status === 401 || status === 403 || status === 402) throw err;
-      circuitFailures += 1;
-      if (circuitFailures >= CIRCUIT_THRESHOLD) {
-        circuitOpenUntil = Date.now() + CIRCUIT_COOLDOWN_MS;
+      // 4xx 不计入熔断（2026-10-28 同批修复，与 `postWithResilience` 口径统一）。
+      //   熔断计数是全站共享的（deep-analysis / valuation / sales-strategy 共用一个
+      //   `circuitFailures`），而 4xx 只说明「端点活着并正常应答了，只是请求说错了话」：
+      //   一次非法 model / 越界 maxTokens 连续 5 次 400 就会把三个功能一起熔断 30s，
+      //   与本次事故是同一类「子功能连坐主链路」。只有 429（限流）、5xx（服务端故障）
+      //   与网络错/超时（无 status，端点根本没应答）才构成「端点不可用」的证据。
+      const circuitFailure = typeof status !== "number" || status === 429 || status >= 500;
+      if (circuitFailure) {
+        circuitFailures += 1;
+        if (circuitFailures >= CIRCUIT_THRESHOLD) {
+          circuitOpenUntil = Date.now() + CIRCUIT_COOLDOWN_MS;
+        }
       }
       // 429 / 5xx 重试一次（指数退避）；其余 / 末次直接抛出
       const retryable = status === 429 || (typeof status === "number" && status >= 500);
