@@ -36,7 +36,7 @@ function getLocaleFromRequest(request: NextRequest): string {
 }
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 90; // Vercel PRO 最大 120s。预算：图片下载(并行，最坏20s) + 豆包(75s) = 95s 理论峰值，90s 内靠 deadline 收敛；.cn 侧 nginx proxy_read_timeout 已放宽至 180s（2026-09-20），不再被 60s 掐断
+export const maxDuration = 90; // Vercel PRO 最大 120s。预算：图片下载(并行，最坏20s) + 豆包(75s) = 95s 理论峰值，90s 内靠 deadline 收敛；.cn 侧 nginx proxy_read_timeout 已放宽至 330s（2026-10-28，与 AI 路由 300s 预算对齐），不再被 180s 掐断
 
 // ── 国内农机品牌关键词（用于自动检测 isChineseBrand） ──
 const CHINESE_BRAND_KEYWORDS = [

@@ -40,10 +40,20 @@ vi.mock("@/lib/sales-strategy/retrieval", () => ({
   retrieveStrategyContext: vi.fn(),
   fetchLeadDealerContact: vi.fn(),
 }));
-vi.mock("@/lib/sales-strategy/prompt", () => ({
-  buildStrategyMessages: vi.fn(() => []),
-  parseStrategyResult: vi.fn(),
-}));
+/**
+ * 提示词层：**保留真实的 `sanitizeStrategy` / `isStrategyEmpty`**（本次修复的核心防线，
+ * mock 掉就等于把「防白屏 + 防假成功」这两条主逻辑一起测掉了），
+ * 只把 `buildStrategyMessages`（要下载图片，测试里不需要）与
+ * `parseStrategyResultDetailed`（按用例喂不同文本）换成 spy。
+ */
+vi.mock("@/lib/sales-strategy/prompt", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/sales-strategy/prompt")>();
+  return {
+    ...actual,
+    buildStrategyMessages: vi.fn(async () => []),
+    parseStrategyResultDetailed: vi.fn(),
+  };
+});
 // @/lib/pii 保持真实，验证默认脱敏确实生效
 
 import { getUserFromRequest } from "@/lib/auth";
@@ -52,7 +62,7 @@ import { chatCompletionDoubao } from "@/lib/ai/ark-client";
 import { AI_COST_MULTIPLIER, deductCredits } from "@/lib/credits/spend";
 import { getAiCostGuardrail } from "@/lib/credits/config";
 import { retrieveStrategyContext, fetchLeadDealerContact } from "@/lib/sales-strategy/retrieval";
-import { parseStrategyResult } from "@/lib/sales-strategy/prompt";
+import { parseStrategyResultDetailed, sanitizeStrategy } from "@/lib/sales-strategy/prompt";
 import { POST } from "@/app/api/agents/seller-helper/sales-strategy/route";
 
 const PLAIN_PHONE = "13800001111";
@@ -124,7 +134,14 @@ beforeEach(() => {
   vi.mocked(getAiCostGuardrail).mockResolvedValue(3000);
   vi.mocked(deductCredits).mockResolvedValue({ ok: true, credits: 9900, required: MIN_POINTS });
   vi.mocked(retrieveStrategyContext).mockResolvedValue(mockCtx() as any);
-  vi.mocked(parseStrategyResult).mockImplementation((t: string) => JSON.parse(t));
+  // 默认解析：走真实的 JSON.parse + 真实的 sanitizeStrategy（与路由同一套类型清洗）
+  vi.mocked(parseStrategyResultDetailed).mockImplementation((t: string) => {
+    try {
+      return { strategy: sanitizeStrategy(JSON.parse(t)), truncated: false, repaired: false };
+    } catch {
+      return { strategy: {}, truncated: false, repaired: false };
+    }
+  });
   vi.mocked(fetchLeadDealerContact).mockResolvedValue({
     candidateId: "lead_abc",
     type: "lead",
@@ -283,8 +300,10 @@ describe("⑤ 成本加成计费（真价格表参与断言）", () => {
   it("护栏熔断 → 429 GUARDRAIL（未扣费、不写 UsageLog）", async () => {
     vi.mocked(getUserFromRequest).mockResolvedValue({ id: "u1", credits: 99999 } as any);
     vi.mocked(getAiCostGuardrail).mockResolvedValue(1); // 极低下限，必然熔断
+    // ⚠️ 必须给「可解析且非空」的策略：解析为空现在会在**扣费之前**返回 502 LLM_UNPARSEABLE
+    //    （本次修复的行为），那样就走不到护栏分支了。旧用例用 "{}" 依赖的正是"假成功"旧行为。
     vi.mocked(chatCompletionDoubao).mockResolvedValue({
-      text: "{}",
+      text: LLM_JSON,
       usage: { prompt_tokens: 1, completion_tokens: 1 },
     } as any);
 
@@ -298,8 +317,9 @@ describe("⑤ 成本加成计费（真价格表参与断言）", () => {
 
   it("实际扣费不足 → 402 INSUFFICIENT_CREDITS（返回余额与所需积分）", async () => {
     vi.mocked(getUserFromRequest).mockResolvedValue({ id: "u1", credits: 99999 } as any);
+    // 同上：非空可解析的策略才走得到扣费分支
     vi.mocked(chatCompletionDoubao).mockResolvedValue({
-      text: "{}",
+      text: LLM_JSON,
       usage: { prompt_tokens: 1, completion_tokens: 1 },
     } as any);
     vi.mocked(deductCredits).mockResolvedValue({

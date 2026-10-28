@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Sparkles, Loader2, AlertCircle, Bot } from "lucide-react";
 import AnalysisReportView from "@/components/valuation/analysis-report-view";
+import { isCnSite } from "@/config/site";
 
 interface DeepAnalysisCardProps {
   productId: string;
@@ -68,6 +69,9 @@ export default function DeepAnalysisCard({
           brandName: brandName || undefined,
           year: year || undefined,
           enginePower: enginePower || undefined,
+          // AI 输出语种（服务端 `resolveAiLocale` 的 body 优先级最高）：
+          // 不带这一项，`.com` 的俄语/西语用户会拿到中文报告。
+          locale,
         }),
       });
 
@@ -115,16 +119,28 @@ export default function DeepAnalysisCard({
   };
 
   const title = locale === "zh" ? "AI 深度分析" : "AI Deep Analysis";
-  const engineTag = isChineseBrand
-    ? (locale === "zh" ? "国内农机引擎" : "Domestic Engine")
-    : (locale === "zh" ? "国际农机引擎" : "International Engine");
-  const desc = isChineseBrand
-    ? (locale === "zh"
-      ? `接入大模型，对 ${productName} 进行详尽的国内设备分析（技术参数、操作维修、车况评估、购买建议）`
-      : `Powered by AI Model — comprehensive domestic equipment analysis for ${productName}`)
-    : (locale === "zh"
-      ? `接入大模型，对 ${productName} 进行详尽的设备分析（技术参数、操作维修、车况评估、验机要点、购买建议）`
-      : `Powered by AI Model — comprehensive equipment analysis for ${productName}`);
+  /**
+   * 站点口径（`.cn` 服务国内卖家 / `.com` 服务全球卖家）。
+   *
+   * 历史文案在 `.com` 国际站也写「国内农机引擎 / 国内设备分析」—— 那边的用户是
+   * 俄罗斯、巴西、中东的买家/卖家，被问「国内设备分析」完全说不通。
+   * 所以：`.cn` 保留原中文/英文表述，`.com` 一律用站点中立的英文表述。
+   */
+  const cnSite = isCnSite();
+  const engineTag = cnSite
+    ? isChineseBrand
+      ? (locale === "zh" ? "国内农机引擎" : "Domestic Engine")
+      : (locale === "zh" ? "国际农机引擎" : "International Engine")
+    : "Global farm machinery engine";
+  const desc = cnSite
+    ? isChineseBrand
+      ? (locale === "zh"
+        ? `接入大模型，对 ${productName} 进行详尽的国内设备分析（技术参数、操作维修、车况评估、购买建议）`
+        : `Powered by AI Model — comprehensive domestic equipment analysis for ${productName}`)
+      : (locale === "zh"
+        ? `接入大模型，对 ${productName} 进行详尽的设备分析（技术参数、操作维修、车况评估、验机要点、购买建议）`
+        : `Powered by AI Model — comprehensive equipment analysis for ${productName}`)
+    : `Multimodal AI analysis of ${productName} — technical specs, operation & maintenance, condition assessment, inspection checklist and buying advice.`;
   const btnText = analyzing
     ? (locale === "zh" ? "分析中（约15-30秒）..." : "Analyzing...")
     : (locale === "zh" ? "开始深度分析" : "Start Deep Analysis");

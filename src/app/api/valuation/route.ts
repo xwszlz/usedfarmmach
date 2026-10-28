@@ -14,16 +14,50 @@ import { calculateValuation, calculateValuationV4, type ValuationInput, type Val
 
 import { getValuationIntelligence } from "@/lib/valuation/intelligence";
 
-import { analyzeProductImages } from "@/lib/valuation/image-analyzer";
+import {
+  analyzeProductImages,
+  conditionCodeLabelText,
+  scoreToConditionCode,
+  type ConditionCode,
+  type VisualValuationResult,
+} from "@/lib/valuation/image-analyzer";
 
 import { analyzeVideo } from "@/lib/valuation/video-analyzer";
 
 import { getVideoUrl } from "@/lib/image-url";
 import { resolveValuationCodes } from "@/lib/valuation/resolve-codes";
 
+// 2026-11 AI 输出质量专项：真正的「结论层」（文本大模型）+ 8 语种解析
+import { generateValuationNarrative, type ValuationNarrative } from "@/lib/valuation/narrative";
+import { isDomesticBrandSupported } from "@/lib/valuation/brand-data";
+import { resolveAiLocale, type AiLocale } from "@/lib/i18n/ai-locale";
+
 
 
 export const dynamic = "force-dynamic";
+
+/**
+ * 单次估值的最长执行时间（秒）。**只有 Vercel 读这个常量**；
+ * `.cn` 跑在 ECS nginx 后面，真正的上限是 `deploy/nginx/conf.d/cn.conf` 的 proxy_read_timeout。
+ *
+ * 串行链路的**理论最坏**耗时（每段都是 ark-client 的超时，且 429/5xx 会重试一次）：
+ *   视觉分析 5 图**并行**（MAX_ANALYZE_IMAGES=5）：≈76s（并行不随时长涨；但若豆包侧限流
+ *     把并行压成串行，最坏会退化成 5×76s=380s —— 这是视觉段自身没有总预算的既有风险）
+ *   视频分析（如有）：75s × 2 = 150s
+ *   结论叙述：见下方 NARRATIVE_TIMEOUT_MS
+ * ⇒ 剩给叙述层的预算必须动态计算，不足就直接跳过（返回 narrative: null），
+ *   绝不能让结论层拖垮整个估值请求。
+ */
+export const maxDuration = 240;
+
+/** 单次估值请求的总预算（毫秒）。低于 maxDuration 与 nginx 330s，留出序列化/写响应余量 */
+const VALUATION_TOTAL_BUDGET_MS = 200_000;
+
+/** 结论叙述层的**上限**超时（实际取「剩余预算」与它的较小值） */
+const NARRATIVE_TIMEOUT_MS = 90_000;
+
+/** 剩余预算低于此值时直接跳过结论层（跑一半超时比没有结论更糟） */
+const NARRATIVE_MIN_BUDGET_MS = 25_000;
 
 
 
@@ -50,7 +84,14 @@ const guestValuationCounters = new Map<string, { count: number; resetAt: number 
 /** 估值放行的最低积分门槛：预检只看够不够门槛，实际扣多少由算完后的真实 token 用量决定 */
 const VALUATION_MIN_CREDITS = 1;
 
-/** 从 referer / 路径推断 locale（与 quota guard / 各 AI 路由保持一致） */
+/**
+ * 从 referer / 路径推断 locale（历史实现，保留能力不删）。
+ *
+ * 2026-11 起 `locale` 的唯一主入口是 `resolveAiLocale()`（见 POST 内 `aiLocale`）——
+ * 它覆盖 referer 之外还有 body.locale / IP 国家 / accept-language，且会按站点收敛语种。
+ * 本函数仅在 `aiLocale` 理论上取不到值时兜底（正常路径不会走到），
+ * 之所以保留而不是删除：它是 rechargeUrl 语种的历史口径，删掉会丢失一条可回溯的推断路径。
+ */
 function getLocaleFromRequest(request: NextRequest): string {
   const referer = request.headers.get("referer") || "";
   const m = referer.match(/\/([a-z]{2})\b/) || referer.match(/\/([a-z]{2})$/);
@@ -212,9 +253,21 @@ export async function POST(request: NextRequest) {
 
   try {
 
+    // 本次请求的总 deadline：结论层只能用「剩余预算」，视觉/视频花掉的时间必须先扣掉
+    const requestDeadline = Date.now() + VALUATION_TOTAL_BUDGET_MS;
+
     const body = await request.json();
 
     const { productId, brand, modelName, category, year, workingHours, condition, priceCny, useV4, skipImageAnalysis, engineBrand, tradeChannel } = body;
+
+    // ── AI 输出语种（8 语种基建，commit b3fb475）──
+    // 优先级：body.locale（前端 next-intl 当前路由语言）→ IP 国家 → accept-language → referer → 站点默认，
+    // 且 .cn 会被收敛到 zh/en。视觉分析的 analysis 文案、结论叙述、rechargeUrl 三处必须同源，
+    // 否则会出现「俄语报告 + 中文充值页」这种自相矛盾的体验。
+    const aiLocale: AiLocale = resolveAiLocale({
+      bodyLocale: (body as { locale?: unknown } | null)?.locale,
+      request,
+    }).locale;
 
 
 
@@ -243,7 +296,8 @@ export async function POST(request: NextRequest) {
         const balanceNow = creditRow?.credits ?? 0;
 
         if (balanceNow < VALUATION_MIN_CREDITS) {
-          const locale = getLocaleFromRequest(request);
+          // 语种与 AI 文案同源（aiLocale）；getLocaleFromRequest 仅理论兜底，正常不会走到
+          const locale = aiLocale || getLocaleFromRequest(request);
           return NextResponse.json(
             {
               success: false,
@@ -536,6 +590,12 @@ export async function POST(request: NextRequest) {
 
     let result: ValuationResult;
 
+    // 视觉逐图明细要回传到响应（data.visual），故在引擎分支外声明；V2 分支恒为 undefined
+    let visualResult: VisualValuationResult | undefined;
+
+    /** 实际送去视觉模型分析的图片数（skipImageAnalysis / 无图时为 0） */
+    let analyzedImageCount = 0;
+
 
 
     if (shouldUseV4) {
@@ -545,8 +605,6 @@ export async function POST(request: NextRequest) {
       
 
       // 1. 图片分析（如果提供了图片且未跳过）
-
-      let visualResult = undefined;
 
       console.log("[Valuation V4] 图片分析检查:", {
 
@@ -571,7 +629,9 @@ export async function POST(request: NextRequest) {
 
           console.log("[Valuation V4] 开始图片分析, URLs:", input.imageUrls.length);
 
-          visualResult = await analyzeProductImages(input.imageUrls);
+          // 传 aiLocale：analysis 类说明文字按目标语种输出（conditionCode 枚举永远英文）
+          visualResult = await analyzeProductImages(input.imageUrls, aiLocale);
+          analyzedImageCount = visualResult.perImage?.length ?? 0;
 
           console.log("[Valuation V4] 图片分析完成:", {
 
@@ -613,7 +673,7 @@ export async function POST(request: NextRequest) {
 
           if (videoFullUrl) {
 
-            videoAnalysisResult = await analyzeVideo(videoFullUrl);
+            videoAnalysisResult = await analyzeVideo(videoFullUrl, aiLocale);
 
             console.log("[Valuation V4] 视频分析完成:", {
 
@@ -659,6 +719,76 @@ export async function POST(request: NextRequest) {
     }
 
 
+
+    // ── AI 结论叙述层（2026-11 新增）：只有已登录用户才生成 ──
+    // 生成条件**只**看「是否已登录」，不含任何 .com 专属逻辑 —— .cn 与 .com 行为一致
+    // （老板：`.cn` 的估值报告同样太简单）。游客看免费简化版（价格区间 + 基础视觉分）。
+    //
+    // 位置很关键：必须在本函数下面那次 drainUsage() 之前 —— narrative 内部用 recordUsage()
+    // 归集 token，紧接着的 drainUsage() 会把它与视觉 token 合并成【一次】成本、一次扣费。
+    // 失败一律返回 null，绝不阻断下面的价格结果返回。
+    let narrative: ValuationNarrative | null = null;
+    if (isAuthenticated) {
+      // 剩余预算：视觉/视频已经花掉的时间必须先扣掉，超预算就跳过结论层而不是硬跑
+      const remainingBudgetMs = requestDeadline - Date.now();
+      const narrativeTimeoutMs = Math.min(NARRATIVE_TIMEOUT_MS, remainingBudgetMs - 5_000);
+
+      if (narrativeTimeoutMs < NARRATIVE_MIN_BUDGET_MS) {
+        console.warn(
+          `[Valuation] 跳过结论叙述：剩余预算 ${remainingBudgetMs}ms 不足 ${NARRATIVE_MIN_BUDGET_MS}ms（视觉/视频已耗时过长），返回 narrative: null`
+        );
+      } else {
+        const narrativeOut = await generateValuationNarrative({
+          locale: aiLocale,
+          result,
+          intelligence,
+          productMeta: {
+            brand: input.brand,
+            modelName: input.modelName,
+            category: input.category,
+            year: input.year,
+            workingHours: input.workingHours ?? null,
+            condition: input.condition ?? null,
+            region: intelRegion ?? null,
+            engineBrand: input.engineBrand ?? null,
+            enginePower: input.enginePower ?? null,
+            driveSystem: input.driveSystem ?? null,
+            sellerAskingCny: input.priceCny ?? null,
+            foreignPriceCny: input.foreignPriceCny ?? null,
+            imageCount: analyzedImageCount,
+            videoCount: input.videoUrls?.length ?? 0,
+            perImage: visualResult?.perImage ?? [],
+            visualConditionScore: visualResult?.visualConditionScore ?? null,
+            visualConditionAnalysis: visualResult?.visualConditionAnalysis ?? null,
+          },
+          isChineseBrand: isDomesticBrandSupported(input.brand),
+          // 动态预算：不允许结论层吃掉整个请求的时间（详见文件顶部 maxDuration 注释）
+          timeoutMs: narrativeTimeoutMs,
+        });
+        narrative = narrativeOut.narrative;
+        console.log(
+          `[Valuation] 结论叙述: generated=${narrative !== null} locale=${aiLocale} budget=${narrativeTimeoutMs}ms in=${narrativeOut.usage.inputTokens} out=${narrativeOut.usage.outputTokens}`
+        );
+      }
+    }
+
+    // ── 视觉成色（data.visual）：英文枚举 + 本地化文案 + 逐图明细 ──
+    // score 为 null 表示本次没有可用的视觉评估（跳过分析 / 全失败），前端据此隐藏该区块。
+    const visualScore =
+      visualResult && visualResult.visualConditionScore > 0 ? visualResult.visualConditionScore : null;
+    const visualLabel: ConditionCode | null =
+      visualResult?.conditionCode ?? (visualScore !== null ? scoreToConditionCode(visualScore) : null);
+    const visualBase = {
+      score: visualScore,
+      label: visualLabel,
+      labelText: visualLabel ? conditionCodeLabelText(visualLabel, aiLocale) : null,
+      // 图片分析置信度（0-1）。`imageConfidence === 0` 表示「没有可用的视觉评估」，
+      // 一律输出 null 而不是 0 —— 前端把它渲染成「置信度 0%」比不显示更糟（0% 是错误信息，
+      // 真实含义是「没看图」）。有值时必须 > 0，故用 > 0 判定而不是 != null。
+      confidence:
+        visualResult && visualResult.imageConfidence > 0 ? visualResult.imageConfidence : null,
+      imageCount: analyzedImageCount,
+    };
 
     // ── 积分计费 ②：估值算完后，按本请求内 LLM 的【真实 token 用量】扣分 ──
     // 用量由 image-analyzer / video-analyzer 在拿到 provider usage 后经 usage-collector 归集。
@@ -733,13 +863,24 @@ export async function POST(request: NextRequest) {
 
         intelligence,
 
-        data: toBlurredValuation(result),
+        // 游客：价格区间化 + 无 AI 结论（付费差异点）+ 基础视觉分（不含逐图明细）
+        data: {
+
+          ...toBlurredValuation(result),
+
+          narrative: null,
+
+          visual: { ...visualBase, perImage: [] },
+
+        },
 
         meta: {
 
           engine: shouldUseV4 ? "v4" : "v2",
 
           guest: true,
+
+          aiLocale,
 
         },
 
@@ -761,7 +902,17 @@ export async function POST(request: NextRequest) {
 
       version: result.version,
 
-      data: result,
+      // 只增不改：result 的全部字段保持原样，新增 narrative（AI 结论层，生成失败为 null）
+      // 与 visual（视觉成色 + 逐图明细）。前端按这两个键渲染报告主体。
+      data: {
+
+        ...result,
+
+        narrative,
+
+        visual: { ...visualBase, perImage: visualResult?.perImage ?? [] },
+
+      },
 
       // 计费可见化：本次估值按 LLM 真实用量扣了多少积分 + 扣后余额（无用量时为 null）
       // 字段名严格为 billing.points / billing.balance —— 前端 page.tsx 直接读这两个键。
@@ -776,6 +927,9 @@ export async function POST(request: NextRequest) {
         engine: shouldUseV4 ? "v4" : "v2",
 
         imageAnalyzed: shouldUseV4 && result.usedV4Condition,
+
+        // 本次 AI 文案实际使用的语种（前端可用于排查「报告语言不对」的反馈）
+        aiLocale,
 
         specFieldsCount: [
 

@@ -44,6 +44,7 @@ const COUNTRY_CURRENCY: Record<string, string> = {
   DEFAULT: "USD",
 };
 
+
 /** 币种 → 计价单位 U(c)（VND/IDR=1000，其余 1） */
 const CURRENCY_UNIT: Record<string, number> = {
   VND: 1000,
@@ -62,6 +63,7 @@ export function getCurrencyOfCountry(country?: string | null): string {
   const c = country.toUpperCase();
   return COUNTRY_CURRENCY[c] ?? COUNTRY_CURRENCY.DEFAULT;
 }
+
 
 /** 币种 → 计价单位 U(c) */
 export function getUnit(currency: string): number {

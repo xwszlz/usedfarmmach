@@ -67,7 +67,26 @@ export interface ChatCompletionOptions {
   timeoutMs?: number;
   /** 是否携带 thinking 关闭开关（豆包 seed 思考型模型实测关闭后延迟从 63s→2s） */
   disableThinking?: boolean;
+  /**
+   * 绝对截止时间戳（`Date.now()` 口径，毫秒）。**可选，不传则行为与旧版完全一致。**
+   *
+   * 为什么需要：本函数内部对 429/5xx 有「退避 1s 再试一次」的重试，若每次都吃满
+   * `timeoutMs`，总耗时就是 2×timeout —— 调用方（如销售策略路由）按 `maxDuration`
+   * 算出的预算会被这一次盲重试直接击穿，表现为平台杀进程返 HTML 504。
+   * 传入 `deadlineMs` 后，每次重试前都会检查剩余预算，不足就**不再重试**而是抛出最后一次错误，
+   * 让调用方能拿到一个正常的 JSON 错误响应。
+   */
+  deadlineMs?: number;
 }
+
+/**
+ * 重试前要求的最小剩余预算。
+ *
+ * 取 15s 的理由：豆包在 `disableThinking` 关闭思考链后首 token 延迟约 2s，
+ * 一次有意义的尝试至少要留出「排队 + 首 token + 若干 token 输出」的时间；
+ * 低于 15s 再重试几乎必然超时，只会把「快速失败」拖成「慢速失败」。
+ */
+const RETRY_MIN_REMAINING_MS = 15_000;
 
 /**
  * 调用豆包 chat/completions（OpenAI 兼容）。
@@ -90,6 +109,16 @@ export async function chatCompletionDoubao(opts: ChatCompletionOptions): Promise
   let lastErr: unknown;
   const attempts = 2;
   for (let attempt = 0; attempt < attempts; attempt++) {
+    // 预算闸：第 2 次及以后的尝试前先看还剩多少时间（`deadlineMs` 未传时行为不变）
+    if (attempt > 0 && typeof opts.deadlineMs === "number") {
+      const remaining = opts.deadlineMs - Date.now();
+      if (remaining < RETRY_MIN_REMAINING_MS) {
+        // 预算不足：不再重试，抛上一次的错误（调用方据此返回正常 JSON 错误而非被平台杀掉）
+        throw lastErr instanceof Error
+          ? lastErr
+          : new Error(`[ARK] 剩余预算不足(${remaining}ms)，放弃重试`);
+      }
+    }
     try {
       const resp = await axios.post(
         url,

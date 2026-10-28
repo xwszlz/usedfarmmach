@@ -20,24 +20,111 @@ interface ReportSection {
   content: string;
 }
 
-/** Parse Markdown into sections by ## headings */
-function parseMarkdownSections(md: string): ReportSection[] {
+// ═══════════════════════════════════════════════════════════
+// 报告尾部 JSON 小节清洗规则
+// ═══════════════════════════════════════════════════════════
+//
+// 真实故障（老板实测）：报告结尾多出一个「§7 结构化数据（JSON）」小节，只有标题没有内容。
+//
+// 根因链：prompt 曾要求模型在正文末尾写 `## 结构化数据（JSON）` 小标题 + 一句引导语
+// + ```json 代码块；此处清洗只删代码块 ⇒ **标题与引导语原样留下**，而 `split(/^## /)`
+// 又把它切成最后一个 section，于是渲染成一个空标题。
+//
+// 为什么前端必须独立做一遍（后端 route 也在清洗，且历史报告已被后端洗过）：
+//   ① 「下载 HTML」走的是前端渲染结果，前端不清洗 ⇒ 导出的 HTML 里仍有空标题；
+//   ② 「复制MD」复制的是后端文本，但用户手上正在看的历史报告 / 缓存响应 / 边界情况
+//      （如 `partial` 降级、max_tokens 截断）仍可能残留；
+//   ③ 防御性去重是幂等的，多洗一次没有任何副作用。
+
+/**
+ * ① 残留中文小标题：行首可选 `#` + 空白 + `结构化数据`，整行删除。
+ * 例：`## 结构化数据（JSON）` / `**结构化数据（JSON）**` / `结构化数据`
+ */
+const JSON_SECTION_HEADING_CN = /^[ \t]*#{0,6}[ \t]*\**结构化数据[^\n]*$/gim;
+
+/**
+ * ② 残留外语小标题（模型按 locale 换语种后标题名会变，抓不住中文）：
+ * 以 `#` 开头且该行出现 JSON 字样的整行。
+ * 例：`## Structured Data (JSON)` / `## Données structurées (JSON)`
+ */
+const JSON_SECTION_HEADING_MD = /^[ \t]*#{1,6}[^\n]*\bJSON\b[^\n]*$/gim;
+
+/**
+ * ③ 残留引导语行（「最后附上一个JSON代码块，包含…」这类纯说明行），整行删除。
+ * 中文：最后附上 / 最后附加 / 附上一个 / 以下为结构化数据
+ * 英文：Finally, append… / Lastly, output…
+ */
+const JSON_SECTION_LEAD_CN =
+  /^[ \t]*(?:最后附上|最后附加|附上一个|以下为结构化数据|下面是结构化数据)[^\n]*$/gim;
+const JSON_SECTION_LEAD_EN =
+  /^[ \t]*(?:finally|lastly)[,]?[ \t]+(?:append|output|provide|attach|here\s+is)[^\n]*$/gim;
+
+/** ④ 连续 3 行以上空行（含只含空格的行）→ 压成 1 个空行 */
+const EXCESS_BLANK_LINES = /\n(?:[ \t]*\n){2,}/g;
+
+/** ⑤ 小节标题命中即整段丢弃（内容被删光后只剩个标题的形状） */
+const JSON_SECTION_TITLE = /(结构化数据|structured\s*data)/i;
+
+/**
+ * 把 Markdown 正文切成小节。
+ *
+ * 两步走（顺序不能反）：
+ *   A. **字符串级清洗**：剥掉 ```json 围栏块 + 残留标题行 + 引导语行 + 多余空行；
+ *   B. **小节级过滤**：切出来的 section 只要「标题命中结构化数据」或「正文为空」就丢弃
+ *      —— 清洗后有些残留只剩一个标题，字符串级规则抓不全，必须在这一层再兜一道。
+ *
+ * ⚠️ 本函数只负责**显示层**。`data.structured`（指标卡 / 技术参数表 / 六维度评分）
+ * 是调用方用 `extractStructured()` 从原始报告里解析的，与此处删标题完全无关，勿动。
+ *
+ * 兜底原则：过滤不能把整份报告洗成空白页。若过滤后一条不剩（例如模型没写任何 `## `，
+ * 通篇只有一段话），退回「过滤前的小节」但**仍然**剔除结构化数据标题。
+ *
+ * @param md 模型返回的原始 Markdown（可能含尾部 JSON 代码块与残留标题）
+ * @returns 可渲染的小节列表（保证 title 非空）
+ */
+export function parseMarkdownSections(md: string): ReportSection[] {
+  const source = typeof md === "string" ? md : "";
   // Remove JSON code block at end
   // 兜底加固：① 完整围栏块（大小写不敏感）② 被 max_tokens 截断、缺闭合 ``` 的尾部 JSON
   // ③ 残留的孤立围栏行 —— 三种情况都不该在正文里露出裸 JSON
-  const cleaned = md
+  const cleaned = source
     .replace(/```json[\s\S]*?```/gi, "")
     .replace(/```json[\s\S]*$/i, "")
     .replace(/^```+$/gm, "")
+    // ④ 残留标题 / 引导语（模型不听话时的兜底；必须在 trim 之前做，行锚点依赖原始换行）
+    .replace(JSON_SECTION_HEADING_CN, "")
+    .replace(JSON_SECTION_HEADING_MD, "")
+    .replace(JSON_SECTION_LEAD_CN, "")
+    .replace(JSON_SECTION_LEAD_EN, "")
+    // ⑤ 删行后留下的空洞压平：3 行以上空行 → 1 个空行（保留段落分隔，勿压成单个换行）
+    .replace(EXCESS_BLANK_LINES, "\n\n")
     .trim();
+
   // Split by ## headings
   const parts = cleaned.split(/^## /m).filter((s) => s.trim());
-  return parts.map((part) => {
+
+  /** 原始切分结果（过滤前的形状，仅用于最后兜底） */
+  const rawSections: ReportSection[] = [];
+  /** 通过过滤的结果 */
+  const sections: ReportSection[] = [];
+
+  for (const part of parts) {
     const lines = part.split("\n");
     const title = lines[0].trim();
     const content = lines.slice(1).join("\n").trim();
-    return { title, content };
-  });
+    if (!title) continue;
+    // 标题本身就是结构化数据小节 ⇒ 整段丢弃（它的正文只是 JSON，已在上方删掉）
+    if (JSON_SECTION_TITLE.test(title)) continue;
+    rawSections.push({ title, content });
+    // 正文为空的小节渲染出来就是一个空标题 —— 一律不展示
+    if (!content) continue;
+    sections.push({ title, content });
+  }
+
+  if (sections.length > 0) return sections;
+
+  // 兜底：过滤后一条不剩时保留原文（避免整份报告白屏），但标题命中结构化数据的仍剔除
+  return rawSections.filter((s) => s.title && !JSON_SECTION_TITLE.test(s.title));
 }
 
 /** Convert simple Markdown content to HTML (bold, lists, line breaks) */
@@ -92,6 +179,88 @@ function genReportId(): string {
   return `SD-${ymd}-${rnd}`;
 }
 
+// ═══════════════════════════════════════════════════════════
+// 报告外壳文案（网页版 + 下载 HTML 共用）
+// ═══════════════════════════════════════════════════════════
+//
+// 现状：`.com` 与 `.cn` 共用本组件，`.com` 会传 ru/es/pt/ar/fr/hi。
+// 本次只把**硬编码中文**（`<html lang>` / `<title>` / 报告头 / 页脚）按 locale 出文案，
+// 仍是「中文 / 英文」二元判断 —— 扩到 8 语种是独立工作量的活，本次不做；
+// 保证 ru/es/pt/ar/fr/hi 走英文分支且不崩即可。
+
+/** 报告外壳需要本地化的固定文案 */
+interface ReportShellText {
+  /** `<html lang>` 的取值（BCP-47） */
+  htmlLang: string;
+  /** `<html dir>`：阿拉伯语需要 rtl，否则整篇错位 */
+  dir: "ltr" | "rtl";
+  /** 下载 HTML 的 `<title>` 前缀 */
+  htmlTitle: string;
+  /** 报告头大标题（网页版与导出共用） */
+  headerTitle: string;
+  /** 报告头「报告编号」标签 */
+  reportIdLabel: string;
+  /** 报告头「生成时间」标签 */
+  generatedLabel: string;
+  /** 页脚站点署名 */
+  footerBrand: string;
+  /** 页脚免责声明 */
+  footerNotice: string;
+  /** 下载文件名前缀（`深度分析报告_xxx.html`） */
+  filenamePrefix: string;
+}
+
+/** locale → `<html lang>` 取值（阿拉伯语单独给 rtl） */
+const HTML_LANG_BY_LOCALE: Record<string, string> = {
+  zh: "zh-CN",
+  en: "en",
+  ru: "ru",
+  es: "es",
+  pt: "pt",
+  ar: "ar",
+  fr: "fr",
+  hi: "hi",
+};
+
+const REPORT_SHELL_ZH: ReportShellText = {
+  htmlLang: "zh-CN",
+  dir: "ltr",
+  htmlTitle: "深度分析报告",
+  headerTitle: "AI 深度分析报告",
+  reportIdLabel: "报告编号",
+  generatedLabel: "生成时间",
+  footerBrand: "神雕农机 usedfarmmach.com",
+  footerNotice: "本报告由AI生成，仅供参考",
+  filenamePrefix: "深度分析报告",
+};
+
+const REPORT_SHELL_EN: ReportShellText = {
+  htmlLang: "en",
+  dir: "ltr",
+  htmlTitle: "Deep Analysis Report",
+  headerTitle: "AI Deep Analysis Report",
+  reportIdLabel: "Report ID",
+  generatedLabel: "Generated",
+  footerBrand: "ShenDiao Agri Machinery · usedfarmmach.com",
+  footerNotice: "AI-generated, for reference only",
+  filenamePrefix: "Deep_Analysis_Report",
+};
+
+/**
+ * 取当前语种的报告外壳文案。
+ *
+ * `zh` → 中文；其余（含 ru/es/pt/ar/fr/hi 与非法值）→ 英文。
+ * `htmlLang` / `dir` 则是真正的 8 语种映射（这两个是 HTML 结构化属性，与文案不同层）。
+ */
+function resolveReportShell(locale: string | undefined): ReportShellText {
+  const primary =
+    typeof locale === "string" ? locale.trim().toLowerCase().split(/[-_]/)[0] : "";
+  const shell = primary === "zh" ? REPORT_SHELL_ZH : REPORT_SHELL_EN;
+  const htmlLang = HTML_LANG_BY_LOCALE[primary] ?? shell.htmlLang;
+  const dir: "ltr" | "rtl" = primary === "ar" ? "rtl" : "ltr";
+  return { ...shell, htmlLang, dir };
+}
+
 export default function AnalysisReportView({
   report,
   structured,
@@ -111,6 +280,8 @@ export default function AnalysisReportView({
   const reportRef = useRef<HTMLDivElement>(null);
   const reportId = useMemo(() => genReportId(), []);
   const reportTime = useMemo(() => new Date().toLocaleString("zh-CN"), []);
+  /** 报告外壳文案（`<html lang>` / 标题 / 页脚；zh → 中文，其余语种 → 英文） */
+  const shell = useMemo(() => resolveReportShell(locale), [locale]);
 
   // Payment tiers were removed: the full report is always visible.
   // `locked` / `onUnlock` are kept only so existing callers keep type-checking.
@@ -241,11 +412,11 @@ export default function AnalysisReportView({
       .join("");
 
     const html = `<!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="${shell.htmlLang}" dir="${shell.dir}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>深度分析报告 ${reportId}</title>
+<title>${esc(shell.htmlTitle)} ${reportId}</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; max-width: 800px; margin: 0 auto; padding: 24px 20px; color: #1f2937; background: #f9fafb; }
@@ -288,8 +459,8 @@ td.k { color: #6b7280; width: 40%; }
 </head>
 <body>
 <div class="report-header">
-  <h1>AI 深度分析报告</h1>
-  <div class="meta">报告编号：${reportId} | 生成时间：${reportTime} | ${esc(structured?.brand || "")} ${esc(structured?.modelName || "")}</div>
+  <h1>${esc(shell.headerTitle)}</h1>
+  <div class="meta">${esc(shell.reportIdLabel)}：${reportId} | ${esc(shell.generatedLabel)}：${reportTime} | ${esc(structured?.brand || "")} ${esc(structured?.modelName || "")}</div>
 </div>
 ${metrics.length > 0 ? `<div class="metrics">${metricsHtml}</div>` : ""}
 ${chartHtml}
@@ -297,11 +468,11 @@ ${techHtml}
 ${condHtml}
 ${sectionsHtml}
 <div class="footer">
-  神雕农机 usedfarmmach.com | 本报告由AI生成，仅供参考 | 报告编号：${reportId}
+  ${esc(shell.footerBrand)} | ${esc(shell.footerNotice)} | ${esc(shell.reportIdLabel)}：${reportId}
 </div>
 </body>
 </html>`;
-    const filename = `深度分析报告_${reportId}.html`;
+    const filename = `${shell.filenamePrefix}_${reportId}.html`;
 
     // ── 主路径：走服务端通道，与前端 blob 解耦（失败原因通过 HTTP 状态/JSON 可观测）──
     try {
@@ -429,13 +600,11 @@ ${sectionsHtml}
         >
           <div className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            <h3 className="text-base font-bold">
-              {zh ? "AI 深度分析报告" : "AI Deep Analysis Report"}
-            </h3>
+            <h3 className="text-base font-bold">{shell.headerTitle}</h3>
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs opacity-80">
-            <span>{zh ? "报告编号" : "Report ID"}：{reportId}</span>
-            <span>{zh ? "生成时间" : "Generated"}：{reportTime}</span>
+            <span>{shell.reportIdLabel}：{reportId}</span>
+            <span>{shell.generatedLabel}：{reportTime}</span>
             {structured?.brand && (
               <span>{structured.brand} {structured.modelName || ""}</span>
             )}
@@ -605,9 +774,7 @@ ${sectionsHtml}
 
         {/* Footer */}
         <div className="border-t border-gray-100 bg-gray-50 px-5 py-3 text-center text-[10px] text-gray-400">
-          {zh ? "神雕农机 usedfarmmach.com" : "ShenDiao Agri Machinery"} |{" "}
-          {zh ? "本报告由AI生成，仅供参考" : "AI-generated, for reference only"} |{" "}
-          {reportId}
+          {shell.footerBrand} | {shell.footerNotice} | {reportId}
         </div>
       </div>
 
