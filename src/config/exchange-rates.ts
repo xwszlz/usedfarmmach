@@ -122,7 +122,10 @@ export const UPDATE_STRATEGY = {
   
   // 更新条件
   conditions: {
-    maxAgeHours: 24, // 最大数据年龄（小时）
+    // 36 小时 = 容忍 cron（每日一次）漏跑一轮仍使用真实库内汇率。
+    // 取 24 时，稳态下库内值年龄贴身跑在阈值上限，漏跑一轮即静默回落静态快照；
+    // 取 36 只影响「极端行情下最多用 36 小时前的汇率」，代价远小于「无声退回旧快照」。
+    maxAgeHours: 36, // 最大数据年龄（小时）
     minConfidence: 0.8, // 最小置信度
     retryAttempts: 3, // 重试次数
     retryDelayMs: 1000, // 重试延迟（毫秒）
