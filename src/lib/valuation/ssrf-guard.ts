@@ -3,7 +3,9 @@
  *
  * 为什么需要它：估值接口的 `imageUrls` 完全来自请求体，攻击者可以直接传内网地址，
  * 让服务器代其出网并把响应 base64 后回吐。`.cn` 跑在阿里云 ECS 上，
- * `http://100.0.0.200/latest/meta-data/` 就是实例元数据端点 —— 属于典型 SSRF 提权面。
+ * `http://100.100.100.200/latest/meta-data/` 就是实例元数据端点 —— 属于典型 SSRF 提权面。
+ * （注意是 `100.100.100.200`，属 RFC 6598 CGNAT 100.64.0.0/10；曾误写成 `100.0.0.200`，
+ *   那是公网段、本守卫**会放行**，照它写"应该被拒"的用例只会得到一条绿，别被它带偏。）
  *
  * 本模块给出的缓解是「实用级」，分三步：
  *   1. scheme 白名单（只放行 http/https）
@@ -222,7 +224,7 @@ export async function assertSafeImageUrl(imageUrl: string): Promise<URL> {
  * 带守卫生效的抓取。
  *
  * 为什么手动跟随重定向（`redirect: "manual"`）：如果让 fetch 自动跟随，攻击者只要提供一个
- * 公网地址再 302 到 `http://100.0.0.200/...`，就能绕过主机名校验。这里每一跳都重新走
+ * 公网地址再 302 到 `http://100.100.100.200/...`（云元数据），就能绕过主机名校验。这里每一跳都重新走
  * `assertSafeImageUrl`，超过 3 跳直接拒绝。
  */
 export async function fetchGuardedImage(imageUrl: string): Promise<Response> {
