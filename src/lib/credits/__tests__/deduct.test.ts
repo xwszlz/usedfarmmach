@@ -55,11 +55,14 @@ describe("deductAiUsage —— 实际扣减编排", () => {
     expect(r.cost).toBe(2000);
     expect(r.balance).toBe(800);
     expect(r.code).toBe("OK");
+    // ⚠️ 第 4 参 breakdown 是**可选参数**（deduct.ts:41 `breakdown?:`），本用例没传 ⇒ 实际传下去的是
+    // `undefined`。`expect.anything()` 只匹配「非 null 且非 undefined」，匹配不了 undefined，
+    // 所以此处必须断言 `undefined` 而不是 `anything`（既存断言失配，2026-10-28 修正；生产代码未改）。
     expect(deductCredits).toHaveBeenCalledWith(
       "u1",
       2000,
       "AI销售策略",
-      expect.anything(),
+      undefined,
       "ai_deduct"
     );
   });
@@ -114,11 +117,12 @@ describe("deductAiUsage —— 实际扣减编排", () => {
 
     expect(r.ok).toBe(true);
     expect(r.cost).toBe(800); // ceil(800 × 1)
+    // breakdown 未传 ⇒ undefined（原因见用例 ①）
     expect(deductCredits).toHaveBeenCalledWith(
       "u1",
       800,
       "解锁销售线索联系方式",
-      expect.anything(),
+      undefined,
       "viewcontact_cost"
     );
   });
@@ -136,6 +140,7 @@ describe("deductAiUsage —— 实际扣减编排", () => {
     });
 
     expect(r.cost).toBe(0);
-    expect(deductCredits).toHaveBeenCalledWith("u1", 0, "x", expect.anything(), "ai_deduct");
+    // breakdown 未传 ⇒ undefined（原因见用例 ①）
+    expect(deductCredits).toHaveBeenCalledWith("u1", 0, "x", undefined, "ai_deduct");
   });
 });
