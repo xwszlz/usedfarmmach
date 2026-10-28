@@ -2,9 +2,11 @@
  * POST /api/credits/recharge —— 积分充值下单入口（双站）
  *
  * 老板口径：取消 4 档会员，改为「积分中心 + 积分充值」。
- *   - .cn（境内）：1 元 = 100 积分；走微信 Native / 支付宝 预下单（普通商户直收增值服务费，
+ *   - 全球统一购买力：**1 元人民币 = 100 积分**。.cn 直接 1 元 = 100 积分；
+ *     .com 收美元，按当日人民币汇率折回人民币后再换积分（见 `creditsFromLocalAmount`）。
+ *   - .cn（境内）：走微信 Native / 支付宝 预下单（普通商户直收增值服务费，
  *     红线：绝不走收付通/服务商/资金托管，不碰分账/二清）。
- *   - .com（国际）：1 美元 = 100 积分；走 Paddle Checkout（一次性支付，Paddle 为 MoR）。
+ *   - .com（国际）：走 Paddle Checkout（一次性支付，Paddle 为 MoR）。
  *
  * 注意：本端点只负责【创建支付订单】，真正的【加积分】在支付回调里做：
  *   - .cn → /api/membership/wechat/notify、/api/membership/alipay/notify
@@ -24,11 +26,13 @@ import {
   createCreditRechargeTransaction,
 } from "@/lib/payments/paddle";
 import { buildCreditOutTradeNo } from "@/lib/credits/recharge-order";
+import { creditsFromLocalAmount } from "@/lib/credits/fx";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
+// 上限按「积分」计：10,000,000 积分 = 人民币等值 ¥100,000（1 元 = 100 积分），语义自洽
 const MAX_CREDITS = 10_000_000; // = ¥100,000 × 100 积分/元
 
 const bodySchema = z.object({
@@ -58,8 +62,10 @@ export async function POST(request: NextRequest) {
     const { amount, channel, currency } = parsed.data;
 
     if (isComSite()) {
-      // $1 = 100 积分
-      const credits = Math.floor(amount * 100);
+      // 全球统一口径：1 元人民币 = 100 积分。收美元必须按汇率折回人民币再换积分，
+      // 否则 $1 只买到 100 积分（= ¥1），比 .cn 用户少拿 6.69 倍。
+      const amountCents = Math.round(amount * 100);
+      const credits = creditsFromLocalAmount(amount, "USD");
       if (credits < 1 || credits > MAX_CREDITS) {
         return NextResponse.json({ success: false, error: "金额超出范围" }, { status: 400 });
       }
@@ -77,6 +83,8 @@ export async function POST(request: NextRequest) {
       const { transactionId } = await createCreditRechargeTransaction({
         userId: user.id,
         credits,
+        // 实付金额与发放积分解耦：这里传真实金额（分），金额绝不等于 credits
+        amountCents,
         currency: "USD",
       });
       return NextResponse.json({
@@ -85,8 +93,15 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // .cn：1 元 = 100 积分
-    const credits = Math.floor(amount * 100);
+    // .cn：1 元 = 100 积分。金额先归一到「分」，令积分与实付分值严格相等，
+    // 避免 floor/round 不一致触发回调 amount mismatch（用户已付款却不到账）。
+    //
+    // 历史 bug（本次修复）：下单时积分用 Math.floor(amount*100)、实付用 Math.round(amount*100)，
+    // 浮点误差下两者会差 1 分（如 1.15*100 = 114.99999999999999 → floor 114 / round 115），
+    // 回调侧「实付分 !== credits」判不符 ⇒ 微信重投 15 次后放弃，钱到账但积分不到账。
+    // 现在两者共用同一个 amountCents，物理上不可能再不一致。
+    const amountCents = Math.round(amount * 100);
+    const credits = amountCents;
     if (credits < 1 || credits > MAX_CREDITS) {
       return NextResponse.json({ success: false, error: "金额超出范围" }, { status: 400 });
     }
@@ -102,11 +117,10 @@ export async function POST(request: NextRequest) {
           { status: 503 }
         );
       }
-      // 微信要「分」：credits 数值上已等于分（1 元 = 100 积分 = 100 分），
-      // 但为免 floor 与浮点误差，直接用真实金额取分，不可再乘 100。
+      // 微信要「分」：直接复用 amountCents（= credits），不再二次 Math.round(amount*100)
       const { code_url } = await createNativeOrder(
         outTradeNo,
-        Math.round(amount * 100), // 单位：分
+        amountCents, // 单位：分
         description,
         `${base}/api/membership/wechat/notify`,
         user.id // attach：回调原样返回，用于定位用户
@@ -124,10 +138,11 @@ export async function POST(request: NextRequest) {
         { status: 503 }
       );
     }
-    // 支付宝要「元」：credits 数值上已等于分，必须传真实金额 amount（元）
+    // 支付宝要「元」：由 amountCents 反算，保证与 credits 严格同源
+    // （回调侧按 `Number(total_amount) === pc.credits / 100` 校验）
     const { qr_code } = await createPrecreateOrder(
       outTradeNo,
-      amount, // 单位：元
+      amountCents / 100, // 单位：元
       description,
       `${base}/api/membership/alipay/notify`,
       user.id // passback_params：异步通知原样返回

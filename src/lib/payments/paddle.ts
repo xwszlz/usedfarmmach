@@ -53,12 +53,19 @@ function getSiteDomain(): string {
 
 /**
  * 创建「积分充值」Paddle Transaction（一次性支付，仅 .com）。
- * 口径：$1 = 100 积分 => 1 积分 = $0.01 = 1 分，故「积分充值 c 积分」= c 美分
- *      （c = floor(美元金额 × 100)，数值上就是最小货币单位「分」，无需再乘 100）。
- * custom_data.plan = "credit_recharge" 供 webhook 识别后加积分。
+ *
+ * ⚠️ 自 2026-10-28 起「实付金额」与「发放积分」彻底解耦：
+ *    积分按「1 元人民币 = 100 积分、全球等值」折算（美元先按汇率折回人民币），
+ *    数值上**不再等于**金额分值。因此本函数必须显式接收 `amountCents`，
+ *    由调用方（/api/credits/recharge）算好实付金额，绝不能用 credits 反推金额
+ *    —— 用 credits 当金额会让 $10 被收成 $66.92（放大 6.69 倍的资损事故）。
+ *
+ * custom_data.plan = "credit_recharge" 供 webhook 识别后加积分；
+ * `custom_data.credits` 是履约的唯一依据（webhook 只认它）。
  *
  * 价格模式二选一（防御性）：
  *  - 配了 PADDLE_PRICE_ID_CREDITS_USD → 走目录价格（items[].price_id）
+ *    此时实付金额由 Paddle 目录价决定，可能与本次 `amountCents` 不一致（见下方告警）
  *  - 未配 → 走内联价格（items[].price + price.product，即 non-catalog）
  *    原因：老板尚未在 Paddle 后台建 Product/Price，内联价格可先跑通，
  *    建好后填 env 即可切换，无需改代码。
@@ -66,6 +73,8 @@ function getSiteDomain(): string {
 export async function createCreditRechargeTransaction(input: {
   userId: string;
   credits: number;
+  /** 实付金额，最小货币单位（分/美分）。与 credits 解耦，由调用方按真实金额传入。 */
+  amountCents: number;
   currency: PaddleCurrency;
 }): Promise<{ checkoutUrl: string; transactionId: string }> {
   if (!isComSite()) {
@@ -75,13 +84,22 @@ export async function createCreditRechargeTransaction(input: {
     throw new Error("Paddle 未配置");
   }
 
-  const { userId, credits, currency } = input;
+  const { userId, credits, amountCents, currency } = input;
   const c = Math.max(1, Math.floor(credits));
-  // $1 = 100 积分 -> 1 积分 = 1 分：c 本身已是「分」（最小货币单位）
-  const unitAmount = c;
+  const a = Math.max(1, Math.round(amountCents));
+  // 实付金额与发放积分自 2026-10-28 起彻底解耦：
+  // USD 侧积分按汇率折算为人民币口径，不再在数值上等于金额分值。
+  const unitAmount = a;
   const domain = getSiteDomain();
 
   const priceId = process.env.PADDLE_PRICE_ID_CREDITS_USD;
+  if (priceId) {
+    console.warn(
+      `[Paddle] 已配置 PADDLE_PRICE_ID_CREDITS_USD，实付金额由 Paddle 目录价决定，` +
+        `与本次 credits 可能不一致（credits=${c} amountCents=${a} ${currency}）；` +
+        `webhook 仍以 custom_data.credits 为准`
+    );
+  }
   const items = [
     priceId
       ? { quantity: 1, price_id: priceId }
@@ -89,7 +107,8 @@ export async function createCreditRechargeTransaction(input: {
           quantity: 1,
           price: {
             name: `积分充值 ${c} 积分`,
-            description: `Credit recharge ${c} credits ($1 = 100 credits)`,
+            // 不写任何数字锚点（不写 $1 = 100 credits）：汇率会变，锚点一写就过期
+            description: `Credit recharge ${c} credits, converted at the day's CNY exchange rate`,
             // Paddle 要求 amount 为字符串形式的最小货币单位整数
             unit_price: { amount: String(unitAmount), currency_code: currency },
             // non-catalog product：与 price 同级嵌套在 price 内（Paddle API v1）

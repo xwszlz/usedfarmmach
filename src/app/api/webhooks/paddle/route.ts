@@ -37,6 +37,7 @@ import {
   verifyWebhookSignature,
 } from "@/lib/payments/paddle";
 import { grantRecharge } from "@/lib/credits/grant";
+import { creditsFromLocalAmount } from "@/lib/credits/fx";
 import { CYCLE_DAYS, type BillingCycle } from "@/lib/membership/pricing";
 
 export const dynamic = "force-dynamic";
@@ -125,6 +126,18 @@ async function handleTransactionCompleted(data: any): Promise<void> {
   const currency = ((data?.currency_code as string) || "usd").toUpperCase();
   // 仅用于日志排查，不参与积分计算
   const paidTotal = data?.details?.totals?.total;
+
+  // 金额一致性告警（只告警，不参与发放）：用于捕捉「Paddle 目录价与 credits 脱钩」的配置事故。
+  // 优先取 subtotal：total 可能含税，用含税值比对会持续误报。
+  const paidMinor = Number(data?.details?.totals?.subtotal ?? data?.details?.totals?.total);
+  if (Number.isFinite(paidMinor) && paidMinor > 0) {
+    const expectedCredits = creditsFromLocalAmount(paidMinor / 100, currency);
+    if (Math.abs(expectedCredits - credits) > 1) {
+      console.warn(
+        `[Webhook/Paddle] 积分与实付金额不一致 期望=${expectedCredits} 实发=${credits} 实付分=${paidMinor} 币种=${currency} txn=${txnId}`
+      );
+    }
+  }
 
   if (custom.plan !== "credit_recharge") {
     // 会员订阅 / 增值包：走会员履约分支

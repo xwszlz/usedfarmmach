@@ -269,7 +269,7 @@
 
     },
 
-    "rechargeComRate": "$1 = 100 credits, any amount (secure online payment)",
+    "rechargeComRate": "Pay in USD; credits are converted at the day's CNY exchange rate (secure online payment)",
 
     "rechargeCnRate": "¥1 = 100 credits, any amount",
 

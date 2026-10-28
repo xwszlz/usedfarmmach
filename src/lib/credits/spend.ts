@@ -2,9 +2,9 @@
  * 积分扣减（AI 功能计费核心）
  *
  * 积分计价口径（老板口径 2026-10-12，修订 2026-10-12-E；2026-10-13 单位细化；2026-10-28 全球统一）：
- *   - 充值：.cn 站 1 元 = 100 积分；.com 站 $1 = 100 积分（充值侧折算见 fx.ts / grant.ts）；
- *   - AI 消耗：**全球统一按人民币口径折算** —— 1 元 = 100 积分（`CREDITS_PER_UNIT`），
- *     1 积分 = ¥0.01。各国用户 1000 积分购买力一致，不再按注册国币种差异化定价。
+ *   - 充值：**全球统一购买力 —— 1 元人民币 = 100 积分**。.cn 站直接 1 元 = 100 积分；
+ *     .com 站以美元支付，按当日人民币汇率折回人民币后再换积分（`fx.creditsFromLocalAmount`）。
+ *   - AI 消耗：同样按人民币口径折算（见下），1 积分 = ¥0.01，各国用户 1000 积分购买力一致。
  *
  * 计费链路：AI 功能按大模型 token 的实际成本乘以运营定价倍率（`AI_COST_MULTIPLIER`）反算积分。
  *   1) 从 LLM provider 返回里取 usage（prompt_tokens / completion_tokens）与所用 model id；
@@ -85,8 +85,9 @@ export const FALLBACK_PRICING: ModelPrice = {
 export const DEFAULT_USD_TO_CNY = 7.2;
 
 /**
- * 计费单位换算：1 元人民币 = 100 积分，1 美元 = 100 积分。
- * 即 1 积分 = 1 分钱（0.01 元）/ 1 美分（$0.01）。
+ * 计费单位换算：1 元人民币 = 100 积分（AI 消耗侧全球统一人民币口径，见 `computeAiCost`）。
+ * 充值侧口径一致：本币金额先按汇率折回人民币，再 × 100 得积分（见 `fx.creditsFromLocalAmount`）。
+ * 即 1 积分 = 0.01 元。
  */
 export const CREDITS_PER_UNIT = 100;
 

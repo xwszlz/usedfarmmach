@@ -269,7 +269,7 @@
 
     },
 
-    "rechargeComRate": "$1 = 100 积分，金额随意充（安全在线支付）",
+    "rechargeComRate": "美元支付，积分按支付当日人民币汇率折算（安全在线支付）",
 
     "rechargeCnRate": "1 元 = 100 积分，金额随意充",
 
