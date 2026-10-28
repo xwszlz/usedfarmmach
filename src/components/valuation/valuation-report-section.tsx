@@ -780,6 +780,27 @@ export default function ValuationReportSection({
     result.imageCount,
   ]);
 
+  /**
+   * AI 结论是否有实质内容。
+   * 只要 narrative 存在但内容全空（后端降级时可能给出空壳对象），也走空态提示 ——
+   * 报告里不允许出现「标题下什么都没有」的空白块。
+   */
+  const narrativeHasContent = useMemo(() => {
+    const n = result.narrative;
+    if (!n) return false;
+    const tldr = Array.isArray(n.tldr) ? n.tldr.filter((t) => typeof t === "string" && t.trim()) : [];
+    const anchors = Array.isArray(n.marketAnchors) ? n.marketAnchors : [];
+    const questions = Array.isArray(n.openQuestions) ? n.openQuestions : [];
+    const insight = n.keyInsight ?? null;
+    return (
+      tldr.length > 0 ||
+      anchors.length > 0 ||
+      questions.length > 0 ||
+      !!insight?.headline ||
+      !!insight?.detail
+    );
+  }, [result.narrative]);
+
   const handleCopy = () => {
     const lines = [
       `AI 估值报告 ${reportId}`,
@@ -1242,8 +1263,8 @@ ${warnings}
           </div>
         </div>
 
-        {/* AI 结论（一页看懂）：有 narrative 渲染结论；为 null 时渲染空态提示（不整块消失） */}
-        {result.narrative ? (
+        {/* AI 结论（一页看懂）：有内容渲染结论；null 或空壳渲染空态提示（绝不整块消失） */}
+        {narrativeHasContent && result.narrative ? (
           <NarrativeCard narrative={result.narrative} zh={zh} />
         ) : (
           <NarrativeEmptyState zh={zh} locale={locale} />
