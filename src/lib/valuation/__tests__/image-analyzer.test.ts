@@ -17,6 +17,7 @@ import {
   analyzeProductImage,
   analyzeProductImages,
   CONDITION_CODES,
+  MAX_ANALYZE_IMAGES,
   visualScoreToConditionFactor,
 } from "../image-analyzer";
 
@@ -177,7 +178,7 @@ describe("perImage 逐图明细（本次新增：过去只留加权最高那张�
     expect(result.visualConditionAnalysis).toBe("接近全新");
   });
 
-  it("最多只分析 3 张（成本保护），perImage 长度随之封顶", async () => {
+  it("传 5 张 → 实际发出 5 次视觉调用，perImage 长度 5（对齐前端 MAX_IMAGES=5）", async () => {
     postMock.mockResolvedValue(
       llmResponse({
         conditionScore: 7,
@@ -187,15 +188,63 @@ describe("perImage 逐图明细（本次新增：过去只留加权最高那张�
         confidence: 0.8,
       }) as never
     );
-    const result = await analyzeProductImages([
-      "https://example.com/1.jpg",
-      "https://example.com/2.jpg",
-      "https://example.com/3.jpg",
-      "https://example.com/4.jpg",
-      "https://example.com/5.jpg",
-    ]);
-    expect(postMock).toHaveBeenCalledTimes(3);
-    expect(result.perImage).toHaveLength(3);
+    const urls = Array.from({ length: 5 }, (_, i) => `https://example.com/${i + 1}.jpg`);
+    const result = await analyzeProductImages(urls);
+    expect(postMock).toHaveBeenCalledTimes(5);
+    expect(result.perImage).toHaveLength(5);
+    // 每张图都是独立一次调用（独立计费），不是把 5 张塞进一次请求
+    for (let i = 0; i < 5; i += 1) {
+      const body = postMock.mock.calls[i][1] as {
+        messages: Array<{ content: Array<{ type: string }> }>;
+      };
+      expect(body.messages[0].content.filter((c) => c.type === "image_url")).toHaveLength(1);
+    }
+  });
+
+  it("传 7 张 → 只取前 5 张（成本上限，第 6/7 张不扣费）", async () => {
+    // fetch 把 URL 本身当图片字节返回，便于从 base64 反解出「这一枪打的是哪张图」
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => ({
+        ok: true,
+        arrayBuffer: async () => Buffer.from(String(url)),
+        headers: { get: () => "image/jpeg" },
+      }))
+    );
+    postMock.mockResolvedValue(
+      llmResponse({
+        conditionScore: 7,
+        conditionCode: "good",
+        conditionLabel: "良好",
+        analysis: "ok",
+        confidence: 0.8,
+      }) as never
+    );
+    const urls = Array.from({ length: 7 }, (_, i) => `https://example.com/${i + 1}.jpg`);
+    const result = await analyzeProductImages(urls);
+    expect(postMock).toHaveBeenCalledTimes(5);
+    expect(result.perImage).toHaveLength(5);
+
+    // 从 base64 还原每枪对应的原始 URL，确认是「前 5 张、顺序不变」
+    const decoded = postMock.mock.calls.map((call) => {
+      const body = call[1] as {
+        messages: Array<{ content: Array<{ type: string; image_url?: { url: string } }> }>;
+      };
+      const image = body.messages[0].content.find((c) => c.type === "image_url");
+      const dataUrl = image?.image_url?.url ?? "";
+      const base64 = dataUrl.split(",")[1] ?? "";
+      return Buffer.from(base64, "base64").toString();
+    });
+    expect(decoded).toHaveLength(5);
+    for (let i = 0; i < 5; i += 1) {
+      expect(decoded).toContain(`https://example.com/${i + 1}.jpg`);
+    }
+    expect(decoded.some((url) => url.includes("/6.jpg"))).toBe(false);
+    expect(decoded.some((url) => url.includes("/7.jpg"))).toBe(false);
+  });
+
+  it("MAX_ANALYZE_IMAGES 就是 5（前端 MAX_IMAGES 的同源常量，防止两边再次漂移）", () => {
+    expect(MAX_ANALYZE_IMAGES).toBe(5);
   });
 
   it("data URI 直接透传，不额外 fetch（国产渠道零收费回归点）", async () => {

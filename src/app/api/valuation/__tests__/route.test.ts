@@ -385,6 +385,28 @@ describe("⑥ 响应新增字段 shape（只增不改）", () => {
     const j = await res.json();
     expect(j.data.visual).toEqual({ score: null, label: null, labelText: null, imageCount: 0, perImage: [] });
   });
+
+  it("5 张图的逐图明细全部透传（第 4/5 张不再被静默丢弃）", async () => {
+    vi.mocked(analyzeProductImages).mockResolvedValue({
+      visualConditionScore: 7,
+      visualConditionAnalysis: "成色良好",
+      imageConfidence: 0.8,
+      usedV4Condition: true,
+      conditionCode: "good",
+      perImage: Array.from({ length: 5 }, (_, i) => ({
+        score: 7,
+        label: "good",
+        analysis: `第 ${i + 1} 张`,
+        confidence: 0.8,
+      })),
+    } as never);
+
+    const res = await POST(makeReq({ ...BASE_BODY, imageDataUris: [DATA_URI] }));
+    const j = await res.json();
+    expect(j.data.visual.imageCount).toBe(5);
+    expect(j.data.visual.perImage).toHaveLength(5);
+    expect(j.data.visual.perImage[4].analysis).toBe("第 5 张");
+  });
 });
 
 describe("⑦ 计费：视觉 token 与 narrative token 合并成一次扣费", () => {

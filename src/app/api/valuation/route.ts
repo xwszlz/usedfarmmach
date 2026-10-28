@@ -41,11 +41,12 @@ export const dynamic = "force-dynamic";
  * `.cn` 跑在 ECS nginx 后面，真正的上限是 `deploy/nginx/conf.d/cn.conf` 的 proxy_read_timeout。
  *
  * 串行链路的**理论最坏**耗时（每段都是 ark-client 的超时，且 429/5xx 会重试一次）：
- *   视觉分析 3 图并行：75s × 2 = 150s
+ *   视觉分析 5 图**并行**（MAX_ANALYZE_IMAGES=5）：≈76s（并行不随时长涨；但若豆包侧限流
+ *     把并行压成串行，最坏会退化成 5×76s=380s —— 这是视觉段自身没有总预算的既有风险）
  *   视频分析（如有）：75s × 2 = 150s
  *   结论叙述：见下方 NARRATIVE_TIMEOUT_MS
- * ⇒ 视觉+视频两段就足以吃满 300s，所以叙述层**必须**按「剩余预算」动态收紧，
- *   预算不够就直接跳过（返回 narrative: null），绝不能让结论层拖垮整个估值请求。
+ * ⇒ 剩给叙述层的预算必须动态计算，不足就直接跳过（返回 narrative: null），
+ *   绝不能让结论层拖垮整个估值请求。
  */
 export const maxDuration = 240;
 

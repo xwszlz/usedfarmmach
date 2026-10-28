@@ -33,6 +33,8 @@ import { recordUsage, ESTIMATED_TOKENS } from "@/lib/credits/usage-collector";
 import { withLanguage, type AiLocale } from "@/lib/i18n/ai-locale";
 import type { ValuationResult } from "@/lib/valuation/formulas";
 import { MIN_RESIDUAL_RATIO } from "@/lib/valuation/brand-data";
+// 逐图明细上限与视觉分析上限同源（两处都写死数字就是下一次漂移的开始）
+import { MAX_ANALYZE_IMAGES } from "@/lib/valuation/image-analyzer";
 
 // ============================================================
 // 对外类型（前端 / route 依赖这些字面量，改动需同步前端）
@@ -620,7 +622,9 @@ function buildNarrativePayload(input: GenerateValuationNarrativeInput): Record<s
     },
     // 视觉逐图明细：只在真的分析过才有内容，模型不许凭空写出第 4 张图
     visual: {
-      perImage: Array.isArray(meta.perImage) ? (meta.perImage as unknown[]).slice(0, 3) : [],
+      // 逐图明细按 MAX_ANALYZE_IMAGES=5 全量透传（前端上限 5 张）：报告要能逐图引用，
+      // 只给 3 张会让第 4/5 张的视觉证据在结论里凭空消失。
+      perImage: Array.isArray(meta.perImage) ? (meta.perImage as unknown[]).slice(0, MAX_ANALYZE_IMAGES) : [],
       imageCount: perImageCount,
       visualConditionScore: visualScore,
       visualConditionAnalysis: typeof meta.visualConditionAnalysis === "string" ? meta.visualConditionAnalysis : null,

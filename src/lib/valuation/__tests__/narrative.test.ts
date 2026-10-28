@@ -308,8 +308,7 @@ describe("③ 必填锚点缺失 → 用确定性数据补齐", () => {
     expect(byAxis.get("salvage")).toMatchObject({ priceCny: 42000, basis: "derived" });
   });
 
-  it(".com 必出 export_fob（模型漏了也要有该轴位，价格可为 not_found）", async () => {
-    mockLlm(
+  it(".com 必出 export_fob（模型漏了也要有该轴位，价格可为 not_found）", async () => {    mockLlm(
       JSON.stringify({
         ...validOutput(),
         marketAnchors: [{ axis: "new_equivalent", priceText: "¥420,000", priceCny: 420000, basis: "benchmark", note: "" }],
@@ -529,5 +528,43 @@ describe("⑦ prompt 契约（语言指令 + 英文枚举 + 反编造红线）",
     });
     const call = vi.mocked(chatCompletionDoubao).mock.calls[0][0] as { timeoutMs: number };
     expect(call.timeoutMs).toBe(120_000);
+  });
+});
+
+describe("⑧ 视觉张数上限 5：逐图证据全量进 payload", () => {
+  it("5 张图的 perImage 全部出现在 payload 里（第 4/5 张不再从结论里消失）", async () => {
+    const perImage = Array.from({ length: 5 }, (_, i) => ({
+      score: 8 - i,
+      label: "good",
+      analysis: `第 ${i + 1} 张的评估依据`,
+      confidence: 0.8,
+    }));
+    await callNarrative({ productMeta: { ...PRODUCT_META, perImage } });
+
+    const call = vi.mocked(chatCompletionDoubao).mock.calls[0][0] as {
+      messages: Array<{ content: unknown }>;
+    };
+    const userContent = String(call.messages[1].content);
+    for (let i = 1; i <= 5; i += 1) {
+      expect(userContent).toContain(`第 ${i} 张的评估依据`);
+    }
+  });
+
+  it("超过 5 张时 payload 只取前 5（与视觉分析上限同源，不会多烧 token）", async () => {
+    const perImage = Array.from({ length: 7 }, (_, i) => ({
+      score: 8,
+      label: "good",
+      analysis: `图-${i + 1}`,
+      confidence: 0.8,
+    }));
+    await callNarrative({ productMeta: { ...PRODUCT_META, perImage } });
+
+    const call = vi.mocked(chatCompletionDoubao).mock.calls[0][0] as {
+      messages: Array<{ content: unknown }>;
+    };
+    const userContent = String(call.messages[1].content);
+    expect(userContent).toContain("图-5");
+    expect(userContent).not.toContain("图-6");
+    expect(userContent).not.toContain("图-7");
   });
 });

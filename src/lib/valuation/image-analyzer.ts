@@ -27,6 +27,23 @@ export type ConditionCode = "excellent" | "good" | "fair" | "poor";
 /** 全部合法成色代码（顺序：由好到差） */
 export const CONDITION_CODES: readonly ConditionCode[] = ["excellent", "good", "fair", "poor"];
 
+/**
+ * 一次估值最多送进视觉模型的图片张数。
+ *
+ * 为什么是 5（而不是原来写死的 3）：
+ *   1. 前端估值页 `page.tsx` 的 `MAX_IMAGES = 5` —— 用户能传 5 张（整机外观 / 发动机舱 /
+ *      驾驶室 / 铭牌 / 轮胎磨损），后端只吃前 3 张等于**静默丢弃**第 4、5 张；而聚合口径是
+ *      `avgScore = 所有结果的平均`、`bestScore` 取加权最高，样本少 ⇒ 置信度低 ⇒ 结论保守，
+ *      老板看到的「报告比较单薄」有这一份贡献。
+ *   2. `api/agents/seller-helper/recognize` 路由对图片数量**不设上限**（`images.map` 全量送豆包）：
+ *      同一批图「识别品牌型号」看 5 张、「估值视觉分析」只看 3 张，两个模块口径不一致。
+ *   3. 为什么不是无限：每张图都是一次独立计费的视觉调用（`maxTokens: 800`）。上限必须显式存在，
+ *      否则用户传 18 张就会烧 18 次；5 张是「够覆盖验机所需角度」与「成本可控」的交点。
+ *
+ * ⚠️ 前端与后端两处上限必须同步（本常量 export 出来就是为了让前端/测试引用同一个数）。
+ */
+export const MAX_ANALYZE_IMAGES = 5;
+
 const IMAGE_PROMPT = `你是一位资深二手农业机械评估专家，熟悉各类农机设备的成色评估标准。
 请仔细分析这张农机设备图片，评估设备的成色状态。
 
@@ -243,7 +260,7 @@ function fallbackConditionLabel(score: number): string {
 /**
  * 批量分析多张产品图片（并行处理）。
  *
- * @param imageUrls 图片 URL / data URI 列表（最多分析前 3 张，控制成本）
+ * @param imageUrls 图片 URL / data URI 列表（最多分析前 MAX_ANALYZE_IMAGES=5 张，控制成本）
  * @param locale    输出语种
  */
 export async function analyzeProductImages(
@@ -260,8 +277,8 @@ export async function analyzeProductImages(
     };
   }
 
-  // 最多分析3张图片（避免过多API调用）
-  const urlsToAnalyze = imageUrls.slice(0, 3);
+  // 最多分析 MAX_ANALYZE_IMAGES 张图片（成本保护上限，与前端上传上限对齐）
+  const urlsToAnalyze = imageUrls.slice(0, MAX_ANALYZE_IMAGES);
 
   try {
     const results = await Promise.all(urlsToAnalyze.map((url) => analyzeProductImage(url, locale)));
