@@ -145,6 +145,24 @@ export async function creditsFromLocalAmount(
 }
 
 /**
+ * 充值对账容差：判断「按实付金额折算出的积分」与「实际发放积分」是否算不一致。
+ *
+ * 为什么不用绝对值 ±1：
+ *   接线库内实时汇率后，同一笔订单的「下单」与「回调」之间可能跨过每日 02:00 的汇率刷新，
+ *   也可能跨过 24h 过期阈值（库内值变 stale → 回落静态表，USD 静态 0.14943 vs 实时 0.14998
+ *   差 0.37%）。$10 对应 6667 积分，0.37% 漂移即 ±24 分；USD 日波动常达 0.03%~0.4%。
+ *   若容差写死 ±1，几乎每笔跨日订单都会误报，运维会很快把这条告警当噪音（比不告警更糟）。
+ *
+ * 故按「相对 1%，且至少 2 分」判定。真实的「credits 与实付脱钩」事故是数量级偏差
+ * （例如把 credits 当美分用：$10 会差 6.7 倍），1% 容差不会漏。
+ */
+export function isRechargeCreditsMismatch(expected: number, actual: number): boolean {
+  if (!Number.isFinite(expected) || !Number.isFinite(actual)) return false;
+  const tolerance = Math.max(2, Math.round(Math.abs(expected) * 0.01));
+  return Math.abs(expected - actual) > tolerance;
+}
+
+/**
  * R_d(c) 及其来源：CNY → 本币 汇率，并标记拿到的是库内实时值还是静态兜底。
  *
  * 与 `getRd` 同源同语义（`getRd` 直接委托本函数取 `.rd`，返回值/兜底行为一字不变），

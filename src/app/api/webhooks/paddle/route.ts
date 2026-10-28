@@ -37,7 +37,7 @@ import {
   verifyWebhookSignature,
 } from "@/lib/payments/paddle";
 import { grantRecharge } from "@/lib/credits/grant";
-import { creditsFromLocalAmount } from "@/lib/credits/fx";
+import { creditsFromLocalAmount, isRechargeCreditsMismatch } from "@/lib/credits/fx";
 import { CYCLE_DAYS, type BillingCycle } from "@/lib/membership/pricing";
 
 export const dynamic = "force-dynamic";
@@ -129,10 +129,12 @@ async function handleTransactionCompleted(data: any): Promise<void> {
 
   // 金额一致性告警（只告警，不参与发放）：用于捕捉「Paddle 目录价与 credits 脱钩」的配置事故。
   // 优先取 subtotal：total 可能含税，用含税值比对会持续误报。
+  // 容差见 isRechargeCreditsMismatch：相对 1%（至少 2 分）。理由是接库内实时汇率后，
+  // 下单与回调之间跨过汇率刷新/过期回落属正常漂移，写死 ±1 会天天误报。
   const paidMinor = Number(data?.details?.totals?.subtotal ?? data?.details?.totals?.total);
   if (Number.isFinite(paidMinor) && paidMinor > 0) {
     const expectedCredits = await creditsFromLocalAmount(paidMinor / 100, currency);
-    if (Math.abs(expectedCredits - credits) > 1) {
+    if (isRechargeCreditsMismatch(expectedCredits, credits)) {
       console.warn(
         `[Webhook/Paddle] 积分与实付金额不一致 期望=${expectedCredits} 实发=${credits} 实付分=${paidMinor} 币种=${currency} txn=${txnId}`
       );

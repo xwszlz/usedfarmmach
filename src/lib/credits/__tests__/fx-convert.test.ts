@@ -35,6 +35,7 @@ import {
   getRd,
   getRdSync,
   getRdWithSource,
+  isRechargeCreditsMismatch,
 } from "@/lib/credits/fx";
 import { exchangeRateService } from "@/lib/services/exchange-rate-service";
 
@@ -189,5 +190,37 @@ describe("getRdWithSource —— 汇率来源审计（资金路径必须能区�
     expect(await getRd("USD")).toBe(0.15);
     expect(await getRd("CNY")).toBe(1);
     expect(await getRd("XYZ")).toBe(1);
+  });
+});
+
+describe("isRechargeCreditsMismatch —— 回调对账容差（相对 1%，至少 2 分）", () => {
+  it("汇率正常漂移不算不一致：$10 在 6667 ± 24 之间都不告警（0.37% 静态/实时差）", () => {
+    expect(isRechargeCreditsMismatch(6667, 6667)).toBe(false);
+    expect(isRechargeCreditsMismatch(6667, 6667 + 24)).toBe(false);
+    expect(isRechargeCreditsMismatch(6667, 6667 - 24)).toBe(false);
+    // 静态 6692 与实时 6667 互比（跨过刷新点）也不告警
+    expect(isRechargeCreditsMismatch(6692, 6667)).toBe(false);
+  });
+
+  it("超出 1% 才告警", () => {
+    expect(isRechargeCreditsMismatch(6667, 6667 + 70)).toBe(true);
+    expect(isRechargeCreditsMismatch(6667, 6667 - 70)).toBe(true);
+  });
+
+  it("真实的「credits 与实付脱钩」是数量级偏差，必须告警", () => {
+    // 把 credits 当美分用：$10 只发 1000
+    expect(isRechargeCreditsMismatch(6667, 1000)).toBe(true);
+    // 反过来把美分当人民币：$10 发 100000
+    expect(isRechargeCreditsMismatch(6667, 100000)).toBe(true);
+  });
+
+  it("小额订单吃到「至少 2 分」下限，仍能抓住脱钩", () => {
+    expect(isRechargeCreditsMismatch(6, 7)).toBe(false);
+    expect(isRechargeCreditsMismatch(6, 9)).toBe(true);
+  });
+
+  it("非有限数一律不告警（脏数据不制造噪音）", () => {
+    expect(isRechargeCreditsMismatch(Number.NaN, 100)).toBe(false);
+    expect(isRechargeCreditsMismatch(6667, Number.NaN)).toBe(false);
   });
 });
