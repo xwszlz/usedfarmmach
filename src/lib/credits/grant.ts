@@ -2,7 +2,8 @@
  * 幂等注册礼包：grantRegisterGiftIfNeeded
  *
  * 经 UserMilestone(event=register_gift) 去重；已发则跳过，保证幂等。
- * 数值取 DEFAULT_REWARD_VALUES.registerGift（P0 增长方案 2026-09-06：默认 20；2026-10-13 积分单位细化后为 2000，可被 SystemConfig 覆盖）。
+ * 数值取 DEFAULT_REWARD_VALUES.registerGift（2026-10-28 全球统一为 1000，双站同值、不按币种区分，
+ * 可被 SystemConfig 覆盖）。历史用户已发放的旧数值不回收、不补差。
  *
  * 复用模式：与 src/app/api/credits/recharge/route.ts 的 $transaction 一致，
  * 写入 CreditLot（gift 批次）+ CreditTransaction（流水）+ 用户 credits 自增。

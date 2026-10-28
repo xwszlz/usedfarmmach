@@ -3,7 +3,8 @@
  *
  * 老板口径：取消 4 档会员，改为「积分中心 + 积分充值」。
  *   - 全球统一购买力：**1 元人民币 = 100 积分**。.cn 直接 1 元 = 100 积分；
- *     .com 收美元，按当日人民币汇率折回人民币后再换积分（见 `creditsFromLocalAmount`）。
+ *     .com 收美元，按当日人民币汇率折回人民币后再换积分（见 `getRdWithSource` +
+ *     `cnyFromLocalAmountWithRate`，汇率来源会打进审计日志）。
  *   - .cn（境内）：走微信 Native / 支付宝 预下单（普通商户直收增值服务费，
  *     红线：绝不走收付通/服务商/资金托管，不碰分账/二清）。
  *   - .com（国际）：走 Paddle Checkout（一次性支付，Paddle 为 MoR）。
@@ -26,7 +27,7 @@ import {
   createCreditRechargeTransaction,
 } from "@/lib/payments/paddle";
 import { buildCreditOutTradeNo } from "@/lib/credits/recharge-order";
-import { creditsFromLocalAmount } from "@/lib/credits/fx";
+import { cnyFromLocalAmountWithRate, getRdWithSource } from "@/lib/credits/fx";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -64,8 +65,24 @@ export async function POST(request: NextRequest) {
     if (isComSite()) {
       // 全球统一口径：1 元人民币 = 100 积分。收美元必须按汇率折回人民币再换积分，
       // 否则 $1 只买到 100 积分（= ¥1），比 .cn 用户少拿 6.69 倍。
+      //
+      // 这里刻意**不用** `creditsFromLocalAmount`：资金路径需要把「本次用的汇率 + 来源」
+      // 记进日志以便事后审计，而该函数只返回数值。故先 getRdWithSource 取 { rd, source }，
+      // 再复用纯函数折算 —— 一次查库、两处复用，且不破坏 webhook 那边对数值签名的依赖。
       const amountCents = Math.round(amount * 100);
-      const credits = creditsFromLocalAmount(amount, "USD");
+      const { rd: usdRd, source: fxSource } = await getRdWithSource("USD");
+      const credits = Math.floor(cnyFromLocalAmountWithRate(amount, "USD", usdRd) * 100 + 1e-6);
+      // 资金路径审计：每笔 .com 充值都记录本次使用的汇率与来源，
+      // 事后可追溯「这一单按什么汇率折算」。source=static 说明库内无新鲜汇率，回落了代码快照。
+      if (fxSource === "static") {
+        console.warn(
+          `[Recharge] USD→CNY 回落静态汇率 rd=${usdRd} user=${user.id} amountCents=${amountCents} credits=${credits}`
+        );
+      } else {
+        console.log(
+          `[Recharge] USD→CNY source=${fxSource} rd=${usdRd} user=${user.id} amountCents=${amountCents} credits=${credits}`
+        );
+      }
       if (credits < 1 || credits > MAX_CREDITS) {
         return NextResponse.json({ success: false, error: "金额超出范围" }, { status: 400 });
       }

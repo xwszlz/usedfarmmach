@@ -477,6 +477,29 @@ export class ExchangeRateService {
   }
 
   /**
+   * 仅返回「库内新鲜（未过期）」的 CNY→本币 汇率，键为币种代码。
+   *
+   * 与 `getAllRates()` 的区别：**不做静态兜底合并**，因此调用方可以精确判断
+   * 某个币种到底取到了库内实时值，还是只能回落代码快照。
+   * 资金路径（如 .com 充值下单）需要这个区分来做汇率来源审计日志。
+   *
+   * 单次查询、不触发任何外部网络请求；读库异常时返回空对象
+   * （`getAllLatestRatesFromDb` 内部已吞异常并打日志）。
+   */
+  async getLiveRatesFromDb(): Promise<Record<string, number>> {
+    const live: Record<string, number> = {};
+    const dbMap = await this.getAllLatestRatesFromDb();
+    for (const currency of SUPPORTED_CURRENCIES) {
+      if (currency === 'CNY') continue;
+      const dbRate = dbMap.get(currency);
+      if (dbRate && !this.isRateStale(dbRate) && Number.isFinite(dbRate.rate) && dbRate.rate > 0) {
+        live[currency] = dbRate.rate;
+      }
+    }
+    return live;
+  }
+
+  /**
    * 获取全部支持货币相对 CNY 的汇率（GET /api/exchange-rates 用）
    * 优先读库内最新实时值；缺失或过期的币种回退静态表；CNY 恒为 1。
    * 不触发任何外部网络请求 —— 保证读取路径快且稳。

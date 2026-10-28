@@ -131,7 +131,7 @@ async function handleTransactionCompleted(data: any): Promise<void> {
   // 优先取 subtotal：total 可能含税，用含税值比对会持续误报。
   const paidMinor = Number(data?.details?.totals?.subtotal ?? data?.details?.totals?.total);
   if (Number.isFinite(paidMinor) && paidMinor > 0) {
-    const expectedCredits = creditsFromLocalAmount(paidMinor / 100, currency);
+    const expectedCredits = await creditsFromLocalAmount(paidMinor / 100, currency);
     if (Math.abs(expectedCredits - credits) > 1) {
       console.warn(
         `[Webhook/Paddle] 积分与实付金额不一致 期望=${expectedCredits} 实发=${credits} 实付分=${paidMinor} 币种=${currency} txn=${txnId}`

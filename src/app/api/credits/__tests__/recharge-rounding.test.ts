@@ -16,6 +16,10 @@ import { NextRequest } from "next/server";
 
 // fx.ts 顶层 import 了 @/lib/db（依赖 DATABASE_URL），单测桩掉
 vi.mock("@/lib/db", () => ({ prisma: {} }));
+// 汇率服务桩：默认库内无新鲜汇率 ⇒ 走静态快照（USD=0.14943），数值可确定断言
+vi.mock("@/lib/services/exchange-rate-service", () => ({
+  exchangeRateService: { getLiveRatesFromDb: vi.fn(async () => ({})) },
+}));
 vi.mock("@/lib/auth", () => ({ getUserFromRequest: vi.fn() }));
 vi.mock("@/config/site", () => ({ isComSite: vi.fn(() => false) }));
 vi.mock("@/lib/wechat-pay", () => ({
@@ -36,6 +40,7 @@ import { isComSite } from "@/config/site";
 import { createNativeOrder } from "@/lib/wechat-pay";
 import { createPrecreateOrder } from "@/lib/alipay";
 import { createCreditRechargeTransaction } from "@/lib/payments/paddle";
+import { exchangeRateService } from "@/lib/services/exchange-rate-service";
 import { POST } from "@/app/api/credits/recharge/route";
 
 function makeReq(body: unknown) {
@@ -146,5 +151,52 @@ describe("③ .com Paddle：实付金额与发放积分解耦", () => {
     const res = await POST(makeReq({ amount: 0 }));
     expect(res.status).toBe(400);
     expect(createCreditRechargeTransaction).not.toHaveBeenCalled();
+  });
+});
+
+describe("④ .com 汇率来源审计：每笔充值必须留下可 grep 的 rd= 日志", () => {
+  it("库内无新鲜汇率 → console.warn 打「回落静态汇率 rd=…」", async () => {
+    vi.mocked(isComSite).mockReturnValue(true);
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const res = await POST(makeReq({ amount: 10 }));
+      expect(res.status).toBe(200);
+      const hit = warnSpy.mock.calls
+        .map((c) => String(c[0]))
+        .find((s) => s.includes("[Recharge]") && s.includes("rd=0.14943"));
+      expect(hit).toBeDefined();
+      expect(hit).toContain("回落静态汇率");
+      expect(hit).toContain("user=u1");
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
+  it("库内有实时汇率 → console.log 标 source=live，且积分按实时值算", async () => {
+    vi.mocked(isComSite).mockReturnValue(true);
+    // rd=0.2 ⇒ $10 = ¥50 = 5000 积分（静态表会给出 6692，两者必须不同）
+    vi.mocked(exchangeRateService.getLiveRatesFromDb).mockResolvedValueOnce({ USD: 0.2 });
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      const res = await POST(makeReq({ amount: 10 }));
+      expect(res.status).toBe(200);
+      const j = await res.json();
+      expect(j.data.credits).toBe(5000);
+      const hit = logSpy.mock.calls
+        .map((c) => String(c[0]))
+        .find((s) => s.includes("[Recharge]") && s.includes("rd=0.2"));
+      expect(hit).toBeDefined();
+      expect(hit).toContain("source=live");
+    } finally {
+      logSpy.mockRestore();
+    }
+  });
+
+  it("审计日志不含任何积分发放入参（响应体也不得泄漏计费参数）", async () => {
+    vi.mocked(isComSite).mockReturnValue(true);
+    const res = await POST(makeReq({ amount: 10 }));
+    const raw = JSON.stringify(await res.json());
+    // 响应体只允许出现 credits / transactionId / type
+    expect(raw).not.toMatch(/multiplier|coeff|guardrail|minPoints/i);
   });
 });
