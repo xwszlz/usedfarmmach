@@ -15,9 +15,12 @@
  *      且指令里还要引用中文/阿拉伯文语种名，中英混排比中文指令更不容易产生歧义。
  *
  * 本模块为服务端/纯函数库，无副作用、不发网络请求。
+ * 依赖面：**只依赖 `@/config/site`**（不 import Prisma / 不发请求），
+ *   故 AI 路由与「仅引用类型」的前端代码都可安全 import，也不会让测试的模块
+ *   全量 mock 失效（历史坑：曾把「国家→语种」放在 `credits/fx` 里，那边 import 了
+ *   `@/lib/db`，导致 valuation 路由测试对 fx 的全量 mock 缺 key 而 8 例全红）。
  */
 import { siteConfig, isCnSite } from "@/config/site";
-import { getLocaleOfCountry } from "@/lib/credits/fx";
 
 /** AI 功能支持的输出语种（与 siteConfigMap.com.locales 一致） */
 export type AiLocale = "zh" | "en" | "ru" | "es" | "pt" | "ar" | "fr" | "hi";
@@ -59,6 +62,136 @@ const AI_LOCALE_SET: ReadonlySet<string> = new Set<string>(AI_LOCALES);
  * `.cn` 线上只有 zh/en 两个语言路由，AI 若吐出 ru/es/… 前端无处安放。
  */
 const CN_ALLOWED_LOCALES: readonly AiLocale[] = ["zh", "en"];
+
+// ⚠️ 不要搬去 src/lib/credits/fx.ts：那个模块 import 了 @/lib/db（Prisma），
+//    而本模块会被 AI 路由和前端类型引用，拖上 Prisma 会让测试的全量 mock 失效、
+//    并有把客户端包污染的风险。「国家→语种」本身就是国际化职责，归属本文件。
+/**
+ * 国家 ISO2 → 默认语言（IP 定位后的语言兜底，覆盖 8 语种主要国家）
+ *
+ * 用途：`.com` 跑在 Vercel 上，`x-vercel-ip-country` 请求头免费可读，
+ * 用它在「用户没显式选语言」时给出一个合理语种（见下方 `resolveAiLocale` 第 3 步）。
+ *
+ * 取值口径：
+ *   - 同国家有两种官方语言时只取**更常用**的那一个（如 CA 取 en 而非 fr，CH 取 fr）。
+ *   - 印度 IN 给 en（而非 hi）：印度英语用户占比更高，且 hi 用户多数能读 en。
+ *   - 乌克兰 UA 实际更常用 uk，本平台无 uk 语种 → 回落 ru。
+ *   - 摩洛哥 MA / 阿尔及利亚 DZ / 突尼斯 TN 法语区与阿语区并存 → 取 fr（商业场景更常用）。
+ *   - 未收录（如 DE/JP/VN/ID）一律返回 null，由调用方决定兜底，避免瞎猜。
+ */
+export const COUNTRY_LOCALE: Record<string, AiLocale> = {
+  // 中文
+  CN: "zh",
+
+  // 英语区
+  US: "en",
+  GB: "en",
+  AU: "en",
+  NZ: "en",
+  IE: "en",
+  CA: "en",
+  SG: "en",
+  MY: "en",
+  PH: "en",
+  NG: "en",
+  KE: "en",
+  ZA: "en",
+  IN: "en",
+
+  // 俄语区（UA 实际更常用 uk，本平台无 uk 语种，回落 ru）
+  RU: "ru",
+  BY: "ru",
+  KZ: "ru",
+  KG: "ru",
+  UZ: "ru",
+  UA: "ru",
+  AM: "ru",
+  AZ: "ru",
+  MD: "ru",
+
+  // 西语区
+  ES: "es",
+  MX: "es",
+  AR: "es",
+  CO: "es",
+  CL: "es",
+  PE: "es",
+  VE: "es",
+  EC: "es",
+  GT: "es",
+  BO: "es",
+  PY: "es",
+  UY: "es",
+  CR: "es",
+  PA: "es",
+  DO: "es",
+  HN: "es",
+  SV: "es",
+  NI: "es",
+  CU: "es",
+
+  // 葡语区
+  BR: "pt",
+  PT: "pt",
+  AO: "pt",
+  MZ: "pt",
+
+  // 法语区（CH 多语，通用按 fr；MA/DZ/TN 法阿并存，取 fr）
+  FR: "fr",
+  BE: "fr",
+  SN: "fr",
+  CI: "fr",
+  CM: "fr",
+  ML: "fr",
+  BF: "fr",
+  NE: "fr",
+  TD: "fr",
+  GA: "fr",
+  CG: "fr",
+  CD: "fr",
+  MG: "fr",
+  TG: "fr",
+  BJ: "fr",
+  CH: "fr",
+  MA: "fr",
+  DZ: "fr",
+  TN: "fr",
+  LB: "fr",
+
+  // 阿语区（MA/DZ/TN 已在法语区收录，此处不重复）
+  SA: "ar",
+  AE: "ar",
+  EG: "ar",
+  IQ: "ar",
+  JO: "ar",
+  KW: "ar",
+  QA: "ar",
+  OM: "ar",
+  BH: "ar",
+  YE: "ar",
+  LY: "ar",
+  SD: "ar",
+  SY: "ar",
+};
+
+/** 合法的国家码形状：两位拉丁字母 */
+const COUNTRY_ISO2_PATTERN = /^[A-Za-z]{2}$/;
+
+/**
+ * 由国家码解析语种，未收录返回 null（让调用方决定兜底）。
+ *
+ * 与 `@/lib/credits/fx` 的 `getCurrencyOfCountry` 的差别：币种必须有兜底（计费不能没有币种），
+ * 语种则**故意返回 null** —— 兜底语种依赖站点上下文（`.cn` → zh / `.com` → en），
+ * 由调用方 `resolveAiLocale` 按站点决定，本函数不猜，避免把 `.cn` 用户带偏。
+ *
+ * 入参为 null/undefined/空串/非 2 字母 → null；大小写不敏感（`"ru"` 与 `"RU"` 等价）。
+ */
+export function getLocaleOfCountry(countryIso2: string | null | undefined): AiLocale | null {
+  if (typeof countryIso2 !== "string") return null;
+  const code = countryIso2.trim();
+  if (!COUNTRY_ISO2_PATTERN.test(code)) return null;
+  return COUNTRY_LOCALE[code.toUpperCase()] ?? null;
+}
 
 /**
  * 是否启用「登录用户偏好语言」（`User.preferredLanguage`）参与决策。

@@ -1,5 +1,5 @@
 /**
- * 单测：AI 输出语种基建（`src/lib/i18n/ai-locale.ts` + `fx.ts` 新增的国家→语种映射）
+ * 单测：AI 输出语种基建（`src/lib/i18n/ai-locale.ts`）
  *
  * 这次改造的事故形态很具体：老板在 `.com` 国际站实测三个 AI 功能**全部输出中文**。
  * 所以本文件锁四件事：
@@ -11,17 +11,6 @@
  *      否则深度分析的 `condition: "excellent|good|fair|poor"` 会被模型本地化成中文，下游匹配全废。
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-
-// fx.ts 顶层 import 了 @/lib/db（prisma 实例化会强依赖 DATABASE_URL），单测里桩掉
-vi.mock("@/lib/db", () => ({ prisma: {} }));
-
-// 汇率服务桩（fx.ts 顶层 import，本文件不测汇率数值）
-vi.mock("@/lib/services/exchange-rate-service", () => ({
-  exchangeRateService: {
-    getLiveRatesFromDb: vi.fn(async () => ({})),
-    getAllRates: vi.fn(async () => ({ base: "CNY", rates: { CNY: 1 } })),
-  },
-}));
 
 /**
  * 站点桩：`src/config/site.ts` 的 `SITE` 是 **import 时求值** 的模块常量，
@@ -68,11 +57,12 @@ import {
   AI_LOCALES,
   AI_LOCALE_SELF_NAME,
   buildLanguageDirective,
+  COUNTRY_LOCALE,
+  getLocaleOfCountry,
   normalizeAiLocale,
   resolveAiLocale,
   withLanguage,
 } from "@/lib/i18n/ai-locale";
-import { COUNTRY_LOCALE, getLocaleOfCountry } from "@/lib/credits/fx";
 
 /** 把「站点切到 com / cn」这件事收敛成一个函数（含 defaultLocale 同步） */
 function setSite(variant: "com" | "cn"): void {
