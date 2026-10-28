@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // 统一幂等发放注册礼包（替代旧 credits:10 直写，口径统一为 registerGift=5）
+    // 统一幂等发放注册礼包（替代旧 credits:10 直写，口径统一为 registerGift）
     const gift = await grantRegisterGiftIfNeeded(user.id);
     const finalCredits = (user.credits ?? 0) + (gift.granted ? gift.amount : 0);
 

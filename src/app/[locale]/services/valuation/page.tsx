@@ -665,7 +665,7 @@ function DeepAnalysisSection({
         setStructured(s);
         setLocked(true);
         onComplete?.(s);
-        // token 计费可见化：本次按 LLM 真实用量 ×2 扣的积分与扣后余额
+        // token 计费可见化：本次按 LLM 真实用量与实际模型成本扣的积分与扣后余额
         if (typeof data.data?.pointsCharged === "number") {
           setConsumption({ points: data.data.pointsCharged, balance: data.data?.creditsBalance });
         }
@@ -689,7 +689,7 @@ function DeepAnalysisSection({
         </div>
       </div>
       <p className="mb-3 text-xs text-gray-500">
-        包含：六维度现状评估 · 技术参数 · 操作维修 · 车况评估 · 购买建议 · 资源文档（按大模型 token 消耗 ×2 计费）
+        包含：六维度现状评估 · 技术参数 · 操作维修 · 车况评估 · 购买建议 · 资源文档（按大模型 token 实际成本计价）
       </p>
 
       {!report && !loading && (
@@ -751,7 +751,7 @@ function DeepAnalysisSection({
           {consumption && (
             <div className="flex items-center justify-between rounded-lg bg-purple-50 px-3 py-2 text-xs text-purple-700">
               <span>
-                本次消耗 <b className="text-sm">{consumption.points}</b> 积分（按大模型 token 实际用量 ×2 计费）
+                本次消耗 <b className="text-sm">{consumption.points}</b> 积分（按大模型 token 实际用量与实际成本计价）
                 {consumption.balance != null && <> · 剩余 <b>{consumption.balance}</b> 积分</>}
               </span>
               <a href={`/${locale}/credits`} className="font-medium underline">积分中心</a>
@@ -852,6 +852,11 @@ export default function ValuationPage() {
     ? calcDomesticBasePrice(dBrand, dHP)
     : iNewPrice;
 
+  // 是否有「已上传的本地压缩图」。用图片数组判定而非 hasImage：
+  // hasImage 只在 AI 识别回调成功后才置真，识别失败/超时时会漏传 data URI ⇒
+  // 后端跳过视觉分析 ⇒ 零 token ⇒ 估值零收费。两者必须同源。
+  const hasUploadedImages = uploadedImages.length > 0;
+
   // 执行估值
   const doValuation = async () => {
     setLoading(true);
@@ -875,7 +880,9 @@ export default function ValuationPage() {
             priceCny: dSellerPrice ? Number(dSellerPrice) : undefined,
             region: dRegion,
             useV4: true,
-            skipImageAnalysis: !hasImage,
+            // 国产渠道同样要传图：不传 = 后端跳过视觉分析 = 估值永远零收费（修通计费的关键一处）
+            skipImageAnalysis: !hasUploadedImages,
+            imageDataUris: hasUploadedImages ? uploadedImages : [],
           }),
         });
 
@@ -956,8 +963,8 @@ export default function ValuationPage() {
               region: iRegion,
               tradeChannel: channel === "export" ? "export" : undefined,
               useV4: true,
-              skipImageAnalysis: !hasImage,
-              imageDataUris: hasImage ? uploadedImages : [],
+              skipImageAnalysis: !hasUploadedImages,
+              imageDataUris: hasUploadedImages ? uploadedImages : [],
             }),
           });
           const data = await res.json().catch(() => null);
@@ -977,6 +984,11 @@ export default function ValuationPage() {
               warnings: generateWarnings(),
               channelPrices: (r as { channelPrices?: Record<string, number> }).channelPrices,
             });
+            // token 计费可见化（与国际/出口、国产渠道同源）：后端 billing 字段
+            const intlBilling = (data as { billing?: { points?: number; balance?: number } }).billing;
+            if (intlBilling && typeof intlBilling.points === "number" && intlBilling.points > 0) {
+              setValuationBilling({ points: intlBilling.points, balance: intlBilling.balance });
+            }
             if (channel === "export") {
               const arb = calcExportArbitrage(v4Value, eTargetCountry, eShipping, eTariff);
               setArbitrage(arb);
@@ -1719,11 +1731,11 @@ export default function ValuationPage() {
                     <div className="mb-1 text-xs font-medium text-gray-400">估值公式</div>
                     <div className="font-mono text-xs text-gray-600">{result.formula}</div>
                   </div>
-                  {/* token 计费可见化：本次估值按 LLM 真实用量 ×2 扣的积分（无 LLM 用量时不展示） */}
+                  {/* token 计费可见化：本次估值按 LLM 真实用量与实际模型成本扣的积分（无 LLM 用量时不展示） */}
                   {valuationBilling && (
                     <div className="mt-3 flex items-center justify-between rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
                       <span>
-                        本次消耗 <b className="text-sm">{valuationBilling.points}</b> 积分（按大模型 token 实际用量 ×2 计费）
+                        本次消耗 <b className="text-sm">{valuationBilling.points}</b> 积分（按大模型 token 实际用量与实际成本计价）
                         {valuationBilling.balance != null && <> · 剩余 <b>{valuationBilling.balance}</b> 积分</>}
                       </span>
                       <a href={`/${locale}/credits`} className="font-medium underline">积分中心</a>
@@ -1732,7 +1744,7 @@ export default function ValuationPage() {
                 </div>
               </div>
 
-              {/* ── AI 估值报告：随本次估值自动生成（估值 API 已按大模型 token ×2 计费）── */}
+              {/* ── AI 估值报告：随本次估值自动生成（估值 API 已按大模型 token 的实际成本计价）── */}
               <ValuationReportSection
                 channel={channel}
                 meta={{

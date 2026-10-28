@@ -27,11 +27,12 @@ vi.mock("@/lib/ai/ark-client", () => ({
   chatCompletionDoubao: vi.fn(),
   getArkModelId: vi.fn(() => "doubao-seed-2-1-pro-260915"),
 }));
-vi.mock("@/lib/credits/deduct", () => ({
-  deductAiUsage: vi.fn(),
-  estimateAiCost: vi.fn(),
-  UNLOCK_ESTIMATED_TOKENS: 800,
-}));
+// 计费层：保留真实 computeAiCost（本文件不关心金额），只替换 deductCredits（不写库）
+vi.mock("@/lib/credits/spend", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/credits/spend")>();
+  return { ...actual, deductCredits: vi.fn() };
+});
+vi.mock("@/lib/credits/config", () => ({ getAiCostGuardrail: vi.fn(async () => 3000) }));
 vi.mock("@/lib/sales-strategy/retrieval", () => ({
   retrieveStrategyContext: vi.fn(),
   fetchLeadDealerContact: vi.fn(),
@@ -43,7 +44,7 @@ vi.mock("@/lib/sales-strategy/prompt", () => ({
 
 import { getUserFromRequest } from "@/lib/auth";
 import { chatCompletionDoubao } from "@/lib/ai/ark-client";
-import { deductAiUsage, estimateAiCost } from "@/lib/credits/deduct";
+import { deductCredits } from "@/lib/credits/spend";
 import { retrieveStrategyContext } from "@/lib/sales-strategy/retrieval";
 import { parseStrategyResult } from "@/lib/sales-strategy/prompt";
 import { WEB_STATUS_NOTE } from "@/lib/sales-strategy/strategy-schema";
@@ -89,14 +90,13 @@ function makeCtx(webEvidence?: unknown) {
 /** 把成功路径的 mock 一次性铺好，返回路由响应体 */
 async function runSuccess(webEvidence?: unknown) {
   (getUserFromRequest as any).mockResolvedValue({ id: "u1", credits: 99999 });
-  (estimateAiCost as any).mockResolvedValue(100);
   (retrieveStrategyContext as any).mockResolvedValue(makeCtx(webEvidence));
   (chatCompletionDoubao as any).mockResolvedValue({
     text: "{}",
     usage: { prompt_tokens: 100, completion_tokens: 200 },
   });
   (parseStrategyResult as any).mockReturnValue(ADEQUATE_STRATEGY);
-  (deductAiUsage as any).mockResolvedValue({ ok: true, cost: 10, balance: 99989 });
+  (deductCredits as any).mockResolvedValue({ ok: true, credits: 99989, required: 250 });
 
   const res = await POST(makeReq());
   expect(res.status).toBe(200);

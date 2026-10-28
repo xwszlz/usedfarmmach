@@ -177,8 +177,8 @@ export default function DealerPartitionView({
 
           <p className="text-center text-xs text-gray-400">
             {locale === "zh"
-              ? "联系方式已脱敏；解锁明文需积分解锁（unlock-contact）"
-              : "Contacts masked; unlock plaintext via credits (unlock-contact)"}
+              ? "联系方式已脱敏；在「AI 销售策略」中可免费解锁明文（unlock-contact）"
+              : "Contacts masked; unlock plaintext for free in AI Sales Strategy (unlock-contact)"}
           </p>
         </div>
       )}

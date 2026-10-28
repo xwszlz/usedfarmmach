@@ -1,29 +1,23 @@
 /**
  * 积分扣减（AI 功能计费核心）
  *
- * 积分按各站本位币计价（老板口径 2026-10-12，修订 2026-10-12-E；2026-10-13 单位细化）：
- *   - 充值：.cn 站 1 元 = 100 积分；.com 站 $1 = 100 积分；
- *   - AI 消耗 = 实际模型成本 × 2 反算积分，且**站点感知本位币**：
- *       · .com 站：USD 计价模型直接按 $ 计费（不折 ¥），与"$1=100 积分"充值口径对齐；
- *       · .cn 站 / CNY 计价模型：按 ¥ 计费（USD 模型仍按固定汇率 7.2 折 ¥）。
+ * 积分计价口径（老板口径 2026-10-12，修订 2026-10-12-E；2026-10-13 单位细化；2026-10-28 全球统一）：
+ *   - 充值：**全球统一购买力 —— 1 元人民币 = 100 积分**。.cn 站直接 1 元 = 100 积分；
+ *     .com 站以美元支付，按当日人民币汇率折回人民币后再换积分（`fx.creditsFromLocalAmount`）。
+ *   - AI 消耗：同样按人民币口径折算（见下），1 积分 = ¥0.01，各国用户 1000 积分购买力一致。
  *
- * 计费链路：四大 AI 功能按大模型 token 实际消耗成本 × 2 收费，反算积分消耗。
+ * 计费链路：AI 功能按大模型 token 的实际成本乘以运营定价倍率（`AI_COST_MULTIPLIER`）反算积分。
  *   1) 从 LLM provider 返回里取 usage（prompt_tokens / completion_tokens）与所用 model id；
- *   2) 用模型价格表算实际成本 actualCost（站点感知本位币）：
- *      - $ 计价模型 + .com 站：actualCost = actualCostUsd（直接以 $ 计，不做 ¥ 折算）；
- *      - $ 计价模型 + .cn 站：actualCost = actualCostUsd × 7.2 折 ¥；
- *      - ¥ 计价模型：actualCost = actualCostCny；
- *      - 价格表见下方 MODEL_PRICING；未知模型用兜底 ¥0.004/1K 混合价（标注"兜底，待校准"）。
- *   3) points = round(actualCost × 100 × 2)（×100 即 CREDITS_PER_UNIT：1 元/1 美元 = 100 积分）；
- *   4) 在 CreditTransaction.breakdown JSON 记录 currency + 全部计量字段
- *      （actualCostCny 字段存"计费货币下的成本"，配合 currency 区分 cny/usd）。
+ *   2) 用模型价格表算实际成本 cnyCost（底价统一为豆包 CNY 成本，见 `MODEL_PRICING`；
+ *      未知模型用兜底 ¥0.004/1K 混合价，标注「兜底，待校准」）；
+ *   3) points = round(cnyCost × CREDITS_PER_UNIT × AI_COST_MULTIPLIER)；
+ *   4) 在 CreditTransaction.breakdown JSON 记录 currency + 全部计量字段（见 `AiCostBreakdown`）。
  *
  * 与 grant.ts 保持一致的写法：事务内读 User.credits → 不足整体拒绝（E7 红线：绝不产生负余额）→
  * FIFO 减 CreditLot → 写 CreditTransaction(type=ai_deduct) → 扣 User.credits。
  */
 import { prisma } from "@/lib/db";
 import { isComSite } from "@/config/site";
-import { getCurrencyOfCountry, getUnit, getRdSync } from "./fx";
 
 export interface DeductResult {
   ok: boolean;
@@ -39,10 +33,11 @@ export interface AiCostBreakdown {
   outputTokens: number;
   inPrice: number;
   outPrice: number;
-  /** 计费币种代码（CNY/USD/VND/...），由注册国解析得到；.cn 恒为 CNY */
+  /** 计费币种代码：2026-10-28 起 AI 消耗侧全球统一 CNY（充值侧另论） */
   currency?: string;
-  /** 豆包 CNY 实际成本（无论站点/国家，底价统一为 CNY） */
+  /** 豆包 CNY 实际成本（消耗侧唯一计费成本口径） */
   actualCostCny: number;
+  /** 运营定价倍率（[商业机密·内部]，取自 `AI_COST_MULTIPLIER`） */
   multiplier: number;
   points: number;
   /** 当时的积分单位换算（1 计价单位 = pointsPerUnit 积分），用于区分新旧单位时代的账本 */
@@ -51,11 +46,11 @@ export interface AiCostBreakdown {
   channel?: string;
   /** 链路路径：b-channel（.com 经 HK/SG 代理）/ direct（.cn 直连） */
   linkPath?: "b-channel" | "direct";
-  /** 计费国家（注册锁定的 AI 计费国） */
+  /** 用户注册锁定的 AI 计费国（仅作审计留痕，2026-10-28 起不参与消耗计价） */
   country?: string | null;
   /** 豆包原始 CNY 成本（独立字段，便于核对） */
   cnyCost?: number;
-  /** 使用的 CNY→本币 实时汇率 R_d(c)（.cn 不填） */
+  /** CNY→本币 汇率：消耗侧全球统一人民币口径，恒为 undefined（字段保留供读旧账本） */
   fxRateUsed?: number;
 }
 
@@ -90,28 +85,44 @@ export const FALLBACK_PRICING: ModelPrice = {
 export const DEFAULT_USD_TO_CNY = 7.2;
 
 /**
- * 计费单位换算：1 元人民币 = 100 积分，1 美元 = 100 积分。
- * 即 1 积分 = 1 分钱（0.01 元）/ 1 美分（$0.01）。
+ * 计费单位换算：1 元人民币 = 100 积分（AI 消耗侧全球统一人民币口径，见 `computeAiCost`）。
+ * 充值侧口径一致：本币金额先按汇率折回人民币，再 × 100 得积分（见 `fx.creditsFromLocalAmount`）。
+ * 即 1 积分 = 0.01 元。
  */
 export const CREDITS_PER_UNIT = 100;
 
-/** AI 计费倍率（实际支出 × 2） */
-export const AI_COST_MULTIPLIER = 2;
+/**
+ * 运营定价倍率（[商业机密·内部]）。
+ * ⚠️ 具体数值只在此处维护：注释、文档、commit message、对外文案均不得展开其取值。
+ * 调整本常量属于定价决策，需与 `getAiCostGuardrail()` 的单次护栏联动复核。
+ */
+export const AI_COST_MULTIPLIER = 10;
 
 /**
- * 依据模型单价与 token 用量计算实际成本与应扣积分。
- * 站点感知本位币（老板口径 2026-10-12-E）：
- *   - .com 站 + USD 计价模型：actualCost 直接取 $ 值（不折 ¥），与"$1=100 积分"充值对齐；
- *   - 其余（.cn 站 / CNY 计价模型）：USD 模型仍按 7.2 折 ¥，CNY 模型直接按 ¥。
- * 最终 points = round(actualCost × 100 × 2)。
+ * 依据模型单价与 token 用量计算实际成本与应扣积分（成本加成口径）。
+ *
+ * 2026-10-28 运营决策：AI 消耗计费全球统一按人民币口径折算（1 元 = 100 积分，
+ * 1 积分 = ¥0.01），不再按注册国币种差异化，以保证各国用户 1000 积分购买力一致。
+ * 汇率仍用于充值侧折算，与本函数无关。
+ *
+ * 因此：`billingCountry` / `rd` 保留在签名里仅为兼容既有调用方（5 个 AI 路由仍在传，
+ * 立刻删除会引发编译错误），函数内部一律忽略它们，恒定按 CNY（R=1、U=1）计价。
+ *
+ * 公式：points = round(cnyCost × 100 × AI_COST_MULTIPLIER)
  */
 export function computeAiCost(params: {
   model: string;
   inputTokens: number;
   outputTokens: number;
-  /** 注册锁定的 AI 计费国家（R-04/R-05 落库字段），缺省回落 USD */
+  /**
+   * @deprecated 2026-10-28 起消耗计费全球统一人民币口径，本参数被忽略。
+   *   保留仅为兼容既有调用方签名；新代码不需要传。
+   */
   billingCountry?: string;
-  /** CNY→本币 实时汇率 R_d(c)；缺省走同步静态兜底（getRdSync） */
+  /**
+   * @deprecated 2026-10-28 起消耗计费固定 R=1（CNY），本参数被忽略。
+   *   汇率仍用于充值侧折算（见 fx.ts / grant.ts）。
+   */
   rd?: number;
 }): AiCostBreakdown {
   const p: ModelPrice = MODEL_PRICING[params.model] || FALLBACK_PRICING;
@@ -122,16 +133,16 @@ export function computeAiCost(params: {
   const cnyCost =
     (inputTokens / 1000) * p.inPrice + (outputTokens / 1000) * p.outPrice;
 
-  // 注册国感知：国家 → 币种 → 计价单位 U(c) + 汇率 R_d(c)（CNY→本币）
-  const currency = getCurrencyOfCountry(params.billingCountry);
-  const unit = getUnit(currency);
-  const rd =
-    typeof params.rd === "number" && params.rd > 0 ? params.rd : getRdSync(currency);
+  // ── 全球统一人民币口径（2026-10-28 运营决策）──
+  // 不再做「注册国 → 币种 → 计价单位 + 汇率」的分支：三个量恒为 CNY / 1 / 1，
+  // 使 points 对所有国家用户一致（1000 积分全球等值）。
+  const currency = "CNY";
+  const unit = 1;
+  const rd = 1;
   const linkPath: "b-channel" | "direct" =
     isComSite() && process.env.ARK_PROXY_URL ? "b-channel" : "direct";
 
-  // 公式：points = round( 豆包CNY成本 × R_d(c) ÷ U(c) × 100 × 2 )
-  // .cn：R=1、U=1 → 退化为 round(成本 × 100 × 2)，与改动前完全一致（验收 I-1）。
+  // 公式：points = round( 豆包CNY成本 × R × 100 × AI_COST_MULTIPLIER )，R 恒为 1
   const points = Math.round(
     (cnyCost * rd) / unit * CREDITS_PER_UNIT * AI_COST_MULTIPLIER
   );
@@ -151,7 +162,8 @@ export function computeAiCost(params: {
     linkPath,
     country: params.billingCountry ?? null,
     cnyCost: Math.round(cnyCost * 1000) / 1000,
-    fxRateUsed: currency === "CNY" ? undefined : rd,
+    // 全球统一人民币口径 ⇒ 无本币折算；字段保留以便读旧账本时不报错
+    fxRateUsed: undefined,
   };
 }
 

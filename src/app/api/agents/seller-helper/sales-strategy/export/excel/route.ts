@@ -2,11 +2,13 @@
  * POST /api/agents/seller-helper/sales-strategy/export/excel
  * AI 销售策略 · 导出经销商联系表（T3，含 PII 门禁）
  *
- * 流程：登录校验 → 余额预检（名义）→ retrieveDealers(partition) 取脱敏经销商 →
+ * 流程：登录校验 → retrieveDealers(partition) 取脱敏经销商 →
  *       按当前用户 PiiAuditLog(unlock:dealer_*) 构建 unlockedSet →
- *       buildExcel（unlockedSet 内写明文，否则 maskPhone/maskEmail）→ 扣费（NOMINAL）→ 返回 xlsx。
+ *       buildExcel（unlockedSet 内写明文，否则 maskPhone/maskEmail）→ 返回 xlsx。
  *
- * 计费顺序（关键）：先 build 成功再 deductAiUsage —— 渲染失败直接 500 且不扣费。
+ * 计费（2026-10-28 起）：**免费**。导出是纯渲染，零 LLM 调用、零模型成本；统一到成本加成口径后
+ *   其成本本就为 0，故不再收取名义积分（此前按固定名义 token 计费属重复收费）。
+ *   渲染失败直接 500 —— 本来就不扣费，因此「钱扣了却拿不到文件」的风险彻底消失。
  * 合规（#1 数据不出境 / PII 最小化）：
  *   - 明文联系方式仅在「用户曾付费解锁该经销商」时写出；
  *   - 未解锁行一律脱敏（微信无公网标准 → 统一占位）；
@@ -15,7 +17,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { estimateAiCost, deductAiUsage, EXPORT_ESTIMATED_TOKENS } from "@/lib/credits/deduct";
 import { retrieveDealers } from "@/lib/sales-strategy/dealers";
 import { buildExcel, type ExcelDealerInput } from "@/lib/sales-strategy/export";
 import { splitCountryCity } from "@/lib/sales-strategy/derive";
@@ -43,36 +44,6 @@ function buildUnlockedSet(fields: Array<{ field: string }>): Set<string> {
     }
   }
   return set;
-}
-
-/** 扣费失败统一响应（402 余额不足 / 429 护栏熔断） */
-function billingFailResponse(
-  locale: "zh" | "en",
-  deduction: { code?: string; cost: number; balance: number }
-) {
-  const zh = locale === "zh";
-  if (deduction.code === "GUARDRAIL") {
-    return NextResponse.json(
-      {
-        success: false,
-        error: zh ? "本次导出成本超出单次上限，已熔断（未扣费）" : "Export cost exceeded cap; circuit-broken (no charge).",
-        code: "GUARDRAIL",
-        balance: deduction.balance,
-      },
-      { status: 429 }
-    );
-  }
-  return NextResponse.json(
-    {
-      success: false,
-      error: zh ? "积分不足，请先充值后再导出" : "Insufficient credits.",
-      code: "INSUFFICIENT_CREDITS",
-      rechargeUrl: `/${locale}/credits`,
-      required: deduction.cost,
-      balance: deduction.balance,
-    },
-    { status: 402 }
-  );
 }
 
 export async function POST(request: NextRequest) {
@@ -120,22 +91,6 @@ export async function POST(request: NextRequest) {
     const strategy =
       body.strategy && typeof body.strategy === "object" ? (body.strategy as StrategyLlmResult) : null;
     const webStatus = typeof body.webStatus === "string" ? body.webStatus : undefined;
-
-    // ── 余额预检（名义）──
-    const est = await estimateAiCost(EXPORT_ESTIMATED_TOKENS);
-    if (user.credits < est) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: zh ? "积分不足，请先充值后再导出" : "Insufficient credits. Please recharge first.",
-          code: "INSUFFICIENT_CREDITS",
-          rechargeUrl: `/${locale}/credits`,
-          required: est,
-          balance: user.credits,
-        },
-        { status: 402 }
-      );
-    }
 
     // ── 取脱敏经销商（遵循 T4 分区契约，只读当前站点 prisma）──
     const { domestic, international } = await retrieveDealers(partition);
@@ -205,7 +160,7 @@ export async function POST(request: NextRequest) {
       };
     });
 
-    // ── 先 build 成功再扣费（build 失败 → 500 且不扣费）──
+    // ── 先 build 成功再返回（build 失败 → 500；导出不扣费，见文件头「计费」说明）──
     // layout 1 时传 `undefined`（而非 `{ layout: 1 }`）：与改造前的三参调用逐字等价，
     // 保证 legacy 路径连「多传一个参数」这种差异都不引入。
     const buf = await buildExcel(
@@ -214,18 +169,6 @@ export async function POST(request: NextRequest) {
       locale,
       layoutOpt === 2 ? { layout: 2, strategy, webStatus } : undefined
     );
-
-    const deduction = await deductAiUsage({
-      userId: user.id,
-      action: "exportManual",
-      estimatedTokens: EXPORT_ESTIMATED_TOKENS,
-      reason: "导出经销商联系表",
-      breakdown: { locale, partition },
-    });
-    if (!deduction.ok) {
-      // 扣费失败：丢弃产物，返回对应错误
-      return billingFailResponse(locale, deduction);
-    }
 
     return new NextResponse(new Uint8Array(buf), {
       status: 200,

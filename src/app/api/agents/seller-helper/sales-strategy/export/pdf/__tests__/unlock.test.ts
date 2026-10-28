@@ -242,7 +242,8 @@ describe("T12 ⑤ DB 异常 ⇒ 仍可导出（不阻断、不重复扣费）", 
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toBe("application/pdf");
     expect(lastPayload().channels).toEqual([]);
-    expect(deductAiUsage).toHaveBeenCalledTimes(1);
+    // 导出免费：DB 异常也不产生任何扣费
+    expect(deductAiUsage).not.toHaveBeenCalled();
   });
 });
 

@@ -2,7 +2,9 @@
  * 积分体系常量定义（共享知识 §8.3/§8.4/§8.6/§8.7/§8.11/§8.13）
  * 数值默认值以 PRD 为准；运营可调项存 SystemConfig，代码只兜底默认值。
  *
- * ⚠️ 积分单位（2026-10-13 起）：1 元 = 100 积分，1 美元 = 100 积分。
+ * ⚠️ 积分单位（2026-10-13 起）：1 元 = 100 积分。
+ *    2026-10-28 起**全球统一购买力**：所有币种的充值额都先折回人民币再换积分
+ *    （1 元 = 100 积分，全球等值），不再存在「1 美元 = 100 积分」这种与汇率脱钩的独立锚点。
  *    本文件中所有「积分数」常量均已按新单位 ×100；priceCny、天数、次数、名额、周期、比例
  *    等非积分数值保持不变。充值/扣费口径必须同一版本上线，详见 prisma/migrate-credits-x100.ts。
  */
@@ -50,7 +52,7 @@ export type MilestoneEvent = (typeof MILESTONE_EVENTS)[number];
 
 // ─── 奖励数值默认值（可被 SystemConfig reward_values 覆盖）────
 export const DEFAULT_REWARD_VALUES = {
-  registerGift: 2000, // P0 增长方案 2026-09-06：赠分 5→20，消解"发第6台卡死"，配合月额度 publishesPerMonth（×100 后 2000 分）
+  registerGift: 1000, // 全球统一口径（2026-10-28）：双站同值、不按币种区分。发布每台扣 1 积分
   certPersonal: 500, // 实名认证（certType=personnel/personal）
   certEnterprise: 1000, // 企业认证（certType=institution/enterprise）
   inviteCertInviter: 1000, // 被邀请人认证通过 → 邀请人

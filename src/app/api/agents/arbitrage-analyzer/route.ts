@@ -7,7 +7,7 @@ import { getBillingCountry } from "@/lib/credits/fx";
 
 export const dynamic = "force-dynamic";
 
-/** 套利分析固定名义输入 token 数（无 LLM，纯数据库计算），token×2 反算积分 */
+/** 套利分析固定名义输入 token 数（无 LLM，纯数据库计算），按模型成本乘以运营定价倍率反算积分 */
 const ARBITRAGE_NOMINAL_INPUT_TOKENS = 1000;
 
 /** 从 referer / 路径推断 locale（与 quota guard / 各 AI 路由保持一致） */

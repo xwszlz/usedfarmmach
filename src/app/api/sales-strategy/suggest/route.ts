@@ -28,7 +28,7 @@ import { getBillingCountry } from "@/lib/credits/fx";
 
 export const dynamic = "force-dynamic";
 
-/** 销售策略固定名义输入 token 数（本路由无 LLM 调用，等效 2000 tokens），token×2 反算积分 */
+/** 销售策略固定名义输入 token 数（本路由无 LLM 调用，等效 2000 tokens），按模型成本乘以运营定价倍率反算积分 */
 const SALES_STRATEGY_NOMINAL_INPUT_TOKENS = 2000;
 
 /** 从 referer / 路径推断 locale（与 quota guard / 各 AI 路由保持一致） */
