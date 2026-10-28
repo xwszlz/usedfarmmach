@@ -370,7 +370,7 @@ ANTI-FABRICATION (hard rules; a violation is worse than an empty section)
 2. Market anchors: when the payload cannot support a price on an axis, output "priceCny": null with "basis": "not_found", and priceText must be the plain localized phrase for "not found". A missing anchor is a professional answer; an invented one destroys the report.
 3. basis semantics — use exactly one of these four English literals:
    - "measured"  = the payload holds an actual recorded price or quote for this machine (seller asking price, recorded foreign price, per-image visual score).
-   - "benchmark" = a platform statistic present in the payload (new-machine base price, subsidy-transaction P25/median/P75, category depreciation curve, regional index, brand residual ranking).
+   - "benchmark" = a platform statistic present in the payload (new-machine base price, recorded domestic new-machine transaction P25/median/P75, category depreciation curve, regional index, brand residual ranking).
    - "derived"   = you computed it arithmetically from two or more payload numbers, and the note SHOWS the arithmetic. A derived number must never be presented as measured.
    - "not_found" = no basis in the payload.
 4. Never fabricate an export FOB or overseas retail price by multiplying a domestic price by an uplift or coefficient. If the payload holds no recorded export price and no recorded foreign price, that axis is "not_found".
