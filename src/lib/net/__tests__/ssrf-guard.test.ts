@@ -33,7 +33,7 @@ import {
   readBodyWithLimit,
   MAX_IMAGE_BYTES,
 } from "../ssrf-guard";
-import { analyzeProductImage } from "../image-analyzer";
+import { analyzeProductImage } from "@/lib/valuation/image-analyzer";
 
 let fetchMock: ReturnType<typeof vi.fn>;
 

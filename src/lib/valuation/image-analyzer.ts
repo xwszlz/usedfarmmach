@@ -20,7 +20,7 @@
 import { chatCompletionDoubao, getArkVisionModelId } from "@/lib/ai/ark-client";
 import { recordUsage, ESTIMATED_TOKENS } from "@/lib/credits/usage-collector";
 import { withLanguage, type AiLocale } from "@/lib/i18n/ai-locale";
-import { fetchGuardedImage, readBodyWithLimit } from "@/lib/valuation/ssrf-guard";
+import { fetchGuardedImage, readBodyWithLimit } from "@/lib/net/ssrf-guard";
 
 /** 成色代码：英文枚举，**不翻译**（下游按字面量匹配） */
 export type ConditionCode = "excellent" | "good" | "fair" | "poor";
@@ -183,7 +183,7 @@ export function conditionCodeLabelText(code: ConditionCode | null | undefined, l
  * - data URI：**原样透传**。前端 `canvas.toDataURL("image/jpeg", 0.82)` 已给出压缩后的 base64，
  *   再 `fetch()` 一次纯属浪费；且超长 data URI 在部分 runtime 下 fetch 行为不确定。
  * - http(s) URL：下载后 base64，mime 取响应 `content-type`（非 image/* 一律按 jpeg 兜底）。
- *   下载**必须**走出网守卫（`@/lib/valuation/ssrf-guard`）：`imageUrls` 来自请求体，
+ *   下载**必须**走出网守卫（`@/lib/net/ssrf-guard`）：`imageUrls` 来自请求体，
  *   若不校验就是可直接把服务器当跳板打内网/云元数据的 SSRF；同时受 12MB 体积上限与 20s 超时约束。
  *
  * 为什么必须支持 data URI：估值页 / 深度分析上传的都是本地压缩图（不上传到 CDN），
