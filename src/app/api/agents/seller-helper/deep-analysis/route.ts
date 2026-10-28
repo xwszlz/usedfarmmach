@@ -504,7 +504,7 @@ export async function POST(request: NextRequest) {
       .replace(/^```+$/gm, "")
       .trim();
 
-    // ── 积分扣减（按 LLM token 实际消耗成本 × 2，反算积分）──
+    // ── 积分扣减（按 LLM token 实际消耗成本乘以运营定价倍率，反算积分）──
     const billingCountry = await getBillingCountry(payload.userId);
     const cost: AiCostBreakdown = computeAiCost({
       model: billingModel || getArkModelId(),

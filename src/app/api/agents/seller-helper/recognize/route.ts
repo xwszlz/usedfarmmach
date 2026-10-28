@@ -711,7 +711,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // ── 积分扣减（按 LLM token 实际消耗成本 × 2，反算积分）──
+    // ── 积分扣减（按 LLM token 实际消耗成本乘以运营定价倍率，反算积分）──
     // 用量由豆包（唯一 provider）在拿到 HTTP 响应后经 usage-collector 归集。
     // 只扣一次：把本请求全部记录按模型算成本后求和，再一次 deductCredits。
     // 多图是「一次请求」（buildDoubaoContent 把 N 张图塞进同一个 content 数组），

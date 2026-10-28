@@ -2,9 +2,18 @@
  * POST /api/agents/seller-helper/sales-strategy
  * AI 销售策略 —— 第四个 AI 能力模块（LLM 版，决策 A/B 落地）
  *
- * 流程：登录校验 → 检索上下文（内部实时 + 外部日报快照）→ 豆包生成结构化策略
- *       → rejected 不达标则重试 ≤1 次（PRD §3.3）→ 按量扣费（决策 B：实际 token ×
- *       SystemConfig 系数，护栏熔断）→ 写 UsageLog → 关联线索/经销商候选并脱敏联系方式 → 返回。
+ * 流程：登录校验 → 余额预检（成本加成口径）→ 检索上下文（内部实时 + 外部日报快照）
+ *       → 豆包生成结构化策略 → rejected 不达标则重试 ≤1 次（PRD §3.3）
+ *       → 按实际 token 的模型成本加成扣费（单次护栏熔断）→ 写 UsageLog
+ *       → 关联线索/经销商候选并脱敏联系方式 → 返回。
+ *
+ * 计费口径（2026-10-28 统一）：与估值/识别/深度分析同一口径 ——
+ *   `computeAiCost()` 按豆包实际 CNY 成本 × 运营定价倍率反算积分（`spend.ts` 的
+ *   `AI_COST_MULTIPLIER`），再经 `deductCredits()` 落库扣减。
+ *   另设策略专属「单次最低消费」（见 `SALES_STRATEGY_MIN_POINTS`）：策略是旗舰产品，
+ *   单次收费不得低于深度分析。
+ *   ⚠️ 运营倍率、护栏、最低消费这些**定价参数名与取值**不得以明文形式出现在响应体里
+ *   （响应只回「本次实际扣了多少」的 `cost` 与余额；`__tests__/route.test.ts` 有断言守着）。
  *
  * 返回体：`...strategy` 展开透传（9 个老字段 + 12 个新增决策字段，arch §1.3）
  *         + channels（脱敏后覆盖）+ searchStatus / searchNote（PRD §6.5：前端黄条 +
@@ -16,14 +25,14 @@
  *         isChineseBrand?, text?, imageUrls?, videoUrls? }
  *
  * 合规：.cn 数据不出境 —— 仅调用国行火山方舟豆包；Lead/Dealer 联系方式默认脱敏，
- *       明文仅在 unlock-contact 路由按积分解锁。计费系数只从 SystemConfig 读取，
- *       代码不持有明文倍数（[商业机密·内部]）。
+ *       明文仅在 unlock-contact 路由按积分解锁。
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { chatCompletionDoubao, getArkModelId } from "@/lib/ai/ark-client";
-import { deductAiUsage, estimateAiCost } from "@/lib/credits/deduct";
+import { computeAiCost, deductCredits } from "@/lib/credits/spend";
+import { getAiCostGuardrail } from "@/lib/credits/config";
 import { maskPhone, maskEmail } from "@/lib/pii";
 import {
   retrieveStrategyContext,
@@ -48,14 +57,32 @@ export const maxDuration = 90;
  * ⚠️ 口径铁律（勿"对齐"成 8192）：
  *   - 这里估的是**期望输出量**，**不是** `maxTokens` 上限（8192 是 cap，按 cap 预检会把
  *     大量余额够用的正常用户挡在门外）；
- *   - **真实扣费恒按 LLM 实测 usage** 计（见 `deductAiUsage({ actualTokens })`），
+ *   - **真实扣费恒按 LLM 实测 usage** 计（见下方 `computeAiCost({ inputTokens, outputTokens })`），
  *     本常量不参与计价，改它不会让任何用户多付一分钱；
  *   - 3000 → 4500 的原因：12 个决策字段让输出必然变长（+1200~2000 token），按老字段量级
- *     估属**系统性低估**；低估计的后果不是"少扣钱"，而是 `deductAiUsage` 在生成完成后返回
- *     `{ok:false, code:"INSUFFICIENT"}` ⇒ 用户白等 80 秒只看到"积分不足"、内容全丢，
- *     平台还白烧一次 token（双输）。
+ *     估属**系统性低估**；低估计的后果不是"少扣钱"，而是扣费环节在生成完成后返回
+ *     余额不足 ⇒ 用户白等 80 秒只看到"积分不足"、内容全丢，平台还白烧一次 token（双输）。
  */
 const SALES_STRATEGY_ESTIMATED_TOKENS = 4500;
+
+/**
+ * 预检用的**输入侧**典型规模（token）。
+ * 实测 system 段约 2627 + user 段约 2360 ≈ 5000；取 4000 作为偏保守的典型值，
+ * 与 `SALES_STRATEGY_ESTIMATED_TOKENS`（输出侧）一起按成本加成口径估算门槛。
+ */
+const SALES_STRATEGY_ESTIMATED_INPUT_TOKENS = 4000;
+
+/**
+ * 策略专属「单次最低消费」（积分）。
+ *
+ * 老板要求：AI 销售策略扣的积分必须高于 AI 深度分析。但策略与深度分析的实测成本区间重叠
+ * （策略 output 3000–8192、深度分析输出量级相近），按纯成本加成算，策略并不天然更贵。
+ * 故设此下限兜住「旗舰产品不得比深度分析更便宜」的产品规则。
+ *
+ * ⚠️ 这是**策略专属**规则，故放在本路由而非 `spend.ts`（那是全站共用计费层）。
+ * ⚠️ 泄露铁律：本数值不得出现在 API 响应体里（`__tests__/route.test.ts` 有断言守着）。
+ */
+const SALES_STRATEGY_MIN_POINTS = 250;
 
 /**
  * 首轮输出上限：12 个决策字段让输出显著变长（PM 估算 +1200~2000 token），
@@ -233,9 +260,19 @@ export async function POST(request: NextRequest) {
 
     const finalBrand = ctx.product?.brandName || body.brandName || "";
 
-    // 软门槛：余额不足（按名义预估）直接 402，避免浪费 LLM 调用
-    const estimatedCost = await estimateAiCost(SALES_STRATEGY_ESTIMATED_TOKENS);
-    if (user.credits < estimatedCost) {
+    // ── 模型 ID 提前解析：预检与扣费都要拿它查价格表，必须共用同一个变量（勿各写各的）──
+    const model = getArkModelId();
+
+    // 软门槛：余额不足（按成本加成口径预估）直接 402，避免浪费 LLM 调用。
+    // 门槛取 max(预估成本, 单次最低消费)：否则余额落在 [预估成本, 最低消费) 区间的用户会
+    // 先通过预检、白等 80 秒，再在扣费环节被 402 拦下 —— 那正是本预检要消灭的双输场景。
+    const estCost = computeAiCost({
+      model,
+      inputTokens: SALES_STRATEGY_ESTIMATED_INPUT_TOKENS,
+      outputTokens: SALES_STRATEGY_ESTIMATED_TOKENS,
+    });
+    const requiredPoints = Math.max(estCost.points, SALES_STRATEGY_MIN_POINTS);
+    if (user.credits < requiredPoints) {
       return NextResponse.json(
         {
           success: false,
@@ -245,7 +282,7 @@ export async function POST(request: NextRequest) {
               : "Insufficient credits. Please recharge first.",
           code: "INSUFFICIENT_CREDITS",
           rechargeUrl: `/${locale}/credits`,
-          required: estimatedCost,
+          required: requiredPoints,
           balance: user.credits,
         },
         { status: 402 }
@@ -260,37 +297,46 @@ export async function POST(request: NextRequest) {
       imageUrls: body.imageUrls,
       videoUrls: body.videoUrls,
     });
-    const model = getArkModelId();
     // 响应字段沿用已上线的 `searchStatus / searchNote`（半公开契约：小程序端也在打这个接口，
     // 不改名以避开“静默破坏下游”）；前端卡片把它映射成导出层的 `webStatus / webNote`。
     const webStatus = pickWebStatus(ctx);
     const webEvidence = pickWebEvidence(ctx);
     const searchNote = pickSearchNote(ctx, webStatus);
 
-    /** 单次 LLM 调用的封装：统一 token 累计口径（重试的 token 也计入扣费） */
+    /**
+     * 单次 LLM 调用的封装：把 usage 拆成 input/output 两段原样带回。
+     *
+     * ⚠️ 必须保留拆分：成本加成按「输入单价 ≠ 输出单价」分别计价（输出单价是输入的 5 倍），
+     *    合并成一个总数会让成本算错；重试的 token 也必须由调用方累加计入（见下方 `+=`）。
+     */
     const callLlm = async (
       callMessages: Array<{ role: string; content: string }>,
       timeoutMs: number
-    ): Promise<{ text: string; tokens: number }> => {
+    ): Promise<{ text: string; promptTokens: number; completionTokens: number }> => {
       const res = await chatCompletionDoubao({
         model,
         maxTokens: SALES_STRATEGY_MAX_TOKENS,
         timeoutMs,
         messages: callMessages,
       });
-      const promptTokens = res.usage?.prompt_tokens ?? 0;
-      const completionTokens = res.usage?.completion_tokens ?? 0;
-      return { text: res.text || "", tokens: promptTokens + completionTokens };
+      return {
+        text: res.text || "",
+        promptTokens: res.usage?.prompt_tokens ?? 0,
+        completionTokens: res.usage?.completion_tokens ?? 0,
+      };
     };
 
     let llmText = "";
-    let actualTokens = 0;
+    // 累计两段 token：首轮 + 重试（重试是真实发生的第二次 LLM 调用，必须一起计价）
+    let promptTokens = 0;
+    let completionTokens = 0;
     let llmCalls = 0;
     const llmDeadline = Date.now() + LLM_TOTAL_BUDGET_MS;
     try {
       const first = await callLlm(messages, LLM_CALL_TIMEOUT_MS);
       llmText = first.text;
-      actualTokens += first.tokens;
+      promptTokens += first.promptTokens;
+      completionTokens += first.completionTokens;
       llmCalls = 1;
 
       // ── rejected 不达标 ⇒ 重试 ≤1 次（PRD §3.3：不达标严禁静默通过）──
@@ -303,7 +349,8 @@ export async function POST(request: NextRequest) {
               Math.min(LLM_CALL_TIMEOUT_MS, remaining - 3000)
             );
             llmText = retry.text;
-            actualTokens += retry.tokens;
+            promptTokens += retry.promptTokens;
+            completionTokens += retry.completionTokens;
             llmCalls = 2;
           } catch (retryErr: any) {
             // 重试失败不阻断主链路：保留首轮结果（渲染层会有告警条兜底）
@@ -330,40 +377,52 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ── 按量扣费（决策 B：实际 token × SystemConfig 系数；护栏熔断不扣费）──
-    const deduction = await deductAiUsage({
-      userId: user.id,
-      action: "aiSalesStrategy",
-      actualTokens: actualTokens || SALES_STRATEGY_ESTIMATED_TOKENS,
-      reason: "AI销售策略",
-      breakdown: {
-        model,
-        actualTokens,
-        brand: finalBrand,
-        modelName: ctx.product?.modelName || body.modelName || "",
-        candidateCount: ctx.candidates.length,
-        // PRD §6.6：检索耗时与次数写入 breakdown，供后续定价（检索按 query 计费）
-        searchQueries: typeof webEvidence.totalQueries === "number" ? webEvidence.totalQueries : 0,
-        searchMs: typeof webEvidence.elapsedMs === "number" ? webEvidence.elapsedMs : 0,
-        searchStatus: webStatus,
-        rejectedRetried: llmCalls > 1,
-      },
+    // ── 扣费：成本加成口径（与实际模型成本 × 运营定价倍率挂钩，币种全球统一 CNY）──
+    // 实际 token（首轮 + 重试）先按「输入单价 / 输出单价」分别算成本，得到 cost.points。
+    const cost = computeAiCost({
+      model,
+      inputTokens: promptTokens,
+      outputTokens: completionTokens,
+    });
+    // 策略专属最低消费（见常量注释）；实际扣减以此为准。
+    const finalPoints = Math.max(cost.points, SALES_STRATEGY_MIN_POINTS);
+
+    // 防御性护栏：成本加成下正常单次成本远低于此上限，护栏实际永不触发，
+    // 保留只为在「模型价目表被误改 / usage 异常暴涨」时兜住失控请求。
+    // 注意比的是 finalPoints（真正要扣的钱），不是 cost.points —— 否则最低消费一旦高过
+    // 护栏，就会出现「实际扣费 > 护栏」的漏洞。
+    const guardrail = await getAiCostGuardrail();
+    if (finalPoints > guardrail) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            locale === "zh"
+              ? "本次请求成本超出单次上限，已熔断（未扣费）。请简化输入或联系平台。"
+              : "Request cost exceeded single-request cap; circuit-broken (no charge).",
+          code: "GUARDRAIL",
+          balance: user.credits,
+        },
+        { status: 429 }
+      );
+    }
+
+    const deduction = await deductCredits(user.id, finalPoints, "AI销售策略", {
+      ...cost,
+      brand: finalBrand,
+      modelName: ctx.product?.modelName || body.modelName || "",
+      candidateCount: ctx.candidates.length,
+      // PRD §6.6：检索耗时与次数写入 breakdown，供后续定价（检索按 query 计费）
+      searchQueries: typeof webEvidence.totalQueries === "number" ? webEvidence.totalQueries : 0,
+      searchMs: typeof webEvidence.elapsedMs === "number" ? webEvidence.elapsedMs : 0,
+      searchStatus: webStatus,
+      rejectedRetried: llmCalls > 1,
+      // 审计：两段 token 与实际计费点数分开留痕，便于对账
+      promptTokens,
+      completionTokens,
+      chargedPoints: finalPoints,
     });
     if (!deduction.ok) {
-      if (deduction.code === "GUARDRAIL") {
-        return NextResponse.json(
-          {
-            success: false,
-            error:
-              locale === "zh"
-                ? "本次请求成本超出单次上限，已熔断（未扣费）。请简化输入或联系平台。"
-                : "Request cost exceeded single-request cap; circuit-broken (no charge).",
-            code: "GUARDRAIL",
-            balance: deduction.balance,
-          },
-          { status: 429 }
-        );
-      }
       return NextResponse.json(
         {
           success: false,
@@ -373,8 +432,8 @@ export async function POST(request: NextRequest) {
               : "Insufficient credits.",
           code: "INSUFFICIENT_CREDITS",
           rechargeUrl: `/${locale}/credits`,
-          required: deduction.cost,
-          balance: deduction.balance,
+          required: deduction.required ?? finalPoints,
+          balance: deduction.credits ?? 0,
         },
         { status: 402 }
       );
@@ -449,9 +508,11 @@ export async function POST(request: NextRequest) {
         searchStatus: webStatus,
         searchNote,
         model,
-        estimatedCost,
-        cost: deduction.cost,
-        balance: deduction.balance,
+        // 预检门槛积分（= 余额门槛，前端据此展示「约需 X 积分」，与真实扣费口径一致）
+        estimatedCost: requiredPoints,
+        // 本次实际扣减积分（成本加成结果，已含策略最低消费）
+        cost: finalPoints,
+        balance: deduction.credits ?? 0,
         realtimeExternal: ctx.realtimeExternal,
         dataDate: ctx.dailyReport?.date || null,
       },

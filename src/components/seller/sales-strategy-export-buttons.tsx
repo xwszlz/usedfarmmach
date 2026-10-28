@@ -353,7 +353,7 @@ export default function SalesStrategyExportButtons({
 
       {busy && (
         <p className="text-[11px] text-gray-400">
-          {zh ? "导出按名义积分计费（不含再次生成成本）。" : "Export is nominally billed (no regeneration cost)."}
+          {zh ? "导出免费（不再重复计费）。" : "Export is free (no extra charge)."}
         </p>
       )}
     </div>

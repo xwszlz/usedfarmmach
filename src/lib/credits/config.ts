@@ -116,10 +116,15 @@ export async function getPlanBySku(sku: string): Promise<PlanSku | null> {
 // 真实数值由老板后台配置；默认值均为占位，便于未配置时系统可运行。
 
 /**
- * AI 销售策略计费系数。
+ * AI 销售策略计费系数（按量口径，**已废弃**）。
  * 单次成本公式：cost(积分) = 实际 token 消耗 × 本系数。
  * ⚠️ [商业机密·内部]：本系数是平台计费核心参数，仅存于 SystemConfig，
  *    代码中绝不出现明文倍数值；未知/非法值回落占位 1.0。
+ *
+ * @deprecated 销售策略已统一到「成本加成」口径（`computeAiCost`，见 spend.ts），
+ *   不再读取本系数。保留函数与 `CONFIG_KEYS.aiCostCoeff` 仅为兼容仍在用
+ *   `deductAiUsage` 的导出/解锁类动作（unlock-contact），避免破坏性变更；
+ *   新代码请勿再引入。彻底下线需另行评估存量 SystemConfig 数据与调用方。
  */
 export async function getAiCostCoeff(): Promise<number> {
   const v = await getConfig<number>(CONFIG_KEYS.aiCostCoeff, 1.0);

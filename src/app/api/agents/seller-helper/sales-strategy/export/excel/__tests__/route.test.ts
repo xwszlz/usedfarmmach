@@ -154,19 +154,18 @@ describe("① 鉴权 / 余额门禁（取数前短路）", () => {
     expect(deductAiUsage).not.toHaveBeenCalled();
   });
 
-  it("余额不足 → 402 INSUFFICIENT_CREDITS，且不查经销商、不生成文件、不扣费", async () => {
+  it("余额为 0 也允许导出（导出免费，不再有余额预检）", async () => {
     vi.mocked(getUserFromRequest).mockResolvedValue({ id: "u1", credits: 0 } as any);
-    vi.mocked(estimateAiCost).mockResolvedValue(9999);
 
     const res = await POST(makeReq({ partition: "all" }));
 
-    expect(res.status).toBe(402);
-    const j = await res.json();
-    expect(j.code).toBe("INSUFFICIENT_CREDITS");
-    expect(j.rechargeUrl).toContain("/credits");
-    expect(retrieveDealers).not.toHaveBeenCalled();
-    expect(buildExcel).not.toHaveBeenCalled();
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toBe(
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    expect(retrieveDealers).toHaveBeenCalled();
     expect(deductAiUsage).not.toHaveBeenCalled();
+    expect(estimateAiCost).not.toHaveBeenCalled();
   });
 });
 
@@ -190,14 +189,14 @@ describe("③ partition 取值校验", () => {
     expect(retrieveDealers).toHaveBeenLastCalledWith("cn");
   });
 
-  it("partition=\"intl\" 原样透传（且扣费 breakdown 记录实际分区）", async () => {
+  it("partition=\"intl\" 原样透传（导出不扣费，无 breakdown 可留痕）", async () => {
     vi.mocked(getUserFromRequest).mockResolvedValue({ id: "u1", credits: 99999 } as any);
 
     const res = await POST(makeReq({ partition: "intl" }));
 
     expect(res.status).toBe(200);
     expect(retrieveDealers).toHaveBeenCalledWith("intl");
-    expect(vi.mocked(deductAiUsage).mock.calls[0][0].breakdown).toMatchObject({ partition: "intl" });
+    expect(deductAiUsage).not.toHaveBeenCalled();
   });
 });
 
@@ -232,12 +231,9 @@ describe("⑤ 成功路径 + ⑥ unlockedSet 构建", () => {
     expect(cd).toContain("attachment");
     expect(cd).toContain(".xlsx");
 
-    // 扣费恰好一次 + 动作正确
-    expect(deductAiUsage).toHaveBeenCalledTimes(1);
-    const arg = vi.mocked(deductAiUsage).mock.calls[0][0];
-    expect(arg.userId).toBe("u1");
-    expect(arg.action).toBe("exportManual");
-    expect(arg.estimatedTokens).toBe(800);
+    // 导出免费：零 LLM 成本 ⇒ 不进计费模块
+    expect(deductAiUsage).not.toHaveBeenCalled();
+    expect(estimateAiCost).not.toHaveBeenCalled();
 
     // unlockedSet 构建：PiiAuditLog 的 "unlock:dealer_abc" → "abc"；"unlock:lead_xyz" 被排除
     const call = vi.mocked(buildExcel).mock.calls[0];

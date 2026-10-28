@@ -267,7 +267,8 @@ describe("①② T12 二段式解锁（真实 PDF 文本级验证）", () => {
     expect(res.status).toBe(200);
     const { pageCount, text } = await pdfTextOf(res);
     expect(pageCount).toBeGreaterThanOrEqual(1);
-    expect(deductAiUsage).toHaveBeenCalledTimes(1);
+    // 导出免费：库挂了也照常出文件，且不产生任何扣费
+    expect(deductAiUsage).not.toHaveBeenCalled();
     // 库挂了 ⇒ 查不到 = 不解锁（fail-closed），绝不能"猜"一个明文出来
     expect(text).not.toContain(UNLOCKED_PHONE);
     expect(text).not.toContain(LOCKED_PHONE);
