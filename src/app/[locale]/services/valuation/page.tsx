@@ -16,6 +16,10 @@ import ValuationReportSection, {
   type ValuationNarrative,
 } from "@/components/valuation/valuation-report-section";
 import { isCnSite } from "@/config/site";
+import {
+  describeValuationHttpError,
+  readServerErrorMessage,
+} from "@/components/valuation/valuation-api-error";
 import ValuationResultGate, { type BlurredValuation } from "@/components/valuation/valuation-result-gate";
 import {
   DOMESTIC_HP_REGRESSION,
@@ -140,6 +144,22 @@ const DOMESTIC_CONDITION_I18N: Record<string, { zh: string; en: string }> = {
   fair: { zh: "一般", en: "Fair" },
   poor: { zh: "较差", en: "Poor" },
 };
+
+/**
+ * /api/valuation 成功响应里的 `data`：
+ * 登录用户 = 全量 ValuationResult（+ narrative / visual）；
+ * 游客 = 区间化模糊结果（priceLow/priceMid/priceHigh）。
+ */
+type ValuationApiData = RawValuationPayload & {
+  estimatedValue: number;
+  priceLow?: number;
+  priceHigh?: number;
+  priceMid?: number;
+};
+
+/** 本地粗算降级提示文案（本地粗算 ≠ AI 估值，必须让人看得见） */
+const DEGRADED_NOTICE =
+  "当前为本地粗算结果（未调用 AI 引擎），精度明显低于 AI 估值。请点「开始估值」重试。";
 
 // 国产品类
 const DOMESTIC_CATEGORIES = [
@@ -957,6 +977,10 @@ export default function ValuationPage() {
 
   const [loading, setLoading] = useState(false);
   const [hasImage, setHasImage] = useState(false);
+  // 估值请求的显式错误（非 2xx / 响应不可解析）。有值时结果区不渲染，只显示错误卡。
+  const [valuationError, setValuationError] = useState<string | null>(null);
+  // 是否走了本地粗算降级（doClientCalc / fallbackIntlCalc）。为真时结果区顶部挂可见提示。
+  const [degraded, setDegraded] = useState(false);
 
   // ── P0 留资引擎：游客模糊区间结果 / 429 限流 / 解锁成功状态 ──
   const [gateData, setGateData] = useState<BlurredValuation | null>(null);
@@ -981,6 +1005,8 @@ export default function ValuationPage() {
   const doValuation = async () => {
     setLoading(true);
     setValuationBilling(null);
+    setValuationError(null);
+    setDegraded(false);
     try {
       if (channel === "domestic") {
         // 调用网站API进行完整估值
@@ -1016,23 +1042,50 @@ export default function ValuationPage() {
           return;
         }
 
-        // body 只能读一次：先取出再分支，避免二次 res.json() 报
-        // "body stream already read" 导致结果区卡死。
-        const data = await res.json().catch(() => null);
+        // ── 非 2xx 一律显式报错，绝不静默降级成本地粗算 ──
+        // 413（Vercel 请求体超限）/ 504（网关超时）/ 502 返回的都是 HTML 错误页，
+        // 以前 res.json() 解析失败 → data=null → 悄悄 doClientCalc()，
+        // 用户看到「估值明显不聪明」而非「请求失败」，是本轮最隐蔽的误导。
+        if (!res.ok) {
+          const serverMsg = await readServerErrorMessage(res);
+          setValuationError(describeValuationHttpError(res.status, serverMsg));
+          setResult(null);
+          setGateData(null);
+          return;
+        }
 
+        // body 只能读一次：先取文本再解析，避免二次读取报 "body stream already read"
+        const rawText = await res.text().catch(() => "");
+        let data: {
+          success?: boolean;
+          blurred?: boolean;
+          error?: string;
+          data?: ValuationApiData;
+          intelligence?: ValuationIntelligence | null;
+          billing?: { points?: number; balance?: number };
+        } | null = null;
+        try {
+          data = rawText ? JSON.parse(rawText) : null;
+        } catch {
+          data = null;
+        }
+
+        // 2xx 但响应不是可解析 JSON：显式报错，不再本地粗算冒充 AI 结果
         if (!data) {
-          doClientCalc();
+          setValuationError("服务端返回了无法解析的响应，请重试");
+          setResult(null);
+          setGateData(null);
           return;
         }
         if (data.success) {
           // ── P0 留资引擎：游客模糊区间结果 → 渲染解锁卡片 ──
           if (data.blurred === true) {
-            const r = data.data;
+            const r = data.data as ValuationApiData;
             setGateData({
-              priceLow: r.priceLow,
-              priceHigh: r.priceHigh,
-              priceMid: r.priceMid,
-              confidence: r.confidence,
+              priceLow: r.priceLow ?? 0,
+              priceHigh: r.priceHigh ?? 0,
+              priceMid: r.priceMid ?? 0,
+              confidence: r.confidence ?? 0,
             });
             setLimitReached(false);
             setIntel(data.intelligence ?? null);
@@ -1043,7 +1096,7 @@ export default function ValuationPage() {
           // 登录用户（blurred: false）：照旧展示精确结果
           setGateData(null);
           setLimitReached(false);
-          const r = data.data;
+          const r = data.data as ValuationApiData;
           setIntel(data.intelligence ?? null);
           setResult({
             value: r.estimatedValue,
@@ -1069,8 +1122,11 @@ export default function ValuationPage() {
             setValuationBilling({ points: billing.points, balance: billing.balance });
           }
         } else {
-          // API失败时用客户端计算
-          doClientCalc();
+          // HTTP 200 但 success:false（积分不足 / 护栏拦截 / 参数非法等）：
+          // 显示后端给的结构化错误，不再本地粗算冒充 AI 结果。
+          setValuationError(data.error || "估值失败，请稍后重试");
+          setResult(null);
+          setGateData(null);
         }
       } else {
         // 国际/出口：统一走 /api/valuation (V4 引擎)，与产品页、国产渠道同源，消除「两套模型」
@@ -1097,9 +1153,37 @@ export default function ValuationPage() {
               locale,
             }),
           });
-          const data = await res.json().catch(() => null);
-          if (data && data.success) {
-            const r = data.data;
+          // 非 2xx 一律显式报错（413/504/502 是 HTML 错误页，不能静默降级）
+          if (!res.ok) {
+            const serverMsg = await readServerErrorMessage(res);
+            setValuationError(describeValuationHttpError(res.status, serverMsg));
+            setResult(null);
+            return;
+          }
+
+          // body 只能读一次：先取文本再解析
+          const rawText = await res.text().catch(() => "");
+          let data: {
+            success?: boolean;
+            error?: string;
+            data?: ValuationApiData;
+            intelligence?: ValuationIntelligence | null;
+            billing?: { points?: number; balance?: number };
+          } | null = null;
+          try {
+            data = rawText ? JSON.parse(rawText) : null;
+          } catch {
+            data = null;
+          }
+
+          if (!data) {
+            setValuationError("服务端返回了无法解析的响应，请重试");
+            setResult(null);
+            return;
+          }
+
+          if (data.success) {
+            const r = data.data as ValuationApiData;
             setIntel(data.intelligence ?? null);
             const v4Value = r.estimatedValue;
             setResult({
@@ -1127,13 +1211,18 @@ export default function ValuationPage() {
               setArbitrage(arb);
             }
           } else {
-            fallbackIntlCalc();
+            // HTTP 200 但 success:false：显示后端结构化错误，不再本地粗算冒充 AI
+            setValuationError(data.error || "估值失败，请稍后重试");
+            setResult(null);
           }
         } catch {
+          // 网络层异常（断网 / DNS / 请求被中断）：保留本地粗算兜底，
+          // 但由 fallbackIntlCalc 置 degraded=true，结果区会显示「本地粗算」提示。
           fallbackIntlCalc();
         }
       }
     } catch {
+      // 同上：纯网络异常才走本地粗算，并且必须让用户看见降级提示
       doClientCalc();
     } finally {
       setLoading(false);
@@ -1145,6 +1234,8 @@ export default function ValuationPage() {
     const { value, breakdown } = calcIntlValuation(
       iBrand, iHP, iHours, iNewPrice, iRegion, iYear, iCondition, iEmission, iConfigAddon,
     );
+    // 本地粗算 ≠ AI 估值：必须让用户在结果区看得见（否则会被误判成「AI 不聪明」）
+    setDegraded(true);
     setResult({
       value,
       confidence: calcConfidence(channel, iBrand, iHP, hasImage, Math.round(iHours / 500)),
@@ -1167,6 +1258,8 @@ export default function ValuationPage() {
       const brandPremium = DOMESTIC_BRAND_PREMIUM[dBrand] || 1.0;
       const value = Math.round(basePrice * depreciation * regionFactor * trendFactor * brandPremium / 1.3);
 
+      // 本地粗算 ≠ AI 估值：标记降级，结果区顶部会挂可见提示
+      setDegraded(true);
       setResult({
         value,
         confidence: calcConfidence(channel, dBrand, dHP, hasImage, dYears),
@@ -1784,6 +1877,24 @@ export default function ValuationPage() {
             </div>
           )}
 
+          {/* ── 估值请求失败：非 2xx / 响应不可解析 / 后端 success:false 一律显式提示 ── */}
+          {valuationError && (
+            <div className="mt-6 animate-in rounded-xl border border-red-200 bg-red-50 p-4">
+              <div className="mb-1 flex items-center gap-2 text-sm font-semibold text-red-700">
+                <AlertTriangle className="h-4 w-4" />
+                估值未完成
+              </div>
+              <p className="text-xs leading-relaxed text-red-700">{valuationError}</p>
+              <button
+                onClick={doValuation}
+                disabled={loading}
+                className="mt-3 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading ? "重试中..." : "重新估值"}
+              </button>
+            </div>
+          )}
+
           {/* ── P0 留资引擎：游客模糊区间结果（交邮箱解锁精确值）── */}
           {!result && gateData && (
             <div className="mt-6 animate-in">
@@ -1812,6 +1923,17 @@ export default function ValuationPage() {
           {/* Results */}
           {result && (
             <div className="mt-6 space-y-4 animate-in">
+              {/* 降级提示：走的是本地粗算公式而非 AI 引擎 —— 不标出来就会被误判成「AI 不聪明」 */}
+              {degraded && (
+                <div className="flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs leading-relaxed text-amber-800">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                  <div>
+                    <div className="font-semibold">当前为本地粗算结果</div>
+                    <div className="mt-0.5">{DEGRADED_NOTICE}</div>
+                  </div>
+                </div>
+              )}
+
               {/* Main Result */}
               <div className="flex items-center gap-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
                 <ConfidenceGauge value={result.confidence} />
