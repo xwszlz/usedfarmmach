@@ -380,10 +380,48 @@ describe("⑥ 响应新增字段 shape（只增不改）", () => {
     }
   });
 
-  it("视觉分析被跳过 → score/label 为 null，imageCount 为 0", async () => {
+  it("视觉分析被跳过 → score/label/confidence 为 null，imageCount 为 0", async () => {
     const res = await POST(makeReq({ ...BASE_BODY, skipImageAnalysis: true }));
     const j = await res.json();
-    expect(j.data.visual).toEqual({ score: null, label: null, labelText: null, imageCount: 0, perImage: [] });
+    expect(j.data.visual).toEqual({
+      score: null,
+      label: null,
+      labelText: null,
+      confidence: null,
+      imageCount: 0,
+      perImage: [],
+    });
+  });
+
+  it("有图时 confidence 是 0-1 的数字（前端「分析图片 N 张 · 置信度 X%」后半截靠它）", async () => {
+    const res = await POST(makeReq({ ...BASE_BODY, imageDataUris: [DATA_URI] }));
+    const j = await res.json();
+    expect(typeof j.data.visual.confidence).toBe("number");
+    expect(j.data.visual.confidence).toBeGreaterThan(0);
+    expect(j.data.visual.confidence).toBeLessThanOrEqual(1);
+    expect(j.data.visual.confidence).toBe(0.8);
+  });
+
+  it("imageConfidence=0（视觉全失败）→ confidence 为 null 而不是 0（0 会被渲染成「置信度 0%」）", async () => {
+    vi.mocked(analyzeProductImages).mockResolvedValue({
+      visualConditionScore: 0,
+      visualConditionAnalysis: "",
+      imageConfidence: 0,
+      usedV4Condition: false,
+      perImage: [],
+    } as never);
+    const res = await POST(makeReq({ ...BASE_BODY, imageDataUris: [DATA_URI] }));
+    const j = await res.json();
+    expect(j.data.visual.confidence).toBeNull();
+    expect(j.data.visual.score).toBeNull();
+  });
+
+  it("游客侧同样带 confidence（两态同 shape，只是不给逐图明细）", async () => {
+    vi.mocked(verifyToken).mockReturnValue(null as never);
+    const res = await POST(makeReq({ ...BASE_BODY, imageDataUris: [DATA_URI] }));
+    const j = await res.json();
+    expect(j.data.visual.confidence).toBe(0.8);
+    expect(j.data.visual.perImage).toEqual([]);
   });
 
   it("5 张图的逐图明细全部透传（第 4/5 张不再被静默丢弃）", async () => {

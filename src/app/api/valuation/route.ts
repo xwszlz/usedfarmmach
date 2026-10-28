@@ -782,6 +782,11 @@ export async function POST(request: NextRequest) {
       score: visualScore,
       label: visualLabel,
       labelText: visualLabel ? conditionCodeLabelText(visualLabel, aiLocale) : null,
+      // 图片分析置信度（0-1）。`imageConfidence === 0` 表示「没有可用的视觉评估」，
+      // 一律输出 null 而不是 0 —— 前端把它渲染成「置信度 0%」比不显示更糟（0% 是错误信息，
+      // 真实含义是「没看图」）。有值时必须 > 0，故用 > 0 判定而不是 != null。
+      confidence:
+        visualResult && visualResult.imageConfidence > 0 ? visualResult.imageConfidence : null,
       imageCount: analyzedImageCount,
     };
 
