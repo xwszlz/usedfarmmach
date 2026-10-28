@@ -1,171 +1,320 @@
 /**
- * image-analyzer.ts 单元测试
+ * image-analyzer.ts 单元测试（vitest 版）
  *
- * 测试图片分析模块的逻辑（统一豆包视觉能力入口）。
- * 注意：需 mock axios（豆包 chat/completions 内部走 axios.post）与全局 fetch（图片下载），
- * 以避免实际 LLM / 网络调用。
+ * 历史：本文件原先是「console.log + 自定义 assert」脚本，且降级用例依赖真实 axios
+ * 网络失败 —— 在 vitest 下会挂住整个 run（无 test suite + 真实网络请求）。
+ * 2026-11 改为标准 vitest：原有断言逐条保留，网络全部 mock（axios / fetch），
+ * 并补上本次新增的 `perImage` 逐图明细与 `conditionCode` 英文枚举用例。
  */
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-// 注意：image-analyzer 统一走 chatCompletionDoubao（火山方舟 ARK），
-// 其内部通过 axios.post 调用，本测试 mock axios 即可拦截，无需真实 key。
+// ark-client 内部 `import axios from "axios"` 后调 axios.post —— 只替换这一层
+vi.mock("axios", () => ({ default: { post: vi.fn() } }));
+
+import axios from "axios";
 
 import {
+  analyzeProductImage,
   analyzeProductImages,
+  CONDITION_CODES,
   visualScoreToConditionFactor,
-  type ImageAnalysisResult,
 } from "../image-analyzer";
 
-// 保存原始 axios / fetch
-let originalAxios: any;
-let originalFetch: any;
+const postMock = vi.mocked(axios.post);
 
-// Mock axios（拦截 ark-client 的 chat/completions 调用）
-function mockAxios() {
-  const mockPost = async (_url: string, _data: any, _config: any) => {
-    // 模拟豆包成功响应（OpenAI 兼容结构 + usage 供计费归集）
-    return {
-      data: {
-        choices: [
-          {
-            message: {
-              content: JSON.stringify({
-                conditionScore: 8,
-                conditionLabel: "良好",
-                analysis: "设备外观良好，有轻微使用痕迹",
-                confidence: 0.85,
-              }),
-            },
-          },
-        ],
-        usage: { prompt_tokens: 100, completion_tokens: 20 },
-      },
-    };
+/** 构造一次豆包视觉成功响应（OpenAI 兼容） */
+function llmResponse(payload: Record<string, unknown>) {
+  return {
+    data: {
+      choices: [{ message: { content: JSON.stringify(payload) } }],
+      usage: { prompt_tokens: 1200, completion_tokens: 180 },
+    },
   };
-
-  const axios = require("axios");
-  originalAxios = { ...axios };
-  axios.default = mockPost;
-  axios.post = mockPost;
-
-  return mockPost;
 }
 
-function restoreAxios() {
-  if (originalAxios) {
-    const axios = require("axios");
-    Object.assign(axios, originalAxios);
-  }
+/** 从 mock 调用里取出 prompt 正文 */
+function promptOf(callIndex = 0): string {
+  const body = postMock.mock.calls[callIndex][1] as {
+    messages: Array<{ content: Array<{ type: string; text?: string }> }>;
+  };
+  return body.messages[0].content.find((c) => c.type === "text")?.text ?? "";
 }
 
-// Mock 全局 fetch（模拟图片下载返回字节，避免真实网络）
-function mockFetch() {
-  originalFetch = global.fetch;
-  global.fetch = (async (_url: string) => ({
-    ok: true,
-    arrayBuffer: async () => Buffer.from("fake-image-bytes"),
-  })) as any;
-}
+beforeEach(() => {
+  postMock.mockReset();
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => ({
+      ok: true,
+      arrayBuffer: async () => Buffer.from("fake-image-bytes"),
+      headers: { get: () => "image/jpeg" },
+    }))
+  );
+});
 
-function restoreFetch() {
-  if (originalFetch) global.fetch = originalFetch;
-}
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
-async function runImageAnalyzerTests() {
-  console.log("\n=== image-analyzer.ts 单元测试 ===\n");
+describe("visualScoreToConditionFactor 映射（既有断言，逐条保留）", () => {
+  it.each([
+    [9, 1.05],
+    [10, 1.05],
+    [8, 1.0],
+    [7, 0.98],
+    [6, 0.95],
+    [5, 0.9],
+    [4, 0.85],
+    [3, 0.78],
+    [1, 0.7],
+    [2, 0.7],
+    [0, 0.7],
+    [11, 1.05],
+  ])("%s 分 → %s", (score, expected) => {
+    expect(Math.abs(visualScoreToConditionFactor(score) - expected)).toBeLessThan(0.001);
+  });
+});
 
-  let passed = 0;
-  let failed = 0;
-  const failures: string[] = [];
-
-  function assert(condition: boolean, message: string) {
-    if (condition) {
-      passed++;
-      console.log(`  ✅ PASS: ${message}`);
-    } else {
-      failed++;
-      failures.push(message);
-      console.log(`  ❌ FAIL: ${message}`);
-    }
-  }
-
-  // -------------------------------------------------------
-  // 测试1: visualScoreToConditionFactor 映射
-  // -------------------------------------------------------
-  console.log("\n📊 测试: visualScoreToConditionFactor 映射");
-  {
-    assert(Math.abs(visualScoreToConditionFactor(9) - 1.05) < 0.001, "9分 → 1.05");
-    assert(Math.abs(visualScoreToConditionFactor(10) - 1.05) < 0.001, "10分 → 1.05");
-    assert(Math.abs(visualScoreToConditionFactor(8) - 1.0) < 0.001, "8分 → 1.0");
-    assert(Math.abs(visualScoreToConditionFactor(7) - 0.98) < 0.001, "7分 → 0.98");
-    assert(Math.abs(visualScoreToConditionFactor(6) - 0.95) < 0.001, "6分 → 0.95");
-    assert(Math.abs(visualScoreToConditionFactor(5) - 0.90) < 0.001, "5分 → 0.90");
-    assert(Math.abs(visualScoreToConditionFactor(4) - 0.85) < 0.001, "4分 → 0.85");
-    assert(Math.abs(visualScoreToConditionFactor(3) - 0.78) < 0.001, "3分 → 0.78");
-    assert(Math.abs(visualScoreToConditionFactor(1) - 0.70) < 0.001, "1分 → 0.70");
-    assert(Math.abs(visualScoreToConditionFactor(2) - 0.70) < 0.001, "2分 → 0.70");
-    assert(Math.abs(visualScoreToConditionFactor(0) - 0.70) < 0.001, "0分 → 0.70 (边界)");
-    assert(Math.abs(visualScoreToConditionFactor(11) - 1.05) < 0.001, "11分 → 1.05 (边界)");
-  }
-
-  // -------------------------------------------------------
-  // 测试2: 无图片输入
-  // -------------------------------------------------------
-  console.log("\n📊 测试: 无图片输入");
-  {
+describe("无图片输入", () => {
+  it("返回全 0 + 空 perImage，且不调用模型", async () => {
     const result = await analyzeProductImages([]);
-    assert(result.visualConditionScore === 0, "无图片时 visualConditionScore 应为 0");
-    assert(result.usedV4Condition === false, "无图片时 usedV4Condition 应为 false");
-    assert(result.imageConfidence === 0, "无图片时 imageConfidence 应为 0");
-  }
+    expect(result.visualConditionScore).toBe(0);
+    expect(result.usedV4Condition).toBe(false);
+    expect(result.imageConfidence).toBe(0);
+    expect(result.perImage).toEqual([]);
+    expect(postMock).not.toHaveBeenCalled();
+  });
+});
 
-  // -------------------------------------------------------
-  // 测试3: 正常路径（mock 豆包返回结构化 JSON）
-  // -------------------------------------------------------
-  console.log("\n📊 测试: 正常路径（豆包视觉返回）");
-  {
-    mockFetch();
-    mockAxios();
-    try {
-      const result = await analyzeProductImages(["https://example.com/test.jpg"]);
-      assert(result.visualConditionScore === 8, "正常路径 visualConditionScore 应为 8");
-      assert(result.usedV4Condition === true, "正常路径 usedV4Condition 应为 true");
-      assert(Math.abs(result.imageConfidence - 0.85) < 0.001, "正常路径 imageConfidence 应为 0.85");
-    } finally {
-      restoreAxios();
-      restoreFetch();
+describe("正常路径（豆包视觉返回结构化 JSON）", () => {
+  it("评分/置信度/conditionCode 正确解析", async () => {
+    postMock.mockResolvedValue(
+      llmResponse({
+        conditionScore: 8,
+        conditionCode: "good",
+        conditionLabel: "良好",
+        analysis: "设备外观良好，有轻微使用痕迹",
+        confidence: 0.85,
+      }) as never
+    );
+
+    const result = await analyzeProductImages(["https://example.com/test.jpg"]);
+    expect(result.visualConditionScore).toBe(8);
+    expect(result.usedV4Condition).toBe(true);
+    expect(Math.abs(result.imageConfidence - 0.85)).toBeLessThan(0.001);
+    expect(result.conditionCode).toBe("good");
+    expect(result.perImage).toHaveLength(1);
+    expect(result.perImage![0]).toEqual({
+      score: 8,
+      label: "good",
+      analysis: "设备外观良好，有轻微使用痕迹",
+      confidence: 0.85,
+    });
+  });
+
+  it("conditionLabel（中文，向后兼容字段）保持原样不被改写", async () => {
+    postMock.mockResolvedValue(
+      llmResponse({
+        conditionScore: 6,
+        conditionCode: "fair",
+        conditionLabel: "一般",
+        analysis: "x",
+        confidence: 0.6,
+      }) as never
+    );
+    const single = await analyzeProductImage("https://example.com/a.jpg");
+    expect(single.conditionLabel).toBe("一般");
+    expect(single.conditionCode).toBe("fair");
+  });
+});
+
+describe("perImage 逐图明细（本次新增：过去只留加权最高那张的 analysis）", () => {
+  it("3 张图 → perImage 长度 3，顺序与入参一致，每项含 score/label/analysis/confidence", async () => {
+    postMock
+      .mockResolvedValueOnce(
+        llmResponse({
+          conditionScore: 9,
+          conditionCode: "excellent",
+          conditionLabel: "优秀",
+          analysis: "接近全新",
+          confidence: 0.9,
+        }) as never
+      )
+      .mockResolvedValueOnce(
+        llmResponse({
+          conditionScore: 6,
+          conditionCode: "fair",
+          conditionLabel: "一般",
+          analysis: "轻度锈蚀",
+          confidence: 0.7,
+        }) as never
+      )
+      .mockResolvedValueOnce(
+        llmResponse({
+          conditionScore: 4,
+          conditionCode: "poor",
+          conditionLabel: "较差",
+          analysis: "轮胎磨损严重",
+          confidence: 0.8,
+        }) as never
+      );
+
+    const urls = ["https://example.com/1.jpg", "https://example.com/2.jpg", "https://example.com/3.jpg"];
+    const result = await analyzeProductImages(urls);
+
+    expect(result.perImage).toHaveLength(urls.length);
+    expect(result.perImage!.map((item) => item.score)).toEqual([9, 6, 4]);
+    expect(result.perImage!.map((item) => item.label)).toEqual(["excellent", "fair", "poor"]);
+    expect(result.perImage!.map((item) => item.analysis)).toEqual(["接近全新", "轻度锈蚀", "轮胎磨损严重"]);
+    for (const item of result.perImage!) {
+      expect(typeof item.score).toBe("number");
+      expect(CONDITION_CODES).toContain(item.label);
+      expect(typeof item.analysis).toBe("string");
+      expect(typeof item.confidence).toBe("number");
     }
-  }
+    // 聚合语义不变：平均分四舍五入到 1 位；analysis 仍是加权最高那张
+    expect(result.visualConditionScore).toBe(6.3);
+    expect(result.visualConditionAnalysis).toBe("接近全新");
+  });
 
-  // -------------------------------------------------------
-  // 测试4: 降级逻辑（豆包不可用时返回默认分析）
-  // -------------------------------------------------------
-  console.log("\n📊 测试: 降级逻辑");
-  {
-    mockFetch();
-    // 不 mock axios → 真实 axios.post 离线会失败并被 image-analyzer 捕获降级
-    try {
-      const result = await analyzeProductImages(["https://example.com/test.jpg"]);
-      assert(result.visualConditionScore === 5, "降级时默认评分为 5");
-      assert(result.usedV4Condition === false, "降级时 usedV4Condition 应为 false");
-    } finally {
-      restoreFetch();
-    }
-  }
+  it("最多只分析 3 张（成本保护），perImage 长度随之封顶", async () => {
+    postMock.mockResolvedValue(
+      llmResponse({
+        conditionScore: 7,
+        conditionCode: "good",
+        conditionLabel: "良好",
+        analysis: "ok",
+        confidence: 0.8,
+      }) as never
+    );
+    const result = await analyzeProductImages([
+      "https://example.com/1.jpg",
+      "https://example.com/2.jpg",
+      "https://example.com/3.jpg",
+      "https://example.com/4.jpg",
+      "https://example.com/5.jpg",
+    ]);
+    expect(postMock).toHaveBeenCalledTimes(3);
+    expect(result.perImage).toHaveLength(3);
+  });
 
-  // -------------------------------------------------------
-  // 打印总结
-  // -------------------------------------------------------
-  console.log("\n" + "=".repeat(60));
-  console.log(`image-analyzer 测试结果: ${passed} 通过, ${failed} 失败`);
-  console.log("=".repeat(60));
+  it("data URI 直接透传，不额外 fetch（国产渠道零收费回归点）", async () => {
+    const fetched: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        fetched.push(url);
+        return { ok: true, arrayBuffer: async () => Buffer.from("x"), headers: { get: () => "image/jpeg" } };
+      })
+    );
+    postMock.mockResolvedValue(
+      llmResponse({
+        conditionScore: 8,
+        conditionCode: "good",
+        conditionLabel: "良好",
+        analysis: "ok",
+        confidence: 0.8,
+      }) as never
+    );
 
-  if (failures.length > 0) {
-    console.log("\n失败用例:");
-    failures.forEach((f, i) => console.log(`  ${i + 1}. ${f}`));
-  }
+    await analyzeProductImages(["data:image/jpeg;base64,AAAA"]);
+    expect(fetched).toEqual([]);
+    expect(postMock).toHaveBeenCalledTimes(1);
+    // 图片真的被放进了视觉请求体
+    const body = postMock.mock.calls[0][1] as { messages: Array<{ content: Array<{ type: string }> }> };
+    expect(body.messages[0].content.some((c) => c.type === "image_url")).toBe(true);
+  });
+});
 
-  return { passed, failed, failures };
-}
+describe("conditionCode 只能是 4 个英文枚举之一（非法值兜底）", () => {
+  it.each([
+    ["模型给了合法英文", "excellent", 9, "excellent"],
+    ["大小写混杂", " GOOD ", 7, "good"],
+    ["模型给了中文标签", "优秀", 9, "excellent"],
+    ["模型给了非法词", "TERRIBLE", 3, "poor"],
+    ["模型没给", undefined, 8, "good"],
+    ["模型给了数字", 7, 7, "good"],
+  ])("%s → %s", async (_title, rawCode, score, expected) => {
+    postMock.mockResolvedValue(
+      llmResponse({
+        conditionScore: score,
+        conditionCode: rawCode,
+        conditionLabel: "x",
+        analysis: "x",
+        confidence: 0.8,
+      }) as never
+    );
+    const result = await analyzeProductImage("https://example.com/a.jpg");
+    expect(result.conditionCode).toBe(expected);
+    expect(CONDITION_CODES).toContain(result.conditionCode);
+  });
+});
 
-// 运行测试
-runImageAnalyzerTests().catch(console.error);
+describe("降级逻辑（视觉模型不可用）", () => {
+  it("axios 报错 → 默认成色 5 分 / usedV4Condition=false / conditionCode=fair", async () => {
+    postMock.mockRejectedValue(new Error("ECONNREFUSED") as never);
+    const result = await analyzeProductImages(["https://example.com/test.jpg"]);
+    expect(result.visualConditionScore).toBe(5);
+    expect(result.usedV4Condition).toBe(false);
+    expect(result.conditionCode).toBe("fair");
+    expect(result.perImage).toHaveLength(1);
+    expect(result.perImage![0].label).toBe("fair");
+  });
+
+  it("模型返回无法解析的文本 → 该图降级为默认分，不抛异常", async () => {
+    postMock.mockResolvedValue({
+      data: { choices: [{ message: { content: "我觉得还行吧" } }], usage: { prompt_tokens: 10, completion_tokens: 5 } },
+    } as never);
+    const result = await analyzeProductImages(["https://example.com/test.jpg"]);
+    expect(result.visualConditionScore).toBe(5);
+    expect(result.usedV4Condition).toBe(false);
+  });
+});
+
+describe("prompt 契约：conditionCode 字段 + 语言指令", () => {
+  it("prompt 里写明 conditionCode 四个英文枚举", async () => {
+    postMock.mockResolvedValue(
+      llmResponse({
+        conditionScore: 7,
+        conditionCode: "good",
+        conditionLabel: "良好",
+        analysis: "ok",
+        confidence: 0.8,
+      }) as never
+    );
+    await analyzeProductImage("https://example.com/a.jpg", "en");
+    const promptText = promptOf();
+    expect(promptText).toContain("conditionCode");
+    expect(promptText).toContain("excellent / good / fair / poor");
+  });
+
+  it("locale 决定语言指令（ru → Русский，且要求枚举不翻译）", async () => {
+    postMock.mockResolvedValue(
+      llmResponse({
+        conditionScore: 7,
+        conditionCode: "good",
+        conditionLabel: "良好",
+        analysis: "ok",
+        confidence: 0.8,
+      }) as never
+    );
+    await analyzeProductImage("https://example.com/a.jpg", "ru");
+    const promptText = promptOf();
+    expect(promptText).toContain("Русский");
+    expect(promptText).toContain("OUTPUT LANGUAGE");
+  });
+
+  it("默认 locale=zh 同样注入简体中文指令（8 语种不搞特例）", async () => {
+    postMock.mockResolvedValue(
+      llmResponse({
+        conditionScore: 7,
+        conditionCode: "good",
+        conditionLabel: "良好",
+        analysis: "ok",
+        confidence: 0.8,
+      }) as never
+    );
+    await analyzeProductImage("https://example.com/a.jpg");
+    expect(promptOf()).toContain("简体中文");
+  });
+});

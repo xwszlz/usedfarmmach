@@ -318,4 +318,20 @@ async function runTests() {
 }
 
 // 运行测试
-runTests().catch(console.error);
+//
+// 2026-11：本文件原是「console.log + 自定义 assert」脚本，在 vitest 下会以
+// "No test suite found" 直接判红（并让 `vitest run src/lib/valuation` 永远不绿）。
+// 这里只做**最小改造**：保留原有 runTests() 与全部 32 条断言不动，
+// 只把它包进一个 it() 并对失败计数做最终断言 —— 断言一条都没删、没改。
+import { describe, it, expect } from "vitest";
+
+describe("formulas V4 估值引擎（原 tsx 脚本转 vitest，断言逐条保留）", () => {
+  it(
+    "全部场景断言通过",
+    async () => {
+      const summary = await runTests();
+      expect(summary.failed, "失败用例详见上方 stdout").toBe(0);
+    },
+    120_000
+  );
+});

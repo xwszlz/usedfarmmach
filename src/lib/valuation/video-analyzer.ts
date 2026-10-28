@@ -16,6 +16,7 @@
 
 import { chatCompletionDoubao, getArkVideoModelId } from "@/lib/ai/ark-client";
 import { recordUsage, ESTIMATED_TOKENS } from "@/lib/credits/usage-collector";
+import { withLanguage, type AiLocale } from "@/lib/i18n/ai-locale";
 
 const VIDEO_PROMPT = `你是一位资深二手农业机械评估专家，熟悉各类农机设备的运转状态评估。
 请分析这台农机的运转视频，评估以下维度，以 JSON 格式返回。
@@ -65,9 +66,14 @@ export interface VideoAnalysisResult {
 
 /**
  * 分析农机运转视频（统一豆包）。失败/模型不支持时降级。
+ *
+ * @param videoUrl 视频公网地址
+ * @param locale   输出语种（只影响 analysis 等说明性文字；
+ *                 engineSoundStatus / mechanismSmoothness / overallImpression 三个枚举永远英文）
  */
 export async function analyzeVideo(
-  videoUrl: string
+  videoUrl: string,
+  locale: AiLocale = "zh"
 ): Promise<VideoAnalysisResult> {
   try {
     const model = getArkVideoModelId();
@@ -78,7 +84,7 @@ export async function analyzeVideo(
         {
           role: "user",
           content: [
-            { type: "text", text: VIDEO_PROMPT },
+            { type: "text", text: withLanguage(VIDEO_PROMPT, locale) },
             { type: "video_url", video_url: { url: videoUrl } },
           ],
         },
