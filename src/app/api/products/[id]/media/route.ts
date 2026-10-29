@@ -6,25 +6,36 @@
  *   - type: "image" | "video"
  *   - files: 一个或多个文件
  *
- * 权限: admin / super_admin / editor
+ * 权限（2026-10-29 调整）：产品 owner（发布者本人）或 admin / super_admin / editor。
+ * 普通卖家可以给自己的产品补图补视频；editor 可对全站任意产品操作。
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyToken, getTokenFromHeaders } from "@/lib/auth";
 import { uploadBufferToOSS } from "@/lib/oss-upload";
 import { randomUUID } from "crypto";
+import {
+  checkProductEditPermission,
+  describeEditDenial,
+} from "@/lib/product-edit-auth";
 
-async function checkAuth(req: NextRequest) {
+async function authorize(req: NextRequest, productId: string) {
   const token = getTokenFromHeaders(req.headers);
-  if (!token) return null;
+  if (!token) {
+    return { ok: false as const, status: 401, error: "请先登录" };
+  }
   const payload = verifyToken(token);
-  if (!payload) return null;
-  const user = await prisma.user.findUnique({
-    where: { id: payload.userId },
-    select: { role: true },
-  });
-  if (!user || !["admin", "super_admin", "editor"].includes(user.role)) return null;
-  return payload;
+  if (!payload) {
+    return { ok: false as const, status: 401, error: "Token 无效" };
+  }
+  const permission = await checkProductEditPermission(payload.userId, productId);
+  if (permission.outcome === "not_found") {
+    return { ok: false as const, status: 404, error: describeEditDenial(permission) };
+  }
+  if (!permission.allowed) {
+    return { ok: false as const, status: 403, error: describeEditDenial(permission) };
+  }
+  return { ok: true as const, payload, permission };
 }
 
 const MIME_MAP: Record<string, string> = {
@@ -46,9 +57,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await checkAuth(request);
-  if (!auth) {
-    return NextResponse.json({ success: false, error: "无权限" }, { status: 403 });
+  const auth = await authorize(request, (await params).id);
+  if (!auth.ok) {
+    return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
   }
 
   try {

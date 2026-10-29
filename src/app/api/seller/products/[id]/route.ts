@@ -1,15 +1,23 @@
 /**
  * 卖家产品编辑 API
- * - GET: 获取单个产品详情（含所有图片，用于编辑页）
+ * - GET: 获取单个产品详情（含所有图片、视频，用于编辑页）
  * - PUT: 更新产品信息
  *
- * 权限：仅产品 owner（sellerId === userId）可操作
+ * 权限（2026-10-29 调整）：
+ *   - 产品 owner（sellerId === userId）→ 可读写自己的产品；
+ *   - admin / super_admin / editor → 可读写全站任意产品。
+ *   判定统一走 @/lib/product-edit-auth，与 /api/products/[id] 等接口保持同一口径。
  */
 import { NextRequest, NextResponse } from "next/server";
 import { cnyToUsd, getUsdPerCny } from "@/lib/exchange-rate";
 import { prisma } from "@/lib/db";
 import { verifyToken, getTokenFromHeaders } from "@/lib/auth";
 import { buildLocationText } from "@/lib/location-parser";
+import {
+  checkProductEditPermission,
+  describeEditDenial,
+  canDeleteAnyProduct,
+} from "@/lib/product-edit-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -36,12 +44,28 @@ export async function GET(
 
     const { id } = params;
 
+    // 归属 + 角色统一判定：owner 放行，editor/admin/super_admin 放行
+    const permission = await checkProductEditPermission(seller.userId, id);
+    if (permission.outcome === "not_found") {
+      return NextResponse.json(
+        { success: false, error: describeEditDenial(permission) },
+        { status: 404 }
+      );
+    }
+    if (!permission.allowed) {
+      return NextResponse.json(
+        { success: false, error: describeEditDenial(permission) },
+        { status: 403 }
+      );
+    }
+
     const product = await prisma.product.findUnique({
       where: { id },
       include: {
         brand: { select: { id: true, nameZh: true, nameEn: true, isChineseBrand: true } },
         category: { select: { id: true, nameZh: true, nameEn: true } },
         images: { orderBy: { sortOrder: "asc" } },
+        videos: { orderBy: { sortOrder: "asc" } },
       },
     });
 
@@ -52,14 +76,16 @@ export async function GET(
       );
     }
 
-    if (product.sellerId !== seller.userId) {
-      return NextResponse.json(
-        { success: false, error: "无权查看此产品" },
-        { status: 403 }
-      );
-    }
-
-    return NextResponse.json({ success: true, data: product });
+    return NextResponse.json({
+      success: true,
+      data: product,
+      // 前端据此决定是否显示「可编辑任意产品」的提示（editor 视角）
+      editScope: permission.outcome === "privileged" ? "any" : "own",
+      // 前端据此决定是否显示「删除产品」按钮：
+      // owner 可以删自己发的（发错了要能撤），editor / admin 可以删全站任意产品
+      canDelete:
+        permission.outcome === "owner" || canDeleteAnyProduct(permission.role),
+    });
   } catch (error: any) {
     console.error("[GET /api/seller/products/[id]]", error);
     return NextResponse.json(
@@ -85,17 +111,17 @@ export async function PUT(
 
     const { id } = params;
 
-    // 验证产品归属
-    const existing = await prisma.product.findUnique({ where: { id } });
-    if (!existing) {
+    // 归属 + 角色统一判定（同 GET）
+    const permission = await checkProductEditPermission(seller.userId, id);
+    if (permission.outcome === "not_found") {
       return NextResponse.json(
-        { success: false, error: "产品不存在" },
+        { success: false, error: describeEditDenial(permission) },
         { status: 404 }
       );
     }
-    if (existing.sellerId !== seller.userId) {
+    if (!permission.allowed) {
       return NextResponse.json(
-        { success: false, error: "无权修改此产品" },
+        { success: false, error: describeEditDenial(permission) },
         { status: 403 }
       );
     }
@@ -106,6 +132,9 @@ export async function PUT(
       driveSystem, mainConfig, overallLength, overallWidth, overallHeight,
       netWeight, condition, priceCny,
       category, country, province, city, location,
+      // 2026-10-29 补齐：编辑页需要能改描述 / 状态 / 负责人联系方式
+      descriptionZh, status,
+      contactName, contactPhone, contactWechat, contactEmail,
     } = body;
 
     // ── 品牌解析：brandName → brandId ──
@@ -188,6 +217,23 @@ export async function PUT(
         ...(province !== undefined && { province }),
         ...(city !== undefined && { city }),
         ...(finalLocation !== undefined && { location: finalLocation }),
+        // 2026-10-29 新增可编辑字段
+        ...(descriptionZh !== undefined && {
+          descriptionZh: descriptionZh === null || descriptionZh === "" ? null : String(descriptionZh),
+        }),
+        ...(status !== undefined && { status: String(status) }),
+        ...(contactName !== undefined && {
+          contactName: contactName === null || contactName === "" ? null : String(contactName),
+        }),
+        ...(contactPhone !== undefined && {
+          contactPhone: contactPhone === null || contactPhone === "" ? null : String(contactPhone),
+        }),
+        ...(contactWechat !== undefined && {
+          contactWechat: contactWechat === null || contactWechat === "" ? null : String(contactWechat),
+        }),
+        ...(contactEmail !== undefined && {
+          contactEmail: contactEmail === null || contactEmail === "" ? null : String(contactEmail),
+        }),
 
         updatedAt: new Date(),
       },
