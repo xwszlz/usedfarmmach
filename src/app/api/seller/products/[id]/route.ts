@@ -16,6 +16,7 @@ import { buildLocationText } from "@/lib/location-parser";
 import {
   checkProductEditPermission,
   describeEditDenial,
+  canDeleteAnyProduct,
 } from "@/lib/product-edit-auth";
 
 export const dynamic = "force-dynamic";
@@ -80,6 +81,10 @@ export async function GET(
       data: product,
       // 前端据此决定是否显示「可编辑任意产品」的提示（editor 视角）
       editScope: permission.outcome === "privileged" ? "any" : "own",
+      // 前端据此决定是否显示「删除产品」按钮：
+      // owner 可以删自己发的（发错了要能撤），editor / admin 可以删全站任意产品
+      canDelete:
+        permission.outcome === "owner" || canDeleteAnyProduct(permission.role),
     });
   } catch (error: any) {
     console.error("[GET /api/seller/products/[id]]", error);

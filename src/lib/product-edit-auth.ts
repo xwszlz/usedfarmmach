@@ -79,3 +79,19 @@ export function describeEditDenial(permission: ProductEditPermission): string {
       return "无权编辑此产品";
   }
 }
+
+/**
+ * 是否具备「删除**全站任意**产品」的权限。
+ *
+ * 2026-10-29 补充：机器卖掉后需要把产品从站上撤掉，editor 也要能删，
+ * 所以「删任意产品」与「编辑任意产品」保持同一角色集合。
+ *
+ * 注意：本函数只回答「能否删别人的产品」。产品 owner 删除自己的产品由调用方
+ * 单独放行（见 /api/products/[id] DELETE），不依赖本函数。
+ * 真正的安全网在删除接口内：存在询盘/合同/托管单等关联记录时返回 409，
+ * 提示改为「状态=归档」——归档只是不展示，不会丢业务线索。
+ */
+export function canDeleteAnyProduct(role: string | null | undefined): boolean {
+  return !!role && (EDIT_ANY_PRODUCT_ROLES as readonly string[]).includes(role);
+}
+

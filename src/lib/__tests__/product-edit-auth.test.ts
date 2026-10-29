@@ -22,6 +22,7 @@ vi.mock("@/lib/db", () => ({
 import {
   checkProductEditPermission,
   describeEditDenial,
+  canDeleteAnyProduct,
   EDIT_ANY_PRODUCT_ROLES,
 } from "@/lib/product-edit-auth";
 
@@ -131,6 +132,19 @@ describe("checkProductEditPermission", () => {
       ["admin", "editor", "super_admin"].sort()
     );
   });
+});
+
+describe("canDeleteAnyProduct", () => {
+  it.each(["editor", "admin", "super_admin"])("%s 可删除全站任意产品", (role) => {
+    expect(canDeleteAnyProduct(role)).toBe(true);
+  });
+
+  it.each(["seller", "buyer", "partner_limited", "", null, undefined])(
+    "非内部角色（%s）不能删除他人产品",
+    (role) => {
+      expect(canDeleteAnyProduct(role as string | null | undefined)).toBe(false);
+    }
+  );
 });
 
 describe("describeEditDenial", () => {

@@ -76,6 +76,9 @@ export default function EditProductPage() {
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   // "own" = 只能改自己发布的；"any" = editor/admin，可改全站任意产品
   const [editScope, setEditScope] = useState<"own" | "any">("own");
+  // 删除产品的权限（editor / admin / super_admin），由后端判定后下发
+  const [canDelete, setCanDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // 加载产品数据
   useEffect(() => {
@@ -89,6 +92,7 @@ export default function EditProductPage() {
           const found: ProductDetail = d.data;
           setProduct(found);
           setEditScope(d.editScope === "any" ? "any" : "own");
+          setCanDelete(d.canDelete === true);
           setForm({
             brandName: found.brand?.nameZh || "",
             modelName: found.modelName || "",
@@ -171,6 +175,37 @@ export default function EditProductPage() {
       setSaving(false);
     }
   };
+
+  // 删除产品：owner 可删自己发的（发错了要能撤），editor/admin 可删全站任意产品。
+  // 是否显示按钮由后端下发的 canDelete 决定，前端不自行判断角色。
+  async function handleDelete() {
+    const confirmed = window.confirm(
+      `确定删除产品「${form.modelName || product?.modelName || ""}」吗？\n\n` +
+        `删除后不可恢复，关联的图片和视频也会一并删除。\n` +
+        `如果只是暂时不卖或不慎发错想撤下，建议把「上架状态」改成「归档」，不必删除。`
+    );
+    if (!confirmed) return;
+
+    setDeleting(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/products/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(data.message || "删除成功");
+        router.push(`/${locale}/seller/products`);
+      } else {
+        alert(`❌ 删除失败：${data.error || "未知错误"}`);
+      }
+    } catch {
+      alert("❌ 网络错误，请重试");
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   // 删除单张图片
   async function handleDeleteImage(imgId: string) {
@@ -762,7 +797,17 @@ export default function EditProductPage() {
           </p>
         </div>
 
-        <div className="flex justify-end gap-3 border-t pt-4">
+        <div className="flex items-center justify-end gap-3 border-t pt-4">
+          {canDelete && (
+            <button
+              onClick={handleDelete}
+              disabled={deleting || saving}
+              className="mr-auto rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+              title="删除后不可恢复；只想下架请把「上架状态」改为归档"
+            >
+              {deleting ? "删除中..." : "🗑 删除此产品"}
+            </button>
+          )}
           <button
             onClick={() => router.back()}
             className="rounded-lg border px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
