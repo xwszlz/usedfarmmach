@@ -1,24 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyToken, getTokenFromHeaders } from "@/lib/auth";
+import {
+  checkProductEditPermission,
+  describeEditDenial,
+} from "@/lib/product-edit-auth";
 
 /**
  * DELETE /api/products/[id]/videos/[videoId]
- * 删除产品单个视频（admin/editor/super_admin）
+ * 删除产品单个视频
+ * 权限（2026-10-29 调整）：产品 owner 或 admin / super_admin / editor
  */
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; videoId: string }> }
 ) {
-  // 鉴权
+  // 鉴权：登录 + （owner 或管理角色）
   const token = getTokenFromHeaders(request.headers);
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const user = verifyToken(token);
-  if (!user || !["admin", "super_admin", "editor"].includes(user.role)) {
-    return NextResponse.json({ error: "需要管理员权限" }, { status: 403 });
+  const payload = verifyToken(token);
+  if (!payload) {
+    return NextResponse.json({ error: "Token 无效" }, { status: 401 });
   }
 
   const { id: productId, videoId } = await params;
+
+  const permission = await checkProductEditPermission(payload.userId, productId);
+  if (permission.outcome === "not_found") {
+    return NextResponse.json({ error: describeEditDenial(permission) }, { status: 404 });
+  }
+  if (!permission.allowed) {
+    return NextResponse.json({ error: describeEditDenial(permission) }, { status: 403 });
+  }
 
   // 验证视频归属
   const video = await prisma.productVideo.findFirst({

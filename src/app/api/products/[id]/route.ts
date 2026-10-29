@@ -5,6 +5,7 @@ import { verifyToken, getTokenFromHeaders } from "@/lib/auth";
 import { ArbitrageCalculator } from "@/lib/services/arbitrage-calculator";
 import { cache, cacheKey } from "@/lib/cache";
 import { stripContactFields } from "@/lib/pii";
+import { checkProductEditPermission, describeEditDenial } from "@/lib/product-edit-auth";
 
 /**
  * 缓存 key 前缀（v2）：v1 时期详情响应曾把卖家联系方式一起缓存/下发，
@@ -258,22 +259,20 @@ export async function PATCH(
   if (!payload) {
     return NextResponse.json({ success: false, error: "Token 无效" }, { status: 401 });
   }
-  const user = await prisma.user.findUnique({
-    where: { id: payload.userId },
-    select: { role: true },
-  });
-  if (!user || !["admin", "super_admin", "editor"].includes(user.role)) {
-    return NextResponse.json({ success: false, error: "无权限" }, { status: 403 });
+
+  const { id } = await params;
+
+  // 2026-10-29：编辑权限由「只认 admin/editor」放宽为「owner 或 editor/admin」
+  const permission = await checkProductEditPermission(payload.userId, id);
+  if (permission.outcome === "not_found") {
+    return NextResponse.json({ success: false, error: describeEditDenial(permission) }, { status: 404 });
+  }
+  if (!permission.allowed) {
+    return NextResponse.json({ success: false, error: describeEditDenial(permission) }, { status: 403 });
   }
 
   try {
-    const { id } = await params;
     const body = await request.json();
-
-    const existing = await prisma.product.findUnique({ where: { id } });
-    if (!existing) {
-      return NextResponse.json({ success: false, error: "产品不存在" }, { status: 404 });
-    }
 
     const updateData: Record<string, unknown> = {};
 
