@@ -21,26 +21,6 @@ export const revalidate = 300;
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
 
-/**
- * 首页 H1 文案。
- * 背景：首页此前**没有任何 H1**（实测 .com/.cn 各语种 h1=0、h2=11），属于结构性 SEO 缺失。
- * 文案对齐首页 <title> 的核心词（"used farm machinery trading platform" / "二手农机交易平台"），
- * 而不是展会口号 —— 该位置此前由首页展会横幅（expo-banner.tsx · 天津 CIAME 2026 单展版）占据，
- * 主标题位渲染的是口号（GLOBAL_NARRATIVE: "One global stage — CIAME 2026"），
- * 无品牌无关键词，不适合作为站点首页的 H1。
- * 该横幅已随天津展闭幕（2026-10-29）撤除，此段历史保留备查。
- * 其余 6 语（es/pt/ar/fr/hi）沿用英文，与站内既有回落策略一致（见 brand-film-banner.tsx 注释）。
- */
-const HOME_H1: Record<string, string> = {
-  zh: "二手农机交易平台",
-  en: "Global Used Farm Machinery Trading Platform",
-  ru: "Глобальная платформа торговли подержанной сельхозтехникой",
-};
-const HOME_H1_SUB: Record<string, string> = {
-  zh: "跨境农机出口 · AI 智能估价 · 一站式物流",
-  en: "Cross-border export · AI valuation · One-stop logistics",
-  ru: "Трансграничный экспорт · AI-оценка · Логистика под ключ",
-};
 
 export async function generateMetadata({
   params,
@@ -194,17 +174,6 @@ export default async function HomePage({
 
       {/* 10 屏组装 */}
 
-      {/* 首页 H1（此前缺失）：可见、服务端渲染，文案对齐 <title> 关键词 */}
-      <section className="bg-white pt-8 pb-2">
-        <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
-            {HOME_H1[locale] || HOME_H1.en}
-          </h1>
-          <p className="mt-2 text-sm text-gray-500">
-            {HOME_H1_SUB[locale] || HOME_H1_SUB.en}
-          </p>
-        </div>
-      </section>
 
       <RecruitmentBanner locale={locale} />
       <HotEquipment products={hotProducts} locale={locale} />
