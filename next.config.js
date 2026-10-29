@@ -41,8 +41,9 @@ const nextConfig = {
     ],
   },
 
-  // 黑龙江农机展（2026-09-19~21）已收官且不再推进：相关页面已下线，
-  // 旧 URL 永久 301 到当前主战场天津页，避免 404 白白丢掉已积累的权重。
+  // 黑龙江农机展（2026-09-19~21）与天津 CIAME（2026-10-26~28）均已收官，专题页已下线。
+  // 旧 URL 永久 301 到仍在运营的线上展馆 /:locale/expo（神雕云展常年在线），
+  // 而不是让它 404 —— 这两条 URL 此前在 sitemap 里 priority 0.8 收录过，权重不能白扔。
   // 注意：next.config 的 redirects 在 middleware 之前执行，故这里按「带语言前缀」的
   // 真实收录形态匹配；无前缀的请求由 middleware 先补语言前缀，会多一跳但结果一致。
   async redirects() {
@@ -50,12 +51,23 @@ const nextConfig = {
     return [
       {
         source: `/:locale(${LOCALES})/expo/heilongjiang-2026`,
-        destination: "/:locale/expo/tianjin-2026",
+        destination: "/:locale/expo",
         statusCode: 301,
       },
       {
         source: `/:locale(${LOCALES})/expo/heilongjiang-2026/:path*`,
-        destination: "/:locale/expo/tianjin-2026",
+        destination: "/:locale/expo",
+        statusCode: 301,
+      },
+      // 天津 CIAME 2026 专题页下线（2026-10-29），保留 301 承接已收录 URL
+      {
+        source: `/:locale(${LOCALES})/expo/tianjin-2026`,
+        destination: "/:locale/expo",
+        statusCode: 301,
+      },
+      {
+        source: `/:locale(${LOCALES})/expo/tianjin-2026/:path*`,
+        destination: "/:locale/expo",
         statusCode: 301,
       },
     ];

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
-import { BrandFilmBanner } from "@/components/home/brand-film-banner";
 import { RecruitmentBanner } from "@/components/home/recruitment-banner";
 import { PartsEntrance } from "@/components/home/parts-entrance";
 import { ServicesEntrance } from "@/components/home/services-entrance";
@@ -11,7 +10,6 @@ import { ResearchHubEntry } from "@/components/home/research-hub-entry";
 import { DailyReportSection } from "@/components/home/daily-report-section";
 import { TrustBadges } from "@/components/home/trust-badges";
 import { CTASection } from "@/components/home/cta-section";
-import { ExpoBanner } from "@/components/home/expo-banner";
 import { ArbitrageShowcase } from "@/components/home/arbitrage-showcase";
 import { DAILY_REPORT_RANKING } from "@/config/daily-report-ranking";
 import { generatePageMetadata } from "@/lib/seo-metadata";
@@ -27,10 +25,11 @@ const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
  * 首页 H1 文案。
  * 背景：首页此前**没有任何 H1**（实测 .com/.cn 各语种 h1=0、h2=11），属于结构性 SEO 缺失。
  * 文案对齐首页 <title> 的核心词（"used farm machinery trading platform" / "二手农机交易平台"），
- * 而不是展会口号 —— 因为 .com 上 expo-banner 的主标题位渲染的是口号
- * （GLOBAL_NARRATIVE: "One global stage — CIAME 2026"），无品牌无关键词，
- * 不适合作为站点首页的 H1。
- * 其余 6 语（es/pt/ar/fr/hi）沿用英文，与站内既有回落策略一致（见 expo-banner.tsx 注释）。
+ * 而不是展会口号 —— 该位置此前由首页展会横幅（expo-banner.tsx · 天津 CIAME 2026 单展版）占据，
+ * 主标题位渲染的是口号（GLOBAL_NARRATIVE: "One global stage — CIAME 2026"），
+ * 无品牌无关键词，不适合作为站点首页的 H1。
+ * 该横幅已随天津展闭幕（2026-10-29）撤除，此段历史保留备查。
+ * 其余 6 语（es/pt/ar/fr/hi）沿用英文，与站内既有回落策略一致（见 brand-film-banner.tsx 注释）。
  */
 const HOME_H1: Record<string, string> = {
   zh: "二手农机交易平台",
@@ -194,7 +193,6 @@ export default async function HomePage({
       />
 
       {/* 10 屏组装 */}
-      <ExpoBanner locale={locale} />
 
       {/* 首页 H1（此前缺失）：可见、服务端渲染，文案对齐 <title> 关键词 */}
       <section className="bg-white pt-8 pb-2">
@@ -207,10 +205,6 @@ export default async function HomePage({
           </p>
         </div>
       </section>
-
-      {/* 品牌影片横幅《神雕跨山海》30 秒版：静态海报 + 点击弹窗播放。
-          preload="none" + 弹窗打开才挂载 <video>，首页首屏不拉 7 MB 视频。*/}
-      <BrandFilmBanner locale={locale} />
 
       <RecruitmentBanner locale={locale} />
       <HotEquipment products={hotProducts} locale={locale} />
