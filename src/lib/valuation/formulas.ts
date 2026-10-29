@@ -45,7 +45,14 @@ import {
 import { BRAND_RELATIVE_PREMIUM } from "./brand-relative-premium";
 
 // V4: 导入图片分析模块
-import { type VisualValuationResult, visualScoreToConditionFactor } from "./image-analyzer";
+//
+// ⚠️ `VisualValuationResult` 必须保持 `import type`（编译期擦除），运行时依赖
+// **只能指向零依赖的叶子模块 `./condition`**：本文件被多个 `"use client"` 组件
+// （valuation-report-pro / valuation-report-section / product-valuation-report …）直接 import，
+// 一旦从 `./image-analyzer` 取运行时符号，那条 `node:dns/promises` / `node:net`
+// （经 `@/lib/net/ssrf-guard`）就会被打进浏览器 bundle ⇒ `next build` 编译失败。
+import { visualScoreToConditionFactor } from "./condition";
+import type { VisualValuationResult } from "./image-analyzer";
 
 // V4: 导入视频分析模块
 import { type VideoAnalysisResult, calculateVideoFactor } from "./video-analyzer";

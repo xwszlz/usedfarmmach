@@ -38,6 +38,14 @@ function getCredentials(): { accessKeyId: string; accessKeySecret: string } {
   return { accessKeyId, accessKeySecret };
 }
 
+/**
+ * 「自有 OSS 地址」的常量与判定已下沉到 `@/lib/net/oss-host`（零依赖纯模块），
+ * 目的是让 `net/ssrf-guard.ts` 不必反向依赖这个业务模块（否则 `ali-oss` 的加载
+ * 会变成全站图片链路的隐式前置条件）。这里 re-export，保证
+ * `import { OSS_BUCKET_HOSTNAME } from "@/lib/oss-upload"` 的既有调用方一行都不用改。
+ */
+export { OSS_BUCKET_HOSTNAME, isOwnOssUrl } from "@/lib/net/oss-host";
+
 /** 创建 ali-oss 客户端 */
 function createClient() {
   const { accessKeyId, accessKeySecret } = getCredentials();

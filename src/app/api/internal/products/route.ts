@@ -24,7 +24,9 @@ import { cnyToUsd, getUsdPerCny } from "@/lib/exchange-rate";
 
 import { prisma } from "@/lib/db";
 
-import { uploadBufferToOSS } from "@/lib/oss-upload";
+import { uploadBufferToOSS, isOwnOssUrl } from "@/lib/oss-upload";
+import { downloadGuardedImage } from "@/lib/net/download-image";
+import { MAX_IMAGE_BYTES, MAX_UPLOAD_IMAGE_BYTES } from "@/lib/net/ssrf-guard";
 
 import { hashPassword, verifyToken, getTokenFromHeaders } from "@/lib/auth";
 
@@ -42,7 +44,6 @@ import { drainUsage } from "@/lib/credits/usage-collector";
 
 import { getDetailImageUrl, getVideoUrl } from "@/lib/image-url";
 
-import axios from "axios";
 
 import crypto from "crypto";
 
@@ -67,7 +68,9 @@ export const maxDuration = 300;
 
 // 已经是最终地址，后端无需再下载重传
 
-const OSS_HOST = "https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com";
+// 判断"是否自有 OSS 地址"已改用 isOwnOssUrl()（解析后精确比 hostname）。
+// 原来这里存的是带 scheme 的整条前缀，配 startsWith 使用 —— 可被
+// `https://<host>.evil.tld/x` 这类地址绕过，把外部 URL 冒充成小程序直传产物。
 
 
 
@@ -324,30 +327,6 @@ async function resolveCategory(categoryId?: string, categoryName?: string) {
 
 
 
-/**
-
- * 从 HTTPS URL 下载文件到 Buffer（仅支持 URL，不支持 Data URI）
-
- */
-
-async function downloadBuffer(url: string): Promise<{ buffer: Buffer; contentType: string }> {
-
-  const res = await fetch(url, { redirect: "follow" });
-
-  if (!res.ok) {
-
-    throw new Error(`Download failed (${res.status}): ${url}`);
-
-  }
-
-  const arrayBuffer = await res.arrayBuffer();
-
-  const contentType = res.headers.get("content-type") || "application/octet-stream";
-
-  return { buffer: Buffer.from(arrayBuffer), contentType };
-
-}
-
 
 
 /**
@@ -388,9 +367,13 @@ async function getDataUriBuffer(src: string): Promise<{ buffer: Buffer; contentT
 
   }
 
-  // HTTPS URL 回退到 downloadBuffer
-
-  return await downloadBuffer(src);
+  // HTTPS URL 回退到带守卫的下载（商品图要落 OSS，按 30MB 的落盘口径，而不是送模型的 12MB）。
+  // 原来这里是裸 fetch + redirect:"follow"：任意登录用户传内网地址即可让服务器代取，
+  // 且响应会经 uploadBufferToOSS 固化成公开可访问对象（可下载/分享/被索引/长期留存）。
+  return await downloadGuardedImage(src, {
+    maxBytes: MAX_UPLOAD_IMAGE_BYTES,
+    defaultContentType: "application/octet-stream",
+  });
 
 }
 
@@ -793,6 +776,18 @@ export async function POST(request: NextRequest) {
 
     );
 
+    // 合规缺口可观测化（不改过滤逻辑）：http:// 图片会被整段跳过微信内容安全检测。
+    // 之所以只打日志而不放行 http：把 http 图推给微信可能被拒，属行为风险；
+    // 但"跳过"这件事必须留下痕迹，否则将来要决策"是否禁用 http 图片"时没有任何数据。
+    const skippedByScheme = (images || []).filter(
+      (src: string) => typeof src === "string" && src.length > 0 && !src.startsWith("https://")
+    ).length;
+    if (skippedByScheme > 0) {
+      console.warn(
+        `[internal/products] sec-check skipped non-https images: count=${skippedByScheme} total=${(images || []).length}`
+      );
+    }
+
 
 
     try {
@@ -1143,7 +1138,7 @@ export async function POST(request: NextRequest) {
 
 
 
-        if (src.startsWith(OSS_HOST)) {
+        if (isOwnOssUrl(src)) {
 
           // ✅ 小程序直传产物：直接复用 OSS URL
 
@@ -1450,9 +1445,14 @@ export async function POST(request: NextRequest) {
               await Promise.all(
                 imageFullUrls.slice(0, 8).map(async (url: string) => {
                   try {
-                    const resp = await axios.get(url, { responseType: "arraybuffer", timeout: 20000 });
-                    const mime = (resp.headers["content-type"] || "image/jpeg").split(";")[0];
-                    const b64 = Buffer.from(resp.data as ArrayBuffer).toString("base64");
+                    // 同一批 images[] 的第二出口（入库后回读做 AI 识别）：必须同样过守卫，
+                    // 否则第一处堵住、这里仍会把内网响应解成 base64 送进模型。
+                    // 送模型口径 12MB（大图对识别无增益，只是白烧 token）。
+                    const { buffer: imgBuf, contentType: imgType } = await downloadGuardedImage(url, {
+                      maxBytes: MAX_IMAGE_BYTES,
+                    });
+                    const mime = imgType.split(";")[0];
+                    const b64 = imgBuf.toString("base64");
                     return { type: "image_url" as const, image_url: { url: `data:${mime};base64,${b64}` } };
                   } catch {
                     return null;

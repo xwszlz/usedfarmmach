@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { createHash } from "crypto";
-
 import { prisma } from "@/lib/db";
 
 import { getTokenFromHeaders, verifyToken } from "@/lib/auth";
@@ -26,6 +24,8 @@ import { analyzeVideo } from "@/lib/valuation/video-analyzer";
 
 import { getVideoUrl } from "@/lib/image-url";
 import { resolveValuationCodes } from "@/lib/valuation/resolve-codes";
+// 游客限流键：站点感知的 IP 取值链 + 匿名哈希（详见该模块头注释）
+import { getClientIpHash } from "@/lib/valuation/client-ip";
 
 // 2026-11 AI 输出质量专项：真正的「结论层」（文本大模型）+ 8 语种解析
 import { generateValuationNarrative, type ValuationNarrative } from "@/lib/valuation/narrative";
@@ -73,6 +73,22 @@ const NARRATIVE_MIN_BUDGET_MS = 25_000;
 
 //       以支持多实例部署与重启后保留。
 
+// 另：限流键 `getClientIpHash()` 已抽到 `@/lib/valuation/client-ip`（route 文件只能导出
+
+//     HTTP 方法/路由配置，纯函数留在本文件无法单测）。抽出的同时修掉了取值链的伪造漏洞：
+
+//     旧实现「优先取 x-forwarded-for 首段」在 `.cn` 上可被伪造 —— nginx 用
+
+//     `$proxy_add_x_forwarded_for` 把客户端自带的 XFF 原样保留在前、真实 IP 追加到末尾，
+
+//     首段完全由攻击者控制 ⇒ 每请求换一个随机 XFF 就等于每次都是"新访客"，
+
+//     而游客估值不扣积分 ⇒ 视觉 + 文本双模型可被无限白嫖。
+
+//     现在的链路是「x-real-ip 优先；.cn 回退 XFF 末段；.com 回退 XFF 首段」，
+
+//     ⚠️ 它依赖 nginx 的 `proxy_set_header X-Real-IP $remote_addr`，部署侧不得移除。
+
 // ============================================================
 
 const GUEST_DAILY_LIMIT = 3;
@@ -99,22 +115,6 @@ function getLocaleFromRequest(request: NextRequest): string {
     return m[1];
   }
   return "zh";
-}
-
-
-
-function getClientIpHash(headers: Headers): string {
-
-  const ip =
-
-    headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-
-    headers.get("x-real-ip") ||
-
-    "unknown";
-
-  return createHash("sha256").update(`valuation-gate:${ip}`).digest("hex");
-
 }
 
 

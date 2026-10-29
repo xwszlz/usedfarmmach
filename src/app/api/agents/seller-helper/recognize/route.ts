@@ -14,7 +14,8 @@
 // ───────────────────────────────────────────────
 
 import { NextRequest, NextResponse } from "next/server";
-import axios from "axios";
+// 图片下载统一走 @/lib/ai/multimodal（内部已接出网守卫），不再本地重复实现一份
+import { downloadImageAsBase64 } from "@/lib/ai/multimodal";
 import { parseLocationText, buildLocationText } from "@/lib/location-parser";
 import { findCountryInText } from "@/lib/location-data";
 import { resolveBrand } from "@/lib/agents/seller-helper/resolve-brand";
@@ -378,17 +379,6 @@ async function callDoubao(content: Array<Record<string, unknown>>): Promise<stri
   );
 
   return result.text || "";
-}
-
-// ── 下载图片并转为 base64 ──
-async function downloadImageAsBase64(url: string): Promise<{ mimeType: string; data: string }> {
-  const response = await axios.get(url, {
-    responseType: "arraybuffer",
-    timeout: 20000,
-  });
-  const contentType = response.headers["content-type"] || "image/jpeg";
-  const base64 = Buffer.from(new Uint8Array(response.data as ArrayBuffer)).toString("base64");
-  return { mimeType: contentType.split(";")[0], data: base64 };
 }
 
 // ── 解析 AI 响应为结构化数据 ──

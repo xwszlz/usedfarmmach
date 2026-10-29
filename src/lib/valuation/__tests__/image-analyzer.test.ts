@@ -11,6 +11,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 // ark-client 内部 `import axios from "axios"` 后调 axios.post —— 只替换这一层
 vi.mock("axios", () => ({ default: { post: vi.fn() } }));
 
+// 图片下载现在要过 SSRF 守卫：守卫会解析主机名判内网段。
+// 这里固定返回公网地址，保证测试**不依赖真实 DNS/网络**（否则内网构建机/离线环境会红）。
+vi.mock("node:dns/promises", () => ({
+  lookup: vi.fn(async () => [{ address: "93.184.216.34", family: 4 }]),
+}));
+
 import axios from "axios";
 
 import {

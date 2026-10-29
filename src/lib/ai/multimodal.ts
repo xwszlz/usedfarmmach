@@ -8,10 +8,8 @@
  *
  * 本模块只做消息体组装与图片下载，不持有任何模型参数 / 计费逻辑，可安全复用。
  */
-import axios from "axios";
-
-/** 单张图片下载超时（毫秒）；与深度分析原实现保持一致 */
-const IMAGE_DOWNLOAD_TIMEOUT_MS = 20000;
+import { downloadGuardedImage } from "@/lib/net/download-image";
+import { MAX_IMAGE_BYTES } from "@/lib/net/ssrf-guard";
 
 /** 图片下载失败时的日志截断长度，避免把整条 base64 / 超长签名 URL 打满日志 */
 const ERROR_MESSAGE_MAX_LEN = 80;
@@ -28,13 +26,12 @@ const ERROR_MESSAGE_MAX_LEN = 80;
 export async function downloadImageAsBase64(
   url: string
 ): Promise<{ mimeType: string; data: string }> {
-  const response = await axios.get(url, {
-    responseType: "arraybuffer",
-    timeout: IMAGE_DOWNLOAD_TIMEOUT_MS,
-  });
-  const contentType = response.headers["content-type"] || "image/jpeg";
-  const base64 = Buffer.from(new Uint8Array(response.data as ArrayBuffer)).toString("base64");
-  return { mimeType: contentType.split(";")[0], data: base64 };
+  // 出网守卫：url 来自请求体（deep-analysis / sales-strategy 的 imageUrls），
+  // 不过守卫就是一条"服务器代取任意地址、再以 base64 回吐并送进模型"的通道。
+  // 超时沿用守卫的 20s（与该函数原来的 20s 保持一致，行为不变）。
+  // 送模型场景：12MB 上限（与既有视觉链路口径一致）
+  const { buffer, contentType } = await downloadGuardedImage(url, { maxBytes: MAX_IMAGE_BYTES });
+  return { mimeType: contentType.split(";")[0], data: buffer.toString("base64") };
 }
 
 /**
