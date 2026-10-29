@@ -5,7 +5,12 @@ import { Play, X, Film, Sparkles } from "lucide-react";
 import { isCnSite } from "@/config/site";
 
 /**
- * 首页品牌影片横幅 · 《跨山海》30 秒
+ * 品牌影片横幅 · 《跨山海》30 秒
+ *
+ * 挂载位置：2026-10-29 起从首页迁至「关于我们」页（src/app/[locale]/about/page.tsx），
+ * 首页不再出现该横幅 —— 老板明确「国庆片从首页撤掉，放关于我们页保留」。
+ * 组件仍留在 components/home/ 下（未移动，避免动 import 路径与 git 历史）；
+ * 文件名与目录语义不一致属已知，若要归位请整体移动到 components/brand/ 并同步改 import。
  *
  * 素材：
  * - 视频 `public/videos/national-day-30s-web.mp4`（1920×1080 / 30.00s / 7.0 MB）
