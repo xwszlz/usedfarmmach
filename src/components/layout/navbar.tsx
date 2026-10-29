@@ -111,7 +111,7 @@ export function Navbar({ locale }: NavbarProps) {
                     {locale === "en" ? "My Booth" : "展台管理"}
                   </Button>
                 </Link>
-                {["admin", "super_admin"].includes(user.role) && (
+                {["admin", "super_admin", "editor"].includes(user.role) && (
                   <Link href={`/${locale}/admin`}>
                     <Button variant="ghost" size="sm" className="flex items-center gap-1.5">
                       <LayoutDashboard className="h-4 w-4" />
@@ -170,7 +170,7 @@ export function Navbar({ locale }: NavbarProps) {
                   <Link href={`/${locale}/seller/booth`} className="flex-1" onClick={() => setMobileOpen(false)}>
                     <Button variant="outline" size="sm" className="w-full">{locale === "en" ? "My Booth" : "展台管理"}</Button>
                   </Link>
-                  {["admin", "super_admin"].includes(user.role) && (
+                  {["admin", "super_admin", "editor"].includes(user.role) && (
                     <Link href={`/${locale}/admin`} className="flex-1" onClick={() => setMobileOpen(false)}>
                       <Button variant="outline" size="sm" className="w-full">{locale === "en" ? "Admin" : "管理后台"}</Button>
                     </Link>
