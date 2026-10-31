@@ -275,7 +275,13 @@ export function ValuationCard({ productId, productName, locale, autoLoad = false
                           ? (zh ? "减分" : "-")
                           : (zh ? "中性" : "~")}
                   </div>
-                  {d.description && <div className="text-[10px] text-gray-400">{d.description}</div>}
+                  {/* `whitespace-pre-line`：多视频聚合后的分析文本是**多行**的
+                      （`视频1：…\n视频2：…`，见 video-analyzer.analyzeVideos）。
+                      默认 white-space 会把换行折叠成一个空格，三条视频的分析糊成一坨。
+                      单行文本加这个类无任何副作用（没有换行就没有额外表现）。 */}
+                  {d.description && (
+                    <div className="whitespace-pre-line text-[10px] text-gray-400">{d.description}</div>
+                  )}
                 </div>
               </div>
             ))}
