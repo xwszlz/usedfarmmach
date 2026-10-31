@@ -489,7 +489,11 @@ async function arkSearchAndExtract(query: string, brandZh: string): Promise<Intl
     body: JSON.stringify({
       model: ARK_MODEL_ID,
       stream: true,
-      tools: [{ type: "web_search", sources: ["doubao"] }],
+      // ⚠️ `sources` 必须是 "search_engine"。写 "doubao" 会返回 HTTP 403
+      //    AccessDenied（"verify the activation status" —— 文案误导，实际是枚举名写错，
+      //    不是插件没开通）。合法值只有 "search_engine"，也可用 [] 或省略该字段。
+      //    生产侧同一处见 `src/lib/ai/ark-client.ts` 的 `arkWebSearch`。
+      tools: [{ type: "web_search", sources: ["search_engine"] }],
       input: [{ role: "user", content: [{ type: "input_text", text: prompt }] }],
     }),
     signal: AbortSignal.timeout(120000),

@@ -638,6 +638,10 @@ const SELF_HOSTNAMES: ReadonlySet<string> = new Set(
  *
  * 解析失败的 URL **保留**：解析不了不代表它是自家域名，宁可留下一条可疑证据
  * （下游靠 `status` 与 `note` 表达可信度），也不能因为解析失败静默吞掉真实证据。
+ *
+ * ⚠️ 调用点有两处语义：本函数既用于「收集阶段的最终 items」，也用于
+ * `retrieveWebEvidence` 里**逐条 outcome 的成败判定**（某个 query 只剩自家站点时
+ * 必须降级成 error，否则会变成"status:ok + 空证据"的静默成功）。
  */
 export function filterSelfReferentialItems(items: WebEvidenceItem[]): WebEvidenceItem[] {
   const kept: WebEvidenceItem[] = [];
@@ -1206,10 +1210,31 @@ export async function retrieveWebEvidence(
       deadline: startedAt + budgetMs,
       maxAttempts: 1 + retry,
     };
-    const outcomes = await runQueries(queries, ctx, maxConcurrency);
+    const rawOutcomes = await runQueries(queries, ctx, maxConcurrency);
 
-    // 先剔自家站点（自引用闭环），再去重（顺序有意义：先过滤可以让去重少吞一条外部同 URL 证据）
-    const items = dedupeItems(filterSelfReferentialItems(outcomes.flatMap((o) => o.items)));
+    // ⚠️ 自引用过滤**必须在「判成败」这一层做**，不能只在收集 items 时做。
+    //
+    // 漏洞形状（2026-11 团队评审发现）：`runSingleQuery` 里 `usable.length === 0 ⇒ status:"error"`
+    // 的判定发生在自引用过滤**之前**。若某条 query 命中的**全部**是自家站点 URL，
+    // 那时 items 非空 ⇒ 先被判成 `status:"ok"`；随后在收集阶段被
+    // `filterSelfReferentialItems()` 全部剔掉 ⇒ 得到 `status:"ok"` 但 `items: []`、`urls: []`。
+    // 后果是**静默成功**：`webStatus === "ok"` 而证据为空 ⇒ 下游
+    // `src/lib/sales-strategy/derive.ts:980` 的「本轮未接入外部检索」降级提示不会追加，
+    // 报告带着空的「数据来源」当成"有外部证据支撑"正常出稿。
+    // 这与本仓「truncation 不得当成功」是同一类铁律违规 ⇒ 必须把这类 query 降级为 error。
+    //
+    // 注意：下面**所有**引用 `outcomes` 的地方（successQueries / errorDetail / allTimeout /
+    // timeoutEvidence 分支）都改用过滤后的版本，保证 `status` 与 `items` 永远自洽。
+    const outcomes: QueryOutcome[] = rawOutcomes.map((o): QueryOutcome => {
+      if (o.status !== "ok") return o;
+      const kept = filterSelfReferentialItems(o.items);
+      if (kept.length === 0) {
+        return { ...o, status: "error", items: [], error: "仅命中自家站点，已剔除" };
+      }
+      return { ...o, items: kept };
+    });
+
+    const items = dedupeItems(outcomes.flatMap((o) => o.items));
     const urls: string[] = [];
     for (const it of items) {
       if (it.url && !urls.includes(it.url)) urls.push(it.url);

@@ -904,3 +904,68 @@ describe("readArkUsage（检索成本可见化）", () => {
     });
   });
 });
+
+// ═══════════════════════════════════════════════════════════
+// ⑪ 自引用过滤必须在「判成败」层生效（禁止 status:ok + 空证据的静默成功）
+// ═══════════════════════════════════════════════════════════
+
+/**
+ * 漏洞形状：`runSingleQuery` 里 `usable.length === 0 ⇒ status:"error"` 的判定发生在
+ * 自引用过滤**之前**。若某条 query 命中的**全部**是自家站点 URL，它会先以
+ * `status:"ok"` 的身份进分档，随后条目在收集阶段被剔干净 ⇒ `status:"ok"` + `items:[]`。
+ *
+ * 下游 `src/lib/sales-strategy/derive.ts:980` 只在 `webStatus !== "ok"` 时才追加
+ * 「本轮未接入外部检索」⇒ 这种"成功"会让报告带着空的「数据来源」冒充有外部证据出稿。
+ * 本组用例把「只剩自家站点 ⇒ 必须降级」这件事钉死。
+ */
+describe("自引用过滤参与成败判定", () => {
+  const arkRuntime = { site: "com" as const, arkApiKey: "ark-key", searchApiKey: "", searchApiProvider: "" };
+  const SELF_URL = "https://usedfarmmach.cn/listing/self";
+
+  /** 构造一份只含若干 findings 的 arkWebSearch 返回 */
+  function arkResponseWith(urls: string[]) {
+    const findings = {
+      findings: urls.map((url, i) => ({ title: `t${i}`, url, snippet: "s", kind: "二手挂牌" })),
+    };
+    return {
+      ...arkFindingsResponse("selfref"),
+      raw: JSON.stringify({ output_text: JSON.stringify(findings), usage: { total_tokens: 100 } }),
+    };
+  }
+
+  it("全部 5 条 query 都只命中自家站点 ⇒ status 不得为 ok，items / urls 必须为空", async () => {
+    arkWebSearchMock.mockImplementation(async () => arkResponseWith([SELF_URL]));
+
+    const ev = await retrieveWebEvidence(input(), { runtime: arkRuntime });
+
+    expect(ev.status).not.toBe("ok");
+    expect(ev.items).toEqual([]);
+    expect(ev.urls).toEqual([]);
+    // 五档判定全部失败 ⇒ 走「全失败」档；reason 不得是 ok/partial
+    expect(ev.successQueries).toBe(0);
+    expect(ev.status).toBe("timeout");
+    expect(ev.reason).toBe("error");
+    // 关键：必须留下"为什么没证据"的痕迹（否则又变成静默降级）
+    expect(ev.errorDetail).toContain("仅命中自家站点");
+  });
+
+  it("混合场景：1 条只有自家站点 + 4 条有真实外部 URL ⇒ partial，successQueries = 4", async () => {
+    let call = 0;
+    arkWebSearchMock.mockImplementation(async () => {
+      call += 1;
+      // 第 1 次调用模拟"只搜到自家站点"，其余返回外部站点
+      return call === 1
+        ? arkResponseWith([SELF_URL])
+        : arkResponseWith([`https://example-farm.de/listing/mixed-${call}`]);
+    });
+
+    const ev = await retrieveWebEvidence(input(), { runtime: arkRuntime });
+
+    expect(ev.status).toBe("partial");
+    expect(ev.successQueries).toBe(4);
+    expect(ev.totalQueries).toBe(5);
+    expect(ev.items.length).toBeGreaterThan(0);
+    // 自家 URL 一条都不许混进来
+    expect(ev.urls.some((u) => u.includes("usedfarmmach"))).toBe(false);
+  });
+});
