@@ -20,16 +20,10 @@ vi.mock("@/lib/db", () => ({
     piiAuditLog: { findMany: vi.fn() },
   },
 }));
-vi.mock("@/lib/credits/deduct", () => ({
-  estimateAiCost: vi.fn(),
-  deductAiUsage: vi.fn(),
-  EXPORT_ESTIMATED_TOKENS: 800,
-}));
 vi.mock("@/lib/sales-strategy/dealers", () => ({ retrieveDealers: vi.fn() }));
 
 import { getUserFromRequest } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { estimateAiCost, deductAiUsage } from "@/lib/credits/deduct";
 import { retrieveDealers } from "@/lib/sales-strategy/dealers";
 import { POST } from "@/app/api/agents/seller-helper/sales-strategy/export/excel/route";
 
@@ -100,8 +94,6 @@ let errSpy: ReturnType<typeof vi.spyOn>;
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(getUserFromRequest).mockResolvedValue({ id: "u1", credits: 99999 } as any);
-  vi.mocked(estimateAiCost).mockResolvedValue(100);
-  vi.mocked(deductAiUsage).mockResolvedValue({ ok: true, cost: 100, balance: 9900 } as any);
   vi.mocked(retrieveDealers).mockResolvedValue({
     site: "cn",
     domestic: [publicDealer(UNLOCKED_ID, "cn", "解锁过的公司")],

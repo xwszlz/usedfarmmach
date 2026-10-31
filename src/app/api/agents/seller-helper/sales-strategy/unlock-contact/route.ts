@@ -4,7 +4,8 @@
  *
  * 计费：无。历史上按 viewcontact_cost 固定名义 token 计费（800），现已取消：
  *       联系方式是成交的最后一公里，收费挡的是付费用户，收益远小于流失。
- *       如需恢复收费，改回 deductAiUsage（模块仍在，未删除，见 src/lib/credits/deduct.ts）。
+ *       如需恢复收费，请按 `@/lib/credits/spend` 的「成本加成」口径新写一段（旧的
+ *       `@/lib/credits/deduct` 已于 2026-10-31 随 `ai_cost_coeff` 退役被整体删除）。
  * 合规：明文联系方式仍强制「责任声明二次确认」后返回，并写 PiiAuditLog 留痕
  *       （免费 ≠ 无审计：谁、何时、读了哪个线索的哪个字段，必须可追溯）。
  *
@@ -80,7 +81,8 @@ export async function POST(request: NextRequest) {
 
     // ── 免费解锁（2026-10-28 口径）：不扣分、不写 CreditTransaction ──
     // 旧实现此处调 deductAiUsage(action="unlockContact")，按 800 名义 token 扣费；
-    // 现已取消。deduct.ts 仍保留（导出/其它动作可能复用），但本路由不再依赖它。
+    // 现已取消。`@/lib/credits/deduct` 已于 2026-10-31 随 `ai_cost_coeff` 退役整体删除，
+    // 本路由不再依赖它（导出链路同样已免费，不再有任何按量计费的下游）。
 
     // ── PII 审计留痕（谁、何时、读了哪个线索的哪个字段、用途）──
     try {

@@ -25,11 +25,6 @@ vi.mock("@/lib/db", () => ({
     lead: { findMany: vi.fn() },
   },
 }));
-vi.mock("@/lib/credits/deduct", () => ({
-  estimateAiCost: vi.fn(),
-  deductAiUsage: vi.fn(),
-  EXPORT_ESTIMATED_TOKENS: 800,
-}));
 vi.mock("@/lib/sales-strategy/export", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/sales-strategy/export")>();
   return { ...actual, buildPdf: vi.fn(async () => new Uint8Array([0x25, 0x50, 0x44, 0x46])) };
@@ -37,7 +32,6 @@ vi.mock("@/lib/sales-strategy/export", async (importOriginal) => {
 
 import { getUserFromRequest } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { estimateAiCost, deductAiUsage } from "@/lib/credits/deduct";
 import { buildPdf } from "@/lib/sales-strategy/export";
 import { POST } from "@/app/api/agents/seller-helper/sales-strategy/export/pdf/route";
 
@@ -86,8 +80,6 @@ let errSpy: ReturnType<typeof vi.spyOn>;
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(getUserFromRequest).mockResolvedValue({ id: "u1", credits: 99999 } as any);
-  vi.mocked(estimateAiCost).mockResolvedValue(100);
-  vi.mocked(deductAiUsage).mockResolvedValue({ ok: true, cost: 100, balance: 9900, code: "OK" } as any);
   // 默认：dealer_unlocked 有解锁记录，locked 没有
   vi.mocked(prisma.piiAuditLog.findMany).mockResolvedValue([
     { field: `unlock:dealer_${UNLOCKED_ID}` },
@@ -243,7 +235,6 @@ describe("T12 ⑤ DB 异常 ⇒ 仍可导出（不阻断、不重复扣费）", 
     expect(res.headers.get("content-type")).toBe("application/pdf");
     expect(lastPayload().channels).toEqual([]);
     // 导出免费：DB 异常也不产生任何扣费
-    expect(deductAiUsage).not.toHaveBeenCalled();
   });
 });
 

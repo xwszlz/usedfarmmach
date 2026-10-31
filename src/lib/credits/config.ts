@@ -111,31 +111,28 @@ export async function getPlanBySku(sku: string): Promise<PlanSku | null> {
   return plans.find((p) => p.sku === sku) ?? null;
 }
 
-// ─── AI 销售策略按量计费（决策 B：[商业机密·内部]）──────────
-// 计费系数 / 护栏上限一律只从 SystemConfig 读取，代码不持有明文倍数。
-// 真实数值由老板后台配置；默认值均为占位，便于未配置时系统可运行。
+// ─── AI 计费：单次成本护栏（决策 B：[商业机密·内部]）──────────
+// 护栏上限只从 SystemConfig 读取，代码不持有明文倍数。
+// 真实数值由老板后台配置；默认值为占位，便于未配置时系统可运行。
 
-/**
- * AI 销售策略计费系数（按量口径，**已废弃**）。
- * 单次成本公式：cost(积分) = 实际 token 消耗 × 本系数。
- * ⚠️ [商业机密·内部]：本系数是平台计费核心参数，仅存于 SystemConfig，
- *    代码中绝不出现明文倍数值；未知/非法值回落占位 1.0。
- *
- * @deprecated 销售策略已统一到「成本加成」口径（`computeAiCost`，见 spend.ts），
- *   不再读取本系数。2026-10-28 起导出与 `unlock-contact` 均改为免费，`deductAiUsage`
- *   已无生产调用方（仅单测覆盖），本函数随之无实际读取点；保留函数与
- *   `CONFIG_KEYS.aiCostCoeff` 仅为兼容存量 SystemConfig 数据，避免破坏性变更。
- *   新代码请勿再引入。彻底下线需另行评估存量配置与调用方。
- */
-export async function getAiCostCoeff(): Promise<number> {
-  const v = await getConfig<number>(CONFIG_KEYS.aiCostCoeff, 1.0);
-  return typeof v === "number" && Number.isFinite(v) && v > 0 ? v : 1.0;
-}
+// ⚠️ `ai_cost_coeff`（计费系数）已于 **2026-10-31 退役**，代码侧全部删除，**不要再加回来**。
+//   · 原用途：`cost(积分) = 实际 token 消耗 × ai_cost_coeff`，是「按量」口径。
+//   · 退役原因：全站 AI 消耗已统一到「成本加成」口径 —— 真实计价见
+//     `src/lib/credits/spend.ts` 的 `computeAiCost()`：
+//         points = round(豆包人民币成本 × 100) × 运营倍率
+//     即 1 积分 = ¥0.01。消费者只读 `usage` 的 input/output tokens，**与任何倍数开关无关**。
+//   · 为什么必须删而不是留着：留一个「改了不生效」的后台开关，比没有开关危险得多 ——
+//     运营调了它、以为单价变了、实际一分不变，问题会拖到对账时才暴露。
+//   · SystemConfig 表里的 `ai_cost_coeff` 行已同步删除（2026-10-31，`.com` 库）。
+//   · 若将来真要恢复「按量」计费，请**新建**一套口径并显式迁移，不要把本开关复活。
 
 /**
  * 单次成本护栏上限（积分）。
  * 单次请求实际成本超过此值 → 路由直接熔断返回（不扣费），防不可控高价检索/异常用量。
  * ⚠️ [商业机密·内部]：占位值 5000，真实值由老板后台配置（ai_cost_guardrail_credits）。
+ *
+ * ⚠️ 本函数与 `ai_cost_guardrail_credits` 是**活的**（`sales-strategy/route.ts` 每次生成都读），
+ *    与已退役的 `ai_cost_coeff` 无关，不要一起删。
  */
 export async function getAiCostGuardrail(): Promise<number> {
   const v = await getConfig<number>(CONFIG_KEYS.aiCostGuardrail, 5000);

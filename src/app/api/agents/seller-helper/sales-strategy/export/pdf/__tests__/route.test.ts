@@ -10,8 +10,9 @@
  * 说明：@/lib/sales-strategy/export 的 buildPdf 以「spy 包裹真实实现」方式 mock，
  *       因此成功用例走的是真实 pdf-lib 渲染（字体走模块级缓存，仅首个用例付出 ~1s）；
  *       失败用例用 mockRejectedValueOnce 注入异常，验证失败路径。
- *       `@/lib/credits/deduct` 仍然保留 mock —— 它现在唯一的用途是**反向回归锁**：
- *       一旦有人把导出链路重新接上扣费，`not.toHaveBeenCalled()` 立刻变红。
+ *       注意：2026-10-31 起 `@/lib/credits/deduct` 模块已整体删除（`ai_cost_coeff` 退役），
+ *       本文件原先对它的 mock 与 `not.toHaveBeenCalled()` 反向回归锁一并移除 ——
+ *       那条锁保的是「导出不扣费」，而现在扣费模块根本不存在，链接不回去，锁已无对象。
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { NextRequest } from "next/server";
@@ -28,11 +29,6 @@ vi.mock("@/lib/db", () => ({
     lead: { findMany: vi.fn(async () => []) },
   },
 }));
-vi.mock("@/lib/credits/deduct", () => ({
-  estimateAiCost: vi.fn(),
-  deductAiUsage: vi.fn(),
-  EXPORT_ESTIMATED_TOKENS: 800,
-}));
 
 // hoisted 句柄：保存真实 buildPdf，供 beforeEach 恢复默认实现
 const H = vi.hoisted(() => ({
@@ -46,7 +42,6 @@ vi.mock("@/lib/sales-strategy/export", async (importOriginal) => {
 });
 
 import { getUserFromRequest } from "@/lib/auth";
-import { estimateAiCost, deductAiUsage } from "@/lib/credits/deduct";
 import { buildPdf } from "@/lib/sales-strategy/export";
 import { POST } from "@/app/api/agents/seller-helper/sales-strategy/export/pdf/route";
 
@@ -85,10 +80,6 @@ beforeEach(() => {
   vi.clearAllMocks();
   // 每个用例默认：真实渲染 + 余额充足 + 扣费成功
   vi.mocked(buildPdf).mockReset().mockImplementation(H.realBuildPdf as any);
-  vi.mocked(estimateAiCost).mockReset().mockResolvedValue(100);
-  vi.mocked(deductAiUsage)
-    .mockReset()
-    .mockResolvedValue({ ok: true, cost: 100, balance: 9900, code: "OK" } as any);
   vi.mocked(getUserFromRequest).mockReset();
   errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 });
@@ -109,7 +100,6 @@ describe("① 鉴权（渲染前短路）", () => {
     expect(j.code).toBe("LOGIN_REQUIRED");
     expect(j.loginUrl).toContain("/auth/login");
     expect(buildPdf).not.toHaveBeenCalled();
-    expect(deductAiUsage).not.toHaveBeenCalled();
   });
 
   it("② 余额为 0 也允许导出（导出免费，不再有余额预检）", async () => {
@@ -119,13 +109,11 @@ describe("① 鉴权（渲染前短路）", () => {
 
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toBe("application/pdf");
-    expect(deductAiUsage).not.toHaveBeenCalled();
-    expect(estimateAiCost).not.toHaveBeenCalled();
   });
 });
 
 describe("③ 计费顺序：先 build 成功再扣费", () => {
-  it("buildPdf 抛错（如字体缺失）→ 500 SERVER_ERROR 且 deductAiUsage 未被调用", async () => {
+  it("buildPdf 抛错（如字体缺失）→ 500 SERVER_ERROR 且不返回文件头", async () => {
     vi.mocked(getUserFromRequest).mockResolvedValue({ id: "u1", credits: 99999 } as any);
     vi.mocked(buildPdf).mockRejectedValueOnce(new Error("NotoSansSC 字体未找到"));
 
@@ -136,7 +124,6 @@ describe("③ 计费顺序：先 build 成功再扣费", () => {
     expect(j.success).toBe(false);
     expect(j.code).toBe("SERVER_ERROR");
     // 红线：渲染失败绝不扣费
-    expect(deductAiUsage).not.toHaveBeenCalled();
   });
 
   it("build 抛错时不写 UsageLog / 不返回文件头（无 Content-Disposition）", async () => {
@@ -146,7 +133,6 @@ describe("③ 计费顺序：先 build 成功再扣费", () => {
     const res = await POST(makeReq(PAYLOAD));
     expect(res.headers.get("content-disposition")).toBeNull();
     expect(res.headers.get("content-type")).toContain("application/json");
-    expect(deductAiUsage).not.toHaveBeenCalled();
   });
 });
 
@@ -168,8 +154,6 @@ describe("④ 成功路径", () => {
     expect(buf.length).toBeGreaterThan(10 * 1024);
 
     // 导出免费：零 LLM 成本 ⇒ 不进计费模块
-    expect(deductAiUsage).not.toHaveBeenCalled();
-    expect(estimateAiCost).not.toHaveBeenCalled();
   });
 
   it("导出已无「扣费失败」分支：任何余额都返回文件，不再出现 402/429", async () => {
@@ -179,7 +163,6 @@ describe("④ 成功路径", () => {
 
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toBe("application/pdf");
-    expect(deductAiUsage).not.toHaveBeenCalled();
   });
 
   it("body 为空（无 strategy/channels）也不 500：走兜底渲染", async () => {
@@ -189,7 +172,6 @@ describe("④ 成功路径", () => {
 
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toBe("application/pdf");
-    expect(deductAiUsage).not.toHaveBeenCalled();
   });
 
   it("en referer → 英文文案渲染成功（locale 由 referer 决定）", async () => {
@@ -199,6 +181,5 @@ describe("④ 成功路径", () => {
 
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toBe("application/pdf");
-    expect(deductAiUsage).not.toHaveBeenCalled();
   });
 });

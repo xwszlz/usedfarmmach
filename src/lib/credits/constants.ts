@@ -169,10 +169,11 @@ export const CONFIG_KEYS = {
   complianceText: "compliance_text",
   paymentQr: "payment_qr",
   rewardValues: "reward_values",
-  // ── AI 销售策略按量计费（决策 B：[商业机密·内部]）──
-  // 计费系数：cost = 实际 token 消耗 × ai_cost_coeff；代码只读取、不写明文倍数。
-  // 护栏：单次成本（积分）超过 ai_cost_guardrail_credits 直接熔断，防不可控高价检索。
-  aiCostCoeff: "ai_cost_coeff",
+  // ── AI 按量计费的历史开关（[商业机密·内部]）──
+  // ⚠️ `aiCostCoeff` / `ai_cost_coeff` 已于 **2026-10-31 退役并删除**：全站 AI 消耗
+  //    统一走「成本加成」口径（`spend.ts` 的 `computeAiCost`），不再乘任何系数。
+  //    细节与「不要再加回来」的理由见 `config.ts` 里 `getAiCostGuardrail` 上方的注释块。
+  // 护栏（活的）：单次成本（积分）超过 ai_cost_guardrail_credits 直接熔断，防不可控高价检索。
   aiCostGuardrail: "ai_cost_guardrail_credits",
 } as const;
 
