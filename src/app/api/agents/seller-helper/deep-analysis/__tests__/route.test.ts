@@ -13,7 +13,7 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import type { NextRequest } from "next/server";
 
-/** 可控状态：站点变体、模型出口剧本、每次调用的 messages */
+/** 可控状态：站点变体、模型出口剧本、每次调用的 messages、余额与计费参数 */
 const state = vi.hoisted(() => ({
   cnSite: false,
   /** 依次消费的模型返回剧本；用尽后复用最后一条 */
@@ -24,6 +24,16 @@ const state = vi.hoisted(() => ({
   costMsPerCall: 0,
   /** 假时钟当前值（Date.now 被替换成读它） */
   clock: 1_800_000_000_000,
+  /** 当前用户余额（预检读它；低于门槛必须早退 402） */
+  credits: 100_000,
+  /** 每次模型调用返回的 usage（可调，用于验证「多轮 token 累加」） */
+  usage: { prompt_tokens: 100, completion_tokens: 200 },
+  /** 记录每次 computeAiCost 的入参（**第一次是预检，最后一次才是真计费**） */
+  costCalls: [] as Array<{ model: string; inputTokens: number; outputTokens: number }>,
+  /** 记录每次 deductCredits 的入参 */
+  deductCalls: [] as Array<{ userId: string; points: number; reason: string }>,
+  /** 模型出口的 spy —— 预检反证要断言它 **toHaveBeenCalledTimes(0)** */
+  llm: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -31,9 +41,39 @@ vi.mock("@/lib/auth", () => ({
   verifyToken: () => ({ userId: "user-1" }),
 }));
 
+vi.mock("@/lib/db", () => ({
+  prisma: {
+    user: { findUnique: async () => ({ credits: state.credits }) },
+  },
+}));
+
+/**
+ * 限流：本文件**mock 成永远放行**。
+ * 理由：`@/lib/rate-limit` 的计数是进程级状态，若在本文件用真模块，前面十几个用例
+ * 会把配额吃光，后面的用例全部 429（假红）。真实限流行为另见
+ * `__tests__/route.ratelimit.test.ts`（那里用**真模块**连续打 N+1 次）。
+ */
+vi.mock("@/lib/rate-limit", () => ({
+  rateLimit: async () => ({ allowed: true, remaining: 2, retryAfterSec: 0 }),
+}));
+
 vi.mock("@/lib/credits/spend", () => ({
-  computeAiCost: () => ({ points: 12, model: "doubao-seed-2-1-pro" }),
-  deductCredits: async () => ({ ok: true, credits: 988, required: 12 }),
+  computeAiCost: (params: {
+    model: string;
+    inputTokens: number;
+    outputTokens: number;
+  }) => {
+    state.costCalls.push({
+      model: params.model,
+      inputTokens: params.inputTokens,
+      outputTokens: params.outputTokens,
+    });
+    return { points: 12, model: params.model };
+  },
+  deductCredits: async (userId: string, points: number, reason: string) => {
+    state.deductCalls.push({ userId, points, reason });
+    return { ok: true, credits: 988, required: points };
+  },
 }));
 
 vi.mock("@/lib/credits/fx", () => ({
@@ -48,19 +88,32 @@ vi.mock("@/lib/credits/fx", () => ({
 
 vi.mock("@/lib/ai/ark-client", () => ({
   getArkModelId: () => "doubao-seed-2-1-pro",
-  chatCompletionDoubao: async (params: { messages: Array<{ role: string; content: unknown }> }) => {
-    state.calls.push({ messages: params.messages });
-    // 模拟这次调用真实消耗的时间（预算闸用的是假时钟，见下方 describe）
-    if (state.costMsPerCall > 0) state.clock += state.costMsPerCall;
-    const next = state.script.length > 1 ? state.script.shift()! : state.script[0];
-    if (!next) throw new Error("测试剧本未设置");
-    return {
-      text: next.text,
-      finishReason: next.finishReason,
-      usage: { prompt_tokens: 100, completion_tokens: 200 },
-    };
-  },
+  chatCompletionDoubao: (params: { messages: Array<{ role: string; content: unknown }> }) =>
+    state.llm(params),
 }));
+
+/**
+ * 模型出口的假实现（放在 mock 工厂外，才能用 vi.fn 的调用次数做断言）。
+ *
+ * ⚠️ 必须是一个**具名函数**并且在 `beforeEach` 里重新 `mockImplementation`，
+ *    不能只在模块顶层注册一次：`afterEach` 里的 `vi.restoreAllMocks()` 对
+ *    `vi.fn()` 同样会移除已注册的实现（`mockRestore` 语义），第一次用例跑完
+ *    模型出口就变回「返回 undefined」⇒ 从第二个用例起全文件假红。
+ *    这是 b3（`afterEach` 无 `vi.fn()` spy）与 b4（`vi.fn()` spy 无 `afterEach`）
+ *    合并后才会出现的**静默**破坏，git 不会报冲突。
+ */
+async function llmImpl(params: { messages: Array<{ role: string; content: unknown }> }) {
+  state.calls.push({ messages: params.messages });
+  // 模拟这次调用真实消耗的时间（预算闸用的是假时钟，见下方 describe）
+  if (state.costMsPerCall > 0) state.clock += state.costMsPerCall;
+  const next = state.script.length > 1 ? state.script.shift()! : state.script[0];
+  if (!next) throw new Error("测试剧本未设置");
+  return {
+    text: next.text,
+    finishReason: next.finishReason,
+    usage: state.usage,
+  };
+}
 
 vi.mock("@/config/site", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/config/site")>();
@@ -88,9 +141,17 @@ async function runRoute(
   body: Record<string, unknown>,
   headers: Record<string, string> = {}
 ): Promise<any> {
-  const { POST } = await import("../route");
-  const res = await POST(makeRequest({ imageDataUris: [DATA_URI], ...body }, headers));
+  const res = await runRouteRaw(body, headers);
   return res.json();
+}
+
+/** 走真实 POST；返回 Response 本体（要断言 status / headers 时用） */
+async function runRouteRaw(
+  body: Record<string, unknown>,
+  headers: Record<string, string> = {}
+): Promise<Response> {
+  const { POST } = await import("../route");
+  return POST(makeRequest({ imageDataUris: [DATA_URI], ...body }, headers));
 }
 
 /** 取某次调用里 user 侧的纯文本 prompt（content[0].text） */
@@ -129,6 +190,14 @@ beforeEach(() => {
   // 假时钟：路由用 Date.now() 算预算，必须可控才能验证「预算不足 ⇒ 不续写」
   state.clock = 1_800_000_000_000;
   vi.spyOn(Date, "now").mockImplementation(() => state.clock);
+  // 预检默认余额充足（门槛 300 + 预估值），单测不关心余额时不用每条都设
+  state.credits = 100_000;
+  state.usage = { prompt_tokens: 100, completion_tokens: 200 };
+  state.costCalls = [];
+  state.deductCalls = [];
+  state.llm.mockClear();
+  // 每个用例都重新装一次实现：上一条用例的 afterEach 已把它清掉了（见 llmImpl 注释）
+  state.llm.mockImplementation(llmImpl);
 });
 
 afterEach(() => {
@@ -386,6 +455,79 @@ describe("截断契约（truncated / budgetExhausted）", () => {
 });
 
 /**
+ * 余额预检（2026-10-31 计费安全）
+ *
+ * 洞：旧实现只在**末尾** `deductCredits` 处拦「积分不足」。余额 0 的账号点一次，
+ * 系统照样跑完 190~290 秒、生成完整报告，最后才 402 ⇒ 报告丢弃、一分钱收不到，
+ * 而单次真实成本 ¥0.28~0.43 已经烧掉，且可无限重复。
+ *
+ * 所以这里最重要的一条不是「返回 402」，而是 **`chatCompletionDoubao` 一次都没被调用**。
+ */
+describe("余额预检（早退，不是预扣）", () => {
+  it("余额 < 门槛 ⇒ 402 且 LLM 零调用（核心反证）", async () => {
+    state.credits = 100; // 门槛最低 300，必然不足
+
+    const res = await runRouteRaw({ locale: "zh" });
+    const body = await res.json();
+
+    // ① 一个 token 都不该花：模型出口 spy 必须零调用
+    expect(state.llm).toHaveBeenCalledTimes(0);
+    expect(state.calls).toHaveLength(0);
+    // ② 也不该走到扣费
+    expect(state.deductCalls).toHaveLength(0);
+    // ③ 状态码与响应体形状必须与旧「余额不足」分支完全一致（前端只有一条 402 分支）
+    expect(res.status).toBe(402);
+    expect(body).toMatchObject({
+      success: false,
+      error: "积分不足，请先充值后再使用 AI 深度分析",
+      code: "INSUFFICIENT_CREDITS",
+      rechargeUrl: "/zh/credits",
+    });
+    expect(typeof body.required).toBe("number");
+    expect(body.balance).toBe(100);
+    // ④ 字段集合必须与旧分支同形（多一个少一个都会逼前端加分支）
+    expect(Object.keys(body).sort()).toEqual(
+      ["balance", "code", "error", "rechargeUrl", "required", "success"].sort()
+    );
+  });
+
+  it("门槛是「>= 放行 / < 拦截」的边界，不是「多 1 分才让过」", async () => {
+    // 本文件的 computeAiCost mock 恒返回 12 分，低于 MIN_POINTS ⇒ 门槛恒为 300。
+    // 用 299 / 300 卡边界：拦在 299、放行 300，证明比较用的是 `<` 而不是 `<=`。
+    state.credits = 299;
+    const denied = await runRouteRaw({ locale: "zh" });
+    expect(denied.status).toBe(402);
+    expect(state.calls).toHaveLength(0);
+
+    state.credits = 300;
+    state.calls = [];
+    const allowed = await runRouteRaw({ locale: "zh" });
+    expect(allowed.status).toBe(200);
+    expect(state.calls.length).toBeGreaterThan(0);
+  });
+
+  it("门槛随图片数上升（图越多预估越贵）", async () => {
+    const one = async () => {
+      state.costCalls = [];
+      await runRoute({ imageDataUris: [DATA_URI], locale: "zh" });
+      return state.costCalls[0].inputTokens;
+    };
+    const eight = async () => {
+      const uris = Array.from({ length: 8 }, (_, i) => `data:image/png;base64,AAAA${i}`);
+      state.costCalls = [];
+      await runRoute({ imageDataUris: uris, imageUrls: [], locale: "zh" });
+      return state.costCalls[0].inputTokens;
+    };
+    const oneImg = await one();
+    const eightImg = await eight();
+    expect(eightImg).toBeGreaterThan(oneImg);
+    // 预估输入量级校验（8 图 ≈ 40.7k，对应实测累计输入 42,145）
+    expect(eightImg).toBeGreaterThan(38_000);
+    expect(eightImg).toBeLessThan(44_000);
+  });
+});
+
+/**
  * 图片张数上限（老板 2026-10-29 拍板 3→8）
  *
  * 前端已切片，但接口是登录即可调的 ⇒ 服务端必须再夹一次，
@@ -481,5 +623,50 @@ describe("结构化 JSON 前置（国内版 prompt 同样适用）", () => {
     expect(jsonAt).toBeLessThan(firstSectionAt);
     // 且不允许再出现「正文全部写完后…输出 json」的旧尾句
     expect(prompt).not.toContain("正文全部写完后");
+  });
+});
+
+/**
+ * 正向回归：余额充足时行为与改前完全一致（预检不得改变计费结果）
+ */
+describe("余额充足时行为不变", () => {
+  it("deductCredits 仍然只调一次，且 points 来自 computeAiCost", async () => {
+    await runRoute({ locale: "zh" });
+
+    expect(state.deductCalls).toHaveLength(1);
+    expect(state.deductCalls[0].userId).toBe("user-1");
+    expect(state.deductCalls[0].reason).toBe("AI深度分析");
+    expect(state.deductCalls[0].points).toBe(12);
+  });
+
+  it("续写多轮的 token 必须**累加**后计费（不是只取最后一轮）", async () => {
+    // 每轮 prompt 14,000 / completion 2,000（量级对齐实测 8 图三轮 input 42,145）
+    state.usage = { prompt_tokens: 14_000, completion_tokens: 2_000 };
+    state.script = [
+      { text: REPORT_HEAD, finishReason: "length" },
+      {
+        text:
+          "\n\n## 技术参数解读（续）\n额定马力 410 HP，排量 9.0 L，六缸发动机，四驱，" +
+          "变速箱 16 前进 4 倒退，液压输出流量 120 L/min，整机重量 12,800 kg。",
+        finishReason: "length",
+      },
+      {
+        text:
+          "\n\n## 购买建议\n该机整体状况良好，液压系统无渗漏，轮胎花纹剩余约六成，" +
+          "适合中等规模农场作业；建议重点检查传动系统与制动鼓，并索取完整维保记录后再议价。",
+        finishReason: "stop",
+      },
+    ];
+
+    await runRoute({ locale: "zh" });
+
+    // 3 轮模型调用
+    expect(state.calls).toHaveLength(3);
+    // 计费那一次（最后一次 computeAiCost；第一次是预检）
+    const billing = state.costCalls[state.costCalls.length - 1];
+    expect(billing.inputTokens).toBe(14_000 * 3);
+    expect(billing.outputTokens).toBe(2_000 * 3);
+    // 若只取最后一轮，这里会是 14,000 —— 这条断言就是防这个回归
+    expect(billing.inputTokens).not.toBe(14_000);
   });
 });

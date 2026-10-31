@@ -33,6 +33,13 @@
  *                        或上游报错。前端可据此区分「内容太长」与「服务器时间不够」两类提示。
  * 正文一个 token 都没拿到时**不返回 200**，仍走下面的 `ALL_MODELS_FAILED` 503 出口。
  * ────────────────────────────────────────────────────────────────────────
+ *
+ * ── 计费安全（V2.4，2026-10-31）────────────────────────────────────────
+ * 本路由单次真实成本 ¥0.28~0.43（8 图，含续写），且要跑 190~290 秒。旧实现只在**末尾**扣费，
+ * 余额 0 的账号照样能跑完整流程 ⇒ 报告丢弃 + 成本白烧，且可无限重复。现在入口处两道闸：
+ *   ① **余额预检**（`estimateDeepAnalysisPoints`）：按实测最坏单次成本估门槛，不足直接 402 早退；
+ *   ② **限流**（按 userId，3 次/10 分钟）：见 `DEEP_ANALYSIS_RATE_*` 常量，注意当前是进程内计数。
+ * 两道闸都在**任何图片下载与模型调用之前**，且都**只读不写**（不做预扣/退款）。
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -40,6 +47,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getTokenFromHeaders, verifyToken } from "@/lib/auth";
 import { computeAiCost, deductCredits, type AiCostBreakdown } from "@/lib/credits/spend";
 import { getBillingCountry } from "@/lib/credits/fx";
+import { prisma } from "@/lib/db";
+import { rateLimit } from "@/lib/rate-limit";
 import { chatCompletionDoubao, getArkModelId } from "@/lib/ai/ark-client";
 import { buildDoubaoContent } from "@/lib/ai/multimodal";
 // 图片张数上限必须与前端「同一份定义」：前端截取、服务端夹取。
@@ -201,6 +210,101 @@ const DEEP_ANALYSIS_CONTINUE_PROMPT =
  * 保留 300 是为了 `.com` 侧与 internal/products 对齐。
  */
 export const maxDuration = 300;
+
+/**
+ * ── 余额预检（早退）────────────────────────────────────────────────────
+ *
+ * 洞（2026-10-31 排查）：本路由**没有余额预检**，只在最末尾 `deductCredits` 处拦「积分不足」。
+ * 后果：余额 0 的账号点一次，系统照样跑完 190~290 秒、生成完整报告，最后才 402
+ * ⇒ 报告丢弃、一分钱收不到，而单次真实成本 ¥0.28~0.43 已经烧掉，且可无限重复。
+ *
+ * 预检的目的是**在花钱之前**把明显付不起的账号挡掉，不是精确报价。
+ * 因此按「实测最坏单次成本」估，不按平均成本估 —— 估低了就又回到「跑完才说没钱」。
+ *
+ * 预估模型（真实计价公式见 `spend.ts` 的 `computeAiCost`：points ≈ 人民币成本 × 1000）：
+ *   ① 输入 token 随图片数近似线性。实测同一台设备的真实商品图：
+ *        3 图 → prompt 4,919 tokens；8 图 → prompt 11,309 tokens
+ *      ⇒ 斜率 (11,309 − 4,919) / 5 ≈ **1,278 tokens/图**，截距 ≈ 4,919 − 3×1,278 ≈ **1,085 tokens**
+ *   ② 一次请求最多 1 轮初稿 + 2 轮续写，而续写会把**已写正文**作为 assistant 上下文回灌，
+ *      所以累计输入远大于单轮。实测 8 图 3 轮：累计输入 42,145 / 单轮 11,703 ≈ **3.6×**
+ *   ③ 累计输出实测 6,000 ~ 8,123 tokens，取上界 **8,700** 留余量
+ * 代入 `computeAiCost` 反算（8 图）：输入 3.6 × 11,309 ≈ 40,700、输出 8,700
+ *   ⇒ 成本 ≈ (40,700/1,000) × ¥0.006 + (8,700/1,000) × ¥0.03 = ¥0.244 + ¥0.261 = **¥0.505** ⇒ **505 积分**
+ * 实测对照：8 图单轮 = 273 积分；8 图 2 轮续写（input 42,145 / output 6,000）= **433 积分**。
+ * 即预估 505 比实测最贵一单高约 17%，这段余量就是留给「输出再长一点」的。
+ *
+ * 用 `computeAiCost` 反算而不是写死积分，是为了让预检**跟着价目表走**：
+ * 将来 `MODEL_PRICING` 一改，门槛自动跟上，不会出现「预检 505、实扣 900」的双输。
+ */
+const DEEP_ANALYSIS_EST_INPUT_TOKENS_BASE = 1_085;
+const DEEP_ANALYSIS_EST_INPUT_TOKENS_PER_IMAGE = 1_278;
+const DEEP_ANALYSIS_EST_ROUND_INPUT_FACTOR = 3.6;
+const DEEP_ANALYSIS_EST_OUTPUT_TOKENS = 8_700;
+
+/**
+ * 单次请求最低门槛（积分）。
+ *
+ * 正常情况下按上面反算出的预估（1 图 312 / 3 图 367 / 8 图 505）都高于本值，本值不生效；
+ * 它只在**预估本身失真**时兜底 —— 典型场景是 `getArkModelId()` 返回了价目表里没有的模型，
+ * `computeAiCost` 回落到 `FALLBACK_PRICING`（¥0.004/1K），8 图只算出 198 积分，
+ * 那时 300 的下限能挡住「余额 200 也想跑一次 285 秒」的请求。
+ */
+const DEEP_ANALYSIS_MIN_POINTS = 300;
+
+/**
+ * ── 限流参数（按 userId 维度）──────────────────────────────────────────
+ *
+ * 为什么按 userId 而不是 IP：本接口已强制登录，userId 是稳定身份；
+ * 而 `.cn` 的 IP 来自 nginx 的 `X-Forwarded-For`，运营商 NAT 下大量真实用户共享出口 IP，
+ * 按 IP 限流会误伤无关用户，且换 IP 就能绕过 —— 两头不讨好。
+ *
+ * 频次推导：单次生成 190~290s（实测 191.4s / 218.6s / 263.1s），10 分钟窗口内
+ * 理论上最多排进 2~3 次；再给「超时/失败后重试」留 1 次余量 ⇒ **3 次 / 10 分钟**。
+ * 最坏烧钱上限 = 3 × ¥0.43 ≈ **¥1.29 / 10 分钟 / 账号**（改前是无上限）。
+ */
+const DEEP_ANALYSIS_RATE_WINDOW_SEC = 600;
+const DEEP_ANALYSIS_RATE_MAX = 3;
+
+/**
+ * ⚠️ 这个限流**当前不是全局限流**，别当成分布式锁用。核实结论（2026-10-31）：
+ *
+ *   `@/lib/rate-limit` → `@/lib/cache`：只有配了 `UPSTASH_REDIS_REST_URL` +
+ *   `UPSTASH_REDIS_REST_TOKEN` 才走跨实例 Redis，否则回落到**进程内 `MemoryCache`**。
+ *   现状是**未配置 Upstash**（`grep -rn "UPSTASH_REDIS"` 全仓只命中 `cache.ts` 自己，
+ *   `.env` 也没有这两个键），所以实际行为是：**进程内、重启清零、多实例不共享**。
+ *
+ *   - `.cn`：`docker-compose.yml` 只有单个 `cn-app` 容器（无 `replicas` / `deploy` 段），
+ *     每个进程就是全部实例 ⇒ 进程内计数**等价于全局**，3 次/10 分钟在本站真实有效。
+ *   - `.com`(Vercel)：多实例 ⇒ 每个实例各自计数，实际全局上限 ≈ 3 × 实例数，
+ *     且冷启动/扩缩容会清零。属于「尽力而为」的兜底，不是硬约束。
+ *   - 想变成真正的全局：配 Upstash 两个环境变量即可，**本文件一行都不用改**。
+ *
+ * 已有的三个调用方（forgot-password / send-verify-email / admin-reminder）也是同样的边界。
+ */
+
+/**
+ * 估算单次深度分析要花多少积分（向上取整到「最坏单次」口径，见上方常量注释）。
+ *
+ * @param imageCount 本次请求进入模型的图片数（视频未建模，见下）
+ * @param model      模型 ID —— 必须与真正计费用的是同一个 ID，否则预检会按错的价目表算
+ *
+ * ⚠️ 视频未纳入模型：历史请求以图片为主，且视频体积由 `buildDoubaoContent` 单独限；
+ *    有视频时本预估会偏松（偏低），最终仍由末尾 `deductCredits` 兜底 —— 预检只负责
+ *    挡掉「连图片都不够付」的账号，不承诺 100% 覆盖所有费用组合。
+ */
+function estimateDeepAnalysisPoints(imageCount: number, model: string): number {
+  const safeImageCount = Math.max(0, Math.floor(imageCount || 0));
+  const singleRoundInput =
+    DEEP_ANALYSIS_EST_INPUT_TOKENS_BASE +
+    DEEP_ANALYSIS_EST_INPUT_TOKENS_PER_IMAGE * safeImageCount;
+  const inputTokens = Math.round(singleRoundInput * DEEP_ANALYSIS_EST_ROUND_INPUT_FACTOR);
+  const { points } = computeAiCost({
+    model,
+    inputTokens,
+    outputTokens: DEEP_ANALYSIS_EST_OUTPUT_TOKENS,
+  });
+  return Math.max(points, DEEP_ANALYSIS_MIN_POINTS);
+}
 
 /**
  * 国际农机深度分析 Prompt — 全球市场
@@ -647,6 +751,65 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // ── ① 余额预检（**早退**，不是预扣）──────────────────────────────────
+    // 必须在任何图片下载与模型调用之前：一次请求要跑 190~290s、真金白银 ¥0.28~0.43，
+    // 跑完才说「积分不足」是把成本 100% 白送出去（详见常量区的洞说明）。
+    // 只读余额：**不扣款、不预扣、不退款**（预扣/退款是另一件事，未做）。
+    const precheckModel = getArkModelId();
+    const requiredPoints = estimateDeepAnalysisPoints(images.length, precheckModel);
+    const balanceRow = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: { credits: true },
+    });
+    const currentCredits = balanceRow?.credits ?? 0;
+    if (currentCredits < requiredPoints) {
+      console.warn(
+        `[DeepAnalysis] 余额预检拦截: user=${payload.userId}, 余额=${currentCredits} < ` +
+        `门槛=${requiredPoints}（${images.length} 图, model=${precheckModel}），未发起任何模型调用`
+      );
+      // ⚠️ 响应体必须与末尾 `deductCredits` 失败分支**完全同形**（同一个 code / error 文案 /
+      //    rechargeUrl / required / balance 字段），否则前端 `deep-analysis-card.tsx` 要多加一条分支。
+      return NextResponse.json(
+        {
+          success: false,
+          error: "积分不足，请先充值后再使用 AI 深度分析",
+          code: "INSUFFICIENT_CREDITS",
+          rechargeUrl: `/${locale}/credits`,
+          required: requiredPoints,
+          balance: currentCredits,
+        },
+        { status: 402 }
+      );
+    }
+
+    // ── ② 限流（按 userId；放在余额预检之后，保证 400/402 不消耗配额）──
+    // 顺序理由：400(NO_MEDIA) 与 402(余额不足) 都是「不花钱」的路径，
+    // 让它们吃掉配额会出现「用户补了张图/充了值，却因为前面几次失败被 429」的荒谬体验。
+    const rl = await rateLimit({
+      key: `rl:deep-analysis:user:${payload.userId}`,
+      windowSec: DEEP_ANALYSIS_RATE_WINDOW_SEC,
+      max: DEEP_ANALYSIS_RATE_MAX,
+    });
+    if (!rl.allowed) {
+      console.warn(
+        `[DeepAnalysis] 触发限流: user=${payload.userId}, ` +
+        `${DEEP_ANALYSIS_RATE_WINDOW_SEC}s 内已满 ${DEEP_ANALYSIS_RATE_MAX} 次, ` +
+        `retryAfter=${rl.retryAfterSec}s，未发起任何模型调用`
+      );
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            `请求过于频繁：同一账号 ${Math.round(DEEP_ANALYSIS_RATE_WINDOW_SEC / 60)} 分钟内` +
+            `最多 ${DEEP_ANALYSIS_RATE_MAX} 次 AI 深度分析，请 ${rl.retryAfterSec} 秒后再试`,
+          code: "RATE_LIMITED",
+          retryAfterSec: rl.retryAfterSec,
+        },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
+      );
+    }
+
     // 双引擎Prompt选择（站点优先）：
     // `.cn` 是国内站，按品牌国籍切双引擎；`.com` 是国际站，一律走国际版
     // （国际站讲中国市场补贴政策对国际买家没有意义，且会被误读为「国内=中国」）。
