@@ -189,9 +189,22 @@ export async function PUT(
         ...(brandId !== undefined && { brandId }),
         ...(categoryId !== undefined && { categoryId }),
         ...(modelName !== undefined && { modelName }),
+        // 注意：`year` 传 null 时 Number(null) === 0 会写成年份 0 —— 本轮不修，见交付报告「风险与遗留」。
         ...(year !== undefined && { year: Number(year) }),
+        // 工时（累计使用小时数）：`0` 是**合法业务值**（全新机 / 试机机），必须与「空」严格区分。
+        // 旧写法 `workingHours ? Number(workingHours) : null` 把数字 0 当 falsy 写成 null，
+        // 而字符串 "0" 是 truthy 又被正确写成 0 ⇒ 同一字段两种输入类型两种结果（AI 视觉识别
+        // 回填送的是数字，全新机必踩）。这里改为与同文件 descriptionZh 一致的口径：
+        //   空（null / "" / undefined 已由外层过滤）→ null
+        //   可转成有限数字 → 数字本身（含 0）
+        //   转不成数字（"abc" / NaN / Infinity）→ null（绝不把 NaN 写进库）
         ...(workingHours !== undefined && {
-          workingHours: workingHours ? Number(workingHours) : null,
+          workingHours:
+            workingHours === null || workingHours === ""
+              ? null
+              : Number.isFinite(Number(workingHours))
+                ? Number(workingHours)
+                : null,
         }),
         ...(engineType !== undefined && { engineType }),
         ...(enginePower !== undefined && {
