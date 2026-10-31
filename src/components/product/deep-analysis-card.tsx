@@ -8,12 +8,25 @@ import { isCnSite } from "@/config/site";
 /**
  * 客户端请求超时（300s = 5 分钟）。
  *
- * 取值必须落在「服务端总预算 260s」与「`.cn` 反代 `proxy_read_timeout` 330s」之间：
- *   不早于 260s → 不会抢在服务端自己的截断/失败返回之前把连接掐掉（否则用户永远拿到
+ * 取值必须落在「服务端总预算 285s」与「`.cn` 反代 `proxy_read_timeout` 330s」之间：
+ *   不早于 285s → 不会抢在服务端自己的截断/失败返回之前把连接掐掉（否则用户永远拿到
  *                 "超时"而不是服务端精心构造的 JSON 错误）；
  *   不晚于 330s → 反代掐断之前浏览器已经放弃，用户看到的是可读文案而非"一直转圈"。
  */
 const DEEP_ANALYSIS_CLIENT_TIMEOUT_MS = 300_000;
+
+/**
+ * 深度分析最多送几张图进模型。
+ *
+ * 老板 2026-10-29 拍板：**3 → 8**。
+ * 前提（缺一不可，否则会吃穿总预算）：
+ *   ① 图片必须**并行下载**（`buildDoubaoContent` 的 `Promise.allSettled`）——
+ *      串行 8×20s=160s 足够把 285s 总预算吃穿；
+ *   ② 下载阶段整体受 `DEEP_ANALYSIS_DOWNLOAD_BUDGET_MS`(45s) 封顶。
+ * 另外：图越多 input token 越大、prefill 越慢，`DEEP_ANALYSIS_MAX_TOKENS` 必须与之配套校准
+ * （见 route.ts 里该常量的实测注释）。
+ */
+const MAX_DEEP_ANALYSIS_IMAGES = 8;
 
 interface DeepAnalysisCardProps {
   productId: string;
@@ -57,8 +70,9 @@ export default function DeepAnalysisCard({
   const [truncated, setTruncated] = useState(false);
   const [budgetExhausted, setBudgetExhausted] = useState(false);
 
-  // 只取前3张图片（豆包处理够用，避免超时）
-  const selectedImages = imageUrls.slice(0, 3);
+  // 最多取 8 张图（老板 2026-10-29 拍板，见 MAX_DEEP_ANALYSIS_IMAGES）。
+  // 图片由服务端**并行**下载且整体受 45s 预算封顶，所以放开张数不会线性拉长耗时。
+  const selectedImages = imageUrls.slice(0, MAX_DEEP_ANALYSIS_IMAGES);
 
   const handleAnalyze = async () => {
     if (selectedImages.length === 0) {
@@ -82,10 +96,10 @@ export default function DeepAnalysisCard({
         /**
          * 客户端超时：300s。
          *
-         * 为什么必须加：服务端总预算 260s，`.cn` 反代 `proxy_read_timeout` 330s。
+         * 为什么必须加：服务端总预算 285s，`.cn` 反代 `proxy_read_timeout` 330s。
          * 浏览器侧若裸 fetch、不设超时，一旦反代/容器出问题，用户会看到按钮无限转圈；
          * 更糟的是各浏览器的默认超时（有的长达数分钟）会把「服务端已经失败」掩盖成「还在算」。
-         * 取 300s：> 服务端 260s 预算（不抢在服务端之前掐断），< 反代 330s。
+         * 取 300s：> 服务端 285s 预算（不抢在服务端之前掐断），< 反代 330s。
          */
         signal: AbortSignal.timeout(DEEP_ANALYSIS_CLIENT_TIMEOUT_MS),
         body: JSON.stringify({

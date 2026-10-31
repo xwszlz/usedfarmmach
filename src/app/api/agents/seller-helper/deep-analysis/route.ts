@@ -51,8 +51,21 @@ interface LlmCallResult {
 
 /**
  * 深度分析单次生成的 max_tokens。
- * 模型（doubao-seed-2-1-pro）官方上限 256k，但单次调用受路由 maxDuration 约束：
- * 16384 tokens 在 300s 预算内可稳定生成完，超出部分走续写轮次拼接（见下方续写逻辑）。
+ *
+ * 模型（doubao-seed-2-1-pro-260915）官方上限 256k，单次调用还会被路由的时间预算掐断，
+ * 所以本值只承担**「防跑飞」的安全上限**角色，不是"提高输出量"的按钮。
+ *
+ * 🔴 2026-10-31 实测数据（真实 ARK，国际版 prompt，真实商品图；详见 PR 报告）：
+ *   - 3 张图 → 输出 6,152 tokens，墙钟 227.6s，tok/s≈27.0，finish_reason=stop（自然收尾）
+ *   - 8 张图 → 输出 8,366 tokens，墙钟 264.1s，tok/s≈31.7，finish_reason=stop（自然收尾）
+ *   即：**模型自己只会写 6k~8.4k tokens，根本用不到 16384**。
+ *
+ * ⚠️ 因此「把 max_tokens 降到 6000~8000 来提速」是错的方向（曾评估过 方案A，实测否决）：
+ *   降到 8192 就会把 8 图场景 8,366 tokens 的**结尾 ```json 代码块**砍掉 ⇒
+ *   `extractStructured()` 拿不到结构化数据 ⇒ 前端估值联动、六维度评分全部变空。
+ *   降 max_tokens 不会让模型写得更快，只会让报告更残。
+ *   真正决定成败的是「输出 token 数 ÷ 吞吐(27~32 tok/s)」与总预算的比值，见下方
+ *   `DEEP_ANALYSIS_TOTAL_BUDGET_MS` 的实测反算。
  */
 const DEEP_ANALYSIS_MAX_TOKENS = 16384;
 /**
@@ -83,8 +96,20 @@ const DEEP_ANALYSIS_MAX_CONTINUE_ROUNDS = 2;
  *   - < `maxDuration` 300s，保证 `.com`(Vercel) 侧同样不会被平台杀进程；
  *   - > 估值链路 200s / 销售策略 280s 的口径区间，足够一次 16k tokens 初稿 + 1 轮续写收尾。
  * ⚠️ 若将来调大本值，必须同步把 nginx 的 `proxy_read_timeout` 提到「本值 + 30s」以上。
+ *
+ * ── 2026-10-31 修订：260s → 285s（线上二次事故复盘后按实测反算）──────────────
+ * 老板线上看到的报错是「…timeout of 280000ms exceeded」+ `ALL_MODELS_FAILED`（**应用自己的 503 JSON**），
+ * 说明请求墙钟 < 330s、是**单次 LLM 调用自己跑满 280s 被掐**，不是 3 轮累加。实测吞吐只有
+ * **27~32 tokens/s**（不是先前假设的 40~90），于是：
+ *   - 3 张图：6,152 tokens → 227.6s
+ *   - 8 张图：8,366 tokens → 264.1s      （老板 2026-10-29 拍板 3→8 张图）
+ * ⇒ 260s 预算下，8 图请求**必然**在 write 完之前被预算闸掐断（截断可见但报告不全）。
+ * ⇒ 取 285s：`264.1s(实测) + 下载抖动(≤45s 但实测 0.6s) + 扣费/序列化(~2s)` 之后仍有余量；
+ *    `.cn` 侧 285 < nginx 330（余量 45s），`.com` 侧 285 < maxDuration 300（余量 15s）。
+ * ⚠️ 再往上调（>290s）会同时撞 Vercel 300s 与 nginx 330s，**不要再调大**；
+ *    若仍频繁截断，只能减少图片数或降低报告目标字数（都是产品决策，不是常量决策）。
  */
-const DEEP_ANALYSIS_TOTAL_BUDGET_MS = 260_000;
+const DEEP_ANALYSIS_TOTAL_BUDGET_MS = 285_000;
 
 /**
  * 允许开始下一轮续写所需的最小剩余预算。
@@ -101,7 +126,7 @@ const DEEP_ANALYSIS_CONTINUE_MIN_REMAINING_MS = 50_000;
  *
  * 3 张图并行下载，每张超时取 `min(20s, 剩余预算)`；整个阶段再叠加 45s 上限。
  * 45s 的理由：单张 20s（守卫默认值）×2 轮最坏情况 + 队列抖动 ≈ 42s，
- * 取整到 45s 后仍给 LLM 留出 ≥ 215s，且远小于总预算 260s。
+ * 取整到 45s 后仍给 LLM 留出 ≥ 240s（总预算 285s），实测 8 图自然收尾需 264s，余量约 21s。
  * 阶段超时**不整体失败**：带着已拿到的图继续分析（保持既有"丢图不丢链路"语义）。
  */
 const DEEP_ANALYSIS_DOWNLOAD_BUDGET_MS = 45_000;
@@ -111,6 +136,18 @@ const DEEP_ANALYSIS_DOWNLOAD_BUDGET_MS = 45_000;
  * 低于这个值再发起调用没有任何意义，直接判预算耗尽（快速失败 → 503 JSON，而不是等 nginx 掐断）。
  */
 const DEEP_ANALYSIS_MIN_CALL_REMAINING_MS = 5_000;
+
+/**
+ * 单次请求最多送进模型的图片数。
+ *
+ * 老板 2026-10-29 拍板 3 → 8（前端 `MAX_DEEP_ANALYSIS_IMAGES` 同步）。
+ * 服务端这里**必须再夹一次**：前端只是第一道，接口是登录即可调的，
+ * 若有人直接 POST 30 张，input token 会翻几倍、prefill 与输出都会拖长，
+ * 预算闸虽能兜住（不会 504），但白白烧钱并让报告变成截断。
+ * 实测（600px 商品图）：3 图 → prompt 4,919 tokens / 输出 6,152 tokens / 227.6s；
+ *                        8 图 → prompt 11,309 tokens / 输出 8,366 tokens / 264.1s。
+ */
+const DEEP_ANALYSIS_MAX_IMAGES = 8;
 
 /**
  * 预算耗尽哨兵错误。
@@ -135,7 +172,7 @@ const DEEP_ANALYSIS_CONTINUE_PROMPT =
 
 /**
  * ⚠️ 只有 Vercel（`.com`）读这个值；**`.cn` 是 Next standalone，不读 `maxDuration`**。
- * `.cn` 的实际墙钟闸门是 `DEEP_ANALYSIS_TOTAL_BUDGET_MS`(260s) 与 nginx `proxy_read_timeout`(330s)。
+ * `.cn` 的实际墙钟闸门是 `DEEP_ANALYSIS_TOTAL_BUDGET_MS`(285s) 与 nginx `proxy_read_timeout`(330s)。
  * 保留 300 是为了 `.com` 侧与 internal/products 对齐。
  */
 export const maxDuration = 300;
@@ -549,7 +586,15 @@ export async function POST(request: NextRequest) {
     const year = body.year as number | undefined;
     const enginePower = body.enginePower as string | undefined;
 
-    const images = [...imageUrls, ...imageDataUris];
+    const allImages = [...imageUrls, ...imageDataUris];
+    // 服务端二次夹取（见 DEEP_ANALYSIS_MAX_IMAGES 注释）：超出的图静默丢弃，
+    // 不报错 —— 前端本来就只送 8 张，这里只防"绕过前端直接打接口"。
+    const images = allImages.slice(0, DEEP_ANALYSIS_MAX_IMAGES);
+    if (allImages.length > images.length) {
+      console.warn(
+        `[DeepAnalysis] 图片数超上限：收到 ${allImages.length} 张，只取前 ${images.length} 张`
+      );
+    }
 
     if (images.length === 0 && videoUrls.length === 0) {
       return NextResponse.json(
@@ -672,10 +717,16 @@ export async function POST(request: NextRequest) {
       if (analysisText) truncated = true;
     }
 
+    // 吞吐可观测：`outputTokens / LLM 墙钟` 是我们校准 DEEP_ANALYSIS_MAX_TOKENS 的唯一依据
+    // （2026-10-31 线上事故复盘：单轮 280s 写不完，必须先知道真实 tokens/s 才能定 cap）。
+    // 只打数字，不含任何用户内容，可长期保留。
+    const elapsedMs = Date.now() - requestStartedAt;
+    const outputTokens = lastUsage.outputTokens;
     console.log(
-      `[DeepAnalysis] 生成结束: 墙钟=${Date.now() - requestStartedAt}ms, ` +
-      `预算=${DEEP_ANALYSIS_TOTAL_BUDGET_MS}ms, 续写轮次=${continueRounds}, ` +
-      `truncated=${truncated}, budgetExhausted=${budgetExhausted}`
+      `[DeepAnalysis] 生成结束: 墙钟=${elapsedMs}ms, 预算=${DEEP_ANALYSIS_TOTAL_BUDGET_MS}ms, ` +
+      `续写轮次=${continueRounds}, truncated=${truncated}, budgetExhausted=${budgetExhausted}, ` +
+      `输入tokens=${lastUsage.inputTokens}, 输出tokens=${outputTokens}, ` +
+      `平均吞吐=${elapsedMs > 0 ? (outputTokens / (elapsedMs / 1000)).toFixed(1) : "0"} tokens/s`
     );
 
     if (!analysisText || analysisText.trim().length < 50) {

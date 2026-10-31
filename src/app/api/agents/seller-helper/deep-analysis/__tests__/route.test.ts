@@ -10,7 +10,7 @@
  * 测试手法：mock 掉鉴权 / 计费 / 模型出口，走真实 POST 处理器（含真实 prompt 常量、真实清洗逻辑、
  * 真实的 `@/lib/ai/multimodal`）。不 mock 被测模块自身，避免「测了个假的」。
  */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import type { NextRequest } from "next/server";
 
 /** 可控状态：站点变体、模型出口剧本、每次调用的 messages */
@@ -20,6 +20,10 @@ const state = vi.hoisted(() => ({
   script: [] as Array<{ text: string; finishReason?: string }>,
   /** 记录每次 chatCompletionDoubao 的调用参数 */
   calls: [] as Array<{ messages: Array<{ role: string; content: unknown }> }>,
+  /** 每次模型调用"消耗"的毫秒数（配合假时钟，用于验证预算闸） */
+  costMsPerCall: 0,
+  /** 假时钟当前值（Date.now 被替换成读它） */
+  clock: 1_800_000_000_000,
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -46,6 +50,8 @@ vi.mock("@/lib/ai/ark-client", () => ({
   getArkModelId: () => "doubao-seed-2-1-pro",
   chatCompletionDoubao: async (params: { messages: Array<{ role: string; content: unknown }> }) => {
     state.calls.push({ messages: params.messages });
+    // 模拟这次调用真实消耗的时间（预算闸用的是假时钟，见下方 describe）
+    if (state.costMsPerCall > 0) state.clock += state.costMsPerCall;
     const next = state.script.length > 1 ? state.script.shift()! : state.script[0];
     if (!next) throw new Error("测试剧本未设置");
     return {
@@ -119,6 +125,14 @@ beforeEach(() => {
   state.cnSite = false;
   state.calls = [];
   state.script = [{ text: REPORT_HEAD, finishReason: "stop" }];
+  state.costMsPerCall = 0;
+  // 假时钟：路由用 Date.now() 算预算，必须可控才能验证「预算不足 ⇒ 不续写」
+  state.clock = 1_800_000_000_000;
+  vi.spyOn(Date, "now").mockImplementation(() => state.clock);
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 describe("站点优先的引擎选择（.com 去中国化）", () => {
@@ -315,5 +329,83 @@ describe("用户可见的 modelUsed", () => {
     expect(json.data.model).toBe("豆包 doubao-seed-2-1-pro");
     expect(json.data.model).not.toContain("国内(DOMESTIC)");
     expect(json.data.model).not.toContain("国际(INTERNATIONAL)");
+  });
+});
+
+/**
+ * 截断契约（2026-10-31 线上二次事故的回归锁）
+ *
+ * 事故形态：单轮 LLM 跑满超时 → 老板只看到「模型均调用失败」。修复后要求：
+ *   - 正常收尾 ⇒ `truncated=false` / `budgetExhausted=false`
+ *   - `finishReason=length` 但剩余预算不足 ⇒ **不再发起续写**，且必须显式回 `truncated=true`
+ *     + `budgetExhausted=true`（前端据此显示黄色提示条，绝不能静默当成功）
+ *   - 正文为空 ⇒ 仍走 503 `ALL_MODELS_FAILED`（不改成 200）
+ */
+describe("截断契约（truncated / budgetExhausted）", () => {
+  it("正常收尾：两个标记都为 false，并回传墙钟与 token 数", async () => {
+    const json = await runRoute({ locale: "zh" });
+
+    expect(json.success).toBe(true);
+    expect(json.data.truncated).toBe(false);
+    expect(json.data.budgetExhausted).toBe(false);
+    expect(json.data.continueRounds).toBe(0);
+    expect(typeof json.data.elapsedMs).toBe("number");
+  });
+
+  it("被 max_tokens 截断且剩余预算不足：跳过续写，标记 truncated+budgetExhausted（只调 1 次）", async () => {
+    state.script = [{ text: REPORT_HEAD, finishReason: "length" }];
+    // 单轮消耗 250s：总预算 285s ⇒ 剩余 35s < 续写门槛 50s ⇒ 必须放弃续写
+    state.costMsPerCall = 250_000;
+
+    const json = await runRoute({ locale: "zh" });
+
+    expect(state.calls.length).toBe(1);
+    expect(json.data.truncated).toBe(true);
+    expect(json.data.budgetExhausted).toBe(true);
+    expect(json.data.continueRounds).toBe(0);
+    // 已生成正文必须保留（不能因为截断就整份丢弃）
+    expect(json.data.analysis).toContain("## 设备识别");
+  });
+
+  it("被 max_tokens 截断但预算充足：照常续写，最终 truncated=false", async () => {
+    state.script = [
+      { text: REPORT_HEAD, finishReason: "length" },
+      { text: "\n\n## 购买建议\n该机整体状况良好，适合中等规模农场作业；建议重点检查液压系统、传动系统与轮胎磨损情况，并索取完整维保记录后再议价。", finishReason: "stop" },
+    ];
+    // 每轮 30s，两轮共 60s，远少于 285s 预算
+    state.costMsPerCall = 30_000;
+
+    const json = await runRoute({ locale: "zh" });
+
+    expect(state.calls.length).toBe(2);
+    expect(json.data.continueRounds).toBe(1);
+    expect(json.data.truncated).toBe(false);
+    expect(json.data.budgetExhausted).toBe(false);
+    expect(json.data.analysis).toContain("## 购买建议");
+  });
+});
+
+/**
+ * 图片张数上限（老板 2026-10-29 拍板 3→8）
+ *
+ * 前端已切片，但接口是登录即可调的 ⇒ 服务端必须再夹一次，
+ * 否则有人直接 POST 30 张会把 input token 翻几倍、把报告拖成截断。
+ */
+describe("图片张数上限", () => {
+  it("8 张全部进入模型（不被误裁）", async () => {
+    const uris = Array.from({ length: 8 }, (_, i) => `data:image/png;base64,AAAA${i}`);
+    await runRoute({ imageDataUris: uris, imageUrls: [], locale: "zh" });
+
+    const content = state.calls[0].messages[0].content as Array<Record<string, unknown>>;
+    expect(content.filter((c) => c.type === "image_url")).toHaveLength(8);
+  });
+
+  it("超过 8 张时服务端截到 8 张（防绕过前端）", async () => {
+    const uris = Array.from({ length: 12 }, (_, i) => `data:image/png;base64,AAAA${i}`);
+    const json = await runRoute({ imageDataUris: uris, imageUrls: [], locale: "zh" });
+
+    const content = state.calls[0].messages[0].content as Array<Record<string, unknown>>;
+    expect(content.filter((c) => c.type === "image_url")).toHaveLength(8);
+    expect(json.data.mediaCount.images).toBe(8);
   });
 });
