@@ -2037,7 +2037,9 @@ export default function ValuationPage() {
                     <div key={i} className="flex items-center justify-between text-sm">
                       <div>
                         <span className="text-gray-500">{item.label}</span>
-                        {item.detail && <span className="ml-2 text-xs text-gray-400">{item.detail}</span>}
+                        {/* `whitespace-pre-line`：视频因子的 detail 是多行分析（每条视频一行），
+                            默认会被折叠成一行。单行 detail 无副作用。 */}
+                        {item.detail && <span className="ml-2 whitespace-pre-line text-xs text-gray-400">{item.detail}</span>}
                       </div>
                       <span className="font-medium text-gray-800">{item.value}</span>
                     </div>

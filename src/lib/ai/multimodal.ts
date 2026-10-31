@@ -9,6 +9,7 @@
  * 本模块只做消息体组装与图片下载，不持有任何模型参数 / 计费逻辑，可安全复用。
  */
 import { downloadGuardedImage } from "@/lib/net/download-image";
+import { filterOwnMediaUrls } from "@/lib/net/oss-host";
 import { IMAGE_FETCH_TIMEOUT_MS, MAX_IMAGE_BYTES } from "@/lib/net/ssrf-guard";
 
 /** 图片下载失败时的日志截断长度，避免把整条 base64 / 超长签名 URL 打满日志 */
@@ -89,12 +90,14 @@ export interface BuildDoubaoContentOptions {
  * 不影响同批其他图，也不中断整条链路（既有降级语义不变）；
  * 但**拼接顺序严格保持入参顺序**，否则模型看到的图序会随机变。
  *
- * 注意 3（视频）：视频仍以 video_url 形式透传，该格式未在 .cn 生产环境验证过，
- * 若豆包侧不支持或抓取失败，会抛错并被上层 catch 记入 errors 后降级到备用模型，
- * 不会阻断整条链路。视频支持保留。
+ * 注意 3（视频）：视频以真实 `video_url` 内容块送出（豆包原生支持视频画面识别），
+ * 但**只送自有域名**（`net/oss-host.filterOwnMediaUrls`）—— 该内容块是让方舟服务端去抓地址，
+ * 不过白名单就等于把我们变成"让第三方模型访问任意 URL"的跳板。不合规的丢弃 + warn。
+ * 若豆包侧不支持某格式或抓取失败，会抛错并被上层 catch 记入 errors 后降级，
+ * 不会阻断整条链路。
  *
  * @param images 图片列表：`data:` 开头的 base64 data URI 或公开 http(s) URL
- * @param videos 视频列表：公开 http(s) URL
+ * @param videos 视频列表：**自有域名的 https URL**（其余一律被丢弃，见注意 3）
  * @param prompt 文本部分（已含语言指令的完整 prompt）
  * @param options 下载阶段预算（不传时行为与旧版一致）
  * @returns 豆包 `messages[].content` 数组：text + image_url… + video_url…
@@ -189,7 +192,14 @@ export async function buildDoubaoContent(
   }
 
   // 视频（豆包支持 video_url 类型）
-  for (const url of videos) {
+  //
+  // ⚠️ 只送**自有域名**的视频：`video_url` 内容块意味着**方舟服务端**会去抓这个地址
+  // （我们这侧不抓，所以不是我们的 SSRF）。若不过白名单，请求体里塞任意外部 URL
+  // 就等于把我们变成"让第三方模型访问任意地址"的跳板。
+  // 判定统一走 `net/oss-host.filterOwnMediaUrls`（**唯一实现**，另一处是 video-analyzer）：
+  // 不合规的**丢弃 + warn**，不抛错、不阻断其余内容 —— 缺一条视频不影响图片识别。
+  const ownVideos = filterOwnMediaUrls(videos, "视频");
+  for (const url of ownVideos) {
     content.push({
       type: "video_url",
       video_url: { url },
