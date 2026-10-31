@@ -124,6 +124,27 @@ export async function chatCompletionDoubao(opts: ChatCompletionOptions): Promise
           : new Error(`[ARK] 剩余预算不足(${remaining}ms)，放弃重试`);
       }
     }
+
+    /**
+     * 本次尝试实际使用的 axios 超时：**必须按剩余预算再裁剪一次**。
+     *
+     * 为什么光有上面的"剩余 < 15s 不重试"还不够（2026-11 补洞）：
+     *   `timeoutMs` 是调用方**在发起前一次性算好的**，两次尝试共用同一个值。
+     *   于是最坏情况 = 第一次跑 t1（t1 ≤ remaining - 15s）后收到可重试的 429/5xx，
+     *   第二次再吃满 `timeoutMs` ⇒ 总耗时 ≈ 2×remaining，仍可能击穿调用方预算
+     *   （深度分析 260s ⇒ 最坏 ~505s ≫ nginx 330s ⇒ 又是 HTML 504）。
+     *   按剩余裁剪后，任一次尝试都不可能跑过 `deadlineMs`，总耗时恒 ≤ 预算。
+     *
+     * 不传 `deadlineMs` 时 `attemptTimeoutMs === timeoutMs`，与旧版完全一致。
+     */
+    const attemptTimeoutMs =
+      typeof opts.deadlineMs === "number" && Number.isFinite(opts.deadlineMs)
+        ? Math.max(
+            Math.min(1_000, timeoutMs),
+            Math.min(timeoutMs, opts.deadlineMs - Date.now())
+          )
+        : timeoutMs;
+
     try {
       const resp = await axios.post(
         url,
@@ -138,7 +159,7 @@ export async function chatCompletionDoubao(opts: ChatCompletionOptions): Promise
             Authorization: `Bearer ${ARK_API_KEY}`,
             "Content-Type": "application/json",
           },
-          timeout: timeoutMs,
+          timeout: attemptTimeoutMs,
         }
       );
       circuitFailures = 0;

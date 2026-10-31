@@ -49,6 +49,17 @@ export const MAX_UPLOAD_IMAGE_BYTES = 30 * 1024 * 1024;
 /** 图片下载超时（20s）。与视觉模型自身的超时相互独立 */
 export const IMAGE_FETCH_TIMEOUT_MS = 20_000;
 
+/**
+ * 调用方可传入的**最小**单张图片下载超时（1s）。
+ *
+ * 为什么要有下界：调用方会按「剩余总预算」动态收窄超时（见
+ * `buildDoubaoContent` 的 `downloadDeadlineMs`），预算见底时算出来的差值
+ * 可能是 0 或负数；`AbortSignal.timeout(0)` 会在**发出请求的同一 tick** 就 abort，
+ * 那只会得到一堆"下载失败"的噪声日志，反而看不出是预算问题。
+ * 收窄到 1s 既保证一定有一个真实请求窗口，又不会让预算再被击穿。
+ */
+const MIN_IMAGE_FETCH_TIMEOUT_MS = 1_000;
+
 /** 允许的 URL scheme（其余一律拒绝：file/ftp/gopher/blob/data 等） */
 const ALLOWED_PROTOCOLS = new Set(["http:", "https:"]);
 
@@ -320,16 +331,37 @@ export async function assertSafeImageUrls(urls: string[]): Promise<void> {
  * 为什么手动跟随重定向（`redirect: "manual"`）：如果让 fetch 自动跟随，攻击者只要提供一个
  * 公网地址再 302 到 `http://100.100.100.200/...`（云元数据），就能绕过主机名校验。这里每一跳都重新走
  * `assertSafeImageUrl`，超过 3 跳直接拒绝。
+ *
+ * @param imageUrl 待抓取地址（只接受 http(s)）
+ * @param options.timeoutMs 单跳超时；**不传时保持原有的 20s 行为**
+ *   （深度分析按总预算动态收窄它，见 `downloadGuardedImage` / `buildDoubaoContent`）
  */
-export async function fetchGuardedImage(imageUrl: string): Promise<Response> {
+export async function fetchGuardedImage(
+  imageUrl: string,
+  options: { timeoutMs?: number } = {}
+): Promise<Response> {
   let current = typeof imageUrl === "string" ? imageUrl.trim() : "";
+  const requested = options?.timeoutMs;
+  const timeoutMs =
+    typeof requested === "number" && Number.isFinite(requested)
+      ? Math.max(MIN_IMAGE_FETCH_TIMEOUT_MS, Math.floor(requested))
+      : IMAGE_FETCH_TIMEOUT_MS;
+  /** 整条跳转链共用的截止时刻（含全部重定向跳），避免多跳叠加 */
+  const hopDeadline = Date.now() + timeoutMs;
 
   for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
     await assertSafeImageUrl(current);
 
+    // 每一跳都从同一个总窗口里扣：否则 3 次重定向会变成 4 × timeoutMs
+    // （深度分析把这个值当"剩余总预算"用，多跳叠加就会击穿预算）。
+    const hopTimeoutMs =
+      typeof requested === "number" && Number.isFinite(requested)
+        ? Math.max(MIN_IMAGE_FETCH_TIMEOUT_MS, hopDeadline - Date.now())
+        : IMAGE_FETCH_TIMEOUT_MS;
+
     const resp = await fetch(current, {
       redirect: "manual",
-      signal: AbortSignal.timeout(IMAGE_FETCH_TIMEOUT_MS),
+      signal: AbortSignal.timeout(hopTimeoutMs),
     });
 
     const status = typeof resp.status === "number" ? resp.status : 0;
