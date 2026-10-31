@@ -20,7 +20,7 @@ import {
   type VisualValuationResult,
 } from "@/lib/valuation/image-analyzer";
 
-import { analyzeVideo } from "@/lib/valuation/video-analyzer";
+import { analyzeVideos, type VideoAnalysisResult } from "@/lib/valuation/video-analyzer";
 
 import { getVideoUrl } from "@/lib/image-url";
 import { resolveValuationCodes } from "@/lib/valuation/resolve-codes";
@@ -596,6 +596,15 @@ export async function POST(request: NextRequest) {
     /** 实际送去视觉模型分析的图片数（skipImageAnalysis / 无图时为 0） */
     let analyzedImageCount = 0;
 
+    /**
+     * 全视频聚合分析结果（`undefined` = 无视频 / 全部失败）。
+     *
+     * 类型显式写在引擎分支外：图片与视频现在是**两个并行 task 各自写入**，
+     * 若沿用 `let x = undefined`（evolving any），TS 在跨闭包赋值时无法收窄，
+     * 会退化成隐式 any 并把类型检查变成摆设。
+     */
+    let videoAnalysisResult: VideoAnalysisResult | undefined;
+
 
 
     if (shouldUseV4) {
@@ -604,7 +613,7 @@ export async function POST(request: NextRequest) {
 
       
 
-      // 1. 图片分析（如果提供了图片且未跳过）
+      // 概况日志：图片分析检查（真正的分析在下面与视频【并行】发起，见 imageAnalysisTask）
 
       console.log("[Valuation V4] 图片分析检查:", {
 
@@ -623,79 +632,65 @@ export async function POST(request: NextRequest) {
 
       
 
-      if (!skipImageAnalysis && input.imageUrls && input.imageUrls.length > 0) {
-
+      // ── 1 + 2. 图片分析与视频分析【并行】──
+      //
+      // 为什么必须并行：`.cn` 容器内实测（北京 → ark.cn-beijing 真实路径）视觉 5 图 110.2s、
+      // 视频 1 条 61.6s，串行 = 171.8s；而本请求总预算只有 VALUATION_TOTAL_BUDGET_MS(200s)、
+      // 结论叙述还要 90s（保底 25s）—— 串行后只剩 28.2s，直接低于保底线，结论叙述会被跳过
+      // （见下方 narrative 预算闸）。而视频 3 条**并行**实测只要 54.5s，
+      // 与图片段完全重叠后总墙钟 ≈ max(110.2, 54.5) ≈ 110s，结论叙述才有时间跑。
+      //
+      // 两段互不依赖（图片只写 visualResult，视频只写 videoAnalysisResult），
+      // 且各自 try/catch 把异常吃在内部（任一失败只影响自己的结果），所以这里用 Promise.all 汇合：
+      // 两个 task 都不会 reject，不存在「一个失败把另一个也拖垮」。
+      const imageAnalysisTask = (async (): Promise<void> => {
+        if (skipImageAnalysis || !input.imageUrls || input.imageUrls.length === 0) {
+          console.log("[Valuation V4] 跳过图片分析:", {
+            reason: skipImageAnalysis ? "用户跳过" : "无图片URL",
+          });
+          return;
+        }
         try {
-
           console.log("[Valuation V4] 开始图片分析, URLs:", input.imageUrls.length);
-
           // 传 aiLocale：analysis 类说明文字按目标语种输出（conditionCode 枚举永远英文）
           visualResult = await analyzeProductImages(input.imageUrls, aiLocale);
           analyzedImageCount = visualResult.perImage?.length ?? 0;
 
           console.log("[Valuation V4] 图片分析完成:", {
-
             visualConditionScore: visualResult.visualConditionScore,
-
             usedV4Condition: visualResult.usedV4Condition,
-
             imageConfidence: visualResult.imageConfidence,
-
           });
-
         } catch (error) {
-
           console.warn("[Valuation V4] 图片分析失败，降级到V2:", error);
-
         }
+      })();
 
-      } else {
-
-        console.log("[Valuation V4] 跳过图片分析:", {
-
-          reason: skipImageAnalysis ? "用户跳过" : "无图片URL",
-
-        });
-
-      }
-
-
-
-      // 2. 视频分析（如果提供了视频URL）
-
-      let videoAnalysisResult = undefined;
-
-      if (input.videoUrls && input.videoUrls.length > 0) {
-
+      // 视频：循环**全部**视频（不再只取 `videoUrls[0]`），交给 analyzeVideos 内部并行 + 异常优先聚合。
+      // 每条都先过 getVideoUrl() 转成可直接访问的地址（与原 `getVideoUrl(input.videoUrls[0])` 同一口径）；
+      // 条数上限(MAX_ANALYZE_VIDEOS=3)在 analyzeVideos 内部夹，异常请求不会拖长耗时。
+      const videoAnalysisTask = (async (): Promise<void> => {
+        const videoFullUrls = (input.videoUrls ?? [])
+          .map((url) => getVideoUrl(url))
+          .filter((url) => url.length > 0);
+        if (videoFullUrls.length === 0) {
+          return;
+        }
         try {
-
-          const videoFullUrl = getVideoUrl(input.videoUrls[0]);
-
-          if (videoFullUrl) {
-
-            videoAnalysisResult = await analyzeVideo(videoFullUrl, aiLocale);
-
-            console.log("[Valuation V4] 视频分析完成:", {
-
-              qualityScore: videoAnalysisResult.qualityScore,
-
-              engineSoundStatus: videoAnalysisResult.engineSoundStatus,
-
-              mechanismSmoothness: videoAnalysisResult.mechanismSmoothness,
-
-            });
-
-          }
-
+          videoAnalysisResult = await analyzeVideos(videoFullUrls, aiLocale);
+          console.log("[Valuation V4] 视频分析完成:", {
+            videoCount: videoFullUrls.length,
+            qualityScore: videoAnalysisResult.qualityScore,
+            engineSoundStatus: videoAnalysisResult.engineSoundStatus,
+            mechanismSmoothness: videoAnalysisResult.mechanismSmoothness,
+            degraded: videoAnalysisResult.degraded === true,
+          });
         } catch (error) {
-
           console.warn("[Valuation V4] 视频分析失败，降级到无视频:", error);
-
         }
+      })();
 
-      }
-
-
+      await Promise.all([imageAnalysisTask, videoAnalysisTask]);
 
       // 3. 将视频分析结果注入input
 
@@ -1134,53 +1129,52 @@ export async function GET(request: NextRequest) {
 
     let result: ValuationResult;
 
-
+    // GET 分支同理：图片/视频是两个并行 task 各自写入，声明必须提到 `if (shouldUseV4)` 之外
+    // 并显式标注类型（evolving any 在跨闭包赋值时会被 TS 判成隐式 any，等于放弃类型检查）。
+    let visualResult: VisualValuationResult | undefined;
+    let videoAnalysisResult: VideoAnalysisResult | undefined;
 
     if (shouldUseV4) {
 
-      // V4: 图片分析
-
-      let visualResult = undefined;
-
-      if (skipImageAnalysisParam !== "true" && input.imageUrls && input.imageUrls.length > 0) {
-
+      // V4: 图片分析与视频分析【并行】（口径同 POST：串行会被 200s 总预算挤掉结论叙述）
+      //
+      // 并行只改「两段谁先谁后」，不改任何单段语义：
+      //   - 图片段保留 `skipImageAnalysisParam` / 无图片 URL 的跳过分支（跳过时不发请求）；
+      //   - 视频段同样循环**全部**视频（不再只取 [0]），条数上限在 analyzeVideos 内部夹；
+      //   - 两段各自 try/catch，任一失败只影响自己的结果。
+      const getImageAnalysisTask = (async (): Promise<void> => {
+        if (skipImageAnalysisParam === "true" || !input.imageUrls || input.imageUrls.length === 0) {
+          return;
+        }
         try {
-
           visualResult = await analyzeProductImages(input.imageUrls);
-
         } catch (error) {
-
           console.warn("[Valuation V4 GET] 图片分析失败，降级到V2:", error);
-
         }
+      })();
 
-      }
-
-
-
-      // V4: 视频分析
-
-      let videoAnalysisResult = undefined;
-
-      if (input.videoUrls && input.videoUrls.length > 0) {
-
+      // ⚠️ GET 分支保持既有语义：调视频分析**不传 locale**（历史行为，不在本单改造范围）
+      const getVideoAnalysisTask = (async (): Promise<void> => {
+        const videoFullUrls = (input.videoUrls ?? [])
+          .map((url) => getVideoUrl(url))
+          .filter((url) => url.length > 0);
+        if (videoFullUrls.length === 0) {
+          return;
+        }
         try {
-
-          const videoFullUrl = getVideoUrl(input.videoUrls[0]);
-
-          if (videoFullUrl) {
-
-            videoAnalysisResult = await analyzeVideo(videoFullUrl);
-
-          }
-
+          videoAnalysisResult = await analyzeVideos(videoFullUrls);
+          console.log("[Valuation V4 GET] 视频分析完成:", {
+            videoCount: videoFullUrls.length,
+            engineSoundStatus: videoAnalysisResult.engineSoundStatus,
+            mechanismSmoothness: videoAnalysisResult.mechanismSmoothness,
+            degraded: videoAnalysisResult.degraded === true,
+          });
         } catch (error) {
-
           console.warn("[Valuation V4 GET] 视频分析失败:", error);
-
         }
+      })();
 
-      }
+      await Promise.all([getImageAnalysisTask, getVideoAnalysisTask]);
 
       if (videoAnalysisResult) {
 

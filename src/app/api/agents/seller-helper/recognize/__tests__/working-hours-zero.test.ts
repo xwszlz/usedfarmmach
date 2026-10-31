@@ -35,10 +35,12 @@ vi.mock("@/lib/db", () => ({
   },
 }));
 
-// data: URI 直接透传，不会真的走 downloadImageAsBase64；这里给个 mock 只为防御
-vi.mock("@/lib/ai/multimodal", () => ({
-  downloadImageAsBase64: async () => ({ mimeType: "image/png", data: "AAAA" }),
-}));
+// ⚠️ 这里**故意不 mock** `@/lib/ai/multimodal`：
+//    路由的图片/视频消息体现在完全复用该共享模块，而共享 `buildDoubaoContent` 对
+//    `data:` 开头的输入是原样透传（不发起任何下载）⇒ 本用例全程走真实实现，
+//    顺带覆盖「路由 → 共享 buildDoubaoContent」这条接线。
+//    若将来本用例改用 http(s) 图片 URL，必须先 mock `@/lib/net/download-image`
+//    （`downloadGuardedImage`），否则测试会真的出网。
 
 vi.mock("@/lib/ai/ark-client", () => ({
   chatCompletionDoubao: chatMock,
