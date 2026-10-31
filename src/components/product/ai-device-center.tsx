@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, Bot, Calculator, Target, ChevronDown } from "lucide-react";
+import { Sparkles, Bot, Calculator, Target, ChevronDown, ScanEye } from "lucide-react";
 import DeepAnalysisCard from "./deep-analysis-card";
 import ProductValuationReport from "@/components/product/product-valuation-report";
 import AiSalesStrategyCard from "./ai-sales-strategy-card";
+import AiVisionRecognizeCard from "./ai-vision-recognize-card";
 
 interface AiDeviceCenterProps {
   productId: string;
@@ -25,13 +26,50 @@ interface AiDeviceCenterProps {
 }
 
 /**
- * 产品页「AI 设备中心」—— 将原先分离的两张卡（AI 深度分析 + AI 智能估值）
- * 合并为一个大卡：两个按钮，深度分析在前、估值在后（按用户要求排序）。
+ * 产品页「AI 设备中心」—— 四个 AI 能力入口，纵向排列（1/2/3/4），手风琴互斥展开。
  *
- * 两个子能力共用同一批产品图片/视频，均按 token 计费（豆包大模型统一出口）。
+ * 顺序依据老板 2026-10-29 拍板：**AI 视觉识别排第一**。
+ * 原话：「为了解决用户发布产品他不专业的问题，我们用专业的 AI 图片视频识别给它规范一下，
+ * 这是第一步。要有这个基础，我们的深度分析和估值还有销售策略才能更准确。」
+ *
+ * 四个子能力共用同一批产品图片/视频，均按 token 计费（豆包大模型统一出口）。
+ * - 视觉识别：点击「开始 AI 视觉识别」触发（AiVisionRecognizeCard，默认不跑）
  * - 深度分析：点击「开始深度分析」触发（DeepAnalysisCard 自带按钮）
  * - 智能估值：点击「开始AI估值」触发（ValuationCard 已改为 autoLoad=false）
+ * - 销售策略：点击生成后触发（AiSalesStrategyCard 自带按钮）
  */
+/**
+ * 序号徽章（1/2/3/4）：让老板一眼看出「上下排开四条」的先后顺序。
+ * 展开态用半透明白底（按钮底色已变成实色），收起态用同色系的浅底。
+ */
+function StepBadge({
+  index,
+  active,
+  tone,
+}: {
+  index: number;
+  active: boolean;
+  tone: "sky" | "purple" | "indigo" | "emerald";
+}) {
+  const idleTone =
+    tone === "sky"
+      ? "bg-sky-200/70 text-sky-800"
+      : tone === "purple"
+        ? "bg-purple-200/70 text-purple-800"
+        : tone === "indigo"
+          ? "bg-indigo-200/70 text-indigo-800"
+          : "bg-emerald-200/70 text-emerald-800";
+  return (
+    <span
+      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[11px] font-bold ${
+        active ? "bg-white/25 text-white" : idleTone
+      }`}
+    >
+      {index}
+    </span>
+  );
+}
+
 export default function AiDeviceCenter({
   productId,
   productName,
@@ -53,6 +91,8 @@ export default function AiDeviceCenter({
   const [valOpen, setValOpen] = useState(false);
   // 第四个 AI 能力模块：AI 销售策略（与深度分析/估值互斥展开）
   const [strategyOpen, setStrategyOpen] = useState(false);
+  // 第 1 个 AI 能力模块：AI 视觉识别（其余三个的前置基础，排第一位）
+  const [recognizeOpen, setRecognizeOpen] = useState(false);
   // P3 联动：深度分析结构化结果回灌估值卡（与估值中心一致）
   const [deepStructured, setDeepStructured] = useState<Record<string, any> | null>(null);
 
@@ -60,6 +100,7 @@ export default function AiDeviceCenter({
   const deepRef = useRef<HTMLDivElement>(null);
   const valRef = useRef<HTMLDivElement>(null);
   const strategyRef = useRef<HTMLDivElement>(null);
+  const recognizeRef = useRef<HTMLDivElement>(null);
 
   const toggleDeep = () => {
     const next = !deepOpen;
@@ -67,6 +108,7 @@ export default function AiDeviceCenter({
     if (next) {
       setValOpen(false);
       setStrategyOpen(false);
+      setRecognizeOpen(false);
     }
   };
   const toggleVal = () => {
@@ -75,6 +117,7 @@ export default function AiDeviceCenter({
     if (next) {
       setDeepOpen(false);
       setStrategyOpen(false);
+      setRecognizeOpen(false);
     }
   };
   const toggleStrategy = () => {
@@ -83,6 +126,16 @@ export default function AiDeviceCenter({
     if (next) {
       setDeepOpen(false);
       setValOpen(false);
+      setRecognizeOpen(false);
+    }
+  };
+  const toggleRecognize = () => {
+    const next = !recognizeOpen;
+    setRecognizeOpen(next);
+    if (next) {
+      setDeepOpen(false);
+      setValOpen(false);
+      setStrategyOpen(false);
     }
   };
 
@@ -95,8 +148,12 @@ export default function AiDeviceCenter({
   useEffect(() => {
     if (strategyOpen) strategyRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [strategyOpen]);
+  useEffect(() => {
+    if (recognizeOpen) recognizeRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [recognizeOpen]);
   const zh = locale === "zh";
 
+  const recognizeLabel = zh ? "AI 视觉识别" : "AI Vision Recognition";
   const deepLabel = zh ? "AI 深度分析" : "AI Deep Analysis";
   const valLabel = zh ? "AI 智能估值" : "AI Valuation";
   const strategyLabel = zh ? "AI 销售策略" : "AI Sales Strategy";
@@ -113,43 +170,82 @@ export default function AiDeviceCenter({
         </span>
       </div>
 
-      {/* 三个入口按钮（深度分析 / 估值 / 销售策略，互斥手风琴） */}
-      <div className="grid grid-cols-2 gap-3 p-5 sm:grid-cols-3">
+      {/* 四个入口按钮：竖向排列（老板要求上下排开四条），序号 1-4 标明先后关系 */}
+      <div className="flex flex-col gap-2.5 p-5">
+        {/* 1. AI 视觉识别（sky）—— 其余三个的前置基础，排第一位 */}
+        <button
+          onClick={toggleRecognize}
+          className={`flex w-full items-center justify-start gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${
+            recognizeOpen
+              ? "border-sky-400 bg-sky-600 text-white shadow-sm"
+              : "border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100"
+          }`}
+        >
+          <StepBadge index={1} active={recognizeOpen} tone="sky" />
+          <ScanEye className="h-4 w-4 shrink-0" />
+          {recognizeLabel}
+          <ChevronDown
+            className={`ml-auto h-4 w-4 shrink-0 transition-transform ${
+              recognizeOpen ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+
+        {/* 2. AI 深度分析（purple） */}
         <button
           onClick={toggleDeep}
-          className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${
+          className={`flex w-full items-center justify-start gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${
             deepOpen
               ? "border-purple-400 bg-purple-600 text-white shadow-sm"
               : "border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100"
           }`}
         >
-          <Bot className="h-4 w-4" />
+          <StepBadge index={2} active={deepOpen} tone="purple" />
+          <Bot className="h-4 w-4 shrink-0" />
           {deepLabel}
-          <ChevronDown className={`h-4 w-4 transition-transform ${deepOpen ? "rotate-180" : ""}`} />
+          <ChevronDown
+            className={`ml-auto h-4 w-4 shrink-0 transition-transform ${
+              deepOpen ? "rotate-180" : ""
+            }`}
+          />
         </button>
+
+        {/* 3. AI 智能估值（indigo） */}
         <button
           onClick={toggleVal}
-          className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${
+          className={`flex w-full items-center justify-start gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${
             valOpen
               ? "border-indigo-400 bg-indigo-600 text-white shadow-sm"
               : "border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
           }`}
         >
-          <Calculator className="h-4 w-4" />
+          <StepBadge index={3} active={valOpen} tone="indigo" />
+          <Calculator className="h-4 w-4 shrink-0" />
           {valLabel}
-          <ChevronDown className={`h-4 w-4 transition-transform ${valOpen ? "rotate-180" : ""}`} />
+          <ChevronDown
+            className={`ml-auto h-4 w-4 shrink-0 transition-transform ${
+              valOpen ? "rotate-180" : ""
+            }`}
+          />
         </button>
+
+        {/* 4. AI 销售策略（emerald） */}
         <button
           onClick={toggleStrategy}
-          className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${
+          className={`flex w-full items-center justify-start gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${
             strategyOpen
               ? "border-emerald-400 bg-emerald-600 text-white shadow-sm"
               : "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
           }`}
         >
-          <Target className="h-4 w-4" />
+          <StepBadge index={4} active={strategyOpen} tone="emerald" />
+          <Target className="h-4 w-4 shrink-0" />
           {strategyLabel}
-          <ChevronDown className={`h-4 w-4 transition-transform ${strategyOpen ? "rotate-180" : ""}`} />
+          <ChevronDown
+            className={`ml-auto h-4 w-4 shrink-0 transition-transform ${
+              strategyOpen ? "rotate-180" : ""
+            }`}
+          />
         </button>
       </div>
 
@@ -159,6 +255,20 @@ export default function AiDeviceCenter({
           ? "「AI 智能估值」按需触发：展开后需再点一次「开始AI估值」，单次约需 15–20 秒，期间请勿关闭页面。"
           : "AI Valuation runs on demand - expand, then press Start AI Valuation. Takes ~15-20s."}
       </p>
+
+      {/* 展开区：AI 视觉识别（第 1 步，识别图片与视频 → 一键回填产品参数） */}
+      {recognizeOpen && (
+        <div ref={recognizeRef} className="px-5 pb-5 scroll-mt-20">
+          <AiVisionRecognizeCard
+            productId={productId}
+            productName={productName}
+            imageUrls={imageUrls}
+            videoUrls={videoUrls}
+            locale={locale}
+            isChineseBrand={isChineseBrand}
+          />
+        </div>
+      )}
 
       {/* 展开区：AI 深度分析（豆包报告） */}
       {deepOpen && (
