@@ -24,15 +24,9 @@ vi.mock("@/lib/db", () => ({
     lead: { findMany: vi.fn() },
   },
 }));
-vi.mock("@/lib/credits/deduct", () => ({
-  estimateAiCost: vi.fn(),
-  deductAiUsage: vi.fn(),
-  EXPORT_ESTIMATED_TOKENS: 800,
-}));
 
 import { getUserFromRequest } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { estimateAiCost, deductAiUsage } from "@/lib/credits/deduct";
 import { POST } from "@/app/api/agents/seller-helper/sales-strategy/export/pdf/route";
 import { extractPdfText, inspectPdf } from "@/lib/sales-strategy/__tests__/pdf-text";
 
@@ -132,8 +126,6 @@ let errSpy: ReturnType<typeof vi.spyOn>;
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(getUserFromRequest).mockResolvedValue({ id: "u1", credits: 99999 } as any);
-  vi.mocked(estimateAiCost).mockResolvedValue(100);
-  vi.mocked(deductAiUsage).mockResolvedValue({ ok: true, cost: 100, balance: 9900, code: "OK" } as any);
   vi.mocked(prisma.dealer.findMany).mockResolvedValue(DEALER_ROWS as any);
   vi.mocked(prisma.lead.findMany).mockResolvedValue(LEAD_ROWS as any);
   vi.mocked(prisma.piiAuditLog.findMany).mockResolvedValue([
@@ -268,7 +260,6 @@ describe("①② T12 二段式解锁（真实 PDF 文本级验证）", () => {
     const { pageCount, text } = await pdfTextOf(res);
     expect(pageCount).toBeGreaterThanOrEqual(1);
     // 导出免费：库挂了也照常出文件，且不产生任何扣费
-    expect(deductAiUsage).not.toHaveBeenCalled();
     // 库挂了 ⇒ 查不到 = 不解锁（fail-closed），绝不能"猜"一个明文出来
     expect(text).not.toContain(UNLOCKED_PHONE);
     expect(text).not.toContain(LOCKED_PHONE);

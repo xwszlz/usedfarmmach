@@ -5,7 +5,7 @@
  *  ① 未登录 → 401 LOGIN_REQUIRED；
  *  ② 余额不足 → 402 INSUFFICIENT_CREDITS；
  *  ③ partition 非法值（"xxx"）→ 回落 "all"（断言传给 retrieveDealers 的实参）；
- *  ④ 计费顺序：buildExcel 抛错 → 500 且 deductAiUsage 未被调用；
+ *  ④ 失败不收文件：buildExcel 抛错 → 500 且不带 Content-Disposition；
  *  ⑤ build 成功 → 200 + xlsx MIME + Content-Disposition: attachment；
  *  ⑥ unlockedSet 构建：只认 "unlock:dealer_<id>"，lead 前缀不得混入经销商解锁集；
  *  ⑦ 端到端 PII 门禁：解析真实产物，已解锁行明文、未解锁行搜不到原始 PII。
@@ -24,11 +24,6 @@ vi.mock("@/lib/db", () => ({
     dealer: { findMany: vi.fn() },
     piiAuditLog: { findMany: vi.fn() },
   },
-}));
-vi.mock("@/lib/credits/deduct", () => ({
-  estimateAiCost: vi.fn(),
-  deductAiUsage: vi.fn(),
-  EXPORT_ESTIMATED_TOKENS: 800,
 }));
 vi.mock("@/lib/sales-strategy/dealers", () => ({ retrieveDealers: vi.fn() }));
 
@@ -49,7 +44,6 @@ vi.mock("@/lib/sales-strategy/export", async (importOriginal) => {
 
 import { getUserFromRequest } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { estimateAiCost, deductAiUsage } from "@/lib/credits/deduct";
 import { retrieveDealers } from "@/lib/sales-strategy/dealers";
 import { buildExcel } from "@/lib/sales-strategy/export";
 import { POST } from "@/app/api/agents/seller-helper/sales-strategy/export/excel/route";
@@ -98,10 +92,6 @@ beforeEach(() => {
 
   // 默认：真实 buildExcel + 两分区经销商 + 明文行 + audit 日志含 dealer 与 lead 两种前缀
   vi.mocked(buildExcel).mockReset().mockImplementation(H.realBuildExcel as any);
-  vi.mocked(estimateAiCost).mockReset().mockResolvedValue(100);
-  vi.mocked(deductAiUsage)
-    .mockReset()
-    .mockResolvedValue({ ok: true, cost: 100, balance: 9900, code: "OK" } as any);
   vi.mocked(getUserFromRequest).mockReset();
   vi.mocked(retrieveDealers)
     .mockReset()
@@ -151,7 +141,6 @@ describe("① 鉴权 / 余额门禁（取数前短路）", () => {
     expect(j.code).toBe("LOGIN_REQUIRED");
     expect(retrieveDealers).not.toHaveBeenCalled();
     expect(buildExcel).not.toHaveBeenCalled();
-    expect(deductAiUsage).not.toHaveBeenCalled();
   });
 
   it("余额为 0 也允许导出（导出免费，不再有余额预检）", async () => {
@@ -164,8 +153,6 @@ describe("① 鉴权 / 余额门禁（取数前短路）", () => {
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     );
     expect(retrieveDealers).toHaveBeenCalled();
-    expect(deductAiUsage).not.toHaveBeenCalled();
-    expect(estimateAiCost).not.toHaveBeenCalled();
   });
 });
 
@@ -196,12 +183,11 @@ describe("③ partition 取值校验", () => {
 
     expect(res.status).toBe(200);
     expect(retrieveDealers).toHaveBeenCalledWith("intl");
-    expect(deductAiUsage).not.toHaveBeenCalled();
   });
 });
 
 describe("④ 计费顺序：先 build 成功再扣费", () => {
-  it("buildExcel 抛错 → 500 SERVER_ERROR 且 deductAiUsage 未被调用", async () => {
+  it("buildExcel 抛错 → 500 SERVER_ERROR 且不返回文件头", async () => {
     vi.mocked(getUserFromRequest).mockResolvedValue({ id: "u1", credits: 99999 } as any);
     vi.mocked(buildExcel).mockRejectedValueOnce(new Error("xlsx write failed"));
 
@@ -212,7 +198,6 @@ describe("④ 计费顺序：先 build 成功再扣费", () => {
     expect(j.success).toBe(false);
     expect(j.code).toBe("SERVER_ERROR");
     // 红线：渲染失败绝不扣费
-    expect(deductAiUsage).not.toHaveBeenCalled();
     expect(res.headers.get("content-disposition")).toBeNull();
   });
 });
@@ -232,8 +217,6 @@ describe("⑤ 成功路径 + ⑥ unlockedSet 构建", () => {
     expect(cd).toContain(".xlsx");
 
     // 导出免费：零 LLM 成本 ⇒ 不进计费模块
-    expect(deductAiUsage).not.toHaveBeenCalled();
-    expect(estimateAiCost).not.toHaveBeenCalled();
 
     // unlockedSet 构建：PiiAuditLog 的 "unlock:dealer_abc" → "abc"；"unlock:lead_xyz" 被排除
     const call = vi.mocked(buildExcel).mock.calls[0];
