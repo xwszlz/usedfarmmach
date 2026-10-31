@@ -109,3 +109,36 @@ describe("buildDoubaoContent：单图被拒不影响同批正常图", () => {
     expect(imagePart.image_url.url).toBe("data:image/jpeg;base64,AAAA");
   });
 });
+
+describe("buildDoubaoContent：视频只送自有域名", () => {
+  const OWN = "https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/videos/a.mp4";
+
+  it("恶意 URL 不产生 video_url 内容块，自有 OSS 视频照常送出", async () => {
+    const content = await buildDoubaoContent(
+      [],
+      ["https://evil.example.com/x.mp4", OWN],
+      "prompt"
+    );
+    const videos = content.filter((part) => part.type === "video_url");
+    expect(videos).toHaveLength(1);
+    expect((videos[0].video_url as { url: string }).url).toBe(OWN);
+  });
+
+  it("只有恶意 URL ⇒ 一个 video_url 都没有，且不抛错（不阻断整条链路）", async () => {
+    const content = await buildDoubaoContent([], ["https://evil.example.com/x.mp4"], "prompt");
+    expect(content.filter((part) => part.type === "video_url")).toHaveLength(0);
+    expect(content[0]).toEqual({ type: "text", text: "prompt" });
+  });
+
+  it("同域但 http / 后缀域名攻击 都被拒", async () => {
+    const content = await buildDoubaoContent(
+      [],
+      [
+        "http://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/videos/a.mp4",
+        "https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com.evil.tld/videos/a.mp4",
+      ],
+      "prompt"
+    );
+    expect(content.filter((part) => part.type === "video_url")).toHaveLength(0);
+  });
+});

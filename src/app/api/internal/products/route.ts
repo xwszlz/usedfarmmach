@@ -38,7 +38,7 @@ import { resolveValuationCodes } from "@/lib/valuation/resolve-codes";
 
 import { analyzeProductImages } from "@/lib/valuation/image-analyzer";
 
-import { analyzeVideo, calculateVideoFactor } from "@/lib/valuation/video-analyzer";
+import { analyzeVideos, calculateVideoFactor } from "@/lib/valuation/video-analyzer";
 import { chatCompletionDoubao, getArkVisionModelId } from "@/lib/ai/ark-client";
 import { drainUsage } from "@/lib/credits/usage-collector";
 
@@ -1641,21 +1641,34 @@ export async function POST(request: NextRequest) {
 
 
 
-            // 视频分析
-
+            // 视频分析（**全部**视频）：交给 analyzeVideos 并行分析 + 异常优先聚合。
+            //
+            // 改动前这里是 `updatedProduct.videos[0].url` —— 一台机器传了 3 条视频，
+            // 另外 2 条里的异响/卡滞完全不被看见；而「宁可低估不可高估」恰恰最需要那两条证据。
+            //
+            // 条数上限（MAX_ANALYZE_VIDEOS=3）与「自有域名白名单」都在 analyzeVideos 内部处理：
+            // 本文件不再自己 slice(0, 3) / 过滤域名 —— 唯一实现，避免重演"两份副本各自漂移"。
             let videoAnalysisResult = undefined;
 
             if (updatedProduct.videos.length > 0) {
 
               try {
 
-                const videoFullUrl = getVideoUrl(updatedProduct.videos[0].url);
+                const videoFullUrls = updatedProduct.videos
+                  .map((video) => getVideoUrl(video.url))
+                  .filter((url) => url.length > 0);
 
-                if (videoFullUrl) {
+                if (videoFullUrls.length > 0) {
 
-                  videoAnalysisResult = await analyzeVideo(videoFullUrl);
+                  videoAnalysisResult = await analyzeVideos(videoFullUrls);
 
-                  console.log("[internal/products] step-7d video analysis done:", videoAnalysisResult.engineSoundStatus);
+                  console.log(
+                    "[internal/products] step-7d video analysis done:",
+                    `videos=${videoFullUrls.length}`,
+                    `engineSound=${videoAnalysisResult.engineSoundStatus}`,
+                    `smoothness=${videoAnalysisResult.mechanismSmoothness}`,
+                    `degraded=${videoAnalysisResult.degraded === true}`
+                  );
 
                 }
 
@@ -1668,7 +1681,7 @@ export async function POST(request: NextRequest) {
             }
 
             // ── 用量归集收口 ──
-            // analyzeProductImages / analyzeVideo 内部已 recordUsage（image-analyzer / video-analyzer），
+            // analyzeProductImages / analyzeVideos（内部逐条 analyzeVideo）已 recordUsage（image-analyzer / video-analyzer），
             // 但本文件是内部批量管线：暂不计费（系统账号批量处理，计费口径待定），
             // 然而**必须 drain** —— usage-collector 是模块级数组，不 drain 会一直堆着，
             // 被下一个任意请求（recognize / valuation）drain 走 → 跨请求串账，

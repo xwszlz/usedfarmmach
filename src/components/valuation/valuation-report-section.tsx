@@ -603,7 +603,9 @@ function DepreciationCard({
             <div key={i} className="flex items-start justify-between border-b border-gray-50 pb-1 text-xs last:border-0">
               <span className="text-gray-500">
                 {b.label}
-                {b.detail && <span className="ml-1 text-[10px] text-gray-400">{b.detail}</span>}
+                {/* `whitespace-pre-line`：视频因子的 detail 是多行分析文本（每条视频一行），
+                    不加就会被折叠成一行。单行 detail 无副作用。 */}
+                {b.detail && <span className="ml-1 whitespace-pre-line text-[10px] text-gray-400">{b.detail}</span>}
               </span>
               <span className="ml-2 shrink-0 text-right font-semibold text-gray-800">{b.value}</span>
             </div>
@@ -822,7 +824,11 @@ export default function ValuationReportSection({
       `${zh ? "置信度" : "Confidence"}: ${Math.round(result.confidence)}%`,
       "",
       zh ? "计算过程:" : "Breakdown:",
-      ...result.breakdown.map((b) => `- ${b.label}: ${b.value}${b.detail ? ` (${b.detail})` : ""}`),
+      ...result.breakdown.map(
+        // detail 可能是多行（视频因子逐条分析）；纯文本导出是「一项一行」，
+        // 这里把换行压成「；」，否则复制出来的段落结构会被一条视频分析打断。
+        (b) => `- ${b.label}: ${b.value}${b.detail ? ` (${b.detail.replace(/\n+/g, "；")})` : ""}`
+      ),
       ...(result.narrative?.tldr?.length
         ? ["", zh ? "AI 结论:" : "Verdict:", ...result.narrative.tldr.map((t, i) => `${i + 1}. ${t}`)]
         : []),
@@ -1063,7 +1069,7 @@ td { padding: 7px 6px; border-bottom: 1px solid #f3f4f6; vertical-align: top; }
 tr:last-child td { border-bottom: none; }
 td.k { color: #6b7280; width: 40%; }
 td.num { text-align: right; font-weight: 600; white-space: nowrap; }
-.detail { display: block; font-size: 11px; color: #9ca3af; }
+.detail { display: block; font-size: 11px; color: #9ca3af; white-space: pre-line; }
 .formula { font-family: ui-monospace, Consolas, monospace; font-size: 12px; color: #4b5563; background: #f3f4f6; padding: 10px; border-radius: 8px; word-break: break-all; }
 .bars { display: flex; align-items: flex-end; gap: 14px; height: 130px; padding: 6px 0; border-bottom: 1px solid #e5e7eb; }
 .bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; }
@@ -1327,7 +1333,8 @@ ${warnings}
                 <div key={i} className="flex items-center justify-between border-b border-gray-50 pb-1 text-xs">
                   <span className="text-gray-500">
                     {b.label}
-                    {b.detail && <span className="ml-1 text-[10px] text-gray-400">{b.detail}</span>}
+                    {/* 同 DepreciationCard：多行 detail（视频逐条分析）需要保留换行 */}
+                    {b.detail && <span className="ml-1 whitespace-pre-line text-[10px] text-gray-400">{b.detail}</span>}
                   </span>
                   <span className="font-semibold text-gray-800">{b.value}</span>
                 </div>
