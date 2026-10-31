@@ -348,22 +348,36 @@ describe("specification-table 既有语种回归保护", () => {
 });
 
 describe("specification-table 实渲染断言（es / pt / fr / ar / hi）", () => {
-  it.each([...PATCHED_LOCALES])("%s 渲染出 13 行，标签顺序与译文全部正确", (locale) => {
+  it.each([...PATCHED_LOCALES])("%s 渲染出 13 行，13 个字段名全用了本语种译文", (locale) => {
     const rows = renderFilled(locale);
     expect(rows, `${locale} 渲染行数不对`).toHaveLength(EXPECTED_RENDERED_ORDER.length);
-
     const expectedLabels = EXPECTED_RENDERED_ORDER.map((key) => LABELS[locale][key]);
-    expect(rows.map((row) => row.label)).toEqual(expectedLabels);
+    // 比对「字段名全集」：13 个字段名一个不缺、也没有英文残留。
+    // 这里刻意不锁死 model / category 的先后 —— 行序由 fix/spec-table-row-order
+    // 单独负责，两个分支各自合并都不应该把对方搞红。
+    expect([...rows.map((row) => row.label)].sort()).toEqual([...expectedLabels].sort());
   });
 
   it.each([...PATCHED_LOCALES])("%s 的「型号」「品类」两行都用了本语种译文", (locale) => {
     const rows = renderFilled(locale);
-    // 组件的 rows 顺序是 brand → model → category → year ...，
-    // 所以渲染后第 2 行是「型号」、第 3 行是「品类」。
-    expect(rows[1].label, `${locale} 第 2 行不是型号译文`).toBe(LABELS[locale].model);
-    expect(rows[2].label, `${locale} 第 3 行不是品类译文`).toBe(LABELS[locale].category);
-    expect(rows[1].value).toBe("6120M");
-    expect(rows[2].value).toBe("Tractor");
+    // 第 1 行固定是「品牌」；第 2、3 行就是「型号」与「品类」这两行
+    // （origin/main 上顺序是 品牌→型号→品类，fix/spec-table-row-order 上是
+    //  品牌→品类→型号，所以只校验「第 2、3 行是这两行的译文」，不锁先后）。
+    expect(rows[0].label, `${locale} 第 1 行不是品牌译文`).toBe(LABELS[locale].brand);
+    expect([rows[1].label, rows[2].label].sort(), `${locale} 第 2、3 行不是型号/品类译文`).toEqual(
+      [LABELS[locale].model, LABELS[locale].category].sort(),
+    );
+    expect([rows[1].value, rows[2].value].sort()).toEqual(["6120M", "Tractor"].sort());
+  });
+
+  it.each([...PATCHED_LOCALES])("%s 第 1 行与第 4 行起的行序稳定（品牌 → 年份 → … → 状况）", (locale) => {
+    const rows = renderFilled(locale);
+    expect(rows[0].label, `${locale} 第 1 行不是品牌译文`).toBe(LABELS[locale].brand);
+    // 第 4 行起是 year … condition，与行序改造无关，锁死
+    const tailKeys = EXPECTED_RENDERED_ORDER.slice(3);
+    expect(rows.slice(3).map((row) => row.label)).toEqual(
+      tailKeys.map((key) => LABELS[locale][key]),
+    );
   });
 
   it.each([...PATCHED_LOCALES])("%s 的工作小时行用了本语种的小时单位", (locale) => {
