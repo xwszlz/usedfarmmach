@@ -13,10 +13,13 @@
  *   PUT { workingHours: "0" }   → 库里 0      ✅
  *   PUT { workingHours: "" }    → 库里 null   ✅（清空）
  *
- * 修复后统一为「空 → null，可转成有限数字 → 数字本身，转不成数字 → null」，
+ * 修复后统一为「空 → null，可转成有限数字 → **四舍五入后的整数**，转不成数字 → null」，
  * 与同文件 `descriptionZh`、以及 `/api/internal/products` 里
  * `finalWorkingHours`（注释原文：「工时由发布者填写，0 合法；空/非数字落 null
  * （不能把 0 当空值丢掉）」）完全同一口径。
+ *
+ * 取整（`Math.round`）是第二条必须锁的行为：列是 `Int?`，而 AI 估计「约 12.5 小时」
+ * 是正常输出，直接写小数会被 Prisma 拒绝 ⇒ 前端表现为 500。
  *
  * 另：文件末尾那条用例**刻意锁定** enginePower/尺寸/净重的现有语义（0 → null），
  * 因为评审结论是「只有工时的 0 有业务含义，其余 5 个字段保持原样，不许批量改成新写法」。
@@ -131,6 +134,46 @@ describe("workingHours：空与零必须区分（核心回归）", () => {
   it("数字 12 ⇒ 写入 12", async () => {
     const data = await putAndCaptureData({ workingHours: 12 });
     expect(data.workingHours).toBe(12);
+  });
+
+  /**
+   * 小数必须四舍五入成整数。
+   *
+   * 列是 `Int?`，而工时的上游并不保证整数：AI 估计「约 12.5 小时」是很正常的输出，
+   * `recognize-apply` 的 `toFiniteNumber("12.5")` 也**正确地**放行小数。
+   * 修复前这里直接写 `Number(...)` ⇒ 12.5 原样进 Prisma ⇒ 被拒绝 ⇒ 老板点「一键回填」
+   * 只要模型给了小数就吃一个 500，报错还跟"工时填错了"毫无关系。
+   * 现在按 `/api/internal/products` 的 `finalWorkingHours` 口径 `Math.round`。
+   */
+  it("数字 12.5 ⇒ 写入 13（不是 12.5，会撞 Int 列）", async () => {
+    const data = await putAndCaptureData({ workingHours: 12.5 });
+    expect(data.workingHours).toBe(13);
+    expect(Number.isInteger(data.workingHours)).toBe(true);
+  });
+
+  it("字符串 \"12.5\" ⇒ 写入 13", async () => {
+    const data = await putAndCaptureData({ workingHours: "12.5" });
+    expect(data.workingHours).toBe(13);
+    expect(Number.isInteger(data.workingHours)).toBe(true);
+  });
+
+  it("小数向下也按四舍五入：12.4 ⇒ 12", async () => {
+    const data = await putAndCaptureData({ workingHours: 12.4 });
+    expect(data.workingHours).toBe(12);
+  });
+
+  it("字符串 \"0.4\" ⇒ 写入 0（不能因为取整就变成 null 或丢掉）", async () => {
+    const data = await putAndCaptureData({ workingHours: "0.4" });
+    expect(data.workingHours).toBe(0);
+    expect(data.workingHours).not.toBeNull();
+  });
+
+  it("任何小数输入写进 data 的都必须是整数（Int 列的硬约束）", async () => {
+    for (const input of [12.5, "12.5", 0.6, "0.6", 999.999]) {
+      updateMock.mockClear();
+      const data = await putAndCaptureData({ workingHours: input });
+      expect(Number.isInteger(data.workingHours)).toBe(true);
+    }
   });
 
   it("非数字 \"abc\" ⇒ 写入 null（绝不把 NaN 塞进库）", async () => {

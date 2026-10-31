@@ -196,14 +196,21 @@ export async function PUT(
         // 而字符串 "0" 是 truthy 又被正确写成 0 ⇒ 同一字段两种输入类型两种结果（AI 视觉识别
         // 回填送的是数字，全新机必踩）。这里改为与同文件 descriptionZh 一致的口径：
         //   空（null / "" / undefined 已由外层过滤）→ null
-        //   可转成有限数字 → 数字本身（含 0）
+        //   可转成有限数字 → **四舍五入后的整数**（含 0）
         //   转不成数字（"abc" / NaN / Infinity）→ null（绝不把 NaN 写进库）
+        //
+        // 为什么要 Math.round：列是 `Int?`，而工时的上游并不保证整数 ——
+        // AI 估算「约 12.5 小时」是很正常的输出，`recognize-apply` 的 `toFiniteNumber("12.5")`
+        // 也**正确地**放行小数。若这里直接写 12.5，Prisma 会拒绝 ⇒ 老板点「一键回填」时
+        // 只要模型给了小数就吃一个 500，且报错信息与「工时填错了」毫无关系。
+        // 口径与 `/api/internal/products` 的 `finalWorkingHours` 对齐（那边也是 Math.round），
+        // 避免「同一台机器从后台录和从前台录，得到不同结果」这种下一层坑。
         ...(workingHours !== undefined && {
           workingHours:
             workingHours === null || workingHours === ""
               ? null
               : Number.isFinite(Number(workingHours))
-                ? Number(workingHours)
+                ? Math.round(Number(workingHours))
                 : null,
         }),
         ...(engineType !== undefined && { engineType }),
