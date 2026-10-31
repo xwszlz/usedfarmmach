@@ -13,7 +13,20 @@
  *      把模型残留的标题 / 引导语 / 多余空行全部剥掉（JSON 代码块本身仍保留给 `extractStructured()`）。
  *
  * Body: { imageUrls?: string[], imageDataUris?: string[], videoUrls?: string[], isChineseBrand?: boolean, locale?: string }
- * Response: { success: true, data: { analysis: "Markdown报告", structured: {...}, model: "..." } }
+ * Response: { success: true, data: { analysis: "Markdown报告", structured: {...}, model: "...",
+ *             mediaCount, pointsCharged, creditsBalance, truncated: boolean, budgetExhausted: boolean,
+ *             continueRounds: number } }
+ *
+ * ── 截断契约（V2.4，硬要求，前端据此提示用户）─────────────────────────────
+ * 本接口**不允许**静默返回半截报告。两个布尔字段必须一起看：
+ *   - `truncated`      = 响应正文**确实不完整**。为 true 的三种来源：
+ *                        ① `finishReason === "length"` 且续写轮次用尽；
+ *                        ② `finishReason === "length"` 但剩余预算不足以再来一轮续写；
+ *                        ③ 续写调用本身抛错（已生成的正文保留，但尾巴缺了）。
+ *   - `budgetExhausted`= 中止原因是**总预算**（`DEEP_ANALYSIS_TOTAL_BUDGET_MS`）而不是轮次上限
+ *                        或上游报错。前端可据此区分「内容太长」与「服务器时间不够」两类提示。
+ * 正文一个 token 都没拿到时**不返回 200**，仍走下面的 `ALL_MODELS_FAILED` 503 出口。
+ * ────────────────────────────────────────────────────────────────────────
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -42,10 +55,76 @@ interface LlmCallResult {
  * 16384 tokens 在 300s 预算内可稳定生成完，超出部分走续写轮次拼接（见下方续写逻辑）。
  */
 const DEEP_ANALYSIS_MAX_TOKENS = 16384;
-/** 单次调用超时：必须小于路由 maxDuration(300s)，否则路由先被平台杀掉、自身超时永远等不到 */
+/**
+ * 单次 LLM 调用超时。
+ *
+ * ⚠️ 2026-11 修正（旧注释与实现不一致）：这里原先写「必须小于路由 maxDuration(300s)」，
+ *    但 **`.cn` 是 Next standalone 部署，根本不读 `maxDuration`** —— 该常量只对 Vercel 生效。
+ *    `.cn` 真正生效的墙钟闸门只有两个：本文件的**总预算**（`DEEP_ANALYSIS_TOTAL_BUDGET_MS`）
+ *    与 nginx 的 `proxy_read_timeout 330s`（`deploy/nginx/conf.d/cn.conf`）。
+ *    所以单次超时不再用于"对齐 maxDuration"，而是作为**单次上限**，实际生效值由总预算裁剪
+ *    （见 `callDoubao` 的 `deadlineMs`）。保留 280s 仅为 `.com`(Vercel) 侧的单次调用上限。
+ */
 const DEEP_ANALYSIS_TIMEOUT_MS = 280_000;
 /** 续写轮次上限：1 次初稿 + 2 次续写，理论可覆盖约 48k tokens 的报告 */
 const DEEP_ANALYSIS_MAX_CONTINUE_ROUNDS = 2;
+
+/**
+ * 深度分析**总预算**（从请求入口起算，含图片下载 + 初稿 + 全部续写轮次）。
+ *
+ * 为什么必须有（线上真实故障）：`.cn` 产品详情页点「AI 深度分析」→ 504。
+ * 旧实现三者都是"每次调用"口径、**没有任何总闸**：
+ *   图片下载 3 张串行 × 20s = 60s；单次 LLM 280s，且 `ark-client` 内部还会重试 1 次；
+ *   续写最多 2 轮 ⇒ 最坏墙钟 ≈ 60s + 280s × 3 = 900s ≫ nginx 330s
+ *   ⇒ 反代先掐断，返回 HTML 504，前端走非 JSON 分支显示「AI服务返回异常」。
+ *
+ * 260s 的取值理由：
+ *   - < nginx `proxy_read_timeout` 330s，留 70s 余量给响应序列化（长报告 + base64 元数据）与网络抖动；
+ *   - < `maxDuration` 300s，保证 `.com`(Vercel) 侧同样不会被平台杀进程；
+ *   - > 估值链路 200s / 销售策略 280s 的口径区间，足够一次 16k tokens 初稿 + 1 轮续写收尾。
+ * ⚠️ 若将来调大本值，必须同步把 nginx 的 `proxy_read_timeout` 提到「本值 + 30s」以上。
+ */
+const DEEP_ANALYSIS_TOTAL_BUDGET_MS = 260_000;
+
+/**
+ * 允许开始下一轮续写所需的最小剩余预算。
+ *
+ * 50s 的理由：一轮续写要重新把「已写正文」作为 assistant 上下文回灌（输入侧同样要算 prefill 时间），
+ * 实测续写段首 token 明显慢于初稿；剩余预算低于 50s 时发起续写，几乎必然在
+ * `deadlineMs` 之前被打断，还会把**已经拿到的时间**浪费在 TCP/排队上。
+ * 不足就不续写 → 返回 `truncated: true` + `budgetExhausted: true`，让前端如实提示。
+ */
+const DEEP_ANALYSIS_CONTINUE_MIN_REMAINING_MS = 50_000;
+
+/**
+ * 图片下载阶段的子预算（相对请求入口起算的**阶段上限**）。
+ *
+ * 3 张图并行下载，每张超时取 `min(20s, 剩余预算)`；整个阶段再叠加 45s 上限。
+ * 45s 的理由：单张 20s（守卫默认值）×2 轮最坏情况 + 队列抖动 ≈ 42s，
+ * 取整到 45s 后仍给 LLM 留出 ≥ 215s，且远小于总预算 260s。
+ * 阶段超时**不整体失败**：带着已拿到的图继续分析（保持既有"丢图不丢链路"语义）。
+ */
+const DEEP_ANALYSIS_DOWNLOAD_BUDGET_MS = 45_000;
+
+/**
+ * 发起 LLM 调用所需的最小剩余预算（5s）。
+ * 低于这个值再发起调用没有任何意义，直接判预算耗尽（快速失败 → 503 JSON，而不是等 nginx 掐断）。
+ */
+const DEEP_ANALYSIS_MIN_CALL_REMAINING_MS = 5_000;
+
+/**
+ * 预算耗尽哨兵错误。
+ *
+ * 为什么要单独一个类：`callDoubao` 的其它失败（鉴权/超时/空响应）混在同一个 catch 里，
+ * 前端需要区分「内容被预算截断」与「上游真的挂了」—— 只有前者应显示
+ * 「因时间预算限制被截断」的黄色提示条，后者应显示错误。
+ */
+class DeepAnalysisBudgetExhaustedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "DeepAnalysisBudgetExhaustedError";
+  }
+}
 /** 续写指令：明确要求只写剩余部分，避免 LLM 从头重复整篇报告 */
 const DEEP_ANALYSIS_CONTINUE_PROMPT =
   "上面的内容是你正在撰写的深度分析报告，因单次输出长度上限被截断。" +
@@ -54,7 +133,12 @@ const DEEP_ANALYSIS_CONTINUE_PROMPT =
   "③ 保持原有章节编号与格式继续往下写；" +
   "④ 若报告正文已完结，只需补上结尾要求的那一个 ```json 代码块（不要加任何标题、小节名或说明文字）。";
 
-export const maxDuration = 300; // 长报告（含续写轮次）需要更长时间；与 internal/products 的 300s 对齐
+/**
+ * ⚠️ 只有 Vercel（`.com`）读这个值；**`.cn` 是 Next standalone，不读 `maxDuration`**。
+ * `.cn` 的实际墙钟闸门是 `DEEP_ANALYSIS_TOTAL_BUDGET_MS`(260s) 与 nginx `proxy_read_timeout`(330s)。
+ * 保留 300 是为了 `.com` 侧与 internal/products 对齐。
+ */
+export const maxDuration = 300;
 
 /**
  * 国际农机深度分析 Prompt — 全球市场
@@ -242,23 +326,56 @@ const DOMESTIC_ANALYSIS_PROMPT = `你是一位拥有20年经验的中国资深�
 
 /**
  * 调用豆包 API（统一出口 chatCompletionDoubao）
+ *
+ * @param content 多模态消息体（text + image_url… + video_url…）
+ * @param extraMessages 续写时追加的历史消息（assistant 已写内容 + user 续写指令）
+ * @param deadlineMs 本次请求的**总预算截止时间戳**（`Date.now()` 口径）。
+ *   两个作用：
+ *     ① 单次 `timeoutMs` 被剩余预算裁剪（`min(280s, max(5s, 剩余))`）；
+ *     ② 传给 `ark-client` 的 `deadlineMs`，让它在 429/5xx 重试前检查预算
+ *        —— 否则内部那一次盲重试会把总预算直接击穿（2 × timeout）。
+ * @throws {DeepAnalysisBudgetExhaustedError} 剩余预算不足以发起调用（调用方据此标记 budgetExhausted）
  */
 async function callDoubao(
   content: Array<Record<string, unknown>>,
   /** 续写时追加的历史消息（assistant 已写内容 + user 续写指令） */
-  extraMessages: Array<{ role: string; content: string }> = []
+  extraMessages: Array<{ role: string; content: string }> = [],
+  /** 请求级总预算截止时间戳；不传时才回落到旧的"单次 280s、无总闸"行为（仅供单测/内部调用） */
+  deadlineMs?: number
 ): Promise<LlmCallResult> {
   const model = getArkModelId();
+
+  // ── 预算闸①：剩余不足以发起一次有意义的调用 → 立即失败，不占用时间去排队 ──
+  const hasDeadline = typeof deadlineMs === "number" && Number.isFinite(deadlineMs);
+  const remainingMs = hasDeadline ? (deadlineMs as number) - Date.now() : Number.POSITIVE_INFINITY;
+  if (hasDeadline && remainingMs < DEEP_ANALYSIS_MIN_CALL_REMAINING_MS) {
+    throw new DeepAnalysisBudgetExhaustedError(
+      `[DeepAnalysis] 总预算耗尽（剩余 ${Math.max(0, Math.round(remainingMs))}ms < ` +
+        `${DEEP_ANALYSIS_MIN_CALL_REMAINING_MS}ms），放弃本次 LLM 调用`
+    );
+  }
+
+  /** 单次超时：不得超过总预算剩余，也不得超过单次上限 280s */
+  const timeoutMs = hasDeadline
+    ? Math.min(
+        DEEP_ANALYSIS_TIMEOUT_MS,
+        Math.max(DEEP_ANALYSIS_MIN_CALL_REMAINING_MS, Math.round(remainingMs))
+      )
+    : DEEP_ANALYSIS_TIMEOUT_MS;
+
   console.log(
     `[DeepAnalysis] 豆包调用: model=${model}, ` +
     `图片数=${content.filter((c) => c.type === "image_url").length}, ` +
-    `视频数=${content.filter((c) => c.type === "video_url").length}`
+    `视频数=${content.filter((c) => c.type === "video_url").length}, ` +
+    `timeoutMs=${timeoutMs}${hasDeadline ? `, 剩余预算=${Math.round(remainingMs)}ms` : ""}`
   );
 
   const result = await chatCompletionDoubao({
     model,
     maxTokens: DEEP_ANALYSIS_MAX_TOKENS,
-    timeoutMs: DEEP_ANALYSIS_TIMEOUT_MS,
+    timeoutMs,
+    // ark-client 内部有 429/5xx 退避重试；不传 deadlineMs 时那次重试不受预算约束。
+    ...(hasDeadline ? { deadlineMs: deadlineMs as number } : {}),
     messages: [{ role: "user", content }, ...extraMessages],
   });
 
@@ -379,6 +496,12 @@ function cleanAnalysisText(analysisText: string): string {
 
 export async function POST(request: NextRequest) {
   try {
+    // ── 总预算起点：必须在 body 解析 / 图片下载之前 ──
+    // 只有从请求入口起算，才能保证「下载 + 初稿 + 续写 + 扣费 + 序列化」的**整段墙钟**
+    // 落在 DEEP_ANALYSIS_TOTAL_BUDGET_MS 之内（< nginx 330s / maxDuration 300s）。
+    const requestStartedAt = Date.now();
+    const requestDeadline = requestStartedAt + DEEP_ANALYSIS_TOTAL_BUDGET_MS;
+
     // ── 登录校验：AI 深度分析需登录并按积分计费（游客不可用）──
     // 401 分支也要拼 /{locale}/credits，此时 body 还没读 → 先用请求头解析一次；
     // body 解析后再带 body.locale 复核（前端显式 locale 优先级最高），得到最终 locale。
@@ -465,6 +588,8 @@ export async function POST(request: NextRequest) {
     let billingModel = "";
     let lastUsage = { inputTokens: 0, outputTokens: 0 };
     let truncated = false;
+    /** 中止/截断是否由**总预算**导致（供前端区分提示文案，见文件头「截断契约」） */
+    let budgetExhausted = false;
     let continueRounds = 0;
     const errors: string[] = [];
 
@@ -473,8 +598,20 @@ export async function POST(request: NextRequest) {
     try {
       const model = getArkModelId();
       console.log(`[DeepAnalysis] 首选豆包: ${model}, 引擎: ${engineLabel}, 语种: ${locale}, 图片数: ${images.length}, 视频数: ${videoUrls.length}`);
-      const content = await buildDoubaoContent(images, videoUrls, activePrompt);
-      const res = await callDoubao(content);
+      // ── 图片下载阶段：并行 + 双重预算封顶（阶段 45s 与总预算取早者）──
+      // 下载超时**不整体失败**：`buildDoubaoContent` 内部逐图 allSettled，只丢失败的那张。
+      const downloadDeadline = Math.min(
+        requestDeadline,
+        Date.now() + DEEP_ANALYSIS_DOWNLOAD_BUDGET_MS
+      );
+      const content = await buildDoubaoContent(images, videoUrls, activePrompt, {
+        downloadDeadlineMs: downloadDeadline,
+      });
+      console.log(
+        `[DeepAnalysis] 图片下载阶段完成: 用时=${Date.now() - requestStartedAt}ms, ` +
+        `实际进入模型图片数=${content.filter((c) => c.type === "image_url").length}/${images.length}`
+      );
+      const res = await callDoubao(content, [], requestDeadline);
       analysisText = res.text;
       lastUsage = res.usage;
       billingModel = model;
@@ -486,14 +623,28 @@ export async function POST(request: NextRequest) {
       // 按火山官方推荐做法：把已生成内容作为上下文继续写；轮次用尽仍截断则置 truncated。
       let finishReason = res.finishReason;
       while (finishReason === "length" && continueRounds < DEEP_ANALYSIS_MAX_CONTINUE_ROUNDS) {
+        // ── 预算闸②：续写前的预算检查（与销售策略链路的 `remaining < 15s` 同口径，但更保守）──
+        // 不检查的后果：最后一轮续写吃满 timeout，把总墙钟顶到预算之外 → 反代 504 HTML。
+        const remaining = requestDeadline - Date.now();
+        if (remaining < DEEP_ANALYSIS_CONTINUE_MIN_REMAINING_MS) {
+          budgetExhausted = true;
+          truncated = true;
+          console.warn(
+            `[DeepAnalysis] 剩余预算 ${Math.max(0, Math.round(remaining))}ms < ` +
+            `${DEEP_ANALYSIS_CONTINUE_MIN_REMAINING_MS}ms，跳过第 ${continueRounds + 1} 次续写，` +
+            `标记 truncated=true / budgetExhausted=true`
+          );
+          break;
+        }
         continueRounds += 1;
         console.warn(
           `[DeepAnalysis] 输出被 max_tokens 截断(finish_reason=length)，第 ${continueRounds}/${DEEP_ANALYSIS_MAX_CONTINUE_ROUNDS} 次续写`
         );
+        // 续写同样带 deadlineMs：其内部重试不能突破 requestDeadline
         const cont = await callDoubao(content, [
           { role: "assistant", content: analysisText },
           { role: "user", content: continuePrompt },
-        ]);
+        ], requestDeadline);
         analysisText += cont.text;
         lastUsage = {
           inputTokens: lastUsage.inputTokens + cont.usage.inputTokens,
@@ -502,17 +653,30 @@ export async function POST(request: NextRequest) {
         finishReason = cont.finishReason;
       }
       if (finishReason === "length") {
+        // 走到这里有两种可能：① 续写轮次用尽（continueRounds 达上限）；
+        // ② 预算闸②刚 break（budgetExhausted 已置 true）。两者都算截断。
         truncated = true;
-        console.error("[DeepAnalysis] 已达最大续写轮次，报告仍不完整，已标记 truncated");
+        console.error(
+          `[DeepAnalysis] 报告仍不完整：continueRounds=${continueRounds}, ` +
+          `budgetExhausted=${budgetExhausted}, 已用墙钟=${Date.now() - requestStartedAt}ms，已标记 truncated`
+        );
       }
     } catch (error: any) {
+      const isBudget = error instanceof DeepAnalysisBudgetExhaustedError;
+      if (isBudget) budgetExhausted = true;
       const msg = `[豆包] ${error.message || ""}`.substring(0, 150);
-      console.warn("[DeepAnalysis] 豆包失败:", msg);
+      console.warn("[DeepAnalysis] 豆包失败:", msg, isBudget ? "(预算耗尽)" : "");
       errors.push(msg);
       // 初稿失败 → analysisText 为空，走下方 ALL_MODELS_FAILED；
       // 续写失败 → 保留已生成内容并标记 truncated，避免静默缺尾。
       if (analysisText) truncated = true;
     }
+
+    console.log(
+      `[DeepAnalysis] 生成结束: 墙钟=${Date.now() - requestStartedAt}ms, ` +
+      `预算=${DEEP_ANALYSIS_TOTAL_BUDGET_MS}ms, 续写轮次=${continueRounds}, ` +
+      `truncated=${truncated}, budgetExhausted=${budgetExhausted}`
+    );
 
     if (!analysisText || analysisText.trim().length < 50) {
       return NextResponse.json({
@@ -559,19 +723,46 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    /**
+     * 成功响应体的 `data` 结构（**契约定义**，见文件头「截断契约」）。
+     *
+     * 单独声明成类型而不是内联对象字面量，是为了让 `truncated` / `budgetExhausted`
+     * 这两个前端依赖的字段不会在将来重构里被悄悄删掉（删了 tsc 会报错）。
+     */
+    const responseData: {
+      analysis: string;
+      structured: Record<string, unknown>;
+      model: string;
+      mediaCount: { images: number; videos: number };
+      pointsCharged: number;
+      /** 扣费后的余额；`deductCredits` 在上游未返回余额时可能为 undefined（此时 JSON 里不出现该字段） */
+      creditsBalance: number | undefined;
+      /** true = 正文不完整（轮次用尽 / 预算不足 / 续写失败），前端必须提示 */
+      truncated: boolean;
+      /** true = 中止原因是总预算（DEEP_ANALYSIS_TOTAL_BUDGET_MS） */
+      budgetExhausted: boolean;
+      /** 实际发生的续写轮次（0 = 一次写完） */
+      continueRounds: number;
+      /** 本次请求实际墙钟耗时（毫秒），便于对照预算排障 */
+      elapsedMs: number;
+    } = {
+      analysis: analysisClean,
+      structured: structured || {},
+      model: modelUsed,
+      mediaCount: { images: images.length, videos: videoUrls.length },
+      pointsCharged: cost.points,
+      creditsBalance: deduction.credits,
+      // true = 正文被截断（续写轮次用尽 / 预算不足 / 续写调用失败），前端应提示「报告未完整生成」
+      truncated,
+      // true = 截断原因是总预算不足，前端可提示「因时间预算限制被截断」
+      budgetExhausted,
+      continueRounds,
+      elapsedMs: Date.now() - requestStartedAt,
+    };
+
     return NextResponse.json({
       success: true,
-      data: {
-        analysis: analysisClean,
-        structured: structured || {},
-        model: modelUsed,
-        mediaCount: { images: images.length, videos: videoUrls.length },
-        pointsCharged: cost.points,
-        creditsBalance: deduction.credits,
-        // true = 续写轮次用尽仍未收尾，前端应提示「报告未完整生成」
-        truncated,
-        continueRounds,
-      },
+      data: responseData,
     });
 
   } catch (error: any) {

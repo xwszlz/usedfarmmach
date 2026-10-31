@@ -17,6 +17,13 @@ export interface DownloadGuardedImageOptions {
   maxBytes?: number;
   /** 响应没有 content-type 时的兜底值；默认 `image/jpeg` */
   defaultContentType?: string;
+  /**
+   * 本次抓取可用的超时（毫秒，含全部重定向跳）。**不传时保持守卫默认的 20s**。
+   *
+   * 深度分析用它把「3 张图下载」整体收进总预算：调用方按剩余预算算出这个值
+   * （见 `buildDoubaoContent` 的 `downloadDeadlineMs`），避免下载阶段独自吃满 60s。
+   */
+  timeoutMs?: number;
 }
 
 /**
@@ -34,7 +41,10 @@ export async function downloadGuardedImage(
   const maxBytes = options.maxBytes ?? MAX_IMAGE_BYTES;
   const defaultContentType = options.defaultContentType ?? "image/jpeg";
 
-  const res = await fetchGuardedImage(url);
+  const res = await fetchGuardedImage(
+    url,
+    typeof options.timeoutMs === "number" ? { timeoutMs: options.timeoutMs } : {}
+  );
   if (!res.ok) throw new Error(`图片下载失败: ${res.status}`);
 
   const buffer = await readBodyWithLimit(res, maxBytes);

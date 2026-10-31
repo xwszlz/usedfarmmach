@@ -1,9 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, Loader2, AlertCircle, Bot } from "lucide-react";
+import { Sparkles, Loader2, AlertCircle, AlertTriangle, Bot } from "lucide-react";
 import AnalysisReportView from "@/components/valuation/analysis-report-view";
 import { isCnSite } from "@/config/site";
+
+/**
+ * 客户端请求超时（300s = 5 分钟）。
+ *
+ * 取值必须落在「服务端总预算 260s」与「`.cn` 反代 `proxy_read_timeout` 330s」之间：
+ *   不早于 260s → 不会抢在服务端自己的截断/失败返回之前把连接掐掉（否则用户永远拿到
+ *                 "超时"而不是服务端精心构造的 JSON 错误）；
+ *   不晚于 330s → 反代掐断之前浏览器已经放弃，用户看到的是可读文案而非"一直转圈"。
+ */
+const DEEP_ANALYSIS_CLIENT_TIMEOUT_MS = 300_000;
 
 interface DeepAnalysisCardProps {
   productId: string;
@@ -39,6 +49,13 @@ export default function DeepAnalysisCard({
   const [modelUsed, setModelUsed] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [locked, setLocked] = useState(false);
+  /**
+   * 服务端「截断契约」的两个布尔字段（见 deep-analysis/route.ts 文件头）：
+   * `truncated` = 正文不完整；`budgetExhausted` = 原因是总预算不足。
+   * 为 true 时在报告顶部显示黄色提示条 —— 截断**不能静默**成功。
+   */
+  const [truncated, setTruncated] = useState(false);
+  const [budgetExhausted, setBudgetExhausted] = useState(false);
 
   // 只取前3张图片（豆包处理够用，避免超时）
   const selectedImages = imageUrls.slice(0, 3);
@@ -55,11 +72,22 @@ export default function DeepAnalysisCard({
     setStructured(null);
     setModelUsed("");
     setLocked(false);
+    setTruncated(false);
+    setBudgetExhausted(false);
 
     try {
       const res = await fetch("/api/agents/seller-helper/deep-analysis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        /**
+         * 客户端超时：300s。
+         *
+         * 为什么必须加：服务端总预算 260s，`.cn` 反代 `proxy_read_timeout` 330s。
+         * 浏览器侧若裸 fetch、不设超时，一旦反代/容器出问题，用户会看到按钮无限转圈；
+         * 更糟的是各浏览器的默认超时（有的长达数分钟）会把「服务端已经失败」掩盖成「还在算」。
+         * 取 300s：> 服务端 260s 预算（不抢在服务端之前掐断），< 反代 330s。
+         */
+        signal: AbortSignal.timeout(DEEP_ANALYSIS_CLIENT_TIMEOUT_MS),
         body: JSON.stringify({
           imageUrls: selectedImages,
           videoUrls: videoUrls.length > 0 ? videoUrls : undefined,
@@ -110,9 +138,27 @@ export default function DeepAnalysisCard({
       setStructured(data.data.structured || null);
       onComplete?.(data.data.structured || null);
       setModelUsed(data.data.model || "");
+      // 截断标记：服务端明确回传的契约字段（缺失按 false 处理，向后兼容旧版响应）
+      setTruncated(data.data.truncated === true);
+      setBudgetExhausted(data.data.budgetExhausted === true);
       setLocked(true);
     } catch (err: any) {
-      setError(err.message || (locale === "zh" ? "深度分析失败，请稍后重试" : "Analysis failed, please try again"));
+      /**
+       * 超时单独一条文案（不要掉进「AI服务返回异常」的笼统分支）：
+       * `AbortSignal.timeout()` 在浏览器/Node 里 reject 的名字是 `TimeoutError`，
+       * 手动 `controller.abort()` 是 `AbortError`，两者都要接住。
+       */
+      const errName = String(err?.name || "");
+      if (errName === "TimeoutError" || errName === "AbortError") {
+        console.error("[DeepAnalysis] 客户端超时:", DEEP_ANALYSIS_CLIENT_TIMEOUT_MS, "ms");
+        setError(
+          locale === "zh"
+            ? "分析超时（超过 5 分钟），请稍后重试或减少图片数量"
+            : "Analysis timed out (over 5 minutes). Please retry later or use fewer images"
+        );
+      } else {
+        setError(err.message || (locale === "zh" ? "深度分析失败，请稍后重试" : "Analysis failed, please try again"));
+      }
     } finally {
       setAnalyzing(false);
     }
@@ -213,6 +259,22 @@ export default function DeepAnalysisCard({
       {/* Report */}
       {report && (
         <div className="mt-4">
+          {/* 截断提示条：服务端 `truncated`/`budgetExhausted` 为真时**必须**可见，
+              否则用户会把半截报告当成完整结论（曾经的静默失败）。 */}
+          {truncated && (
+            <div className="mb-3 flex items-start gap-2 rounded-lg border border-yellow-300 bg-yellow-50 p-3 text-sm text-yellow-800">
+              <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+              <span>
+                {zh
+                  ? (budgetExhausted
+                    ? "本次分析因时间预算限制被截断，内容可能不完整，请稍后重试"
+                    : "本次分析内容被截断，可能不完整，请稍后重试")
+                  : (budgetExhausted
+                    ? "This analysis was truncated due to the time budget; the content may be incomplete. Please try again later"
+                    : "This analysis was truncated and may be incomplete. Please try again later")}
+              </span>
+            </div>
+          )}
           <AnalysisReportView
             report={report}
             structured={structured}
