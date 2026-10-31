@@ -147,6 +147,156 @@ export async function analyzeVideo(
 }
 
 /**
+ * 单次估值最多分析几条视频。
+ *
+ * 为什么是 3：`MAX_VIDEOS_PER_PRODUCT`（`src/lib/content-moderation.ts`）就是产品视频的
+ * 业务上限，正常数据不可能超过；这里再夹一次是为了防「请求体塞几十条 URL」这类异常调用
+ * 把单次估值的墙钟直接拖穿 —— 每条视频都是一次完整的模型调用（实测单条 40~61s）。
+ *
+ * 为什么不从 content-moderation 直接 import：那是内容审核业务模块（带 Prisma 等依赖），
+ * 估值库只是「算法 + 模型调用」，不该为了一个数字把整条业务依赖链拉进来。
+ */
+export const MAX_ANALYZE_VIDEOS = 3;
+
+/** 多视频拼接时单条 `analysis` 的截断长度（拼接后仍要能塞进估值报告正文） */
+const ANALYSIS_PER_VIDEO_MAX_CHARS = 200;
+
+/**
+ * 三个枚举维度的「取值优先级」——**靠前的更坏、更该被采信**。
+ *
+ * 与 {@link analyzeVideos} 的聚合方向严格对应：取优先级最高（最坏）的那一个。
+ */
+const ENGINE_SOUND_PRIORITY = ["abnormal_smoke", "abnormal_noise", "normal", "no_sound"] as const;
+const SMOOTHNESS_PRIORITY = ["jammed", "sluggish", "smooth"] as const;
+const IMPRESSION_PRIORITY = ["poor", "fair", "good", "excellent"] as const;
+
+/** 按优先级表挑出「最坏」的那个取值；候选里一个都匹配不上时返回 undefined 由调用方兜底 */
+function pickWorst<T extends string>(candidates: readonly T[], priority: readonly T[]): T | undefined {
+  for (const value of priority) {
+    if (candidates.includes(value)) return value;
+  }
+  return undefined;
+}
+
+/** 截断单条分析文本，避免 3 条各几百字把估值报告正文挤爆 */
+function truncateAnalysis(text: string): string {
+  const raw = typeof text === "string" ? text.trim() : "";
+  if (raw.length <= ANALYSIS_PER_VIDEO_MAX_CHARS) return raw;
+  return `${raw.slice(0, ANALYSIS_PER_VIDEO_MAX_CHARS)}…`;
+}
+
+/**
+ * 分析一台机器的**全部**视频并聚合成一个结果（供估值使用）。
+ *
+ * ## 为什么要并行
+ *
+ * `.cn` 生产容器实测（北京 → ark.cn-beijing 真实路径）：
+ *   - 视觉 5 图：110.2s
+ *   - 视频 ×1：61.6s（冷启动；后续 40~55s）
+ *   - 视频 ×3 **并行**：总墙钟 54.5s（并行有效，不是线性叠加）
+ *
+ * 估值总预算 `VALUATION_TOTAL_BUDGET_MS` 只有 200s，其中结论叙述要 90s、保底线 25s。
+ * 串行账（图 110.2s → 视频 61.6s）= 171.8s，只剩 28.2s，已经低到要走「跳过结论叙述」；
+ * 若是 3 条视频串行则必然被砍。并行后视频段 ≈ 54.5s，与图片段重叠，总墙钟 ≈ max(110.2, 54.5)。
+ *
+ * 注意：视频**之间**并行，图片与视频的并行由调用方（`valuation/route.ts`）用 `Promise.all` 编排。
+ *
+ * ## 为什么聚合「异常优先」（保守）
+ *
+ * 二手车估值宁可低估、不可高估：3 条视频里有 1 条拍了冒黑烟/割台卡滞，另外 2 条一切正常，
+ * 正确的结论是「这台机器存在该问题」，而不是「3 条里 2 条正常所以按正常算」。
+ * 因此三个判断维度一律取**最坏**的取值；只有 `qualityScore` / `confidence` 取最大值 ——
+ * 它们衡量的是「画面看得清不清、判断有多确定」，不是机器好坏，取最好的那条才有信息量。
+ *
+ * @param videoUrls 视频公网地址（调用方负责先用 `getVideoUrl()` 转成可访问地址）
+ * @param locale    输出语种，透传给每条视频的 `analyzeVideo`
+ * @returns 聚合结果；**没有任何一条成功**时返回中性降级结果（`degraded: true` ⇒ 因子 1.0）
+ */
+export async function analyzeVideos(
+  videoUrls: string[],
+  locale: AiLocale = "zh"
+): Promise<VideoAnalysisResult> {
+  const urls = (Array.isArray(videoUrls) ? videoUrls : []).filter(
+    (url): url is string => typeof url === "string" && url.trim().length > 0
+  );
+  const limited = urls.slice(0, MAX_ANALYZE_VIDEOS);
+  if (limited.length < urls.length) {
+    console.warn(
+      `[VideoAnalyzer] 视频数 ${urls.length} 超过上限 ${MAX_ANALYZE_VIDEOS}，只分析前 ${limited.length} 条`
+    );
+  }
+  // 没有可分析的视频：返回中性降级（与"有视频但没分析成功"出口一致，因子恒 1.0）
+  if (limited.length === 0) return getDefaultAnalysis();
+
+  // 并行发起：单条失败/降级都不能拖垮整体（`analyzeVideo` 内部已 try/catch，
+  // 这里再用 allSettled 兜一层，保证"它哪天改成会抛"时聚合逻辑也不会连带炸掉整条估值链路）
+  const settled = await Promise.allSettled(limited.map((url) => analyzeVideo(url, locale)));
+
+  const succeeded: VideoAnalysisResult[] = [];
+  settled.forEach((outcome, index) => {
+    const label = `视频${index + 1}`;
+    if (outcome.status === "rejected") {
+      const reason = outcome.reason;
+      console.warn(
+        `[VideoAnalyzer] ${label}分析抛错（已跳过，不参与聚合）:`,
+        reason instanceof Error ? reason.message : String(reason)
+      );
+      return;
+    }
+    // 降级结果的字段是兜底值（smooth / good / 0.3），拿它参与"最坏优先"聚合会污染结论：
+    // 既可能凭空制造最坏值，也可能（qualityScore 取最大时）盖掉真实成功的那条。
+    if (outcome.value.degraded === true) {
+      console.warn(`[VideoAnalyzer] ${label}分析降级，不参与聚合`);
+      return;
+    }
+    succeeded.push(outcome.value);
+  });
+
+  // 全部失败/全部降级 ⇒ 中性。这里必须走 getDefaultAnalysis() 而不是拼一个"看起来中性"的对象：
+  // 降级标记 + 因子中性由 getDefaultAnalysis / calculateVideoFactor 这一对保证，只有一处口径。
+  if (succeeded.length === 0) {
+    console.warn(`[VideoAnalyzer] ${limited.length} 条视频全部未取得有效分析（聚合降级，因子中性）`);
+    return getDefaultAnalysis();
+  }
+
+  const engineSoundStatus =
+    pickWorst(
+      succeeded.map((item) => item.engineSoundStatus),
+      ENGINE_SOUND_PRIORITY
+    ) ?? "no_sound";
+  const mechanismSmoothness =
+    pickWorst(
+      succeeded.map((item) => item.mechanismSmoothness),
+      SMOOTHNESS_PRIORITY
+    ) ?? "smooth";
+  const overallImpression =
+    pickWorst(
+      succeeded.map((item) => item.overallImpression),
+      IMPRESSION_PRIORITY
+    ) ?? "good";
+
+  console.log(
+    `[VideoAnalyzer] 多视频聚合完成: 成功 ${succeeded.length}/${limited.length}，` +
+      `engineSound=${engineSoundStatus}，smoothness=${mechanismSmoothness}，impression=${overallImpression}`
+  );
+
+  return {
+    hasVideo: true,
+    degraded: false,
+    // 画面质量/置信度取最大值：衡量的是"看得清不清 / 判断有多确定"，不是机器好坏
+    qualityScore: Math.max(...succeeded.map((item) => item.qualityScore)),
+    engineSoundStatus,
+    mechanismSmoothness,
+    overallImpression,
+    // 逐条编号拼接，方便卖家/复核人对着具体那条视频读结论
+    analysis: succeeded
+      .map((item, index) => `视频${index + 1}：${truncateAnalysis(item.analysis)}`)
+      .join("\n"),
+    confidence: Math.max(...succeeded.map((item) => item.confidence)),
+  };
+}
+
+/**
  * 模型返回里是否含有**至少一个**可用于打分的有效维度。
  *
  * 只认三个判断类枚举与 qualityScore 本身 —— `analysis` / `confidence` 是说明性字段，

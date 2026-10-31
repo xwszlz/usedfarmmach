@@ -65,7 +65,10 @@ vi.mock("@/lib/valuation/image-analyzer", async (importOriginal) => {
 });
 vi.mock("@/lib/valuation/video-analyzer", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/valuation/video-analyzer")>();
-  return { ...actual, analyzeVideo: vi.fn() };
+  // ⚠️ 必须同时 stub `analyzeVideos`：路由现在循环全部视频、只调 analyzeVideos，
+  //    而 analyzeVideos 内部是**词法引用** analyzeVideo，这里的 stub 拦不住它
+  //    ⇒ 只 stub analyzeVideo 会让「带 videoUrls 的用例」真的出网调模型。
+  return { ...actual, analyzeVideo: vi.fn(), analyzeVideos: vi.fn() };
 });
 vi.mock("@/lib/valuation/resolve-codes", () => ({
   resolveValuationCodes: vi.fn(),
@@ -86,6 +89,7 @@ import { computeAiCost, deductCredits } from "@/lib/credits/spend";
 import { drainUsage } from "@/lib/credits/usage-collector";
 import { calculateValuationV4 } from "@/lib/valuation/formulas";
 import { analyzeProductImages } from "@/lib/valuation/image-analyzer";
+import { analyzeVideos } from "@/lib/valuation/video-analyzer";
 import { generateValuationNarrative } from "@/lib/valuation/narrative";
 import { POST } from "@/app/api/valuation/route";
 
@@ -463,5 +467,78 @@ describe("⑦ 计费：视觉 token 与 narrative token 合并成一次扣费", 
     expect(deductCredits).toHaveBeenCalledTimes(1);
     expect(vi.mocked(deductCredits).mock.calls[0][1]).toBe(102);
     expect(j.billing).toEqual({ points: 102, balance: 9898 });
+  });
+});
+
+describe("⑧ 图片分析与视频分析必须【并行】（串行会被 200s 总预算挤掉结论叙述）", () => {
+  it("两段同时在途（并发度 2），且全部视频都送进 analyzeVideos（不再只取 [0]）", async () => {
+    let inFlight = 0;
+    let maxInFlight = 0;
+    /** 进入时 +1、离开时 -1，记录观察到的最大并发度 */
+    const holdInFlight = async (): Promise<void> => {
+      inFlight += 1;
+      maxInFlight = Math.max(maxInFlight, inFlight);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      inFlight -= 1;
+    };
+
+    vi.mocked(analyzeProductImages).mockImplementation(async () => {
+      await holdInFlight();
+      return {
+        visualConditionScore: 7,
+        visualConditionAnalysis: "成色良好",
+        imageConfidence: 0.8,
+        usedV4Condition: true,
+        conditionCode: "good",
+        perImage: [{ score: 7, label: "good", analysis: "外观良好", confidence: 0.8 }],
+      } as never;
+    });
+    vi.mocked(analyzeVideos).mockImplementation(async () => {
+      await holdInFlight();
+      return {
+        hasVideo: true,
+        degraded: false,
+        qualityScore: 0.8,
+        engineSoundStatus: "normal",
+        mechanismSmoothness: "smooth",
+        overallImpression: "good",
+        analysis: "视频1：运转平稳",
+        confidence: 0.8,
+      } as never;
+    });
+
+    const res = await POST(
+      makeReq({
+        ...BASE_BODY,
+        imageUrls: ["https://cdn.example.com/a.jpg"],
+        videoUrls: ["/uploads/v1.mp4", "/uploads/v2.mp4", "/uploads/v3.mp4"],
+      })
+    );
+
+    expect(res.status).toBe(200);
+    // 串行实现下这个值恒为 1
+    expect(maxInFlight).toBe(2);
+    // 一次聚合调用，且拿到的是【全部】3 条视频（相对路径已过 getVideoUrl 转成 OSS 绝对地址）
+    expect(analyzeVideos).toHaveBeenCalledTimes(1);
+    const sentUrls = vi.mocked(analyzeVideos).mock.calls[0][0] as string[];
+    expect(sentUrls).toHaveLength(3);
+    expect(sentUrls.every((url) => url.startsWith("https://") && url.endsWith(".mp4"))).toBe(true);
+  });
+
+  it("视频分析失败不影响图片结果（两段各自降级）", async () => {
+    vi.mocked(analyzeVideos).mockRejectedValue(new Error("video upstream 500") as never);
+
+    const res = await POST(
+      makeReq({
+        ...BASE_BODY,
+        imageUrls: ["https://cdn.example.com/a.jpg"],
+        videoUrls: ["/uploads/v1.mp4"],
+      })
+    );
+
+    expect(res.status).toBe(200);
+    expect(analyzeProductImages).toHaveBeenCalledTimes(1);
+    // 视频挂了 ⇒ 不注入 videoAnalysisResult（视频因子缺席 = 中性），估值照常返回
+    expect(vi.mocked(calculateValuationV4).mock.calls[0][0].videoAnalysisResult).toBeUndefined();
   });
 });

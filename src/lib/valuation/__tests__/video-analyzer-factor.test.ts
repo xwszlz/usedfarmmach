@@ -29,7 +29,7 @@ vi.mock("@/lib/credits/usage-collector", () => ({
   ESTIMATED_TOKENS: { input: 100, output: 100 },
 }));
 
-import { analyzeVideo, calculateVideoFactor, type VideoAnalysisResult } from "../video-analyzer";
+import { analyzeVideo, analyzeVideos, calculateVideoFactor, type VideoAnalysisResult } from "../video-analyzer";
 
 /** 降级默认结果（与 getDefaultAnalysis 同形），`degraded` 必须为 true */
 const DEGRADED: VideoAnalysisResult = {
@@ -135,5 +135,153 @@ describe("analyzeVideo：失败/不可解析都走中性降级", () => {
     const result = await analyzeVideo("https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/demo.mp4");
     expect(result.degraded).toBeUndefined();
     expect(calculateVideoFactor(result)).toBe(1.08);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────
+// analyzeVideos：多视频并行 + 异常优先聚合
+// ─────────────────────────────────────────────────────────────
+
+const VIDEO_URLS = [
+  "https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/v1.mp4",
+  "https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/v2.mp4",
+  "https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/v3.mp4",
+];
+
+/** 构造一次"模型正常返回"的 content 文本，用 overrides 指定该条视频的维度 */
+function videoJson(overrides: Record<string, unknown> = {}): string {
+  return JSON.stringify({
+    qualityScore: 0.7,
+    engineSoundStatus: "no_sound",
+    mechanismSmoothness: "smooth",
+    overallImpression: "good",
+    analysis: "画面可辨，机器静止",
+    confidence: 0.6,
+    ...overrides,
+  });
+}
+
+/** 按顺序为 N 条视频各排一个模型返回值（analyzeVideos 内部按 url 顺序并发发起） */
+function queueModelResponses(texts: string[]): void {
+  for (const text of texts) {
+    chatMock.mockResolvedValueOnce({ text });
+  }
+}
+
+describe("analyzeVideos：并行 + 异常优先聚合", () => {
+  it("3 条视频是【并行】发起（并发度 3，不是串行）", async () => {
+    let inFlight = 0;
+    let maxInFlight = 0;
+    chatMock.mockImplementation(async () => {
+      inFlight += 1;
+      maxInFlight = Math.max(maxInFlight, inFlight);
+      // 留出真实的"调用在途"窗口：串行实现下并发度永远是 1
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      inFlight -= 1;
+      return { text: videoJson() };
+    });
+
+    await analyzeVideos(VIDEO_URLS);
+    expect(chatMock).toHaveBeenCalledTimes(3);
+    expect(maxInFlight).toBe(3);
+  });
+
+  it("3 条中 1 条 jammed ⇒ 聚合为 jammed（异常优先）", async () => {
+    queueModelResponses([
+      videoJson({ mechanismSmoothness: "smooth" }),
+      videoJson({ mechanismSmoothness: "jammed", analysis: "割台卡死，无法完成动作" }),
+      videoJson({ mechanismSmoothness: "smooth" }),
+    ]);
+
+    const result = await analyzeVideos(VIDEO_URLS);
+    expect(result.mechanismSmoothness).toBe("jammed");
+    expect(result.degraded).toBe(false);
+  });
+
+  it("1 条 abnormal_smoke 混在 2 条 normal 里 ⇒ 聚合为 abnormal_smoke", async () => {
+    queueModelResponses([
+      videoJson({ engineSoundStatus: "normal" }),
+      videoJson({ engineSoundStatus: "abnormal_smoke", analysis: "排气管冒黑烟" }),
+      videoJson({ engineSoundStatus: "normal" }),
+    ]);
+
+    const result = await analyzeVideos(VIDEO_URLS);
+    expect(result.engineSoundStatus).toBe("abnormal_smoke");
+  });
+
+  it("overallImpression 同样取最坏（poor > fair > good > excellent）", async () => {
+    queueModelResponses([
+      videoJson({ overallImpression: "excellent" }),
+      videoJson({ overallImpression: "fair" }),
+      videoJson({ overallImpression: "excellent" }),
+    ]);
+
+    const result = await analyzeVideos(VIDEO_URLS);
+    expect(result.overallImpression).toBe("fair");
+  });
+
+  it("全部失败/降级 ⇒ degraded=true 且因子 1.0（中性，不加价）", async () => {
+    chatMock.mockRejectedValue(new Error("upstream 500"));
+
+    const result = await analyzeVideos(VIDEO_URLS);
+    expect(result.degraded).toBe(true);
+    expect(calculateVideoFactor(result)).toBe(1.0);
+  });
+
+  it("部分降级不影响其余：1 条失败 + 2 条正常 ⇒ 用正常的那两条聚合", async () => {
+    chatMock.mockReset();
+    chatMock
+      .mockRejectedValueOnce(new Error("timeout"))
+      .mockResolvedValueOnce({ text: videoJson({ mechanismSmoothness: "sluggish" }) })
+      .mockResolvedValueOnce({ text: videoJson({ mechanismSmoothness: "smooth" }) });
+
+    const result = await analyzeVideos(VIDEO_URLS);
+    expect(result.degraded).toBe(false);
+    expect(result.mechanismSmoothness).toBe("sluggish");
+  });
+
+  it("qualityScore / confidence 取最大值（衡量画面清晰度，不是机器好坏）", async () => {
+    queueModelResponses([
+      videoJson({ qualityScore: 0.62, confidence: 0.55 }),
+      videoJson({ qualityScore: 0.95, confidence: 0.9 }),
+      videoJson({ qualityScore: 0.8, confidence: 0.7 }),
+    ]);
+
+    const result = await analyzeVideos(VIDEO_URLS);
+    expect(result.qualityScore).toBeCloseTo(0.95, 5);
+    expect(result.confidence).toBeCloseTo(0.9, 5);
+  });
+
+  it("analysis 逐条拼接并编号，单条超 200 字截断", async () => {
+    const longText = "很长的分析".repeat(200); // 1000 字
+    queueModelResponses([
+      videoJson({ analysis: longText }),
+      videoJson({ analysis: "第二条" }),
+      videoJson({ analysis: "第三条" }),
+    ]);
+
+    const result = await analyzeVideos(VIDEO_URLS);
+    const lines = result.analysis.split("\n");
+    expect(lines).toHaveLength(3);
+    expect(lines[0].startsWith("视频1：")).toBe(true);
+    expect(lines[1]).toBe("视频2：第二条");
+    // 前缀「视频1：」+ 200 字 + 省略号「…」
+    expect(lines[0].length).toBe("视频1：".length + 200 + 1);
+    expect(lines[0].endsWith("…")).toBe(true);
+  });
+
+  it("超过上限只分析前 3 条（异常请求不会把墙钟拖穿）", async () => {
+    chatMock.mockResolvedValue({ text: videoJson() });
+
+    const result = await analyzeVideos([...VIDEO_URLS, `${VIDEO_URLS[0]}?x=4`, `${VIDEO_URLS[0]}?x=5`]);
+    expect(chatMock).toHaveBeenCalledTimes(3);
+    expect(result.hasVideo).toBe(true);
+  });
+
+  it("空数组 / 全空白 URL ⇒ 中性降级，一次模型都不调", async () => {
+    const result = await analyzeVideos(["", "   "]);
+    expect(chatMock).not.toHaveBeenCalled();
+    expect(result.degraded).toBe(true);
+    expect(calculateVideoFactor(result)).toBe(1.0);
   });
 });
