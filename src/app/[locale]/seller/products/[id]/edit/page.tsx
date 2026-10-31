@@ -154,7 +154,17 @@ export default function EditProductPage() {
         },
         body: JSON.stringify({
           ...form,
-          workingHours: form.workingHours ? Number(form.workingHours) : null,
+          // 工时：**不再在客户端做 Number 转换**，只把「空」归一成 null，其余原样透传。
+          // ❌ 旧写法 `form.workingHours ? Number(form.workingHours) : null` 用真值判断，
+          //    会把数字 0（全新机 / 刚试机）当 falsy 丢掉写成 null —— 而 0 正是这个字段
+          //    唯一"有意义的极小值"。判定现在统一交给后端 PUT（它已区分空与零，
+          //    并对 "abc"/NaN/Infinity 兜底成 null），避免同一规则在两处各写一遍、各错一遍。
+          workingHours:
+            form.workingHours === null ||
+            form.workingHours === undefined ||
+            form.workingHours === ""
+              ? null
+              : form.workingHours,
           enginePower: form.enginePower ? Number(form.enginePower) : null,
           overallLength: form.overallLength ? Number(form.overallLength) : null,
           overallWidth: form.overallWidth ? Number(form.overallWidth) : null,

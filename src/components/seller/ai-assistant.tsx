@@ -161,6 +161,25 @@ const FIELD_UNITS: Record<string, string> = {
 };
 
 /**
+ * 工时字段「识别值 → 表单值」的转换（纯函数，导出以便单测）。
+ *
+ * 为什么单独抽出来：`0` 是合法业务值（全新机 / 刚试机的机器，仪表盘读数为 0），
+ * 而旧写法 `rawValue ? String(rawValue) : ""` 用真值判断，把数字 0 当"没识别到"
+ * 清成空串 —— 于是全新机的工时在"AI 回填"这一步就被抹掉，后面的保存链路再正确也救不回来。
+ * 这里改成只把「空」当空：null / undefined / "" （以及 NaN 这种非法数字）→ ""，
+ * 其余（含 0 与 "0"）→ 原样字符串化，交给后面的 PUT 统一做数字归一。
+ *
+ * @param rawValue 后端 `data.workingHours`（正常是 number | null，兼容字符串）
+ * @returns 表单输入框的值（字符串；空值为 ""）
+ */
+export function formatWorkingHoursForForm(rawValue: unknown): string {
+  if (rawValue === null || rawValue === undefined || rawValue === "") return "";
+  // 模型偶尔会吐出 NaN / Infinity，别把它们渲染成输入框里的 "NaN"
+  if (typeof rawValue === "number" && !Number.isFinite(rawValue)) return "";
+  return String(rawValue);
+}
+
+/**
  * 从 N 张图片中智能选取最有代表性的 maxCount 张
  */
 function selectBestImages(files: File[], maxCount = 6): File[] {
@@ -434,7 +453,9 @@ export default function SellerAiAssistant({
         } else if (formKey === "tradeTerm" && !rawValue) {
           filled[formKey] = "FOB";
         } else if (formKey === "workingHours") {
-          filled[formKey] = rawValue ? String(rawValue) : "";
+          // ❌ 旧写法 `rawValue ? String(rawValue) : ""` 把数字 0 吞成 "" —— 全新机的工时到不了后端的
+          //    "空 vs 零" 判定。详见 formatWorkingHoursForForm 的注释。
+          filled[formKey] = formatWorkingHoursForForm(rawValue);
         } else {
           filled[formKey] = rawValue || "";
         }

@@ -619,6 +619,25 @@ function buildBrandModelFallbackPrompt(isDomestic: boolean): string {
     : `Please identify only two fields from the image and return as JSON, no other text:\n{\n  "brand": "Brand English name (John Deere, CLAAS, New Holland, etc.) — required",\n  "modelName": "Model name/number (e.g. 6603, JAGUAR 970, FR9040) — required"\n}`;
 }
 
+// ── 工时归一化：`0` 是合法值，「空」才是 null ──
+/**
+ * 把模型返回的 `workingHours` 归一成「数字或 null」。
+ *
+ * 为什么必须区分空与零：本字段语义是「累计使用小时数」，`0` 是**合法业务值**
+ * （全新机 / 刚试机的机器），也正是视觉识别最容易给出的值之一（仪表盘读数为 0）。
+ * 旧写法 `recognized.workingHours || null` 把 0 当 falsy 丢掉 ⇒ 响应里变 null ⇒
+ * 前端回填空 ⇒ 一路 null 进库，全新机的工时信息在每个环节都被抹掉一次。
+ *
+ * 口径与 `PUT /api/seller/products/[id]`、`/api/internal/products` 的
+ * `finalWorkingHours` 完全一致：空（null/undefined/""）→ null；
+ * 可转成有限数字 → 数字本身（含 0）；转不成数字（"abc"/NaN/Infinity）→ null。
+ */
+function toNullableWorkingHours(raw: unknown): number | null {
+  if (raw === null || raw === undefined || raw === "") return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
 // ── 构建成功响应 ──
 async function buildSuccessResponse(recognized: Record<string, any>) {
   // 自动检测 isChineseBrand：优先用AI返回值，否则用关键词检测
@@ -681,7 +700,9 @@ async function buildSuccessResponse(recognized: Record<string, any>) {
       overallHeight: recognized.overallHeight || null,
       netWeight: recognized.netWeight || null,
       mainConfig: recognized.mainConfig || null,
-      workingHours: recognized.workingHours || null,
+      // 工时：0 合法（全新机），只有 null / undefined / "" 才落 null。
+      // ❌ 旧写法 `recognized.workingHours || null` 会把 0 吞成 null —— 见 toNullableWorkingHours 的注释。
+      workingHours: toNullableWorkingHours(recognized.workingHours),
       condition: recognized.condition || null,
       priceMode: recognized.priceMode || null,
       tradeTerm: recognized.tradeTerm || null,
