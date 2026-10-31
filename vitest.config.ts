@@ -15,6 +15,12 @@ export default defineConfig({
   resolve: {
     alias: [{ find: /^@\/(.*)$/, replacement: resolve(__dirname, "src") + "/$1" }],
   },
+  // 项目 tsconfig 是 `"jsx": "preserve"`（交给 Next/SWC 处理），esbuild 不认这个值，
+  // 会退回 classic 转换（`React.createElement`），于是任何「组件里带 JSX」的 .tsx
+  // 在 vitest 里一被调用就 ReferenceError: React is not defined。
+  // 这里显式指定 automatic runtime（React 18 的 react/jsx-runtime），
+  // 组件源码不需要 import React 就能在 node 环境被渲染/断言。
+  esbuild: { jsx: "automatic" },
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],

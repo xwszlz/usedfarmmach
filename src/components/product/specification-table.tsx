@@ -110,8 +110,8 @@ export function SpecificationTable({
 
   const rows: { icon: React.ReactNode; label: string; value: string }[] = [
     { icon: <Wrench className="h-4 w-4 text-gray-400" />, label: l.brand, value: brandName },
-    { icon: <Settings className="h-4 w-4 text-gray-400" />, label: l.model, value: modelName },
     { icon: <Tag className="h-4 w-4 text-gray-400" />, label: l.category, value: categoryName },
+    { icon: <Settings className="h-4 w-4 text-gray-400" />, label: l.model, value: modelName },
     { icon: <Calendar className="h-4 w-4 text-gray-400" />, label: l.year, value: String(year) },
     {
       icon: <Clock className="h-4 w-4 text-gray-400" />,
