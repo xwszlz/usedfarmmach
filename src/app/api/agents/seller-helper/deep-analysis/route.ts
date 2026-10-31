@@ -39,7 +39,10 @@
  * 余额 0 的账号照样能跑完整流程 ⇒ 报告丢弃 + 成本白烧，且可无限重复。现在入口处两道闸：
  *   ① **余额预检**（`estimateDeepAnalysisPoints`）：按实测最坏单次成本估门槛，不足直接 402 早退；
  *   ② **限流**（按 userId，3 次/10 分钟）：见 `DEEP_ANALYSIS_RATE_*` 常量，注意当前是进程内计数。
- * 两道闸都在**任何图片下载与模型调用之前**，且都**只读不写**（不做预扣/退款）。
+ * 两道闸都在**第一次 `callDoubao()`（line ~640）之前**，且都**只读不写**（不做预扣/退款）。
+ * ⚠️ 位置口径按「首次模型调用」算，不按「图片下载」算：**本路由并不下载图片** ——
+ *    `imageUrls` 是远端 URL 原样透传给 ARK、`imageDataUris` 已是 base64 内联，路由内零 `fetch`。
+ *    若将来真的加入服务端下载/转码，**必须放在这两道闸之后**，否则又变回「先花钱、后验余额」。
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -753,8 +756,9 @@ export async function POST(request: NextRequest) {
     }
 
     // ── ① 余额预检（**早退**，不是预扣）──────────────────────────────────
-    // 必须在任何图片下载与模型调用之前：一次请求要跑 190~290s、真金白银 ¥0.28~0.43，
-    // 跑完才说「积分不足」是把成本 100% 白送出去（详见常量区的洞说明）。
+    // 必须在第一次 `callDoubao()` 之前（本路由不下载图片，见文件头说明）：一次请求要跑
+    // 190~290s、真金白银 ¥0.28~0.43，跑完才说「积分不足」是把成本 100% 白送出去
+    // （详见常量区的洞说明）。
     // 只读余额：**不扣款、不预扣、不退款**（预扣/退款是另一件事，未做）。
     const precheckModel = getArkModelId();
     const requiredPoints = estimateDeepAnalysisPoints(images.length, precheckModel);
