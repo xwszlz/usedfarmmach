@@ -52,22 +52,25 @@ interface LlmCallResult {
 /**
  * 深度分析单次生成的 max_tokens。
  *
- * 模型（doubao-seed-2-1-pro-260915）官方上限 256k，单次调用还会被路由的时间预算掐断，
- * 所以本值只承担**「防跑飞」的安全上限**角色，不是"提高输出量"的按钮。
+ * 设计意图（2026-10-31 第二轮，team-lead 拍板）：**单轮降到 8000，靠续写轮补全**。
+ * 旧值 16384 是「一杆子打满」的单点失败设计：一旦某次生成超过墙钟上限就直接整体失败。
  *
- * 🔴 2026-10-31 实测数据（真实 ARK，国际版 prompt，真实商品图；详见 PR 报告）：
- *   - 3 张图 → 输出 6,152 tokens，墙钟 227.6s，tok/s≈27.0，finish_reason=stop（自然收尾）
- *   - 8 张图 → 输出 8,366 tokens，墙钟 264.1s，tok/s≈31.7，finish_reason=stop（自然收尾）
- *   即：**模型自己只会写 6k~8.4k tokens，根本用不到 16384**。
+ * 实测依据（真实 ARK / doubao-seed-2-1-pro-260915 / 真实 OSS 商品图）：
+ *   - 单图 64×64 探针：215s 写完，输出 **6,152** tokens
+ *   - 3 张真实商品图：227.6s / 6,152 tokens；走路由 256.7s / 8,590 tokens
+ *   - 8 张真实商品图：264.1s / 8,366 tokens；走路由 220.4s / 7,465 tokens
+ *   - 实测吞吐 **27~34 tokens/s**（注意：不是 16384/215s=76，那次只写了 6,152 tokens）
  *
- * ⚠️ 因此「把 max_tokens 降到 6000~8000 来提速」是错的方向（曾评估过 方案A，实测否决）：
- *   降到 8192 就会把 8 图场景 8,366 tokens 的**结尾 ```json 代码块**砍掉 ⇒
- *   `extractStructured()` 拿不到结构化数据 ⇒ 前端估值联动、六维度评分全部变空。
- *   降 max_tokens 不会让模型写得更快，只会让报告更残。
- *   真正决定成败的是「输出 token 数 ÷ 吞吐(27~32 tok/s)」与总预算的比值，见下方
- *   `DEEP_ANALYSIS_TOTAL_BUDGET_MS` 的实测反算。
+ * 8000 的取舍：
+ *   - 8000 tokens ≈ 240s @ 33 tok/s ⇒ **单轮就能顶到 260s 预算边缘**，
+ *     所以「两轮各 8000 共 16k」在 260s 内**做不到**（需 ~480s）；
+ *   - 但 8000 仍显著大于常见自然输出（6.1k~8.6k 中的低段），
+ *     多数请求一次写完（~150-240s），少数长报告会 `finish_reason=length` 后由续写轮补，
+ *     续写轮是否真的能跑取决于当时剩余预算（<50s 直接放弃并置 truncated）。
+ *   - ⚠️ 若实测发现「自然输出 8.4k 被 8000 砍断且没钱续写」，则说明 8000 偏低、
+ *     应回到 16384 并把总预算抬到 285s（实测最坏 264.1s）。数据见 PR 报告。
  */
-const DEEP_ANALYSIS_MAX_TOKENS = 16384;
+const DEEP_ANALYSIS_MAX_TOKENS = 8000;
 /**
  * 单次 LLM 调用超时。
  *
@@ -97,19 +100,18 @@ const DEEP_ANALYSIS_MAX_CONTINUE_ROUNDS = 2;
  *   - > 估值链路 200s / 销售策略 280s 的口径区间，足够一次 16k tokens 初稿 + 1 轮续写收尾。
  * ⚠️ 若将来调大本值，必须同步把 nginx 的 `proxy_read_timeout` 提到「本值 + 30s」以上。
  *
- * ── 2026-10-31 修订：260s → 285s（线上二次事故复盘后按实测反算）──────────────
+ * ── 2026-10-31 二次复盘：单轮 280s 都写不完，根因是吞吐（不是三轮累加）──────────
  * 老板线上看到的报错是「…timeout of 280000ms exceeded」+ `ALL_MODELS_FAILED`（**应用自己的 503 JSON**），
  * 说明请求墙钟 < 330s、是**单次 LLM 调用自己跑满 280s 被掐**，不是 3 轮累加。实测吞吐只有
  * **27~32 tokens/s**（不是先前假设的 40~90），于是：
  *   - 3 张图：6,152 tokens → 227.6s
  *   - 8 张图：8,366 tokens → 264.1s      （老板 2026-10-29 拍板 3→8 张图）
- * ⇒ 260s 预算下，8 图请求**必然**在 write 完之前被预算闸掐断（截断可见但报告不全）。
- * ⇒ 取 285s：`264.1s(实测) + 下载抖动(≤45s 但实测 0.6s) + 扣费/序列化(~2s)` 之后仍有余量；
- *    `.cn` 侧 285 < nginx 330（余量 45s），`.com` 侧 285 < maxDuration 300（余量 15s）。
- * ⚠️ 再往上调（>290s）会同时撞 Vercel 300s 与 nginx 330s，**不要再调大**；
- *    若仍频繁截断，只能减少图片数或降低报告目标字数（都是产品决策，不是常量决策）。
+ * ⇒ 结论：**先降单轮输出量（MAX_TOKENS 16384→8000），不动闸门**（team-lead 拍板）。
+ *   实测 8 图自然收尾 264.1s 已逼近 260s 上限，靠单轮降量 + 续写轮换取稳定性；
+ *   若日后确需更大预算，必须同时满足：本值 < nginx 330s 且 < Vercel maxDuration 300s。
+ * ⚠️ 不要单独把本值抬到 290s 以上：会同时撞 Vercel 300s 与 nginx 330s。
  */
-const DEEP_ANALYSIS_TOTAL_BUDGET_MS = 285_000;
+const DEEP_ANALYSIS_TOTAL_BUDGET_MS = 260_000;
 
 /**
  * 允许开始下一轮续写所需的最小剩余预算。
@@ -126,7 +128,7 @@ const DEEP_ANALYSIS_CONTINUE_MIN_REMAINING_MS = 50_000;
  *
  * 3 张图并行下载，每张超时取 `min(20s, 剩余预算)`；整个阶段再叠加 45s 上限。
  * 45s 的理由：单张 20s（守卫默认值）×2 轮最坏情况 + 队列抖动 ≈ 42s，
- * 取整到 45s 后仍给 LLM 留出 ≥ 240s（总预算 285s），实测 8 图自然收尾需 264s，余量约 21s。
+ * 取整到 45s 后仍给 LLM 留出 ≥ 215s（总预算 260s）。实测 8 图下载仅 358ms，该上限基本用不到。
  * 阶段超时**不整体失败**：带着已拿到的图继续分析（保持既有"丢图不丢链路"语义）。
  */
 const DEEP_ANALYSIS_DOWNLOAD_BUDGET_MS = 45_000;
@@ -172,7 +174,7 @@ const DEEP_ANALYSIS_CONTINUE_PROMPT =
 
 /**
  * ⚠️ 只有 Vercel（`.com`）读这个值；**`.cn` 是 Next standalone，不读 `maxDuration`**。
- * `.cn` 的实际墙钟闸门是 `DEEP_ANALYSIS_TOTAL_BUDGET_MS`(285s) 与 nginx `proxy_read_timeout`(330s)。
+ * `.cn` 的实际墙钟闸门是 `DEEP_ANALYSIS_TOTAL_BUDGET_MS`(260s) 与 nginx `proxy_read_timeout`(330s)。
  * 保留 300 是为了 `.com` 侧与 internal/products 对齐。
  */
 export const maxDuration = 300;

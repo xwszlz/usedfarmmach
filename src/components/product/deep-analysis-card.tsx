@@ -202,7 +202,9 @@ export default function DeepAnalysisCard({
         : `Powered by AI Model — comprehensive equipment analysis for ${productName}`)
     : `Multimodal AI analysis of ${productName} — technical specs, operation & maintenance, condition assessment, inspection checklist and buying advice.`;
   const btnText = analyzing
-    ? (locale === "zh" ? "分析中（约15-30秒）..." : "Analyzing...")
+    // 真实耗时实测 100~265s（见 route.ts MAX_TOKENS 注释里的 tokens/s 数据），
+    // 旧文案「约15-30秒」与事实相差一个数量级，属误导用户，已按实测改为「1-4 分钟」。
+    ? (locale === "zh" ? "分析中（约 1-4 分钟）..." : "Analyzing (1-4 min)...")
     : (locale === "zh" ? "开始深度分析" : "Start Deep Analysis");
   const reportTitle = locale === "zh" ? "深度分析报告" : "Deep Analysis Report";
   const zh = locale === "zh";
