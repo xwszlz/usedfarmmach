@@ -15,6 +15,11 @@ export default defineConfig({
   resolve: {
     alias: [{ find: /^@\/(.*)$/, replacement: resolve(__dirname, "src") + "/$1" }],
   },
+  // 项目 tsconfig 是 `"jsx": "preserve"`（由 Next/SWC 负责注入），esbuild 不认这个值，
+  // 会退回 classic 转换（`React.createElement`），于是「组件里带 JSX」的 .tsx 在 vitest
+  // 里一被渲染就 `ReferenceError: React is not defined`。这里显式指定 React 18 的
+  // automatic runtime，让组件级渲染测试（如首页日报区块的多语种回归）可跑。
+  esbuild: { jsx: "automatic" },
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],

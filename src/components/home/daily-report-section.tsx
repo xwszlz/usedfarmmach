@@ -5,7 +5,7 @@ import Link from "next/link";
 import { TrendingUp, ArrowRight, Globe, Newspaper, BarChart3 } from "lucide-react";
 import { getLocalizedData } from "@/config/daily-report-home";
 
-const LABELS: Record<string, {
+export interface DailyReportLabels {
   title: string;
   subtitle: string;
   topOpportunities: string;
@@ -25,7 +25,17 @@ const LABELS: Record<string, {
   statArbitrage: string;
   statDomestic: string;
   statSample: string;
-}> = {
+}
+
+/**
+ * 首页「跨境套利日报」区块的多语言文案。
+ *
+ * 该区块挂在 `.com` 国际站首页（`src/app/[locale]/page.tsx`），面向 zh / en / ru /
+ * es / pt / fr / ar / hi 全部 8 个语种，因此 8 个对象必须逐 key 对齐、一个不缺
+ * （类型 `Record<string, DailyReportLabels>` 会在编译期强制这一点）。
+ * 单测见 `src/components/home/__tests__/daily-report-section-locales.test.ts`。
+ */
+export const LABELS: Record<string, DailyReportLabels> = {
   zh: {
     title: "跨境套利日报",
     subtitle: "每日捕捉全球农机价差机会",
@@ -89,6 +99,115 @@ const LABELS: Record<string, {
     statDomestic: "Внутр. объявл.",
     statSample: "Выборка",
   },
+  // ── 以下 5 个语种为 `.com` 国际站补齐：此前缺失，es/pt/fr/ar/hi 访客在首页会看到
+  //    整块中文（`|| LABELS.zh` 兜底），等同于「这站不是给我看的」。 ──
+  es: {
+    title: "Reporte diario de arbitraje transfronterizo",
+    subtitle: "Oportunidades diarias de arbitraje en maquinaria agrícola global",
+    topOpportunities: "TOP3 de oportunidades de hoy",
+    marketIntel: "Inteligencia de mercado",
+    industryNews: "Noticias del sector",
+    price: "Precio ofertado",
+    profit: "Margen bruto",
+    margin: "Margen %",
+    viewDetail: "Ver detalles",
+    viewAll: "Ver todo",
+    dataSituationTitle: "Panorama diario de datos",
+    dataSituationSubtitle: "Índice de referencia global · Arbitraje transfronterizo · Anuncios del mercado interno",
+    viewDetailFull: "Ver panel completo",
+    benchmarkIndex: "Índice de referencia global (muestra)",
+    domesticPending: "Recolección de vendedores nacionales: tarea en despliegue; los datos se cargarán automáticamente cuando el sistema ECS esté operativo",
+    statBenchmark: "Referencia",
+    statArbitrage: "Arbitraje",
+    statDomestic: "Anuncios internos",
+    statSample: "Muestras válidas",
+  },
+  pt: {
+    title: "Relatório diário de arbitragem transfronteiriça",
+    subtitle: "Oportunidades diárias de arbitragem em máquinas agrícolas globais",
+    topOpportunities: "TOP3 oportunidades de hoje",
+    marketIntel: "Inteligência de mercado",
+    industryNews: "Notícias do setor",
+    price: "Preço ofertado",
+    profit: "Margem bruta",
+    margin: "Margem %",
+    viewDetail: "Ver detalhes",
+    viewAll: "Ver tudo",
+    dataSituationTitle: "Panorama diário de dados",
+    dataSituationSubtitle: "Índice de referência global · Arbitragem transfronteiriça · Anúncios do mercado interno",
+    viewDetailFull: "Ver painel completo",
+    benchmarkIndex: "Índice de referência global (amostra)",
+    domesticPending: "Coleta de vendedores nacionais: tarefa em implantação; os dados serão carregados automaticamente quando o sistema ECS estiver operacional",
+    statBenchmark: "Referência",
+    statArbitrage: "Arbitragem",
+    statDomestic: "Anúncios internos",
+    statSample: "Amostras válidas",
+  },
+  // fr 注意：一律使用排版撇号 ’（U+2019），禁用 ASCII 半角单引号 '（单测会校验）。
+  fr: {
+    title: "Rapport quotidien d’arbitrage transfrontalier",
+    subtitle: "Opportunités quotidiennes d’écart de prix sur les machines agricoles",
+    topOpportunities: "TOP3 des opportunités du jour",
+    marketIntel: "Veille marché",
+    industryNews: "Actualités du secteur",
+    price: "Prix proposé",
+    profit: "Marge brute",
+    margin: "Marge %",
+    viewDetail: "Voir le détail",
+    viewAll: "Tout voir",
+    dataSituationTitle: "Panorama quotidien des données",
+    dataSituationSubtitle: "Indice de référence mondial · Arbitrage transfrontalier · Annonces du marché intérieur",
+    viewDetailFull: "Voir le tableau de bord",
+    benchmarkIndex: "Indice de référence mondial (échantillon)",
+    domesticPending: "Collecte des vendeurs nationaux : déploiement en cours, les données seront intégrées automatiquement après la mise en service du système ECS",
+    statBenchmark: "Référence",
+    statArbitrage: "Arbitrage",
+    statDomestic: "Annonces internes",
+    statSample: "Échantillons valides",
+  },
+  // ar 注意：纯文案，不带 dir 属性、不带 RTL 方向控制符（由全局 <html dir> 统一处理）。
+  ar: {
+    title: "تقرير المراجحة اليومي عبر الحدود",
+    subtitle: "فرص يومية لفروق أسعار الآلات الزراعية عالميًا",
+    topOpportunities: "أفضل 3 فرص اليوم",
+    marketIntel: "معلومات السوق",
+    industryNews: "أخبار القطاع",
+    price: "السعر المعروض",
+    profit: "الهامش الإجمالي",
+    margin: "نسبة الهامش",
+    viewDetail: "عرض التفاصيل",
+    viewAll: "عرض الكل",
+    dataSituationTitle: "مؤشر البيانات اليومي",
+    dataSituationSubtitle: "السعر المرجعي العالمي · المراجحة عبر الحدود · عروض البائعين المحليين",
+    viewDetailFull: "عرض لوحة المعلومات الكاملة",
+    benchmarkIndex: "السعر المرجعي العالمي (عينة)",
+    domesticPending: "جمع بيانات البائعين المحليين: المهمة قيد النشر، وستُستورد البيانات تلقائيًا بعد تشغيل نظام ECS",
+    statBenchmark: "السعر المرجعي",
+    statArbitrage: "المراجحة",
+    statDomestic: "عروض محلية",
+    statSample: "العينات الصالحة",
+  },
+  hi: {
+    title: "सीमा-पार आर्बिट्राज दैनिक रिपोर्ट",
+    subtitle: "वैश्विक कृषि मशीनरी में कीमत अंतर के दैनिक अवसर",
+    topOpportunities: "आज के टॉप 3 अवसर",
+    marketIntel: "बाज़ार सूचना",
+    industryNews: "उद्योग समाचार",
+    price: "प्रस्तावित मूल्य",
+    profit: "सकल मार्जिन",
+    margin: "मार्जिन %",
+    viewDetail: "विवरण देखें",
+    viewAll: "सभी देखें",
+    dataSituationTitle: "दैनिक डेटा स्थिति",
+    dataSituationSubtitle: "वैश्विक संदर्भ मूल्य सूचकांक · सीमा-पार आर्बिट्राज · घरेलू विक्रेता लिस्टिंग",
+    viewDetailFull: "पूरा डैशबोर्ड देखें",
+    benchmarkIndex: "वैश्विक संदर्भ मूल्य सूचकांक (नमूना)",
+    domesticPending: "घरेलू विक्रेता संग्रह: कार्य तैनाती में है, ECS चालू होने के बाद डेटा स्वतः जुड़ जाएगा",
+    statBenchmark: "संदर्भ सूचकांक",
+    statArbitrage: "आर्बिट्राज",
+    statDomestic: "घरेलू लिस्टिंग",
+    statSample: "वैध नमूने",
+  },
 };
 
 const colorMap: Record<string, string> = {
@@ -123,7 +242,9 @@ function StatCard({ label, value }: { label: string; value: string }) {
 // 行业资讯 - 全部动态拉取最新3篇（固定文章在博客页面通过 isPinned 置顶）
 
 export function DailyReportSection({ locale, initialArticles = [] }: DailyReportSectionProps) {
-  const l = LABELS[locale] || LABELS.zh;
+  // 未收录语种回落英语而非中文 —— `.com` 是国际站，中文外泄比英文兜底糟得多
+  // （此前兜底为 `LABELS.zh`，导致 es/pt/fr/ar/hi 访客在首页看到整块中文）。
+  const l = LABELS[locale] || LABELS.en;
   const data = getLocalizedData(locale);
   const intelUrl = `/${locale}/intelligence`;
   const blogUrl = `/${locale}/blog`;

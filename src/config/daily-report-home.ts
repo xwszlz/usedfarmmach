@@ -44,27 +44,32 @@ export interface DailyReportConfig {
 }
 
 // 按语言提取数据的辅助函数
+//
+// 语言回退口径：只有 `zh` 取中文、`ru` 取俄文，其余所有语种（含 es / pt / fr / ar / hi
+// 以及尚未收录的语种）一律回落英语。**绝不能回落中文** —— `.com` 是国际站，外国买家
+// 看到整块中文比看到英文兜底糟得多（此处曾把 es/pt/fr/ar/hi 的日报正文全部渲染成中文）。
 export function getLocalizedData(locale: string) {
   const d = DAILY_REPORT_CONFIG;
+  const lang: "zh" | "en" | "ru" = locale === "zh" ? "zh" : locale === "ru" ? "ru" : "en";
   return {
     date: d.date,
     highlights: d.highlights.map(h => ({
       emoji: h.emoji,
-      label: locale === 'en' ? h.labelEn : locale === 'ru' ? h.labelRu : h.labelZh,
-      value: locale === 'en' ? h.valueEn : locale === 'ru' ? h.valueRu : h.valueZh,
+      label: lang === 'en' ? h.labelEn : lang === 'ru' ? h.labelRu : h.labelZh,
+      value: lang === 'en' ? h.valueEn : lang === 'ru' ? h.valueRu : h.valueZh,
       color: h.color,
     })),
     topArbitrage: d.topArbitrage.map(a => ({
       rank: a.rank,
-      product: locale === 'en' ? a.productEn : locale === 'ru' ? a.productRu : a.productZh,
+      product: lang === 'en' ? a.productEn : lang === 'ru' ? a.productRu : a.productZh,
       price: a.price,
-      profit: locale === 'en' ? a.profitEn : locale === 'ru' ? a.profitRu : a.profitZh,
+      profit: lang === 'en' ? a.profitEn : lang === 'ru' ? a.profitRu : a.profitZh,
       margin: a.margin,
       productId: a.productId,
     })),
     marketIntel: d.marketIntel.map(m => ({
       icon: m.icon,
-      text: locale === 'en' ? m.textEn : locale === 'ru' ? m.textRu : m.textZh,
+      text: lang === 'en' ? m.textEn : lang === 'ru' ? m.textRu : m.textZh,
       url: m.url.replace('/zh/', `/${locale}/`),
     })),
     totalProducts: d.totalProducts,

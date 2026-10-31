@@ -24,13 +24,15 @@ interface ProductCardProps {
   onProductClick?: (productId: string) => void;
 }
 
-const CURRENCY_LABELS: Record<string, Record<string, string>> = {
+export const CURRENCY_LABELS: Record<string, Record<string, string>> = {
   zh: { price: "国内价", profit: "套利空间" },
   en: { price: "Domestic Price", profit: "Arbitrage Gap" },
   ru: { price: "Цена в Китае", profit: "Арбитраж" },
   es: { price: "Precio Doméstico", profit: "Diferencia" },
-  pt: { price: "Precio Doméstico", profit: "Diferença" },
-  fr: { price: "Prix Domestic", profit: "Écart" },
+  // pt 必须是葡语「Preço Doméstico」—— 此前误填了西班牙语 "Precio Doméstico"
+  pt: { price: "Preço Doméstico", profit: "Diferença" },
+  // fr「Prix Domestique」必须带重音 é —— 此前缺重音写成 "Prix Domestic"
+  fr: { price: "Prix Domestique", profit: "Écart" },
   ar: { price: "السعر المحلي", profit: "فجوة" },
   hi: { price: "घरेलू मूल्य", profit: "अंतर" },
 };
