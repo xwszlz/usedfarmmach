@@ -409,3 +409,53 @@ describe("图片张数上限", () => {
     expect(json.data.mediaCount.images).toBe(8);
   });
 });
+
+/**
+ * 结构化 JSON 必须排在正文**之前**（V2.5 截断韧性，2026-11）
+ *
+ * 根因：截断（`finish_reason=length`）砍掉的永远是**尾部**。JSON 放末尾 ⇒ 截断时
+ * `structured` 为空 ⇒ 前端技术参数表 / 六维度评分整块空白（即使正文已经写了 5000 字）。
+ * 放到开头后，只要模型还在写字，JSON 就一定已经写完。
+ *
+ * 这两条断言锁的是「prompt 顺序」这个**契约**，防止将来有人「把 JSON 挪回结尾图省事」：
+ *   ① 初稿 prompt 里第一个 ```json 代码块必须出现在第一个 `## ` 小节**之前**；
+ *   ② 续写指令不得再要求补 JSON 块（重复输出会让 `extractStructured` 的 `match` 命中错的那份）。
+ *
+ * 为什么用真实解析（而不是断言整段 prompt 文本）：prompt 文案会持续微调，
+ * 断死文案会让每次改一个字就红；顺序是语义，文案是措辞。
+ */
+describe("结构化 JSON 前置（截断韧性）", () => {
+  it("初稿 prompt：```json 块在小节正文之前", async () => {
+    await runRoute({ locale: "zh" });
+    const prompt = promptOf(0);
+
+    const jsonAt = prompt.indexOf("```json");
+    const firstSectionAt = prompt.search(/^##\s+\S/m);
+
+    expect(jsonAt).toBeGreaterThan(-1);
+    expect(firstSectionAt).toBeGreaterThan(-1);
+    // 核心：JSON 模板在第一个二级小节之前
+    expect(jsonAt).toBeLessThan(firstSectionAt);
+  });
+
+  it("续写指令：明确禁止再输出 json 代码块", async () => {
+    state.script = [
+      { text: REPORT_HEAD, finishReason: "length" },
+      {
+        text:
+          "\n\n## 购买建议\n该机整体状况良好，液压系统无渗漏、轮胎花纹剩余约六成，" +
+          "适合中等规模农场作业；建议重点检查传动系统与制动鼓，并索取完整维保记录后再议价。",
+        finishReason: "stop",
+      },
+    ];
+    state.costMsPerCall = 20_000;
+
+    await runRoute({ locale: "zh" });
+    const instruction = continueInstructionOf(1);
+
+    expect(instruction).toContain("json");
+    expect(instruction).toContain("严禁");
+    // 不能再说「补上结尾要求的那一个 json 代码块」
+    expect(instruction).not.toContain("只需补上");
+  });
+});

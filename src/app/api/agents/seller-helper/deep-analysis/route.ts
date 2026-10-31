@@ -11,6 +11,12 @@
  *      大量产品误走国内版 prompt，导致国际买家看到「国内就是中国」「补贴政策」这类中国市场视角内容）；
  *   ③ 空小节：prompt 不再要求 `## 结构化数据（JSON）` 小标题，同时服务端清洗加固，
  *      把模型残留的标题 / 引导语 / 多余空行全部剥掉（JSON 代码块本身仍保留给 `extractStructured()`）。
+ * V2.5（2026-11）**截断韧性**：结构化 JSON 从「正文末尾」挪到「正文最前」。
+ *   动机：截断（`finish_reason=length`）时被砍掉的永远是**尾部**，JSON 放在末尾 ⇒ `structured` 为空，
+ *   前端技术参数表 / 六维度评分整块空白。挪到开头后，只要模型还在写字，JSON 就一定已经写完。
+ *   改动面：**只改两个 prompt 的顺序与说明文字 + 续写指令第④条**，`extractStructured()` /
+ *   `cleanAnalysisText()` 的正则本来就是位置无关的，逻辑一行未动。
+ *   同时把图片张数上限提取到 `@/lib/ai/deep-analysis-limits`（前后端同一个数字）。
  *
  * Body: { imageUrls?: string[], imageDataUris?: string[], videoUrls?: string[], isChineseBrand?: boolean, locale?: string }
  * Response: { success: true, data: { analysis: "Markdown报告", structured: {...}, model: "...",
@@ -36,6 +42,9 @@ import { computeAiCost, deductCredits, type AiCostBreakdown } from "@/lib/credit
 import { getBillingCountry } from "@/lib/credits/fx";
 import { chatCompletionDoubao, getArkModelId } from "@/lib/ai/ark-client";
 import { buildDoubaoContent } from "@/lib/ai/multimodal";
+// 图片张数上限必须与前端「同一份定义」：前端截取、服务端夹取。
+// 该模块零运行时依赖（不 import 任何 `node:*`），因此可被 `"use client"` 组件安全引用。
+import { MAX_DEEP_ANALYSIS_IMAGES } from "@/lib/ai/deep-analysis-limits";
 import { resolveAiLocale, withLanguage, type AiLocale } from "@/lib/i18n/ai-locale";
 import { isCnSite } from "@/config/site";
 
@@ -140,16 +149,18 @@ const DEEP_ANALYSIS_DOWNLOAD_BUDGET_MS = 45_000;
 const DEEP_ANALYSIS_MIN_CALL_REMAINING_MS = 5_000;
 
 /**
- * 单次请求最多送进模型的图片数。
+ * 单次请求最多送进模型的图片数 —— **从共享模块派生，不要在这里写死数字**。
  *
- * 老板 2026-10-29 拍板 3 → 8（前端 `MAX_DEEP_ANALYSIS_IMAGES` 同步）。
+ * 老板 2026-10-29 拍板 3 → 8。前端 `deep-analysis-card.tsx` 与服务端共用
+ * `@/lib/ai/deep-analysis-limits` 的 `MAX_DEEP_ANALYSIS_IMAGES`，避免「改了一处忘另一处」
+ * 造成「前端送 8 张、服务端按 3 张夹」的静默不一致。
  * 服务端这里**必须再夹一次**：前端只是第一道，接口是登录即可调的，
  * 若有人直接 POST 30 张，input token 会翻几倍、prefill 与输出都会拖长，
  * 预算闸虽能兜住（不会 504），但白白烧钱并让报告变成截断。
  * 实测（600px 商品图）：3 图 → prompt 4,919 tokens / 输出 6,152 tokens / 227.6s；
  *                        8 图 → prompt 11,309 tokens / 输出 8,366 tokens / 264.1s。
  */
-const DEEP_ANALYSIS_MAX_IMAGES = 8;
+const DEEP_ANALYSIS_MAX_IMAGES = MAX_DEEP_ANALYSIS_IMAGES;
 
 /**
  * 预算耗尽哨兵错误。
@@ -170,7 +181,8 @@ const DEEP_ANALYSIS_CONTINUE_PROMPT =
   "请紧接着截断处继续输出剩余部分，严格要求：" +
   "① 严禁重复任何已写内容；② 不要输出报告摘要或开头语；" +
   "③ 保持原有章节编号与格式继续往下写；" +
-  "④ 若报告正文已完结，只需补上结尾要求的那一个 ```json 代码块（不要加任何标题、小节名或说明文字）。";
+  "④ **严禁再输出 ```json 结构化代码块**（它已在报告最开头输出过，重复会让程序解析到错的那份），" +
+  "正文写完后直接结束。";
 
 /**
  * ⚠️ 只有 Vercel（`.com`）读这个值；**`.cn` 是 Next standalone，不读 `maxDuration`**。
@@ -193,7 +205,39 @@ const INTERNATIONAL_ANALYSIS_PROMPT = `你是一位拥有20年经验的资深二
 
 说明：本报告面向**国际买家**撰写，请始终站在买家所在的目标销售市场（销售目的地国家/地区）视角做分析与建议；不要默认设备已在该市场落地，也不要默认买家熟悉当地的政策与规则。
 
-报告必须包含以下部分（用 Markdown 格式输出）：
+⛔ **输出顺序（硬性要求，两步，不许调换、不许合并）：先结构化 JSON，后正文。**
+
+【第 1 步 · 报告最开头】先输出**唯一一个** \`\`\`json 代码块，字段名与类型严格照抄下方模板；
+代码块前后不要加任何标题、小节名、序号、引导语或说明文字（不要写「结构化数据」「以下是结构化数据」
+「Structured Data」之类的话，程序会直接剥掉这个代码块）：
+\`\`\`json
+{
+  "brand": "品牌",
+  "modelName": "型号",
+  "year": 年份,
+  "enginePower": "马力",
+  "engineType": "发动机类型",
+  "driveSystem": "驱动方式",
+  "overallLength": "长mm",
+  "overallWidth": "宽mm",
+  "overallHeight": "高mm",
+  "netWeight": "重量kg",
+  "mainConfig": "主要配置",
+  "condition": "excellent|good|fair|poor",
+  "conditionScores": {
+    "exterior": 1-10,
+    "rust": 1-10,
+    "tires": 1-10,
+    "cabin": 1-10,
+    "hydraulic": 1-10,
+    "overall": 1-10
+  },
+  "isChineseBrand": false,
+  "confidence": 0.0-1.0
+}
+\`\`\`
+
+【第 2 步 · 紧接着写正文】代码块结束后**立刻**开始写正文，正文必须包含以下部分（用 Markdown 格式输出）：
 
 ## 设备识别
 - 品牌（英文标准名）
@@ -241,7 +285,28 @@ const INTERNATIONAL_ANALYSIS_PROMPT = `你是一位拥有20年经验的资深二
 - 技术培训视频或资料推荐
 - 该机型在你目标销售市场（买家所在国家/地区）的授权经销与服务网络信息
 
-正文全部写完后，**单独输出一个 \`\`\`json 代码块**，前后不要加任何标题、小节名、序号或说明文字（不要写「结构化数据」「最后附上」之类的话，程序会直接剥掉这个代码块）：
+⛔ 正文写到最后一行就结束：**不要**再输出第二个 \`\`\`json 代码块、不要再补「结构化数据」小节、
+也不要再写任何总结性 JSON（结构化信息只需出现一次，就在报告最开头那份）。
+
+重要提示：
+1. **请充分利用你的专业知识**，不要仅依赖照片信息
+2. 报告内容要详实、专业、有深度，至少2000字`;
+
+/**
+ * 国内农机深度分析 Prompt — 车况评估、操作维修、国内市场
+ *
+ * ⚠️ 本 prompt 仅 `.cn` 国内站使用（见 `useDomesticPrompt` 的站点优先判定），
+ * 其中的「中国 / 国内 / 农机购置补贴」措辞是**该站应有内容，不要删改**。
+ */
+const DOMESTIC_ANALYSIS_PROMPT = `你是一位拥有20年经验的中国资深农业机械专家和评估师，精通东方红、雷沃、沃得、福田、久保田（国产）、洋马、井关、时风、五征、常发、星光、中联重科等国内主流品牌的拖拉机、收割机、插秧机、播种机、植保机、打捆机等各类农机设备。你对中国农机购置补贴政策、各省补贴额度、二手农机交易市场行情有深入了解。
+
+请根据用户提供的农机照片和视频（可能包含整机全貌、铭牌、驾驶室、发动机、轮胎底盘、工作视频等），结合你的专业知识库，给出一份**详尽的深度分析报告**。
+
+⛔ **输出顺序（硬性要求，两步，不许调换、不许合并）：先结构化 JSON，后正文。**
+
+【第 1 步 · 报告最开头】先输出**唯一一个** \`\`\`json 代码块，字段名与类型严格照抄下方模板；
+代码块前后不要加任何标题、小节名、序号、引导语或说明文字（不要写「结构化数据」「以下是结构化数据」
+「Structured Data」之类的话，程序会直接剥掉这个代码块）：
 \`\`\`json
 {
   "brand": "品牌",
@@ -264,26 +329,12 @@ const INTERNATIONAL_ANALYSIS_PROMPT = `你是一位拥有20年经验的资深二
     "hydraulic": 1-10,
     "overall": 1-10
   },
-  "isChineseBrand": false,
+  "isChineseBrand": true,
   "confidence": 0.0-1.0
 }
 \`\`\`
 
-重要提示：
-1. **请充分利用你的专业知识**，不要仅依赖照片信息
-2. 报告内容要详实、专业、有深度，至少2000字`;
-
-/**
- * 国内农机深度分析 Prompt — 车况评估、操作维修、国内市场
- *
- * ⚠️ 本 prompt 仅 `.cn` 国内站使用（见 `useDomesticPrompt` 的站点优先判定），
- * 其中的「中国 / 国内 / 农机购置补贴」措辞是**该站应有内容，不要删改**。
- */
-const DOMESTIC_ANALYSIS_PROMPT = `你是一位拥有20年经验的中国资深农业机械专家和评估师，精通东方红、雷沃、沃得、福田、久保田（国产）、洋马、井关、时风、五征、常发、星光、中联重科等国内主流品牌的拖拉机、收割机、插秧机、播种机、植保机、打捆机等各类农机设备。你对中国农机购置补贴政策、各省补贴额度、二手农机交易市场行情有深入了解。
-
-请根据用户提供的农机照片和视频（可能包含整机全貌、铭牌、驾驶室、发动机、轮胎底盘、工作视频等），结合你的专业知识库，给出一份**详尽的深度分析报告**。
-
-报告必须包含以下部分（用 Markdown 格式输出）：
+【第 2 步 · 紧接着写正文】代码块结束后**立刻**开始写正文，正文必须包含以下部分（用 Markdown 格式输出）：
 
 ## 设备识别
 - 品牌（中文标准名）
@@ -331,33 +382,8 @@ const DOMESTIC_ANALYSIS_PROMPT = `你是一位拥有20年经验的中国资深�
 - 技术培训视频或资料推荐
 - 该品牌在中国的授权服务商信息
 
-正文全部写完后，**单独输出一个 \`\`\`json 代码块**，前后不要加任何标题、小节名、序号或说明文字（不要写「结构化数据」「最后附上」之类的话，程序会直接剥掉这个代码块）：
-\`\`\`json
-{
-  "brand": "品牌",
-  "modelName": "型号",
-  "year": 年份,
-  "enginePower": "马力",
-  "engineType": "发动机类型",
-  "driveSystem": "驱动方式",
-  "overallLength": "长mm",
-  "overallWidth": "宽mm",
-  "overallHeight": "高mm",
-  "netWeight": "重量kg",
-  "mainConfig": "主要配置",
-  "condition": "excellent|good|fair|poor",
-  "conditionScores": {
-    "exterior": 1-10,
-    "rust": 1-10,
-    "tires": 1-10,
-    "cabin": 1-10,
-    "hydraulic": 1-10,
-    "overall": 1-10
-  },
-  "isChineseBrand": true,
-  "confidence": 0.0-1.0
-}
-\`\`\`
+⛔ 正文写到最后一行就结束：**不要**再输出第二个 \`\`\`json 代码块、不要再补「结构化数据」小节、
+也不要再写任何总结性 JSON（结构化信息只需出现一次，就在报告最开头那份）。
 
 重要提示：
 1. **请充分利用你的专业知识**，不要仅依赖照片信息
@@ -467,9 +493,11 @@ function extractStructured(analysisText: string): Record<string, any> | null {
   return null;
 }
 
-// ── 报告尾部 JSON 小节清洗规则 ──
+// ── 报告里 JSON 小节 / 代码块的清洗规则 ──
 // 根因：prompt 曾要求模型写 `## 结构化数据（JSON）` 小标题 + 引导语 + ```json 代码块；
 // 清洗只删代码块，标题与引导语原样留下 → 报告结尾残留一个只有标题、没有内容的小节。
+// 现状（V2.5）：prompt 已把 ```json 代码块**挪到正文最前面**（截断时仍能拿到 structured），
+// 这些规则同时兜住「头部/尾部」两种残留位置，无需按位置区分。
 // 现在 prompt 已不再要求标题，但模型不一定完全听话，故服务端再兜一道。
 
 /**
@@ -505,10 +533,14 @@ const EXCESS_BLANK_LINES = /\n(?:[ \t]*\n){2,}/g;
 const TRAILING_HR = /\n[ \t]*(?:-{3,}|\*{3,}|_{3,})[ \t]*\n*$/;
 
 /**
- * 清理报告正文：剥掉 ```json 代码块及其残留标题/引导语，供前端直接渲染 Markdown。
+ * 清理报告正文：剥掉 ```json 代码块及其残留标题/引导语 / 分隔线，供前端直接渲染 Markdown。
  *
  * ⚠️ 代码块本身必须在 `extractStructured()` **之后**才删（结构化字段走 `data.structured`），
  * 顺序颠倒会导致六维度评分、技术参数表全部解析失败。
+ *
+ * 位置无关性（V2.5 关键点）：prompt 现在把结构化 JSON 放在**正文之前**，
+ * 所以这里用的正则一律是「全文匹配 + 整块删除」，不能假设代码块在尾部
+ * （`/```json[\s\S]*?```/` 与无闭合围栏的 `/```json[\s\S]*$/` 都天然位置无关）。
  */
 function cleanAnalysisText(analysisText: string): string {
   const cleaned = analysisText

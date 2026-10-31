@@ -4,6 +4,10 @@ import { useState } from "react";
 import { Sparkles, Loader2, AlertCircle, AlertTriangle, Bot } from "lucide-react";
 import AnalysisReportView from "@/components/valuation/analysis-report-view";
 import { isCnSite } from "@/config/site";
+// 图片张数上限与服务端共用同一份定义（前端截取、服务端夹取）。
+// 该模块只导出常量、零运行时依赖，可以安全地从 `"use client"` 组件 import；
+// ⚠️ 一旦有人往该模块里加入 `node:*` 依赖，`next build` 会立刻失败（tsc/vitest 拦不住）。
+import { MAX_DEEP_ANALYSIS_IMAGES } from "@/lib/ai/deep-analysis-limits";
 
 /**
  * 客户端请求超时（300s = 5 分钟）。
@@ -14,19 +18,6 @@ import { isCnSite } from "@/config/site";
  *   不晚于 330s → 反代掐断之前浏览器已经放弃，用户看到的是可读文案而非"一直转圈"。
  */
 const DEEP_ANALYSIS_CLIENT_TIMEOUT_MS = 300_000;
-
-/**
- * 深度分析最多送几张图进模型。
- *
- * 老板 2026-10-29 拍板：**3 → 8**。
- * 前提（缺一不可，否则会吃穿总预算）：
- *   ① 图片必须**并行下载**（`buildDoubaoContent` 的 `Promise.allSettled`）——
- *      串行 8×20s=160s 足够把 285s 总预算吃穿；
- *   ② 下载阶段整体受 `DEEP_ANALYSIS_DOWNLOAD_BUDGET_MS`(45s) 封顶。
- * 另外：图越多 input token 越大、prefill 越慢，`DEEP_ANALYSIS_MAX_TOKENS` 必须与之配套校准
- * （见 route.ts 里该常量的实测注释）。
- */
-const MAX_DEEP_ANALYSIS_IMAGES = 8;
 
 interface DeepAnalysisCardProps {
   productId: string;
