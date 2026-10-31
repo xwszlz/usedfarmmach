@@ -62,6 +62,18 @@ export interface VideoAnalysisResult {
   overallImpression: "excellent" | "good" | "fair" | "poor";
   analysis: string; // 详细分析文本
   confidence: number; // 置信度 0-1
+  /**
+   * 本次结果是否为**降级结果**（分析调用失败、或模型返回了无法解析出任何有效维度的响应）。
+   *
+   * 为什么要显式标出来而不是"让默认值算出来刚好等于 1.0"：
+   * 因子表（{@link calculateVideoFactor} 里的加减分）会随业务调整变动，
+   * 靠"默认字段拼出来正好 1.00"是**隐式耦合**——任何人给 smooth / good 调一下分值，
+   * 降级路径就会重新开始偷偷加价，而且没有任何一处代码会因此报错。
+   * 显式标记后，「降级必须中性」这条规则由 `calculateVideoFactor` 第一行强制保证。
+   *
+   * 说明性字段（analysis / confidence）在降级时仍会被展示，因此保留默认文案。
+   */
+  degraded?: boolean;
 }
 
 /**
@@ -108,6 +120,17 @@ export async function analyzeVideo(
       if (jsonMatch) parsed = JSON.parse(jsonMatch[0]);
     }
 
+    // HTTP 200 但解析不出任何有效维度（模型只回了说明性文字、回了 "{}"、或 JSON 结构不对）：
+    // 业务上与"调用失败"完全等价 —— 没有任何证据支持加减价。
+    // 必须走中性降级，否则下面的字段兜底值（smooth + good）会凭空拼出 +2% 的加价。
+    if (!hasUsableSignal(parsed)) {
+      console.warn("[VideoAnalyzer] 模型返回无可解析的有效维度（降级，中性因子）");
+      return getDefaultAnalysis();
+    }
+
+    // 注：单个字段缺失时仍沿用既有兜底值（缺 engineSoundStatus → no_sound 不加减价；
+    // 缺 mechanismSmoothness → smooth 会 +0.02；缺 overallImpression → good 不加减价）。
+    // 这是本次之前就有的字段级语义，未纳入本次"降级必须中性"的修复范围。
     return {
       hasVideo: true,
       qualityScore: Math.max(0, Math.min(1, Number(parsed.qualityScore) || 0.5)),
@@ -124,9 +147,46 @@ export async function analyzeVideo(
 }
 
 /**
- * 计算视频因子（videoFactor）
+ * 模型返回里是否含有**至少一个**可用于打分的有效维度。
+ *
+ * 只认三个判断类枚举与 qualityScore 本身 —— `analysis` / `confidence` 是说明性字段，
+ * 单独出现（"视频看不清" 之类）不构成打分依据，不能拿来当"分析成功"。
+ */
+function hasUsableSignal(parsed: Partial<VideoAnalysisResult>): boolean {
+  const sound = parsed.engineSoundStatus;
+  if (sound === "normal" || sound === "abnormal_noise" || sound === "abnormal_smoke" || sound === "no_sound") {
+    return true;
+  }
+  const smoothness = parsed.mechanismSmoothness;
+  if (smoothness === "smooth" || smoothness === "sluggish" || smoothness === "jammed") {
+    return true;
+  }
+  const impression = parsed.overallImpression;
+  if (impression === "excellent" || impression === "good" || impression === "fair" || impression === "poor") {
+    return true;
+  }
+  const quality = Number(parsed.qualityScore);
+  return Number.isFinite(quality) && quality > 0;
+}
+
+/**
+ * 计算视频因子（videoFactor）。
+ *
+ * ⚠️ 铁律：**降级必须中性**（恒返回 1.0，不加价也不减价）。
+ *
+ * 被锁死的 Bug（本函数第一行守的就是它）：降级默认值是
+ * `qualityScore 0.3 / no_sound / smooth / good`，代入打分表后
+ * `smooth` 给 +0.02、其余均 0 ⇒ **视频分析失败反而给估值加价 2%**。
+ * 这不是"偏差不大可以接受"，而是赔率方向错了：越没看清，车越贵。
+ * 所以降级判定放在最前面短路，且依赖显式的 `degraded` 标记，
+ * 而不是"希望字段默认值拼出来正好等于 1.0"（因子表一调就会重新开始偷偷加价）。
+ *
+ * @param video 视频分析结果（可能来自降级路径）
+ * @returns 视频因子，取值 [0.92, 1.08]；降级 / 无视频恒为 1.0
  */
 export function calculateVideoFactor(video: VideoAnalysisResult): number {
+  // 降级结果：没有任何画面证据 ⇒ 中性，不得参与加减价
+  if (video.degraded === true) return 1.0;
   if (!video.hasVideo) return 1.0; // 无视频 = 基准，不扣分
 
   let factor = 1.0;
@@ -161,11 +221,17 @@ export function calculateVideoFactor(video: VideoAnalysisResult): number {
 }
 
 /**
- * 获取默认分析结果（降级方案）
+ * 获取默认分析结果（降级方案）。
+ *
+ * ⚠️ `degraded: true` 是**必须**的：它是 `calculateVideoFactor` 判定"中性"的唯一依据。
+ * 曾经没有这个标记，靠下面这组字段的取值"凑"出因子 —— 结果凑出了 1.02（smooth +0.02），
+ * 变成"分析失败反而加价"。改动本函数的任何字段前，先确认 `calculateVideoFactor`
+ * 是否仍会把该组合识别为中性（现在由 `degraded` 短路，不再依赖字段取值）。
  */
 function getDefaultAnalysis(): VideoAnalysisResult {
   return {
     hasVideo: true,
+    degraded: true,
     qualityScore: 0.3,
     engineSoundStatus: "no_sound",
     mechanismSmoothness: "smooth",

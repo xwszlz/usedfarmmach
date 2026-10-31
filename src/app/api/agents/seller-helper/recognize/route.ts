@@ -14,8 +14,13 @@
 // ───────────────────────────────────────────────
 
 import { NextRequest, NextResponse } from "next/server";
-// 图片下载统一走 @/lib/ai/multimodal（内部已接出网守卫），不再本地重复实现一份
-import { downloadImageAsBase64 } from "@/lib/ai/multimodal";
+// 多模态消息体（图片下载转 base64 + 视频 video_url）统一走 @/lib/ai/multimodal。
+// 为什么不再本地重复实现一份：本路由曾持有一份私有副本，那份副本把视频降级成了
+// 一行 `[视频] <url>` 文本，模型**看不到任何画面**（视频多模态输入形同虚设）；
+// 而共享实现发的是真正的 `{ type: "video_url" }` 内容块。共用一份才能保证
+// 「深度分析 / 估值 / 销售策略 / 智能识别」四条链路的视频能力不会各自漂移。
+// 该模块内部已接出网守卫（SSRF）与 12MB 体积上限，本路由无需再包一层。
+import { buildDoubaoContent } from "@/lib/ai/multimodal";
 import { parseLocationText, buildLocationText } from "@/lib/location-parser";
 import { findCountryInText } from "@/lib/location-data";
 import { resolveBrand } from "@/lib/agents/seller-helper/resolve-brand";
@@ -25,8 +30,6 @@ import { getUserFromRequest } from "@/lib/auth";
 import { computeAiCost, deductCredits, type AiCostBreakdown } from "@/lib/credits/spend";
 import { recordUsage, drainUsage, ESTIMATED_TOKENS } from "@/lib/credits/usage-collector";
 import { chatCompletionDoubao, getArkModelId } from "@/lib/ai/ark-client";
-// 单张图片下载的既有超时（出网守卫内置，20s）。这里只读常量以便按总预算收窄，不改共享库。
-import { IMAGE_FETCH_TIMEOUT_MS } from "@/lib/net/ssrf-guard";
 
 /** 从 referer / 路径推断 locale（与 quota guard 的 rechargeUrl 保持一致） */
 function getLocaleFromRequest(request: NextRequest): string {
@@ -58,9 +61,6 @@ const RECOGNIZE_TOTAL_BUDGET_MS = 75_000;
  */
 const RECOGNIZE_CONTINUE_MIN_REMAINING_MS = 20_000;
 
-/** 单张图片下载可用的最小超时：预算见底时也保底 3s，避免算出 0/负数导致必然失败 */
-const RECOGNIZE_MIN_IMAGE_TIMEOUT_MS = 3_000;
-
 /** 一次模型调用可用的最小超时：低于 5s 的调用没有意义，直接当超预算处理 */
 const RECOGNIZE_MIN_LLM_TIMEOUT_MS = 5_000;
 
@@ -73,7 +73,9 @@ const RECOGNIZE_LLM_TIMEOUT_MS = 75_000;
 // ⚠️ 历史教训（本次修复针对的就是它）：原注释写着「90s 内靠 deadline 收敛」，但代码里
 // 从来没有一处 `Date.now()` 预算判断，`chatCompletionDoubao` 也未收到 `deadlineMs`。
 // 于是最坏墙钟 = 图片下载 20s + 75s + 自动重试 75s = 170s，平台直接 kill → 504 HTML。
-// 现在预算闸是**代码里真的执行**的：见 `settleWithin` / `perImageTimeoutMs` / `callDoubao`。
+// 现在预算闸是**代码里真的执行**的：见 `remainingBudgetMs` / 两处「预算闸」判断 /
+// `callDoubao` 的 `deadlineMs`，以及图片下载阶段（由共享 `buildDoubaoContent` 的
+// `downloadDeadlineMs` 按剩余预算收窄单图超时）。
 
 // ── 国内农机品牌关键词（用于自动检测 isChineseBrand） ──
 const CHINESE_BRAND_KEYWORDS = [
@@ -343,46 +345,6 @@ const INTERNATIONAL_PROMPT = `你是一位资深二手农业机械专家，熟�
 9. 品牌名用英文标准名，如果看到中文品牌名则翻译为英文
 10. isChineseBrand 固定为 false`;
 
-/** `settleWithin` 的返回联合类型：值 / 异常 / 到点放弃，三态显式化，调用方不会误吞错误 */
-type Settled<T> =
-  | { kind: "value"; value: T }
-  | { kind: "error"; error: unknown }
-  | { kind: "timeout" };
-
-/**
- * 在 `timeoutMs` 内等待 `task`；到点就返回 `{ kind: "timeout" }`，不再等它。
- *
- * 为什么不直接给 fetch 传 signal：单跳超时控制在出网守卫
- * （`@/lib/net/ssrf-guard` 的 `IMAGE_FETCH_TIMEOUT_MS = 20s`）里，本路由**不改共享库**，
- * 只保证本请求的墙钟不被下载阶段拖过总预算。
- * 放弃等待后底层请求仍会按自己的 20s 超时收尾，它的失败已被这里的 `then(onRejected)`
- * 接住 ⇒ 不产生 unhandled rejection。
- */
-function settleWithin<T>(task: Promise<T>, timeoutMs: number): Promise<Settled<T>> {
-  return new Promise<Settled<T>>((resolve) => {
-    let settled = false;
-    const timer = setTimeout(() => {
-      if (settled) return;
-      settled = true;
-      resolve({ kind: "timeout" });
-    }, Math.max(0, timeoutMs));
-    task.then(
-      (value) => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(timer);
-        resolve({ kind: "value", value });
-      },
-      (error) => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(timer);
-        resolve({ kind: "error", error });
-      }
-    );
-  });
-}
-
 /**
  * 统一「无法识别，请手动填写」出口（503）。
  * 结构与既有前端契约完全一致：success/code="MANUAL_FALLBACK"/retryable/debug 都不变，
@@ -399,89 +361,6 @@ function manualFallbackResponse(errors: string[]): NextResponse {
     },
     { status: 503 }
   );
-}
-
-// ── 构建豆包(ARK)格式的消息内容（OpenAI兼容）──
-// 注意：豆包服务端下载公开图片 URL 会超时失败
-// （InvalidParameter: Timeout while downloading url），
-// 因此公开 URL 一律在服务端先下载并转成 base64 data URI 再传入。
-// 豆包支持 base64 data URI 传图（已实测可用），data: 输入原样透传。
-//
-// @param deadlineMs 本次请求的总预算截止时刻（毫秒时间戳）。不传则保持原有行为
-//   （每张图固定 20s 超时），其他调用方与单测不受影响。
-async function buildDoubaoContent(
-  images: string[],
-  videoUrls: string[] = [],
-  prompt: string,
-  deadlineMs?: number
-): Promise<Array<Record<string, unknown>>> {
-  const content: Array<Record<string, unknown>> = [
-    { type: "text", text: prompt },
-  ];
-
-  /**
-   * 单张图本次可用超时：`min(守卫的 20s, max(3s, 剩余预算))`。
-   * 预算充足 ⇒ 与原来完全一致（20s）；预算见底 ⇒ 保底 3s，
-   * 而不是 0/负数（`AbortSignal.timeout(0)` 级别的值会让所有图"必然失败"）。
-   */
-  const perImageTimeoutMs = (): number => {
-    if (typeof deadlineMs !== "number" || !Number.isFinite(deadlineMs)) {
-      return IMAGE_FETCH_TIMEOUT_MS;
-    }
-    return Math.min(
-      IMAGE_FETCH_TIMEOUT_MS,
-      Math.max(RECOGNIZE_MIN_IMAGE_TIMEOUT_MS, deadlineMs - Date.now())
-    );
-  };
-
-  // 并行下载全部图片（原为 for...of 逐张串行 await，3 张图最坏 3x20s=60s，
-  // 会把模型的时间预算全部吃光；并行后最坏 20s）。
-  // 注意：必须【保持原有顺序】，否则图片次序变化可能影响模型对多图的判断。
-  // 单张失败 / 超预算只丢那一张，其余照常送模型（既有降级语义不变）。
-  const downloaded = await Promise.all(
-    images.map(async (url, idx) => {
-      if (url.startsWith("data:")) {
-        // data: 本身就是 base64，原样透传
-        return { idx, ok: true as const, url };
-      }
-      // HTTP URL -> 服务端下载转 base64（豆包服务端自行下载会超时）
-      const budgetMs = perImageTimeoutMs();
-      const outcome = await settleWithin(downloadImageAsBase64(url), budgetMs);
-      if (outcome.kind === "value") {
-        const { mimeType, data } = outcome.value;
-        return { idx, ok: true as const, url: `data:${mimeType};base64,${data}` };
-      }
-      if (outcome.kind === "timeout") {
-        const left = typeof deadlineMs === "number" ? deadlineMs - Date.now() : NaN;
-        console.warn(
-          `[SellerHelper] 下载图片超预算，跳过 ${url}（已等 ${budgetMs}ms，剩余预算 ${
-            Number.isFinite(left) ? left : "?"
-          }ms）`
-        );
-        return { idx, ok: false as const, url };
-      }
-      const err = outcome.error as { message?: string } | undefined;
-      console.warn(`[SellerHelper] 下载图片失败 ${url}:`, err?.message?.substring(0, 80));
-      return { idx, ok: false as const, url };
-    })
-  );
-  // 按原顺序回填，只保留成功的
-  for (const item of downloaded.sort((a, b) => a.idx - b.idx)) {
-    if (item.ok) {
-      content.push({
-        type: "image_url",
-        image_url: { url: item.url },
-      });
-    }
-  }
-  // 视频URL作为文本描述传入（多模态模型可参考）
-  for (const vUrl of videoUrls) {
-    content.push({
-      type: "text",
-      text: `[视频] ${vUrl}`,
-    });
-  }
-  return content;
 }
 
 // ── 调用豆包 API（统一出口 chatCompletionDoubao，OpenAI 兼容格式）──
@@ -502,8 +381,12 @@ async function callDoubao(
         Math.max(RECOGNIZE_MIN_LLM_TIMEOUT_MS, (deadlineMs as number) - Date.now())
       )
     : RECOGNIZE_LLM_TIMEOUT_MS;
+  // 日志分项计数：`content.length - 1` 的口径在视频改成真实 `video_url` 内容块之后会失真
+  // （视频 part 会被算成图片数，排查「图为什么没进去」时直接被误导）。首项恒为 text prompt。
+  const imagePartCount = content.filter((part) => part.type === "image_url").length;
+  const videoPartCount = content.filter((part) => part.type === "video_url").length;
   console.log(
-    `[SellerHelper] 豆包调用: ${model}，图片数: ${content.length - 1}，本次超时: ${timeoutMs}ms`
+    `[SellerHelper] 豆包调用: ${model}，图片数: ${imagePartCount}，视频数: ${videoPartCount}，本次超时: ${timeoutMs}ms`
   );
 
   const result = await chatCompletionDoubao({
@@ -830,8 +713,12 @@ export async function POST(request: NextRequest) {
     // 全站统一豆包（火山方舟 ARK）：.cn 直连国行、.com 经 B 通道代理（见 ark-client.ts）。
     // 数据不出境红线：豆包为境内服务，.cn 数据不经境外。
     try {
-      // 图片下载阶段纳入总预算：每张图超时 = min(20s, max(3s, 剩余预算))
-      const content = await buildDoubaoContent(images, videoUrls, activePrompt, requestDeadline);
+      // 图片下载阶段纳入总预算：共享实现的 `downloadDeadlineMs` 会让单图超时
+      // = min(守卫的 20s, max(1s, 剩余预算))，与原先路由内私有副本的口径一致；
+      // 视频以真实 `video_url` 内容块送出（模型能直接看画面），不再降级成一行 URL 文本。
+      const content = await buildDoubaoContent(images, videoUrls, activePrompt, {
+        downloadDeadlineMs: requestDeadline,
+      });
       const imageParts = content.filter((c) => c.type === "image_url").length;
       if (imageParts === 0) {
         lastError = new Error("豆包无有效图片输入");
@@ -884,7 +771,9 @@ export async function POST(request: NextRequest) {
         try {
           console.log("[SellerHelper] 关键字段缺失，启动豆包聚焦补识别...");
           const fallbackPrompt = buildBrandModelFallbackPrompt(useDomestic);
-          const fallbackContent = await buildDoubaoContent(images, [], fallbackPrompt, requestDeadline);
+          const fallbackContent = await buildDoubaoContent(images, [], fallbackPrompt, {
+            downloadDeadlineMs: requestDeadline,
+          });
           const fallbackText = await callDoubao(fallbackContent, requestDeadline);
           const fallback = parseAIResponse(fallbackText);
           if (!finalRecognized.brand && fallback.brand) {
