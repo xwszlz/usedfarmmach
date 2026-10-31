@@ -459,3 +459,27 @@ describe("结构化 JSON 前置（截断韧性）", () => {
     expect(instruction).not.toContain("只需补上");
   });
 });
+
+/**
+ * 国内版 prompt 的顺序同样必须「JSON 在前」。
+ *
+ * 两个 prompt 是两份独立的大字符串，改了一个很容易漏另一个 ——
+ * `.cn` 站的中国品牌产品走的正是国内版，漏改就等于国内用户的截断韧性没修。
+ */
+describe("结构化 JSON 前置（国内版 prompt 同样适用）", () => {
+  it("`.cn` + 中国品牌：```json 块在小节正文之前", async () => {
+    state.cnSite = true;
+    await runRoute({ isChineseBrand: true, locale: "zh" });
+
+    const prompt = promptOf(0);
+    // 先确认确实走的是国内版
+    expect(prompt).toContain("农机购置补贴政策");
+
+    const jsonAt = prompt.indexOf("```json");
+    const firstSectionAt = prompt.search(/^##\s+\S/m);
+    expect(jsonAt).toBeGreaterThan(-1);
+    expect(jsonAt).toBeLessThan(firstSectionAt);
+    // 且不允许再出现「正文全部写完后…输出 json」的旧尾句
+    expect(prompt).not.toContain("正文全部写完后");
+  });
+});
