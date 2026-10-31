@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Copy, Check, Share2, Loader2, Gift } from "lucide-react";
 
-const LABELS: Record<string, {
+export const LABELS: Record<string, {
   title: string;
   subtitle: string;
   myCode: string;
@@ -74,6 +74,90 @@ const LABELS: Record<string, {
     loginBtn: "Войти",
     tip: "Вознаграждение: 50% с первой линии (сначала баллами; денежные выплаты скоро).",
   },
+  // ── 以下 5 个语种为 `.com` 国际站补齐：缺失时 `|| LABELS.zh` 兜底会让 es/pt/fr/ar/hi
+  //    访客在「我的推广码」页看到整块中文。 ──
+  es: {
+    title: "Mi código de promoción",
+    subtitle: "Comparte tus enlaces con el código ?ref=. Cuando alguien se registre y pague a través de tu enlace, ganas recompensas por referido",
+    myCode: "Código",
+    links: "Copia tus enlaces de referido",
+    home: "Inicio",
+    products: "Mercado de equipos",
+    valuation: "Valoración IA",
+    credits: "Membresía",
+    expo: "Feria",
+    copy: "Copiar enlace",
+    copied: "Copiado",
+    loginGate: "Inicia sesión para obtener tu código de promoción personal",
+    loginBtn: "Iniciar sesión",
+    tip: "Recompensa por referido: 50% de comisión de primer nivel (primero en créditos; la opción en efectivo llegará pronto).",
+  },
+  pt: {
+    title: "Meu código de indicação",
+    subtitle: "Compartilhe seus links com o código ?ref=. Quando alguém se cadastrar e pagar pelo seu link, você ganha recompensas por indicação",
+    myCode: "Código",
+    links: "Copie seus links de indicação",
+    home: "Início",
+    products: "Mercado de máquinas",
+    valuation: "Avaliação por IA",
+    credits: "Membros",
+    expo: "Feira",
+    copy: "Copiar link",
+    copied: "Copiado",
+    loginGate: "Entre para obter seu código de indicação pessoal",
+    loginBtn: "Entrar",
+    tip: "Recompensa por indicação: 50% de comissão de primeiro nível (primeiro em créditos; opção em dinheiro em breve).",
+  },
+  // fr 注意：一律使用排版撇号 ’（U+2019），禁用 ASCII 半角单引号 '。
+  fr: {
+    title: "Mon code de parrainage",
+    subtitle: "Partagez vos liens avec le code ?ref=. Lorsqu’une personne s’inscrit et paie via votre lien, vous gagnez des récompenses de parrainage",
+    myCode: "Code",
+    links: "Copiez vos liens de parrainage",
+    home: "Accueil",
+    products: "Marché",
+    valuation: "Estimation IA",
+    credits: "Abonnement",
+    expo: "Salon",
+    copy: "Copier le lien",
+    copied: "Copié",
+    loginGate: "Connectez-vous pour obtenir votre code de parrainage personnel",
+    loginBtn: "Se connecter",
+    tip: "Récompense de parrainage : 50% de commission de premier niveau (d’abord en crédits ; paiement en espèces bientôt disponible).",
+  },
+  // ar 注意：纯文案，不带 dir 属性、不带 RTL 方向控制符。
+  ar: {
+    title: "رمز الإحالة الخاص بي",
+    subtitle: "شارك روابطك مع رمز ?ref=. عندما يسجل شخص ما ويدفع عبر رابطك، تحصل على مكافآت الإحالة",
+    myCode: "الرمز",
+    links: "انسخ روابط الإحالة",
+    home: "الرئيسية",
+    products: "سوق المعدات",
+    valuation: "تقييم بالذكاء الاصطناعي",
+    credits: "العضوية",
+    expo: "المعرض",
+    copy: "نسخ الرابط",
+    copied: "تم النسخ",
+    loginGate: "سجّل الدخول للحصول على رمز الإحالة الخاص بك",
+    loginBtn: "تسجيل الدخول",
+    tip: "مكافأة الإحالة: 50% عمولة على المستوى الأول (بنقاط أولًا، والخيار النقدي قريبًا).",
+  },
+  hi: {
+    title: "मेरा प्रोमो कोड",
+    subtitle: "अपने लिंक ?ref= कोड के साथ साझा करें। जब कोई आपके लिंक से साइन अप करके भुगतान करता है, तो आपको रेफ़रल इनाम मिलता है",
+    myCode: "कोड",
+    links: "अपने रेफ़रल लिंक कॉपी करें",
+    home: "होम",
+    products: "मशीनरी बाज़ार",
+    valuation: "AI मूल्यांकन",
+    credits: "सदस्यता",
+    expo: "एक्सपो",
+    copy: "लिंक कॉपी करें",
+    copied: "कॉपी हो गया",
+    loginGate: "अपना व्यक्तिगत प्रोमो कोड पाने के लिए लॉग इन करें",
+    loginBtn: "लॉग इन",
+    tip: "रेफ़रल इनाम: प्रथम स्तर पर 50% कमीशन (पहले क्रेडिट के रूप में; नकद विकल्प जल्द आएगा)।",
+  },
 };
 
 const PATHS: { key: "home" | "products" | "valuation" | "credits" | "expo"; path: string }[] = [
@@ -108,7 +192,9 @@ export function PromoClient({ locale }: { locale: string }) {
       .catch(() => setLoading(false));
   }, []);
 
-  const t = LABELS[locale] || LABELS.zh;
+  // 未收录语种回落英语而非中文 —— `.com` 是国际站，中文外泄比英文兜底糟得多
+  // （此前兜底为 `LABELS.zh`，导致 es/pt/fr/ar/hi 访客在此页看到整块中文）。
+  const t = LABELS[locale] || LABELS.en;
   const origin = typeof window !== "undefined" ? window.location.origin : "";
 
   function buildUrl(path: string): string {

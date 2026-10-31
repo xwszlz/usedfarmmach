@@ -17,6 +17,24 @@
 import { chatCompletionDoubao, getArkVideoModelId } from "@/lib/ai/ark-client";
 import { recordUsage, ESTIMATED_TOKENS } from "@/lib/credits/usage-collector";
 import { withLanguage, type AiLocale } from "@/lib/i18n/ai-locale";
+// 视频 URL 白名单（自有域名）：视频以 `video_url` 送进方舟后是**方舟服务端**去抓地址，
+// 不过白名单就等于把我们变成"让第三方模型访问任意地址"的跳板。
+// 判定逻辑刻意放在 `net/oss-host`（零依赖纯函数）而不是本文件 —— 与 multimodal 共用同一份实现。
+import { filterOwnMediaUrls, isOwnMediaUrl } from "@/lib/net/oss-host";
+
+/**
+ * 日志用：尽力取出 hostname（永不抛错）。
+ *
+ * 为什么只打 host 不打完整 URL：视频地址常带签名参数（`?Expires=...&Signature=...`），
+ * 日志一旦被转存/外发就等于泄露可访问凭证（与 `ssrf-guard` 的 `redirect-limit` 同口径）。
+ */
+function hostForLog(url: string): string {
+  try {
+    return new URL(url).hostname || "-";
+  } catch {
+    return "-";
+  }
+}
 
 const VIDEO_PROMPT = `你是一位资深二手农业机械评估专家，熟悉各类农机设备的运转状态评估。
 请分析这台农机的运转视频，评估以下维度，以 JSON 格式返回。
@@ -87,6 +105,14 @@ export async function analyzeVideo(
   videoUrl: string,
   locale: AiLocale = "zh"
 ): Promise<VideoAnalysisResult> {
+  // 非自有域名：直接中性降级，**一次网络请求都不发**。
+  // 为什么在这里也拦一道（`analyzeVideos` 已经先过滤过）：`analyzeVideo` 是导出函数，
+  // `internal/products` 等调用方可能绕过聚合直调；而"把任意 URL 交给方舟去抓"
+  // 这条风险必须由**库**兜住，不能依赖每个调用方都记得先过滤。
+  if (!isOwnMediaUrl(videoUrl)) {
+    console.warn(`[VideoAnalyzer] 跳过非自有域名视频（不交第三方模型抓取，降级为中性）: host=${hostForLog(videoUrl)}`);
+    return getDefaultAnalysis();
+  }
   try {
     const model = getArkVideoModelId();
     const result = await chatCompletionDoubao({
@@ -216,21 +242,23 @@ export async function analyzeVideos(
   videoUrls: string[],
   locale: AiLocale = "zh"
 ): Promise<VideoAnalysisResult> {
-  const urls = (Array.isArray(videoUrls) ? videoUrls : []).filter(
-    (url): url is string => typeof url === "string" && url.trim().length > 0
-  );
-  const limited = urls.slice(0, MAX_ANALYZE_VIDEOS);
-  if (limited.length < urls.length) {
+  // ① 先过「自有媒体」白名单（**唯一实现**在 `net/oss-host.filterOwnMediaUrls`）：
+  //    非自有域名的视频会被丢弃 + warn，不抛错。这一步必须在下面的并发**之前**做 ——
+  //    否则会为一个注定被拒的 URL 白起一次并发（每条都是一次完整模型调用）。
+  const ownUrls = filterOwnMediaUrls(Array.isArray(videoUrls) ? videoUrls : [], "视频");
+  // ② 再按条数上限裁剪（`MAX_ANALYZE_VIDEOS`，对齐产品视频业务上限 3）
+  const urls = ownUrls.slice(0, MAX_ANALYZE_VIDEOS);
+  if (urls.length < ownUrls.length) {
     console.warn(
-      `[VideoAnalyzer] 视频数 ${urls.length} 超过上限 ${MAX_ANALYZE_VIDEOS}，只分析前 ${limited.length} 条`
+      `[VideoAnalyzer] 视频数 ${ownUrls.length} 超过上限 ${MAX_ANALYZE_VIDEOS}，只分析前 ${urls.length} 条`
     );
   }
   // 没有可分析的视频：返回中性降级（与"有视频但没分析成功"出口一致，因子恒 1.0）
-  if (limited.length === 0) return getDefaultAnalysis();
+  if (urls.length === 0) return getDefaultAnalysis();
 
   // 并行发起：单条失败/降级都不能拖垮整体（`analyzeVideo` 内部已 try/catch，
   // 这里再用 allSettled 兜一层，保证"它哪天改成会抛"时聚合逻辑也不会连带炸掉整条估值链路）
-  const settled = await Promise.allSettled(limited.map((url) => analyzeVideo(url, locale)));
+  const settled = await Promise.allSettled(urls.map((url) => analyzeVideo(url, locale)));
 
   const succeeded: VideoAnalysisResult[] = [];
   settled.forEach((outcome, index) => {
@@ -255,7 +283,7 @@ export async function analyzeVideos(
   // 全部失败/全部降级 ⇒ 中性。这里必须走 getDefaultAnalysis() 而不是拼一个"看起来中性"的对象：
   // 降级标记 + 因子中性由 getDefaultAnalysis / calculateVideoFactor 这一对保证，只有一处口径。
   if (succeeded.length === 0) {
-    console.warn(`[VideoAnalyzer] ${limited.length} 条视频全部未取得有效分析（聚合降级，因子中性）`);
+    console.warn(`[VideoAnalyzer] ${urls.length} 条视频全部未取得有效分析（聚合降级，因子中性）`);
     return getDefaultAnalysis();
   }
 
@@ -276,7 +304,7 @@ export async function analyzeVideos(
     ) ?? "good";
 
   console.log(
-    `[VideoAnalyzer] 多视频聚合完成: 成功 ${succeeded.length}/${limited.length}，` +
+    `[VideoAnalyzer] 多视频聚合完成: 成功 ${succeeded.length}/${urls.length}，` +
       `engineSound=${engineSoundStatus}，smoothness=${mechanismSmoothness}，impression=${overallImpression}`
   );
 

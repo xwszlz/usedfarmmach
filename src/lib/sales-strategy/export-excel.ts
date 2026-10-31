@@ -13,8 +13,13 @@
  *     逐列规格 = PRD §4.0–§4.3，验收断言 = PRD §7 C1–C3'。
  *
  * 合规红线（PII 门禁不放宽）：
- *   - 明文唯一条件是 `dealer.id ∈ unlockedSet`（`unlockedSet` 由路由依据
- *     `PiiAuditLog.field = "unlock:dealer_<id>"` 构建）；
+ *   - 明文的放行条件**只有两个**，二者取「或」：
+ *       ① 逐条解锁：`dealer.id ∈ unlockedSet`（`unlockedSet` 由路由依据
+ *          `PiiAuditLog.field = "unlock:dealer_<id>"` 构建）；
+ *       ② 角色放行：`opts.unlockAll === true` —— 仅由路由在
+ *          `canViewFullPii(role)`（super_admin / admin）为真时传入，
+ *          用于「超管导出即全量明文」，且路由必须为此写一条 `PiiAuditLog(action:"export")`。
+ *     渲染层**不做角色判定**（角色字符串不可信），`unlockAll` 是唯一由路由下发的全量放行标记。
  *   - 未解锁行必须走统一出口 `@/lib/pii` 的 `maskPhone` / `maskEmail`，
  *     **禁止手写 slice / replace**；
  *   - 微信无公网标准 → 未解锁统一占位 `微信:********`；**layout 2 的微信列已移出主表**（PRD §4.4）；
@@ -62,6 +67,17 @@ export interface BuildExcelOptions {
    * 非 `ok` 时 Sheet2「备注」列追加 `外部检索未接入`；缺省视同 `ok`。
    */
   webStatus?: string;
+  /**
+   * 全量明文放行标记（缺省 `false` = 老行为）。
+   *
+   * 仅由导出路由在 `canViewFullPii(user.role)` 为真时传 `true`：
+   * 超管 / 管理员导出即拿到明文电话·邮箱·微信·联系人，不再要求逐个点过「解锁」。
+   * 传 `true` 时 `unlockedSet` 被**完全忽略**（等价于「每行都 unlocked」），
+   * 但路由仍必须把本次导出写入 `PiiAuditLog(action: "export")` 留痕。
+   *
+   * 非管理员（buyer / seller / …）路由恒不传 ⇒ 门禁落回 `unlockedSet`，行为逐字不变。
+   */
+  unlockAll?: boolean;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -302,12 +318,13 @@ function applyTextFormat(ws: ExcelJS.Worksheet, columnIndex: number, rowCount: n
 
 /**
  * 生成经销商联系表（Excel）。PII 门禁：
- *   dealer.id ∈ unlockedSet → 明文电话/微信/邮箱/联系人；否则 maskPhone/maskEmail 脱敏。
+ *   dealer.id ∈ unlockedSet（或 `opts.unlockAll === true`）→ 明文电话/微信/邮箱；
+ *   否则 maskPhone / maskEmailAddresses 脱敏。
  *
  * @param dealers      经销商输入（携带明文联系方式，由路由安全读取）
  * @param unlockedSet  本用户已解锁的经销商 id 集合（`unlock:dealer_<id>` 剥前缀后）
  * @param locale       语言，`zh`（默认）/ `en`
- * @param opts         版式与数据源；`{ layout?: 1 | 2; strategy?; webStatus? }`，默认 `1`
+ * @param opts         版式与数据源；`{ layout?: 1 | 2; strategy?; webStatus?; unlockAll? }`，默认 `1`
  * @returns xlsx 字节（Node `Buffer`）
  */
 export async function buildExcel(
@@ -318,6 +335,11 @@ export async function buildExcel(
 ): Promise<Buffer> {
   // 版式解析：缺省 / 非法值一律回落 legacy(1)，保证旧客户端与既有断言行为不变。
   const layout: BuildExcelLayout = opts?.layout === 2 ? 2 : 1;
+  /**
+   * 全量明文放行（仅超管 / 管理员）。严格 `=== true`：路由不传 / 传垃圾值一律视同关闭，
+   * 避免 `"false"`、`1` 之类真值把 PII 门禁打开。
+   */
+  const unlockAll = opts?.unlockAll === true;
   if (layout === 2) {
     // T11：三 Sheet 版式（渠道联系总表 14 列 / 机型价格速查 7 列 / 必办清单 5 列）。
     // 独立函数实现，**不复用**下方 legacy 代码路径，确保 layout 1 行为逐字节不变。
@@ -338,7 +360,8 @@ export async function buildExcel(
   const partitionLabel = (p: "cn" | "intl") => (p === "cn" ? (zh ? "境内" : "Domestic") : zh ? "跨境" : "Intl");
 
   for (const d of dealers) {
-    const unlocked = unlockedSet.has(d.id);
+    // 门禁：全量放行标记优先；否则只看逐条解锁集（口径与 layout 2 的 buildChannelRows 一致）
+    const unlocked = unlockAll || unlockedSet.has(d.id);
     const phoneCell = unlocked ? d.phone || "" : maskPhone(d.phone);
     // PII 修复（T11 裁决）：改为**逐地址**脱敏；单邮箱输出与旧实现逐字相同，
     // 多邮箱不再泄漏第二个及以后的完整地址。空值仍保持空串（不改 legacy 单元格口径）。
@@ -374,9 +397,9 @@ export async function buildExcel(
  * Sheet 顺序（PRD §4.0）：1 渠道联系总表 → 2 机型价格速查 → 3 必办清单。
  *
  * @param dealers      经销商输入
- * @param unlockedSet  已解锁经销商 id 集合（PII 门禁唯一依据）
+ * @param unlockedSet  已解锁经销商 id 集合（PII 门禁依据之一）
  * @param locale       `zh` / `en`
- * @param opts         `strategy` / `webStatus` 数据源
+ * @param opts         `strategy` / `webStatus` 数据源；`unlockAll` 为全量明文放行标记
  */
 async function buildExcelSheets(
   dealers: ExcelDealerInput[],
@@ -387,6 +410,8 @@ async function buildExcelSheets(
   const zh = locale !== "en";
   const strategy = opts?.strategy ?? null;
   const webStatus = normalizeWebStatus(opts?.webStatus);
+  /** 全量明文放行（仅超管 / 管理员；严格 `=== true`，见 buildExcel 同名字段注释） */
+  const unlockAll = opts?.unlockAll === true;
 
   const wb = new ExcelJS.Workbook();
   wb.creator = "usedfarmmach";
@@ -398,7 +423,7 @@ async function buildExcelSheets(
     header: h,
     width: SHEET1_WIDTHS[i] ?? 18,
   }));
-  const sheet1Rows = buildChannelRows(dealers, unlockedSet, zh);
+  const sheet1Rows = buildChannelRows(dealers, unlockedSet, zh, unlockAll);
   for (const row of sheet1Rows) ws1.addRow(row.cells);
 
   applyTableShell(ws1, SHEET1_HEADERS_ZH.length);
@@ -464,15 +489,19 @@ interface ChannelRow {
  * 排序键（PRD §4.1 第 1 列）：方向分组序（`DIRECTION_ORDER`）→ `priority`(S>A>B>C) → `id`；
  * `序号` 为排序后的**全局连续** 1..N。
  *
- * PII 门禁：电话 / 邮箱 / 联系人 三列同源于 `unlockedSet`，无例外。
+ * PII 门禁：电话 / 邮箱 / 联系人 三列同源于 `unlockedSet`（或 `unlockAll`），无例外。
+ *
+ * @param unlockAll 全量明文放行标记：`true` 时**整表**走 unlocked 分支，`unlockedSet` 被忽略。
+ *                  仅由路由在 `canViewFullPii(role)` 为真时传入，缺省 `false` = 老行为。
  */
 function buildChannelRows(
   dealers: ExcelDealerInput[],
   unlockedSet: Set<string>,
-  zh: boolean
+  zh: boolean,
+  unlockAll = false
 ): ChannelRow[] {
   const rows: ChannelRow[] = dealers.map((d) => {
-    const unlocked = unlockedSet.has(d.id);
+    const unlocked = unlockAll || unlockedSet.has(d.id);
 
     // 方向：**必须同时传 regions 与 country**（只传 country 会把无 country 的行全归「其他」，
     // regions 正则才是兜底关键 —— 架构师实测结论）。

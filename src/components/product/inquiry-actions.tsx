@@ -27,7 +27,8 @@ export function InquiryActions({ productId, productName, locale }: InquiryAction
   const [error, setError] = useState("");
   const [rechargeUrl, setRechargeUrl] = useState("");
   const [form, setForm] = useState({ name: "", phone: "", message: "" });
-  const l = LABELS[locale] || LABELS.zh;
+  // 未收录语种回落英语而非中文 —— `.com` 是国际站，中文外泄比英文兜底糟得多。
+  const l = LABELS[locale] || LABELS.en;
 
   const scrollToInquiry = () => {
     const el = document.getElementById("bargain");

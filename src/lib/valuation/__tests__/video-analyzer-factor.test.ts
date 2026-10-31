@@ -285,3 +285,48 @@ describe("analyzeVideos：并行 + 异常优先聚合", () => {
     expect(calculateVideoFactor(result)).toBe(1.0);
   });
 });
+
+// ─────────────────────────────────────────────────────────────
+// 自有域名白名单：视频 URL 会被交给**方舟服务端**去抓取
+// ─────────────────────────────────────────────────────────────
+describe("视频 URL 白名单（不把任意 URL 交给第三方模型抓取）", () => {
+  it("[自有OSS视频, evil.com视频] ⇒ 只对自有那条发起调用，且不抛错", async () => {
+    chatMock.mockResolvedValue({ text: videoJson() });
+    const evil = "https://evil.example.com/x.mp4";
+
+    await expect(analyzeVideos([VIDEO_URLS[0], evil])).resolves.toBeDefined();
+
+    // 只发起了一次模型调用（恶意的那个连并发都不该起）
+    expect(chatMock).toHaveBeenCalledTimes(1);
+    const params = chatMock.mock.calls[0][0] as { messages: Array<{ content: Array<Record<string, any>> }> };
+    const videoParts = params.messages[0].content.filter((part) => part.type === "video_url");
+    expect(videoParts).toHaveLength(1);
+    expect(videoParts[0].video_url.url).toBe(VIDEO_URLS[0]);
+  });
+
+  it("全部非自有 ⇒ 中性降级 + 零模型调用", async () => {
+    const result = await analyzeVideos([
+      "https://evil.example.com/a.mp4",
+      `http://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com/b.mp4`, // 同域但 http：也要拒
+      `https://usedfarmmach-oss.oss-cn-beijing.aliyuncs.com.evil.tld/c.mp4`, // 后缀域名攻击
+    ]);
+    expect(chatMock).not.toHaveBeenCalled();
+    expect(result.degraded).toBe(true);
+    expect(calculateVideoFactor(result)).toBe(1.0);
+  });
+
+  it("analyzeVideo 直接调非自有 URL ⇒ 零调用 + 中性降级（库层兜底，不依赖调用方先过滤）", async () => {
+    const result = await analyzeVideo("https://evil.example.com/x.mp4");
+    expect(chatMock).not.toHaveBeenCalled();
+    expect(result.degraded).toBe(true);
+    expect(calculateVideoFactor(result)).toBe(1.0);
+  });
+
+  it("自有 URL 仍然照常分析（不能因为加白名单把功能弄坏）", async () => {
+    chatMock.mockResolvedValue({ text: videoJson({ engineSoundStatus: "normal" }) });
+    const result = await analyzeVideo(VIDEO_URLS[0]);
+    expect(chatMock).toHaveBeenCalledTimes(1);
+    expect(result.engineSoundStatus).toBe("normal");
+    expect(result.degraded).toBeUndefined();
+  });
+});
