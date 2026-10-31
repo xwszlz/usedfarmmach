@@ -143,7 +143,8 @@ export function SellerContactCard({ productId, locale }: { productId: string; lo
     };
   }, [productId]);
 
-  const t = LABELS[locale] || LABELS.zh;
+  // 未收录语种回落英语而非中文 —— `.com` 是国际站，中文外泄比英文兜底糟得多。
+  const t = LABELS[locale] || LABELS.en;
 
   // 登录态校验中
   if (authed === null) {
