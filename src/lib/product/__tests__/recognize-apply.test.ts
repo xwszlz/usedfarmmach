@@ -319,6 +319,51 @@ describe("buildApplyPayload", () => {
     expect(Object.keys(payload)).toEqual(["year"]);
   });
 
+  /**
+   * 「零」与「空」的边界 —— 成对存在，缺一不可。
+   *
+   * 背景：`PUT /api/seller/products/[id]` 原本是 `workingHours ? Number(workingHours) : null`，
+   * 数字 0 会被写成 null（字符串 "0" 反倒能写对）。虽然该 route 已另开分支修，
+   * 但「视觉识别 → 回填」这条链路的**前端侧**也必须钉死：
+   * `workingHours = 0` 是合法业务值（全新机 / 试机机），绝不能被当成空值丢掉；
+   * 而 null / "" 才是「AI 没识别出来」，必须不传（PUT 是传了才覆盖，传 null 会清空卖家已有值）。
+   *
+   * 这两条同时锁住 `normalizeScalar` 的实现假设：它用 `typeof === "number"` 分支，
+   * 一旦有人改成 `if (!value) return null` 这类 falsy 判断，第一条会立刻变红。
+   */
+  it("workingHours 识别为 0（全新机 / 试机机）⇒ payload 里是数字 0，不能被当作空值丢弃", () => {
+    const payload = buildApplyPayload({ workingHours: 0 }, ["workingHours"]);
+
+    // 必须在，且必须是数字 0（不是 "0"、不是 null、不是被丢弃）
+    expect(payload).toHaveProperty("workingHours");
+    expect(payload.workingHours).toBe(0);
+    expect(typeof payload.workingHours).toBe("number");
+    expect(Number.isNaN(payload.workingHours as number)).toBe(false);
+
+    // 数值 0 与字符串 "0" 必须产出同一结果（Number("0") === 0）
+    expect(buildApplyPayload({ workingHours: "0" }, ["workingHours"])).toEqual({
+      workingHours: 0,
+    });
+  });
+
+  it("workingHours 为 null / 空串 / 缺省 ⇒ payload 不含该键（空值不覆盖卖家已有值）", () => {
+    expect(buildApplyPayload({ workingHours: null }, ["workingHours"])).not.toHaveProperty(
+      "workingHours"
+    );
+    expect(buildApplyPayload({ workingHours: "" }, ["workingHours"])).not.toHaveProperty(
+      "workingHours"
+    );
+    expect(buildApplyPayload({}, ["workingHours"])).not.toHaveProperty("workingHours");
+    expect(
+      buildApplyPayload({ workingHours: "   " }, ["workingHours"])
+    ).not.toHaveProperty("workingHours");
+
+    // 对照组：0 → 有键，null → 无键。两者放在一起才把边界钉死。
+    expect(buildApplyPayload({ workingHours: 0 }, ["workingHours"])).toHaveProperty(
+      "workingHours"
+    );
+  });
+
   it("数值字段转 number（含字符串输入）；非数值字段保持字符串并去空白", () => {
     const payload = buildApplyPayload(
       makeRecognized({
