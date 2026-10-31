@@ -15,6 +15,10 @@ export default defineConfig({
   resolve: {
     alias: [{ find: /^@\/(.*)$/, replacement: resolve(__dirname, "src") + "/$1" }],
   },
+  // 组件源码用的是新版 JSX 转换（tsconfig 里 `jsx: "preserve"`，由 Next/SWC 负责注入），
+  // 而 esbuild 默认走 classic runtime，会让 `renderToStaticMarkup` 渲染 .tsx 组件时报
+  // `React is not defined`。这里显式切到 automatic runtime，让组件级渲染测试可用。
+  esbuild: { jsx: "automatic" },
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],
