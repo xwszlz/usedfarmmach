@@ -3,22 +3,38 @@
  * AI 销售策略 · 导出经销商联系表（T3，含 PII 门禁）
  *
  * 流程：登录校验 → retrieveDealers(partition) 取脱敏经销商 →
- *       按当前用户 PiiAuditLog(unlock:dealer_*) 构建 unlockedSet →
- *       buildExcel（unlockedSet 内写明文，否则 maskPhone/maskEmail）→ 返回 xlsx。
+ *       角色放行（super_admin / admin ⇒ 全量明文）否则按 PiiAuditLog(unlock:dealer_*) 构建 unlockedSet →
+ *       buildExcel（unlockedSet 内 / 全量放行时写明文，否则 maskPhone/maskEmail）→ 返回 xlsx。
+ *
+ * ── 明文放行判据（2026-11 修复「超管导出里全是掩码」）────────────────────────────
+ *   ① `canViewFullPii(user.role)` 为真（super_admin / admin）⇒ 传 `unlockAll: true`，
+ *      整表明文；并写一条 `PiiAuditLog(action:"export", field:"export:dealer_batch")` 留痕。
+ *      修复前只按「是否点过解锁按钮」判定，超管没逐个解锁过 ⇒ unlockedSet 为空 ⇒ 全打码。
+ *   ② 其他角色（buyer / seller / …）⇒ 仍按逐条解锁的 unlockedSet 判定，**行为逐字不变**。
+ *   ⚠️ 留痕 field 前缀必须是 `export:`，**绝不能**是 `unlock:`：`unlock:` 会被
+ *      `buildUnlockedDealerSet()` 识别为「该经销商已解锁」⇒ 等于永久解锁，是权限泄漏不是日志。
  *
  * 计费（2026-10-28 起）：**免费**。导出是纯渲染，零 LLM 调用、零模型成本；统一到成本加成口径后
  *   其成本本就为 0，故不再收取名义积分（此前按固定名义 token 计费属重复收费）。
  *   渲染失败直接 500 —— 本来就不扣费，因此「钱扣了却拿不到文件」的风险彻底消失。
  * 合规（#1 数据不出境 / PII 最小化）：
- *   - 明文联系方式仅在「用户曾付费解锁该经销商」时写出；
+ *   - 明文联系方式仅在「用户曾付费解锁该经销商」**或**「当前用户为 super_admin / admin」时写出；
+ *     后者属于职务必需，故必须留痕（见上；一次导出写一条汇总记录）；
  *   - 未解锁行一律脱敏（微信无公网标准 → 统一占位）；
  *   - 本路由只读「当前站点 prisma」，不触达 .com / ARK。
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { canViewFullPii } from "@/lib/pii";
 import { retrieveDealers } from "@/lib/sales-strategy/dealers";
 import { buildExcel, type ExcelDealerInput } from "@/lib/sales-strategy/export";
+import type { BuildExcelOptions } from "@/lib/sales-strategy/export-excel";
+import {
+  DEALER_UNLOCK_FIELD_PREFIX,
+  buildUnlockedDealerSet,
+  recordAdminFullPiiExport,
+} from "@/lib/sales-strategy/pii-export";
 import { splitCountryCity } from "@/lib/sales-strategy/derive";
 import type { StrategyLlmResult } from "@/lib/sales-strategy/prompt";
 import type { DealerPartitionQuery } from "@/lib/sales-strategy/types";
@@ -34,17 +50,6 @@ function getLocaleFromRequest(request: NextRequest): "zh" | "en" {
 }
 
 const PARTITIONS = new Set<DealerPartitionQuery>(["all", "cn", "intl"]);
-
-/** 由 PiiAuditLog 的 field(unlock:dealer_<id>) 提取已解锁经销商 id 集合 */
-function buildUnlockedSet(fields: Array<{ field: string }>): Set<string> {
-  const set = new Set<string>();
-  for (const f of fields) {
-    if (f.field.startsWith("unlock:dealer_")) {
-      set.add(f.field.slice("unlock:dealer_".length));
-    }
-  }
-  return set;
-}
 
 export async function POST(request: NextRequest) {
   const locale = getLocaleFromRequest(request);
@@ -122,12 +127,19 @@ export async function POST(request: NextRequest) {
         : [];
     const plainMap = new Map(plainRows.map((r) => [r.id, r]));
 
-    // ── PII 审计：本用户已解锁的经销商集合 ──
-    const auditLogs = await prisma.piiAuditLog.findMany({
-      where: { actorId: user.id, field: { startsWith: "unlock:dealer_" } },
-      select: { field: true },
-    });
-    const unlockedSet = buildUnlockedSet(auditLogs);
+    // ── 角色放行判定：super_admin / admin 导出即全量明文（不需要逐个点过「解锁」）──
+    // `user.role ?? ""` 兜底：老 token / 测试桩可能没有 role ⇒ 按「无权限」处理（安全默认）。
+    const fullPii = canViewFullPii(user.role ?? "");
+
+    // ── PII 审计：本用户已解锁的经销商集合（管理员走 unlockAll，无需这次查询）──
+    let unlockedSet = new Set<string>();
+    if (!fullPii) {
+      const auditLogs = await prisma.piiAuditLog.findMany({
+        where: { actorId: user.id, field: { startsWith: DEALER_UNLOCK_FIELD_PREFIX } },
+        select: { field: true },
+      });
+      unlockedSet = buildUnlockedDealerSet(auditLogs);
+    }
 
     // ── 组装 Excel 输入（带明文，由 buildExcel 按门禁脱敏）──
     const inputs: ExcelDealerInput[] = allDealers.map((d) => {
@@ -161,14 +173,37 @@ export async function POST(request: NextRequest) {
     });
 
     // ── 先 build 成功再返回（build 失败 → 500；导出不扣费，见文件头「计费」说明）──
-    // layout 1 时传 `undefined`（而非 `{ layout: 1 }`）：与改造前的三参调用逐字等价，
+    // 版式 1 且非管理员时**一个可选参数都不传**（`undefined`）：与改造前的三参调用逐字等价，
     // 保证 legacy 路径连「多传一个参数」这种差异都不引入。
+    const buildOpts: BuildExcelOptions = {};
+    if (layoutOpt === 2) {
+      buildOpts.layout = 2;
+      buildOpts.strategy = strategy;
+      buildOpts.webStatus = webStatus;
+    }
+    if (fullPii) buildOpts.unlockAll = true;
     const buf = await buildExcel(
       inputs,
       unlockedSet,
       locale,
-      layoutOpt === 2 ? { layout: 2, strategy, webStatus } : undefined
+      Object.keys(buildOpts).length > 0 ? buildOpts : undefined
     );
+
+    // ── 留痕：管理员导出全量明文 PII（一次导出写一条汇总记录）──
+    // 时机：放在 build 成功之后 —— 文件确实生成出来了才记账，避免「记了导出却 500 没文件」的假阳性。
+    // 刻意不吞异常：留痕失败 ⇒ 抛给外层 catch ⇒ 500 且不发文件（导出免费、重试即可；
+    // 而「明文已外发却查不到谁导的」是不可补救的合规缺口，宁可失败在明处）。
+    // field 形如 `export:dealer_batch`，**不带** `unlock:` 前缀，见 pii-export.ts 文件头红线。
+    if (fullPii && inputs.length > 0) {
+      await recordAdminFullPiiExport({
+        actorId: user.id,
+        role: user.role ?? "",
+        channel: "excel",
+        scope: partition,
+        rows: inputs.length,
+        auditScope: "dealer",
+      });
+    }
 
     return new NextResponse(new Uint8Array(buf), {
       status: 200,

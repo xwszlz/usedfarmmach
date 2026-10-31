@@ -26,13 +26,22 @@
  *   6. DB 任何异常/超时 ⇒ `unlockedSet=∅`、`channels=[]`，仍返回 200 + 可打开的 PDF
  *      （查库失败不能让用户拿不到文件、更不能扣费后报错）。
  *
- * 合规：明文 PII 的唯一放行条件是「本用户曾为该 candidateId 付费解锁」（PiiAuditLog 有记录）；
- *       本路由只读当前站点 prisma，不触达 .com / ARK。
+ * 合规：明文 PII 的放行条件有两条（取「或」）：
+ *   ① 本用户曾为该 candidateId 解锁（PiiAuditLog 有 `unlock:` 记录）；
+ *   ② 当前用户为 super_admin / admin（`canViewFullPii`，职务必需 ⇒ 全量明文 + 必须在
+ *      `PiiAuditLog` 留一条 `action:"export"` 的汇总记录，field 前缀 `export:`）。
+ *   非管理员行为与改造前逐字不变。本路由只读当前站点 prisma，不触达 .com / ARK。
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { maskEmail, maskPhone } from "@/lib/pii";
+import { canViewFullPii, maskEmail, maskPhone } from "@/lib/pii";
+import {
+  UNLOCK_FIELD_PREFIX,
+  buildUnlockedContactSets,
+  recordAdminFullPiiExport,
+  type ExportAuditScope,
+} from "@/lib/sales-strategy/pii-export";
 import {
   buildPdf,
   type StrategyExportChannel,
@@ -48,10 +57,11 @@ export const maxDuration = 60;
 /** 未解锁行的微信占位（微信无公网标准，占位不暴露任何信息） */
 const WECHAT_PLACEHOLDER = "微信:********";
 
-/** PiiAuditLog.field 前缀：与 `export/excel/route.ts` 的 `buildUnlockedSet` **同一常量口径** */
-const UNLOCK_FIELD_PREFIX = "unlock:";
-const DEALER_UNLOCK_FIELD_PREFIX = "unlock:dealer_";
-const LEAD_UNLOCK_FIELD_PREFIX = "unlock:lead_";
+// `unlock:` 系列前缀（`unlock:` / `unlock:dealer_` / `unlock:lead_`）与「已解锁集合」构建，
+// 已统一抽到 `@/lib/sales-strategy/pii-export`（`UNLOCK_FIELD_PREFIX` / `buildUnlockedContactSets`），
+// 本文件与 `export/excel/route.ts` **import 同一份实现**。
+// 原因：两端口径一旦各写一份就容易分叉 —— 会出现「Excel 给明文、PDF 仍打码」这种
+// 同一用户、同一数据、两种结果的故障，且极难在联调中发现。禁止再在本文件里重定义前缀。
 
 /** candidateId 前缀解析（与 `retrieval.fetchLeadDealerContact` 完全一致的正则） */
 const CANDIDATE_ID_RE = /^(lead|dealer)_(.+)$/;
@@ -101,40 +111,16 @@ async function withDbTimeout<T>(p: Promise<T>, ms: number = DB_TIMEOUT_MS): Prom
   }
 }
 
-// ── 解锁集（与 Excel 路由同口径）────────────────────────────────────────────
-
-/**
- * 由 PiiAuditLog 的 field 提取「已解锁」集合。
- *
- * 与 `export/excel/route.ts` 的 `buildUnlockedSet` **同口径**：同一条 `field` 记录、
- * 同一个 `"unlock:dealer_"` 前缀、同样 `slice(前缀长度)` 取 id。
- * ⚠️ TODO(去重): 该函数在 excel / pdf 两个路由各有一份复刻，未来需抽公共 util
- *   （建议 `src/lib/sales-strategy/unlock.ts`），两侧改为 import，避免有人只改一处导致两端口径分叉。
- *   当前不抽：`export/excel/route.ts` 正由 T11 修改，此时抽取必冲突。
- *
- * 本路由额外识别 `"unlock:lead_"`，因为 `unlock-contact` 路由对所有 candidateId
- * 统一写 `field = "unlock:<candidateId>"`，线索解锁同样留过 PiiAuditLog，PDF 也必须给明文
- * （解锁自 2026-10-28 起免费，但审计记录照旧写入，故本判定口径不变）。
- */
-function buildUnlockedSets(fields: Array<{ field: string }>): {
-  dealers: Set<string>;
-  leads: Set<string>;
-} {
-  const dealers = new Set<string>();
-  const leads = new Set<string>();
-  for (const f of fields) {
-    const field = typeof f?.field === "string" ? f.field : "";
-    if (!field.startsWith(UNLOCK_FIELD_PREFIX)) continue;
-    if (field.startsWith(DEALER_UNLOCK_FIELD_PREFIX)) {
-      const id = field.slice(DEALER_UNLOCK_FIELD_PREFIX.length);
-      if (id) dealers.add(id);
-    } else if (field.startsWith(LEAD_UNLOCK_FIELD_PREFIX)) {
-      const id = field.slice(LEAD_UNLOCK_FIELD_PREFIX.length);
-      if (id) leads.add(id);
-    }
-  }
-  return { dealers, leads };
-}
+// ── 解锁集（与 Excel 路由同一份实现，本文件不再保留本地复刻）─────────────────
+//
+// 解锁集构建已抽到 `@/lib/sales-strategy/pii-export` 的 `buildUnlockedContactSets`：
+// 同一前缀常量、同一 `slice(前缀长度)` 取 id 规则，只认 `unlock:dealer_` / `unlock:lead_`。
+//
+// 本路由用到 `lead` 集合，因为 `unlock-contact` 路由对所有 candidateId 统一写
+// `field = "unlock:<candidateId>"`，线索解锁同样留过 PiiAuditLog，PDF 也必须给明文
+// （解锁自 2026-10-28 起免费，但审计记录照旧写入，故本判定口径不变）。
+//
+// 历史 TODO(去重) 已就地解决：两路由 import 同一模块，从根上排除「有人只改一处导致口径分叉」。
 
 // ── 客户端入参：只信 candidateId / rationale / 顺序 ──────────────────────────
 
@@ -206,8 +192,13 @@ function fallbackName(id: string, zh: boolean): string {
 /**
  * 单条渠道的 PII 二段式装配。
  *
- * 已解锁 ⇒ 明文写进 `*Masked` 槽位（`buildPdf` 只读这三个槽位）+ `unlocked:true` + `phone` 明文；
+ * 已解锁（逐条解锁 **或** `fullPii` 全量放行）⇒ 明文写进 `*Masked` 槽位
+ * （`buildPdf` 只读这三个槽位）+ `unlocked:true` + `phone` 明文；
  * 未解锁 ⇒ `maskPhone` / `maskEmail` / 微信占位。
+ *
+ * @param fullPii 全量明文放行标记：`true` 时整份渠道表走 unlocked 分支，
+ *                `unlockedDealers` / `unlockedLeads` 被忽略。仅由路由在
+ *                `canViewFullPii(role)`（super_admin / admin）为真时传 `true`，缺省 `false` = 老行为。
  */
 function buildChannel(
   seed: ChannelSeed,
@@ -215,7 +206,8 @@ function buildChannel(
   leadMap: Map<string, LeadContactRow>,
   unlockedDealers: Set<string>,
   unlockedLeads: Set<string>,
-  zh: boolean
+  zh: boolean,
+  fullPii = false
 ): StrategyExportChannel | null {
   const m = CANDIDATE_ID_RE.exec(seed.candidateId);
   if (!m) return null;
@@ -225,7 +217,7 @@ function buildChannel(
   if (type === "dealer") {
     const row = dealerMap.get(rawId);
     if (!row) return null; // 取不到 → 丢弃，不编造
-    const unlocked = unlockedDealers.has(row.id);
+    const unlocked = fullPii || unlockedDealers.has(row.id);
     const regionText = [row.country, row.city].filter(Boolean).join(" · ") || row.regions?.[0] || null;
     return {
       candidateId: seed.candidateId,
@@ -248,7 +240,7 @@ function buildChannel(
 
   const row = leadMap.get(rawId);
   if (!row) return null; // 取不到 → 丢弃，不编造
-  const unlocked = unlockedLeads.has(row.id);
+  const unlocked = fullPii || unlockedLeads.has(row.id);
   return {
     candidateId: seed.candidateId,
     type,
@@ -304,14 +296,21 @@ export async function POST(request: NextRequest) {
     const seeds = readChannelSeeds(body.channels);
     const { dealerIds, leadIds } = splitCandidateIds(seeds);
 
+    // ── 角色放行判定：super_admin / admin 导出即全量明文（不需要逐个点过「解锁」）──
+    // `user.role ?? ""` 兜底：老 token / 测试桩可能没有 role ⇒ 按「无权限」处理（安全默认）。
+    const fullPii = canViewFullPii(user.role ?? "");
+
     // ── 解锁集 + 经销商/线索明文，三查并行；任一失败/超时降级为空（不阻断导出）──
+    // 管理员走 `fullPii` 全量放行 ⇒ 解锁集查询直接跳过（省一次 DB 往返）。
     const [auditFields, dealerRows, leadRows] = await Promise.all([
-      withDbTimeout(
-        prisma.piiAuditLog.findMany({
-          where: { actorId: user.id, field: { startsWith: UNLOCK_FIELD_PREFIX } },
-          select: { field: true },
-        })
-      ),
+      fullPii
+        ? Promise.resolve(null)
+        : withDbTimeout(
+            prisma.piiAuditLog.findMany({
+              where: { actorId: user.id, field: { startsWith: UNLOCK_FIELD_PREFIX } },
+              select: { field: true },
+            })
+          ),
       dealerIds.length > 0
         ? withDbTimeout(
             prisma.dealer.findMany({
@@ -353,7 +352,7 @@ export async function POST(request: NextRequest) {
         : Promise.resolve(null),
     ]);
 
-    const { dealers: unlockedDealers, leads: unlockedLeads } = buildUnlockedSets(auditFields ?? []);
+    const { dealers: unlockedDealers, leads: unlockedLeads } = buildUnlockedContactSets(auditFields ?? []);
     const dealerMap = new Map<string, DealerContactRow>(
       ((dealerRows ?? []) as DealerContactRow[]).map((r) => [r.id, r])
     );
@@ -364,9 +363,15 @@ export async function POST(request: NextRequest) {
     // ── 按 body 原顺序装配；取不到的候选丢弃 ──
     const channels: StrategyExportChannel[] = [];
     for (const seed of seeds) {
-      const ch = buildChannel(seed, dealerMap, leadMap, unlockedDealers, unlockedLeads, zh);
+      const ch = buildChannel(seed, dealerMap, leadMap, unlockedDealers, unlockedLeads, zh, fullPii);
       if (ch) channels.push(ch);
     }
+
+    // 留痕用的渠道构成（与 PDF 正文无关，只进审计 purpose）
+    const dealerCount = channels.filter((c) => c.type === "dealer").length;
+    const leadCount = channels.length - dealerCount;
+    const auditScope: ExportAuditScope =
+      dealerCount > 0 && leadCount > 0 ? "dealer+lead" : leadCount > 0 ? "lead" : "dealer";
 
     // ── 透传字段（strategy/product 为 LLM 结果，非 PII；webStatus 走白名单）──
     const webStatus =
@@ -385,6 +390,23 @@ export async function POST(request: NextRequest) {
       ...(webNote ? { webNote } : {}),
     };
     const pdfBytes = await buildPdf(payload);
+
+    // ── 留痕：管理员导出全量明文 PII（一次导出写一条汇总记录）──
+    // 时机：放在渲染成功之后 —— 文件确实生成出来了才记账，避免「记了导出却 500 没文件」的假阳性。
+    // 刻意不吞异常：留痕失败 ⇒ 抛给外层 catch ⇒ 500 且不发文件（导出免费、重试即可；
+    // 而「明文已外发却查不到谁导的」是不可补救的合规缺口，宁可失败在明处）。
+    // field 形如 `export:dealer_batch` / `export:dealer+lead_batch`，**不带** `unlock:` 前缀
+    // （带 `unlock:` 会被 buildUnlockedContactSets 当成「已解锁」⇒ 永久解锁，是权限泄漏）。
+    if (fullPii && channels.length > 0) {
+      await recordAdminFullPiiExport({
+        actorId: user.id,
+        role: user.role ?? "",
+        channel: "pdf",
+        scope: `dealer=${dealerCount};lead=${leadCount}`,
+        rows: channels.length,
+        auditScope,
+      });
+    }
 
     // ── 导出不扣费（零 LLM 成本；见文件头「计费」说明）──
     const fileId = Date.now().toString(36);
