@@ -14,6 +14,15 @@
  * 计费：调用豆包（火山方舟 ARK）多模态模型，按真实 token 扣积分，所以**不自动跑**，
  *       必须由用户点按钮触发，且说明里明确写出「按量消耗积分」。
  *
+ * ⚠️ 视频能力边界（2026-10-29 老板拍板「先改文案，视频暂不识别」）：
+ *   后端 `buildDoubaoContent` 对 `videoUrls` 只做
+ *   `content.push({ type: "text", text: "[视频] " + url })` —— 即**只把 URL 当一段文本**
+ *   传给模型，既不是 `video_url` part，也不抽帧。模型**看不到任何视频画面**。
+ *   因此：
+ *     1. UI 文案必须明确「视频仅作人工参考，AI 暂不解析视频画面」，不得暗示视频被看过；
+ *     2. `videoUrls` 仍然原样透传（URL 文本对 prompt 有微弱上下文作用，且改 route 不在本单范围）；
+ *     3. 将来要真正识别视频，须由后端抽帧（ffmpeg → 3~5 帧当 image part），前端无需改动。
+ *
  * 安全边界：本文件是 `"use client"`，**绝不能** import 任何链到 `node:*` 内置模块的
  *          代码（否则 next build 会把 Node 模块打进客户端 bundle，Vercel 构建失败）。
  *          仅依赖 react / next-navigation / lucide-react / 纯函数模块。
@@ -560,7 +569,6 @@ export default function AiVisionRecognizeCard({
   }, [recognized, locale]);
 
   const running = phase === "running";
-  const totalInputs = imageCount + videoCount;
 
   return (
     <div className="rounded-xl border border-sky-200 bg-sky-50/40 p-4">
@@ -586,9 +594,18 @@ export default function AiVisionRecognizeCard({
             </li>
             <li>
               {zh
-                ? `• 将识别本产品已上传的 ${imageCount} 张图片与 ${videoCount} 个视频。`
-                : `• Will analyze ${imageCount} photo(s) and ${videoCount} video(s) of this listing.`}
+                ? `• 将逐张识别本产品 ${imageCount} 张图片中的品牌、型号、年份、功率、尺寸等参数。`
+                : `• Analyzes brand, model, year, power and dimensions from your ${imageCount} product photo(s).`}
             </li>
+            {/* 视频不参与画面解析（后端 buildDoubaoContent 只把 URL 当文本传给模型）——
+                这里必须说实话，避免卖家以为视频也被 AI 看过。 */}
+            {videoCount > 0 && (
+              <li className="text-gray-400">
+                {zh
+                  ? `⚠️ 视频（${videoCount} 个）仅作人工参考，AI 暂不解析视频画面。`
+                  : `⚠️ Video(s) (${videoCount}) are for human reference only — AI does not analyze video frames yet.`}
+              </li>
+            )}
             <li>
               {zh
                 ? "• 单次约需 30–80 秒，期间请勿关闭页面。"
@@ -598,17 +615,17 @@ export default function AiVisionRecognizeCard({
           <button
             type="button"
             onClick={startRecognize}
-            disabled={totalInputs === 0}
+            disabled={imageCount === 0}
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500"
           >
             <ScanEye className="h-4 w-4" />
             {zh ? "开始 AI 视觉识别" : "Start AI Vision Recognition"}
           </button>
-          {totalInputs === 0 && (
+          {imageCount === 0 && (
             <p className="text-xs text-amber-600">
               {zh
-                ? "该产品还没有图片/视频，补传后再来识别。"
-                : "No photos or videos yet — upload some first."}
+                ? "该产品还没有可识别的图片，补传图片后再来识别（视频不参与识别）。"
+                : "No photos to analyze yet — upload some first (videos are not analyzed)."}
             </p>
           )}
         </div>
@@ -618,7 +635,7 @@ export default function AiVisionRecognizeCard({
       {running && (
         <div className="mt-3 flex items-center gap-2 rounded-lg border border-sky-200 bg-white px-3 py-3 text-sm text-sky-700">
           <Loader2 className="h-4 w-4 animate-spin" />
-          {zh ? "正在识别图片与视频…" : "Analyzing photos and videos…"}
+          {zh ? "正在逐张识别产品图片…" : "Analyzing product photos…"}
         </div>
       )}
 
