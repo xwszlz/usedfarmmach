@@ -409,7 +409,8 @@ export async function POST(request: NextRequest) {
 
           internationalPrices: { orderBy: { sourceDate: "desc" }, take: 1 },
 
-          images: { orderBy: { sortOrder: "asc" } },
+          // 二级键 id 必填：(productId, sortOrder) 全库 116 组并列，缺稳定键时 ISR 重生成会换图。
+          images: { orderBy: [{ sortOrder: "asc" as const }, { id: "asc" as const }] },
 
           videos: { orderBy: { sortOrder: "asc" } },
 
@@ -1012,7 +1013,8 @@ export async function GET(request: NextRequest) {
 
         internationalPrices: { orderBy: { sourceDate: "desc" }, take: 1 },
 
-        images: { orderBy: { sortOrder: "asc" } },
+        // 同：id 二级键
+        images: { orderBy: [{ sortOrder: "asc" as const }, { id: "asc" as const }] },
 
         videos: { orderBy: { sortOrder: "asc" } },
 

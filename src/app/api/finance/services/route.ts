@@ -20,7 +20,8 @@ export async function GET(request: NextRequest) {
 
     const services = await prisma.financialService.findMany({
       where: whereClause,
-      orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+      // 末级 id 兜底：sortOrder/createdAt 并列时保证顺序稳定（D1）。
+      orderBy: [{ sortOrder: "asc" as const }, { createdAt: "desc" as const }, { id: "asc" as const }],
     });
 
     return NextResponse.json({

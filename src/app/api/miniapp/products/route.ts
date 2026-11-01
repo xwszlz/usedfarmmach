@@ -24,7 +24,8 @@ function requireAuth(req: NextRequest) {
 const productInclude = {
   brand: { select: { nameZh: true, nameEn: true } },
   category: { select: { nameZh: true, nameEn: true } },
-  images: { select: { url: true, isPrimary: true }, orderBy: { sortOrder: "asc" as const } },
+  // 二级键 id 必填：(productId, sortOrder) 全库 116 组并列，缺稳定键时 ISR 重生成会换图。
+  images: { select: { url: true, isPrimary: true }, orderBy: [{ sortOrder: "asc" as const }, { id: "asc" as const }] },
   videos: { select: { url: true }, take: 1 },
 };
 

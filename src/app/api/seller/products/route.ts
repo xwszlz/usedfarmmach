@@ -47,7 +47,8 @@ export async function GET(request: NextRequest) {
     include: {
       brand: { select: { nameZh: true, nameEn: true } },
       category: { select: { nameZh: true, nameEn: true } },
-      images: { orderBy: { sortOrder: "asc" as const }, take: 1 },
+      // 二级键 id 必填：(productId, sortOrder) 全库 116 组并列，缺稳定键时 ISR 重生成会换图。
+      images: { orderBy: [{ sortOrder: "asc" as const }, { id: "asc" as const }], take: 1 },
       _count: { select: { inquiries: true } },
     },
     orderBy: { createdAt: "desc" },
