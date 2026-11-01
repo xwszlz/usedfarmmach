@@ -1,9 +1,10 @@
 /**
  * 首页热门产品排序契约单测。
  *
- * 背景：首页「精选好机 · 全球直供」四卡片原来读的是 src/config/daily-report-ranking.ts
- * 里人工写死的 12 个产品 ID（无 orderBy）。生产库实测 .com 有 5 个 ID 已不存在、
- * .cn 只剩 4 个 → slice(1,5) 只切出 3 个 → 四列网格空一格。
+ * 历史背景：改用动态排名前，首页靠 src/config/daily-report-ranking.ts 的 12 个写死 ID
+ * 取数（无 orderBy），.com 有 5 个 ID 已不存在、.cn 分库只命中其中 3~4 个，
+ * 导致四列网格空一格。现已改为分库实时动态查询，.cn 库有 120 个 active 产品
+ * （119 个有图），不会再出现空卡。
  *
  * 老板 2026-11-01 拍板改为全动态排名：viewCount DESC → createdAt DESC → id DESC。
  *
@@ -45,7 +46,9 @@ describe("pickHomeCards：浏览量前 4 台上卡，不跳过头名", () => {
     expect(out.map((r) => r.id)).not.toContain("p6");
   });
 
-  it("3 个元素 → 返回 3 个（.cn 分库的真实情形，自然收敛不补空卡）", () => {
+  it("不足 4 行时自然收敛，不补空卡（防御性兜底，不是 .cn 现状）", () => {
+    // .cn 站有 120 个 active 产品（119 个有图），远超 4；这条只防
+    // 「将来库内 active + 有图产品真的不足 4 台」的退化场景。
     const out = pickHomeCards(rows(3));
 
     expect(out.map((r) => r.id)).toEqual(["p1", "p2", "p3"]);

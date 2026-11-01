@@ -175,7 +175,7 @@ export default async function HomePage({
       <ItemListStructuredData
         locale={locale}
         listName={locale === "zh" ? "热门设备" : "Hot Equipment"}
-        items={[...rankedProducts.slice(0, HOME_CARD_COUNT)].filter(Boolean).map((p: any) => ({
+        items={rankedProducts.slice(0, HOME_CARD_COUNT).filter(Boolean).map((p: any) => ({
           id: p.id,
           name: (locale === "zh" ? p.brand?.nameZh : p.brand?.nameEn) + " " + p.modelName,
           url: `${BASE_URL}/${locale}/products/${p.id}`,
