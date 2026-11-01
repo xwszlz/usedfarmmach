@@ -34,7 +34,10 @@ export async function GET(
             status: true,
             brand: { select: { nameZh: true, nameEn: true } },
             category: { select: { nameZh: true, nameEn: true } },
-            images: { orderBy: { sortOrder: "asc" }, take: 3 },
+            // 二级键 id 必填：全库有 116 组 (productId, sortOrder) 并列，
+            // 缺二级键时每次生成可能换到另一批候选图，且与 m/qr 落地页口径不一致。
+            // take: 3 是产品设计（此接口只返 3 张），不随落地页的 5 张变动。
+            images: { orderBy: [{ sortOrder: "asc" as const }, { id: "asc" as const }], take: 3 },
             seller: { select: { companyName: true, country: true } },
           },
         },
