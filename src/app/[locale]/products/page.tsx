@@ -41,7 +41,12 @@ export default async function ProductsPage({
   const [rawProducts, total] = await Promise.all([
     prisma.product.findMany({
       where: visibleWhere,
-      orderBy: { createdAt: "desc" },
+      // 与 /api/products 保持同一口径（老板 2026-11-01 拍板）：
+      // viewCount DESC → createdAt DESC → id DESC。
+      // 首屏 SSR 与后续分页必须同序，否则翻页边界上用户会看到「顺序变了」。
+      // 末级 id 是稳定键：全库有 10 个 viewCount 取值并列（涉及 121 个 active 产品），
+      // 缺稳定键时同一页每次生成都可能换顺序。
+      orderBy: [{ viewCount: "desc" }, { createdAt: "desc" }, { id: "desc" }],
       take: 12,
       include: {
         brand: { select: { nameZh: true, nameEn: true, nameRu: true, nameEs: true, namePt: true, nameAr: true, nameFr: true, nameHi: true } },

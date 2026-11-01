@@ -11,6 +11,11 @@ import IntelligencePageClient from "./page-client";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
 
+// ISR：与首页 `src/app/[locale]/page.tsx` 的 300s 保持一致。
+// 本页的「套利榜单速览」死链过滤依赖一次 DB 查询（getAliveRankingItems），
+// 若纯静态化则只在构建时求值一次，产品日后被删榜单仍是旧的。
+export const revalidate = 300;
+
 /**
  * 「套利榜单速览」存活条目过滤。
  *
