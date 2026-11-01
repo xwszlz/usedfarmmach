@@ -22,10 +22,39 @@ const THUMB_PROCESS = "/format,webp/quality,q_75/resize,m_fixed,w_600";
 const DETAIL_PROCESS = "/format,webp/quality,q_80/resize,m_fixed,w_1200";
 
 /**
+ * 自家 OSS 域名（从环境变量取，与文件顶部 OSS_BASE_URL 同源）
+ *
+ * ⚠️ 必须是 hostname 精确相等比较，禁止用 includes / startsWith 做域名判断：
+ * `https://usedfarmmach-oss.xxx.aliyuncs.com.evil.tld/x` 会被前缀匹配放行
+ * （本项目已踩过的 SSRF 坑，参考 src/lib/oss-upload.ts 的 isOwnOssUrl）。
+ */
+function isOwnOssHost(hostname: string): boolean {
+  try {
+    return hostname === new URL(OSS_BASE_URL).hostname;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * OSS 基础路径（不含图片处理参数）
  */
 function getOssUrl(url: string): string {
-  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  if (url.startsWith("http://")) {
+    // 混合内容：https 页面里加载 http 图片，部分浏览器会直接拦截。
+    // 只升级自家 OSS 的 http 链接（OSS 支持 https，实测 200），第三方站不擅自改。
+    try {
+      const u = new URL(url);
+      if (isOwnOssHost(u.hostname)) {
+        u.protocol = "https:";
+        return u.toString();
+      }
+    } catch {
+      /* 非法 URL，原样返回 */
+    }
+    return url;
+  }
+  if (url.startsWith("https://")) return url;
   if (url.startsWith("/uploads/")) return `${OSS_BASE_URL}${url}`;
   return url;
 }

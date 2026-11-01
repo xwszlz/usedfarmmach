@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { DAILY_REPORT_RANKING } from "@/config/daily-report-ranking";
+import { DAILY_REPORT_RANKING, type DailyReportRankItem } from "@/config/daily-report-ranking";
 
 interface MarketIntelItem {
   id: string;
@@ -182,8 +182,24 @@ function IntelCard({ item, locale, actionTipsLabel }: IntelCardProps) {
   );
 }
 
-export default function IntelligencePageClient({ locale }: { locale: string }) {
+export default function IntelligencePageClient({
+  locale,
+  rankingItems,
+}: {
+  locale: string;
+  /**
+   * 服务端已按 status="active" 滤掉死链的「套利榜单速览」条目（保持原日报顺序）。
+   * 为空数组时回退到静态 DAILY_REPORT_RANKING，避免 DB 抖动导致区块整块消失。
+   */
+  rankingItems?: DailyReportRankItem[];
+}) {
   const t = useTranslations("intelligence");
+
+  // 榜单渲染源：优先用服务端滤过死链的结果；为空则回退静态榜单（与首页降级策略一致）。
+  const displayRanking =
+    rankingItems && rankingItems.length > 0
+      ? rankingItems.slice(0, 3)
+      : DAILY_REPORT_RANKING.slice(0, 3);
 
   // 从 URL 读取 date 参数（支持 ?date=YYYY-MM-DD 按日期筛选）
   const [dateParam, setDateParam] = useState("");
@@ -295,7 +311,7 @@ export default function IntelligencePageClient({ locale }: { locale: string }) {
           </h2>
           <div className="rounded-xl border bg-white p-5 shadow-sm">
             <div className="grid gap-3 sm:grid-cols-3">
-              {DAILY_REPORT_RANKING.slice(0, 3).map((item) => (
+              {displayRanking.map((item) => (
                 <Link
                   key={item.rank}
                   href={`/${locale}/products/${item.id}`}
