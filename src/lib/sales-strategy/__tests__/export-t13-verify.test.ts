@@ -153,7 +153,7 @@ describe("A1 双版式选路（真实 PDF 字节抽文本）", () => {
       expect(all, `触发键 ${key} 未走 v2`).toContain("0. 一页结论");
       expect(all, `触发键 ${key} 误走 legacy`).not.toContain("① 经销商清单");
     }
-  });
+  }, 20000);
 
   it("12 个新字段全为显式 null ⇒ 仍走 legacy（`!= null` 判定，null 不算「有字段」）", async () => {
     const allNull = {

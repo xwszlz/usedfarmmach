@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { useState } from "react";
 import { normalizeCondition } from "@/lib/condition";
 import { MapPin, Clock, Play, ShieldCheck, Ship } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -9,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArbitrageBadge } from "./arbitrage-badge";
 import { PriceDisplay } from "./price-display";
 import { calculateArbitragePercent } from "@/lib/utils";
-import { getImageUrl, generateImageAlt } from "@/lib/image-url";
+import { pickThumbCandidates, generateImageAlt } from "@/lib/image-url";
 
 import type { Product } from "@/types";
 
@@ -84,8 +85,12 @@ export function ProductCard({ product, locale }: ProductCardProps) {
 
   const brandName = (locale === "zh" ? product.brand?.nameZh : locale === "ru" ? (product.brand as any)?.nameRu || product.brand?.nameEn : product.brand?.nameEn);
   const categoryName = (locale === "zh" ? product.category?.nameZh : locale === "ru" ? (product.category as any)?.nameRu || product.category?.nameEn : product.category?.nameEn);
-  const baseImageUrl = getImageUrl(product.images?.[0]?.url);
-  // 为特定产品添加缓存破坏参数，强制刷新图片
+  // 首图 404 降级候选链（按 sortOrder 顺序，最多 3 张，已去重、已过滤占位图）。
+  // 生产实测：9/133 个 active 产品首图指向 OSS 上不存在的文件，
+  // 但它们都有 10~40 张备用图，这里依次降级即可兜住，无需改库。
+  const candidates = pickThumbCandidates(product.images, 3);
+
+  // 为特定产品添加缓存破坏参数，强制刷新图片。
   // 注意：getImageUrl() 已经包含 query string (?x-oss-process=...)，追加参数必须用 &
   const cacheBusterMap: Record<string, string> = {
     // 东洋甜菜机
@@ -95,10 +100,45 @@ export function ProductCard({ product, locale }: ProductCardProps) {
     // 约翰迪尔7250
     'cmpdknj9v004b11kwqvki68wr': '&v=20260605',
   };
-  const cacheBuster = cacheBusterMap[product.id];
-  // 如果 URL 已经有 ?x-oss-process 参数，用 & 追加；否则用 ? 开头
-  const separator = baseImageUrl.includes('?') ? '&' : '?';
-  const primaryImage = cacheBuster ? `${baseImageUrl}${cacheBuster}` : baseImageUrl;
+  // 值里已带 &，统一剥掉前缀分隔符再按目标 URL 自身是否带 ? 拼接，避免出现 && 或 ?&
+  const cacheBusterRaw = cacheBusterMap[product.id];
+  const cacheBuster = cacheBusterRaw ? cacheBusterRaw.replace(/^[&?]+/, "") : "";
+  const applyCacheBuster = (url: string): string => {
+    if (!cacheBuster) return url;
+    return `${url}${url.includes('?') ? '&' : '?'}${cacheBuster}`;
+  };
+  const initialCandidates = candidates.map((url, i) => (i === 0 ? applyCacheBuster(url) : url));
+
+  // 当前候选下标 + 该候选的重试时间戳（null = 尚未重试）
+  const [imageState, setImageState] = useState<{ idx: number; nonce: number | null }>({
+    idx: 0,
+    nonce: null,
+  });
+  // 所有候选都失败 → 渲染占位块（绝不留灰色空白）
+  const [imageExhausted, setImageExhausted] = useState(initialCandidates.length === 0);
+
+  const currentBase = initialCandidates[imageState.idx] ?? "";
+  // 同 URL 重试时追加 _r=<时间戳>，绕开浏览器/OSS 的失败缓存（防 OSS 偶发抖动）
+  const currentSrc =
+    currentBase === ""
+      ? ""
+      : imageState.nonce === null
+        ? currentBase
+        : `${currentBase}${currentBase.includes('?') ? '&' : '?'}_r=${imageState.nonce}`;
+
+  /** 图片加载失败：先同 URL 重试 1 次，仍失败则换下一张候选，全部失败则落占位块 */
+  const handleImageError = () => {
+    if (imageState.nonce === null) {
+      setImageState({ idx: imageState.idx, nonce: Date.now() });
+      return;
+    }
+    const nextIdx = imageState.idx + 1;
+    if (nextIdx < initialCandidates.length) {
+      setImageState({ idx: nextIdx, nonce: null });
+      return;
+    }
+    setImageExhausted(true);
+  };
 
   const arbitrage = calculateArbitragePercent(product.priceCny, product.priceUsd);
 
@@ -122,29 +162,18 @@ export function ProductCard({ product, locale }: ProductCardProps) {
       <Card className="group cursor-pointer overflow-hidden transition-shadow hover:shadow-lg">
         {/* Image */}
         <div className="relative h-48 overflow-hidden bg-gray-100">
-          {primaryImage ? (
-            <>
-              <img
-                src={primaryImage}
-                alt={generateImageAlt(brandName, product.modelName, product.year, categoryName, locale, {
-                  location: product.location || undefined,
-                  condition: product.condition,
-                })}
-                className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                loading="lazy"
-                onError={(e) => {
-                  const img = e.currentTarget;
-                  // 重试一次（可能是 OSS 偶发超时）
-                  if (!img.dataset.retried) {
-                    img.dataset.retried = '1';
-                    img.src = primaryImage + (primaryImage.includes('?') ? '&' : '?') + '_r=' + Date.now();
-                  } else {
-                    // 重试失败，显示占位图
-                    img.style.display = 'none';
-                  }
-                }}
-              />
-            </>
+          {!imageExhausted && currentSrc ? (
+            <img
+              key={currentSrc}
+              src={currentSrc}
+              alt={generateImageAlt(brandName, product.modelName, product.year, categoryName, locale, {
+                location: product.location || undefined,
+                condition: product.condition,
+              })}
+              className="h-full w-full object-cover transition-transform group-hover:scale-105"
+              loading="lazy"
+              onError={handleImageError}
+            />
           ) : (
             // 无图占位：显示品牌名+品类图标
             <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
