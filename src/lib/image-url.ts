@@ -86,6 +86,39 @@ export function getVideoUrl(url: string | null | undefined): string {
 }
 
 /**
+ * 为首图 404 兜底挑选候选缩略图。
+ *
+ * 生产实测：9/133 个 active 产品首图指向 OSS 上不存在的文件（如
+ * `cmpdknix7002h11kwupfm486g/1.jpg` 返回 404），但它们都有 10~40 张备用图，
+ * 前端依次降级即可 100% 兜住，无需改动数据库。
+ *
+ * 处理规则：
+ * - 过滤掉 getImageUrl 返回的占位图（避免把 placeholder 当成候选）
+ * - 按传入顺序（即 sortOrder）保留，最多返回 max 个
+ * - 按完整 URL 去重（部分产品有重复 URL，如 8400 的 fm.jpg 出现两次）
+ *
+ * @param images 产品图片数组（只需 url 字段）
+ * @param max 最多返回的候选数，默认 3
+ * @returns 去重后的完整可访问 URL 数组，可能为空数组
+ */
+export function pickThumbCandidates(
+  images: Array<{ url?: string | null }> | null | undefined,
+  max = 3
+): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const img of images ?? []) {
+    const u = getImageUrl(img?.url);
+    if (!u || u.includes("/images/placeholders/")) continue;
+    if (seen.has(u)) continue;
+    seen.add(u);
+    out.push(u);
+    if (out.length >= max) break;
+  }
+  return out;
+}
+
+/**
  * 生成 SEO 友好的图片 Alt 文本
  * 格式: [品牌] [型号] [年份]款[品类] — [所在地] — [成色]
  * 示例: "CLAAS Jaguar 970 2017款青储机 — 山东 — 良好 — 神雕农机"

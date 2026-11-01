@@ -11,10 +11,14 @@ import { DailyReportSection } from "@/components/home/daily-report-section";
 import { TrustBadges } from "@/components/home/trust-badges";
 import { CTASection } from "@/components/home/cta-section";
 import { ArbitrageShowcase } from "@/components/home/arbitrage-showcase";
-import { DAILY_REPORT_RANKING } from "@/config/daily-report-ranking";
 import { generatePageMetadata } from "@/lib/seo-metadata";
 import { BreadcrumbStructuredData, ItemListStructuredData } from "@/components/seo/structured-data";
 import { getImageUrl } from "@/lib/image-url";
+import {
+  HOME_PRODUCT_ORDER_BY,
+  HOME_PRODUCT_TAKE,
+  splitHomeProducts,
+} from "@/lib/home/hot-products";
 import type { Product } from "@/types";
 
 export const revalidate = 300;
@@ -69,7 +73,8 @@ async function fetchLatestArticles(limit: number = 3): Promise<LatestArticle[]> 
 const baseInclude = {
   brand: true,
   category: true,
-  images: { orderBy: { sortOrder: "asc" as const }, take: 1 },
+  // 给前端的首图 404 降级留候选：取前 3 张，product-card 会依次降级
+  images: { orderBy: { sortOrder: "asc" as const }, take: 3 },
   internationalPrices: { orderBy: { sourceDate: "desc" as const }, take: 1 },
   seller: { select: { id: true, companyName: true, country: true } },
   // 关联活跃询价
@@ -84,19 +89,21 @@ const baseInclude = {
  * 安全查询首页产品数据，带容错降级。
  * Vercel Serverless 环境下可能出现冷启动超时或瞬时连接失败，
  * 此函数确保即使 DB 查询失败也不会导致整页 500（避免 ISR 缓存中毒）。
+ *
+ * 排序完全动态（老板 2026-11-01 拍板）：viewCount DESC → createdAt DESC → id DESC，
+ * 不接时间衰减、不随机轮换、不接 promotedUntil。详见 src/lib/home/hot-products.ts。
  */
 async function fetchHomeProducts() {
   try {
-    const allIds = DAILY_REPORT_RANKING.map((p) => p.id);
-    const rawProducts = await prisma.product.findMany({
-      where: { id: { in: allIds }, status: "active" },
+    const rows = await prisma.product.findMany({
+      where: {
+        status: "active",
+        images: { some: {} }, // 硬门槛：至少 1 张图，杜绝空图卡
+      },
       include: baseInclude,
+      orderBy: [...HOME_PRODUCT_ORDER_BY],
+      take: HOME_PRODUCT_TAKE,
     });
-
-    // 按日报排名顺序重组
-    const rankedProducts = allIds
-      .map((id) => rawProducts.find((p) => p.id === id))
-      .filter(Boolean);
 
     const toProduct = (p: any) => ({
       ...p,
@@ -104,10 +111,10 @@ async function fetchHomeProducts() {
       status: p.status as Product["status"],
     }) as Product;
 
-    const topProduct = rankedProducts[0] ? toProduct(rankedProducts[0]) : null;
-    const hotProducts = rankedProducts.slice(1, 5).map(toProduct);
+    const rankedProducts = rows.map(toProduct);
+    const { top, hot } = splitHomeProducts(rankedProducts);
 
-    return { topProduct, hotProducts, rankedProducts, error: null };
+    return { topProduct: top, hotProducts: hot, rankedProducts, error: null };
   } catch (err) {
     console.error("[HomePage] 产品数据查询失败（返回空数据以避免 500）:", err);
     // 返回空数据而不是抛出异常，防止 ISR 缓存错误响应
@@ -148,7 +155,6 @@ export default async function HomePage({
 
   // 安全获取产品数据（带容错）
   const { topProduct, hotProducts, rankedProducts } = await fetchHomeProducts();
-  const topReportData = DAILY_REPORT_RANKING[0];
   const initialArticles = await fetchLatestArticles(3);
   const expoCounts = await fetchExpoPavilionCounts();
 
