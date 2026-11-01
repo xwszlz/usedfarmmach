@@ -37,7 +37,9 @@ export default async function QRCodePage({ params }: PageProps) {
           status: true,
           brand: { select: { nameZh: true, nameEn: true } },
           category: { select: { nameZh: true, nameEn: true } },
-          images: { orderBy: { sortOrder: "asc" }, take: 5 },
+          // 二级键 id 必填：全库有 116 组 (productId, sortOrder) 并列，
+          // 缺二级键时每次 ISR 重生成可能换到另一批候选图（手机扫码落地页上肉眼可见）。
+          images: { orderBy: [{ sortOrder: "asc" as const }, { id: "asc" as const }], take: 5 },
           seller: { select: { companyName: true, country: true } },
         },
       },

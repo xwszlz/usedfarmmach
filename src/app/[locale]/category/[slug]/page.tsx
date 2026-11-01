@@ -82,7 +82,14 @@ const getCategoryData = cache(
         include: {
           brand: true,
           category: true,
-          images: { orderBy: { sortOrder: "asc" }, take: 1 },
+          images: {
+            // 给 product-card 的首图 404 降级留候选：取 5 张（去重后仍能剩 3 张，
+            // 部分产品 sortOrder 1/2、2/3 指向同一个 URL）。
+            // 二级键 id 必填：全库有 116 组 (productId, sortOrder) 并列，
+            // 缺二级键时每次重生成可能换到另一批候选，表现为「刷新一次图就变」。
+            orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+            take: 5,
+          },
           internationalPrices: { orderBy: { sourceDate: "desc" }, take: 1 },
         },
         orderBy: { priceCny: "desc" },

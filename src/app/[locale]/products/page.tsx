@@ -41,12 +41,24 @@ export default async function ProductsPage({
   const [rawProducts, total] = await Promise.all([
     prisma.product.findMany({
       where: visibleWhere,
-      orderBy: { createdAt: "desc" },
+      // 与 /api/products 保持同一口径（老板 2026-11-01 拍板）：
+      // viewCount DESC → createdAt DESC → id DESC。
+      // 首屏 SSR 与后续分页必须同序，否则翻页边界上用户会看到「顺序变了」。
+      // 末级 id 是稳定键：全库有 10 个 viewCount 取值并列（涉及 121 个 active 产品），
+      // 缺稳定键时同一页每次生成都可能换顺序。
+      orderBy: [{ viewCount: "desc" }, { createdAt: "desc" }, { id: "desc" }],
       take: 12,
       include: {
         brand: { select: { nameZh: true, nameEn: true, nameRu: true, nameEs: true, namePt: true, nameAr: true, nameFr: true, nameHi: true } },
         category: { select: { nameZh: true, nameEn: true, nameRu: true, nameEs: true, namePt: true, nameAr: true, nameFr: true, nameHi: true } },
-        images: { orderBy: { sortOrder: "asc" }, take: 1 },
+        images: {
+          // 给 product-card 的首图 404 降级留候选：取 5 张（去重后仍能剩 3 张，
+          // 部分产品 sortOrder 1/2、2/3 指向同一个 URL）。
+          // 二级键 id 必填：全库有 116 组 (productId, sortOrder) 并列，
+          // 缺二级键时每次重生成可能换到另一批候选，表现为「刷新一次图就变」。
+          orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+          take: 5,
+        },
         internationalPrices: { orderBy: { sourceDate: "desc" }, take: 1 },
         seller: { select: { id: true, companyName: true, country: true } },
         // 关联活跃询价

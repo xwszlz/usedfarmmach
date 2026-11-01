@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { productQuerySchema } from "@/lib/validators";
 import { getImageUrl } from "@/lib/image-url";
-import { sortByDailyRank } from "@/config/daily-report-ranking";
 import { cache, cacheKey } from "@/lib/cache";
 import { stripContactFieldsFromList } from "@/lib/pii";
 import {
@@ -184,7 +183,7 @@ export async function GET(request: NextRequest) {
         break;
     }
 
-    // 日报排名排序：需要全量查询后按排名排序再分页
+    // 热度排序（rank）：需要全量查询后排序再分页
     const skip = (page - 1) * pageSize;
 
     if (sort === "rank") {
@@ -193,18 +192,34 @@ export async function GET(request: NextRequest) {
         include: {
           brand: true,
           category: true,
-          images: { orderBy: { sortOrder: "asc" as const }, take: 1 },
+          images: {
+            // 给 product-card 的首图 404 降级留候选：取 5 张（去重后仍能剩 3 张，
+            // 部分产品 sortOrder 1/2、2/3 指向同一个 URL）。
+            // 二级键 id 必填：全库有 116 组 (productId, sortOrder) 并列，
+            // 缺二级键时每次重生成可能换到另一批候选，表现为「刷新一次图就变」。
+            orderBy: [{ sortOrder: "asc" as const }, { id: "asc" as const }],
+            take: 5,
+          },
           videos: { select: { id: true, url: true } },
           internationalPrices: { orderBy: { sourceDate: "desc" as const }, take: 1 },
           seller: { select: { id: true, companyName: true, country: true } },
         },
       };
       
-      // 查询所有匹配产品
+      // 查询所有匹配产品（include 会带出全部标量字段，viewCount / createdAt 天然在结果里）
       const allProducts = await prisma.product.findMany(rankParams);
       
-      // 按日报排名排序
-      const sorted = sortByDailyRank(allProducts);
+      // 按真实热度稳定排序（老板 2026-11-01 拍板口径）：
+      // viewCount DESC → createdAt DESC → id DESC。
+      // 末级 id 是稳定键 —— 全库有 10 个 viewCount 取值并列（涉及 121 个 active 产品），
+      // 没有稳定键时分页会出现「翻一页顺序就变」。
+      // 不再使用 src/config/daily-report-ranking.ts 的写死名单（其中 5 个 ID 已不存在）。
+      const sorted = [...allProducts].sort(
+        (a, b) =>
+          (b.viewCount ?? 0) - (a.viewCount ?? 0) ||
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime() ||
+          (a.id < b.id ? 1 : a.id > b.id ? -1 : 0)
+      );
       
       // 分页
       const paged = sorted.slice(skip, skip + pageSize);
@@ -255,7 +270,11 @@ export async function GET(request: NextRequest) {
           include: {
             brand: true,
             category: true,
-            images: { orderBy: { sortOrder: "asc" as const }, take: 1 },
+            images: {
+              // 首图 404 降级候选（详见 rank 分支同名注释）
+              orderBy: [{ sortOrder: "asc" as const }, { id: "asc" as const }],
+              take: 5,
+            },
             videos: { select: { id: true, url: true } },
             internationalPrices: { orderBy: { sourceDate: "desc" }, take: 1 },
             seller: { select: { id: true, companyName: true, country: true } },
@@ -275,7 +294,11 @@ export async function GET(request: NextRequest) {
               include: {
                 brand: true,
                 category: true,
-                images: { orderBy: { sortOrder: "asc" as const }, take: 1 },
+                images: {
+                  // 首图 404 降级候选（详见 rank 分支同名注释）
+                  orderBy: [{ sortOrder: "asc" as const }, { id: "asc" as const }],
+                  take: 5,
+                },
                 videos: { select: { id: true, url: true } },
                 internationalPrices: { orderBy: { sourceDate: "desc" }, take: 1 },
                 seller: { select: { id: true, companyName: true, country: true } },
@@ -299,7 +322,11 @@ export async function GET(request: NextRequest) {
         include: {
           brand: true,
           category: true,
-          images: { orderBy: { sortOrder: "asc" as const }, take: 1 },
+          images: {
+            // 首图 404 降级候选（详见 rank 分支同名注释）
+            orderBy: [{ sortOrder: "asc" as const }, { id: "asc" as const }],
+            take: 5,
+          },
           videos: { select: { id: true, url: true } },
           internationalPrices: { orderBy: { sourceDate: "desc" }, take: 1 },
           seller: { select: { id: true, companyName: true, country: true } },
