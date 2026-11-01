@@ -43,11 +43,14 @@ import {
   __clearCache,
   buildEvidenceQueries,
   buildWebDataSource,
+  filterSelfReferentialItems,
+  readArkUsage,
   renderEvidenceBlock,
   resolveProvider,
   retrieveWebEvidence,
   sanitizeQuery,
   type WebEvidence,
+  type WebEvidenceItem,
   type WebQueryInput,
 } from "@/lib/search/web-evidence";
 
@@ -710,5 +713,259 @@ describe("successQueries===0 的 note：区分「不可用」与「超时」", (
     expect(ev.note).toContain("超时");
     expect(ev.note).toBe("外部证据未接入（检索超时）");
     expect(ev.dataSources[0].note).toBe(ev.note);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+// ⑧ ARK provider 感知超时预算（2026-11 线上 P0 修复回归锁）
+// ═══════════════════════════════════════════════════════════
+
+/**
+ * 背景：`DEFAULT_TIMEOUT_MS / DEFAULT_BUDGET_MS`（8s / 20s）是 PRD §6.2 给
+ * 第三方**纯搜索 API** 的口径，对 ARK 完全不适用 —— ARK 的 `web_search` 是
+ * 「模型多轮自主检索」，单条 query 内部会打 9~14 次搜索。
+ *
+ * 实测 5 条真实 query 并发（生产并发度就是 5）：
+ *   28.4s / 37.1s / 38.7s / 44.9s / **91.9s**
+ * ⇒ 旧 8s 预算让 ARK 通道 **100% 全超时**，即使插件开通、请求 200 返回，也一条证据都留不下。
+ *
+ * 这里锁两件事：
+ *   ① provider=ark 时默认预算放宽到 ≥100s；
+ *   ② 第三方（tavily）**保持** 8s 老口径（不许顺手把 PRD §6.2 的约束也一起改掉）。
+ */
+describe("ARK provider 感知超时预算", () => {
+  /** ARK 通道运行时（有 arkApiKey ⇒ 白名单顺序选中 ark） */
+  const arkRuntime = { site: "com" as const, arkApiKey: "ark-key", searchApiKey: "", searchApiProvider: "" };
+  /** 第三方通道运行时（只给 tavily 凭据） */
+  const tavilyRuntime = {
+    site: "com" as const,
+    arkApiKey: "",
+    searchApiKey: "tvly-dev-abcdefghijklmn",
+    searchApiProvider: "tavily",
+  };
+
+  it("provider=ark ⇒ 传给 arkWebSearch 的 timeoutMs ≥ 100s（8s 会让方舟恒定全超时）", async () => {
+    arkWebSearchMock.mockImplementation(async () => arkFindingsResponse("ark-budget"));
+
+    const ev = await retrieveWebEvidence(input(), { runtime: arkRuntime });
+
+    expect(ev.provider).toBe("ark");
+    expect(ev.status).toBe("ok");
+    expect(arkWebSearchMock.mock.calls.length).toBeGreaterThan(0);
+    // 每条 query 分到的都是 ≤ timeoutMs，故断言"全部 ≥100s"等价于"默认口径已放宽"
+    for (const call of arkWebSearchMock.mock.calls) {
+      expect(Number(call[0].timeoutMs)).toBeGreaterThanOrEqual(100_000);
+    }
+  });
+
+  it("显式传入 timeoutMs/budgetMs 时仍然优先（provider 默认值不得吃掉调用方口径）", async () => {
+    arkWebSearchMock.mockImplementation(async () => arkFindingsResponse("ark-explicit"));
+
+    await retrieveWebEvidence(input(), {
+      runtime: arkRuntime,
+      timeoutMs: 40,
+      budgetMs: 200,
+      retry: 0,
+    });
+
+    for (const call of arkWebSearchMock.mock.calls) {
+      // 显式 40ms 生效（被 min(timeoutMs, remaining) 与 1s 下限夹到 1s 以内）
+      expect(Number(call[0].timeoutMs)).toBeLessThanOrEqual(1_000);
+    }
+  });
+
+  it("provider=tavily（第三方）⇒ 仍走 8s 老口径（PRD §6.2 不动）", async () => {
+    // 第三方路径把超时做进 `AbortSignal.timeout(perQueryMs)`，没有入参可读 ⇒ 直接监听该调用
+    const timeoutSpy = vi.spyOn(AbortSignal, "timeout");
+    try {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(
+          async () =>
+            new Response(
+              JSON.stringify({
+                results: [{ title: "t", url: "https://example-farm.de/listing/tavily", content: "c" }],
+              }),
+              { status: 200, headers: { "content-type": "application/json" } }
+            )
+        )
+      );
+
+      const ev = await retrieveWebEvidence(input(), { runtime: tavilyRuntime });
+
+      expect(ev.provider).toBe("tavily");
+      expect(ev.status).toBe("ok");
+      const perQueryMs = timeoutSpy.mock.calls.map((c) => Number(c[0]));
+      expect(perQueryMs.length).toBeGreaterThan(0);
+      for (const ms of perQueryMs) expect(ms).toBe(8_000);
+    } finally {
+      timeoutSpy.mockRestore();
+    }
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+// ⑨ 自家站点证据过滤（自引用闭环）
+// ═══════════════════════════════════════════════════════════
+
+/**
+ * 实测 ARK 检索结果里会出现 `https://usedfarmmach.cn/` 作为来源。
+ * 用自家页面当"外部证据"是自引用闭环：我们自己的挂牌价被当成外部市场价喂回模型，
+ * 模型拿我们的报价去论证我们的报价 —— 既污染估值，也污染后续价格指数。
+ */
+describe("自家站点证据过滤", () => {
+  const item = (url: string): WebEvidenceItem => ({
+    query: "q",
+    title: "t",
+    url,
+    snippet: "s",
+  });
+
+  it("剔除 usedfarmmach.cn，保留 usedfarmmach.cn.evil.tld（hostname 精确相等，不能用前缀判）", () => {
+    const kept = filterSelfReferentialItems([
+      item("https://usedfarmmach.cn/"),
+      item("https://usedfarmmach.cn.evil.tld/x"),
+    ]);
+
+    expect(kept.map((k) => k.url)).toEqual(["https://usedfarmmach.cn.evil.tld/x"]);
+  });
+
+  it(".com / .cn 两站的全部别名都算自家（含 www 与裸域）", () => {
+    const sameHosts = [
+      "https://usedfarmmach.com/",
+      "https://www.usedfarmmach.com/listing/1",
+      "https://usedfarmmach.cn/",
+      "https://www.usedfarmmach.cn/zh",
+    ];
+    expect(filterSelfReferentialItems(sameHosts.map(item))).toEqual([]);
+  });
+
+  it("URL 解析失败的条目**保留**（不能因为解析失败而丢证据）", () => {
+    const broken = item("not a url");
+    const kept = filterSelfReferentialItems([broken]);
+    expect(kept).toEqual([broken]);
+  });
+
+  it("接线检查：自家 URL 不会进入最终 items/urls（过滤真的在管线上，不只是个导出的死函数）", async () => {
+    arkWebSearchMock.mockImplementation(async (opts: { prompt?: string }) => {
+      const seed = String(opts?.prompt ?? "");
+      const base = arkFindingsResponse("self");
+      // 强制让 ARK "返回"一条自家页面 + 一条外部页面
+      const findings = {
+        findings: [
+          { title: "自家挂牌", url: "https://usedfarmmach.cn/listing/self", snippet: "¥99", kind: "二手挂牌" },
+          { title: "外部挂牌", url: `https://example-farm.de/listing/ext-${seed.length}`, snippet: "€99", kind: "二手挂牌" },
+        ],
+      };
+      return { ...base, raw: JSON.stringify({ output_text: JSON.stringify(findings) }) };
+    });
+
+    const ev = await retrieveWebEvidence(input(), {
+      runtime: { site: "com", arkApiKey: "ark-key", searchApiKey: "", searchApiProvider: "" },
+    });
+
+    expect(ev.status).toBe("ok");
+    expect(ev.items.length).toBeGreaterThan(0);
+    for (const it of ev.items) {
+      expect(new URL(it.url).hostname).not.toBe("usedfarmmach.cn");
+    }
+    expect(ev.urls.some((u) => u.includes("usedfarmmach"))).toBe(false);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+// ⑩ ARK 用量解析（成本可见化，只打日志，不改返回类型）
+// ═══════════════════════════════════════════════════════════
+
+describe("readArkUsage（检索成本可见化）", () => {
+  it("非流式 JSON：读出 tool_usage.web_search 与 total_tokens", () => {
+    const raw = JSON.stringify({
+      output_text: "{}",
+      usage: { total_tokens: 35_952, tool_usage: { web_search: 14 } },
+    });
+    expect(readArkUsage(raw, "application/json")).toEqual({ searchCalls: 14, totalTokens: 35_952 });
+  });
+
+  it("SSE：从 response.completed 里取（取最后一个累计快照）", () => {
+    const sse = [
+      'data: {"type":"response.output_text.delta","delta":"{"}',
+      'data: {"type":"response.completed","response":{"usage":{"total_tokens":26762,"tool_usage":{"web_search":9}}}}',
+      "data: [DONE]",
+    ].join("\n");
+    expect(readArkUsage(sse, "text/event-stream")).toEqual({ searchCalls: 9, totalTokens: 26_762 });
+  });
+
+  it("usage 缺失 / 响应体为空 / JSON 坏掉 ⇒ 归 0，不抛错", () => {
+    expect(readArkUsage("", "application/json")).toEqual({ searchCalls: 0, totalTokens: 0 });
+    expect(readArkUsage("{bad json", "application/json")).toEqual({ searchCalls: 0, totalTokens: 0 });
+    expect(readArkUsage(JSON.stringify({ output_text: "{}" }), "application/json")).toEqual({
+      searchCalls: 0,
+      totalTokens: 0,
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+// ⑪ 自引用过滤必须在「判成败」层生效（禁止 status:ok + 空证据的静默成功）
+// ═══════════════════════════════════════════════════════════
+
+/**
+ * 漏洞形状：`runSingleQuery` 里 `usable.length === 0 ⇒ status:"error"` 的判定发生在
+ * 自引用过滤**之前**。若某条 query 命中的**全部**是自家站点 URL，它会先以
+ * `status:"ok"` 的身份进分档，随后条目在收集阶段被剔干净 ⇒ `status:"ok"` + `items:[]`。
+ *
+ * 下游 `src/lib/sales-strategy/derive.ts:980` 只在 `webStatus !== "ok"` 时才追加
+ * 「本轮未接入外部检索」⇒ 这种"成功"会让报告带着空的「数据来源」冒充有外部证据出稿。
+ * 本组用例把「只剩自家站点 ⇒ 必须降级」这件事钉死。
+ */
+describe("自引用过滤参与成败判定", () => {
+  const arkRuntime = { site: "com" as const, arkApiKey: "ark-key", searchApiKey: "", searchApiProvider: "" };
+  const SELF_URL = "https://usedfarmmach.cn/listing/self";
+
+  /** 构造一份只含若干 findings 的 arkWebSearch 返回 */
+  function arkResponseWith(urls: string[]) {
+    const findings = {
+      findings: urls.map((url, i) => ({ title: `t${i}`, url, snippet: "s", kind: "二手挂牌" })),
+    };
+    return {
+      ...arkFindingsResponse("selfref"),
+      raw: JSON.stringify({ output_text: JSON.stringify(findings), usage: { total_tokens: 100 } }),
+    };
+  }
+
+  it("全部 5 条 query 都只命中自家站点 ⇒ status 不得为 ok，items / urls 必须为空", async () => {
+    arkWebSearchMock.mockImplementation(async () => arkResponseWith([SELF_URL]));
+
+    const ev = await retrieveWebEvidence(input(), { runtime: arkRuntime });
+
+    expect(ev.status).not.toBe("ok");
+    expect(ev.items).toEqual([]);
+    expect(ev.urls).toEqual([]);
+    // 五档判定全部失败 ⇒ 走「全失败」档；reason 不得是 ok/partial
+    expect(ev.successQueries).toBe(0);
+    expect(ev.status).toBe("timeout");
+    expect(ev.reason).toBe("error");
+    // 关键：必须留下"为什么没证据"的痕迹（否则又变成静默降级）
+    expect(ev.errorDetail).toContain("仅命中自家站点");
+  });
+
+  it("混合场景：1 条只有自家站点 + 4 条有真实外部 URL ⇒ partial，successQueries = 4", async () => {
+    let call = 0;
+    arkWebSearchMock.mockImplementation(async () => {
+      call += 1;
+      // 第 1 次调用模拟"只搜到自家站点"，其余返回外部站点
+      return call === 1
+        ? arkResponseWith([SELF_URL])
+        : arkResponseWith([`https://example-farm.de/listing/mixed-${call}`]);
+    });
+
+    const ev = await retrieveWebEvidence(input(), { runtime: arkRuntime });
+
+    expect(ev.status).toBe("partial");
+    expect(ev.successQueries).toBe(4);
+    expect(ev.totalQueries).toBe(5);
+    expect(ev.items.length).toBeGreaterThan(0);
+    // 自家 URL 一条都不许混进来
+    expect(ev.urls.some((u) => u.includes("usedfarmmach"))).toBe(false);
   });
 });

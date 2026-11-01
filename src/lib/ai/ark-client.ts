@@ -496,12 +496,13 @@ function extractResponsesText(raw: string): { text: string; urls: string[] } {
 /**
  * 调用 ARK `/responses` 完成「联网搜索 + 抽取」。
  *
- * 请求体（arch §1.2.3 逐字，来自线上脚本 `scripts/scout-via-search-api.ts:489-494` 实测）：
+ * 请求体（arch §1.2.3 形状）：
  * ```
  * { "model": "<ARK_MODEL_ID>", "stream": false,
- *   "tools": [{ "type": "web_search", "sources": ["doubao"] }],
+ *   "tools": [{ "type": "web_search", "sources": ["search_engine"] }],
  *   "input": [{ "role": "user", "content": [{ "type": "input_text", "text": "<prompt>" }] }] }
  * ```
+ * ⚠️ `sources` 必须是 `["search_engine"]`，**不是** `["doubao"]`（详见下面 `body` 处的注释）。
  * `stream:false`：脚本硬编码 `true`，实测非流式不被拒且省掉 SSE 解析分支。
  *
  * 合规闸③：`site === "cn"` 时端点 host 必须是 `ark.cn-beijing.volces.com`，否则**拒绝发请求**。
@@ -522,10 +523,29 @@ export async function arkWebSearch(opts: ArkWebSearchOptions): Promise<ArkWebSea
     );
   }
 
+  // ⚠️⚠️ `sources: ["search_engine"]` —— **不要**改回 `["doubao"]`（5 条真实 query 打靶钉死）。
+  //
+  // 为什么必须写这段注释：`doubao` 看起来像「豆包自己搜」，非常自然，但它**不是**合法的
+  // source 枚举值，且它的报错极具误导性 —— 用同一个 key、同一个模型
+  // （doubao-seed-2-1-pro-260915）打同一台机器实测：
+  //
+  //   [{"type":"web_search","sources":["doubao"]}]        ⇒ HTTP 403
+  //     {"error":{"code":"AccessDenied","message":"Access denied for web search.
+  //      Please go to the Volcano Ark Console to verify the activation status."}}
+  //   [{"type":"web_search","sources":["search_engine"]}] ⇒ HTTP 200 ✅（现在用的）
+  //   [{"type":"web_search","sources":[]}]                ⇒ HTTP 200 ✅
+  //   [{"type":"web_search"}]（省略 sources 字段）         ⇒ HTTP 200 ✅
+  //   [{"type":"web_search","sources":["search_engine","doubao"]}] ⇒ HTTP 400
+  //   [{"type":"web_search","sources":["volc_search"]}]   ⇒ HTTP 400（非法值）
+  //
+  // 关键陷阱：403 的文案是 "verify the activation status"，会把人一路带去找火山方舟控制台
+  // 确认插件有没有开通、找财务确认订单有没有生效 —— 实际插件早就开通好了，纯粹是
+  // source 枚举名写错。**合法值只有 `search_engine`**（也可用空数组或直接省略 `sources`，
+  // 此时等价于默认源）。`volc_search` 是 400 非法值，别试。
   const body = {
     model: opts.model || ARK_MODEL_ID,
     stream: false,
-    tools: [{ type: "web_search", sources: ["doubao"] }],
+    tools: [{ type: "web_search", sources: ["search_engine"] }],
     input: [{ role: "user", content: [{ type: "input_text", text: prompt }] }],
   };
 

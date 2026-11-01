@@ -28,7 +28,7 @@ import {
   WEB_STATUS_NOTE,
 } from "@/lib/sales-strategy/strategy-schema";
 import type { WebEvidenceStatus } from "@/lib/sales-strategy/strategy-schema";
-import { isCnSite } from "@/config/site";
+import { isCnSite, siteConfigMap } from "@/config/site";
 import { arkWebSearch, resolveArkResponsesEndpoint } from "@/lib/ai/ark-client";
 
 // 类型再从唯一真相源透出，避免出现两份同名字符串联合（arch §3.5）
@@ -42,6 +42,36 @@ export type { WebEvidenceStatus } from "@/lib/sales-strategy/strategy-schema";
 const DEFAULT_TIMEOUT_MS = 8_000;
 /** 检索总预算（PRD §6.2：20s） */
 const DEFAULT_BUDGET_MS = 20_000;
+/**
+ * ARK 联网检索的单 query 超时（**仅 provider === "ark" 生效**）。
+ *
+ * 为什么不复用上面那两个 8s / 20s：`DEFAULT_TIMEOUT_MS` / `DEFAULT_BUDGET_MS` 是
+ * PRD §6.2「第三方纯搜索 API」的既有口径（Tavily / Serper / Brave 都是单次 HTTP 往返，
+ * 8s 完全够），**不要动它们**。ARK 完全是另一种东西 —— `web_search` 是「模型多轮自主检索」：
+ * 模型先想搜索词、搜一轮、读结果、再决定补搜什么，单条 query 内部会打 9~14 次搜索。
+ *
+ * 实测（5 条真实 query 并发，生产并发度就是 5；模型 doubao-seed-2-1-pro-260915）：
+ *   CLAAS Jaguar 970 新机报价                     28.4s
+ *   CLAAS Jaguar 970 原厂规格                     37.1s
+ *   德国/波兰 农机进口关税增值税清关                38.7s
+ *   俄罗斯 农机青贮机进口准入政策法规               44.9s
+ *   CLAAS Jaguar 970 2019-2025 二手价格           91.9s  ← 最慢
+ * （对应返回 7~11 个真实 URL、9~14 次 web_search、2.4w~4w tokens）
+ *
+ * ⇒ 旧的 8s 会让 ARK 通道 **100% 全超时**：即使插件开通了、请求也 200 返回了，
+ *   预算先把它掐死，一条证据都留不下来。这不是"偶尔超时"而是"恒定 0 产出"。
+ */
+const ARK_TIMEOUT_MS = 110_000;
+/**
+ * ARK 检索总预算：并发跑 5 条，wall clock ≈ 最慢那条（91.9s）+ 18s 余量。
+ *
+ * 上游总闸门**没有被突破**：`src/app/api/agents/seller-helper/sales-strategy/route.ts`
+ * 的 `LLM_TOTAL_BUDGET_MS = 280_000` 是「从请求进入开始算」的**共享**预算，检索吃掉的
+ * 时间会从后面 LLM 可用时间里扣，整条链路的总墙钟仍 ≤ 285s —— 不触碰 `.com` 的
+ * `maxDuration = 300`，也不触碰 `.cn` nginx 的 `proxy_read_timeout 330s`。
+ * **不要改那个 280_000**：它是唯一的总闸，本文件只负责别在子步骤内部提前自杀。
+ */
+const ARK_BUDGET_MS = 110_000;
 /** 并发度上限（PRD §6.2：≤5） */
 const DEFAULT_MAX_CONCURRENCY = 5;
 /** 重试次数上限（PRD §6.2：≤1，且不延长总预算） */
@@ -163,9 +193,9 @@ export interface WebEvidence {
 
 /** 调用参数（arch §3.5 逐字 + runtime 覆盖口） */
 export interface WebEvidenceOptions {
-  /** 单 query 超时，默认 8000 */
+  /** 单 query 超时。不传时按 provider 取默认：ark ⇒ 110s，第三方 ⇒ 8s（PRD §6.2） */
   timeoutMs?: number;
-  /** 总预算，默认 20000 */
+  /** 总预算。不传时按 provider 取默认：ark ⇒ 110s，第三方 ⇒ 20s（PRD §6.2） */
   budgetMs?: number;
   /** 并发度，默认 5 */
   maxConcurrency?: number;
@@ -501,6 +531,72 @@ export function parseArkOutput(raw: string, contentType: string): { text: string
   return { text: completed || acc, urls: [...urls] };
 }
 
+/** ARK `/responses` 的用量快照（**只读**，不参与任何计费/扣费逻辑） */
+export interface ArkUsageSnapshot {
+  /** `usage.tool_usage.web_search`：本条 query 内部实际打了几次联网搜索 */
+  searchCalls: number;
+  /** `usage.total_tokens`：检索结果灌进上下文后的总 token 消耗 */
+  totalTokens: number;
+}
+
+/** 从任意 `{usage: {...}}` 形状里取用量；缺失/非法一律归 0（**不抛错**） */
+function pickArkUsage(obj: unknown): ArkUsageSnapshot | null {
+  const usage = (obj as { usage?: unknown } | null)?.usage;
+  if (!usage || typeof usage !== "object") return null;
+  const u = usage as { total_tokens?: unknown; tool_usage?: unknown };
+  const toolUsage = (u.tool_usage ?? {}) as { web_search?: unknown };
+  const searchCalls = Number(toolUsage.web_search);
+  const totalTokens = Number(u.total_tokens);
+  return {
+    searchCalls: Number.isFinite(searchCalls) ? Math.max(0, Math.trunc(searchCalls)) : 0,
+    totalTokens: Number.isFinite(totalTokens) ? Math.max(0, Math.trunc(totalTokens)) : 0,
+  };
+}
+
+/**
+ * 从 ARK `/responses` 原始响应里读用量（兼容非流式 JSON 与 SSE 两种形状）。
+ *
+ * 为什么需要：`usage.tool_usage.web_search`（单 query 实测 9~14 次）与
+ * `usage.total_tokens`（单 query 实测 2.4w~4w，检索结果会灌进上下文）过去**完全没有被记录**，
+ * 方舟检索的钱在账上看不见 —— 只能等月底出账单再反推，无法按 query / 按站点归因。
+ *
+ * 注意：这里**只打日志**。不新增 `WebEvidence` 字段/枚举（该类型被前端卡片、PDF、Excel
+ * 导出多处消费，加枚举会波及全线），也不在这里接扣费逻辑（计费属于账务侧，不是检索层的职责）。
+ */
+export function readArkUsage(raw: string, contentType: string): ArkUsageSnapshot {
+  const empty: ArkUsageSnapshot = { searchCalls: 0, totalTokens: 0 };
+  const body = typeof raw === "string" ? raw : "";
+  if (!body) return empty;
+
+  const ct = (contentType || "").toLowerCase();
+  if (ct.includes("application/json") && !body.trimStart().startsWith("data:")) {
+    try {
+      const obj = JSON.parse(body) as { response?: unknown };
+      const snap = pickArkUsage(obj.response ?? obj);
+      if (snap) return snap;
+    } catch {
+      /* 落到 SSE 分支 */
+    }
+  }
+
+  // SSE：`response.completed` 在流尾部，带累计用量 ⇒ 取最后一次命中的快照
+  let found: ArkUsageSnapshot | null = null;
+  for (const line of body.split(/\r?\n/)) {
+    if (!line.startsWith("data:")) continue;
+    const payload = line.slice(5).trim();
+    if (!payload || payload === "[DONE]") continue;
+    let obj: { response?: unknown };
+    try {
+      obj = JSON.parse(payload) as { response?: unknown };
+    } catch {
+      continue;
+    }
+    const snap = pickArkUsage(obj.response ?? obj);
+    if (snap) found = snap;
+  }
+  return found ?? empty;
+}
+
 /** 去重（按 url 唯一；无 url 时退化为 title+snippet 指纹） */
 export function dedupeItems(items: WebEvidenceItem[]): WebEvidenceItem[] {
   const seen = new Set<string>();
@@ -512,6 +608,55 @@ export function dedupeItems(items: WebEvidenceItem[]): WebEvidenceItem[] {
     unique.push(it);
   }
   return unique;
+}
+
+/**
+ * 本站自有主机名集合（`.com` + `.cn` 两站的全部别名，全小写）。
+ *
+ * 为什么从 `@/config/site` 现取而不是在这里再抄一份域名清单：
+ * 域名是配置事实，抄第二份就一定会漂移（换域名时改一处忘另一处）。
+ * `siteConfigMap` 已经是全站唯一的域名真相源。
+ *
+ * ⚠️ 比较必须是 **hostname 精确相等**。本仓铁律：用
+ * `startsWith` / `includes` / 正则前缀判域名，`usedfarmmach.cn.evil.tld`
+ * 这种攻击者可控域名会被当成"自家域名"放行（或反之误杀），
+ * 两边都是漏洞。`new URL().hostname` 已经做完了解析与归一，直接 Set 命中即可。
+ */
+const SELF_HOSTNAMES: ReadonlySet<string> = new Set(
+  [siteConfigMap.com, siteConfigMap.cn]
+    .flatMap((cfg) => [cfg.domains.primary, cfg.domains.canonical, ...cfg.domains.aliases])
+    .map((h) => String(h ?? "").trim().toLowerCase())
+    .filter((h) => h.length > 0)
+);
+
+/**
+ * 剔除「自家站点」证据条目 —— 自引用闭环必须挡在证据层，不能靠事后人工辨别。
+ *
+ * 实测 ARK 检索结果里会出现 `https://usedfarmmach.cn/` 作为来源。后果很具体：
+ * 我们自己的挂牌价被当成「外部市场价」喂回模型，于是模型拿我们的报价去论证我们的报价，
+ * 估值看起来"有外部证据支撑"，实际是自己佐证自己 —— 既污染估价，也污染后续的价格指数。
+ *
+ * 解析失败的 URL **保留**：解析不了不代表它是自家域名，宁可留下一条可疑证据
+ * （下游靠 `status` 与 `note` 表达可信度），也不能因为解析失败静默吞掉真实证据。
+ *
+ * ⚠️ 调用点有两处语义：本函数既用于「收集阶段的最终 items」，也用于
+ * `retrieveWebEvidence` 里**逐条 outcome 的成败判定**（某个 query 只剩自家站点时
+ * 必须降级成 error，否则会变成"status:ok + 空证据"的静默成功）。
+ */
+export function filterSelfReferentialItems(items: WebEvidenceItem[]): WebEvidenceItem[] {
+  const kept: WebEvidenceItem[] = [];
+  for (const it of items) {
+    let hostname: string;
+    try {
+      hostname = new URL(String(it.url ?? "")).hostname.trim().toLowerCase();
+    } catch {
+      kept.push(it); // 解析失败 ⇒ 保留
+      continue;
+    }
+    if (SELF_HOSTNAMES.has(hostname)) continue; // 自家域名 ⇒ 剔除
+    kept.push(it);
+  }
+  return kept;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -672,12 +817,27 @@ async function searchViaArk(
     throw new SearchHttpError(`境内站检索端点非境内域名，已拒绝：${endpoint.host}`, 0);
   }
   const prompt = `${ARK_EVIDENCE_INSTRUCTIONS}\n\n检索问题：${query}`;
+  const startedAt = Date.now();
   const res = await arkWebSearch({
     prompt,
     url: endpoint.url,
     site: env.site,
     timeoutMs,
     signal,
+  });
+  // ── 成本可见化（只打日志，不改任何返回类型）──
+  // 方舟 web_search 的计费口径是「搜索次数 + token」，两个数都藏在这条响应的 `usage` 里：
+  //   `usage.tool_usage.web_search` 实测单 query 9~14 次；
+  //   `usage.total_tokens` 实测单 query 2.4w~4w（检索结果全灌进上下文）。
+  // 不打日志就等于这笔钱在账上不可见，出问题（比如某天搜索次数突增 10 倍）也无从发现。
+  const usage = readArkUsage(res.raw, res.contentType || "");
+  // eslint-disable-next-line no-console
+  console.info("[web-evidence] ark-usage", {
+    query: query.slice(0, 40),
+    site: env.site,
+    searchCalls: usage.searchCalls,
+    tokens: usage.totalTokens,
+    elapsedMs: Date.now() - startedAt,
   });
   const parsed = parseArkOutput(res.raw, res.contentType || "");
   const text = parsed.text || res.text || "";
@@ -941,7 +1101,7 @@ function timeoutEvidence(
  * 流程：provider 白名单 → 缓存 → query 构造 + 出境清洗 → 预算内并发执行 → 四档分档 → `dataSources`。
  *
  * @param input 检索入参（结构层出境闸：无 PII / 无 productId / 无图片）
- * @param opts  预算与缓存参数（默认 8s / 20s / 5 并发 / 1 次重试 / 6h 缓存）
+ * @param opts  预算与缓存参数（默认按 provider：ark ⇒ 110s/110s，第三方 ⇒ 8s/20s；5 并发 / 1 次重试 / 6h 缓存）
  * @returns `ok | partial | timeout | disabled` 四档之一，恒含 1 条 `dataSources`
  */
 export async function retrieveWebEvidence(
@@ -1029,8 +1189,14 @@ export async function retrieveWebEvidence(
     }
 
     // ── 预算内并发执行 ──
-    const timeoutMs = Math.max(1_000, Number(options.timeoutMs ?? DEFAULT_TIMEOUT_MS) || DEFAULT_TIMEOUT_MS);
-    const budgetMs = Math.max(1_000, Number(options.budgetMs ?? DEFAULT_BUDGET_MS) || DEFAULT_BUDGET_MS);
+    // 默认值按 provider 取：ARK 是「模型多轮自主检索」，实测单条 28~92s（见 ARK_TIMEOUT_MS
+    // 注释），8s/20s 会让它恒定全超时；第三方纯搜索 API 仍是 PRD §6.2 的 8s/20s。
+    // `options.timeoutMs` / `options.budgetMs` 显式传入时**仍然优先**（测试与调用方覆盖口径不变）。
+    const isArk = provider === "ark";
+    const defaultTimeoutMs = isArk ? ARK_TIMEOUT_MS : DEFAULT_TIMEOUT_MS;
+    const defaultBudgetMs = isArk ? ARK_BUDGET_MS : DEFAULT_BUDGET_MS;
+    const timeoutMs = Math.max(1_000, Number(options.timeoutMs ?? defaultTimeoutMs) || defaultTimeoutMs);
+    const budgetMs = Math.max(1_000, Number(options.budgetMs ?? defaultBudgetMs) || defaultBudgetMs);
     const maxConcurrency = Math.max(
       1,
       Math.min(Number(options.maxConcurrency ?? DEFAULT_MAX_CONCURRENCY) || DEFAULT_MAX_CONCURRENCY, DEFAULT_MAX_CONCURRENCY)
@@ -1044,7 +1210,29 @@ export async function retrieveWebEvidence(
       deadline: startedAt + budgetMs,
       maxAttempts: 1 + retry,
     };
-    const outcomes = await runQueries(queries, ctx, maxConcurrency);
+    const rawOutcomes = await runQueries(queries, ctx, maxConcurrency);
+
+    // ⚠️ 自引用过滤**必须在「判成败」这一层做**，不能只在收集 items 时做。
+    //
+    // 漏洞形状（2026-11 团队评审发现）：`runSingleQuery` 里 `usable.length === 0 ⇒ status:"error"`
+    // 的判定发生在自引用过滤**之前**。若某条 query 命中的**全部**是自家站点 URL，
+    // 那时 items 非空 ⇒ 先被判成 `status:"ok"`；随后在收集阶段被
+    // `filterSelfReferentialItems()` 全部剔掉 ⇒ 得到 `status:"ok"` 但 `items: []`、`urls: []`。
+    // 后果是**静默成功**：`webStatus === "ok"` 而证据为空 ⇒ 下游
+    // `src/lib/sales-strategy/derive.ts:980` 的「本轮未接入外部检索」降级提示不会追加，
+    // 报告带着空的「数据来源」当成"有外部证据支撑"正常出稿。
+    // 这与本仓「truncation 不得当成功」是同一类铁律违规 ⇒ 必须把这类 query 降级为 error。
+    //
+    // 注意：下面**所有**引用 `outcomes` 的地方（successQueries / errorDetail / allTimeout /
+    // timeoutEvidence 分支）都改用过滤后的版本，保证 `status` 与 `items` 永远自洽。
+    const outcomes: QueryOutcome[] = rawOutcomes.map((o): QueryOutcome => {
+      if (o.status !== "ok") return o;
+      const kept = filterSelfReferentialItems(o.items);
+      if (kept.length === 0) {
+        return { ...o, status: "error", items: [], error: "仅命中自家站点，已剔除" };
+      }
+      return { ...o, items: kept };
+    });
 
     const items = dedupeItems(outcomes.flatMap((o) => o.items));
     const urls: string[] = [];

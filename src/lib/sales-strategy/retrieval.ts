@@ -666,7 +666,9 @@ function deriveYearRange(year: number | null | undefined): string | undefined {
  *
  * T07 起新增三块并发查询（`webEvidence` / `rawListings` / `benchmarkDetail`）：
  *   - 全部走 `Promise.all` 并发，不串行叠加延迟；
- *   - `retrieveWebEvidence()` 永不抛错且自带 8s/20s 预算 ⇒ 最坏情况慢 20s，但绝不阻断；
+ *   - `retrieveWebEvidence()` 永不抛错；预算按 provider 取默认（ark ⇒ 110s/110s，
+ *     第三方 ⇒ 8s/20s）⇒ 最坏情况慢 110s，但绝不阻断，且这段时间算在路由的
+ *     `LLM_TOTAL_BUDGET_MS`(280s) 共享预算里（不是额外叠加，见 route.ts 的注释）；
  *   - 其余新查询失败一律返回空数组 / undefined（沿用既有降级风格）。
  */
 export async function retrieveStrategyContext(input: StrategyRetrievalInput): Promise<StrategyContext> {
