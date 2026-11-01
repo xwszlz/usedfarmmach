@@ -12,6 +12,12 @@
  *   不是被抽取出来的中间结构，所以组件内部的渲染代码一行都不用改
  *   （满足「不许改变任何现有渲染行为」的硬约束）。
  *
+ * 语种覆盖的**事实**（与 specification-table.tsx 的内联 LABELS 保持一致）：
+ *   - 已收录译文：zh / en / ru / es / pt / fr / ar / hi，共 8 个语种；
+ *   - 未收录、走英文回退：de / ja / ko / vi，共 4 个语种。
+ *   因此本文件里「已收录语种」与「回退英文语种」必须用**两条各自独立的用例**，
+ *   不要把已收录语种错当成回退英文来断言（这会随任一分支补充译文而莫名变红）。
+ *
  * 运行：npx vitest run src/components/product/__tests__/specification-table-order.test.ts
  */
 import { describe, expect, it } from "vitest";
@@ -104,8 +110,25 @@ describe("SpecificationTable 行顺序：品牌 → 品类 → 型号", () => {
     expect(rows.map((r) => r.label).slice(0, 3)).toEqual(["Бренд", "Категория", "Модель"]);
   });
 
-  it("未收录的语种回退到英文标签，顺序不变（9 个语种全部覆盖）", () => {
-    for (const locale of ["es", "pt", "fr", "ar", "hi", "de", "ja", "ko", "vi"]) {
+  it("已收录的 5 个新增语种：标签用各自语言，顺序仍是 品牌 → 品类 → 型号", () => {
+    // 这 5 个语种已在 specification-table.tsx 的内联 LABELS 里补齐译文，
+    // 「回退英文」的链路对它们不再生效。本用例只负责守「行序」与「译文正确」，
+    // 不负责守回退行为（回退行为由下一条用例守）。
+    const EXPECTED: Record<string, [string, string, string]> = {
+      es: ["Marca", "Categoría", "Modelo"],
+      pt: ["Marca", "Categoria", "Modelo"],
+      fr: ["Marque", "Catégorie", "Modèle"],
+      ar: ["العلامة التجارية", "الفئة", "الطراز"],
+      hi: ["ब्रांड", "श्रेणी", "मॉडल"],
+    };
+    for (const [locale, expected] of Object.entries(EXPECTED)) {
+      const rows = renderRows(locale);
+      expect(rows.map((r) => r.label).slice(0, 3), `locale=${locale}`).toEqual(expected);
+    }
+  });
+
+  it("未收录的 4 个语种仍回退英文：de / ja / ko / vi 标签为 Brand / Category / Model", () => {
+    for (const locale of ["de", "ja", "ko", "vi"]) {
       const rows = renderRows(locale);
       expect(rows.map((r) => r.label).slice(0, 3), `locale=${locale}`).toEqual([
         "Brand",
