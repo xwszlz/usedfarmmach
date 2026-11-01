@@ -21,7 +21,8 @@ export async function fetchProductContext(
     where: { id: productId },
     include: {
       brand: { select: { nameEn: true, nameZh: true } },
-      images: { select: { url: true }, orderBy: { sortOrder: "asc" }, take: 3 },
+      // 二级键 id 必填：(productId, sortOrder) 全库 116 组并列，缺稳定键时 ISR 重生成会换图。
+      images: { select: { url: true }, orderBy: [{ sortOrder: "asc" as const }, { id: "asc" as const }], take: 3 },
       internationalPrices: {
         orderBy: { sourceDate: "desc" },
         take: 2,
@@ -70,7 +71,8 @@ export async function fetchArbitrageTop3(): Promise<ArbitrageProductContext[]> {
       product: {
         include: {
           brand: { select: { nameEn: true } },
-          images: { select: { url: true }, orderBy: { sortOrder: "asc" }, take: 1 },
+          // 同：id 二级键
+          images: { select: { url: true }, orderBy: [{ sortOrder: "asc" as const }, { id: "asc" as const }], take: 1 },
         },
       },
     },

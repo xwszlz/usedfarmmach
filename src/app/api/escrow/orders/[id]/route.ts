@@ -27,7 +27,8 @@ export async function GET(
             id: true,
             modelName: true,
             priceCny: true,
-            images: { take: 3, orderBy: { sortOrder: "asc" } },
+            // 二级键 id 必填：(productId, sortOrder) 全库 116 组并列，缺稳定键时 ISR 重生成会换图。
+            images: { take: 3, orderBy: [{ sortOrder: "asc" as const }, { id: "asc" as const }] },
           },
         },
         part: {

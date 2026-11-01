@@ -426,7 +426,8 @@ export async function getRawListing(
       where: { id: r.productId },
       select: {
         id: true, status: true, brandId: true, categoryId: true, modelName: true, priceCny: true,
-        images: { select: { url: true }, orderBy: { sortOrder: "asc" } },
+        // 二级键 id 必填：(productId, sortOrder) 全库 116 组并列，缺稳定键时 ISR 重生成会换图。
+        images: { select: { url: true }, orderBy: [{ sortOrder: "asc" as const }, { id: "asc" as const }] },
       },
     });
   }

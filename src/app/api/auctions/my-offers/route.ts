@@ -32,7 +32,8 @@ export async function GET(request: NextRequest) {
                 modelName: true,
                 year: true,
                 brand: { select: { nameZh: true, nameEn: true } },
-                images: { orderBy: { sortOrder: "asc" as const }, take: 1 },
+                // 二级键 id 必填：(productId, sortOrder) 全库 116 组并列，缺稳定键时 ISR 重生成会换图。
+                images: { orderBy: [{ sortOrder: "asc" as const }, { id: "asc" as const }], take: 1 },
               },
             },
             seller: {
@@ -57,7 +58,8 @@ export async function GET(request: NextRequest) {
                 modelName: true,
                 year: true,
                 brand: { select: { nameZh: true, nameEn: true } },
-                images: { orderBy: { sortOrder: "asc" as const }, take: 1 },
+                // 同：id 二级键
+                images: { orderBy: [{ sortOrder: "asc" as const }, { id: "asc" as const }], take: 1 },
               },
             },
             seller: {
@@ -80,7 +82,8 @@ export async function GET(request: NextRequest) {
             modelName: true,
             year: true,
             brand: { select: { nameZh: true, nameEn: true } },
-            images: { orderBy: { sortOrder: "asc" as const }, take: 1 },
+            // 同：id 二级键
+            images: { orderBy: [{ sortOrder: "asc" as const }, { id: "asc" as const }], take: 1 },
           },
         },
         seller: {

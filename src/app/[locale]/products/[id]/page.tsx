@@ -50,7 +50,8 @@ export async function generateMetadata({
       year: true,
       brand: { select: { nameZh: true, nameEn: true, nameRu: true, nameEs: true, namePt: true, nameAr: true, nameFr: true, nameHi: true } },
       category: { select: { nameZh: true, nameEn: true, nameRu: true, nameEs: true, namePt: true, nameAr: true, nameFr: true, nameHi: true } },
-      images: { select: { url: true }, orderBy: { sortOrder: "asc" }, take: 1 },
+      // 二级键 id 必填：(productId, sortOrder) 全库 116 组并列，缺稳定键时 ISR 重生成会换图。
+      images: { select: { url: true }, orderBy: [{ sortOrder: "asc" as const }, { id: "asc" as const }], take: 1 },
       descriptionZh: true,
       descriptionEn: true,
     },
@@ -147,7 +148,8 @@ export default async function ProductDetailPage({
     include: {
       brand: true,
       category: true,
-      images: { orderBy: { sortOrder: "asc" } },
+      // 同：id 二级键
+      images: { orderBy: [{ sortOrder: "asc" as const }, { id: "asc" as const }] },
       videos: { orderBy: { sortOrder: "asc" } },
       internationalPrices: { orderBy: { sourceDate: "desc" } },
       seller: { select: { id: true, companyName: true, country: true } },
