@@ -15,9 +15,10 @@ import { generatePageMetadata } from "@/lib/seo-metadata";
 import { BreadcrumbStructuredData, ItemListStructuredData } from "@/components/seo/structured-data";
 import { getImageUrl } from "@/lib/image-url";
 import {
+  HOME_CARD_COUNT,
   HOME_PRODUCT_ORDER_BY,
   HOME_PRODUCT_TAKE,
-  splitHomeProducts,
+  pickHomeCards,
 } from "@/lib/home/hot-products";
 import type { Product } from "@/types";
 
@@ -73,8 +74,11 @@ async function fetchLatestArticles(limit: number = 3): Promise<LatestArticle[]> 
 const baseInclude = {
   brand: true,
   category: true,
-  // 给前端的首图 404 降级留候选：取前 3 张，product-card 会依次降级
-  images: { orderBy: { sortOrder: "asc" as const }, take: 3 },
+  // 给前端的首图 404 降级留候选：取 5 张（去重后仍能剩 3 张，部分产品 sortOrder 1/2、
+  // 2/3 是同一 URL），product-card 会依次降级。
+  // 二级键 id 必填：全库有 116 组 (productId, sortOrder) 并列，
+  // 缺二级键时 ISR 每次重生成可能换到另一批候选，表现为「刷新一次图就变」。
+  images: { orderBy: [{ sortOrder: "asc" as const }, { id: "asc" as const }], take: 5 },
   internationalPrices: { orderBy: { sourceDate: "desc" as const }, take: 1 },
   seller: { select: { id: true, companyName: true, country: true } },
   // 关联活跃询价
@@ -92,6 +96,9 @@ const baseInclude = {
  *
  * 排序完全动态（老板 2026-11-01 拍板）：viewCount DESC → createdAt DESC → id DESC，
  * 不接时间衰减、不随机轮换、不接 promotedUntil。详见 src/lib/home/hot-products.ts。
+ *
+ * 首页没有头条位（HeroSection 在 aadeb32 已从首页移除），四卡片就是浏览量前 4 台，
+ * take 与卡片数相等，不跳过头名。
  */
 async function fetchHomeProducts() {
   try {
@@ -112,13 +119,13 @@ async function fetchHomeProducts() {
     }) as Product;
 
     const rankedProducts = rows.map(toProduct);
-    const { top, hot } = splitHomeProducts(rankedProducts);
+    const hotProducts = pickHomeCards(rankedProducts);
 
-    return { topProduct: top, hotProducts: hot, rankedProducts, error: null };
+    return { hotProducts, rankedProducts, error: null };
   } catch (err) {
     console.error("[HomePage] 产品数据查询失败（返回空数据以避免 500）:", err);
     // 返回空数据而不是抛出异常，防止 ISR 缓存错误响应
-    return { topProduct: null, hotProducts: [], rankedProducts: [], error: String(err) };
+    return { hotProducts: [], rankedProducts: [], error: String(err) };
   }
 }
 
@@ -154,7 +161,7 @@ export default async function HomePage({
   const { locale } = await params;
 
   // 安全获取产品数据（带容错）
-  const { topProduct, hotProducts, rankedProducts } = await fetchHomeProducts();
+  const { hotProducts, rankedProducts } = await fetchHomeProducts();
   const initialArticles = await fetchLatestArticles(3);
   const expoCounts = await fetchExpoPavilionCounts();
 
@@ -168,7 +175,7 @@ export default async function HomePage({
       <ItemListStructuredData
         locale={locale}
         listName={locale === "zh" ? "热门设备" : "Hot Equipment"}
-        items={[...rankedProducts.slice(0, 5)].filter(Boolean).map((p: any) => ({
+        items={[...rankedProducts.slice(0, HOME_CARD_COUNT)].filter(Boolean).map((p: any) => ({
           id: p.id,
           name: (locale === "zh" ? p.brand?.nameZh : p.brand?.nameEn) + " " + p.modelName,
           url: `${BASE_URL}/${locale}/products/${p.id}`,
