@@ -8,6 +8,12 @@ import { isCnSite } from "@/config/site";
 // 该模块只导出常量、零运行时依赖，可以安全地从 `"use client"` 组件 import；
 // ⚠️ 一旦有人往该模块里加入 `node:*` 依赖，`next build` 会立刻失败（tsc/vitest 拦不住）。
 import { MAX_DEEP_ANALYSIS_IMAGES } from "@/lib/ai/deep-analysis-limits";
+// 超时 signal 用 `AbortController` + `setTimeout` 手工构造。
+// ⚠️ 不要改回 `AbortSignal` 自带的 `timeout()` 静态方法：那是 2022 年才落地的新 API，
+// 老浏览器 / 国产双核浏览器旧内核里它是 `undefined`，调用直接抛 `TypeError`，
+// 用户点了按钮只会看到红字（2026-11 线上 P0 事故）。
+// 客户端代码里禁止出现该 API，实现细节与原因见 `@/lib/net/abort-timeout`。
+import { createTimeoutSignal, type TimeoutSignal } from "@/lib/net/abort-timeout";
 
 /**
  * 客户端请求超时（300s = 5 分钟）。
@@ -80,7 +86,14 @@ export default function DeepAnalysisCard({
     setTruncated(false);
     setBudgetExhausted(false);
 
+    /**
+     * 超时 signal 在 `try` 外声明：`fetch` 之前就要建好（要传给 signal），
+     * 而 `finally` 里必须能拿到它调用 `dispose()` 取消定时器。
+     */
+    let timeoutSignal: TimeoutSignal | null = null;
+
     try {
+      timeoutSignal = createTimeoutSignal(DEEP_ANALYSIS_CLIENT_TIMEOUT_MS);
       const res = await fetch("/api/agents/seller-helper/deep-analysis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -91,8 +104,11 @@ export default function DeepAnalysisCard({
          * 浏览器侧若裸 fetch、不设超时，一旦反代/容器出问题，用户会看到按钮无限转圈；
          * 更糟的是各浏览器的默认超时（有的长达数分钟）会把「服务端已经失败」掩盖成「还在算」。
          * 取 300s：> 服务端 285s 预算（不抢在服务端之前掐断），< 反代 330s。
+         *
+         * 用 `createTimeoutSignal()` 而非 `AbortSignal` 自带的 `timeout()` 静态方法：
+         * 后者在 Chrome 103 / Safari 16 / Firefox 100 之前不存在，老浏览器里调用即 `TypeError`。
          */
-        signal: AbortSignal.timeout(DEEP_ANALYSIS_CLIENT_TIMEOUT_MS),
+        signal: timeoutSignal.signal,
         body: JSON.stringify({
           imageUrls: selectedImages,
           videoUrls: videoUrls.length > 0 ? videoUrls : undefined,
@@ -150,8 +166,10 @@ export default function DeepAnalysisCard({
     } catch (err: any) {
       /**
        * 超时单独一条文案（不要掉进「AI服务返回异常」的笼统分支）：
-       * `AbortSignal.timeout()` 在浏览器/Node 里 reject 的名字是 `TimeoutError`，
-       * 手动 `controller.abort()` 是 `AbortError`，两者都要接住。
+       * 现在超时由 `createTimeoutSignal()` 里的手工 `controller.abort()` 触发，
+       * 抛出的 `err.name` 是 `AbortError`；
+       * 同时保留 `TimeoutError` 判断 —— 兼容旧浏览器的 polyfill、以及将来若切回
+       * `AbortSignal` 自带的 `timeout()` 时的语义。两者命中同一条「分析超时」文案。
        */
       const errName = String(err?.name || "");
       if (errName === "TimeoutError" || errName === "AbortError") {
@@ -165,6 +183,8 @@ export default function DeepAnalysisCard({
         setError(err.message || (locale === "zh" ? "深度分析失败，请稍后重试" : "Analysis failed, please try again"));
       }
     } finally {
+      // 请求已结束（成功 / 失败 / 超时），取消定时器，避免组件卸载后仍挂着 300s 的 setTimeout。
+      timeoutSignal?.dispose();
       setAnalyzing(false);
     }
   };
