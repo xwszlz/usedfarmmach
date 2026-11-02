@@ -52,6 +52,29 @@ export interface AiCostBreakdown {
   cnyCost?: number;
   /** CNY→本币 汇率：消耗侧全球统一人民币口径，恒为 undefined（字段保留供读旧账本） */
   fxRateUsed?: number;
+
+  // ── 2026-11-01 检索成本并入（**全部 optional**，不传新参数时这些字段根本不出现）──
+
+  /** 检索侧 input token 合计（已按 input 单价并入 `cnyCost`，是它的一部分，不是额外） */
+  searchInputTokens?: number;
+  /** 检索侧 output token 合计（已按 output 单价并入 `cnyCost`） */
+  searchOutputTokens?: number;
+  /** 检索 token 折算的 CNY —— `cnyCost` 的**子集**，不是额外加在它上面 */
+  searchCostCny?: number;
+  /** 任一条检索用量为经验值 ⇒ true（对账时筛「哪些是估的」） */
+  searchEstimated?: boolean;
+  /** 检索整体命中缓存 ⇒ true（此时检索 token 为 0 —— 成本确实没发生） */
+  searchCached?: boolean;
+  /** `usage.tool_usage.web_search` 合计（只留痕，见决策 1） */
+  searchCalls?: number;
+  /** `searchCalls × ARK_WEB_SEARCH_UNIT_PRICE_CNY`：平台侧真实支出，**仅供对账** */
+  searchCallCostCny?: number;
+  /** **恒 false** —— 检索按次费用由平台吸收，账本上「看得见没收」的显式留痕（决策 1） */
+  searchCallChargedToUser?: boolean;
+  /** 失败/超时的检索尝试条数（该部分用量取不到，按 0 记） */
+  searchFailedAttempts?: number;
+  /** 任一 query 的检索次数超过软上限 ⇒ true（决策 3 的事后观测出口） */
+  searchOverLimit?: boolean;
 }
 
 /**
@@ -99,6 +122,23 @@ export const CREDITS_PER_UNIT = 100;
 export const AI_COST_MULTIPLIER = 10;
 
 /**
+ * 火山方舟「联网内容插件 · 联网资源」官方单价：**4 元 / 千次 = ¥0.004 一次**。
+ *
+ * 🔴 老板决策 1：这笔按次费用**由平台吸收**，不转嫁给用户 ⇒ 本常量只用于折算
+ *    `searchCallCostCny`（对账留痕），**绝不**进入 `cnyCost` / `points` 的任何计算。
+ *    （另：官方有每月 2 万次免费额度，见下。）
+ *
+ * ⚠️ 这是火山方舟**公示价**，不是商业机密；本文件的机密只有 `AI_COST_MULTIPLIER`。
+ */
+export const ARK_WEB_SEARCH_UNIT_PRICE_CNY = 0.004;
+
+/**
+ * 火山方舟「联网资源」官方月度免费额度（2 万次/月）。
+ * 仅作平台成本核算与对账留痕，**不参与任何计价分支**（决策 1）。
+ */
+export const ARK_WEB_SEARCH_MONTHLY_FREE_CALLS = 20_000;
+
+/**
  * 依据模型单价与 token 用量计算实际成本与应扣积分（成本加成口径）。
  *
  * 2026-10-28 运营决策：AI 消耗计费全球统一按人民币口径折算（1 元 = 100 积分，
@@ -124,14 +164,60 @@ export function computeAiCost(params: {
    *   汇率仍用于充值侧折算（见 fx.ts / grant.ts）。
    */
   rd?: number;
+
+  // ── 2026-11-01 新增（**additive**：不传时行为与改前逐位一致）──
+
+  /**
+   * 追加计入成本的 input token（火山方舟联网检索等非主链路用量），按当前模型 input 单价计价。
+   *
+   * 背景：检索的真实成本（实测单份 ≈ ¥0.9）过去完全没进账 —— 只按主 LLM 的
+   * prompt/completion token 计费 ⇒ 单份漏收约 67%。本参数把它并进来。
+   */
+  extraInputTokens?: number;
+  /** 追加计入成本的 output token（同上），按当前模型 output 单价计价 */
+  extraOutputTokens?: number;
+  /**
+   * 按次计量项（火山方舟联网检索次数）。
+   *
+   * 🔴 老板决策 1：**只留痕，绝不并入 `cnyCost` / `points`** —— 按次费用由平台吸收。
+   *    本函数只把它折算成 `searchCallCostCny` 写进 breakdown。
+   */
+  metered?: {
+    /** 计量来源，如 `"ark_web_search"` */
+    kind: string;
+    /** 次数（如 `usage.tool_usage.web_search` 合计） */
+    calls: number;
+    /** 单次单价（CNY），传 `ARK_WEB_SEARCH_UNIT_PRICE_CNY` */
+    unitPriceCny: number;
+  };
 }): AiCostBreakdown {
   const p: ModelPrice = MODEL_PRICING[params.model] || FALLBACK_PRICING;
   const inputTokens = Math.max(0, Math.floor(params.inputTokens || 0));
   const outputTokens = Math.max(0, Math.floor(params.outputTokens || 0));
 
+  // 检索侧追加用量（additive：不传 ⇒ 恒为 0 ⇒ 下面所有式子退化成改前的原式）
+  const extraInputTokens = Math.max(0, Math.floor(params.extraInputTokens || 0));
+  const extraOutputTokens = Math.max(0, Math.floor(params.extraOutputTokens || 0));
+  const billableInputTokens = inputTokens + extraInputTokens;
+  const billableOutputTokens = outputTokens + extraOutputTokens;
+
   // 底价统一为豆包 CNY 成本（5 路由统一国行火山方舟豆包，不再有 USD 计价模型）
+  // ⚠️ 仅把两个「因子」换成含 extra 的合成值；单价系数与加法结构一字未动。
   const cnyCost =
-    (inputTokens / 1000) * p.inPrice + (outputTokens / 1000) * p.outPrice;
+    (billableInputTokens / 1000) * p.inPrice + (billableOutputTokens / 1000) * p.outPrice;
+
+  // 检索 token 折算的 CNY —— 是 `cnyCost` 的**子集**（对账用：检索占比多少一眼可见）。
+  // 🔴 决策 2：`cached_tokens` 维持全价当利润缓冲 ⇒ 这里**没有任何** cached 计价分支。
+  const searchCostCny =
+    (extraInputTokens / 1000) * p.inPrice + (extraOutputTokens / 1000) * p.outPrice;
+
+  // 检索按次费用：平台侧真实支出，**只留痕**（决策 1）
+  const meteredCalls = Math.max(0, Math.floor(params.metered?.calls || 0));
+  const meteredUnitPrice =
+    typeof params.metered?.unitPriceCny === "number" && Number.isFinite(params.metered.unitPriceCny)
+      ? Math.max(0, params.metered.unitPriceCny)
+      : 0;
+  const meteredCostCny = meteredCalls * meteredUnitPrice;
 
   // ── 全球统一人民币口径（2026-10-28 运营决策）──
   // 不再做「注册国 → 币种 → 计价单位 + 汇率」的分支：三个量恒为 CNY / 1 / 1，
@@ -164,6 +250,19 @@ export function computeAiCost(params: {
     cnyCost: Math.round(cnyCost * 1000) / 1000,
     // 全球统一人民币口径 ⇒ 无本币折算；字段保留以便读旧账本时不报错
     fxRateUsed: undefined,
+    // ── 检索明细：**仅在真的传了检索用量时才出现** ──
+    // 不传新参数的 6 个既有调用方，其 breakdown JSON 与改前逐字节一致（additive 回归锁）。
+    ...(extraInputTokens > 0 || extraOutputTokens > 0 || params.metered
+      ? {
+          searchInputTokens: extraInputTokens,
+          searchOutputTokens: extraOutputTokens,
+          searchCostCny: Math.round(searchCostCny * 1000) / 1000,
+          searchCalls: meteredCalls,
+          searchCallCostCny: Math.round(meteredCostCny * 1000) / 1000,
+          // 决策 1 的显式留痕：账本上一眼看出「这笔钱发生了，但没收用户的」
+          searchCallChargedToUser: false,
+        }
+      : {}),
   };
 }
 

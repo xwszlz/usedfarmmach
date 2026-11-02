@@ -13,6 +13,13 @@
  *   - 处理链路结尾必须 drainUsage()，避免模块级数组跨请求串账。
  *   - 若 provider 未返回 usage：由调用方用 ESTIMATED_TOKENS 兜底并标 estimated=true，
  *     breakdown 里能一眼看出"这一笔是估的还是实测的"。
+ *
+ * 🔴 2026-11-01 补充：**检索用量不要用本文件的 `recordUsage()`**。
+ *    本归集器的 `drainUsage()` 被 `valuation` / `recognize` / `internal-products`
+ *    三条链路消费，而 `sales-strategy` **从不调用** `drainUsage()` ——
+ *    检索用量一旦记进来就会漂移到**下一个** valuation / recognize 请求上被 drain 走
+ *    ⇒ **A 用户花的钱算到 B 用户头上**（跨链路串账）。
+ *    检索用量请走 `search-usage-collector.ts`（AsyncLocalStorage 请求作用域 + 独立桶）。
  */
 export interface UsageRecord {
   /** 必须与 src/lib/credits/spend.ts 的 MODEL_PRICING 键一致 */

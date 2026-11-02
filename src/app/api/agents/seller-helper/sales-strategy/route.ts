@@ -31,8 +31,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { chatCompletionDoubao, getArkCircuitState, getArkModelId } from "@/lib/ai/ark-client";
-import { computeAiCost, deductCredits } from "@/lib/credits/spend";
+import {
+  ARK_WEB_SEARCH_UNIT_PRICE_CNY,
+  computeAiCost,
+  deductCredits,
+} from "@/lib/credits/spend";
 import { getAiCostGuardrail } from "@/lib/credits/config";
+import {
+  drainWebSearchUsage,
+  runWithSearchBillingScope,
+  summarizeWebSearchUsage,
+  type SearchUsageSummary,
+} from "@/lib/credits/search-usage-collector";
 import { maskPhone, maskEmail } from "@/lib/pii";
 import {
   retrieveStrategyContext,
@@ -108,6 +118,11 @@ const SALES_STRATEGY_ESTIMATED_INPUT_TOKENS = 4000;
  *
  * ⚠️ 这是**策略专属**规则，故放在本路由而非 `spend.ts`（那是全站共用计费层）。
  * ⚠️ 泄露铁律：本数值不得出现在 API 响应体里（`__tests__/route.test.ts` 有断言守着）。
+ *
+ * 2026-11-01 检索 token 并入后本下限的语义变了：常态请求（实测 ≈1.7k 积分）**永不触发**它，
+ * 它只在「检索命中缓存 + LLM 输出很短」（≈160 积分）这一个真实场景里兜底。
+ * 之所以不跟着上调到常态量级：那等于给"缓存命中"的用户直接涨价十倍，
+ * 而那次请求平台的真实成本只有两毛钱 —— 属定价决策，不在「口径统一」范围内。
  */
 const SALES_STRATEGY_MIN_POINTS = 250;
 
@@ -168,6 +183,15 @@ const LLM_CONTINUE_MAX_ROUNDS = 2;
 const LLM_CONTINUE_MIN_REMAINING_MS = 15_000;
 
 /**
+ * 护栏软告警比例：`finalPoints > guardrail × 本值` 时打
+ * `console.warn("[SalesStrategy] cost-near-guardrail")`，**但不熔断**。
+ *
+ * 熔断仍严格按 `finalPoints > guardrail`。本值只是让运维在撞线之前看到趋势
+ * （2026-11-01 检索 token 并入后，极端请求已能从常态的 3 倍余量缩到 1.2 倍）。
+ */
+const GUARDRAIL_WARN_RATIO = 0.6;
+
+/**
  * 截断续写指令（照 `deep-analysis` 的 `DEEP_ANALYSIS_CONTINUE_PROMPT` 思路，但目标不同）。
  *
  * 深度分析续写的是 **Markdown 正文**，本路由续写的是 **JSON**：
@@ -204,6 +228,8 @@ interface WebEvidenceLite {
   note?: string;
   totalQueries?: number;
   elapsedMs?: number;
+  /** true = 检索整体命中缓存 ⇒ 本次**没有**发生检索用量（成本确实没发生，不计费） */
+  cached?: boolean;
 }
 
 /**
@@ -277,7 +303,14 @@ function currentPeriodStart(): Date {
   return d;
 }
 
-export async function POST(request: NextRequest) {
+/**
+ * 路由主体（检索 + LLM + 扣费）。
+ *
+ * 之所以从 `POST` 里拆出来：`POST` 只负责把它包进 `runWithSearchBillingScope()`
+ * （检索计费的请求作用域），这样作用域能覆盖**整条链路**，
+ * 而函数体本身不用整体缩进一层（diff 可读、review 不被噪音淹没）。
+ */
+async function handlePost(request: NextRequest): Promise<NextResponse> {
   /**
    * 请求入口时间戳：LLM 总预算从这里起算（含检索耗时），
    * 保证「检索 + LLM + 扣费」的总墙钟时间不超过 `LLM_TOTAL_BUDGET_MS < maxDuration`。
@@ -346,25 +379,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ── 检索上下文（内部实时 + 外部快照）──
-    const ctx: StrategyContext = await retrieveStrategyContext({
-      productId: body.productId,
-      brandName: body.brandName,
-      modelName: body.modelName,
-      categoryName: body.categoryName,
-      year: typeof body.year === "number" ? body.year : undefined,
-      location: body.location,
-      isChineseBrand: body.isChineseBrand,
-    });
-
-    const finalBrand = ctx.product?.brandName || body.brandName || "";
-
     // ── 模型 ID 提前解析：预检与扣费都要拿它查价格表，必须共用同一个变量（勿各写各的）──
     const model = getArkModelId();
 
-    // 软门槛：余额不足（按成本加成口径预估）直接 402，避免浪费 LLM 调用。
+    // ══════════════════════════════════════════════════════════════════════════════
+    // ① 首次余额预检 —— **必须在检索之前**
+    // ══════════════════════════════════════════════════════════════════════════════
+    // 🔴 2026-11-01 修复（最严重的一条）：本预检原本排在 `retrieveStrategyContext()` **之后**，
+    //    于是余额为 0 的用户点一次，平台照样先真金白银打 5 条 ARK 联网检索
+    //    （实测 ≈¥0.9/份，钱由平台承担），然后才返回 402 —— 预检根本挡不住最大的那笔成本。
+    //    预检只依赖 `model` 与 `user.credits`（**不依赖 `ctx`**）⇒ 可安全上移。
+    //
     // 门槛取 max(预估成本, 单次最低消费)：否则余额落在 [预估成本, 最低消费) 区间的用户会
     // 先通过预检、白等 80 秒，再在扣费环节被 402 拦下 —— 那正是本预检要消灭的双输场景。
+    //
+    // ⚠️ 口径铁律（沿用 `SALES_STRATEGY_ESTIMATED_TOKENS` 的既定原则）：预检用**期望值**
+    //    （实测中位数），**不用** `maxTokens` 上限 —— 按上限预检会把大量余额够用的
+    //    正常用户挡在门外。检索那部分的真实用量由下面的「二次预检」兜住。
     const estCost = computeAiCost({
       model,
       inputTokens: SALES_STRATEGY_ESTIMATED_INPUT_TOKENS,
@@ -387,6 +418,75 @@ export async function POST(request: NextRequest) {
         { status: 402 }
       );
     }
+
+    // ── 检索上下文（内部实时 + 外部快照）──
+    // ⚠️ 检索期间产生的 ARK 用量由 `search-usage-collector` 在请求作用域内归集
+    //    （见文件底部 `runWithSearchBillingScope` 包装），这里不需要、也不该拿到任何用量参数。
+    const ctx: StrategyContext = await retrieveStrategyContext({
+      productId: body.productId,
+      brandName: body.brandName,
+      modelName: body.modelName,
+      categoryName: body.categoryName,
+      year: typeof body.year === "number" ? body.year : undefined,
+      location: body.location,
+      isChineseBrand: body.isChineseBrand,
+    });
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // ② 二次预检 —— 用**真实**检索用量 + 主 LLM 估算，在花钱更多的 LLM 之前再判一次
+    // ══════════════════════════════════════════════════════════════════════════════
+    // 为什么必须有这一次：首次预检只有 ≈250 积分的门槛，而检索的真实成本 ≈¥0.9（≈900 积分）。
+    // 没有二次预检 ⇒ 「预检通过 → 检索花掉大钱 → 生成完 → 扣费时余额不足」，
+    // 用户白等 3 分钟拿到 402，平台白烧一次检索 + 一次 LLM。加上它只损失检索的钱。
+    //
+    // ⚠️ `drainWebSearchUsage()` 是**唯一消费点**：取完即清空（幂等），
+    //    所以下面扣费时必须复用 `searchNow`，**绝不能**再 drain 一次（第二次只会拿到空数组）。
+    const searchNow: SearchUsageSummary = summarizeWebSearchUsage(drainWebSearchUsage());
+    const estNowCost = computeAiCost({
+      model,
+      inputTokens: SALES_STRATEGY_ESTIMATED_INPUT_TOKENS,
+      outputTokens: SALES_STRATEGY_ESTIMATED_TOKENS,
+      extraInputTokens: searchNow.inputTokens,
+      extraOutputTokens: searchNow.outputTokens,
+      metered: {
+        kind: "ark_web_search",
+        calls: searchNow.searchCalls,
+        unitPriceCny: ARK_WEB_SEARCH_UNIT_PRICE_CNY,
+      },
+    });
+    const requiredNowPoints = Math.max(estNowCost.points, SALES_STRATEGY_MIN_POINTS);
+    if (user.credits < requiredNowPoints) {
+      // 可观测性：走到这里说明平台已经为这次请求付了检索的钱（用户一分没付）。
+      // 这个计数是「预检门槛是否该上调」的决策依据 —— 不能静默。
+      // eslint-disable-next-line no-console
+      console.warn("[SalesStrategy] insufficient-after-search", {
+        userId: user.id,
+        credits: user.credits,
+        requiredNowPoints,
+        searchInputTokens: searchNow.inputTokens,
+        searchOutputTokens: searchNow.outputTokens,
+        searchCalls: searchNow.searchCalls,
+        searchEstimated: searchNow.estimated,
+        searchFailedAttempts: searchNow.failedAttempts,
+        searchMs: pickWebEvidence(ctx).elapsedMs ?? 0,
+      });
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            locale === "zh"
+              ? "积分不足，请先充值后再生成 AI 销售策略"
+              : "Insufficient credits. Please recharge first.",
+          code: "INSUFFICIENT_CREDITS",
+          rechargeUrl: `/${locale}/credits`,
+          required: requiredNowPoints,
+          balance: user.credits,
+        },
+        { status: 402 }
+      );
+    }
+
+    const finalBrand = ctx.product?.brandName || body.brandName || "";
 
     // ── 调用豆包生成结构化策略（统一国行 ARK 出口；.cn 数据不出境）──
     // ⚠️ 图片/视频在这里真正进入模型（`buildDoubaoContent` 下载转 base64 + 拼多模态数组）：
@@ -614,10 +714,23 @@ export async function POST(request: NextRequest) {
 
     // ── 扣费：成本加成口径（与实际模型成本 × 运营定价倍率挂钩，币种全球统一 CNY）──
     // 实际 token（首轮 + 续写 + 重试）先按「输入单价 / 输出单价」分别算成本，得到 cost.points。
+    //
+    // 🔴 2026-11-01：把「火山方舟联网检索」的真实用量并进来 —— 这笔钱过去完全没进账
+    //    （实测单份检索 ≈¥0.9，占单份真实成本的一半以上，漏收约 67%）。
+    //    `searchNow` 来自二次预检处的**唯一一次** drain（此处严禁再 drain）。
     const cost = computeAiCost({
       model,
       inputTokens: promptTokens,
       outputTokens: completionTokens,
+      // 检索侧真实用量（token 转嫁给用户）
+      extraInputTokens: searchNow.inputTokens,
+      extraOutputTokens: searchNow.outputTokens,
+      // 检索按次费用：**只留痕**，不进 cnyCost / points（老板决策 1：平台吸收）
+      metered: {
+        kind: "ark_web_search",
+        calls: searchNow.searchCalls,
+        unitPriceCny: ARK_WEB_SEARCH_UNIT_PRICE_CNY,
+      },
     });
     // 策略专属最低消费（见常量注释）；实际扣减以此为准。
     const finalPoints = Math.max(cost.points, SALES_STRATEGY_MIN_POINTS);
@@ -627,6 +740,24 @@ export async function POST(request: NextRequest) {
     // 注意比的是 finalPoints（真正要扣的钱），不是 cost.points —— 否则最低消费一旦高过
     // 护栏，就会出现「实际扣费 > 护栏」的漏洞。
     const guardrail = await getAiCostGuardrail();
+
+    // 软告警（红线 5：撞线之前就要看得见趋势，而不是等用户投诉 429）。
+    // 2026-11-01 检索成本并入后，极端请求（5 条检索全打满 + 多轮续写）已能逼近护栏，
+    // 必须留痕 —— 但**只告警，不熔断**：熔断仍严格按 `finalPoints > guardrail`。
+    if (finalPoints > guardrail * GUARDRAIL_WARN_RATIO) {
+      // eslint-disable-next-line no-console
+      console.warn("[SalesStrategy] cost-near-guardrail", {
+        userId: user.id,
+        finalPoints,
+        guardrail,
+        searchTokens: searchNow.inputTokens + searchNow.outputTokens,
+        searchCalls: searchNow.searchCalls,
+        llmTokens: promptTokens + completionTokens,
+        llmCalls,
+        searchMs: pickWebEvidence(ctx).elapsedMs ?? 0,
+      });
+    }
+
     if (finalPoints > guardrail) {
       return NextResponse.json(
         {
@@ -651,6 +782,21 @@ export async function POST(request: NextRequest) {
       searchQueries: typeof webEvidence.totalQueries === "number" ? webEvidence.totalQueries : 0,
       searchMs: typeof webEvidence.elapsedMs === "number" ? webEvidence.elapsedMs : 0,
       searchStatus: webStatus,
+      // ── 检索用量明细（2026-11-01 并入；全部由 `searchNow` 一次 drain 得来）──
+      searchInputTokens: searchNow.inputTokens,
+      searchOutputTokens: searchNow.outputTokens,
+      // 检索 token 折算成本（是 cost.cnyCost 的一部分，不是额外）
+      searchCostCny: cost.searchCostCny ?? 0,
+      searchEstimated: searchNow.estimated,
+      // 检索整体命中缓存 ⇒ 本次没有检索成本（对账时能解释「同一份报告两次价格不同」）
+      searchCached: webEvidence.cached === true,
+      searchCalls: searchNow.searchCalls,
+      // 检索按次费用：平台侧真实支出，仅供对账
+      searchCallCostCny: cost.searchCallCostCny ?? 0,
+      // 决策 1 的显式留痕：这笔钱平台付了，没收用户的
+      searchCallChargedToUser: false,
+      searchFailedAttempts: searchNow.failedAttempts,
+      searchOverLimit: searchNow.overLimit,
       // 实际发生过的 LLM 调用次数（>2 说明发生了续写或重试；>3 说明两者都有）
       llmCalls,
       rejectedRetried: llmCalls > 1,
@@ -781,5 +927,44 @@ export async function POST(request: NextRequest) {
       },
       { status: 500 }
     );
+  } finally {
+    // ══════════════════════════════════════════════════════════════════════════════
+    // ③ 兜底 drain —— 防串账的最后一道防线
+    // ══════════════════════════════════════════════════════════════════════════════
+    // 覆盖**所有**提前 return 出口：402 首次预检 / 402 二次预检 / 429 护栏 /
+    // 502 解析失败 / 503 LLM 失败 / 500 未处理异常。
+    //
+    // 正常路径下这里恒为空（用量已在「二次预检」处被**唯一一次** drain 走）；
+    // 非空 ⇒ 有路径漏了消费点，若不清掉，这份用量会漂移到**下一个请求**上
+    // （可能是别人的估值/识别请求）⇒ A 用户花的钱算到 B 用户头上。
+    const leftover = drainWebSearchUsage();
+    if (leftover.length > 0) {
+      const summary = summarizeWebSearchUsage(leftover);
+      // eslint-disable-next-line no-console
+      console.warn("[SalesStrategy] search-usage-drained-in-finally", {
+        records: leftover.length,
+        inputTokens: summary.inputTokens,
+        outputTokens: summary.outputTokens,
+        searchCalls: summary.searchCalls,
+        estimated: summary.estimated,
+        failedAttempts: summary.failedAttempts,
+      });
+    }
   }
+}
+
+/**
+ * POST /api/agents/seller-helper/sales-strategy —— 路由入口。
+ *
+ * 🔴 唯一职责：把整条链路包进**检索计费作用域**（`AsyncLocalStorage`）。
+ *    检索阶段（`retrieveStrategyContext` → `retrieveWebEvidence` → `searchViaArk`）
+ *    会在作用域内 `recordWebSearchUsage()`，路由则在二次预检处 `drainWebSearchUsage()`
+ *    取走并计费、在 `finally` 里兜底清空 —— 没有这个作用域，两条并发请求的检索用量
+ *    会混进同一个桶 ⇒ **A 用户花的钱算到 B 用户头上**。
+ *
+ *    作用域零参数透传：`retrieveStrategyContext` / `retrieveWebEvidence` /
+ *    `searchViaArk` 的签名一个都不用改（ALS store 自动穿透 await 与 Promise.all）。
+ */
+export async function POST(request: NextRequest): Promise<NextResponse> {
+  return runWithSearchBillingScope(() => handlePost(request));
 }
