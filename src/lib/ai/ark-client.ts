@@ -92,8 +92,81 @@ export interface ChatCompletionOptions {
 const RETRY_MIN_REMAINING_MS = 15_000;
 
 /**
+ * 把 provider 返回的单个 token 字段折成非负整数。
+ *
+ * 缺失 / `null` / `NaN` / 负数一律按 0 ——「这一字段没计量到」不等于
+ * 「可以把前面已经计量到的用量整笔丢掉」。
+ */
+function toTokenCount(value: unknown): number {
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.floor(n);
+}
+
+/**
+ * 逐字段累加一次尝试的 token 用量（**纯函数**，不修改入参）。
+ *
+ * 为什么必须累加而不是「取最后一次」：本文件对 429/5xx 会退避重试一次（`attempts = 2`），
+ * 每一次尝试只要把请求发到了方舟，那一轮的 input token 就已经真实烧掉了
+ * （实测检索链路单条 3 万+ input token，超时重试一次就是一整轮的钱）。
+ * 只回最后一次的 usage ⇒ 前面几次尝试的 token 静默漏计 ⇒ 平台少扣用户积分。
+ *
+ * 字段口径：方舟 `usage.prompt_tokens` / `usage.completion_tokens`（本链路不使用
+ * `input_tokens` / `output_tokens` 这一套命名）。
+ *
+ * @param base  已累计的用量（可为 `null` / `undefined`，按 0 计）
+ * @param delta 本次尝试新增的用量（可为 `null` / `undefined` / 缺字段 / 非数值，按 0 计）
+ * @returns 累加后的新用量对象
+ */
+export function accumulateDoubaoUsage(
+  base: DoubaoUsage | null | undefined,
+  delta: unknown
+): DoubaoUsage {
+  const d = (delta && typeof delta === "object" ? delta : {}) as {
+    prompt_tokens?: unknown;
+    completion_tokens?: unknown;
+  };
+  return {
+    prompt_tokens: toTokenCount(base?.prompt_tokens) + toTokenCount(d.prompt_tokens),
+    completion_tokens: toTokenCount(base?.completion_tokens) + toTokenCount(d.completion_tokens),
+  };
+}
+
+/** 重试 / 失败原因分类（结构化打点用，取值有限集合便于 grep 聚合） */
+export type ArkErrorKind =
+  | "none" // 成功
+  | "timeout" // 客户端 abort（ECONNABORTED / ETIMEDOUT 等）
+  | "status-429"
+  | "status-5xx"
+  | "status-4xx"
+  | "network"; // 无 status、也无 timeout code（DNS / 连接被拒 / 代理断开等）
+
+/**
+ * 把一次失败尝试分类成 `ArkErrorKind`。
+ *
+ * 🔴 只依据**结构化信号**（`error.code` / `response.status`）判定，**不靠错误文案猜**（文案会变、会本地化）。
+ *   - axios 超时：客户端 abort，`err.code === "ECONNABORTED"`（含 `ETIMEDOUT`）；
+ *   - 带 `response.status` 的按状态码归 `status-xxx`；
+ *   - 两者都没有归 `network`（DNS / 连接 / 代理层失败，根本没拿到任何 HTTP 应答）。
+ */
+export function classifyArkErrorKind(err: unknown): ArkErrorKind {
+  const e = err as { code?: string; response?: { status?: number } } | null | undefined;
+  if (e?.code === "ECONNABORTED" || e?.code === "ETIMEDOUT") return "timeout";
+  const status = e?.response?.status;
+  if (typeof status === "number") {
+    if (status === 429) return "status-429";
+    if (status >= 500) return "status-5xx";
+    return "status-4xx";
+  }
+  return "network";
+}
+
+/**
  * 调用豆包 chat/completions（OpenAI 兼容）。
  * 自动选择直连 / B 通道，处理超时、重试、熔断；成功时返回文本、usage 与 finishReason 供计费归集与截断判定。
+ *
+ * 用量口径：**返回的是本次调用全部尝试的累计用量**（见 `accumulateDoubaoUsage`），
+ * 不是最后一次尝试的用量。
  */
 export async function chatCompletionDoubao(opts: ChatCompletionOptions): Promise<DoubaoResult> {
   const model = opts.model || ARK_MODEL_ID;
@@ -113,7 +186,87 @@ export async function chatCompletionDoubao(opts: ChatCompletionOptions): Promise
 
   let lastErr: unknown;
   const attempts = 2;
-  for (let attempt = 0; attempt < attempts; attempt++) {
+
+  /**
+   * ── 重试链路的 token 用量归集 ────────────────────────────────────────
+   * 本函数对 429/5xx 会退避重试一次（`attempts = 2`）。只要请求真的发到了方舟，
+   * 那一次尝试的 input token 就已经烧掉了 —— 只回最后一次的 usage 会把前面几次
+   * 尝试的 token 静默漏计（不报错、不告警，只是平台少扣用户积分）。
+   * 故**每一次尝试**的 usage 都要归集进 `totalUsage`，最终返回累计值。
+   */
+  let totalUsage: DoubaoUsage = { prompt_tokens: 0, completion_tokens: 0 };
+  /** 这两个标记决定最终 usage 里**出现哪些字段**，理由见 `buildUsage()` */
+  let usageSeenPrompt = false;
+  let usageSeenCompletion = false;
+  /** 本次尝试实际拿到的 usage（供打点日志逐次呈现；成功 / 失败响应体均可携带）。每次循环归 null。 */
+  let attemptUsage: DoubaoUsage | null = null;
+
+  /**
+   * 归集一次尝试的 usage（成功响应体与失败响应体都可能携带）。
+   * @returns true = 本次尝试确实带回了可用 usage；false = 拿不到（调用方据此打日志留痕）
+   */
+  const collectUsage = (raw: unknown): boolean => {
+    if (!raw || typeof raw !== "object") return false;
+    const u = raw as { prompt_tokens?: unknown; completion_tokens?: unknown };
+    const hasPrompt = typeof u.prompt_tokens === "number" && Number.isFinite(u.prompt_tokens);
+    const hasCompletion =
+      typeof u.completion_tokens === "number" && Number.isFinite(u.completion_tokens);
+    if (!hasPrompt && !hasCompletion) return false;
+    if (hasPrompt) usageSeenPrompt = true;
+    if (hasCompletion) usageSeenCompletion = true;
+    // 记下本次尝试实际拿到的 usage（打点日志逐次呈现用，不污染累计值）
+    attemptUsage = { prompt_tokens: toTokenCount(u.prompt_tokens), completion_tokens: toTokenCount(u.completion_tokens) };
+    totalUsage = accumulateDoubaoUsage(totalUsage, u);
+    return true;
+  };
+
+  /**
+   * 组装最终返回的 usage。
+   *
+   * ⚠️ 为什么「某个字段一次都没拿到」时是**省略该字段**而不是补 0：
+   *   计费侧对缺字段有 `ESTIMATED_TOKENS` 兜底（`usage-collector.ts`：image / video analyzer
+   *   写成 `result.usage?.prompt_tokens ?? ESTIMATED_TOKENS.input` 并标 `estimated: true`）。
+   *   这里若擅自补 0，`??` 就不再触发 ⇒ 从「保守估算计费」退化成「按 0 计费」，反而更漏，
+   *   而且 breakdown 里的 `estimated` 标记会骗人。
+   */
+  const buildUsage = (): DoubaoUsage | undefined => {
+    if (!usageSeenPrompt && !usageSeenCompletion) return undefined;
+    return {
+      ...(usageSeenPrompt ? { prompt_tokens: totalUsage.prompt_tokens ?? 0 } : {}),
+      ...(usageSeenCompletion ? { completion_tokens: totalUsage.completion_tokens ?? 0 } : {}),
+    };
+  };
+
+  /**
+   * 打一条结构化打点日志（`[ARK][retry-usage]` 前缀，单行、字段固定，便于日后 grep 聚合
+   * 出重试率与「无 usage」比例）。字段：
+   *   attempt（第几/总次数）· hasUsage（本次响应体是否拿到 usage）·
+   *   promptTokens / completionTokens（拿到记真实值，没拿到记 0）·
+   *   errorKind（失败原因分类，见 `classifyArkErrorKind`）· elapsedMs（本次尝试耗时）
+   *
+   * 🔴 日志量控制：仅在「非首次尝试」或「首次尝试就没拿到 usage」时输出，避免正常成功路径刷屏。
+   */
+  const emitRetryUsage = (errorKind: ArkErrorKind): void => {
+    const hasUsage = attemptUsage !== null;
+    const promptTokens = attemptUsage?.prompt_tokens ?? 0;
+    const completionTokens = attemptUsage?.completion_tokens ?? 0;
+    if (attempt > 0 || !hasUsage) {
+      console.info(
+        `[ARK][retry-usage] attempt=${attempt + 1}/${attempts} hasUsage=${hasUsage} ` +
+          `promptTokens=${promptTokens} completionTokens=${completionTokens} ` +
+          `errorKind=${errorKind} elapsedMs=${Date.now() - attemptStartedAt}`
+      );
+    }
+  };
+
+  // 这两个变量提升到函数作用域：下面 `emitRetryUsage` 闭包要引用，而闭包定义在循环之外。
+  let attempt = 0;
+  let attemptStartedAt = 0;
+  for (; attempt < attempts; attempt++) {
+    /** 本次尝试实际拿到的 usage（供打点日志逐次呈现；每个循环迭代重新归零） */
+    attemptUsage = null;
+    /** 本次尝试开始时间戳（打点 elapsedMs 用） */
+    attemptStartedAt = Date.now();
     // 预算闸：第 2 次及以后的尝试前先看还剩多少时间（`deadlineMs` 未传时行为不变）
     if (attempt > 0 && typeof opts.deadlineMs === "number") {
       const remaining = opts.deadlineMs - Date.now();
@@ -168,20 +321,33 @@ export async function chatCompletionDoubao(opts: ChatCompletionOptions): Promise
         usage?: { prompt_tokens?: number; completion_tokens?: number };
         error?: { message?: string };
       };
+      // usage 必须在任何分支之前归集：即使本次尝试随后走进 `data.error` 抛出，
+      // 那一轮的 token 也已经真实消耗掉了。
+      collectUsage(data?.usage);
       const text = data?.choices?.[0]?.message?.content || "";
       const finishReason = data?.choices?.[0]?.finish_reason;
       if (data?.error) {
         throw new Error(`豆包API错误: ${data.error.message || JSON.stringify(data.error)}`);
       }
+      // 成功轮也打点（errorKind=none），否则算不出重试率的分母
+      emitRetryUsage("none");
       return {
         text,
         finishReason,
-        usage: data?.usage
-          ? { prompt_tokens: data.usage.prompt_tokens, completion_tokens: data.usage.completion_tokens }
-          : undefined,
+        usage: buildUsage(),
       };
     } catch (err: unknown) {
       lastErr = err;
+      // 失败响应体里**也可能带 usage**（部分 429/5xx 会回带当次已消耗的 token），先试着捞一次；
+      // 捞不到就按 0 计 —— 打点日志会记录 hasUsage=false，不许静默吞掉，否则漏计无从排查。
+      if (attemptUsage === null) {
+        collectUsage(
+          (err as { response?: { data?: { usage?: unknown } } })?.response?.data?.usage
+        );
+      }
+      // 结构化打点（替代原先的 console.warn；字段固定、单行，便于日后 grep 聚合出重试率）。
+      // 熔断判定逻辑（下方 `const status = ...` 到 `throw err;`）一行未改。
+      emitRetryUsage(classifyArkErrorKind(err));
       const status = (err as { response?: { status?: number } })?.response?.status;
       // 鉴权/参数类错误不重试，直接抛出
       if (status === 401 || status === 403 || status === 402) throw err;
