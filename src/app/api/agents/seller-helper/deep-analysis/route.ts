@@ -55,6 +55,7 @@ import { prisma } from "@/lib/db";
 import { rateLimit } from "@/lib/rate-limit";
 import { chatCompletionDoubao, getArkModelId } from "@/lib/ai/ark-client";
 import { buildDoubaoContent } from "@/lib/ai/multimodal";
+import { accumulateUsage, emptyUsage, type LlmTokenUsage } from "@/lib/ai/usage";
 // 图片张数上限必须与前端「同一份定义」：前端截取、服务端夹取。
 // 该模块零运行时依赖（不 import 任何 `node:*`），因此可被 `"use client"` 组件安全引用。
 import { MAX_DEEP_ANALYSIS_IMAGES } from "@/lib/ai/deep-analysis-limits";
@@ -66,7 +67,7 @@ export const dynamic = "force-dynamic";
 /** LLM 调用结果：文本 + token 用量（用于积分计费） */
 interface LlmCallResult {
   text: string;
-  usage: { inputTokens: number; outputTokens: number };
+  usage: LlmTokenUsage;
   /** 豆包停止原因：length = 触及 max_tokens 被截断（长报告需续写） */
   finishReason?: string;
 }
@@ -844,7 +845,9 @@ export async function POST(request: NextRequest) {
     let analysisText = "";
     let modelUsed = "";
     let billingModel = "";
-    let lastUsage = { inputTokens: 0, outputTokens: 0 };
+    // 一次深度分析可能发起多次 LLM 调用（初稿 + ≤2 轮续写），每一轮都真实产生 token 费用。
+    // 全程**只累加不覆盖**：任何一处写成赋值覆盖，前面几轮的 token 就会被静默丢掉 ⇒ 平台少扣积分。
+    let lastUsage: LlmTokenUsage = emptyUsage();
     let truncated = false;
     /** 中止/截断是否由**总预算**导致（供前端区分提示文案，见文件头「截断契约」） */
     let budgetExhausted = false;
@@ -871,7 +874,10 @@ export async function POST(request: NextRequest) {
       );
       const res = await callDoubao(content, [], requestDeadline);
       analysisText = res.text;
-      lastUsage = res.usage;
+      // 累加而非赋值：与下方续写分支同口径（`accumulateUsage` 缺字段按 0 处理）。
+      // 写成 `lastUsage = res.usage` 的话，一旦这段代码将来被包进重试/多模型循环，
+      // 前面已归集的用量会被整笔覆盖 —— 那是一个不报错、只少扣积分的静默洞。
+      lastUsage = accumulateUsage(lastUsage, res.usage);
       billingModel = model;
       // 只回模型名：engineLabel 属于内部实现细节
       modelUsed = `豆包 ${model}`;
@@ -904,10 +910,7 @@ export async function POST(request: NextRequest) {
           { role: "user", content: continuePrompt },
         ], requestDeadline);
         analysisText += cont.text;
-        lastUsage = {
-          inputTokens: lastUsage.inputTokens + cont.usage.inputTokens,
-          outputTokens: lastUsage.outputTokens + cont.usage.outputTokens,
-        };
+        lastUsage = accumulateUsage(lastUsage, cont.usage);
         finishReason = cont.finishReason;
       }
       if (finishReason === "length") {
