@@ -1,106 +1,101 @@
 {
-  "date": "2026-10-26",
+  "date": "2026-11-02",
   "eurCny": 7.91,
   "eurRub": "今日无数据",
   "usdCny": 7.25,
-  "agrolineCount": 229,
+  "agrolineCount": 182,
   "machineryPeteCount": 13,
-  "productCount": 9,
-  "totalCount": 153,
+  "productCount": 2,
+  "totalCount": 163,
   "topArbitrage": [
     {
-      "model": "科罗尼 1290(2014)",
-      "rate": "1048.6%",
-      "intlPrice": "40.2万",
-      "domPrice": "3.5万",
-      "spread": "36.7万",
-      "source": "Agroline"
-    },
-    {
-      "model": "科罗尼 F125xc(2017)",
-      "rate": "361.5%",
-      "intlPrice": "27.7万",
-      "domPrice": "6.0万",
-      "spread": "21.7万",
-      "source": "Agroline"
-    },
-    {
-      "model": "科罗尼 CF155XC(2014)",
-      "rate": "205.8%",
-      "intlPrice": "45.9万",
-      "domPrice": "15.0万",
-      "spread": "30.9万",
-      "source": "Mascus"
-    },
-    {
-      "model": "克拉斯 980(2016)",
-      "rate": "155.2%",
-      "intlPrice": "365.0万",
-      "domPrice": "143.0万",
-      "spread": "222.0万",
-      "source": "Agroline"
-    },
-    {
-      "model": "克拉斯 850(2018)",
-      "rate": "147.2%",
-      "intlPrice": "197.8万",
-      "domPrice": "80.0万",
-      "spread": "117.8万",
-      "source": "Agroline"
-    },
-    {
-      "model": "纽荷兰 FR450(2013)",
-      "rate": "97.7%",
-      "intlPrice": "21.8万",
-      "domPrice": "11.0万",
-      "spread": "10.8万",
-      "source": "TractorHouse"
-    },
-    {
-      "model": "克拉斯 970(2017)",
-      "rate": "55.3%",
-      "intlPrice": "253.1万",
-      "domPrice": "163.0万",
-      "spread": "90.1万",
+      "model": "科罗尼 BiG Pack 1290 XC(2012)",
+      "rate": "481.4%",
+      "intlPrice": "46.5万",
+      "domPrice": "8.0万",
+      "spread": "38.5万",
       "source": "Agroline"
     },
     {
       "model": "克拉斯 970(2021)",
-      "rate": "43.9%",
-      "intlPrice": "234.5万",
+      "rate": "49.8%",
+      "intlPrice": "244.1万",
       "domPrice": "163.0万",
-      "spread": "71.5万",
-      "source": "Agroline"
-    },
-    {
-      "model": "克拉斯 980(2015)",
-      "rate": "33.9%",
-      "intlPrice": "174.0万",
-      "domPrice": "130.0万",
-      "spread": "44.0万",
+      "spread": "81.1万",
       "source": "Agroline"
     }
   ],
-  "negative": [
+  "negative": [],
+  "suspectPairs": [
+    {
+      "model": "科罗尼 1290(2014)",
+      "rate": "1048.6%",
+      "spread": "36.7万",
+      "source": "Agroline",
+      "reason": "品类错配：本机品类为「捡拾台」（配件/属具），却与整机挂牌价配对"
+    },
+    {
+      "model": "科罗尼 F125xc(2017)",
+      "rate": "361.5%",
+      "spread": "21.7万",
+      "source": "Agroline",
+      "reason": "数据陈旧：抓取于 2026-08-17，已 77 天未更新"
+    },
+    {
+      "model": "科罗尼 CF155XC(2014)",
+      "rate": "205.8%",
+      "spread": "30.9万",
+      "source": "Mascus",
+      "reason": "数据陈旧：抓取于 2026-08-17，已 77 天未更新"
+    },
+    {
+      "model": "克拉斯 850(2018)",
+      "rate": "147.2%",
+      "spread": "117.8万",
+      "source": "Agroline",
+      "reason": "无 sourceUrl：AI 按型号估算，非真实挂牌"
+    },
+    {
+      "model": "纽荷兰 FR450(2013)",
+      "rate": "97.7%",
+      "spread": "10.8万",
+      "source": "TractorHouse",
+      "reason": "无 sourceUrl：AI 按型号估算，非真实挂牌"
+    },
+    {
+      "model": "克拉斯 970(2017)",
+      "rate": "55.3%",
+      "spread": "90.1万",
+      "source": "Agroline",
+      "reason": "无 sourceUrl：AI 按型号估算，非真实挂牌"
+    },
     {
       "model": "纽荷兰 9080(2009)",
       "rate": "-0.2%",
-      "advice": "转国内渠道，停止出口报价"
+      "spread": "-0.1万",
+      "source": "TractorHouse",
+      "reason": "无 sourceUrl：AI 按型号估算，非真实挂牌"
     },
     {
       "model": "约翰迪尔 8400(2016)",
       "rate": "-4%",
-      "advice": "转国内渠道，停止出口报价"
+      "spread": "-2.8万",
+      "source": "TractorHouse",
+      "reason": "无 sourceUrl：AI 按型号估算，非真实挂牌"
     },
     {
       "model": "克拉斯 5300RC(2022)",
       "rate": "-8.7%",
-      "advice": "转国内渠道，停止出口报价"
+      "spread": "-5.7万",
+      "source": "e-farm",
+      "reason": "无 sourceUrl：AI 按型号估算，非真实挂牌"
     },
     {
       "model": "纽荷兰 FR500(2014)",
       "rate": "-14.1%",
-      "advice": "转国内渠道，停止出口报价"
+      "spread": "-5.4万",
+      "source": "TractorHouse",
+      "reason": "无 sourceUrl：AI 按型号估算，非真实挂牌"
     }
   ],
   "markets": [
@@ -113,11 +108,12 @@
     "白俄罗斯"
   ],
   "keyEvents": [
-    "EUR/CNY 7.91（真实抓取 20261025），USD/CNY 7.25",
-    "Agroline CLAAS 在售 229 条（真实聚合，供给充足）",
+    "EUR/CNY 7.91（真实抓取 20261101），USD/CNY 7.25",
+    "Agroline CLAAS 在售 182 条（真实聚合，供给充足）",
     "MachineryPete 13 条（样本偏旧，不做趋势判断）",
-    "本期 9 台套利率>30%，理论总毛利 645.4 万元",
-    "国际价配对覆盖率仅 13/153 台（8.5%），缺比价基准",
-    "ICP备案 冀ICP备2024053719号-4 已通过、长期有效（无到期日），公安备案审核中照常跟进"
+    "本期 2 台套利率>30%，理论总毛利 119.6 万元",
+    "国际价配对覆盖率仅 12/163 台（7.4%），缺比价基准",
+    "配对校验：2 台可信 / 10 台待核实（品类错配、无来源、超 60 天），后者已排除出套利榜",
+    "ICP备案 冀ICP备2024053719号-4 已通过、长期有效（无到期日），公安联网备案已完成（冀公网安备 13013202000274）"
   ]
 }
