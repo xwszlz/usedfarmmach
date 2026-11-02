@@ -30,6 +30,7 @@ import {
 import type { WebEvidenceStatus } from "@/lib/sales-strategy/strategy-schema";
 import { isCnSite, siteConfigMap } from "@/config/site";
 import { arkWebSearch, resolveArkResponsesEndpoint } from "@/lib/ai/ark-client";
+import { recordWebSearchUsage } from "@/lib/credits/search-usage-collector";
 
 // 类型再从唯一真相源透出，避免出现两份同名字符串联合（arch §3.5）
 export type { WebEvidenceStatus } from "@/lib/sales-strategy/strategy-schema";
@@ -87,6 +88,55 @@ const RETRY_MIN_BUDGET_MS = 3_000;
 const CACHE_MAX_ENTRIES = 50;
 /** 固定 5 条 query 上限（PRD §6.2 的 5 类检索） */
 const MAX_QUERIES = 5;
+
+// ── 检索成本可见化 / 归集常量（2026-11-01 计费口径统一；见 deliverables/AI计费口径统一-增量设计）──
+
+/**
+ * 单条 query 的联网检索次数**软上限**（老板决策 3：20 次/query）。
+ *
+ * 🔴 **只观测，不硬截断** —— 这不是偷懒，是协议层面做不到，改动前务必读完：
+ *   1. ARK `/responses` 是**单次 HTTP 请求**：请求体只有
+ *      `{model, stream, tools:[{type:"web_search", sources:["search_engine"]}], input:[...]}`，
+ *      **协议里没有任何「最多搜几次」的参数**；
+ *   2. 模型在**服务端内部**自主多轮检索（想搜索词 → 搜 → 读 → 决定补搜），
+ *      客户端观察不到中间态，也就无从"截到第 20 次"；
+ *   3. 客户端能做的中断只有 `AbortSignal` 与 `timeoutMs`，两者都是**取消整次 HTTP**，
+ *      结果是**连证据一起没了**（等价于这条 query 直接失败），而不是"截到第 20 次
+ *      然后返回已有证据" —— 那比超次数更糟；
+ *   4. `max_tokens` 只限制输出长度，与检索次数无关。
+ *
+ * ⇒ 落地形态是「prompt 软约束（`ARK_EVIDENCE_INSTRUCTIONS`）+ 事后观测（本常量）」。
+ *   超阈值只 `console.warn` 并把 `overLimit` 带进归集器，**用户侧零感知**：
+ *   不改 `WebEvidence.status`（前端四档契约不得因内部成本控制而抖动）、不改 `note`、
+ *   不进 API 响应体。
+ * ⚠️ 改它需要重新部署（与 `ARK_TIMEOUT_MS` / `ARK_BUDGET_MS` 一致，不引 env 覆盖，
+ *    避免"改了不生效"的配置陷阱）。
+ */
+export const ARK_SEARCH_CALLS_SOFT_LIMIT = 20;
+
+/**
+ * 兜底规则 A：响应里只有 `total_tokens`、拿不到 input/output 拆分时，output token 的经验上限。
+ *
+ * 依据 2026-11-01 真实探针：单条 query `input_tokens` 32157 / `output_tokens` 1508
+ * （`output_text` 1076 字符）⇒ output 量级在 1500 上下。
+ * 旧的经验值 400 是按「检索侧只输出一个 findings JSON」估的，实测偏低 3 倍以上，
+ * 会让「少收」变成系统性偏差（output 单价是 input 的 5 倍，压低 output 就是压低收入）。
+ *
+ * `min(1500, total)` 的 `min` 保证 `total` 很小时不会把 input 算成负数。
+ */
+export const ARK_SEARCH_EST_OUTPUT_TOKENS = 1_500;
+
+/**
+ * 兜底规则 B：连 `total_tokens` 都拿不到时，单条 query 的经验用量（**实测 5 条的中位数**）。
+ *
+ * 取值依据：5 条真实 query 的 `total_tokens` = 34,472 / 15,865 / 20,197 / 34,060 / 24,759
+ * ⇒ 中位数 ≈ 24,000；`web_search` 次数 = 11/5/14/12/15 ⇒ 中位数 12、均值 11.4 ⇒ 取 11。
+ * **取中位数而非最大值**：宁可略少收，也不可系统性多收；且这一档本来就是异常路径
+ * （正常路径一定能拿到 usage）。
+ */
+export const ARK_SEARCH_FALLBACK_INPUT_TOKENS = 24_000;
+export const ARK_SEARCH_FALLBACK_OUTPUT_TOKENS = 400;
+export const ARK_SEARCH_FALLBACK_SEARCH_CALLS = 11;
 /** 默认境内 ARK 网关（与 ark-client.ts 的 ARK_BASE_URL 缺省值一致） */
 const DEFAULT_ARK_BASE_URL = "https://ark.cn-beijing.volces.com/api/v3";
 
@@ -531,26 +581,146 @@ export function parseArkOutput(raw: string, contentType: string): { text: string
   return { text: completed || acc, urls: [...urls] };
 }
 
-/** ARK `/responses` 的用量快照（**只读**，不参与任何计费/扣费逻辑） */
+/**
+ * ARK `/responses` 的用量快照。
+ *
+ * ⚠️ 本文件**只报数、不算钱**：检索层禁止出现 `computeAiCost` / `deductCredits` /
+ * `AI_COST_MULTIPLIER`（计费属于账务侧，不是检索层的职责）。本快照经
+ * `search-usage-collector.ts` 归集后由路由交给 `computeAiCost()`。
+ *
+ * 实测字段全集（2026-11-01 真实 `/responses` 探针，原样）：
+ * ```json
+ * {
+ *   "input_tokens": 32157, "output_tokens": 1508, "total_tokens": 33665,
+ *   "input_tokens_details": { "cached_tokens": 10040 },
+ *   "output_tokens_details": { "reasoning_tokens": 321 },
+ *   "tool_usage": { "web_search": 13 },
+ *   "tool_usage_details": { "web_search": { "search_engine": 13 } }
+ * }
+ * ```
+ * 三条已被探针证实的事实（改动前必须知道）：
+ *   ① `input + output == total_tokens` 恒等 ⇒ 拆分方案成立；
+ *   ② `reasoning_tokens`(321) **已含在** `output_tokens`(1508) 内 ⇒ **绝不可相加**；
+ *   ③ `cached_tokens` 是 `input_tokens` 的**子集**，独立字段，且按老板决策 2
+ *      **维持全价**（不新增任何 cached 计价分支）⇒ 只留痕。
+ */
 export interface ArkUsageSnapshot {
   /** `usage.tool_usage.web_search`：本条 query 内部实际打了几次联网搜索 */
   searchCalls: number;
-  /** `usage.total_tokens`：检索结果灌进上下文后的总 token 消耗 */
+  /** 检索侧 input token（**已含 cached 部分**，见决策 2） */
+  inputTokens: number;
+  /** 检索侧 output token（**已含 reasoning**，见上方②③） */
+  outputTokens: number;
+  /**
+   * `usage.total_tokens`：检索结果灌进上下文后的总 token 消耗。
+   * 保留它不只是为了兼容既有日志 —— 它是「拆分是否合理」的**唯一交叉校验**
+   * （若 `input+output` 显著大于 `total`，说明解析错了）。
+   */
   totalTokens: number;
+  /** `usage.input_tokens_details.cached_tokens`：**只留痕**，不参与任何计价分支（决策 2） */
+  cachedInputTokens?: number;
+  /** true = 响应里拿不到完整 usage，input/output 是经验值（绝不当成实测值用） */
+  estimated?: boolean;
 }
 
-/** 从任意 `{usage: {...}}` 形状里取用量；缺失/非法一律归 0（**不抛错**） */
+/**
+ * 兜底规则 B 的快照（连 `total_tokens` 都拿不到时用）。
+ *
+ * `seed` 里已有的实测值优先保留（例如响应体里给了 `searchCalls` 却没给 token，
+ * 那就只补 token、不改次数 —— 实测值永远比经验值可信）。
+ */
+function fallbackArkUsage(seed?: { searchCalls?: number; outputTokens?: number | null }): ArkUsageSnapshot {
+  return {
+    searchCalls: seed?.searchCalls && seed.searchCalls > 0 ? seed.searchCalls : ARK_SEARCH_FALLBACK_SEARCH_CALLS,
+    inputTokens: ARK_SEARCH_FALLBACK_INPUT_TOKENS,
+    outputTokens: seed?.outputTokens && seed.outputTokens > 0 ? seed.outputTokens : ARK_SEARCH_FALLBACK_OUTPUT_TOKENS,
+    totalTokens: 0,
+    estimated: true,
+  };
+}
+
+/** 取第一个可解析成非负整数的候选值；全不可用返回 `null` */
+function firstFiniteCount(...candidates: unknown[]): number | null {
+  for (const v of candidates) {
+    const n = Number(v);
+    if (Number.isFinite(n)) return Math.max(0, Math.trunc(n));
+  }
+  return null;
+}
+
+/**
+ * 从任意 `{usage: {...}}` 形状里取用量（**不抛错**）。
+ *
+ * usage 不存在 ⇒ 返回 `null`（由调用方决定走哪条兜底规则）。
+ * usage 存在但字段不全 ⇒ 按规则 A/B 补齐并标 `estimated:true`。
+ */
 function pickArkUsage(obj: unknown): ArkUsageSnapshot | null {
   const usage = (obj as { usage?: unknown } | null)?.usage;
   if (!usage || typeof usage !== "object") return null;
-  const u = usage as { total_tokens?: unknown; tool_usage?: unknown };
-  const toolUsage = (u.tool_usage ?? {}) as { web_search?: unknown };
-  const searchCalls = Number(toolUsage.web_search);
-  const totalTokens = Number(u.total_tokens);
-  return {
-    searchCalls: Number.isFinite(searchCalls) ? Math.max(0, Math.trunc(searchCalls)) : 0,
-    totalTokens: Number.isFinite(totalTokens) ? Math.max(0, Math.trunc(totalTokens)) : 0,
+  const u = usage as {
+    total_tokens?: unknown;
+    input_tokens?: unknown;
+    output_tokens?: unknown;
+    prompt_tokens?: unknown;
+    completion_tokens?: unknown;
+    input_tokens_details?: unknown;
+    output_tokens_details?: unknown;
+    tool_usage?: unknown;
+    tool_usage_details?: unknown;
   };
+
+  // ── 检索次数：`tool_usage.web_search` 为准，`tool_usage_details` 兜底（实测两者同值）──
+  const toolUsage = (u.tool_usage ?? {}) as { web_search?: unknown };
+  const toolUsageDetail = (u.tool_usage_details ?? {}) as { web_search?: unknown };
+  const detailWebSearch = (toolUsageDetail.web_search ?? {}) as { search_engine?: unknown };
+  const searchCalls = firstFiniteCount(toolUsage.web_search, detailWebSearch.search_engine) ?? 0;
+
+  const totalTokens = firstFiniteCount(u.total_tokens) ?? 0;
+  const cachedInputTokens =
+    firstFiniteCount((u.input_tokens_details as { cached_tokens?: unknown } | undefined)?.cached_tokens) ?? 0;
+
+  // ── input / output 拆分（优先级见设计 §3.2）──
+  let inputTokens = firstFiniteCount(u.input_tokens, u.prompt_tokens);
+  let outputTokens = firstFiniteCount(u.output_tokens, u.completion_tokens);
+  let estimated = false;
+
+  if (inputTokens === null || outputTokens === null) {
+    if (totalTokens > 0) {
+      // 兜底规则 A：有 total ⇒ 用 total 反推缺失的那一半
+      estimated = true;
+      if (inputTokens === null && outputTokens === null) {
+        // 两半都没给：output 按经验上限封顶，剩下的全归 input
+        // （检索侧特征是「结果全灌进上下文」⇒ 绝大多数是 input）
+        outputTokens = Math.max(0, Math.min(ARK_SEARCH_EST_OUTPUT_TOKENS, totalTokens));
+        inputTokens = Math.max(0, totalTokens - outputTokens);
+      } else if (outputTokens === null) {
+        // input 是实测值 ⇒ `input + output === total` 是恒等式 ⇒ output 精确可推，无需经验值
+        outputTokens = Math.max(0, totalTokens - (inputTokens ?? 0));
+      } else {
+        // output 是实测值 ⇒ 同理，input 精确可推
+        inputTokens = Math.max(0, totalTokens - outputTokens);
+      }
+    } else {
+      // 兜底规则 B：连 total 都没有 ⇒ 整条按经验中位数记（宁可估，不可静默记 0）
+      const reasoningTokens = firstFiniteCount(
+        (u.output_tokens_details as { reasoning_tokens?: unknown } | undefined)?.reasoning_tokens
+      );
+      inputTokens = ARK_SEARCH_FALLBACK_INPUT_TOKENS;
+      // output_tokens 顶层缺失但 reasoning 存在时，reasoning 是 output 的唯一可用下界
+      outputTokens = reasoningTokens ?? ARK_SEARCH_FALLBACK_OUTPUT_TOKENS;
+      estimated = true;
+    }
+  }
+
+  const snapshot: ArkUsageSnapshot = {
+    searchCalls,
+    inputTokens: inputTokens ?? 0,
+    outputTokens: outputTokens ?? 0,
+    totalTokens,
+  };
+  if (cachedInputTokens > 0) snapshot.cachedInputTokens = cachedInputTokens;
+  if (estimated) snapshot.estimated = true;
+  return snapshot;
 }
 
 /**
@@ -560,11 +730,28 @@ function pickArkUsage(obj: unknown): ArkUsageSnapshot | null {
  * `usage.total_tokens`（单 query 实测 2.4w~4w，检索结果会灌进上下文）过去**完全没有被记录**，
  * 方舟检索的钱在账上看不见 —— 只能等月底出账单再反推，无法按 query / 按站点归因。
  *
- * 注意：这里**只打日志**。不新增 `WebEvidence` 字段/枚举（该类型被前端卡片、PDF、Excel
- * 导出多处消费，加枚举会波及全线），也不在这里接扣费逻辑（计费属于账务侧，不是检索层的职责）。
+ * 2026-11-01 起**不只是打日志**：拆分后的 input/output 会同时写进
+ * `search-usage-collector.ts`（见 `searchViaArk` 里的 `recordWebSearchUsage()`），
+ * 由路由在扣费时并进 `computeAiCost()` —— 检索的钱过去完全没进账。
+ *
+ * 注意：仍**不新增** `WebEvidence` 字段/枚举（该类型被前端卡片、PDF、Excel 导出多处消费，
+ * 加枚举会波及全线），也仍不在这里接扣费逻辑（计费属于账务侧，不是检索层的职责）。
+ *
+ * 兜底规则（解析不出 input/output 时**绝不能静默记 0**，见设计 §3.2 与红线 5）：
+ *   - 规则 A（有 `total_tokens`）：`output = min(1500, total - input)`，`input = total - output`；
+ *   - 规则 B（连 `total_tokens` 都没有，但确实解析到了一个响应对象）：
+ *     `input = 24_000` / `output = 400`（或 reasoning）/ `searchCalls = 11`，实测中位数；
+ *   - 两档都会标 `estimated: true`，一路带到 breakdown 的 `searchEstimated`，
+ *     对账时能一眼筛出「哪些是估的、哪些是实测的」；
+ *   - 只有**根本没有响应体 / 响应体完全不可解析**时才归 0（那是"没发生"，不是"没记到"）。
  */
 export function readArkUsage(raw: string, contentType: string): ArkUsageSnapshot {
-  const empty: ArkUsageSnapshot = { searchCalls: 0, totalTokens: 0 };
+  const empty: ArkUsageSnapshot = {
+    searchCalls: 0,
+    inputTokens: 0,
+    outputTokens: 0,
+    totalTokens: 0,
+  };
   const body = typeof raw === "string" ? raw : "";
   if (!body) return empty;
 
@@ -573,7 +760,9 @@ export function readArkUsage(raw: string, contentType: string): ArkUsageSnapshot
     try {
       const obj = JSON.parse(body) as { response?: unknown };
       const snap = pickArkUsage(obj.response ?? obj);
+      // 解析到了响应对象（说明请求确实发生过、钱已经花了）⇒ usage 缺失走兜底规则 B
       if (snap) return snap;
+      return fallbackArkUsage();
     } catch {
       /* 落到 SSE 分支 */
     }
@@ -581,6 +770,8 @@ export function readArkUsage(raw: string, contentType: string): ArkUsageSnapshot
 
   // SSE：`response.completed` 在流尾部，带累计用量 ⇒ 取最后一次命中的快照
   let found: ArkUsageSnapshot | null = null;
+  let sawPayload = false;
+  let sawUsage = false;
   for (const line of body.split(/\r?\n/)) {
     if (!line.startsWith("data:")) continue;
     const payload = line.slice(5).trim();
@@ -591,10 +782,19 @@ export function readArkUsage(raw: string, contentType: string): ArkUsageSnapshot
     } catch {
       continue;
     }
+    sawPayload = true;
     const snap = pickArkUsage(obj.response ?? obj);
-    if (snap) found = snap;
+    if (snap) {
+      found = snap;
+      sawUsage = true;
+    }
   }
-  return found ?? empty;
+  if (found) return found;
+  if (sawPayload && !sawUsage) {
+    // 流里有响应事件但整条流都没有 usage ⇒ 走兜底规则 B（请求确实发生过、钱已经花了）
+    return fallbackArkUsage();
+  }
+  return empty;
 }
 
 /** 去重（按 url 唯一；无 url 时退化为 title+snippet 指纹） */
@@ -761,6 +961,7 @@ const ARK_EVIDENCE_INSTRUCTIONS = `你是农机二手交易与出口合规的市
 - url 必须是检索结果里真实出现过的来源页，禁止编造；
 - 只保留与「品牌/机型/国别/准入政策」直接相关的事实；
 - 没有可靠结果时返回 {"findings":[]}；
+- 联网搜索最多 ${ARK_SEARCH_CALLS_SOFT_LIMIT} 次；达到 ${ARK_SEARCH_CALLS_SOFT_LIMIT} 次立即停止检索，用已获得的证据输出 JSON；
 - 只输出 JSON，不要任何解释文字、不要 markdown 围栏。`;
 
 /** 归一 ARK 结构化输出；解析失败时用 url 池兜底 */
@@ -825,20 +1026,74 @@ async function searchViaArk(
     timeoutMs,
     signal,
   });
-  // ── 成本可见化（只打日志，不改任何返回类型）──
+  // ── 成本可见化 + 归集（**只报数、不算钱**：扣费在路由侧 `computeAiCost`）──
   // 方舟 web_search 的计费口径是「搜索次数 + token」，两个数都藏在这条响应的 `usage` 里：
   //   `usage.tool_usage.web_search` 实测单 query 9~14 次；
   //   `usage.total_tokens` 实测单 query 2.4w~4w（检索结果全灌进上下文）。
   // 不打日志就等于这笔钱在账上不可见，出问题（比如某天搜索次数突增 10 倍）也无从发现。
   const usage = readArkUsage(res.raw, res.contentType || "");
+  const elapsedMs = Date.now() - startedAt;
   // eslint-disable-next-line no-console
   console.info("[web-evidence] ark-usage", {
     query: query.slice(0, 40),
     site: env.site,
     searchCalls: usage.searchCalls,
     tokens: usage.totalTokens,
-    elapsedMs: Date.now() - startedAt,
+    inputTokens: usage.inputTokens,
+    outputTokens: usage.outputTokens,
+    cachedInputTokens: usage.cachedInputTokens ?? 0,
+    estimated: usage.estimated === true,
+    elapsedMs,
   });
+
+  if (usage.estimated === true) {
+    // 红线 5：用量缺失必须留痕 —— 拿不到 usage 时按经验中位数记（不是静默记 0），
+    // `estimated` 会一路带到 breakdown 的 `searchEstimated`，对账时能筛出「哪些是估的」。
+    // eslint-disable-next-line no-console
+    console.warn("[web-evidence] ark-usage-fallback", {
+      query: query.slice(0, 40),
+      site: env.site,
+      searchCalls: usage.searchCalls,
+      inputTokens: usage.inputTokens,
+      outputTokens: usage.outputTokens,
+      totalTokens: usage.totalTokens,
+      elapsedMs,
+    });
+  }
+
+  // 决策 3 的事后观测：**超软上限只告警，不硬截断**
+  // （协议层面做不到硬截断，完整理由见常量 `ARK_SEARCH_CALLS_SOFT_LIMIT` 的注释）。
+  // 必须在 `parseArkOutput` 之前判断 —— 解析失败也要告警（钱已经花了）。
+  const overLimit = usage.searchCalls > ARK_SEARCH_CALLS_SOFT_LIMIT;
+  if (overLimit) {
+    // eslint-disable-next-line no-console
+    console.warn("[web-evidence] search-calls-over-limit", {
+      query: query.slice(0, 40),
+      site: env.site,
+      searchCalls: usage.searchCalls,
+      limit: ARK_SEARCH_CALLS_SOFT_LIMIT,
+      totalTokens: usage.totalTokens,
+      inputTokens: usage.inputTokens,
+      outputTokens: usage.outputTokens,
+      elapsedMs,
+    });
+  }
+
+  // ── 归集（**记账点必须在 parseArkOutput 之前**）──
+  // HTTP 一成功就意味着钱已经花了，与后面 JSON 是否解析得出来无关；
+  // 放到 parse 之后会漏掉「响应回来了但 JSON 破损」这一类请求。
+  recordWebSearchUsage({
+    kind: "ark_web_search",
+    searchCalls: usage.searchCalls,
+    inputTokens: usage.inputTokens,
+    outputTokens: usage.outputTokens,
+    estimated: usage.estimated === true,
+    overLimit,
+    query,
+    site: env.site,
+    elapsedMs,
+  });
+
   const parsed = parseArkOutput(res.raw, res.contentType || "");
   const text = parsed.text || res.text || "";
   const urlPool = parsed.urls.length > 0 ? parsed.urls : res.urls;
@@ -941,6 +1196,22 @@ async function runSingleQuery(query: string, ctx: RunContext): Promise<QueryOutc
     } catch (err) {
       lastWasTimeout = isTimeoutLike(err);
       lastError = lastWasTimeout ? "超时" : errorSummary(err);
+      // ── 失败尝试的用量留痕（设计 §9.1 已知边界）──
+      // ARK 5xx / 超时的那次请求，服务端**可能**已经消耗了 web_search 次数，
+      // 但错误响应体里没有 `usage` ⇒ 技术上取不到。这里按 0 记并标 `failed:true`：
+      // 既不虚构用量（不多收），也不静默丢弃（账上看得见「有 N 次尝试没记到」）。
+      if (ctx.provider === "ark") {
+        recordWebSearchUsage({
+          kind: "ark_web_search",
+          searchCalls: 0,
+          inputTokens: 0,
+          outputTokens: 0,
+          estimated: false,
+          failed: true,
+          query,
+          site: ctx.env.site,
+        });
+      }
       const retryable = lastWasTimeout || isRetryableError(err);
       const left = ctx.deadline - Date.now();
       const isLastAttempt = attempt >= ctx.maxAttempts - 1;

@@ -273,6 +273,16 @@ function splitCandidateIds(seeds: ChannelSeed[]): { dealerIds: string[]; leadIds
   return { dealerIds, leadIds };
 }
 
+// ── 🔒 导出免计费守卫 (EXPORT_FREE_GUARD) ─────────────────────────────────────
+// 不变式：本路由【永远不得】调用任何计费入口（deductCredits / computeAiCost / 任何
+//   `@/lib/credits/*` 下的扣费函数）。导出是纯渲染（零 LLM、零模型推理成本），
+//   统一到成本加成口径后其成本本就为 0，故不收名义积分、不写 CreditTransaction。
+// 若未来确实要对「导出」收费：
+//   ① 须先在计费设计文档登记并评审；② 同步更新本文件头「计费」说明与该守卫注释；
+//   ③ 对应的回归锁 `__tests__/export-charge-guard.test.ts` 会因此变红报警——
+//      【禁止】靠删测试来通过，那是把「免费」偷偷改成「收费」的红线违规。
+// 注意：渲染/取数失败一律走 500，绝不可回退到「先扣费再渲染」或补一段扣费。
+// ──────────────────────────────────────────────────────────────────────────
 export async function POST(request: NextRequest) {
   const locale = getLocaleFromRequest(request);
   const zh = locale === "zh";

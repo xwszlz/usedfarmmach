@@ -15,6 +15,8 @@
  *       靠 `AbortSignal.timeout` 触发，不 sleep 9 秒。
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 vi.mock("@/lib/ai/ark-client", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/ai/ark-client")>();
@@ -45,6 +47,11 @@ import {
   buildWebDataSource,
   filterSelfReferentialItems,
   readArkUsage,
+  ARK_SEARCH_CALLS_SOFT_LIMIT,
+  ARK_SEARCH_EST_OUTPUT_TOKENS,
+  ARK_SEARCH_FALLBACK_INPUT_TOKENS,
+  ARK_SEARCH_FALLBACK_OUTPUT_TOKENS,
+  ARK_SEARCH_FALLBACK_SEARCH_CALLS,
   renderEvidenceBlock,
   resolveProvider,
   retrieveWebEvidence,
@@ -877,13 +884,25 @@ describe("自家站点证据过滤", () => {
 // ⑩ ARK 用量解析（成本可见化，只打日志，不改返回类型）
 // ═══════════════════════════════════════════════════════════
 
-describe("readArkUsage（检索成本可见化）", () => {
-  it("非流式 JSON：读出 tool_usage.web_search 与 total_tokens", () => {
+/**
+ * ⚠️ 2026-11-01：`ArkUsageSnapshot` 扩出了 `inputTokens` / `outputTokens` /
+ *    `cachedInputTokens` / `estimated` 四个字段（计费口径统一），所以这里的断言
+ *    **不能再用 `toEqual({searchCalls, totalTokens})` 的精确对象相等** ——
+ *    那会把「新增字段」误判成「解析错了」。逐字段断言，加字段不再需要改测试。
+ */
+describe("readArkUsage（检索成本可见化 → 计费归集口径）", () => {
+  it("非流式 JSON：读出 tool_usage.web_search 与 total_tokens（字段级断言）", () => {
     const raw = JSON.stringify({
       output_text: "{}",
       usage: { total_tokens: 35_952, tool_usage: { web_search: 14 } },
     });
-    expect(readArkUsage(raw, "application/json")).toEqual({ searchCalls: 14, totalTokens: 35_952 });
+    const snap = readArkUsage(raw, "application/json");
+    expect(snap.searchCalls).toBe(14);
+    expect(snap.totalTokens).toBe(35_952);
+    // 只有 total ⇒ 走兜底规则 A：output = min(1500, total)，input = total - output
+    expect(snap.outputTokens).toBe(ARK_SEARCH_EST_OUTPUT_TOKENS);
+    expect(snap.inputTokens).toBe(35_952 - ARK_SEARCH_EST_OUTPUT_TOKENS);
+    expect(snap.estimated).toBe(true);
   });
 
   it("SSE：从 response.completed 里取（取最后一个累计快照）", () => {
@@ -892,16 +911,219 @@ describe("readArkUsage（检索成本可见化）", () => {
       'data: {"type":"response.completed","response":{"usage":{"total_tokens":26762,"tool_usage":{"web_search":9}}}}',
       "data: [DONE]",
     ].join("\n");
-    expect(readArkUsage(sse, "text/event-stream")).toEqual({ searchCalls: 9, totalTokens: 26_762 });
+    const snap = readArkUsage(sse, "text/event-stream");
+    expect(snap.searchCalls).toBe(9);
+    expect(snap.totalTokens).toBe(26_762);
+    expect(snap.outputTokens).toBe(ARK_SEARCH_EST_OUTPUT_TOKENS);
+    expect(snap.inputTokens).toBe(26_762 - ARK_SEARCH_EST_OUTPUT_TOKENS);
+    expect(snap.estimated).toBe(true);
   });
 
-  it("usage 缺失 / 响应体为空 / JSON 坏掉 ⇒ 归 0，不抛错", () => {
-    expect(readArkUsage("", "application/json")).toEqual({ searchCalls: 0, totalTokens: 0 });
-    expect(readArkUsage("{bad json", "application/json")).toEqual({ searchCalls: 0, totalTokens: 0 });
-    expect(readArkUsage(JSON.stringify({ output_text: "{}" }), "application/json")).toEqual({
-      searchCalls: 0,
-      totalTokens: 0,
+  it("响应体为空 / JSON 完全坏掉 ⇒ 归 0，不抛错（那是「没发生」，不是「没记到」）", () => {
+    for (const [raw, ct] of [
+      ["", "application/json"],
+      ["{bad json", "application/json"],
+    ] as Array<[string, string]>) {
+      const snap = readArkUsage(raw, ct);
+      expect(snap.searchCalls).toBe(0);
+      expect(snap.inputTokens).toBe(0);
+      expect(snap.outputTokens).toBe(0);
+      expect(snap.totalTokens).toBe(0);
+      expect(snap.estimated).toBeUndefined();
+    }
+  });
+
+  it("usage 全缺（响应体本身是好的）⇒ 兜底规则 B：24_000 / 400 / 11 + estimated", () => {
+    const snap = readArkUsage(JSON.stringify({ output_text: "{}" }), "application/json");
+    expect(snap.searchCalls).toBe(ARK_SEARCH_FALLBACK_SEARCH_CALLS);
+    expect(snap.inputTokens).toBe(ARK_SEARCH_FALLBACK_INPUT_TOKENS);
+    expect(snap.outputTokens).toBe(ARK_SEARCH_FALLBACK_OUTPUT_TOKENS);
+    expect(snap.estimated).toBe(true);
+  });
+
+  it("实测字段全集：input/output 原样拆出，cached 只留痕，estimated 不置位", () => {
+    // 2026-11-01 真实 `/responses` 探针原样 usage
+    const raw = JSON.stringify({
+      output_text: "x",
+      usage: {
+        input_tokens: 32157,
+        output_tokens: 1508,
+        total_tokens: 33665,
+        input_tokens_details: { cached_tokens: 10040 },
+        output_tokens_details: { reasoning_tokens: 321 },
+        tool_usage: { web_search: 13 },
+        tool_usage_details: { web_search: { search_engine: 13 } },
+      },
     });
+    const snap = readArkUsage(raw, "application/json");
+    expect(snap.searchCalls).toBe(13);
+    expect(snap.inputTokens).toBe(32_157);
+    expect(snap.outputTokens).toBe(1_508);
+    expect(snap.totalTokens).toBe(33_665);
+    // 决策 2：cached 维持全价当利润缓冲 ⇒ 只留痕，绝不进任何计价分支
+    expect(snap.cachedInputTokens).toBe(10_040);
+    expect(snap.estimated).toBeUndefined();
+    // 交叉校验基准：input + output === total（实测恒等）
+    expect(snap.inputTokens + snap.outputTokens).toBe(snap.totalTokens);
+  });
+
+  it("reasoning_tokens **已含在** output_tokens 内 ⇒ 绝不重复相加（否则多收一倍）", () => {
+    const raw = JSON.stringify({
+      usage: {
+        input_tokens: 32157,
+        output_tokens: 1508,
+        total_tokens: 33665,
+        output_tokens_details: { reasoning_tokens: 321 },
+        tool_usage: { web_search: 13 },
+      },
+    });
+    const snap = readArkUsage(raw, "application/json");
+    expect(snap.outputTokens).toBe(1_508); // 不是 1508 + 321
+    expect(snap.outputTokens).not.toBe(1_829);
+  });
+
+  it("只有 total_tokens ⇒ 兜底规则 A：output = min(1500, total)，input = total - output", () => {
+    const raw = JSON.stringify({
+      usage: { total_tokens: 24_759, tool_usage: { web_search: 11 } },
+    });
+    const snap = readArkUsage(raw, "application/json");
+    expect(snap.outputTokens).toBe(ARK_SEARCH_EST_OUTPUT_TOKENS);
+    expect(snap.inputTokens).toBe(24_759 - ARK_SEARCH_EST_OUTPUT_TOKENS);
+    expect(snap.estimated).toBe(true);
+    // total 很小时 min(...) 兜住，input 不会变负数
+    const tiny = readArkUsage(JSON.stringify({ usage: { total_tokens: 300 } }), "application/json");
+    expect(tiny.outputTokens).toBe(300);
+    expect(tiny.inputTokens).toBe(0);
+  });
+
+  it("input 实测、output 缺失 ⇒ 只补 output（用 total - input，不退回经验值）", () => {
+    const raw = JSON.stringify({
+      usage: { input_tokens: 32_157, total_tokens: 33_665, tool_usage: { web_search: 13 } },
+    });
+    const snap = readArkUsage(raw, "application/json");
+    expect(snap.inputTokens).toBe(32_157);
+    expect(snap.outputTokens).toBe(33_665 - 32_157);
+    expect(snap.estimated).toBe(true);
+  });
+
+  it("searchCalls：tool_usage 读不到时用 tool_usage_details.web_search.search_engine 兜底", () => {
+    const raw = JSON.stringify({
+      usage: {
+        input_tokens: 1000,
+        output_tokens: 500,
+        total_tokens: 1500,
+        tool_usage_details: { web_search: { search_engine: 7 } },
+      },
+    });
+    expect(readArkUsage(raw, "application/json").searchCalls).toBe(7);
+    // 两者都在时以 tool_usage 为准（实测同值，协议上它是正主）
+    const both = readArkUsage(
+      JSON.stringify({
+        usage: { total_tokens: 10, tool_usage: { web_search: 3 }, tool_usage_details: { web_search: { search_engine: 9 } } },
+      }),
+      "application/json"
+    );
+    expect(both.searchCalls).toBe(3);
+  });
+});
+
+describe("检索次数软上限（决策 3：只观测，不硬截断）", () => {
+  it("searchCalls > 20 ⇒ 打 warn 留痕，但**证据照常产出**（用户侧零感知）", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      arkWebSearchMock.mockImplementation(async (opts: { prompt?: string }) => {
+        const seed = String(opts?.prompt ?? "");
+        const base = arkFindingsResponse("overlimit");
+        return {
+          ...base,
+          raw: JSON.stringify({
+            output_text: base.text,
+            usage: {
+              input_tokens: 60_000,
+              output_tokens: 1_500,
+              total_tokens: 61_500,
+              tool_usage: { web_search: ARK_SEARCH_CALLS_SOFT_LIMIT + 9 },
+            },
+          }),
+        };
+      });
+
+      const ev = await retrieveWebEvidence(input(), {
+        runtime: { site: "com", arkApiKey: "ark-key", searchApiProvider: "" },
+      });
+
+      // ① 证据不受影响：状态与条目照常（前端四档契约不得因内部成本控制而抖动）
+      expect(ev.status).toBe("ok");
+      expect(ev.items.length).toBeGreaterThan(0);
+      // ② 但日志里必须看得见（红线 5）
+      const overLimitLogs = warnSpy.mock.calls.filter(
+        (c) => typeof c[0] === "string" && c[0].includes("search-calls-over-limit")
+      );
+      expect(overLimitLogs.length).toBeGreaterThan(0);
+      expect(overLimitLogs[0][1]).toMatchObject({
+        searchCalls: ARK_SEARCH_CALLS_SOFT_LIMIT + 9,
+        limit: ARK_SEARCH_CALLS_SOFT_LIMIT,
+      });
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
+  it("用量缺失（无 usage）⇒ 打 ark-usage-fallback warn（红线 5：绝不静默记 0）", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      arkWebSearchMock.mockImplementation(async (opts: { prompt?: string }) => {
+        const seed = String(opts?.prompt ?? "");
+        const base = arkFindingsResponse(`nofallback-${seed.length}`);
+        return { ...base, raw: JSON.stringify({ output_text: base.text }) };
+      });
+
+      const ev = await retrieveWebEvidence(input(), {
+        runtime: { site: "com", arkApiKey: "ark-key", searchApiProvider: "" },
+      });
+      expect(ev.status).toBe("ok");
+      const logs = warnSpy.mock.calls.filter(
+        (c) => typeof c[0] === "string" && c[0].includes("ark-usage-fallback")
+      );
+      expect(logs.length).toBeGreaterThan(0);
+      expect(logs[0][1]).toMatchObject({
+        inputTokens: ARK_SEARCH_FALLBACK_INPUT_TOKENS,
+        outputTokens: ARK_SEARCH_FALLBACK_OUTPUT_TOKENS,
+      });
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+});
+
+describe("prompt 软约束（联网搜索最多 20 次）不破坏 JSON 契约", () => {
+  it("响应带前缀解释文字时，仍能解析出 findings（不会退化成 0 证据）", async () => {
+    arkWebSearchMock.mockImplementation(async (opts: { prompt?: string }) => {
+      const seed = String(opts?.prompt ?? "");
+      const base = arkFindingsResponse("prefixed");
+      // 模型在 JSON 前面多说一句（软约束让它有可能这么做）
+      const withPrefix = `好的，以下是检索结果：\n${base.text}`;
+      return {
+        ...base,
+        text: withPrefix,
+        raw: JSON.stringify({ output_text: withPrefix, usage: { total_tokens: 100 } }),
+      };
+    });
+
+    const ev = await retrieveWebEvidence(input(), {
+      runtime: { site: "com", arkApiKey: "ark-key", searchApiProvider: "" },
+    });
+    expect(ev.status).toBe("ok");
+    expect(ev.items.length).toBeGreaterThan(0);
+  });
+
+  it("抽取指令里确实带「最多 20 次」软约束，且「只输出 JSON」末句仍在", () => {
+    const src = readFileSync(
+      resolve(process.cwd(), "src/lib/search/web-evidence.ts"),
+      "utf8"
+    );
+    expect(src).toMatch(/联网搜索最多 \$\{ARK_SEARCH_CALLS_SOFT_LIMIT\} 次/);
+    expect(src).toMatch(/只输出 JSON，不要任何解释文字、不要 markdown 围栏/);
   });
 });
 
