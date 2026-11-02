@@ -1121,5 +1121,26 @@
     "workingHours": "Working hours",
     "workingHoursPlaceholder": "e.g. 1200",
     "_todo": "TODO: translate sellerPublish keys to hi; values temporarily copied from en (P0 2026-09-06)"
+  },
+  "imageCategory": {
+    "OVERALL": "पूरी मशीन",
+    "NAMEPLATE": "मॉडल प्लेट",
+    "DASHBOARD": "डैशबोर्ड / मीटर पैनल",
+    "CAB": "कैब",
+    "ENGINE": "इंजन कक्ष",
+    "WORKING_MECHANISM": "कार्य तंत्र",
+    "CHASSIS": "पहिए / चेसिस",
+    "REAR": "पिछला दृश्य",
+    "FRONT_ATTACHMENT": "सामने / अटैचमेंट",
+    "SIDE": "पूरा साइड व्यू",
+    "DETAIL": "क्लोज़-अप विवरण",
+    "DAMAGE": "नुकसान"
+  },
+  "recognize": {
+    "reminder": {
+      "title": "सुझाई गई मुख्य फ़ोटो",
+      "nameplateMissing": "मॉडल प्लेट की फ़ोटो प्रदान नहीं की गई — पहचान की सटीकता कम हो सकती है।",
+      "dashboardMissing": "डैशबोर्ड की फ़ोटो प्रदान नहीं की गई — कार्य घंटे और मुख्य विनिर्देश छूट सकते हैं।"
+    }
   }
 }

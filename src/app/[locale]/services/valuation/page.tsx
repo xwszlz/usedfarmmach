@@ -679,7 +679,7 @@ function AIRecognizeSection({
           <>
             <Camera className="mx-auto mb-2 h-10 w-10 text-gray-400" />
             <p className="text-sm text-gray-500">点击拍照或拖拽图片到此处（可多选）</p>
-            <p className="mt-1 text-xs text-gray-400">建议3-5张：铭牌、整机、驾驶室、轮胎底盘，AI识别更准</p>
+            <p className="mt-1 text-xs text-gray-400">建议3-5张：铭牌、仪表盘、整机、驾驶室、轮胎底盘，AI识别更准</p>
           </>
         )}
         {imagePreviews.length > 0 && imagePreviews.length < MAX_IMAGES && (

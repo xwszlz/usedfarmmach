@@ -7,6 +7,11 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import {
+  ImageCategory,
+  prioritizeKeyImages,
+  toImageCategory,
+} from "@/lib/products/image-category";
 
 // Vercel Serverless Function 超时延长至60秒（默认10秒，含SCP优化可能超时）
 export const dynamic = "force-dynamic"; // 防 .cn 构建期静态固化，详见 scripts/check-route-dynamic.mjs
@@ -98,30 +103,38 @@ function scpScoreImage(filename: string): number {
 
 /**
  * SCP: 创建完图片后自动优化 — 选最佳整机图作为首图
- * 确保 sortOrder=0 且 isPrimary=true 的图是最高分的
+ * 确保 sortOrder=0 且 isPrimary=true 的图是最高分的（保留既有 SCP 封面选择逻辑：不让仪表盘/铭牌当封面）。
+ * 其余图片的 sortOrder 按【类别优先级】（orderedImageUrls 已是排好序的完整 url 列表）排列，
+ * 使仪表盘/铭牌等关键点靠前但不抢封面。
  *
  * ✨ 性能优化：使用批量操作替代循环单条更新（原方案N张图需2+N次DB调用）
+ *
+ * @param productId 产品 ID
+ * @param orderedImageUrls 已按类别优先级排好序的完整 url 列表（与库内图片一一对应）
  */
-async function autoOptimizeCover(productId: string, imageUrls: string[]) {
-  if (!imageUrls || imageUrls.length <= 1) return; // 0或1张图无需优化
+async function autoOptimizeCover(productId: string, orderedImageUrls: string[]) {
+  if (!orderedImageUrls || orderedImageUrls.length <= 1) return; // 0或1张图无需优化
 
-  // 评分排序
-  const scored = imageUrls.map((url, idx) => ({
-    url,
-    fname: url.split("/").pop() || `img_${idx}`,
-    score: scpScoreImage(url),
-  })).sort((a, b) => b.score - a.score);
+  // 封面仍由 SCP 文件名关键词评分决定（保留：不让仪表盘/铭牌当封面）
+  const scored = orderedImageUrls
+    .map((url, idx) => ({
+      url,
+      fname: url.split("/").pop() || `img_${idx}`,
+      score: scpScoreImage(url),
+    }))
+    .sort((a, b) => b.score - a.score);
 
   const best = scored[0];
-  const firstUrl = imageUrls[0];
+  const firstUrl = orderedImageUrls[0];
 
-  // 如果第一张已经是最佳且分数足够高，跳过优化
+  // 若首图（类别优先级最高者）已经是最佳且分数足够高，跳过优化（保持类别优先级顺序即可）
   if (best.url === firstUrl && best.score >= 70) return;
 
-  const otherUrls = imageUrls.filter(u => u !== best.url);
+  // 其余图片按类别优先级顺序排列（去掉封面图）
+  const otherUrls = orderedImageUrls.filter((u) => u !== best.url);
 
   // ✅ 批量操作：一次更新所有图片的 isPrimary 和 sortOrder（仅需3次DB调用）
-  // 1. 将最佳图设为 isPrimary=true, sortOrder=0
+  // 1. 将最佳图设为 isPrimary=true, sortOrder=0（封面）
   await prisma.productImage.updateMany({
     where: { productId, url: best.url },
     data: { isPrimary: true, sortOrder: 0 },
@@ -135,7 +148,7 @@ async function autoOptimizeCover(productId: string, imageUrls: string[]) {
     });
   }
 
-  // 3. 批量重排其余图的 sortOrder
+  // 3. 按类别优先级批量重排其余图的 sortOrder（封面之后）
   if (otherUrls.length > 1) {
     for (let i = 0; i < otherUrls.length; i++) {
       await prisma.productImage.updateMany({
@@ -145,7 +158,7 @@ async function autoOptimizeCover(productId: string, imageUrls: string[]) {
     }
   }
 
-  console.log(`[SCP] 产品 ${productId} 首图已优化 → ${best.fname} (score=${best.score})`);
+  console.log(`[SCP] 产品 ${productId} 首图已优化 → ${best.fname} (score=${best.score})；其余按类别优先级排序`);
 }
 
 // ========== POST 创建产品 ==========
@@ -201,20 +214,32 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // 如果有图片，创建图片记录
+    // 如果有图片，创建图片记录（按类别优先级排序：铭牌/仪表盘自动靠前）
     if (body.images && Array.isArray(body.images)) {
+      // 兼容新协议 { url, imageCategory? }[] 与旧协议 string[]
+      const imagePayload = (body.images as Array<string | { url: string; imageCategory?: unknown }>).map(
+        (img) =>
+          typeof img === "string"
+            ? { url: img, imageCategory: null }
+            : { url: img.url, imageCategory: toImageCategory(img.imageCategory) }
+      );
+      const ordered = prioritizeKeyImages(imagePayload);
       await prisma.productImage.createMany({
-        data: body.images.map((url: string, i: number) => ({
+        data: ordered.map((img, i: number) => ({
           productId: product.id,
-          url,
+          url: img.url,
           sortOrder: i,
           isPrimary: i === 0,
+          imageCategory: img.imageCategory ?? null,
         })),
       });
 
-      // ✨ SCP 自动优化封面 — 选最佳整机图作为首图
+      // ✨ SCP 自动优化封面 — 选最佳整机图作为首图，其余按类别优先级排序
       try {
-        await autoOptimizeCover(product.id, body.images);
+        await autoOptimizeCover(
+          product.id,
+          ordered.map((i) => i.url)
+        );
       } catch (scpError) {
         console.error("[SCP] 封面优化失败（不影响产品创建）:", scpError);
       }

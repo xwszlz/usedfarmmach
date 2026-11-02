@@ -16,6 +16,11 @@ import { checkContent, isBlocked } from "@/lib/wechat-sec-check";
 import { checkDuplicateProduct, fireVideoModeration, MAX_VIDEOS_PER_PRODUCT, MAX_VIDEO_DURATION_SECONDS, MAX_VIDEO_FILE_SIZE_BYTES } from "@/lib/content-moderation";
 import { translateProductOnPublish } from "@/lib/services/product-translation";
 import { deductCredits } from "@/lib/credits/spend";
+import {
+  ImageCategory,
+  prioritizeKeyImages,
+  toImageCategory,
+} from "@/lib/products/image-category";
 
 /** 从 referer / 路径推断 locale（与 quota guard / 各 AI 路由保持一致） */
 function getLocaleFromRequest(request: NextRequest): string {
@@ -188,12 +193,46 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // === 图片上传（兼容前端直传 OSS 和旧版 FormData 两种模式）===
+    // === 图片上传（兼容三种模式：新 images 协议 / 旧 imageUrls / 旧版 FormData）===
+    // imagePayload：统一结构 { url, imageCategory? }，便于按类别优先级排序写库。
+    // - 新协议 images：前端按拍摄位指定类别，仪表盘/铭牌可被排到最前。
+    // - 旧方案 imageUrls / FormData：无类别（imageCategory=null），保持向后兼容。
+    const directImages = formData.get("images")?.toString();
     const directImageUrls = formData.get("imageUrls")?.toString();
-    let uploadedImageUrls: string[];
+    let uploadedImageUrls: string[] = []; // 扁平 url 列表（向后兼容 & 内容安全检测复用）
+    let imagePayload: { url: string; imageCategory?: ImageCategory | null }[] = [];
 
-    if (directImageUrls) {
-      // 新方案：前端已直传 OSS，只传 URL
+    if (directImages) {
+      // 新协议：前端已直传 OSS，传 { url, imageCategory? }[]
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(directImages);
+      } catch {
+        return NextResponse.json({ success: false, error: "images 格式错误" }, { status: 400 });
+      }
+      if (
+        !Array.isArray(parsed) ||
+        parsed.some((x) => !x || typeof (x as { url?: unknown }).url !== "string")
+      ) {
+        return NextResponse.json(
+          { success: false, error: "images 必须是包含 url 的对象数组", code: "INVALID_IMAGE_URL" },
+          { status: 400 }
+        );
+      }
+      const typed = parsed as Array<{ url: string; imageCategory?: unknown }>;
+      try {
+        await assertSafeImageUrls(typed.map((x) => x.url));
+      } catch (err) {
+        const reason = err instanceof Error ? err.message : String(err);
+        return NextResponse.json(
+          { success: false, error: `图片地址不被接受：${reason}`, code: "INVALID_IMAGE_URL" },
+          { status: 400 }
+        );
+      }
+      uploadedImageUrls = typed.map((x) => x.url);
+      imagePayload = typed.map((x) => ({ url: x.url, imageCategory: toImageCategory(x.imageCategory) }));
+    } else if (directImageUrls) {
+      // 旧方案：前端已直传 OSS，只传 url 数组（无类别）
       try {
         uploadedImageUrls = JSON.parse(directImageUrls);
       } catch {
@@ -220,6 +259,7 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
+      imagePayload = uploadedImageUrls.map((url) => ({ url, imageCategory: null }));
     } else {
       // 旧方案：从 FormData 获取文件并上传到 OSS
       const imageFiles = formData.getAll("images") as File[];
@@ -230,6 +270,7 @@ export async function POST(request: NextRequest) {
         const { url } = await uploadFileToOSS(validImages[i], tempFolder);
         uploadedImageUrls.push(url);
       }
+      imagePayload = uploadedImageUrls.map((url) => ({ url, imageCategory: null }));
     }
 
     // === 内容安全检测（微信 sec-check）===
@@ -313,14 +354,19 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // === 关联已上传的图片到产品 ===
-    for (let i = 0; i < uploadedImageUrls.length; i++) {
+    // === 关联已上传的图片到产品（按类别优先级排序：铭牌/仪表盘自动靠前）===
+    // prioritizeKeyImages 稳定排序：同权重保持原相对序，无类别排最后。
+    // 首图 sortOrder=-1 且 isPrimary=true（封面取优先级最小者=整机全貌/铭牌），
+    // 仪表盘靠前但不抢封面（与"不让仪表盘当封面"的产品诉求一致）。
+    const orderedImages = prioritizeKeyImages(imagePayload);
+    for (let i = 0; i < orderedImages.length; i++) {
       await prisma.productImage.create({
         data: {
           productId: product.id,
-          url: uploadedImageUrls[i],
+          url: orderedImages[i].url,
           sortOrder: i === 0 ? -1 : i,
           isPrimary: i === 0,
+          imageCategory: orderedImages[i].imageCategory ?? null,
         },
       });
     }

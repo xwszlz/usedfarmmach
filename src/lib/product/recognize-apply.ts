@@ -83,6 +83,8 @@ export interface RecognizedData {
   referencePrice?: Scalar;
   isChineseBrand?: boolean | null;
   confidence?: number | null;
+  /** 识别时的关键照片缺失提醒（铭牌/仪表盘缺失等），由后端在 data.reminders 返回。 */
+  reminders?: Array<{ category: string; i18nKey: string }>;
 }
 
 /**

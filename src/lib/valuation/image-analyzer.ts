@@ -28,6 +28,11 @@ import {
   conditionCodeLabelText,
 } from "./condition";
 import type { ConditionCode } from "./condition";
+import {
+  ImageCategory,
+  prioritizeKeyImages,
+  toImageCategory,
+} from "@/lib/products/image-category";
 
 /**
  * ⚠️ 本模块 Node-only：`@/lib/net/ssrf-guard` 顶层依赖 Node 内置的
@@ -242,14 +247,26 @@ function fallbackConditionLabel(score: number): string {
 /**
  * 批量分析多张产品图片（并行处理）。
  *
- * @param imageUrls 图片 URL / data URI 列表（最多分析前 MAX_ANALYZE_IMAGES=5 张，控制成本）
- * @param locale    输出语种
+ * @param images 图片 URL / data URI 列表，或带类别的对象 { url, imageCategory? } 列表。
+ *               若提供对象列表，会先按类别优先级（铭牌/仪表盘最前）重排，再取前
+ *               MAX_ANALYZE_IMAGES=5 张分析（确保关键图进前 5）。
+ *               无 imageCategory 字段（旧图 / 纯字符串 URL）视为无类别：排序权重 999，
+ *               稳定排在最后，且保持原有相对顺序 —— 既有的「纯字符串」调用方行为完全不变。
+ * @param locale 输出语种
  */
 export async function analyzeProductImages(
-  imageUrls: string[],
+  images: Array<string | { url: string; imageCategory?: ImageCategory | null }>,
   locale: AiLocale = "zh"
 ): Promise<VisualValuationResult> {
-  if (!imageUrls || imageUrls.length === 0) {
+  // 归一化为统一结构；对带类别的对象按类别优先级重排（让铭牌/仪表盘进前 5 张）。
+  const normalized: { url: string; imageCategory: ImageCategory | null }[] = (images || []).map(
+    (img) =>
+      typeof img === "string"
+        ? { url: img, imageCategory: null }
+        : { url: img.url, imageCategory: toImageCategory(img.imageCategory) }
+  );
+
+  if (normalized.length === 0) {
     return {
       visualConditionScore: 0,
       visualConditionAnalysis: "",
@@ -259,8 +276,9 @@ export async function analyzeProductImages(
     };
   }
 
-  // 最多分析 MAX_ANALYZE_IMAGES 张图片（成本保护上限，与前端上传上限对齐）
-  const urlsToAnalyze = imageUrls.slice(0, MAX_ANALYZE_IMAGES);
+  // 先按类别优先级重排，再取前 MAX_ANALYZE_IMAGES 张（成本保护上限，与前端上传上限对齐）
+  const prioritized = prioritizeKeyImages(normalized);
+  const urlsToAnalyze = prioritized.slice(0, MAX_ANALYZE_IMAGES).map((i) => i.url);
 
   try {
     const results = await Promise.all(urlsToAnalyze.map((url) => analyzeProductImage(url, locale)));

@@ -2192,6 +2192,47 @@
 
     "workingHoursPlaceholder": "如: 1200"
 
+  },
+
+  "imageCategory": {
+
+    "OVERALL": "整机全貌",
+
+    "NAMEPLATE": "型号铭牌",
+
+    "DASHBOARD": "仪表盘",
+
+    "CAB": "驾驶室",
+
+    "ENGINE": "发动机舱",
+
+    "WORKING_MECHANISM": "作业机构",
+
+    "CHASSIS": "轮毂/底盘",
+
+    "REAR": "后侧图",
+
+    "FRONT_ATTACHMENT": "前脸/附件",
+
+    "SIDE": "侧面全身",
+
+    "DETAIL": "细节特写",
+
+    "DAMAGE": "损伤部位"
+
+  },
+
+  "recognize": {
+
+    "reminder": {
+
+      "title": "建议补充关键照片",
+
+      "nameplateMissing": "未提供型号铭牌照片，识别准确度可能下降",
+
+      "dashboardMissing": "未提供仪表盘照片，工作时长等关键信息可能无法识别"
+
+    }
   }
 
 }

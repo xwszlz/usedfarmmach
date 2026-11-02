@@ -24,6 +24,7 @@ import { analyzeVideos, type VideoAnalysisResult } from "@/lib/valuation/video-a
 
 import { getVideoUrl } from "@/lib/image-url";
 import { resolveValuationCodes } from "@/lib/valuation/resolve-codes";
+import { prioritizeKeyImages, type ImageCategory } from "@/lib/products/image-category";
 // 游客限流键：站点感知的 IP 取值链 + 匿名哈希（详见该模块头注释）
 import { getClientIpHash } from "@/lib/valuation/client-ip";
 
@@ -492,8 +493,20 @@ export async function POST(request: NextRequest) {
 
 
         // V4: 从数据库读取图片和视频
-
-        imageUrls: mergedImageUrls.length > 0 ? mergedImageUrls : product.images?.map((img: any) => img.url) || [],
+        // 双保险①：取回的产品图先按类别优先级重排（铭牌/仪表盘进前 5）再交给 analyzer；
+        // analyzer 内部还会再做一次 prioritizeKeyImages（兼容老图无类别）。请求体直传的
+        // mergedImageUrls 无类别，原样保留（用户手动上传估值不强制分类）。
+        imageUrls:
+          mergedImageUrls.length > 0
+            ? mergedImageUrls
+            : product.images && product.images.length > 0
+              ? prioritizeKeyImages(
+                  product.images.map((img: any) => ({
+                    url: img.url,
+                    imageCategory: (img.imageCategory as ImageCategory | null) ?? null,
+                  }))
+                ).map((i) => i.url)
+              : [],
 
         videoUrls: videoUrls.length > 0 ? videoUrls : product.videos?.map((vid: any) => vid.url) || [],
 
@@ -1094,8 +1107,17 @@ export async function GET(request: NextRequest) {
 
 
       // V4: 从数据库读取图片和视频
+      // 同 POST：按类别优先级重排（铭牌/仪表盘进前 5），兼容老图无类别。
 
-      imageUrls: product.images?.map((img: any) => img.url) || [],
+      imageUrls:
+        product.images && product.images.length > 0
+          ? prioritizeKeyImages(
+              product.images.map((img: any) => ({
+                url: img.url,
+                imageCategory: (img.imageCategory as ImageCategory | null) ?? null,
+              }))
+            ).map((i) => i.url)
+          : [],
 
       videoUrls: product.videos?.map((vid: any) => vid.url) || [],
 

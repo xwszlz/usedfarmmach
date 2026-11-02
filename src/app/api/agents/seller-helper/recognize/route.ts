@@ -30,6 +30,7 @@ import { getUserFromRequest } from "@/lib/auth";
 import { computeAiCost, deductCredits, type AiCostBreakdown } from "@/lib/credits/spend";
 import { recordUsage, drainUsage, ESTIMATED_TOKENS } from "@/lib/credits/usage-collector";
 import { chatCompletionDoubao, getArkModelId } from "@/lib/ai/ark-client";
+import { ImageCategory, KEY_RECOGNITION_CATEGORIES } from "@/lib/products/image-category";
 
 /** 从 referer / 路径推断 locale（与 quota guard 的 rechargeUrl 保持一致） */
 function getLocaleFromRequest(request: NextRequest): string {
@@ -351,16 +352,18 @@ const INTERNATIONAL_PROMPT = `你是一位资深二手农业机械专家，熟�
  * 只是把原先内联的同一段 JSON 抽出来，让「超预算」与「全模型失败」走同一个出口。
  */
 function manualFallbackResponse(errors: string[]): NextResponse {
-  return NextResponse.json(
-    {
-      success: false,
-      error: "AI识别服务暂时不可用，请直接在下方填写产品参数后发布（不影响使用）",
-      code: "MANUAL_FALLBACK",
-      retryable: true,
-      debug: errors.length > 0 ? errors : ["未知错误"],
-    },
-    { status: 503 }
-  );
+    return NextResponse.json(
+      {
+        success: false,
+        error: "AI识别服务暂时不可用，请直接在下方填写产品参数后发布（不影响使用）",
+        code: "MANUAL_FALLBACK",
+        retryable: true,
+        // 模型失败时同样返回空提醒数组，保持响应结构稳定（前端无条件读 reminders 字段）
+        reminders: [] as { category: ImageCategory; i18nKey: string }[],
+        debug: errors.length > 0 ? errors : ["未知错误"],
+      },
+      { status: 503 }
+    );
 }
 
 // ── 调用豆包 API（统一出口 chatCompletionDoubao，OpenAI 兼容格式）──
@@ -522,7 +525,10 @@ function toNullableWorkingHours(raw: unknown): number | null {
 }
 
 // ── 构建成功响应 ──
-async function buildSuccessResponse(recognized: Record<string, any>) {
+async function buildSuccessResponse(
+  recognized: Record<string, any>,
+  reminders: { category: ImageCategory; i18nKey: string }[] = []
+) {
   // 自动检测 isChineseBrand：优先用AI返回值，否则用关键词检测
   const detectedChinese = recognized.isChineseBrand !== undefined
     ? Boolean(recognized.isChineseBrand)
@@ -601,6 +607,8 @@ async function buildSuccessResponse(recognized: Record<string, any>) {
       // ── 既有字段 ──
       isChineseBrand: detectedChinese,
       confidence: recognized.confidence || 0.5,
+      // 识别缺图提醒：铭牌/仪表盘未提供时给出（多语言文案由前端按 i18nKey 渲染）
+      reminders,
     },
   });
 }
@@ -676,6 +684,41 @@ export async function POST(request: NextRequest) {
     const videoUrls: string[] = body.videoUrls || [];
     const forceChineseBrand = body.isChineseBrand as boolean | undefined;
     const images = [...imageUrls, ...imageDataUris];
+
+    // === 识别缺图提醒：收集各图类别，计算铭牌/仪表盘缺失 ===
+    // 优先用请求体带来的 imageCategories（与 imageUrls 同序）；若没有、且作用于已有产品
+    // （body.productId 存在），则从 DB 产品 images 读取（识别可作用于已发布产品）。
+    // 多语言文案由前端按返回的 i18nKey 渲染，后端只负责占位 key，不碰 i18n 文案文件。
+    const presentCategories: ImageCategory[] = Array.isArray(body.imageCategories)
+      ? (Array.from(new Set(body.imageCategories.filter((c: unknown): c is string => typeof c === "string"))) as ImageCategory[])
+      : [];
+    // 请求体未带类别、且提供了 productId → 从 DB 读取该产品已有的图片类别
+    if (presentCategories.length === 0 && typeof body.productId === "string" && body.productId) {
+      try {
+        const prod = await prisma.product.findUnique({
+          where: { id: body.productId },
+          select: { images: { select: { imageCategory: true } } },
+        });
+        const dbCats = (prod?.images || [])
+          .map((i) => i.imageCategory)
+          .filter((c): c is ImageCategory => !!c);
+        for (const c of Array.from(new Set(dbCats))) {
+          if (!presentCategories.includes(c)) presentCategories.push(c);
+        }
+      } catch {
+        // DB 读取失败不阻断识别主流程，仅不给出提醒
+      }
+    }
+    const missingCategories = KEY_RECOGNITION_CATEGORIES.filter(
+      (c) => !presentCategories.includes(c)
+    );
+    const reminders: { category: ImageCategory; i18nKey: string }[] = missingCategories.map((c) => ({
+      category: c,
+      i18nKey:
+        c === ImageCategory.NAMEPLATE
+          ? "recognize.reminder.nameplateMissing"
+          : "recognize.reminder.dashboardMissing",
+    }));
 
     if (!images || !Array.isArray(images) || images.length === 0) {
       return NextResponse.json(
@@ -838,7 +881,7 @@ export async function POST(request: NextRequest) {
       }, { status: 402 });
     }
 
-    return await buildSuccessResponse(finalRecognized);
+    return await buildSuccessResponse(finalRecognized, reminders);
 
   } catch (error: any) {
     console.error("[SellerHelper] 未处理异常:", error?.message);

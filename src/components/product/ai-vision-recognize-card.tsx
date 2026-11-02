@@ -28,6 +28,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   ScanEye,
   Loader2,
@@ -136,12 +137,14 @@ export default function AiVisionRecognizeCard({
   isChineseBrand,
 }: AiVisionRecognizeCardProps) {
   const zh = locale === "zh";
+  const t = useTranslations("recognize");
   const router = useRouter();
 
   const [phase, setPhase] = useState<Phase>("idle");
   const [error, setError] = useState<ErrorState | null>(null);
   const [loginUrl, setLoginUrl] = useState<string | null>(null);
   const [recognized, setRecognized] = useState<RecognizedData | null>(null);
+  const [reminders, setReminders] = useState<Array<{ category: string; i18nKey: string }>>([]);
 
   /** 归属判定结果：null = 尚未判定（不显示回填 UI），true = 可回填，false = 只展示。 */
   const [canApply, setCanApply] = useState<boolean | null>(null);
@@ -263,6 +266,7 @@ export default function AiVisionRecognizeCard({
     setError(null);
     setLoginUrl(null);
     setRecognized(null);
+    setReminders([]);
     setCanApply(null);
     setApplyNote(null);
     setDiffs([]);
@@ -373,6 +377,7 @@ export default function AiVisionRecognizeCard({
       // ── 成功 ──
       const data = json.data as RecognizedData;
       setRecognized(data);
+      setReminders(Array.isArray((data as any).reminders) ? (data as any).reminders : []);
       setPhase("done");
       // 成功后才去判归属 + 算差异
       await loadPermissionAndDiff(data, runId);
@@ -684,6 +689,23 @@ export default function AiVisionRecognizeCard({
       {/* done：结果表 + 回填 */}
       {phase === "done" && recognized && (
         <div className="mt-3 space-y-3">
+          {/* 关键照片缺失提醒（铭牌/仪表盘缺失时后端返回 reminders） */}
+          {reminders.length > 0 && (
+            <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm">
+              <div className="mb-1 flex items-center gap-2 font-medium text-amber-800">
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                {t("reminder.title")}
+              </div>
+              <ul className="space-y-1 pl-6">
+                {reminders.map((r, i) => (
+                  <li key={`${r.i18nKey}-${i}`} className="list-disc text-amber-700">
+                    {t(r.i18nKey.replace(/^recognize\./, ""))}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {/* 结果表（可折叠，避免长表把页面撑长） */}
           <details open className="rounded-lg border border-sky-200 bg-white">
             <summary className="flex cursor-pointer items-center gap-2 px-3 py-2 text-xs font-semibold text-sky-700">

@@ -2190,6 +2190,47 @@
 
     "workingHoursPlaceholder": "e.g. 1200"
 
+  },
+
+  "imageCategory": {
+
+    "OVERALL": "Overall machine",
+
+    "NAMEPLATE": "Model nameplate",
+
+    "DASHBOARD": "Dashboard / instrument panel",
+
+    "CAB": "Cab",
+
+    "ENGINE": "Engine compartment",
+
+    "WORKING_MECHANISM": "Working mechanism",
+
+    "CHASSIS": "Wheels / chassis",
+
+    "REAR": "Rear view",
+
+    "FRONT_ATTACHMENT": "Front / attachments",
+
+    "SIDE": "Full side view",
+
+    "DETAIL": "Detail close-up",
+
+    "DAMAGE": "Damage"
+
+  },
+
+  "recognize": {
+
+    "reminder": {
+
+      "title": "Suggested key photos",
+
+      "nameplateMissing": "No nameplate photo provided — recognition accuracy may drop.",
+
+      "dashboardMissing": "No dashboard photo provided — working hours and key specs may be missed."
+
+    }
   }
 
 }

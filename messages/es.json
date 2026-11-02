@@ -1121,5 +1121,26 @@
     "workingHours": "Working hours",
     "workingHoursPlaceholder": "e.g. 1200",
     "_todo": "TODO: translate sellerPublish keys to es; values temporarily copied from en (P0 2026-09-06)"
+  },
+  "imageCategory": {
+    "OVERALL": "Máquina completa",
+    "NAMEPLATE": "Placa del modelo",
+    "DASHBOARD": "Panel de instrumentos",
+    "CAB": "Cabina",
+    "ENGINE": "Compartimento del motor",
+    "WORKING_MECHANISM": "Mecanismo de trabajo",
+    "CHASSIS": "Ruedas / chasis",
+    "REAR": "Vista trasera",
+    "FRONT_ATTACHMENT": "Frente / implementos",
+    "SIDE": "Vista lateral completa",
+    "DETAIL": "Primer plano",
+    "DAMAGE": "Daños"
+  },
+  "recognize": {
+    "reminder": {
+      "title": "Fotos clave sugeridas",
+      "nameplateMissing": "No se proporcionó foto de la placa del modelo — la precisión del reconocimiento puede disminuir.",
+      "dashboardMissing": "No se proporcionó foto del panel de instrumentos — las horas de trabajo y las especificaciones clave pueden no detectarse."
+    }
   }
 }

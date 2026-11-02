@@ -9,6 +9,7 @@ import SellerAiAssistant from "@/components/seller/ai-assistant";
 import { matchPortByLocation } from "@/lib/port-matcher";
 import { CHINA_PROVINCES, INTERNATIONAL_COUNTRIES, findCountryInText } from "@/lib/location-data";
 import { buildLocationText } from "@/lib/location-parser";
+import { PHOTO_SUGGESTION_CATEGORIES, ImageCategory } from "@/lib/products/image-category";
 
 const CONDITIONS = [
   { value: "excellent", label: "优秀/全新" },
@@ -55,6 +56,8 @@ export default function NewProductPage() {
 
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<{ url: string; name: string }[]>([]);
+  // 每张已上传图片的类别（按 blob url 索引）；上传时按拍摄引导顺序预设默认类别，用户可改
+  const [imageCategories, setImageCategories] = useState<Record<string, ImageCategory>>({});
   const [videoFiles, setVideoFiles] = useState<File[]>([]);
 
   const [videoPreviews, setVideoPreviews] = useState<{ url: string; name: string; duration: number }[]>([]);
@@ -297,11 +300,19 @@ export default function NewProductPage() {
       validFiles.push(f);
     });
 
+    const newPreviews = validFiles.map((f) => ({ url: URL.createObjectURL(f), name: f.name }));
     setImageFiles((prev) => [...prev, ...validFiles]);
-    setImagePreviews((prev) => [
-      ...prev,
-      ...validFiles.map((f) => ({ url: URL.createObjectURL(f), name: f.name })),
-    ]);
+    setImagePreviews((prev) => [...prev, ...newPreviews]);
+    // 按拍摄引导顺序为每张新图预设默认类别（整机全貌→铭牌→仪表盘…循环），用户可改
+    setImageCategories((prev) => {
+      const next = { ...prev };
+      const startIndex = imagePreviews.length;
+      newPreviews.forEach((p, i) => {
+        const idx = startIndex + i;
+        next[p.url] = PHOTO_SUGGESTION_CATEGORIES[idx % PHOTO_SUGGESTION_CATEGORIES.length].category;
+      });
+      return next;
+    });
     // 上传图片后清除视频触发（图片优先）
     if (aiTriggerVideo) setAiTriggerVideo(null);
     // 清除提示
@@ -309,8 +320,16 @@ export default function NewProductPage() {
   };
 
   const removeImage = (index: number) => {
+    const removedUrl = imagePreviews[index]?.url;
     setImageFiles((prev) => prev.filter((_, i) => i !== index));
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+    if (removedUrl) {
+      setImageCategories((prev) => {
+        const next = { ...prev };
+        delete next[removedUrl];
+        return next;
+      });
+    }
   };
 
   // ===== Step 2: 视频上传（多视频，最多3个）=====
@@ -741,8 +760,15 @@ export default function NewProductPage() {
       fd.append("contactPhone", form.contactPhone);
       fd.append("contactWechat", form.contactWechat);
       fd.append("contactEmail", form.contactEmail);
-      // 传递 OSS URL 数组（JSON 字符串），不再是文件
-      fd.append("imageUrls", JSON.stringify(imageUrls));
+      // 传递图片类别信息（新 images 协议：{ url, imageCategory }），便于后端按类别排序重排封面
+      const imagesPayload = imageUrls.map((url, idx) => {
+        const blobUrl = imagePreviews[idx]?.url;
+        const category =
+          (blobUrl && imageCategories[blobUrl]) ||
+          PHOTO_SUGGESTION_CATEGORIES[idx % PHOTO_SUGGESTION_CATEGORIES.length].category;
+        return { url, imageCategory: category };
+      });
+      fd.append("images", JSON.stringify(imagesPayload));
       if (videoUrls.length > 0) {
         fd.append("videoUrls", JSON.stringify(videoUrls));
       }
@@ -854,7 +880,16 @@ export default function NewProductPage() {
           <div className="mb-3 grid grid-cols-3 gap-3 sm:grid-cols-4">
             {imagePreviews.map((img, idx) => (
               <div key={idx} className="relative rounded-lg border border-gray-200 bg-gray-50 p-1">
-                <img src={img.url} alt={img.name} className="h-24 w-full rounded object-cover" />
+                <img src={img.url} alt={img.name} className="h-20 w-full rounded object-cover" />
+                <select
+                  value={imageCategories[img.url] ?? PHOTO_SUGGESTION_CATEGORIES[idx % PHOTO_SUGGESTION_CATEGORIES.length].category}
+                  onChange={(e) => setImageCategories((prev) => ({ ...prev, [img.url]: e.target.value as ImageCategory }))}
+                  className="mt-1 w-full rounded border border-gray-200 bg-white px-1 py-0.5 text-[11px] text-gray-600 focus:border-primary-500 focus:outline-none"
+                >
+                  {PHOTO_SUGGESTION_CATEGORIES.map((c) => (
+                    <option key={c.category} value={c.category}>{c.label}</option>
+                  ))}
+                </select>
                 <span className={`absolute left-1 top-1 rounded px-1.5 py-0.5 text-[10px] font-medium ${
                   idx === 0 ? "bg-primary-600 text-white" : "bg-gray-600 text-white"
                 }`}>

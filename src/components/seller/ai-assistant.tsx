@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Sparkles, Wand2, CheckCircle, AlertCircle, Loader2, Upload, Globe, Flag } from "lucide-react";
 import Link from "next/link";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 /**
  * AI 识别结果数据结构（与后端 /api/agents/seller-helper/recognize 返回的 data 一致）
@@ -258,10 +258,12 @@ export default function SellerAiAssistant({
 }: SellerAiAssistantProps) {
   const [recognizing, setRecognizing] = useState(false);
   const [recognized, setRecognized] = useState<AiRecognizedData | null>(null);
+  const [reminders, setReminders] = useState<{ category: string; i18nKey: string }[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loginUrl, setLoginUrl] = useState<string | null>(null);
   const [phase, setPhase] = useState<string>("");
   const locale = useLocale();
+  const t = useTranslations("recognize");
   const [engineMode, setEngineMode] = useState<"auto" | "domestic" | "international">("auto");
   const [autoRecognizing, setAutoRecognizing] = useState(false);
   const [selectedFields, setSelectedFields] = useState<Set<string>>(new Set());
@@ -283,6 +285,7 @@ export default function SellerAiAssistant({
     setError(null);
     setLoginUrl(null);
     setRecognized(null);
+    setReminders([]);
     setSelectedFields(new Set());
 
     try {
@@ -380,6 +383,7 @@ export default function SellerAiAssistant({
       }
 
       setRecognized(data.data);
+      setReminders(Array.isArray((data.data as any)?.reminders) ? (data.data as any).reminders : []);
 
       // ── 初始化勾选状态 ──
       const initialSelected = new Set<string>();
@@ -711,6 +715,23 @@ export default function SellerAiAssistant({
               </span>
             )}
           </div>
+
+          {/* 关键照片缺失提醒（铭牌/仪表盘缺失时后端返回 reminders） */}
+          {reminders.length > 0 && (
+            <div className="mb-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm">
+              <div className="mb-1 flex items-center gap-2 font-medium text-amber-800">
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                {t("reminder.title")}
+              </div>
+              <ul className="space-y-1 pl-6">
+                {reminders.map((r, i) => (
+                  <li key={`${r.i18nKey}-${i}`} className="list-disc text-amber-700">
+                    {t(r.i18nKey.replace(/^recognize\./, ""))}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* 字段级确认列表（方案B） */}
           <div className="space-y-2">

@@ -50,8 +50,8 @@ export const BRAND_ALLOW = ["nameZh", "nameEn", "originCountry", "isImported"] a
 /** Category 允许出境字段 */
 export const CATEGORY_ALLOW = ["nameZh", "nameEn"] as const;
 
-/** ProductImage 允许出境字段 */
-export const IMAGE_ALLOW = ["url", "sortOrder", "isPrimary"] as const;
+/** ProductImage 允许出境字段（新增 imageCategory：受控图片类别，同步给 .com 展示排序用） */
+export const IMAGE_ALLOW = ["url", "sortOrder", "isPrimary", "imageCategory"] as const;
 
 /** ProductVideo 允许出境字段（fileSize 视需要可选，此处不传） */
 export const VIDEO_ALLOW = ["url", "sortOrder", "title", "duration", "moderationStatus"] as const;
