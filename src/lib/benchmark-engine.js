@@ -491,11 +491,80 @@ function confidenceScore({ sources, sampleSize, ageDays }) {
 const round2 = (n) => Math.round(n * 100) / 100;
 const round4 = (n) => Math.round(n * 10000) / 10000;
 
+// —— 日期解析（sourceDate 实测有 Date / 'YYYY-MM-DD' / 'YYYYMMDD' / ISO 三种形态）——
+// 返回 epoch ms；无法解析返回 null —— 调用方一律「解析失败就放行」，
+// 宁可放过一次正常写入，也不能因为格式不认识就把真实数据误杀。
+function parseSourceDate(v) {
+  if (v == null) return null;
+  if (v instanceof Date) {
+    const t = v.getTime();
+    return Number.isFinite(t) ? t : null;
+  }
+  if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+  if (typeof v !== 'string') return null;
+  const s = v.trim();
+  if (!s) return null;
+
+  const ymd = (y, m, d) => {
+    const year = Number(y);
+    const month = Number(m);
+    const day = Number(d);
+    if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return null;
+    if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+    const t = Date.UTC(year, month - 1, day);
+    return Number.isFinite(t) ? t : null;
+  };
+
+  // 'YYYYMMDD'
+  let m = /^(\d{4})(\d{2})(\d{2})$/.exec(s);
+  if (m) return ymd(m[1], m[2], m[3]);
+  // 'YYYY-MM-DD' / 'YYYY-MM-DDTHH:mm:ssZ'
+  m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(s);
+  if (m) return ymd(m[1], m[2], m[3]);
+
+  const t = Date.parse(s);
+  return Number.isFinite(t) ? t : null;
+}
+
+// 仅用于日志：epoch ms → 'YYYY-MM-DD'
+function formatSourceDate(ts) {
+  return ts == null ? '' : new Date(ts).toISOString().slice(0, 10);
+}
+
 // —— 写库（按 brand+model+sourceSite upsert）——
-async function upsertBenchmark(row) {
+/**
+ * @param {object} row  待写入行
+ * @param {object} [opts]
+ * @param {boolean} [opts.insertOnly] true = 已存在即跳过，**一个字段都不写**
+ *   （连 `lastVerified` 也不写：正是要让"没更新"这件事不被新时间戳掩盖）
+ */
+async function upsertBenchmark(row, opts = {}) {
   const existing = await prisma.brandBenchmark.findFirst({
     where: { brand: row.brand, model: row.model, sourceSite: row.sourceSite },
   });
+
+  // ① 真幂等（insertOnly）：已存在就跳过，不写任何字段。
+  //    禁止连 lastVerified 一起刷新 —— 否则会制造「任务天天在跑、时间戳天天是新的、
+  //    数据其实几个月没变」的假活假象（实测 92 行中 64 行 sourceDate 停在 8 月，
+  //    而 71 行 lastVerified 昨晚被刷成最新）。
+  if (existing && opts.insertOnly === true) {
+    return { skipped: true, id: existing.id };
+  }
+
+  // ② sourceDate 回滚护栏：禁止用更旧的数据时间覆盖较新的行（防其他调用方重放旧种子）。
+  //    任一方解析失败就放行 —— 宁可放过，不能误杀正常写入。
+  if (existing) {
+    const incomingTs = parseSourceDate(row.sourceDate);
+    const existingTs = parseSourceDate(existing.sourceDate);
+    if (incomingTs != null && existingTs != null && incomingTs < existingTs) {
+      console.warn(
+        `⚠️ 跳过回滚写入 ${row.brand} ${row.model} @${row.sourceSite}: ` +
+          `sourceDate ${formatSourceDate(incomingTs)} 早于库里 ${formatSourceDate(existingTs)}`
+      );
+      return { skipped: true, id: existing.id, reason: 'stale-source-date' };
+    }
+  }
+
   const data = {
     brand: row.brand,
     brandNameZh: row.brandNameZh,
@@ -634,7 +703,7 @@ async function seedEuEvidence(jsonRelPath = 'scripts/eu-benchmark-evidence.json'
   }
   if (!records.length) {
     console.warn(`⚠️ 欧系证据种子数据不可用（内联与文件均无），跳过`);
-    return { ok: true, skipped: true, n: 0, err: 0, records: 0 };
+    return { ok: true, skipped: 0, n: 0, err: 0, records: 0 };
   }
 
   // 按 brand+model+sourceSite 分组（同组合的多条挂牌聚合为一行）
@@ -645,33 +714,114 @@ async function seedEuEvidence(jsonRelPath = 'scripts/eu-benchmark-evidence.json'
     groups.get(key).push(r);
   }
 
-  let n = 0, err = 0;
+  let n = 0, skipped = 0, err = 0;
   for (const list of groups.values()) {
     const first = list[0];
     try {
       const listings = list.map((r) => ({ priceForeign: r.priceForeign, currency: r.currency }));
       const agg = aggregateListings(listings, EU_SEED_FX, { priceType: 'listing' });
       if (!agg) continue;
-      await upsertBenchmark({
-        brand: first.brand,
-        brandNameZh: first.brandNameZh,
-        model: first.model,
-        category: normalizeEuCategory(first.category),
-        sourceSite: first.source,
-        ...agg,
-        confidenceScore: 0.6, // WebSearch 逐条验证证据，固定置信度
-        sourceUrl: first.url,
-        sourceDate: first.capturedAt || first.sourceDate || null,
-        region: euCountryToRegion(first.country),
-      });
-      n++;
+      // insertOnly：历史种子只在库里没有该 brand+model+sourceSite 时才插入。
+      // 已存在即跳过（不刷新 lastVerified）—— 种子是固定历史证据，无条件重放
+      // 只会让「假活」永续：时间戳每天更新，数据其实一直是几个月前那份。
+      const r = await upsertBenchmark(
+        {
+          brand: first.brand,
+          brandNameZh: first.brandNameZh,
+          model: first.model,
+          category: normalizeEuCategory(first.category),
+          sourceSite: first.source,
+          ...agg,
+          confidenceScore: 0.6, // WebSearch 逐条验证证据，固定置信度
+          sourceUrl: first.url,
+          sourceDate: first.capturedAt || first.sourceDate || null,
+          region: euCountryToRegion(first.country),
+        },
+        { insertOnly: true }
+      );
+      if (r && r.skipped) skipped++;
+      else n++;
     } catch (e) {
       err++;
       console.error(`  ✗ ${first.brand} ${first.model} @${first.source}: ${e.message}`);
     }
   }
-  console.log(`🌱 欧系证据种子写入：${records.length} 条 → ${n} 行 BrandBenchmark（失败 ${err}）`);
-  return { ok: true, n, err, records: records.length };
+  console.log(
+    `🌱 欧系证据种子：${records.length} 条 → 新增 ${n} 行 / 已存在跳过 ${skipped} 行 / 失败 ${err}`
+  );
+  return { ok: true, n, skipped, err, records: records.length };
+}
+
+// —— 数据陈旧检查（只读，供 cron 告警）——
+/**
+ * 检查 BrandBenchmark 各源站的数据新鲜度，区分两类「陈旧」：
+ *   - `crawl-failed`     ：该 sourceSite 在 `SOURCES` 抓取清单里（有采集通道），
+ *                          但数据停在 `staleDays` 天前 ⇒ 「在抓但抓不到」。
+ *   - `not-in-crawl-list`：该 sourceSite 压根不在 `SOURCES` 里，只可能来自历史种子
+ *                          ⇒ 「没有抓取通道，永远不会自己更新」。
+ * 这两类的处置完全不同（前者查抓取，后者要么补通道、要么把源从基准价里摘掉），
+ * 所以必须分开报，不能混成一个「陈旧」。
+ *
+ * 只 select 两个字段：cron 有 300s 总预算，全表 select 会白白拉一堆价格字段。
+ *
+ * @param {{ staleDays?: number }} [opts] `staleDays` 阈值（天），默认 30
+ * @returns {Promise<{
+ *   checked: number, noDate: number, staleDays: number,
+ *   stale: Array<{ site: string, rows: number, lastDate: string|null, ageDays: number|null, kind: string }>,
+ *   missingSources: string[]
+ * }>}
+ */
+async function checkSourceStaleness({ staleDays = 30 } = {}) {
+  const rows = await prisma.brandBenchmark.findMany({
+    where: { isActive: true },
+    select: { sourceSite: true, sourceDate: true },
+  });
+
+  const crawlKeys = new Set(SOURCES.map((s) => s.key));
+  const bySite = new Map();
+  let noDate = 0;
+
+  for (const r of rows) {
+    const site = r.sourceSite || '(unknown)';
+    const ts = parseSourceDate(r.sourceDate);
+    if (ts == null) noDate++;
+    let cur = bySite.get(site);
+    if (!cur) {
+      cur = { site, rows: 0, maxTs: null };
+      bySite.set(site, cur);
+    }
+    cur.rows++;
+    if (ts != null && (cur.maxTs == null || ts > cur.maxTs)) cur.maxTs = ts;
+  }
+
+  const now = Date.now();
+  const stale = [];
+  for (const cur of bySite.values()) {
+    // 没有任何可解析日期 ⇒ 无法判断新鲜度，按「陈旧」上报（数据质量本身有问题）
+    const ageDays =
+      cur.maxTs == null ? null : Math.floor((now - cur.maxTs) / 86400000);
+    const isStale = ageDays == null || ageDays > staleDays;
+    if (!isStale) continue;
+    stale.push({
+      site: cur.site,
+      rows: cur.rows,
+      lastDate: cur.maxTs == null ? null : formatSourceDate(cur.maxTs),
+      ageDays,
+      kind: crawlKeys.has(cur.site) ? 'crawl-failed' : 'not-in-crawl-list',
+    });
+  }
+  // 按陈旧天数降序；无日期的排最前（最可疑）
+  stale.sort((a, b) => {
+    if (a.ageDays == null && b.ageDays == null) return 0;
+    if (a.ageDays == null) return -1;
+    if (b.ageDays == null) return 1;
+    return b.ageDays - a.ageDays;
+  });
+
+  // 在抓取清单里但库里一行都没有的源（例如 efarm / avito / olx）
+  const missingSources = SOURCES.map((s) => s.key).filter((k) => !bySite.has(k));
+
+  return { checked: rows.length, noDate, staleDays, stale, missingSources };
 }
 
 // —— 只读报告 ——
@@ -729,6 +879,7 @@ module.exports = {
   runRefresh,
   seedFromResearch,
   seedEuEvidence,
+  checkSourceStaleness,
   report,
   disconnectBenchmark,
 };
