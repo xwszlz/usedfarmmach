@@ -9,8 +9,9 @@
  *
  * 钉住的怀疑点（**收尾轮已全部闭环，断言已同步为修复后的语义**）：
  *   A. `bySegment` 是「去重前原始命中数」，sum(bySegment) 可以大于 uniqueItems（口径保留）；
- *   B. 段内「部分页失败」现在由 truncatedSegments 定位，ok 按实际算（不再假绿）；
- *   C. `totalResults > 抓到的条数`（截断）由 truncatedSegments 显式报出；
+ *   B. 段内「部分页失败」由 failedPages / ok=false 表达，**不再**由 truncatedSegments 定位
+ *      （两者语义不同：一个该重试，一个该调大 maxPages）；
+ *   C. `totalResults > maxPages × 40`（结构性截断）才由 truncatedSegments 显式报出；
  *   D. `MAX_CONSECUTIVE_PAGE_FAILURES` 已调为 2（小于 DEFAULT_MAX_PAGES 5），skip 分支可达；
  *   E. `update` 载荷不含 firstSeenAt / lastSeenAt / createdAt，且不再重写 raw（raw 只在 create 写）；
  *   F. 写库是**逐条串行** upsert（600 条 = 600 次 RTT），但写库前会再判一次 budgetMs；
@@ -226,7 +227,7 @@ describe("失败路径与不完整性（失败必须可见）", () => {
     expect(result.bySegment).toEqual({ tractors: 0, "tillage-machines": 2 });
   });
 
-  it("段内第 1 页成功 / 第 2 页失败：truncatedSegments 能定位少采的段", async () => {
+  it("段内第 1 页成功 / 第 2 页失败，且 maxPages 容量本身也不够：仍报截断", async () => {
     installFetch((url) =>
       pageOf(url) === 1
         ? ok(pageHtml(itemsFrom("P1", 40), 120)) // 自报 120 条，本应还有 2 页
@@ -239,9 +240,29 @@ describe("失败路径与不完整性（失败必须可见）", () => {
     expect(result.failedPages).toBe(1);
     expect(result.bySegment.tractors).toBe(40);
     expect(result.uniqueItems).toBe(40);
-    // totalResults=120 > 实收 40 ⇒ 该段被标记为「截断」，运维能定位到是哪一段少采了
+    // maxPages=2 × 40 = 80 < totalResults=120 ⇒ 即便没有失败页也已结构性截断，故仍标记
     expect(result.truncatedSegments).toEqual(["tractors"]);
     expect(result.emptySegments).toEqual([]);
+    expect(result.ok).toBe(false);
+  });
+
+  it("🔴 回归：抓取失败导致的少采不得被误报成 maxPages 截断", async () => {
+    installFetch((url) =>
+      pageOf(url) === 1
+        ? ok(pageHtml(itemsFrom("P1", 40), 120)) // 自报 120 条
+        : new Response("upstream error", { status: 502 })
+    );
+
+    // maxPages=3 ⇒ 容量 3 × 40 = 120，刚好装得下 totalResults=120，结构上不该判截断
+    const result = await ingestMascusLeads({ segmentPaths: [SEG_A], maxPages: 3 });
+
+    expect(result.fetchedPages).toBe(1);
+    // page2、page3 连败 2 次触发 MAX_CONSECUTIVE_PAGE_FAILURES 兜底放弃
+    expect(result.failedPages).toBe(2);
+    expect(result.bySegment.tractors).toBe(40);
+    // 关键：少采是「失败」不是「截断」，truncatedSegments 必须为空
+    expect(result.truncatedSegments).toEqual([]);
+    // 但问题依然必须可见：ok=false
     expect(result.ok).toBe(false);
   });
 
