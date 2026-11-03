@@ -698,6 +698,14 @@ model MascusListing {
   raw Json?
   firstSeenAt DateTime @default(now())
   lastSeenAt  DateTime @updatedAt
+  /// 跟进状态（运营手工维护）。取值域与 Dealer.followStatus 保持一致
+  followStatus String @default("未联系")
+  /// 分配给哪个员工（存 User.id）。刻意用裸 String 不加 @relation ——
+  /// 删用户时不应牵连线索，且线索归属要能留痕
+  assignedTo String?
+  assignedAt DateTime?
+  /// 运营备注
+  note       String?
   createdAt   DateTime @default(now())
 
   /// 按品牌 + 型号找线索（平台最核心的检索动作）
@@ -706,6 +714,10 @@ model MascusListing {
   @@index([sellerPhone])
   /// 判断「还在挂」/ 做增量视图（@updatedAt 每次 upsert 刷新）
   @@index([lastSeenAt])
+  /// 按跟进状态筛（后台列表最常用）
+  @@index([followStatus])
+  /// 按负责人筛（"我的线索"）
+  @@index([assignedTo])
 }
 
 model ChatMessage {
