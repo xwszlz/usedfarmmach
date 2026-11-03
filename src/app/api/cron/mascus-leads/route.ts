@@ -24,8 +24,10 @@ import { matchInternalApiKey } from "@/lib/internal-api-key-auth";
 import { ingestMascusLeads } from "@/lib/mascus-leads/ingest";
 
 export const dynamic = "force-dynamic";
-// 5 品类段 × 5 页 = 25 个请求；实测单页约 5s ⇒ 常态 ~125s，最坏 25s/页（625s）由 ingest 的
-// 220s 总预算闸切断（届时 budgetExhausted=true + truncatedSegments 双信号）。
+// 5 品类段 × 最多 5 页 = 25 个请求；2026-11-03 线上实测 17 页 45.7s（≈2.7s/页）
+// ⇒ 25 页常态约 70s；最坏 25s/页（625s）由 ingest 的 220s 总预算闸切断，
+// 届时 budgetExhausted=true（注意：预算是「提前收工」，不一定是结构性截断，
+// 两者是不同信号，别混）。
 // 需 Vercel Pro（Hobby 上限 60s 会被截断）
 export const maxDuration = 300;
 

@@ -80,9 +80,11 @@ export interface IngestResult {
    */
   emptySegments: string[];
   /**
-   * 本轮被 `maxPages` 截断的品类段（`totalResults > items`）。
-   * 非空代表「还有货没吃进来」（靠次日累积 + 幂等 upsert 补全），
-   * 一旦某段日增超过 `maxPages × 40` 就会**永久丢线索**，故必须外显。
+   * 本轮「结构性截断」的品类段（`totalResults > maxPages × 40`）。
+   * 非空代表 `maxPages` 这个容量上限已经装不下该段日增，**超出部分永久丢线索**
+   * （窗口是 recency desc，今天第 201 位明天只会更靠后，永远滑不进前 N 页），故必须外显。
+   * 🔴 判据**有意不包含**「抓取失败导致的少采」—— 那属 `failedPages`，两者必须分开，
+   * 否则运维无法区分「该调大 maxPages」和「该重试」。
    */
   truncatedSegments: string[];
   /** 是否因总预算耗尽而提前收工（已抓到的条目仍然入库，不算失败） */
@@ -103,7 +105,9 @@ const DEFAULT_RECENT_DAYS = 2;
  *   新挂牌插到前面、最老的一批从尾部掉出窗口 —— 它的名次只会继续往后推，**永远不会滑进前 120**。
  *   所以 3 页（120 条）不是「明天再补」，而是每天稳定丢掉 tractors 后 43 条 + tillage 后 46 条。
  *   实测最大 totalResults = 166（tillage-machines），`ceil(166/40) = 5` ⇒ 取 5 才不丢尾巴。
- * 220s 预算仍是兜底：真慢下来会 `budgetExhausted` + `truncatedSegments` 双信号暴露，不会静默。
+ * 220s 预算仍是兜底：真慢下来会以 `budgetExhausted=true` 暴露，不会静默。
+ * 注意 `budgetExhausted`（提前收工）与 `truncatedSegments`（容量装不下）是**两个独立信号**，
+ * 不要指望预算一耗尽 truncatedSegments 就跟着报 —— 容量够的时候它就是空。
  */
 const DEFAULT_MAX_PAGES = 5;
 const DEFAULT_TIMEOUT_MS = 25000;
@@ -243,9 +247,14 @@ export async function ingestMascusLeads(opts: IngestOptions = {}): Promise<Inges
   const items = scanned.length;
   const uniqueItems = unique.length;
 
-  // 被 maxPages 截断的段（还有货没吃进来）：日增一旦超过 maxPages×40 就会永久丢线索，必须外显
+  // 被 maxPages 结构性截断的段：日增一旦超过 maxPages×40 就会永久丢线索，必须外显。
+  // 🔴 判据必须是「totalResults > maxPages × PAGE_SIZE」这个结构性容量上限。
+  // 不能用「totalResults > items」—— 那会把「某页抓取失败」误报成「被 maxPages 截断」，
+  // 运维看到会去调大 maxPages（无效），而真正该做的是重试。
+  // 抓取失败已由 failedPages / ok=false 单独表达，不在这里重复告警。
+  const segmentCapacity = maxPages * MASCUS_PAGE_SIZE;
   const truncatedSegments = segmentStats
-    .filter((stat) => stat.totalResults > stat.items)
+    .filter((stat) => stat.totalResults > segmentCapacity)
     .map((stat) => stat.key);
 
   let inserted = 0;
