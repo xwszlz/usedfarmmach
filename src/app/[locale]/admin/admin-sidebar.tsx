@@ -28,6 +28,8 @@ export function AdminSidebar({ role }: { role: string }) {
     { href: `/${locale}/admin/products`, label: "产品管理", icon: Package, hideForEditor: false },
     { href: `/${locale}/admin/raw-listings`, label: "采集审核", icon: Inbox, hideForEditor: true },
     { href: `/${locale}/admin/leads`, label: "线索池", icon: Phone, hideForEditor: true },
+    // Mascus 采集线索池：含境外卖家电话，仅 .com 站点可见（后端 SITE 闸门同口径）
+    { href: `/${locale}/admin/mascus-leads`, label: "Mascus 线索池", icon: Phone, hideForEditor: true, showForSite: "com" },
     // 整合视图：经销商（户）与挂牌（台）按马力档+品牌对照；仅 admin/super_admin 可见
     { href: `/${locale}/admin/dealers`, label: "经销商对照", icon: Store, hideForEditor: true },
     // 境内线索录入：仅 .cn 站点显示（数据不出境红线），editor 不可见
