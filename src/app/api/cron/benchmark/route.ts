@@ -48,7 +48,16 @@ async function executeRefresh() {
     return { ok: false, n: 0, err: 1, error: e instanceof Error ? e.message : String(e) };
   });
   const fx = await getFxRates();
-  const stats = await runRefresh({ fx, concurrency: 12, timeoutMs: 8000 });
+  // 并发 20 / 单目标 20s：实测 mascus 响应体 623KB、耗时 3.9s，8s 会被截断；
+  // 靠「源级熔断 + 总预算兜底」把硬拦的源（tractorhouse 403 / machinerypete 470）
+  // 快速甩掉，而不是让它们各自慢慢超时把预算吃光。
+  const stats = await runRefresh({
+    fx,
+    concurrency: 20,
+    timeoutMs: 20000,
+    failureThreshold: 3,
+    budgetMs: 260000,
+  });
 
   // ── 数据陈旧告警（只读聚合）──────────────────────────────────────────
   // 必须在 runRefresh **之后**：告警是事后诊断，不能影响采集。
@@ -83,9 +92,16 @@ async function executeRefresh() {
   }
 
   const tookMs = Date.now() - startedAt;
+  let message = `基准价刷新完成：成功 ${stats.ok} / 跳过(无样本) ${stats.skip} / 失败(网络) ${stats.failed} / 共 ${stats.total}`;
+  if (stats.circuitOpen.length > 0) {
+    message += ` ｜ 熔断：${stats.circuitOpen.join("、")}`;
+  }
+  if (stats.budgetExhausted) {
+    message += ` ｜ 预算耗尽，剩余 ${stats.skippedByBudget} 个目标未跑`;
+  }
   return {
     success: true,
-    message: `基准价刷新完成：成功 ${stats.ok} / 跳过(无样本) ${stats.skip} / 失败(网络) ${stats.failed} / 共 ${stats.total}`,
+    message,
     stats,
     seed,
     staleness,

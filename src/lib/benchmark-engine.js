@@ -622,8 +622,94 @@ async function fetchOneTarget(target, fx, timeoutMs) {
   }
 }
 
+// —— 源级熔断器（纯逻辑，无 I/O，便于单测）——
+/**
+ * 同一源连续 N 次 `failed` 即「开路」，该源剩余目标直接跳过。
+ *
+ * 为什么必须按**源**而不是全局：实测 tractorhouse 是 Cloudflare 硬 403(0.9s)、
+ * machinerypete 是自研反爬 470(3.2s) —— 这类拦截**提超时完全无用**，只会把
+ * 「快速失败」变成「慢慢失败」。266 个目标里同源有十几个，不熔断就会一个源
+ * 反复吃掉几十次超时，把总预算挤爆。
+ *
+ * 语义要点：
+ *   - `failed`：连续失败 +1，达到阈值即 open
+ *   - `ok`    ：计数归零（允许恢复，不永久封死）
+ *   - `skip`  ：既不增加也不重置（「没抓到样本」≠「源坏了」，不能拿它熔断）
+ *
+ * @param {{ failureThreshold?: number }} [opts]
+ */
+function makeSourceCircuit({ failureThreshold = 3 } = {}) {
+  const state = new Map();
+  const read = (site) => state.get(site) || { consecutiveFails: 0, open: false };
+
+  return {
+    /** 该源是否已开路（开路后调用方应直接跳过，不再浪费一次超时） */
+    shouldSkip(site) {
+      return !!read(site).open;
+    },
+    /**
+     * 记录一次采集结果。
+     * @param {string} site 源站 key
+     * @param {'ok'|'skip'|'failed'} status 采集状态
+     */
+    record(site, status) {
+      const cur = read(site);
+      let next;
+      if (status === 'failed') {
+        const consecutiveFails = cur.consecutiveFails + 1;
+        next = { consecutiveFails, open: cur.open || consecutiveFails >= failureThreshold };
+      } else if (status === 'ok') {
+        next = { consecutiveFails: 0, open: false };
+      } else {
+        // 'skip' 及其他未知状态：保持原样（不计数、不重置）
+        next = { consecutiveFails: cur.consecutiveFails, open: cur.open };
+      }
+      state.set(site, next);
+      return next;
+    },
+    /** 只读快照 `{ site: { consecutiveFails, open } }` */
+    snapshot() {
+      const out = {};
+      for (const [site, s] of state.entries()) {
+        out[site] = { consecutiveFails: s.consecutiveFails, open: s.open };
+      }
+      return out;
+    },
+  };
+}
+
+// —— dryRun 专用只读探针 ——
+// 与 `fetchOneTarget` 完全同一套取数流程（httpGet→parseListings→aggregateListings），
+// 唯一区别：**不调用 upsertBenchmark**，因此可以证明「只统计不写库」。
+// 刻意与 fetchOneTarget 保持行为同步；若将来改了取数逻辑，两处需一起改。
+async function probeOneTarget(target, fx, timeoutMs) {
+  const source = SOURCES.find((s) => s.key === target.sourceSite);
+  if (!source) return { status: 'skip', reason: 'no-source' };
+  const url = buildSearchUrl(source, target);
+  const proxy = target.russian && process.env.RESIDENTIAL_PROXY ? process.env.RESIDENTIAL_PROXY : null;
+  try {
+    const html = await httpGet(url, {
+      timeout: timeoutMs,
+      proxy,
+      headers: target.russian ? { 'Accept-Language': 'ru-RU,ru;q=0.9' } : {},
+    });
+    const listings = parseListings(source, html, target);
+    if (!listings.length) return { status: 'skip', reason: 'no-listing' };
+    const agg = aggregateListings(listings, fx, { priceType: 'listing' });
+    if (!agg) return { status: 'skip', reason: 'no-agg' };
+    return { status: 'ok', count: listings.length }; // 只返回统计，不写库
+  } catch (e) {
+    return { status: 'failed', reason: e.message };
+  }
+}
+
 // —— 并发刷新（规避 Vercel 函数超时）——
-// opts: { fx, concurrency=12, timeoutMs=8000, targets?, sources? }
+// opts: {
+//   fx, concurrency=12, timeoutMs=8000, targets?, sources?,
+//   failureThreshold=3,   // 源级熔断阈值
+//   budgetMs=260000,      // 总预算兜底（< maxDuration 300s，留 40s 给种子/告警/序列化）
+//   dryRun=false,         // true = 只统计不写库
+// }
 async function runRefresh(opts = {}) {
   const fx = opts.fx || (await getFxRates());
   let all = opts.targets || buildTargets();
@@ -632,18 +718,87 @@ async function runRefresh(opts = {}) {
     all = all.filter((t) => set.has(t.sourceSite));
   }
   const queue = all.slice();
-  const stats = { ok: 0, skip: 0, failed: 0, total: all.length, bySource: {} };
+
+  // ⚠️ ok / skip / failed / total 四个字段的名字与语义保持不变（route.ts 的 message 在用）
+  const stats = {
+    ok: 0,
+    skip: 0,
+    failed: 0,
+    total: all.length,
+    bySource: {},
+    skipReasons: {},
+    skippedByBudget: 0,
+    budgetExhausted: false,
+    circuitOpen: [],
+    durationMs: 0,
+  };
+
+  const circuit = makeSourceCircuit({ failureThreshold: opts.failureThreshold ?? 3 });
+  const budgetMs = opts.budgetMs ?? 260000;
+  const timeoutMs = opts.timeoutMs || 8000;
+  const dryRun = opts.dryRun === true;
+  const startTs = Date.now();
+
+  const bumpReason = (reason) => {
+    const k = reason || 'unknown';
+    stats.skipReasons[k] = (stats.skipReasons[k] || 0) + 1;
+  };
+  const bumpSite = (site) =>
+    (stats.bySource[site] = stats.bySource[site] || {
+      ok: 0,
+      skip: 0,
+      failed: 0,
+      opened: false,
+    });
+
   const worker = async () => {
     while (queue.length) {
+      // ① 总预算兜底：超预算立即停止派发，剩余队列一次性计入 skippedByBudget。
+      //    没有这道闸，266 目标 × 20s 超时就会撞 maxDuration=300 被平台 kill，
+      //    连已经采到的结果和后面的告警都一起丢掉。
+      if (Date.now() - startTs > budgetMs) {
+        stats.budgetExhausted = true;
+        stats.skippedByBudget += queue.length;
+        queue.length = 0;
+        break;
+      }
       const t = queue.shift();
-      const r = await fetchOneTarget(t, fx, opts.timeoutMs || 8000);
+
+      // ② 源级熔断：该源已开路 → 直接跳过，不再为必然失败的请求付一次超时
+      if (circuit.shouldSkip(t.sourceSite)) {
+        stats.skip += 1;
+        bumpReason('circuit-open');
+        bumpSite(t.sourceSite).skip += 1;
+        continue;
+      }
+
+      // ③ 真抓（dryRun 走只读探针，构造上就不可能写库）
+      const r = dryRun
+        ? await probeOneTarget(t, fx, timeoutMs)
+        : await fetchOneTarget(t, fx, timeoutMs);
+
+      circuit.record(t.sourceSite, r.status);
       stats[r.status] = (stats[r.status] || 0) + 1;
-      const bs = (stats.bySource[t.sourceSite] = stats.bySource[t.sourceSite] || { ok: 0, skip: 0, failed: 0 });
+      if (r.status === 'skip') bumpReason(r.reason);
+      const bs = bumpSite(t.sourceSite);
       bs[r.status] = (bs[r.status] || 0) + 1;
     }
   };
+
   const n = Math.max(1, Math.min(opts.concurrency || 12, all.length));
   await Promise.all(Array.from({ length: n }, () => worker()));
+
+  stats.durationMs = Date.now() - startTs;
+
+  // 收口：哪些源最终开了熔断（供 route 拼 message 与诊断）
+  const snap = circuit.snapshot();
+  for (const [site, s] of Object.entries(snap)) {
+    if (s.open) {
+      stats.circuitOpen.push(site);
+      bumpSite(site).opened = true;
+    }
+  }
+
   return stats;
 }
 
@@ -876,6 +1031,7 @@ module.exports = {
   aggregateListings,
   upsertBenchmark,
   fetchOneTarget,
+  makeSourceCircuit,
   runRefresh,
   seedFromResearch,
   seedEuEvidence,
