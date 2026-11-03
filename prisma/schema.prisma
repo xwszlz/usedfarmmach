@@ -670,6 +670,44 @@ model RawListing {
   @@index([goodsRegion])
 }
 
+/// mascus 品类级扫描线索（与 RawListing / Product / Dealer 完全解耦，只做线索池）
+/// 本表在 .cn（境内）库中应始终为 0 行；若发现数据即为合规事故（SITE 闸门只保证不写入，schema 两站同源会被 db push 建出空表）。
+model MascusListing {
+  id         String @id @default(cuid())
+  /// mascus 商品 GUID（保留花括号原样），幂等键
+  productId  String @unique
+  brandName  String?
+  modelName  String?
+  categoryName String?
+  catalogName  String?
+  year         Int?
+  priceEuro    Float?
+  priceOriginal Float?
+  priceCurrency String?
+  sellerPhone  String?
+  companyName  String?
+  companyCountry String?
+  locationCity   String?
+  locationCountry String?
+  assetUrl  String?
+  imageUrl  String?
+  /// mascus createDate（挂牌时间）
+  listedAt  DateTime?
+  /// 命中本次扫描的品类段（tractors / hay-and-forage-machines …）
+  scanSegment String?
+  raw Json?
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @updatedAt
+  createdAt   DateTime @default(now())
+
+  /// 按品牌 + 型号找线索（平台最核心的检索动作）
+  @@index([brandName, modelName])
+  /// 按经销商电话聚合 / 去重（线索池最关键的动作）
+  @@index([sellerPhone])
+  /// 判断「还在挂」/ 做增量视图（@updatedAt 每次 upsert 刷新）
+  @@index([lastSeenAt])
+}
+
 model ChatMessage {
   id        String      @id @default(cuid())
   sessionId String
