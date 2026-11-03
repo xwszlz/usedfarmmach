@@ -70,6 +70,18 @@ const CATEGORY = {
   SOIL: 'soil',
 };
 
+// mascus 上「询价」占比约 39/40，用时间窗控件控制单次抓取的页面体积与噪音
+const MASCUS_RECENT_DAYS = 7;
+// mascus 真实品类路径段（站点改版后的 URL，旧的 /search?q= 已被服务端忽略）
+const MASCUS_CATEGORY_PATH = {
+  tractor: 'tractors',
+  forage_harvester: 'hay-and-forage-machines',
+  baler: 'hay-and-forage-machines',
+  mower_tedder: 'hay-and-forage-machines',
+  combine: 'agricultural-harvesters',
+  soil: 'soil-preparation',
+};
+
 // 18 个品牌（拖拉机 11 + 收获青贮 4 + 耕整 3）
 const BRANDS = [
   { slug: 'john-deere', nameZh: '约翰迪尔', nameEn: 'John Deere', origin: 'US', primaryCategory: CATEGORY.TRACTOR },
@@ -174,7 +186,17 @@ const MODELS = {
 const SOURCES = [
   { key: 'agroline', name: 'Agroline', region: 'EU', currency: 'EUR', russian: false },
   { key: 'machinerypete', name: 'MachineryPete', region: 'US', currency: 'USD', russian: false },
-  { key: 'mascus', name: 'Mascus', region: 'GLOBAL', currency: 'EUR', russian: false },
+  {
+    key: 'mascus',
+    name: 'Mascus',
+    region: 'GLOBAL',
+    currency: 'EUR',
+    russian: false,
+    // mascus 品牌/型号筛选在 URL 层失效（实测 /tractors/john-deere 返回 Case IH/Challenger 等泛结果），
+    // 38 个靶标只落在 4 个品类页上；且 97% 挂牌为询价（priceEURO=0）。
+    // 故不再参与按型号的靶标采集，改由品类级扫描单独入库。
+    skipInTargets: true,
+  },
   { key: 'tractorhouse', name: 'TractorHouse', region: 'US', currency: 'USD', russian: false },
   { key: 'efarm', name: 'e-farm', region: 'GLOBAL', currency: 'EUR', russian: false },
   { key: 'avito', name: 'Avito', region: 'RU', currency: 'RUB', russian: true },
@@ -188,6 +210,7 @@ function buildTargets() {
     const models = MODELS[b.slug] || [];
     for (const m of models) {
       for (const s of SOURCES) {
+        if (s.skipInTargets) continue; // 见 SOURCES 里 mascus 的注释
         targets.push({
           brand: b.slug,
           brandNameZh: b.nameZh,
@@ -265,8 +288,10 @@ function buildSearchUrl(source, target) {
       return `https://www.agroline.com/search_text.php?query=${encodeURIComponent(`${target.nameEn} ${target.model}`)}`;
     case 'machinerypete':
       return `https://www.machinerypete.com/search?q=${q}`;
-    case 'mascus':
-      return `https://www.mascus.com/search?q=${q}`;
+    case 'mascus': {
+      const seg = MASCUS_CATEGORY_PATH[target.category] || 'hay-and-forage-machines';
+      return `https://www.mascus.com/agriculture/${seg}?lastcreateddays=${MASCUS_RECENT_DAYS}`;
+    }
     case 'tractorhouse':
       return `https://www.tractorhouse.com/search?q=${q}`;
     case 'efarm':
@@ -359,7 +384,7 @@ function extractCurrencyAmount(text, preferredCur) {
 // 按源站选择解析策略；非结构化源回退正则
 function parseListings(source, html, target) {
   if (source.key === 'agroline') return parseAgroline(html, target, source);
-  if (source.key === 'mascus') return parseMascus(html, target, source);
+  if (source.key === 'mascus') return parseMascusNextData(html, target, source);
   const prices = extractPrices(html, source.currency);
   return prices.map((p) => ({ priceForeign: p, currency: source.currency }));
 }
@@ -381,6 +406,73 @@ function parseAgroline(html, target, source) {
   return out;
 }
 
+// Mascus 已整站改版为 Next.js：商品数据在 <script id="__NEXT_DATA__"> 的
+// props.pageProps.searchRes.searchData.items 里（40 条/页，结构化 JSON）。
+// 旧版 CSS class 抓取（parseMascus）在改版后匹配不到任何卡片，仅作回退保留。
+function parseMascusNextData(html, target, source) {
+  const m = /<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/.exec(html);
+  if (!m) return [];
+  let root;
+  try {
+    root = JSON.parse(m[1]);
+  } catch {
+    return [];
+  }
+  const searchData = root?.props?.pageProps?.searchRes?.searchData || {};
+  const items = Array.isArray(searchData.items) ? searchData.items : [];
+  const out = [];
+  for (const it of items) {
+    const title = `${it.brand || ''} ${it.model || ''}`.trim();
+    if (!title) continue;
+    // priceEURO 为 0 表示「询价」（实测占 39/40），无价不能参与价格中位
+    const eur = Number(it.priceEURO) || 0;
+    if (eur <= 0) continue;
+    if (!isRelevant(title, target)) continue;
+    out.push({
+      priceForeign: eur,
+      currency: 'EUR',
+      title,
+      url: it.assetUrl ? `https://www.mascus.com${it.assetUrl}` : undefined,
+      // 以下字段不参与价格聚合，供线索入库/溯源使用
+      sourceDate: it.createDate || undefined,
+      listingId: it.productId || undefined,
+      sellerPhone: it.sellerPhone || undefined,
+      companyName: it.companyName || undefined,
+      country: it.locationCountryCode || undefined,
+      city: it.locationCity || undefined,
+      yearOfManufacture: it.yearOfManufacture || undefined,
+      meterReadout: it.meterReadout ?? undefined,
+      categoryName: it.categoryName || undefined,
+    });
+  }
+  return out;
+}
+
+// 运维排查用：解析 __NEXT_DATA__ 的元信息（总量/标题/品类/条数/有价条数），不参与价格聚合
+function parseMascusDiagnostics(html) {
+  const m = /<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/.exec(html);
+  if (!m) return { ok: false, reason: 'no-next-data' };
+  let root;
+  try {
+    root = JSON.parse(m[1]);
+  } catch {
+    return { ok: false, reason: 'bad-json' };
+  }
+  const sd = root?.props?.pageProps?.searchRes?.searchData || {};
+  const items = Array.isArray(sd.items) ? sd.items : [];
+  return {
+    ok: true,
+    totalResults: sd.totalResults ?? null,
+    searchTitle: sd.searchTitle || null,
+    resolvedCategory: sd.resolvedCategory || null,
+    errorMessage: sd.errorMessage || null,
+    itemCount: items.length,
+    withPrice: items.filter((i) => (Number(i.priceEURO) || 0) > 0).length,
+  };
+}
+
+// ⚠️ 已失效：Mascus 整站改版为 Next.js 后，旧版 CSS class（SearchResultItem_brandmodel）
+// 匹配不到任何卡片，正常路径改走 parseMascusNextData；此函数仅作极端回退保留。
 // Mascus：React 客户端渲染，原始 HTML 多为拍卖填充件；仅接受含真实数字价格的卡片
 function parseMascus(html, target, source) {
   const $ = cheerio.load(html);
@@ -491,11 +583,80 @@ function confidenceScore({ sources, sampleSize, ageDays }) {
 const round2 = (n) => Math.round(n * 100) / 100;
 const round4 = (n) => Math.round(n * 10000) / 10000;
 
+// —— 日期解析（sourceDate 实测有 Date / 'YYYY-MM-DD' / 'YYYYMMDD' / ISO 三种形态）——
+// 返回 epoch ms；无法解析返回 null —— 调用方一律「解析失败就放行」，
+// 宁可放过一次正常写入，也不能因为格式不认识就把真实数据误杀。
+function parseSourceDate(v) {
+  if (v == null) return null;
+  if (v instanceof Date) {
+    const t = v.getTime();
+    return Number.isFinite(t) ? t : null;
+  }
+  if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+  if (typeof v !== 'string') return null;
+  const s = v.trim();
+  if (!s) return null;
+
+  const ymd = (y, m, d) => {
+    const year = Number(y);
+    const month = Number(m);
+    const day = Number(d);
+    if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return null;
+    if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+    const t = Date.UTC(year, month - 1, day);
+    return Number.isFinite(t) ? t : null;
+  };
+
+  // 'YYYYMMDD'
+  let m = /^(\d{4})(\d{2})(\d{2})$/.exec(s);
+  if (m) return ymd(m[1], m[2], m[3]);
+  // 'YYYY-MM-DD' / 'YYYY-MM-DDTHH:mm:ssZ'
+  m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(s);
+  if (m) return ymd(m[1], m[2], m[3]);
+
+  const t = Date.parse(s);
+  return Number.isFinite(t) ? t : null;
+}
+
+// 仅用于日志：epoch ms → 'YYYY-MM-DD'
+function formatSourceDate(ts) {
+  return ts == null ? '' : new Date(ts).toISOString().slice(0, 10);
+}
+
 // —— 写库（按 brand+model+sourceSite upsert）——
-async function upsertBenchmark(row) {
+/**
+ * @param {object} row  待写入行
+ * @param {object} [opts]
+ * @param {boolean} [opts.insertOnly] true = 已存在即跳过，**一个字段都不写**
+ *   （连 `lastVerified` 也不写：正是要让"没更新"这件事不被新时间戳掩盖）
+ */
+async function upsertBenchmark(row, opts = {}) {
   const existing = await prisma.brandBenchmark.findFirst({
     where: { brand: row.brand, model: row.model, sourceSite: row.sourceSite },
   });
+
+  // ① 真幂等（insertOnly）：已存在就跳过，不写任何字段。
+  //    禁止连 lastVerified 一起刷新 —— 否则会制造「任务天天在跑、时间戳天天是新的、
+  //    数据其实几个月没变」的假活假象（实测 92 行中 64 行 sourceDate 停在 8 月，
+  //    而 71 行 lastVerified 昨晚被刷成最新）。
+  if (existing && opts.insertOnly === true) {
+    return { skipped: true, id: existing.id };
+  }
+
+  // ② sourceDate 回滚护栏：禁止用更旧的数据时间覆盖较新的行（防其他调用方重放旧种子）。
+  //    任一方解析失败就放行 —— 宁可放过，不能误杀正常写入。
+  if (existing) {
+    const incomingTs = parseSourceDate(row.sourceDate);
+    const existingTs = parseSourceDate(existing.sourceDate);
+    if (incomingTs != null && existingTs != null && incomingTs < existingTs) {
+      console.warn(
+        `⚠️ 跳过回滚写入 ${row.brand} ${row.model} @${row.sourceSite}: ` +
+          `sourceDate ${formatSourceDate(incomingTs)} 早于库里 ${formatSourceDate(existingTs)}`
+      );
+      return { skipped: true, id: existing.id, reason: 'stale-source-date' };
+    }
+  }
+
   const data = {
     brand: row.brand,
     brandNameZh: row.brandNameZh,
@@ -553,8 +714,94 @@ async function fetchOneTarget(target, fx, timeoutMs) {
   }
 }
 
+// —— 源级熔断器（纯逻辑，无 I/O，便于单测）——
+/**
+ * 同一源连续 N 次 `failed` 即「开路」，该源剩余目标直接跳过。
+ *
+ * 为什么必须按**源**而不是全局：实测 tractorhouse 是 Cloudflare 硬 403(0.9s)、
+ * machinerypete 是自研反爬 470(3.2s) —— 这类拦截**提超时完全无用**，只会把
+ * 「快速失败」变成「慢慢失败」。266 个目标里同源有十几个，不熔断就会一个源
+ * 反复吃掉几十次超时，把总预算挤爆。
+ *
+ * 语义要点：
+ *   - `failed`：连续失败 +1，达到阈值即 open
+ *   - `ok`    ：计数归零（允许恢复，不永久封死）
+ *   - `skip`  ：既不增加也不重置（「没抓到样本」≠「源坏了」，不能拿它熔断）
+ *
+ * @param {{ failureThreshold?: number }} [opts]
+ */
+function makeSourceCircuit({ failureThreshold = 3 } = {}) {
+  const state = new Map();
+  const read = (site) => state.get(site) || { consecutiveFails: 0, open: false };
+
+  return {
+    /** 该源是否已开路（开路后调用方应直接跳过，不再浪费一次超时） */
+    shouldSkip(site) {
+      return !!read(site).open;
+    },
+    /**
+     * 记录一次采集结果。
+     * @param {string} site 源站 key
+     * @param {'ok'|'skip'|'failed'} status 采集状态
+     */
+    record(site, status) {
+      const cur = read(site);
+      let next;
+      if (status === 'failed') {
+        const consecutiveFails = cur.consecutiveFails + 1;
+        next = { consecutiveFails, open: cur.open || consecutiveFails >= failureThreshold };
+      } else if (status === 'ok') {
+        next = { consecutiveFails: 0, open: false };
+      } else {
+        // 'skip' 及其他未知状态：保持原样（不计数、不重置）
+        next = { consecutiveFails: cur.consecutiveFails, open: cur.open };
+      }
+      state.set(site, next);
+      return next;
+    },
+    /** 只读快照 `{ site: { consecutiveFails, open } }` */
+    snapshot() {
+      const out = {};
+      for (const [site, s] of state.entries()) {
+        out[site] = { consecutiveFails: s.consecutiveFails, open: s.open };
+      }
+      return out;
+    },
+  };
+}
+
+// —— dryRun 专用只读探针 ——
+// 与 `fetchOneTarget` 完全同一套取数流程（httpGet→parseListings→aggregateListings），
+// 唯一区别：**不调用 upsertBenchmark**，因此可以证明「只统计不写库」。
+// 刻意与 fetchOneTarget 保持行为同步；若将来改了取数逻辑，两处需一起改。
+async function probeOneTarget(target, fx, timeoutMs) {
+  const source = SOURCES.find((s) => s.key === target.sourceSite);
+  if (!source) return { status: 'skip', reason: 'no-source' };
+  const url = buildSearchUrl(source, target);
+  const proxy = target.russian && process.env.RESIDENTIAL_PROXY ? process.env.RESIDENTIAL_PROXY : null;
+  try {
+    const html = await httpGet(url, {
+      timeout: timeoutMs,
+      proxy,
+      headers: target.russian ? { 'Accept-Language': 'ru-RU,ru;q=0.9' } : {},
+    });
+    const listings = parseListings(source, html, target);
+    if (!listings.length) return { status: 'skip', reason: 'no-listing' };
+    const agg = aggregateListings(listings, fx, { priceType: 'listing' });
+    if (!agg) return { status: 'skip', reason: 'no-agg' };
+    return { status: 'ok', count: listings.length }; // 只返回统计，不写库
+  } catch (e) {
+    return { status: 'failed', reason: e.message };
+  }
+}
+
 // —— 并发刷新（规避 Vercel 函数超时）——
-// opts: { fx, concurrency=12, timeoutMs=8000, targets?, sources? }
+// opts: {
+//   fx, concurrency=12, timeoutMs=8000, targets?, sources?,
+//   failureThreshold=3,   // 源级熔断阈值
+//   budgetMs=260000,      // 总预算兜底（< maxDuration 300s，留 40s 给种子/告警/序列化）
+//   dryRun=false,         // true = 只统计不写库
+// }
 async function runRefresh(opts = {}) {
   const fx = opts.fx || (await getFxRates());
   let all = opts.targets || buildTargets();
@@ -563,18 +810,87 @@ async function runRefresh(opts = {}) {
     all = all.filter((t) => set.has(t.sourceSite));
   }
   const queue = all.slice();
-  const stats = { ok: 0, skip: 0, failed: 0, total: all.length, bySource: {} };
+
+  // ⚠️ ok / skip / failed / total 四个字段的名字与语义保持不变（route.ts 的 message 在用）
+  const stats = {
+    ok: 0,
+    skip: 0,
+    failed: 0,
+    total: all.length,
+    bySource: {},
+    skipReasons: {},
+    skippedByBudget: 0,
+    budgetExhausted: false,
+    circuitOpen: [],
+    durationMs: 0,
+  };
+
+  const circuit = makeSourceCircuit({ failureThreshold: opts.failureThreshold ?? 3 });
+  const budgetMs = opts.budgetMs ?? 260000;
+  const timeoutMs = opts.timeoutMs || 8000;
+  const dryRun = opts.dryRun === true;
+  const startTs = Date.now();
+
+  const bumpReason = (reason) => {
+    const k = reason || 'unknown';
+    stats.skipReasons[k] = (stats.skipReasons[k] || 0) + 1;
+  };
+  const bumpSite = (site) =>
+    (stats.bySource[site] = stats.bySource[site] || {
+      ok: 0,
+      skip: 0,
+      failed: 0,
+      opened: false,
+    });
+
   const worker = async () => {
     while (queue.length) {
+      // ① 总预算兜底：超预算立即停止派发，剩余队列一次性计入 skippedByBudget。
+      //    没有这道闸，266 目标 × 20s 超时就会撞 maxDuration=300 被平台 kill，
+      //    连已经采到的结果和后面的告警都一起丢掉。
+      if (Date.now() - startTs > budgetMs) {
+        stats.budgetExhausted = true;
+        stats.skippedByBudget += queue.length;
+        queue.length = 0;
+        break;
+      }
       const t = queue.shift();
-      const r = await fetchOneTarget(t, fx, opts.timeoutMs || 8000);
+
+      // ② 源级熔断：该源已开路 → 直接跳过，不再为必然失败的请求付一次超时
+      if (circuit.shouldSkip(t.sourceSite)) {
+        stats.skip += 1;
+        bumpReason('circuit-open');
+        bumpSite(t.sourceSite).skip += 1;
+        continue;
+      }
+
+      // ③ 真抓（dryRun 走只读探针，构造上就不可能写库）
+      const r = dryRun
+        ? await probeOneTarget(t, fx, timeoutMs)
+        : await fetchOneTarget(t, fx, timeoutMs);
+
+      circuit.record(t.sourceSite, r.status);
       stats[r.status] = (stats[r.status] || 0) + 1;
-      const bs = (stats.bySource[t.sourceSite] = stats.bySource[t.sourceSite] || { ok: 0, skip: 0, failed: 0 });
+      if (r.status === 'skip') bumpReason(r.reason);
+      const bs = bumpSite(t.sourceSite);
       bs[r.status] = (bs[r.status] || 0) + 1;
     }
   };
+
   const n = Math.max(1, Math.min(opts.concurrency || 12, all.length));
   await Promise.all(Array.from({ length: n }, () => worker()));
+
+  stats.durationMs = Date.now() - startTs;
+
+  // 收口：哪些源最终开了熔断（供 route 拼 message 与诊断）
+  const snap = circuit.snapshot();
+  for (const [site, s] of Object.entries(snap)) {
+    if (s.open) {
+      stats.circuitOpen.push(site);
+      bumpSite(site).opened = true;
+    }
+  }
+
   return stats;
 }
 
@@ -634,7 +950,7 @@ async function seedEuEvidence(jsonRelPath = 'scripts/eu-benchmark-evidence.json'
   }
   if (!records.length) {
     console.warn(`⚠️ 欧系证据种子数据不可用（内联与文件均无），跳过`);
-    return { ok: true, skipped: true, n: 0, err: 0, records: 0 };
+    return { ok: true, skipped: 0, n: 0, err: 0, records: 0 };
   }
 
   // 按 brand+model+sourceSite 分组（同组合的多条挂牌聚合为一行）
@@ -645,33 +961,114 @@ async function seedEuEvidence(jsonRelPath = 'scripts/eu-benchmark-evidence.json'
     groups.get(key).push(r);
   }
 
-  let n = 0, err = 0;
+  let n = 0, skipped = 0, err = 0;
   for (const list of groups.values()) {
     const first = list[0];
     try {
       const listings = list.map((r) => ({ priceForeign: r.priceForeign, currency: r.currency }));
       const agg = aggregateListings(listings, EU_SEED_FX, { priceType: 'listing' });
       if (!agg) continue;
-      await upsertBenchmark({
-        brand: first.brand,
-        brandNameZh: first.brandNameZh,
-        model: first.model,
-        category: normalizeEuCategory(first.category),
-        sourceSite: first.source,
-        ...agg,
-        confidenceScore: 0.6, // WebSearch 逐条验证证据，固定置信度
-        sourceUrl: first.url,
-        sourceDate: first.capturedAt || first.sourceDate || null,
-        region: euCountryToRegion(first.country),
-      });
-      n++;
+      // insertOnly：历史种子只在库里没有该 brand+model+sourceSite 时才插入。
+      // 已存在即跳过（不刷新 lastVerified）—— 种子是固定历史证据，无条件重放
+      // 只会让「假活」永续：时间戳每天更新，数据其实一直是几个月前那份。
+      const r = await upsertBenchmark(
+        {
+          brand: first.brand,
+          brandNameZh: first.brandNameZh,
+          model: first.model,
+          category: normalizeEuCategory(first.category),
+          sourceSite: first.source,
+          ...agg,
+          confidenceScore: 0.6, // WebSearch 逐条验证证据，固定置信度
+          sourceUrl: first.url,
+          sourceDate: first.capturedAt || first.sourceDate || null,
+          region: euCountryToRegion(first.country),
+        },
+        { insertOnly: true }
+      );
+      if (r && r.skipped) skipped++;
+      else n++;
     } catch (e) {
       err++;
       console.error(`  ✗ ${first.brand} ${first.model} @${first.source}: ${e.message}`);
     }
   }
-  console.log(`🌱 欧系证据种子写入：${records.length} 条 → ${n} 行 BrandBenchmark（失败 ${err}）`);
-  return { ok: true, n, err, records: records.length };
+  console.log(
+    `🌱 欧系证据种子：${records.length} 条 → 新增 ${n} 行 / 已存在跳过 ${skipped} 行 / 失败 ${err}`
+  );
+  return { ok: true, n, skipped, err, records: records.length };
+}
+
+// —— 数据陈旧检查（只读，供 cron 告警）——
+/**
+ * 检查 BrandBenchmark 各源站的数据新鲜度，区分两类「陈旧」：
+ *   - `crawl-failed`     ：该 sourceSite 在 `SOURCES` 抓取清单里（有采集通道），
+ *                          但数据停在 `staleDays` 天前 ⇒ 「在抓但抓不到」。
+ *   - `not-in-crawl-list`：该 sourceSite 压根不在 `SOURCES` 里，只可能来自历史种子
+ *                          ⇒ 「没有抓取通道，永远不会自己更新」。
+ * 这两类的处置完全不同（前者查抓取，后者要么补通道、要么把源从基准价里摘掉），
+ * 所以必须分开报，不能混成一个「陈旧」。
+ *
+ * 只 select 两个字段：cron 有 300s 总预算，全表 select 会白白拉一堆价格字段。
+ *
+ * @param {{ staleDays?: number }} [opts] `staleDays` 阈值（天），默认 30
+ * @returns {Promise<{
+ *   checked: number, noDate: number, staleDays: number,
+ *   stale: Array<{ site: string, rows: number, lastDate: string|null, ageDays: number|null, kind: string }>,
+ *   missingSources: string[]
+ * }>}
+ */
+async function checkSourceStaleness({ staleDays = 30 } = {}) {
+  const rows = await prisma.brandBenchmark.findMany({
+    where: { isActive: true },
+    select: { sourceSite: true, sourceDate: true },
+  });
+
+  const crawlKeys = new Set(SOURCES.map((s) => s.key));
+  const bySite = new Map();
+  let noDate = 0;
+
+  for (const r of rows) {
+    const site = r.sourceSite || '(unknown)';
+    const ts = parseSourceDate(r.sourceDate);
+    if (ts == null) noDate++;
+    let cur = bySite.get(site);
+    if (!cur) {
+      cur = { site, rows: 0, maxTs: null };
+      bySite.set(site, cur);
+    }
+    cur.rows++;
+    if (ts != null && (cur.maxTs == null || ts > cur.maxTs)) cur.maxTs = ts;
+  }
+
+  const now = Date.now();
+  const stale = [];
+  for (const cur of bySite.values()) {
+    // 没有任何可解析日期 ⇒ 无法判断新鲜度，按「陈旧」上报（数据质量本身有问题）
+    const ageDays =
+      cur.maxTs == null ? null : Math.floor((now - cur.maxTs) / 86400000);
+    const isStale = ageDays == null || ageDays > staleDays;
+    if (!isStale) continue;
+    stale.push({
+      site: cur.site,
+      rows: cur.rows,
+      lastDate: cur.maxTs == null ? null : formatSourceDate(cur.maxTs),
+      ageDays,
+      kind: crawlKeys.has(cur.site) ? 'crawl-failed' : 'not-in-crawl-list',
+    });
+  }
+  // 按陈旧天数降序；无日期的排最前（最可疑）
+  stale.sort((a, b) => {
+    if (a.ageDays == null && b.ageDays == null) return 0;
+    if (a.ageDays == null) return -1;
+    if (b.ageDays == null) return 1;
+    return b.ageDays - a.ageDays;
+  });
+
+  // 在抓取清单里但库里一行都没有的源（例如 efarm / avito / olx）
+  const missingSources = SOURCES.map((s) => s.key).filter((k) => !bySite.has(k));
+
+  return { checked: rows.length, noDate, staleDays, stale, missingSources };
 }
 
 // —— 只读报告 ——
@@ -721,14 +1118,18 @@ module.exports = {
   parseListings,
   parseAgroline,
   parseMascus,
+  parseMascusNextData,
+  parseMascusDiagnostics,
   extractCurrencyAmount,
   isRelevant,
   aggregateListings,
   upsertBenchmark,
   fetchOneTarget,
+  makeSourceCircuit,
   runRefresh,
   seedFromResearch,
   seedEuEvidence,
+  checkSourceStaleness,
   report,
   disconnectBenchmark,
 };

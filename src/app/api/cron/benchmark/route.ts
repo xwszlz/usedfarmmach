@@ -10,8 +10,16 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { matchInternalApiKey } from "@/lib/internal-api-key-auth";
+import { pushToGroup } from "@/lib/wecom/group-webhook";
 // @ts-ignore — CommonJS 引擎，类型见 benchmark-engine.d.ts
-import { runRefresh, getFxRates, disconnectBenchmark, seedEuEvidence } from "@/lib/benchmark-engine";
+import {
+  runRefresh,
+  getFxRates,
+  disconnectBenchmark,
+  seedEuEvidence,
+  checkSourceStaleness,
+  type SourceStalenessReport,
+} from "@/lib/benchmark-engine";
 
 export const dynamic = "force-dynamic";
 // 266 目标 / 并发12 / 8s超时 → 最坏 ~184s，需 Vercel Pro（Hobby 上限 60s 会被截断）
@@ -40,13 +48,63 @@ async function executeRefresh() {
     return { ok: false, n: 0, err: 1, error: e instanceof Error ? e.message : String(e) };
   });
   const fx = await getFxRates();
-  const stats = await runRefresh({ fx, concurrency: 12, timeoutMs: 8000 });
+  // 并发 20 / 单目标 20s：实测 mascus 响应体 623KB、耗时 3.9s，8s 会被截断；
+  // 靠「源级熔断 + 总预算兜底」把硬拦的源（tractorhouse 403 / machinerypete 470）
+  // 快速甩掉，而不是让它们各自慢慢超时把预算吃光。
+  const stats = await runRefresh({
+    fx,
+    concurrency: 20,
+    timeoutMs: 20000,
+    failureThreshold: 3,
+    budgetMs: 260000,
+  });
+
+  // ── 数据陈旧告警（只读聚合）──────────────────────────────────────────
+  // 必须在 runRefresh **之后**：告警是事后诊断，不能影响采集。
+  // 整段用 .catch() 兜住：告警失败绝不能阻断主流程（宁可这次没告警，
+  // 也不能因为告警挂了把「采集已成功」的结果丢掉）。
+  const staleness: SourceStalenessReport | null = await checkSourceStaleness().catch((e) => {
+    console.warn("基准价陈旧检查失败:", e instanceof Error ? e.message : String(e));
+    return null;
+  });
+  if (staleness && staleness.stale.length > 0) {
+    const lines: string[] = staleness.stale.map((s) => {
+      const lastDate = s.lastDate || "未知";
+      const ageDays = s.ageDays == null ? "未知" : String(s.ageDays);
+      const reason = s.kind === "crawl-failed" ? "抓取失败" : "不在抓取清单，只有历史种子";
+      return `- **${s.site}**（${s.rows} 行）：最新 ${lastDate}，已 ${ageDays} 天 —— ${reason}`;
+    });
+    if (staleness.missingSources.length > 0) {
+      lines.push(
+        `- **无任何数据**：${staleness.missingSources.join("、")}（在抓取清单里但库里 0 行）`
+      );
+    }
+    lines.push("> 今日日报中来自这些源的套利判断不可信，须人工复核。");
+    // 注意：`pushToGroup` 内部会自己拼 `# ${title}`，故 title 不再带 `#`，否则会渲染成 `# # ...`。
+    // 另：WECOM_GROUP_WEBHOOK_URL 未配置时 pushToGroup 自身即 no-op，无需在此判断该 env。
+    await pushToGroup({
+      title: "基准价数据陈旧告警",
+      lines,
+      level: "warn",
+    }).catch((e) => {
+      console.warn("基准价陈旧告警推送失败:", e instanceof Error ? e.message : String(e));
+    });
+  }
+
   const tookMs = Date.now() - startedAt;
+  let message = `基准价刷新完成：成功 ${stats.ok} / 跳过(无样本) ${stats.skip} / 失败(网络) ${stats.failed} / 共 ${stats.total}`;
+  if (stats.circuitOpen.length > 0) {
+    message += ` ｜ 熔断：${stats.circuitOpen.join("、")}`;
+  }
+  if (stats.budgetExhausted) {
+    message += ` ｜ 预算耗尽，剩余 ${stats.skippedByBudget} 个目标未跑`;
+  }
   return {
     success: true,
-    message: `基准价刷新完成：成功 ${stats.ok} / 跳过(无样本) ${stats.skip} / 失败(网络) ${stats.failed} / 共 ${stats.total}`,
+    message,
     stats,
     seed,
+    staleness,
     tookMs,
     at: new Date().toISOString(),
   };
