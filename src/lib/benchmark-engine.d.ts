@@ -9,6 +9,20 @@ declare module '@/lib/benchmark-engine' {
     /** 该源最终是否开了熔断 */
     opened: boolean;
   }
+
+  /** 数据源定义（SOURCES 数组元素） */
+  export interface BenchmarkSource {
+    key: string;
+    name: string;
+    region: string;
+    currency: string;
+    russian: boolean;
+    /** 为 true 时 buildTargets() 跳过该源（mascus：URL 层筛选失效，改品类级扫描） */
+    skipInTargets?: boolean;
+  }
+
+  /** 首期数据源（含 mascus，但 mascus 标记 skipInTargets=true，不进靶标循环） */
+  export const SOURCES: BenchmarkSource[];
   export interface RefreshStats {
     ok: number;
     skip: number;

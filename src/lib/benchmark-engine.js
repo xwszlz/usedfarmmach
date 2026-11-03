@@ -186,7 +186,17 @@ const MODELS = {
 const SOURCES = [
   { key: 'agroline', name: 'Agroline', region: 'EU', currency: 'EUR', russian: false },
   { key: 'machinerypete', name: 'MachineryPete', region: 'US', currency: 'USD', russian: false },
-  { key: 'mascus', name: 'Mascus', region: 'GLOBAL', currency: 'EUR', russian: false },
+  {
+    key: 'mascus',
+    name: 'Mascus',
+    region: 'GLOBAL',
+    currency: 'EUR',
+    russian: false,
+    // mascus 品牌/型号筛选在 URL 层失效（实测 /tractors/john-deere 返回 Case IH/Challenger 等泛结果），
+    // 38 个靶标只落在 4 个品类页上；且 97% 挂牌为询价（priceEURO=0）。
+    // 故不再参与按型号的靶标采集，改由品类级扫描单独入库。
+    skipInTargets: true,
+  },
   { key: 'tractorhouse', name: 'TractorHouse', region: 'US', currency: 'USD', russian: false },
   { key: 'efarm', name: 'e-farm', region: 'GLOBAL', currency: 'EUR', russian: false },
   { key: 'avito', name: 'Avito', region: 'RU', currency: 'RUB', russian: true },
@@ -200,6 +210,7 @@ function buildTargets() {
     const models = MODELS[b.slug] || [];
     for (const m of models) {
       for (const s of SOURCES) {
+        if (s.skipInTargets) continue; // 见 SOURCES 里 mascus 的注释
         targets.push({
           brand: b.slug,
           brandNameZh: b.nameZh,
