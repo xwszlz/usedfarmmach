@@ -110,25 +110,49 @@ describe("makeSourceCircuit —— 源级熔断", () => {
 });
 
 describe("runRefresh —— 总预算兜底（dryRun）", () => {
-  it("⑤ budgetMs 耗尽 ⇒ budgetExhausted=true 且 skippedByBudget>0", async () => {
-    // 用不存在的 sourceSite ⇒ probeOneTarget 立即返回 skip('no-source')，不触网、不写库。
-    const targets = Array.from({ length: 5000 }, () => ({ sourceSite: "__nosrc__" }));
+  // ⚠️ 这两条刻意做成**零竞态**：
+  //   曾用 `budgetMs: 0` 一条同时断言「预算耗尽」和「no-source 计数」，
+  //   但 `budgetMs: 0` 下 20 个 worker 是否在同一毫秒内完成首次预算检查，
+  //   完全取决于调度时序 —— 同毫秒则各跑一个目标（no-source=20），
+  //   翻毫秒则一个都不跑（no-source=0）⇒ CI 上随机红。
+  //   现在拆成两条各自确定收敛的用例。
+  it("⑤a budgetMs 耗尽（-1 保证首次检查即超）⇒ 一个目标都不派发", async () => {
+    const targets = Array.from({ length: 50 }, () => ({ sourceSite: "__nosrc__" }));
     const stats = await engine.runRefresh({
       fx: {}, // 显式给 fx，避免走 getFxRates() 的真实网络
       targets,
-      sources: undefined,
       dryRun: true,
-      budgetMs: 0, // 任何一次迭代后都必然"超预算"
+      // budgetMs: -1 ⇒ `Date.now() - startTs > -1` 恒真（elapsed 恒 >= 0）
+      // ⇒ 第一个 worker 的首轮检查就 break，零目标被派发，完全不依赖时序。
+      budgetMs: -1,
       concurrency: 20,
     });
 
     expect(stats.budgetExhausted).toBe(true);
-    expect(stats.skippedByBudget).toBeGreaterThan(0);
-    expect(stats.skippedByBudget).toBeLessThanOrEqual(stats.total);
-    // 账目闭合：跑过的 + 因预算跳过的 = 总数（in-flight 的算跑过）
-    expect(stats.ok + stats.skip + stats.failed + stats.skippedByBudget).toBe(stats.total);
-    expect(stats.skipReasons["no-source"]).toBeGreaterThan(0);
+    expect(stats.skippedByBudget).toBe(stats.total); // 全部计入"未派发"
+    expect(stats.ok).toBe(0);
+    expect(stats.skip).toBe(0);
+    expect(stats.failed).toBe(0);
     expect(stats.durationMs).toBeGreaterThanOrEqual(0);
+  });
+
+  it("⑤b no-source 逐条计数（预算充裕 ⇒ 确定收敛，不触网）", async () => {
+    // `__nosrc__` 走 probeOneTarget 的 `!source` 早退分支：不触网、不写库、极快。
+    const targets = Array.from({ length: 5000 }, () => ({ sourceSite: "__nosrc__" }));
+    const stats = await engine.runRefresh({
+      fx: {},
+      targets,
+      dryRun: true,
+      budgetMs: 260000, // 5000 条无网络的目标几十毫秒跑完，预算绰绰有余
+      concurrency: 20,
+    });
+
+    expect(stats.budgetExhausted).toBe(false);
+    expect(stats.skippedByBudget).toBe(0);
+    expect(stats.skip).toBe(5000);
+    expect(stats.skipReasons["no-source"]).toBe(5000);
+    // 账目闭合
+    expect(stats.ok + stats.skip + stats.failed + stats.skippedByBudget).toBe(stats.total);
   });
 
   it("⑥ 预算充裕时不误报 budgetExhausted（回归）", async () => {
