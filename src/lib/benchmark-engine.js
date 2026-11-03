@@ -70,6 +70,18 @@ const CATEGORY = {
   SOIL: 'soil',
 };
 
+// mascus 上「询价」占比约 39/40，用时间窗控件控制单次抓取的页面体积与噪音
+const MASCUS_RECENT_DAYS = 7;
+// mascus 真实品类路径段（站点改版后的 URL，旧的 /search?q= 已被服务端忽略）
+const MASCUS_CATEGORY_PATH = {
+  tractor: 'tractors',
+  forage_harvester: 'hay-and-forage-machines',
+  baler: 'hay-and-forage-machines',
+  mower_tedder: 'hay-and-forage-machines',
+  combine: 'agricultural-harvesters',
+  soil: 'soil-preparation',
+};
+
 // 18 个品牌（拖拉机 11 + 收获青贮 4 + 耕整 3）
 const BRANDS = [
   { slug: 'john-deere', nameZh: '约翰迪尔', nameEn: 'John Deere', origin: 'US', primaryCategory: CATEGORY.TRACTOR },
@@ -265,8 +277,10 @@ function buildSearchUrl(source, target) {
       return `https://www.agroline.com/search_text.php?query=${encodeURIComponent(`${target.nameEn} ${target.model}`)}`;
     case 'machinerypete':
       return `https://www.machinerypete.com/search?q=${q}`;
-    case 'mascus':
-      return `https://www.mascus.com/search?q=${q}`;
+    case 'mascus': {
+      const seg = MASCUS_CATEGORY_PATH[target.category] || 'hay-and-forage-machines';
+      return `https://www.mascus.com/agriculture/${seg}?lastcreateddays=${MASCUS_RECENT_DAYS}`;
+    }
     case 'tractorhouse':
       return `https://www.tractorhouse.com/search?q=${q}`;
     case 'efarm':
@@ -359,7 +373,7 @@ function extractCurrencyAmount(text, preferredCur) {
 // 按源站选择解析策略；非结构化源回退正则
 function parseListings(source, html, target) {
   if (source.key === 'agroline') return parseAgroline(html, target, source);
-  if (source.key === 'mascus') return parseMascus(html, target, source);
+  if (source.key === 'mascus') return parseMascusNextData(html, target, source);
   const prices = extractPrices(html, source.currency);
   return prices.map((p) => ({ priceForeign: p, currency: source.currency }));
 }
@@ -381,6 +395,73 @@ function parseAgroline(html, target, source) {
   return out;
 }
 
+// Mascus 已整站改版为 Next.js：商品数据在 <script id="__NEXT_DATA__"> 的
+// props.pageProps.searchRes.searchData.items 里（40 条/页，结构化 JSON）。
+// 旧版 CSS class 抓取（parseMascus）在改版后匹配不到任何卡片，仅作回退保留。
+function parseMascusNextData(html, target, source) {
+  const m = /<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/.exec(html);
+  if (!m) return [];
+  let root;
+  try {
+    root = JSON.parse(m[1]);
+  } catch {
+    return [];
+  }
+  const searchData = root?.props?.pageProps?.searchRes?.searchData || {};
+  const items = Array.isArray(searchData.items) ? searchData.items : [];
+  const out = [];
+  for (const it of items) {
+    const title = `${it.brand || ''} ${it.model || ''}`.trim();
+    if (!title) continue;
+    // priceEURO 为 0 表示「询价」（实测占 39/40），无价不能参与价格中位
+    const eur = Number(it.priceEURO) || 0;
+    if (eur <= 0) continue;
+    if (!isRelevant(title, target)) continue;
+    out.push({
+      priceForeign: eur,
+      currency: 'EUR',
+      title,
+      url: it.assetUrl ? `https://www.mascus.com${it.assetUrl}` : undefined,
+      // 以下字段不参与价格聚合，供线索入库/溯源使用
+      sourceDate: it.createDate || undefined,
+      listingId: it.productId || undefined,
+      sellerPhone: it.sellerPhone || undefined,
+      companyName: it.companyName || undefined,
+      country: it.locationCountryCode || undefined,
+      city: it.locationCity || undefined,
+      yearOfManufacture: it.yearOfManufacture || undefined,
+      meterReadout: it.meterReadout ?? undefined,
+      categoryName: it.categoryName || undefined,
+    });
+  }
+  return out;
+}
+
+// 运维排查用：解析 __NEXT_DATA__ 的元信息（总量/标题/品类/条数/有价条数），不参与价格聚合
+function parseMascusDiagnostics(html) {
+  const m = /<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/.exec(html);
+  if (!m) return { ok: false, reason: 'no-next-data' };
+  let root;
+  try {
+    root = JSON.parse(m[1]);
+  } catch {
+    return { ok: false, reason: 'bad-json' };
+  }
+  const sd = root?.props?.pageProps?.searchRes?.searchData || {};
+  const items = Array.isArray(sd.items) ? sd.items : [];
+  return {
+    ok: true,
+    totalResults: sd.totalResults ?? null,
+    searchTitle: sd.searchTitle || null,
+    resolvedCategory: sd.resolvedCategory || null,
+    errorMessage: sd.errorMessage || null,
+    itemCount: items.length,
+    withPrice: items.filter((i) => (Number(i.priceEURO) || 0) > 0).length,
+  };
+}
+
+// ⚠️ 已失效：Mascus 整站改版为 Next.js 后，旧版 CSS class（SearchResultItem_brandmodel）
+// 匹配不到任何卡片，正常路径改走 parseMascusNextData；此函数仅作极端回退保留。
 // Mascus：React 客户端渲染，原始 HTML 多为拍卖填充件；仅接受含真实数字价格的卡片
 function parseMascus(html, target, source) {
   const $ = cheerio.load(html);
@@ -1026,6 +1107,8 @@ module.exports = {
   parseListings,
   parseAgroline,
   parseMascus,
+  parseMascusNextData,
+  parseMascusDiagnostics,
   extractCurrencyAmount,
   isRelevant,
   aggregateListings,

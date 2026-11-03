@@ -41,6 +41,51 @@ declare module '@/lib/benchmark-engine' {
 
   export function getFxRates(): Promise<Record<string, number>>;
   export function buildTargets(): Array<Record<string, any>>;
+
+  /** 按源站 + 目标构造搜索 URL（mascus 已改用真实品类路径 + lastcreateddays） */
+  export function buildSearchUrl(
+    source: Record<string, any>,
+    target: Record<string, any>
+  ): string;
+
+  /** mascus 改版后（Next.js）结构化商品行（仅保留有价 + 相关机型） */
+  export interface MascusNextDataListing {
+    priceForeign: number;
+    currency: string;
+    title: string;
+    url?: string;
+    sourceDate?: string;
+    listingId?: string | number;
+    sellerPhone?: string;
+    companyName?: string;
+    country?: string;
+    city?: string;
+    yearOfManufacture?: number | string;
+    meterReadout?: number | string;
+    categoryName?: string;
+  }
+
+  /** 从 mascus 页面 <script id="__NEXT_DATA__"> 的 searchData.items 解析商品 */
+  export function parseMascusNextData(
+    html: string,
+    target: Record<string, any>,
+    source?: Record<string, any>
+  ): MascusNextDataListing[];
+
+  /** mascus 抓取诊断（运维排查用，不参与价格聚合） */
+  export type MascusDiagnostics =
+    | { ok: false; reason: string }
+    | {
+        ok: true;
+        totalResults: number | null;
+        searchTitle: string | null;
+        resolvedCategory: string | null;
+        errorMessage: string | null;
+        itemCount: number;
+        withPrice: number;
+      };
+
+  export function parseMascusDiagnostics(html: string): MascusDiagnostics;
   export function runRefresh(opts?: {
     fx?: Record<string, number>;
     concurrency?: number;
