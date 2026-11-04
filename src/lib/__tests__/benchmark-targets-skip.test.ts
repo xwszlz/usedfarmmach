@@ -1,14 +1,15 @@
 /**
  * 单测：mascus 已从 benchmark 的「按型号靶标」循环中摘除
  * ─────────────────────────────────────────────────────────
- * 背景（2026-11 实测）：mascus 品牌/型号筛选在 URL 层失效，38 个靶标只落在 4 个
+ * 背景（2026-11 实测）：mascus 品牌/型号筛选在 URL 层失效，靶标只落在 4 个
  * 品类页上（去重 9.5 倍），且 97% 挂牌为询价（priceEURO=0）。runRefresh(dryRun)
  * 仅 mascus：ok=1 / skip=37，skip 不计熔断、永不收敛 ⇒ 每天白打 37 次只换 1 条。
  * 故给 mascus 的 SOURCES 条目加 `skipInTargets:true`，buildTargets() 跳过它。
  *
  * 覆盖：
  *   ① buildTargets() 结果里 sourceSite==='mascus' 的条数为 0
- *   ② 总条数 = 228（38 品牌×型号组合 × 剩余 6 源），且全部非 mascus、每源各 38 条
+ *   ② 每源条数一致且 = 机型数，全量 = 机型数 × 6，且 ≤ 500 上限
+ *      （**不断言具体数字**：MODELS 会随业务扩容，2026-11-04 已从 38 扩到 51 个机型）
  *   ③ SOURCES 里 mascus 仍存在（skipInTargets=true），buildSearchUrl 仍能产出合法 mascus URL
  *      —— 防有人顺手把 SOURCES 整条删了，导致 checkSourceStaleness 把 mascus 误判成 not-in-crawl-list
  *
@@ -52,13 +53,22 @@ describe("buildTargets —— mascus 已摘除", () => {
     expect(all.filter((t) => t.sourceSite === "mascus").length).toBe(0);
   });
 
-  it("② 总条数 = 228（38 组合 × 剩余 6 源），全部非 mascus，每源各 38 条", () => {
+  it("② 每源条数一致且等于机型数，全量 = 机型数 × 6，且不超过 500 上限", () => {
     const all = engine.buildTargets();
-    expect(all.length).toBe(228);
+
+    // ⚠️ 刻意**不**断言具体数字：MODELS 会随业务扩容（2026-11-04 已从 38 扩到 51 个机型），
+    //    写死 228 会让每次运营侧加机型都撞红一次测试，而测试本身并没有被违反。
+    //    这里改断言「结构不变量」：源集合、每源条数一致、与机型数闭合、总数不超上限。
+    const modelCount = engine.BRANDS.reduce(
+      (n, b) => n + (engine.MODELS[b.slug] || []).length,
+      0
+    );
+    expect(modelCount).toBeGreaterThan(0);
+
     // 全部条目都不是 mascus
     expect(all.filter((t) => t.sourceSite !== "mascus").length).toBe(all.length);
 
-    // 剩余 6 个源，每个都应恰好 38 条（38 = 品牌×型号组合数）
+    // 剩余 6 个源，每个都应恰好「机型数」条
     const bySite = countBySite(all);
     expect(Object.keys(bySite).sort()).toEqual([
       "agroline",
@@ -69,10 +79,14 @@ describe("buildTargets —— mascus 已摘除", () => {
       "tractorhouse",
     ]);
     for (const site of Object.keys(bySite)) {
-      expect(bySite[site]).toBe(38);
+      expect(bySite[site]).toBe(modelCount);
     }
-    // 6 源 × 38 = 228 的闭合校验
-    expect(Object.keys(bySite).length * 38).toBe(all.length);
+    // 6 源 × 机型数 = 总数的闭合校验
+    expect(Object.keys(bySite).length * modelCount).toBe(all.length);
+
+    // 靶标数上限 500：Vercel 上 concurrency 20 / 20s 超时 / budgetMs 260s，
+    // 超过 500 就很难在预算内跑完（见 MODELS 顶部注释的扩容规则）。
+    expect(all.length).toBeLessThanOrEqual(500);
   });
 });
 

@@ -21,6 +21,33 @@ declare module '@/lib/benchmark-engine' {
     skipInTargets?: boolean;
   }
 
+  /** 单个机型配置 */
+  export interface BenchmarkModel {
+    /** 机型字符串（mascus 侧必须与库存里的 `model` 字段原样一致，匹配靠它） */
+    model: string;
+    /** 品类：tractor / forage_harvester / combine / baler / mower_tedder / soil */
+    category: string;
+  }
+
+  /** 18 个目标品牌（已按 mascus `brand` 字段实测校验过写法） */
+  export interface BenchmarkBrand {
+    slug: string;
+    nameZh: string;
+    nameEn: string;
+    origin: string;
+    primaryCategory: string;
+  }
+
+  export const BRANDS: BenchmarkBrand[];
+
+  /**
+   * 品牌 slug → 机型清单（旗舰 + 主流在售机型）。
+   * 扩容规则见 benchmark-engine.js 里 MODELS 顶部注释：只按真实库存筛（有价 / 命中品牌 /
+   * 样本 ≥3），model 必须与 mascus `model` 字段原样一致，category 依 `categoryName` 判定。
+   * ⚠️ 机型数 × 6 个按型号靶标的源 = buildTargets() 长度，上限 500。
+   */
+  export const MODELS: Record<string, BenchmarkModel[]>;
+
   /** 首期数据源（含 mascus，但 mascus 标记 skipInTargets=true，不进靶标循环） */
   export const SOURCES: BenchmarkSource[];
 

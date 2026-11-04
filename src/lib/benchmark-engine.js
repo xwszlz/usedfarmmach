@@ -8,7 +8,9 @@
  *      2) 本地/海外 VPS 的 CLI 脚本 scripts/fetch-benchmark.js（node 直接跑）
  *  - 自带 PrismaClient（不依赖 @/lib/db 别名，保证 node CLI 也能用）。
  *  - runRefresh 支持并发 + 单目标超时，规避 Vercel 函数 60s/300s 上限：
- *      18 品牌 × 机型 × 7 源 ≈ 266 目标，并发 12、单目标 8s 超时 → 最坏 ~184s。
+ *      2026-11-04 起：18 品牌 / 51 机型 × 6 个按型号靶标的源（mascus 走 bulk 通道）
+ *      = 306 个靶标，线上并发 20、单目标 20s，靠「源级熔断 + 总预算 260s 兜底」控时。
+ *      靶标数上限 500（见 MODELS 注释）：再加机型前请先算 机型数 × 6。
  *
  * 决策（2026-08-12 用户拍板）：18 品牌全上 / 轻量爬虫 / 俄线(Avito/OLX)首期 / 每天1次。
  *
@@ -133,11 +135,45 @@ const BRANDS = [
   { slug: 'amazone', nameZh: '阿玛松', nameEn: 'Amazone', origin: 'DE', primaryCategory: CATEGORY.SOIL },
 ];
 
-// 各品牌旗舰机型（1–3 个）
+// 各品牌机型清单 = 旗舰机型 + 主流在售机型
+//
+// 📌 2026-11-04 扩容（老板拍板）：原清单只有「各品牌旗舰新款」38 条，实测在
+//    mascus 近 60 天库存里 35/38 完全不存在 ⇒ 38 组只命中 1 组。扩容口径**不靠印象、
+//    只看真实库存**，筛选规则（见 scripts 侧一次性脚本，未入库）：
+//      ① 只算有价条目（mascusItemPriceEur() !== null，即 priceEURO>0 或能折成 EUR）；
+//      ② 只算 brand 命中下面 BRANDS 18 个品牌的（`mascusBrandMatches`；
+//         Arteer / 空 brand 一律排除 —— 空 brand 是拍卖填充件，实测 137 条）；
+//      ③ 同 (brand, model) 样本数 ≥ 3（与 MASCUS_MIN_SAMPLES 同口径）；
+//      ④ 按样本数降序，已存在的 (brand, model) 不重复加。
+//    筛出 14 组，13 组是新增（全部 john-deere，其余 17 个品牌在 mascus 库存里
+//    连一个 ≥3 样本的机型都没有 —— 不是没加，是**无可加**）。
+//
+// ⚠️ model 字符串必须是 mascus `model` 字段**原样**（这是匹配的输入）：
+//    写 `5075E` 而不是 `John Deere 5075E`，写 `8R 370` 而不是 `8R370 / 8R-370`。
+//    带品牌前缀（如历史上 `MF 7700`）或把空格拆开的写法在 mascus 侧匹配不上，
+//    因为 mascus 的 model 字段不含品牌名 —— 新增时请直接用库存里的原串。
+// ⚠️ category 依据 mascus `categoryName` 字段判定（`tractors` → tractor，
+//    `combineharvesters` → combine），**不要凭型号名猜**。
+// ⚠️ 总 target 上限 500（当前 51 机型 × 6 源 = 306，见 buildTargets）；超限时按样本数截断。
 const MODELS = {
   'john-deere': [
+    // —— 旗舰（原有）——
     { model: '8R 410', category: CATEGORY.TRACTOR },
     { model: '6R 250', category: CATEGORY.TRACTOR },
+    // —— 主流在售（2026-11-04 按 mascus 真实库存扩容，括号内为该机型有价样本数）——
+    { model: '5075E', category: CATEGORY.TRACTOR }, // 9，categoryName=tractors
+    { model: '8R 370', category: CATEGORY.TRACTOR }, // 7，tractors
+    { model: '6R 155', category: CATEGORY.TRACTOR }, // 6，tractors
+    { model: 'S780', category: CATEGORY.COMBINE }, // 5，categoryName=combineharvesters
+    { model: '8R 280', category: CATEGORY.TRACTOR }, // 4，tractors
+    { model: '5055E', category: CATEGORY.TRACTOR }, // 4，tractors
+    { model: '5045E', category: CATEGORY.TRACTOR }, // 4，tractors
+    { model: '4066R', category: CATEGORY.TRACTOR }, // 3，tractors
+    { model: '8370R', category: CATEGORY.TRACTOR }, // 3，tractors
+    { model: '6155M', category: CATEGORY.TRACTOR }, // 3，tractors
+    { model: '8R 310', category: CATEGORY.TRACTOR }, // 3，tractors
+    { model: 'S790', category: CATEGORY.COMBINE }, // 3，combineharvesters
+    { model: 'S680', category: CATEGORY.COMBINE }, // 3，combineharvesters
   ],
   'new-holland': [
     { model: 'T7.315', category: CATEGORY.TRACTOR },
