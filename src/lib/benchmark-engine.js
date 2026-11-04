@@ -338,6 +338,33 @@ function buildSearchUrl(source, target) {
     case 'tractorhouse':
       return `https://www.tractorhouse.com/search?q=${q}`;
     case 'efarm':
+      // ⛔ 2026-11 实测结论：efarm **暂不可采**，此处 URL 保持原样（不要改成 apex 分类页，见下）。
+      //
+      // 两次独立失败原因（都已用真实请求验证）：
+      //   ① `www.e-farm.com` 的任何 HTML 页（含旧 `/en/machines?search=` 与新的
+      //      `/en/used-farm-machinery/tractors/`）在本机直连一律 **HTTP 403 +
+      //      Cloudflare 的 "Just a moment..." JS 挑战**（响应头 `server: cloudflare`、
+      //      `cf-ray: ...-NRT`）。也就是说这个源**是有反爬的**，不是「URL 失效」。
+      //   ② 换到 apex `https://e-farm.com/en/used-farm-machinery/<seg>/` 确实 **200 /
+      //      252–258KB**（tractors / balers / combine-harvesters 三段都通），但页面里
+      //      **`"price"` 出现 0 次、`application/ld+json` 0 个**：列表是客户端渲染的，
+      //      `__NEXT_DATA__` 的 `props.pageProps` 只有 `data.blocks[type=search-results]`
+      //      的**筛选器配置**（`preFetchedBlockProps['search-results-1']` 只有 `filters`
+      //      与 `popularLinks`），没有任何商品条目。商品由前端调用内部 SDK
+      //      `searchMachines({ search: { machineType, brands, models, limit, offset,
+      //      filters, tags }, countryCode, constraints: 'serp' })` 拉取，地址藏在
+      //      cdn2.e-farm.com 的 chunk 里、无公开 API 文档。
+      //      分类页里连详情页链接都是 0 个（`href` 只有 10 个品类/品牌导航）。
+      //
+      // 结论：想拿 efarm 的价格只有两条路，都要额外成本，**故意没做**：
+      //   A. 抓详情页（详情页确有 JSON-LD `Product`+`Offer`）：但分类页拿不到详情 URL，
+      //      只能靠 sitemapindex 逐 locale 展开 + 每台机一次 457KB 请求 ⇒ 请求量爆炸；
+      //   B. 逆向前端 `searchMachines` 私有接口：需要弄清 endpoint、所需头部/鉴权与
+      //      `constraints:'serp'` 语义，属于「另做一个采集器」，不是改一行 URL 的事。
+      //
+      // 为什么不改成 apex 分类页 URL：改完之后该源会从「3 次失败后被熔断开路」
+      // （见 makeSourceCircuit，每轮只白打约 3 个请求）变成「38 次 200 但 0 条」，
+      // 每轮白拉 38 × 250KB ≈ 9.5MB 且永不熔断，纯亏。留原样反而更省。
       return `https://www.e-farm.com/en/machines?search=${q}`;
     case 'avito':
       return `https://www.avito.ru/rossiya?q=${encodeURIComponent(`${target.nameEn} ${target.model}`)}`;
