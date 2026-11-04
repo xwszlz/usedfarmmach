@@ -1281,6 +1281,799 @@ async function fetchMascusBulk(opts = {}) {
   };
 }
 
+// —— Ark web_search 兜底通道（默认关闭，见 runRefresh 的双重门控）——
+//
+// 存在理由：machinerypete(470 自建 WAF) / tractorhouse(403 Cloudflare) / agriaffaires(403 DataDome)
+// 这类「硬拦」源，提超时、换 UA、加并发都无效 —— 它们不是在慢，是在拒绝我们。
+// 2026-11 方舟 web_search 打通后，实测可以绕过这类 WAF 拿到真实挂牌价
+// （machinerypete 的 CLAAS Jaguar 870 连跑 3 次中位 $99,900/$99,900/$99,950，偏差 0.05%）。
+//
+// ⚠️ 三条纪律，改这里之前先读：
+//   1. **默认全关**：`opts.arkSearchFallback === true` 且 `BENCHMARK_ARK_FALLBACK=1`
+//      两个条件同时满足才生效（双重门控，缺一不可）。关着的时候本模块零网络、零写库，
+//      与加它之前逐字节等价。
+//   2. **只兜「直连失败」**：永不用于直连健康的源（agroline 在 ARK_SEARCH_BLOCKED_SOURCES 里
+//      硬排除）。检索来的价格置信度只有 0.3，混进健康源就是污染。
+//   3. **绝不编造**：抽不到 ≥ MASCUS_MIN_SAMPLES 条带币种符号的价格就 skip。
+//      不许用「估算 / AI 推断 / 历史均价」补 —— 宁可空缺。
+const ARK_SEARCH_TIMEOUT_MS = 45000;
+// 检索价格的置信度**固定** 0.3（直连实测约 0.7）。
+// 为什么不复用 confidenceScore()：那个函数按「源数/样本量/时效」算，1 源 + 3 样本会算出 0.35，
+// 但检索结果是二手转述、可能跨地区跨年份、也可能引到别的站点 —— 不确定性远高于同分直连数据。
+// 固定 0.3 是一个显式的「低置信度标记」，别让它随样本数漂上去。
+const ARK_SEARCH_CONFIDENCE = 0.3;
+// 价格合理区间（USD/EUR 口径）：<$1000 多半是配件/运费，>$5,000,000 基本是写错位数
+const ARK_SEARCH_PRICE_MIN = 1000;
+const ARK_SEARCH_PRICE_MAX = 5000000;
+
+// `site:` 限定用的站点域名。**取值来自库里 sourceUrl 的实测值**，不要凭印象写：
+// agriaffaires 实测有 .us / .co.uk / .it 多个 TLD（库里 11 行分别来自这三个域名），
+// 检索统一用 .co.uk（英国站，英文页）。
+const SOURCE_SEARCH_DOMAIN = {
+  agroline: 'agroline.com',
+  machinerypete: 'machinerypete.com',
+  mascus: 'mascus.com',
+  tractorhouse: 'tractorhouse.com',
+  efarm: 'e-farm.com',
+  avito: 'avito.ru',
+  olx: 'olx.ua',
+  // 不在 SOURCES 里（只有历史种子），但探针要用，故一并登记
+  agriaffaires: 'agriaffaires.co.uk',
+};
+
+// 兜底通道的**永久排除**名单：这些源直连健康，任何兜底都是污染。
+// agroline 现在是唯一稳定活的源（61 行、ok 37/skip 12/failed 2），绝不能让它被检索价覆盖。
+const ARK_SEARCH_BLOCKED_SOURCES = new Set(['agroline']);
+
+// 「像 TLD 的后缀」白名单：只用来判断两个域名是否同品牌不同国别站
+// （`tractorhouse.com` ↔ `tractorhouse.com.au` ↔ `tractorhouse.co.uk`）。
+// 白名单而非黑名单，是为了挡住 `agriaffaires.evil.com` 这种「首段同名」的伪站。
+const ARK_TLD_TAIL =
+  /^(com|net|org|co|de|uk|fr|it|nl|pl|es|ru|ua|cn|au|us|ca|jp|in|br|be|dk|se|no|fi|cz|hu|ro|at|ch|ie|nz|za)(\.[a-z]{2})?$/;
+
+/** 环境闸：只有显式置 `BENCHMARK_ARK_FALLBACK=1` 才算开启（默认关，防误开烧 token） */
+function arkSearchGloballyEnabled() {
+  return process.env.BENCHMARK_ARK_FALLBACK === '1';
+}
+
+/**
+ * 纯判据：某次直连结果是否该走 Ark 兜底？
+ *
+ * ⚠️ 只认 `failed`。**`skip` 绝不触发**：`skip` 的语义是「站点通了、但没抽到样本」
+ * （`no-listing` / `too-few-samples`），此时站点是可直连的，拿低置信度检索价去补
+ * 等于用二手转述覆盖一手数据。真正该兜底的只有 `failed`（403/470/超时/解析炸）。
+ *
+ * @param {string} status 直连结果状态
+ * @param {string} sourceSite 源 key
+ * @returns {boolean}
+ */
+function shouldArkFallback(status, sourceSite) {
+  if (status !== 'failed') return false;
+  if (ARK_SEARCH_BLOCKED_SOURCES.has(String(sourceSite || ''))) return false;
+  return true;
+}
+
+/** Ark Responses 端点（`ARK_BASE_URL` 可覆盖，默认公网北京域） */
+function arkResponsesEndpoint() {
+  const base = (process.env.ARK_BASE_URL || 'https://ark.cn-beijing.volces.com/api/v3').replace(
+    /\/+$/,
+    ''
+  );
+  return `${base}/responses`;
+}
+
+/**
+ * 最小 POST-JSON 客户端（引擎是 CJS 且不依赖任何 TS 模块，故不复用 src/lib/ai/ark-client.ts）。
+ *
+ * @param {string} url
+ * @param {object} payload 请求体
+ * @param {{timeout?: number, headers?: Record<string,string>}} [opts]
+ * @returns {Promise<object>} 解析后的 JSON
+ */
+function httpPostJson(url, payload, opts = {}) {
+  const timeout = Number(opts.timeout) > 0 ? Math.trunc(opts.timeout) : ARK_SEARCH_TIMEOUT_MS;
+  const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+  const bodyText = JSON.stringify(payload || {});
+  return new Promise((resolve, reject) => {
+    let parsed;
+    try {
+      parsed = new URL(url);
+    } catch (e) {
+      return reject(new Error(`bad-url: ${url}`));
+    }
+    const lib = parsed.protocol === 'https:' ? https : http;
+    const req = lib.request(
+      {
+        method: 'POST',
+        hostname: parsed.hostname,
+        port: parsed.port || (parsed.protocol === 'https:' ? 443 : 80),
+        path: `${parsed.pathname}${parsed.search}`,
+        headers: { ...headers, 'Content-Length': Buffer.byteLength(bodyText) },
+        timeout,
+      },
+      (res) => {
+        const chunks = [];
+        res.on('data', (c) => chunks.push(c));
+        res.on('end', () => {
+          const text = Buffer.concat(chunks).toString('utf8');
+          if (!res.statusCode || res.statusCode < 200 || res.statusCode >= 300) {
+            // 带上响应体前 300 字：403 AccessDenied / 404 ToolNotOpen 这类错误只看状态码
+            // 会一路把人带去控制台查「插件有没有开通」，实际往往是枚举值写错（见 ark-client.ts 的坑记录）
+            return reject(
+              new Error(`HTTP ${res.statusCode}: ${text.slice(0, 300).replace(/\s+/g, ' ')}`)
+            );
+          }
+          try {
+            resolve(JSON.parse(text));
+          } catch (e) {
+            reject(new Error(`bad-json: ${text.slice(0, 200).replace(/\s+/g, ' ')}`));
+          }
+        });
+      }
+    );
+    req.on('timeout', () => {
+      req.destroy(new Error(`timeout ${timeout}ms`));
+    });
+    req.on('error', reject);
+    req.write(bodyText);
+    req.end();
+  });
+}
+
+/**
+ * 从 Responses 响应里抽正文。
+ *
+ * 主口径（派工单要求）：`output` 里 `type === 'message'` 的 `content[].text`。
+ * 兜底：`output_text`（部分版本直接给拼接好的正文）、以及任意 `output[].content[].text`
+ * （流式/非流式字段差异）。全部缺失则返回空串 —— 调用方按「抽不到价」降级，不抛错。
+ *
+ * @param {any} payload
+ * @returns {string}
+ */
+function extractArkSearchText(payload) {
+  if (!payload || typeof payload !== 'object') return '';
+  const root = payload.response && typeof payload.response === 'object' ? payload.response : payload;
+  let text = '';
+  if (Array.isArray(root.output)) {
+    for (const item of root.output) {
+      if (!item || typeof item !== 'object') continue;
+      const isMessage = item.type === 'message' || item.type == null;
+      if (!isMessage) continue;
+      if (!Array.isArray(item.content)) continue;
+      for (const c of item.content) {
+        if (c && typeof c.text === 'string') text += `${c.text}\n`;
+      }
+    }
+    if (!text) {
+      for (const item of root.output) {
+        if (!item || !Array.isArray(item.content)) continue;
+        for (const c of item.content) {
+          if (c && typeof c.text === 'string') text += `${c.text}\n`;
+        }
+      }
+    }
+  }
+  if (!text && typeof root.output_text === 'string') text = root.output_text;
+  return text;
+}
+
+/**
+ * 价格 token → { amount, currency }。**只认带币种符号/前缀的数字**。
+ *
+ * 为什么不认裸数字：正文里满是年份（2024）、工时（1525 h）、库存号、页码、销量，
+ * 裸数字抽进来就是编造价格。宁可漏抽，不可错抽。
+ *
+ * 金额归一化要处理两种千分位习惯：
+ *   `99,900` / `1,234,567.89`（英美）→ 逗号是千分位
+ *   `99.900`（欧陆，1–3 位 + 恰好 3 位一组）→ 点是千分位
+ *
+ * @param {string} text
+ * @param {{currency?: string}} [opts] 给 `currency` 时只保留该币种的金额
+ * @returns {Array<{amount: number, currency: string, raw: string}>}
+ */
+function extractArkSearchPrices(text, opts = {}) {
+  if (typeof text !== 'string' || text.length === 0) return [];
+  const only =
+    opts && typeof opts.currency === 'string' && opts.currency ? opts.currency.toUpperCase() : null;
+  // explicitOnly：只认**带显式币种标注**的金额（`USD $61,500` / `$103,000 USD` / `EUR 99.900`）。
+  // 为什么检索通道必须开它：tractorhouse 的镜像页会同时印两种币种 ——
+  // `AUD $88,227 Price entered as : USD $61,500`。裸 `$` 取哪个都会被另一种坑到，
+  // 所以「没有显式标注的裸符号金额」在检索通道一律不认。
+  const explicitOnly = opts && opts.explicitOnly === true;
+
+  // 币种 token → ISO。US$ 必须在 $ 之前匹配（正则交替顺序即优先级）
+  const CUR_MAP = {
+    'US$': 'USD',
+    USD: 'USD',
+    EUR: 'EUR',
+    GBP: 'GBP',
+    RUB: 'RUB',
+    CNY: 'CNY',
+    $: 'USD',
+    '€': 'EUR',
+    '£': 'GBP',
+    '₽': 'RUB',
+    '¥': 'CNY',
+  };
+  const ISO = { USD: 'USD', EUR: 'EUR', GBP: 'GBP', RUB: 'RUB', CNY: 'CNY' };
+  // 已知**外币**代码：出现在符号前时（`AUD $88,227`）说明这个金额不是我们要的币种。
+  // 只列真实的币种代码，避免把 `Washington $x` 这种词尾误判成币种。
+  const FOREIGN = new Set([
+    'AUD',
+    'CAD',
+    'NZD',
+    'SGD',
+    'HKD',
+    'ZAR',
+    'BRL',
+    'MXN',
+    'JPY',
+    'CHF',
+    'SEK',
+    'NOK',
+    'DKK',
+    'PLN',
+    'UAH',
+    'KZT',
+    'INR',
+  ]);
+  // 金额后面紧跟计量单位 ⇒ 这是工时/里程/功率，不是价格（`USD 4851 hours`）。
+  // ⚠️ 只对**没有千分位/小数点**的裸整数生效：「$103,000 USD 5451 hours」里的 5451 要丢，
+  //    但「$55,000 Hours 1」里的 55,000 是价格（Hours 是紧随其后的字段名，不是单位）。
+  const UNIT_AFTER = /^\s*(hours?|hrs?|h|km|kms|mi|miles|hp|kw|kg|tons?|t|ac|acres|%)\b/i;
+
+  /** 候选金额（按出现位置排序后再做闸门判断，保证输出顺序 = 原文顺序） */
+  const cands = [];
+  let m;
+
+  // ① 符号在前：`$99,900` / `US$74,600` / `$103,000 USD` / `USD $61,500` / `AUD $88,227`
+  const reSym = /(US\$|[$€£₽¥])\s?([0-9][0-9,.]*)/gi;
+  while ((m = reSym.exec(text)) !== null) {
+    const start = m.index;
+    const end = start + m[0].length;
+    const token = m[1];
+    let currency = CUR_MAP[token.toUpperCase()] || CUR_MAP[token] || null;
+    let explicit = token.toUpperCase() === 'US$';
+    // 后缀币种：`$103,000 USD`
+    const suf = /^\s?(USD|EUR|GBP|RUB|CNY)\b/i.exec(text.slice(end, end + 8));
+    if (suf) {
+      currency = ISO[suf[1].toUpperCase()];
+      explicit = true;
+    }
+    // 前置币种：`USD $61,500`（认）/ `AUD $88,227`（丢）
+    const pre = /([A-Za-z]{3})\s?$/.exec(text.slice(Math.max(0, start - 6), start));
+    if (pre) {
+      const code = pre[1].toUpperCase();
+      if (ISO[code]) {
+        currency = ISO[code];
+        explicit = true;
+      } else if (FOREIGN.has(code)) {
+        continue; // 明确是别的币种的金额，直接不要
+      }
+    }
+    cands.push({ start, end, digitsRaw: m[2], token, currency, explicit });
+  }
+
+  // ② 代码在前、无符号：`USD 1,234,567.89` / `EUR 99.900`
+  const reCode = /\b(USD|EUR|GBP|RUB|CNY)\b\s?([0-9][0-9,.]*)/gi;
+  while ((m = reCode.exec(text)) !== null) {
+    const start = m.index;
+    const end = start + m[0].length;
+    // 与 ① 已处理的范围重叠就跳过（避免同一条金额被算两次）
+    if (cands.some((c) => start < c.end && c.start < end)) continue;
+    cands.push({
+      start,
+      end,
+      digitsRaw: m[2],
+      token: m[1],
+      currency: ISO[m[1].toUpperCase()],
+      explicit: true,
+    });
+  }
+
+  cands.sort((a, b) => a.start - b.start);
+
+  const out = [];
+  for (const c of cands) {
+    if (!c.currency) continue;
+    if (explicitOnly && !c.explicit) continue;
+    if (only && c.currency !== only) continue;
+    const rawDigits = String(c.digitsRaw || '');
+    if (!/[.,]/.test(rawDigits) && UNIT_AFTER.test(text.slice(c.end, c.end + 10))) continue;
+    const digitsRaw = String(c.digitsRaw || '').replace(/[.,]+$/, ''); // 去掉句末标点
+    if (!digitsRaw) continue;
+    let normalized = digitsRaw;
+    if (/^\d{1,3}(\.\d{3})+$/.test(normalized)) {
+      normalized = normalized.replace(/\./g, ''); // 99.900 → 99900
+    } else if (/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(normalized)) {
+      normalized = normalized.replace(/,/g, ''); // 1,234.56 → 1234.56
+    } else {
+      normalized = normalized.replace(/[,\s]/g, '');
+    }
+    const amount = Number(normalized);
+    if (!Number.isFinite(amount)) continue;
+    if (amount < ARK_SEARCH_PRICE_MIN || amount > ARK_SEARCH_PRICE_MAX) continue;
+    out.push({ amount, currency: c.currency, raw: `${c.token}${c.digitsRaw}` });
+  }
+  return out;
+}
+
+/**
+ * 判断一条引用 URL 的主机名是否属于**源站自己的站点**。
+ *
+ * 为什么不能简单 `endsWith`：
+ *   - `tractorhouse.com` 的英国/澳洲镜像站是 `tractorhouse.com.au` / `tractorhouse.co.uk`，
+ *     语义上仍是「同一家的挂牌」，实测 `site:tractorhouse.com` 返回的 citations 全在
+ *     `.com.au` 上（价格同时给 AUD 与 "Price entered as USD"，币种闸会滤掉 AUD 那份）。
+ *     严格要求 `endsWith('.tractorhouse.com')` 会把整条探针判死。
+ *   - 但也不能只看品牌词：`tractorhouse.com` 与 `tractorhouse.de` 是不同市场，
+ *     后缀既不相等也不互为前缀，故必须同时校验「首段相等 + 后缀互为前缀」。
+ *
+ * @param {string} host 引用 URL 的主机名
+ * @param {string} domain 源站域名（SOURCE_SEARCH_DOMAIN 的值）
+ * @returns {boolean}
+ */
+function arkHostMatchesSite(host, domain) {
+  const h = String(host || '').toLowerCase().replace(/^www\./, '');
+  const d = String(domain || '').toLowerCase().replace(/^www\./, '');
+  if (!h || !d) return false;
+  if (h === d) return true;
+  if (h.endsWith(`.${d}`)) return true; // 子域：www.machinerypete.com
+  const hl = h.split('.');
+  const dl = d.split('.');
+  if (hl.length < 2 || dl.length < 2) return false;
+  if (hl[0] !== dl[0]) return false; // 品牌首段必须相同（tractorhouse ≠ agriaffaires）
+  // 两侧的「后缀部分」都必须是像 TLD 的东西，避免 `agriaffaires.evil.com` 这类伪站蒙过
+  const hs = hl.slice(1).join('.');
+  const ds = dl.slice(1).join('.');
+  return ARK_TLD_TAIL.test(hs) && ARK_TLD_TAIL.test(ds);
+}
+
+/**
+ * 从 Responses 响应里抽**引用来源**（`content[].annotations[]` 里 `type==='url_citation'`）。
+ *
+ * 这是本通道唯一可信的溯源依据：每条 citation 带 `url` + 该页的 `summary`（搜索结果摘要原文），
+ * 于是「价格属于哪个站点」变成可判定的事实，而不是从模型正文里猜。
+ *
+ * 为什么必须靠它：实测 `site:agriaffaires.co.uk ...` 的正文里写满了 €62,500 / €80,000 这类数字，
+ * 但 12 条 citations **一条 agriaffaires 都没有**（全在 tractorhouse.com.au / nongjitong /
+ * claasharvestcentre 上）。正文抽价 = 把别家的价记在 agriaffaires 头上。
+ *
+ * @param {any} payload
+ * @returns {Array<{url: string, host: string, title: string, siteName: string, summary: string}>}
+ */
+function extractArkCitations(payload) {
+  if (!payload || typeof payload !== 'object') return [];
+  const root = payload.response && typeof payload.response === 'object' ? payload.response : payload;
+  const out = [];
+  const seen = new Set();
+  const push = (a) => {
+    if (!a || typeof a !== 'object') return;
+    const url = typeof a.url === 'string' ? a.url : '';
+    if (!url || seen.has(url)) return;
+    let host = '';
+    try {
+      host = new URL(url).hostname.toLowerCase().replace(/^www\./, '');
+    } catch (e) {
+      return; // 非绝对 URL 无法判定归属，直接丢
+    }
+    seen.add(url);
+    out.push({
+      url,
+      host,
+      title: typeof a.title === 'string' ? a.title : '',
+      siteName: typeof a.site_name === 'string' ? a.site_name : '',
+      summary: typeof a.summary === 'string' ? a.summary : '',
+    });
+  };
+  const collect = (items) => {
+    if (!Array.isArray(items)) return;
+    for (const item of items) {
+      if (!item || !Array.isArray(item.content)) continue;
+      for (const c of item.content) {
+        if (!c || !Array.isArray(c.annotations)) continue;
+        for (const a of c.annotations) {
+          // 只认 url_citation；其他类型（如 file_citation）没有源站语义
+          if (a && a.type === 'url_citation') push(a);
+        }
+      }
+    }
+  };
+  collect(root.output);
+  if (!out.length && Array.isArray(root.output)) {
+    // 少数版本把 annotations 挂在 output_text 之外的字段，兜底再扫一遍
+    for (const item of root.output) {
+      if (item && Array.isArray(item.annotations)) {
+        for (const a of item.annotations) if (a && a.type === 'url_citation') push(a);
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * 用 Ark web_search 抓单个 (源, 品牌, 机型) 的挂牌价，聚合并（可选）入库。
+ *
+ * 两次检索：
+ *   ① `site:<域名> used <品牌> <机型> price <币种>` —— **锁站点**，唯一可用于入库的样本源
+ *   ② `used <品牌> <机型> price <币种> listing <当年>` —— 不锁站点，**只做交叉诊断**
+ *
+ * 🔴 为什么 ② 的价格绝不能进中位数（2026-11-04 反向探针实测钉死）：
+ *    agriaffaires 是 DataDome 站点，web_search 拿不到它本体页。最初把两次 query 的价格
+ *    「取并集」，结果 agriaffaires 报出 `ok` + 16 条价 + 中位 €206,500 —— 而其中
+ *    **15 条来自锁站点那次之外的别的站**（landwirt / nongjitong 之类）。也就是说
+ *    我们会把别家的价格挂在 `sourceSite: 'agriaffaires'` 名下入库，这是**misattribution**，
+ *    本质与编造价格同级。
+ *    收紧成「只认 ①」，第二次反向探针仍然报 `ok`（11 条价、中位 €100,000）——
+ *    因为 `site:` 只是检索**提示**，模型写答案时照样把 tractorhouse 的价抄进正文。
+ *    原始返回实测：`site:agriaffaires.co.uk ...` 的 12 条 url_citation 里
+ *    **一条 agriaffaires 都没有**（全在 tractorhouse.com.au / nongjitong / claasharvestcentre）。
+ *
+ * ✅ 最终口径：**按 citation 溯源，不从正文抽价**
+ *    1. 只读 `content[].annotations[]` 里 `type==='url_citation'` 的条目，
+ *       每条带 `url` 与该页的 `summary` 原文；
+ *    2. 只保留主机名属于源站自己的 citation（`arkHostMatchesSite`，容许 .com/.com.au 这类同品牌国别站）；
+ *    3. 只在这些 citation 的 `summary` 里抽价，且金额币种必须等于源的币种
+ *       （否则 `AUD $88,227 / Price entered as USD $61,500` 这种镜像站双币种会把 AUD 值当 USD）；
+ *    4. 摘要必须真的在讲这台机型（`mascusModelMatches`），否则
+ *       machinerypete 的 windrowers 页里「Jaguar 8700 $169,000」会被算进 Jaguar 870；
+ *    5. 正文（`extractArkSearchText`）抽到的价只进 `prosePrices` 做诊断，**永不聚合**。
+ *    于是「agriaffaires 一条自家 citation 都拿不到」自然落成 `skip: 'no-site-citation'`。
+ *
+ * @param {{key: string, currency?: string, region?: string}} source 源定义（可来自 SOURCES，也可最小对象）
+ * @param {{brand?: string, brandNameZh?: string, nameEn?: string, model: string, category?: string}} target
+ * @param {Record<string, number>} fx 外币→CNY 汇率表
+ * @param {{dryRun?: boolean, timeoutMs?: number, fetchImpl?: Function}} [opts]
+ * @returns {Promise<{status: 'ok'|'skip'|'failed', reason?: string, prices: Array<{amount:number,currency:string,raw:string,sourceUrl?:string}>, crossSitePrices: Array<{amount:number,currency:string,raw:string}>, prosePrices: Array<{amount:number,currency:string,raw:string}>, corroborated: number, siteCitations: number, citedDomains: string[], queries: string[], medianForeign?: number, medianCny?: number, currency?: string, sampleSize?: number, row?: object, id?: any, usage?: any, errors?: string[]}>}
+ */
+async function fetchViaArkSearch(source, target, fx, opts = {}) {
+  const sourceKey = String((source && source.key) || (target && target.sourceSite) || '').trim();
+  const base = {
+    prices: [],
+    crossSitePrices: [],
+    prosePrices: [],
+    corroborated: 0,
+    siteCitations: 0,
+    citedDomains: [],
+    queries: [],
+    errors: [],
+  };
+  if (!sourceKey) return { ...base, status: 'failed', reason: 'ark-no-source' };
+  // 健康源硬排除：即便调用方手滑传了 agroline 也不会发请求
+  if (ARK_SEARCH_BLOCKED_SOURCES.has(sourceKey)) {
+    return { ...base, status: 'skip', reason: 'ark-source-blocked' };
+  }
+  const apiKey = process.env.ARK_API_KEY || '';
+  if (!apiKey) return { ...base, status: 'failed', reason: 'ark-no-api-key' };
+
+  const domain = SOURCE_SEARCH_DOMAIN[sourceKey] || `${sourceKey}.com`;
+  const brandDef = BRANDS.find((b) => b.slug === (target && target.brand)) || null;
+  const nameEn = String((target && target.nameEn) || (brandDef && brandDef.nameEn) || '').trim();
+  const model = String((target && target.model) || '').trim();
+  if (!nameEn || !model) return { ...base, status: 'failed', reason: 'ark-no-target' };
+
+  const currency = String((source && source.currency) || 'USD');
+  // ⚠️ 派工单模板写的是 `listing 2025`，这里用**当年**：库里数据日期是 2026，
+  //    把 2025 写死会把检索引向一年前的旧挂牌，中位数随之下移。
+  const year = new Date().getFullYear();
+  const jobs = [
+    // ① 锁站点 —— 唯一可入库来源
+    { text: `site:${domain} used ${nameEn} ${model} price ${currency}`, siteLocked: true },
+    // ② 不锁站点 —— 仅交叉诊断（见上面 🔴 说明）
+    { text: `used ${nameEn} ${model} price ${currency} listing ${year}`, siteLocked: false },
+  ].map((j) => ({ ...j, text: j.text.replace(/\s+/g, ' ').trim() }));
+  const queries = jobs.map((j) => j.text);
+
+  const fetchImpl = typeof opts.fetchImpl === 'function' ? opts.fetchImpl : httpPostJson;
+  const timeoutMs = Number(opts.timeoutMs) > 0 ? Math.trunc(opts.timeoutMs) : ARK_SEARCH_TIMEOUT_MS;
+  const endpoint = arkResponsesEndpoint();
+  const modelId = process.env.ARK_MODEL_ID || 'doubao-seed-2-1-pro-260915';
+
+  const sitePrices = [];
+  const crossSitePrices = [];
+  const prosePrices = [];
+  const seenSite = new Set();
+  const seenCross = new Set();
+  const citedDomains = [];
+  let siteCitations = 0;
+  let corroborated = 0;
+  let usage = null;
+  const perQuery = [];
+  // 机型 token：用来把「同一页里别的机型的价」挡在外面（Jaguar 8700 ≠ Jaguar 870）
+  const modelTokens = mascusModelTokens(model);
+
+  // —— 两条 query **并发**发 ——
+  // 为什么必须并发：单次 web_search 实测 30–45s（模型要跑 3–14 次检索再组织答案）。
+  // 串行 = 60–90s/target；实测 3 条探针串行跑掉 216s，直连失败的源只要有十来个，
+  // 260s 总预算当场爆掉。并发后 elapsed ≈ 单次耗时，与 45s 单次超时口径一致，
+  // 请求数/成本都不变（仍是 2 条）。
+  const oneJob = (job) => {
+    const payload = {
+      model: modelId,
+      stream: false,
+      // ⚠️ `sources` 必须写 `['search_engine']`。写成 `['doubao']` 会返回 403
+      // `AccessDenied ... verify the activation status`，把人一路误导去查控制台开通状态，
+      // 实际只是枚举名错（详见 src/lib/ai/ark-client.ts 里 5 条真实 query 的打靶记录）。
+      tools: [{ type: 'web_search', sources: ['search_engine'] }],
+      input: [{ role: 'user', content: [{ type: 'input_text', text: job.text }] }],
+    };
+    return fetchImpl(endpoint, payload, {
+      timeout: timeoutMs,
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+  };
+  const settled = await Promise.allSettled(jobs.map(oneJob));
+
+  // 按 jobs 原序结算：锁站点那次必须先落进 seenSite，
+  // 不锁站点那次才知道哪些价是「被本体检索印证」（corroborated）、哪些是「纯跨站」（丢弃）。
+  for (let i = 0; i < jobs.length; i += 1) {
+    const job = jobs[i];
+    const s = settled[i];
+    if (s.status === 'rejected') {
+      const e = s.reason;
+      const msg = e && e.message ? e.message : String(e);
+      perQuery.push({
+        query: job.text,
+        siteLocked: job.siteLocked,
+        ok: false,
+        found: 0,
+        added: 0,
+        error: msg,
+      });
+      base.errors.push(msg);
+      continue;
+    }
+    const resp = s.value;
+    if (!usage && resp && resp.usage) usage = resp.usage;
+    const text = extractArkSearchText(resp);
+    let added = 0;
+    let found = 0;
+
+    if (job.siteLocked) {
+      // —— ① 锁站点检索：**只认 citation 溯源到的价**（见函数头 ✅） ——
+      const cites = extractArkCitations(resp);
+      for (const c of cites) {
+        if (!citedDomains.includes(c.host)) citedDomains.push(c.host);
+        if (!arkHostMatchesSite(c.host, domain)) continue; // 不是源站自己的页 → 丢弃
+        // 摘要必须真的在讲这台机型（否则同页里别的型号的价会混进来）
+        if (modelTokens.length && !mascusModelMatches(c.summary, modelTokens)) continue;
+        siteCitations += 1;
+        const prices = extractArkSearchPrices(c.summary, { currency, explicitOnly: true });
+        found += prices.length;
+        for (const p of prices) {
+          const key = `${p.currency}|${p.amount}`;
+          if (seenSite.has(key)) continue; // 同一挂牌在多条 citation 里重复出现只算一条
+          seenSite.add(key);
+          sitePrices.push({ ...p, sourceUrl: c.url });
+          added += 1;
+        }
+      }
+      // 正文价：只做诊断。正文会把别站价混进来（agriaffaires 事故），永不聚合。
+      for (const p of extractArkSearchPrices(text, { currency })) prosePrices.push(p);
+    } else {
+      // —— ② 不锁站点检索：纯交叉诊断，不参与聚合 ——
+      const crossFound = extractArkSearchPrices(text);
+      found = crossFound.length;
+      for (const p of crossFound) {
+        const key = `${p.currency}|${p.amount}`;
+        if (seenSite.has(key)) {
+          // 锁站点那边已经拿到同一个价 ⇒ 交叉印证
+          if (!seenCross.has(key)) {
+            seenCross.add(key);
+            corroborated += 1;
+          }
+        } else if (!seenCross.has(key)) {
+          seenCross.add(key);
+          crossSitePrices.push(p);
+          added += 1;
+        }
+      }
+    }
+
+    perQuery.push({
+      query: job.text,
+      siteLocked: job.siteLocked,
+      ok: true,
+      found,
+      added,
+    });
+  }
+
+  // 聚合/入库**只看**「citation 溯源到源站自己页面的价」（见函数头 ✅）
+  const result = {
+    ...base,
+    queries,
+    perQuery,
+    prices: sitePrices,
+    crossSitePrices,
+    prosePrices,
+    corroborated,
+    siteCitations,
+    citedDomains,
+    usage,
+  };
+  if (sitePrices.length === 0) {
+    // 两种「没价」要分开报，否则运维会以为是自己模型/参数写错了：
+    //   no-site-citation = 检索压根没引用到源站任何页面（= 该源对搜索引擎也不可见，如 DataDome 站）
+    //   no-price         = 引用到了源站页面，但摘要里没有可用的带币种价格
+    return {
+      ...result,
+      status: 'skip',
+      reason: siteCitations === 0 && citedDomains.length > 0 ? 'no-site-citation' : 'no-price',
+      hint:
+        siteCitations === 0 && citedDomains.length > 0
+          ? `检索未引用到 ${domain} 的任何页面（引用的站点：${citedDomains.join(', ')}）；正文里的 ${prosePrices.length} 条价已按规则丢弃`
+          : prosePrices.length > 0
+            ? `正文有 ${prosePrices.length} 条价，但没有一条能溯源到 ${domain} 的页面（已按规则丢弃）`
+            : undefined,
+    };
+  }
+  // 门控：样本不足 3 条不写（与 mascus 同口径），宁可空缺也不进假数据
+  if (sitePrices.length < MASCUS_MIN_SAMPLES) {
+    return {
+      ...result,
+      status: 'skip',
+      reason: 'insufficient-samples',
+      hint: `可溯源到 ${domain} 的价仅 ${sitePrices.length} 条（<${MASCUS_MIN_SAMPLES}）；另有正文价 ${prosePrices.length} 条 / 跨站价 ${crossSitePrices.length} 条（均按规则丢弃）`,
+    };
+  }
+
+  // 复用直连那套聚合（IQR 离群剔除 + 中位数 + 按币种取众数），不另写一份统计
+  const listings = sitePrices.map((p) => ({ priceForeign: p.amount, currency: p.currency }));
+  const agg = aggregateListings(listings, fx, { priceType: 'listing' });
+  if (!agg) return { ...result, status: 'skip', reason: 'no-agg' };
+
+  const today = new Date().toISOString().slice(0, 10);
+  const row = {
+    brand: (target && target.brand) || (brandDef && brandDef.slug) || '',
+    brandNameZh: (target && target.brandNameZh) || (brandDef && brandDef.nameZh) || '',
+    model,
+    category:
+      (target && target.category) ||
+      (brandDef && brandDef.primaryCategory) ||
+      CATEGORY.TRACTOR,
+    sourceSite: sourceKey,
+    priceForeign: agg.priceForeign,
+    medianPrice: agg.medianPrice,
+    currency: agg.currency,
+    priceCny: agg.priceCny,
+    exchangeRate: agg.exchangeRate,
+    // `#ark-search` 锚点 = 事后一眼区分「这行是检索来的」还是「直连抓的」
+    sourceUrl: `https://${domain}/#ark-search`,
+    sourceDate: today,
+    confidenceScore: ARK_SEARCH_CONFIDENCE,
+    sampleSize: agg.sampleSize,
+    listingCount: agg.listingCount,
+    priceType: 'listing',
+    region: (source && source.region) || 'GLOBAL',
+  };
+
+  const filled = {
+    ...result,
+    status: 'ok',
+    currency: agg.currency,
+    medianForeign: agg.priceForeign,
+    medianCny: agg.priceCny,
+    sampleSize: agg.sampleSize,
+    listingCount: agg.listingCount,
+    sourceDate: today,
+    row,
+  };
+  if (opts.dryRun === true) return { ...filled, dryRun: true };
+
+  try {
+    const res = await upsertBenchmark(row);
+    return { ...filled, dryRun: false, id: res && res.id, skipped: !!(res && res.skipped) };
+  } catch (e) {
+    return { ...filled, status: 'failed', reason: `write-failed: ${e.message}` };
+  }
+}
+
+/**
+ * Ark 检索**探针模式**：只跑传入的几条 (sourceSite, brand, model)，不碰靶标池、不碰 mascus bulk。
+ *
+ * 设计意图与 `opts.targets` 注入一致：**注入即隔离**。这样验收时可以在生产引擎上
+ * 精确打 3 条探针（含 1 条反向探针），既验证抽价逻辑，又不污染任何其他行。
+ *
+ * @param {Array<{sourceSite: string, brand: string, model: string}>} entries
+ * @param {Record<string, number>} fx
+ * @param {object} opts runRefresh 的 opts（读 arkSearchDryRun / arkSearchFetch / arkSearchTimeoutMs）
+ */
+async function runArkSearchProbe(entries, fx, opts = {}) {
+  const startTs = Date.now();
+  const dryRun = opts.arkSearchDryRun === true;
+  const results = [];
+  const stats = {
+    ok: 0,
+    skip: 0,
+    failed: 0,
+    total: entries.length,
+    bySource: {},
+    skipReasons: {},
+    skippedByBudget: 0,
+    budgetExhausted: false,
+    circuitOpen: [],
+    durationMs: 0,
+    mascus: null,
+    arkProbe: results,
+    arkDryRun: dryRun,
+  };
+  for (const entry of entries) {
+    const sourceKey = String((entry && (entry.sourceSite || entry.source)) || '').trim();
+    const source =
+      SOURCES.find((s) => s.key === sourceKey) || {
+        key: sourceKey,
+        name: sourceKey,
+        currency: (entry && entry.currency) || 'USD',
+        region: (entry && entry.region) || 'GLOBAL',
+      };
+    const brandDef = BRANDS.find((b) => b.slug === (entry && entry.brand)) || null;
+    const modelDef =
+      (MODELS[(entry && entry.brand) || ''] || []).find((m) => m.model === (entry && entry.model)) ||
+      null;
+    const target = {
+      brand: (entry && entry.brand) || '',
+      brandNameZh: (brandDef && brandDef.nameZh) || '',
+      nameEn: (brandDef && brandDef.nameEn) || (entry && entry.nameEn) || '',
+      model: (entry && entry.model) || '',
+      category: (modelDef && modelDef.category) || (entry && entry.category) || CATEGORY.TRACTOR,
+    };
+    const r = await fetchViaArkSearch(source, target, fx, {
+      dryRun,
+      fetchImpl: opts.arkSearchFetch,
+      timeoutMs: opts.arkSearchTimeoutMs,
+    });
+    results.push({
+      sourceSite: sourceKey,
+      brand: target.brand,
+      model: target.model,
+      status: r.status,
+      reason: r.reason || null,
+      queries: r.queries,
+      perQuery: r.perQuery,
+      // ⚠️ prices 只含**锁站点**检索抽到的价（可入库口径）；crossSitePrices 仅诊断，
+      //    绝不能拿来算中位价 —— 见 fetchViaArkSearch 函数头 🔴 的 agriaffaires 事故记录。
+      prices: r.prices,
+      priceCount: r.prices.length,
+      crossSitePrices: r.crossSitePrices,
+      crossSiteCount: (r.crossSitePrices || []).length,
+      // 正文抽价：只做诊断。正文会把别站价混进来，见 fetchViaArkSearch 函数头 agriaffaires 事故。
+      prosePrices: r.prosePrices || [],
+      prosePriceCount: (r.prosePrices || []).length,
+      /** 引用落在源站域名上的 citation 条数（0 = 检索没看到源站本体页） */
+      siteCitations: r.siteCitations || 0,
+      /** 本次检索引用到的全部站点（排障用：一眼看出价其实来自谁） */
+      citedDomains: r.citedDomains || [],
+      corroborated: r.corroborated || 0,
+      hint: r.hint || null,
+      currency: r.currency || null,
+      medianForeign: r.medianForeign == null ? null : r.medianForeign,
+      medianCny: r.medianCny == null ? null : r.medianCny,
+      sampleSize: r.sampleSize == null ? null : r.sampleSize,
+      sourceDate: r.sourceDate || null,
+      confidenceScore: r.row ? r.row.confidenceScore : null,
+      sourceUrl: r.row ? r.row.sourceUrl : null,
+      wrote: r.status === 'ok' && !dryRun,
+      errors: r.errors,
+      usage: r.usage || null,
+    });
+    stats[r.status] = (stats[r.status] || 0) + 1;
+    const bs = (stats.bySource[sourceKey] = stats.bySource[sourceKey] || {
+      ok: 0,
+      skip: 0,
+      failed: 0,
+      opened: false,
+    });
+    bs[r.status] = (bs[r.status] || 0) + 1;
+    if (r.status === 'skip') {
+      const k = r.reason || 'unknown';
+      stats.skipReasons[k] = (stats.skipReasons[k] || 0) + 1;
+    }
+  }
+  stats.durationMs = Date.now() - startTs;
+  return stats;
+}
+
 // —— 源级熔断器（纯逻辑，无 I/O，便于单测）——
 /**
  * 同一源连续 N 次 `failed` 即「开路」，该源剩余目标直接跳过。
@@ -1374,6 +2167,15 @@ async function probeOneTarget(target, fx, timeoutMs) {
 // }
 async function runRefresh(opts = {}) {
   const fx = opts.fx || (await getFxRates());
+
+  // —— Ark 检索探针模式（小范围验证用）：注入即隔离 ——
+  // 传了 `arkSearchProbe` 就**只跑这几条**：不建靶标池、不跑 mascus bulk、不写其他任何行。
+  // 与 `opts.targets` 注入同一设计思路（见下面 mascusEnabled 的第 ① 条），
+  // 目的是能在生产引擎上精确打几条探针做验收，而不污染库里既有数据。
+  if (Array.isArray(opts.arkSearchProbe) && opts.arkSearchProbe.length > 0) {
+    return runArkSearchProbe(opts.arkSearchProbe.slice(), fx, opts);
+  }
+
   let all = opts.targets || buildTargets();
   if (Array.isArray(opts.sources) && opts.sources.length) {
     const set = new Set(opts.sources);
@@ -1428,6 +2230,60 @@ async function runRefresh(opts = {}) {
       opened: false,
     });
 
+  // —— Ark 兜底（双重门控 + 健康源硬排除 + 预算闸）——
+  // 计数**单独挂在 stats.arkFallback** 上，不并入 ok/skip/failed/total：
+  //   ① 兜底是对「一个失败目标」的**额外一次尝试**，不是一个新的靶标，
+  //      并入会让 `ok + skip + failed + skippedByBudget === total` 这个闭合不变量失效
+  //      （benchmark-circuit.test.ts ② / ⑤b / ⑥ 就在断言它）；
+  //   ② 关掉时连 stats.arkFallback 字段都不挂 ⇒ 默认关的行为与加此功能之前完全一致。
+  const arkFallbackEnabled = opts.arkSearchFallback === true && arkSearchGloballyEnabled();
+  const arkFallback = arkFallbackEnabled
+    ? { enabled: true, total: 0, ok: 0, skip: 0, failed: 0, byReason: {}, rows: [] }
+    : null;
+  const runArkFallback = async (t, trigger) => {
+    if (!arkFallback) return;
+    if (ARK_SEARCH_BLOCKED_SOURCES.has(t.sourceSite)) {
+      arkFallback.total += 1;
+      arkFallback.skip += 1;
+      arkFallback.byReason['ark-source-blocked'] =
+        (arkFallback.byReason['ark-source-blocked'] || 0) + 1;
+      return;
+    }
+    const source = SOURCES.find((s) => s.key === t.sourceSite) || null;
+    if (!source) return;
+    // 预算闸：45s 的单次检索比靶标请求贵得多，剩余预算不够就别开新查询
+    const remaining = budgetMs - (Date.now() - startTs);
+    if (remaining < 1000) {
+      arkFallback.total += 1;
+      arkFallback.skip += 1;
+      arkFallback.byReason['ark-budget'] = (arkFallback.byReason['ark-budget'] || 0) + 1;
+      return;
+    }
+    arkFallback.total += 1;
+    const r = await fetchViaArkSearch(source, t, fx, {
+      dryRun,
+      fetchImpl: opts.arkSearchFetch,
+      timeoutMs: Math.min(ARK_SEARCH_TIMEOUT_MS, remaining),
+    });
+    if (r.status === 'ok' || r.status === 'skip' || r.status === 'failed') arkFallback[r.status] += 1;
+    if (r.status === 'skip') {
+      const k = r.reason || 'unknown';
+      arkFallback.byReason[k] = (arkFallback.byReason[k] || 0) + 1;
+    }
+    if (r.status === 'ok') {
+      arkFallback.rows.push({
+        brand: r.row.brand,
+        model: r.row.model,
+        trigger,
+        samples: r.sampleSize,
+        medianForeign: r.medianForeign,
+        currency: r.currency,
+        medianCny: r.medianCny,
+        sourceDate: r.sourceDate,
+      });
+    }
+  };
+
   const worker = async () => {
     while (queue.length) {
       // ① 总预算兜底：超预算立即停止派发，剩余队列一次性计入 skippedByBudget。
@@ -1446,6 +2302,8 @@ async function runRefresh(opts = {}) {
         stats.skip += 1;
         bumpReason('circuit-open');
         bumpSite(t.sourceSite).skip += 1;
+        // 兜底触发点之一：该源已进熔断（直连这条路对这个源整体失效了）
+        await runArkFallback(t, 'circuit-open');
         continue;
       }
 
@@ -1459,6 +2317,10 @@ async function runRefresh(opts = {}) {
       if (r.status === 'skip') bumpReason(r.reason);
       const bs = bumpSite(t.sourceSite);
       bs[r.status] = (bs[r.status] || 0) + 1;
+
+      // 兜底触发点之二：本次直连**失败**（不是 skip —— skip = 有页面但没样本，
+      // 说明站点是通的，再拿检索去补就是拿低置信度数据覆盖可直连的源）
+      if (shouldArkFallback(r.status, t.sourceSite)) await runArkFallback(t, 'direct-failed');
     }
   };
 
@@ -1560,6 +2422,9 @@ async function runRefresh(opts = {}) {
   }
 
   stats.durationMs = Date.now() - startTs;
+
+  // Ark 兜底明细：**只在开启时才挂字段**，保证默认关时 stats 形状与加此功能之前一致
+  if (arkFallback) stats.arkFallback = arkFallback;
 
   // 收口：哪些源最终开了熔断（供 route 拼 message 与诊断）
   const snap = circuit.snapshot();
@@ -1805,6 +2670,18 @@ module.exports = {
   mascusModelMatches,
   mascusItemPriceEur,
   fetchMascusBulk,
+  fetchViaArkSearch,
+  extractArkSearchPrices,
+  extractArkSearchText,
+  extractArkCitations,
+  arkHostMatchesSite,
+  httpPostJson,
+  arkSearchGloballyEnabled,
+  shouldArkFallback,
+  ARK_SEARCH_TIMEOUT_MS,
+  ARK_SEARCH_CONFIDENCE,
+  ARK_SEARCH_BLOCKED_SOURCES,
+  SOURCE_SEARCH_DOMAIN,
   MASCUS_BULK_SEGMENTS,
   MASCUS_BULK_RECENT_DAYS,
   MASCUS_BULK_MAX_PAGES,

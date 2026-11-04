@@ -160,6 +160,212 @@ declare module '@/lib/benchmark-engine' {
     dryRun?: boolean;
   }): Promise<MascusBulkResult>;
 
+  // —— Ark 检索兜底通道（直连失败的源，改用豆包 web_search 抓公开挂牌价）——
+
+  /** Ark 检索单次调用超时（毫秒），当前 45000 */
+  export const ARK_SEARCH_TIMEOUT_MS: number;
+  /**
+   * 检索通道写入行的置信度，当前 0.3。
+   * 直连抓的是源站本体页（≈0.7）；检索抓的是搜索引擎转述，跨了一层，
+   * 且无法保证价格仍是原挂牌价，因此**永远低于**直连。
+   */
+  export const ARK_SEARCH_CONFIDENCE: number;
+  /** 硬排除的源（直连健康的源不得走检索，避免低置信度覆盖高置信度），当前含 agroline */
+  export const ARK_SEARCH_BLOCKED_SOURCES: Set<string>;
+  /** 源 key → 检索用域名（`site:` 限定查询用） */
+  export const SOURCE_SEARCH_DOMAIN: Record<string, string>;
+
+  /** 检索兜底是否全局开启：读 `BENCHMARK_ARK_FALLBACK === '1'`，默认关 */
+  export function arkSearchGloballyEnabled(): boolean;
+  /**
+   * 兜底触发判定：只有直连 `failed`（或源已熔断）才允许，`skip` 一律不允许。
+   * @param status 直连结果状态
+   * @param sourceSite 源 key（命中 ARK_SEARCH_BLOCKED_SOURCES 时返回 false）
+   */
+  export function shouldArkFallback(status: string, sourceSite: string): boolean;
+  /** POST JSON（带 Authorization / 超时），非 2xx 抛错 */
+  export function httpPostJson(
+    url: string,
+    payload: Record<string, any>,
+    opts?: { timeout?: number; headers?: Record<string, string> }
+  ): Promise<any>;
+  /** 从 Ark Responses 的 `output[]`（type==='message' → content[].text）拼出全文 */
+  export function extractArkSearchText(payload: any): string;
+  /**
+   * 从 Responses 的 `annotations[]` 抽引用来源（只认 `type==='url_citation'`，按 url 去重）。
+   * 这是本通道**唯一**的溯源依据：每条带 url 与该页的 summary 原文。
+   */
+  export function extractArkCitations(payload: any): Array<{
+    url: string;
+    host: string;
+    title: string;
+    siteName: string;
+    summary: string;
+  }>;
+  /**
+   * 引用主机名是否属于源站自己（容忍 www 子域与同品牌国别站：
+   * `tractorhouse.com` ↔ `tractorhouse.com.au` ↔ `tractorhouse.co.uk`）。
+   */
+  export function arkHostMatchesSite(host: string, domain: string): boolean;
+  /**
+   * 从检索文本里抽价：**只认带币种前缀的数字**（USD/EUR/$/€ 后跟 ≥4 位数字），
+   * 丢掉 <1000 或 >5,000,000 的金额（运费/零件价/通胀噪声）。
+   *
+   * @param opts.currency 只保留该币种
+   * @param opts.explicitOnly 只认**带显式币种标注**的金额（`USD $61,500` / `$103,000 USD`），
+   *        裸 `$` 一律不认 —— 镜像站会同时印 `AUD $88,227` 与 `USD $61,500`，裸符号必错。
+   */
+  export function extractArkSearchPrices(
+    text: string,
+    opts?: { currency?: string; explicitOnly?: boolean }
+  ): Array<{
+    amount: number;
+    currency: string;
+    raw: string;
+  }>;
+
+  /** 检索抽出的单条价格 */
+  export interface ArkSearchPrice {
+    amount: number;
+    currency: string;
+    raw: string;
+    /** 该价来自哪条 citation（仅 `prices` 里带；事后可逐条复核） */
+    sourceUrl?: string;
+  }
+
+  /**
+   * 走 Ark web_search 给单个 (源, 机型) 取价。
+   *
+   * 🔴 **按 citation 溯源，不从正文抽价**：
+   *    - 只读 `annotations[]` 里 `url_citation` 的条目；
+   *    - 只保留主机名属于源站自己的 citation（同品牌国别站也算）；
+   *    - 只在这些 citation 的 summary 里抽价，且币种必须等于源的币种；
+   *    - summary 必须命中机型 token（`Jaguar 8700` 不得算进 `Jaguar 870`）；
+   *    - 正文抽到的价只进 `prosePrices` 做诊断，**永不聚合**。
+   * 原因：实测 `site:agriaffaires.co.uk ...` 的正文写满 €62,500，12 条 citation
+   * 里却一条 agriaffaires 都没有（全在 tractorhouse.com.au / nongjitong 上）。
+   * 正文抽价 = 把别家价格记在这个源头上，与编造同级。
+   */
+  export function fetchViaArkSearch(
+    source: { key: string; currency?: string; region?: string },
+    target: { brand?: string; brandNameZh?: string; nameEn?: string; model: string; category?: string },
+    fx: Record<string, number>,
+    opts?: {
+      dryRun?: boolean;
+      timeoutMs?: number;
+      /** 注入假 fetch 供离线单测用；不传则用内部 httpPostJson */
+      fetchImpl?: (
+        url: string,
+        payload: Record<string, any>,
+        opts: { timeout: number; headers: Record<string, string> }
+      ) => Promise<any>;
+    }
+  ): Promise<ArkSearchResult>;
+
+  /** fetchViaArkSearch() 的返回值 */
+  export interface ArkSearchResult {
+    status: 'ok' | 'skip' | 'failed';
+    /**
+     * 'ark-source-blocked' / 'ark-no-api-key' / 'no-site-citation' / 'no-price' /
+     * 'insufficient-samples' / 'no-agg' / 'write-failed' …
+     *
+     * `no-site-citation` = 检索一条源站自己的页面都没引用到（该源对搜索引擎也不可见，
+     * 如 DataDome 站），与「引用到了但没价」(`no-price`) 分开报。
+     */
+    reason?: string;
+    /** 可入库口径的价（仅 citation 溯源到源站页面的摘要价） */
+    prices: ArkSearchPrice[];
+    /** 仅诊断：不锁站点检索抽出、且未被溯源价印证的价 */
+    crossSitePrices: ArkSearchPrice[];
+    /** 仅诊断：模型正文里抽到的价（**永不聚合**） */
+    prosePrices: ArkSearchPrice[];
+    /** 两条 query 都抽到的同额同币价（交叉印证次数） */
+    corroborated: number;
+    /** 引用落在源站域名上的 citation 条数（0 = 检索没看到源站本体页） */
+    siteCitations: number;
+    /** 本次检索引用到的全部站点主机名（排障用：一眼看出价其实来自谁） */
+    citedDomains: string[];
+    /** 实际发出的 2 条 query */
+    queries: string[];
+    perQuery?: Array<{
+      query: string;
+      siteLocked: boolean;
+      ok: boolean;
+      found: number;
+      added: number;
+      error?: string;
+    }>;
+    /** skip/failed 时解释「为什么没价」 */
+    hint?: string;
+    currency?: string;
+    medianForeign?: number;
+    medianCny?: number;
+    sampleSize?: number;
+    listingCount?: number;
+    sourceDate?: string;
+    /** 待写入/已写入的行（sourceUrl 带 `#ark-search` 锚点） */
+    row?: Record<string, any>;
+    id?: any;
+    skipped?: boolean;
+    dryRun?: boolean;
+    usage?: any;
+    errors?: string[];
+  }
+
+  /** Ark 探针输入：只跑这几条 (源, 品牌, 机型)，不碰靶标池 / mascus bulk */
+  export interface ArkSearchProbeEntry {
+    /** 源 key（必须是 SOURCES 里的，或用 currency/region 自带的伪源） */
+    sourceSite: string;
+    brand: string;
+    /** 机型字符串（能命中 MODELS 时会继承其 category） */
+    model: string;
+    nameEn?: string;
+    category?: string;
+    currency?: string;
+    region?: string;
+  }
+
+  /** Ark 探针单条结果 */
+  export interface ArkSearchProbeRow {
+    sourceSite: string;
+    brand: string;
+    model: string;
+    status: 'ok' | 'skip' | 'failed';
+    reason: string | null;
+    queries: string[];
+    perQuery?: Array<{
+      query: string;
+      siteLocked: boolean;
+      ok: boolean;
+      found: number;
+      added: number;
+      error?: string;
+    }>;
+    prices: ArkSearchPrice[];
+    priceCount: number;
+    crossSitePrices: ArkSearchPrice[];
+    crossSiteCount: number;
+    /** 正文价（仅诊断，永不聚合） */
+    prosePrices: ArkSearchPrice[];
+    prosePriceCount: number;
+    /** 引用落在源站域名上的 citation 条数 */
+    siteCitations: number;
+    /** 本次检索引用到的全部站点 */
+    citedDomains: string[];
+    corroborated: number;
+    hint: string | null;
+    currency: string | null;
+    medianForeign: number | null;
+    medianCny: number | null;
+    sampleSize: number | null;
+    sourceDate: string | null;
+    confidenceScore: number | null;
+    sourceUrl: string | null;
+    wrote: boolean;
+    errors: string[];
+    usage: any;
+  }
+
   export interface RefreshStats {
     ok: number;
     skip: number;
@@ -208,6 +414,39 @@ declare module '@/lib/benchmark-engine' {
       durationMs: number;
       error: string | null;
     };
+
+    /**
+     * Ark 检索兜底的计数明细。**只在双重门控都开时存在**（默认 off 时为 `undefined`，
+     * 因此默认行为与加此功能之前完全一致）。
+     *
+     * ⚠️ 这里的 ok/skip/failed **不并入**顶层 ok/skip/failed/total：
+     * 兜底是对一个已失败目标的额外一次尝试，不是新靶标，并入会破坏
+     * `ok + skip + failed + skippedByBudget === total` 这条闭合不变量。
+     */
+    arkFallback?: null | {
+      enabled: boolean;
+      total: number;
+      ok: number;
+      skip: number;
+      failed: number;
+      byReason: Record<string, number>;
+      rows: Array<{
+        brand: string;
+        model: string;
+        /** 'direct-failed' = 本次直连失败；'circuit-open' = 该源已熔断 */
+        trigger: string;
+        samples?: number;
+        medianForeign?: number;
+        currency?: string;
+        medianCny?: number;
+        sourceDate?: string;
+      }>;
+    };
+
+    /** 探针模式：每条 (源, 品牌, 机型) 的明细（仅 `arkSearchProbe` 注入时存在） */
+    arkProbe?: ArkSearchProbeRow[];
+    /** 探针模式：是否 dryRun（true = 一条都没写库） */
+    arkDryRun?: boolean;
   }
 
   export interface SourceCircuit {
@@ -304,6 +543,27 @@ declare module '@/lib/benchmark-engine' {
      * 另注：只要调用方注入了 `targets`，mascus bulk 一律不跑（注入 targets = 明确只要跑这些靶标）。
      */
     mascus?: boolean;
+    /**
+     * true = 打开 Ark 检索兜底。**默认 false**。
+     * 注意这是**双重门控**的一半：`opts.arkSearchFallback === true`
+     * **且** 环境变量 `BENCHMARK_ARK_FALLBACK=1`，两者缺一不生效。
+     */
+    arkSearchFallback?: boolean;
+    /**
+     * 探针模式：传入后**只跑这几条** (源, 品牌, 机型)，
+     * 不建靶标池、不跑 mascus bulk、不写其他任何行（注入即隔离）。
+     */
+    arkSearchProbe?: ArkSearchProbeEntry[];
+    /** 探针模式下 true = 不写库（验收用） */
+    arkSearchDryRun?: boolean;
+    /** 检索单次调用超时（默认 45000） */
+    arkSearchTimeoutMs?: number;
+    /** 注入假 fetch 供离线单测用 */
+    arkSearchFetch?: (
+      url: string,
+      payload: Record<string, any>,
+      opts: { timeout: number; headers: Record<string, string> }
+    ) => Promise<any>;
   }): Promise<RefreshStats>;
   export function seedFromResearch(jsonPath: string): Promise<{ n: number; err: number }>;
   export function seedEuEvidence(
