@@ -8,6 +8,8 @@ declare module '@/lib/benchmark-engine' {
     failed: number;
     /** 该源最终是否开了熔断 */
     opened: boolean;
+    /** 该源命中 429 的次数（含被退避重试救回来的；不计入熔断） */
+    rateLimited?: number;
   }
 
   /** 数据源定义（SOURCES 数组元素） */
@@ -19,6 +21,12 @@ declare module '@/lib/benchmark-engine' {
     russian: boolean;
     /** 为 true 时 buildTargets() 跳过该源（mascus：URL 层筛选失效，改品类级扫描） */
     skipInTargets?: boolean;
+    /**
+     * 该源的**在飞请求数上限**，实际取 `min(它, 全局 concurrency)`。
+     * 当前只有 agroline 配了 6（12 个品牌的唯一数据源，全局 12 路压过去 3 轮就 429）。
+     * 不配 = 用全局值。
+     */
+    maxConcurrency?: number;
   }
 
   /** 单个机型配置 */
@@ -366,6 +374,73 @@ declare module '@/lib/benchmark-engine' {
     usage: any;
   }
 
+  /** 429 最多重试次数（硬上限，不许为了成功率拖穿 budgetMs），当前 2 */
+  export const HTTP_429_MAX_RETRIES: number;
+  /** 无 Retry-After 时的退避基数（1s × 2^n），当前 1000 */
+  export const HTTP_429_BASE_DELAY_MS: number;
+  /** Retry-After 的封顶值，当前 10000（防 `Retry-After: 3600` 吃穿预算） */
+  export const HTTP_429_MAX_RETRY_AFTER_MS: number;
+  /** 源级并发下限：reduce 再降也不低于此值，当前 2 */
+  export const SOURCE_MIN_CONCURRENCY: number;
+
+  /**
+   * 解析 `Retry-After` 头：秒数（`120`）或 HTTP-date（`Wed, 21 Oct 2015 07:28:00 GMT`）。
+   * 缺失/非法/负数返回 null（交给指数退避兜底）。
+   */
+  export function parseRetryAfterMs(
+    value: string | string[] | null | undefined,
+    now?: number
+  ): number | null;
+
+  /** 算第 `attempt` 次重试的等待毫秒数（Retry-After 优先，否则 1s→2s；±jitter） */
+  export function computeRetryDelay(
+    attempt: number,
+    retryAfterMs?: number | null,
+    opts?: { jitterRatio?: number; rand?: () => number }
+  ): number;
+
+  /**
+   * 带 429 退避重试的 GET。**只对 429 重试**；5xx / 网络 / 超时原样抛出（交上层熔断）。
+   */
+  export function httpGetWithRetry(
+    url: string,
+    opts?: {
+      request?: {
+        timeout?: number;
+        headers?: Record<string, string>;
+        proxy?: string | null;
+      };
+      getImpl?: (url: string, request: any) => Promise<string>;
+      sleep?: (ms: number, info?: any) => Promise<any>;
+      maxRetries?: number;
+      jitterRatio?: number;
+      rand?: () => number;
+      /** 本轮预算的绝对截止时间戳；退避会越过它就放弃重试（防吃穿 budgetMs） */
+      deadlineTs?: number;
+      onRateLimited?: (info: {
+        attempt: number;
+        delayMs: number;
+        retryAfterMs: number | null;
+        willRetry: boolean;
+      }) => void;
+    }
+  ): Promise<string>;
+
+  /**
+   * 源级并发限制器。`limit = min(全局, 源 maxConcurrency)`；
+   * `reduce(site)` 命中 429 时把该源上限减半（下限 `SOURCE_MIN_CONCURRENCY`），本轮不回升。
+   */
+  export function makeSourceLimiter(
+    globalLimit: number,
+    sources?: Array<{ key: string; maxConcurrency?: number }>
+  ): {
+    acquire(site: string): Promise<void>;
+    release(site: string): void;
+    reduce(site: string): number;
+    limitOf(site: string): number;
+    snapshot(): Record<string, { limit: number; inflight: number; waiting: number }>;
+  };
+
   export interface RefreshStats {
     ok: number;
     skip: number;
@@ -374,6 +449,20 @@ declare module '@/lib/benchmark-engine' {
     bySource: Record<string, SourceStat>;
     /** 跳过原因分布（'no-listing' / 'no-agg' / 'circuit-open' / 'no-source' …） */
     skipReasons: Record<string, number>;
+    /**
+     * 失败原因分布（'http-429' / 'HTTP 503' / 'timeout' …）。
+     * 与 skipReasons 分开：failed 既不是「没数据」也不是「成功」，
+     * 运维要能一眼看出这轮失败到底是限流还是源挂了。
+     */
+    failReasons: Record<string, number>;
+    /** 本轮命中 429 的总次数（含被退避重试救回来的那些） */
+    rateLimited: number;
+    /** 实际发生的退避等待次数（429 命中且会重试的那些） */
+    retries: number;
+    /** 退避等待累计毫秒（判断加固有没有把 budgetMs 吃光） */
+    retryWaitMs: number;
+    /** 本轮最终的源级并发上限（429 会把命中源减半，这里留档） */
+    sourceConcurrency: Record<string, { limit: number; inflight: number; waiting: number }>;
     /** 因总预算耗尽而未派发的目标数 */
     skippedByBudget: number;
     /** true = 触发了 budgetMs 兜底 */
@@ -451,7 +540,12 @@ declare module '@/lib/benchmark-engine' {
 
   export interface SourceCircuit {
     shouldSkip(site: string): boolean;
-    record(site: string, status: 'ok' | 'skip' | 'failed'): {
+    /**
+     * 记录一次采集结果。
+     * `ratelimited`（429）既不 +1 也不重置 —— 限流不是「源坏了」，
+     * 喂进熔断会让三个限流就把单点依赖源整源封死。
+     */
+    record(site: string, status: 'ok' | 'skip' | 'failed' | 'ratelimited'): {
       consecutiveFails: number;
       open: boolean;
     };
@@ -475,6 +569,39 @@ declare module '@/lib/benchmark-engine' {
     }
   ): Promise<string>;
   export function buildTargets(): Array<Record<string, any>>;
+
+  /** 单目标采集结果（`rateLimited` 只在 429 重试仍失败时为 true） */
+  export interface TargetFetchResult {
+    status: 'ok' | 'skip' | 'failed';
+    reason?: string;
+    rateLimited?: boolean;
+    count?: number;
+  }
+
+  /**
+   * 单目标采集（含 429 退避；5xx/网络错误不重试，交上层熔断）。
+   * `opts.getImpl` / `opts.sleep` 供离线单测注入。
+   */
+  export function fetchOneTarget(
+    target: Record<string, any>,
+    fx: Record<string, number>,
+    timeoutMs: number,
+    opts?: {
+      getImpl?: (url: string, request: any) => Promise<string>;
+      sleep?: (ms: number, info?: any) => Promise<any>;
+      maxRetries?: number;
+      jitterRatio?: number;
+      rand?: () => number;
+      /** 本轮预算的绝对截止时间戳（退避越过它就放弃重试） */
+      deadlineTs?: number;
+      onRateLimited?: (info: {
+        attempt: number;
+        delayMs: number;
+        retryAfterMs: number | null;
+        willRetry: boolean;
+      }) => void;
+    }
+  ): Promise<TargetFetchResult>;
 
   /** 按源站 + 目标构造搜索 URL（mascus 已改用真实品类路径 + lastcreateddays） */
   export function buildSearchUrl(
@@ -543,6 +670,23 @@ declare module '@/lib/benchmark-engine' {
      * 另注：只要调用方注入了 `targets`，mascus bulk 一律不跑（注入 targets = 明确只要跑这些靶标）。
      */
     mascus?: boolean;
+    /** 429 最多重试次数（默认 2；硬上限，别为了成功率拖穿 budgetMs） */
+    maxRetries?: number;
+    /** 退避抖动的比例（默认 0.3；12 路并发不能在同一毫秒醒来） */
+    jitterRatio?: number;
+    /** 抖动随机源（注入便于单测断言） */
+    rand?: () => number;
+    /** 退避用的 sleep（注入假 sleep，单测里不真的等） */
+    retrySleep?: (ms: number, info?: any) => Promise<any>;
+    /** 注入假 GET（离线跑整条 worker 链路，含熔断与信号量） */
+    httpGetImpl?: (
+      url: string,
+      request: {
+        timeout?: number;
+        headers?: Record<string, string>;
+        proxy?: string | null;
+      }
+    ) => Promise<string>;
     /**
      * true = 打开 Ark 检索兜底。**默认 false**。
      * 注意这是**双重门控**的一半：`opts.arkSearchFallback === true`

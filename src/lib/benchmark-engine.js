@@ -248,8 +248,22 @@ const MODELS = {
 };
 
 // 首期数据源（7 站，含俄线）。russian=true 的站优先（套利核心市场）。
+//
+// `maxConcurrency`（可选）：该源允许的**在飞请求数上限**，取 `min(它, 全局 concurrency)`。
+// 只有 agroline 配了 6，原因：它是 12 个品牌的**唯一**数据源（51 机型 / 61 行），
+// 全局 12 路并发全压给它时，实测连打三轮就开始 429。降到 6 路后 4 轮连跑 failed 全 0
+// （见 benchmark-ratelimit.test.ts 与提交说明里的实测表）。
+// 不配 = 用全局值，其它源行为完全不变。
 const SOURCES = [
-  { key: 'agroline', name: 'Agroline', region: 'EU', currency: 'EUR', russian: false },
+  {
+    key: 'agroline',
+    name: 'Agroline',
+    region: 'EU',
+    currency: 'EUR',
+    russian: false,
+    // ⚠️ 别调高：agroline 是单点依赖，429 一开就是 12 个品牌同时归零
+    maxConcurrency: 6,
+  },
   { key: 'machinerypete', name: 'MachineryPete', region: 'US', currency: 'USD', russian: false },
   {
     key: 'mascus',
@@ -328,7 +342,13 @@ function httpGet(url, { timeout = 12000, headers = {}, proxy = null, _redirects 
       }
       if (res.statusCode !== 200) {
         res.resume();
-        return reject(new Error(`HTTP ${res.statusCode}`));
+        // ⚠️ 错误对象必须带上**状态码与 Retry-After**，否则上层只能靠 message 字符串
+        //    里那几个字符来判断「是限流还是真挂了」—— 429 要退避、5xx 要熔断，
+        //    两者处置完全相反，靠 `msg.includes('429')` 判是会出人命的。
+        const err = new Error(`HTTP ${res.statusCode}`);
+        err.statusCode = res.statusCode;
+        err.retryAfterMs = parseRetryAfterMs(res.headers['retry-after']);
+        return reject(err);
       }
       let data = '';
       res.setEncoding('utf8');
@@ -338,6 +358,227 @@ function httpGet(url, { timeout = 12000, headers = {}, proxy = null, _redirects 
     req.on('timeout', () => req.destroy(new Error('timeout')));
     req.on('error', reject);
   });
+}
+
+// —— 429 限流加固：Retry-After 解析 / 指数退避 / 源级信号量 ——
+//
+// 为什么单独做这一层（2026-11 实测）：
+//   agroline 是 12 个品牌的**唯一**数据源，扛着 51 机型 / 61 行。全局 12 路并发全压给它时，
+//   10 分钟内连打三轮就把 failed 从 2 抬到 10 —— 全是 429。一轮周更没事，但只要改成日更、
+//   或临时手动补数据，立刻翻车，而这 12 个品牌的价格会**同时归零**。
+//
+// 三条纪律：
+//   ① **429 不进熔断**：429 的语义是「服务端让我慢点」，不是「服务端坏了」。
+//      熔断是给「这个源彻底不可用」用的；把限流喂进熔断，等于限流一次就把整源封死，
+//      剩下几十个目标直接 `circuit-open` —— 处罚远重于过错。
+//      （这与 ARK 那次事故同源：把「调用方/配置错误」当成「服务端故障」连坐整条链路。）
+//   ② **退避有硬上限**：最多重试 2 次（1s → 2s，±30% 抖动），Retry-After 也封顶 10s。
+//      不封顶的话，一个 `Retry-After: 3600` 就能把 260s 总预算直接吃穿。
+//   ③ **抖动**：12 个并发同时睡 1s 会在同一毫秒醒来再撞一次，抖动把醒来的时刻打散。
+const HTTP_429_MAX_RETRIES = 2;
+const HTTP_429_BASE_DELAY_MS = 1000;
+const HTTP_429_MAX_RETRY_AFTER_MS = 10000;
+const HTTP_429_JITTER_RATIO = 0.3;
+/** 源级并发下限：再降也不低于 2，否则单源退化成串行，260s 预算不够用 */
+const SOURCE_MIN_CONCURRENCY = 2;
+
+/**
+ * 解析 `Retry-After` 头。支持两种合法格式：
+ *   - 秒数：`120`（也容忍 `120.5` / 前后空格）
+ *   - HTTP-date：`Wed, 21 Oct 2015 07:28:00 GMT`（RFC 7231）
+ * 缺失/非法/负数一律返回 `null`（交给调用方用指数退避兜底）。
+ *
+ * @param {string|string[]|undefined|null} value 原始头值
+ * @param {number} [now] 当前时间戳（注入便于单测）
+ * @returns {number|null} 需要等待的毫秒数
+ */
+function parseRetryAfterMs(value, now = Date.now()) {
+  if (value == null) return null;
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (typeof raw !== 'string') return null;
+  const txt = raw.trim();
+  if (!txt) return null;
+  if (/^\d+(\.\d+)?$/.test(txt)) {
+    const ms = Math.round(Number(txt) * 1000);
+    return ms >= 0 ? ms : null;
+  }
+  // 只有「看起来像日期」的才交给 Date.parse。否则 `-5` / `1e9` 这类也被 Date.parse
+  // 当成某个年份解析出一个数，把「非法头」误判成「等到某个时刻」。
+  if (!/[A-Za-z]/.test(txt)) return null;
+  const ts = Date.parse(txt);
+  if (!Number.isFinite(ts)) return null;
+  return Math.max(0, ts - now);
+}
+
+/**
+ * 算第 `attempt` 次重试要等多久（attempt 从 1 开始）。
+ *
+ * 优先用服务端给的 `Retry-After`（封顶 `HTTP_429_MAX_RETRY_AFTER_MS`），
+ * 没有就指数退避 `1s → 2s`。两者都套 ±`jitterRatio` 抖动。
+ *
+ * @param {number} attempt 1-based 重试序号
+ * @param {number|null} [retryAfterMs]
+ * @param {{jitterRatio?: number, rand?: () => number}} [opts]
+ * @returns {number} 毫秒（非负整数）
+ */
+function computeRetryDelay(attempt, retryAfterMs, opts = {}) {
+  const base =
+    Number.isFinite(retryAfterMs) && retryAfterMs >= 0
+      ? Math.min(retryAfterMs, HTTP_429_MAX_RETRY_AFTER_MS)
+      : HTTP_429_BASE_DELAY_MS * Math.pow(2, Math.max(0, attempt - 1));
+  const ratio = Number.isFinite(opts.jitterRatio) ? opts.jitterRatio : HTTP_429_JITTER_RATIO;
+  const rand = typeof opts.rand === 'function' ? opts.rand : Math.random;
+  // rand() ∈ [0,1) → 系数 ∈ [1-ratio, 1+ratio)
+  const factor = 1 + (rand() * 2 - 1) * ratio;
+  return Math.max(0, Math.round(base * factor));
+}
+
+/** 默认 sleep（可注入替换，单测里用假 sleep 避免真的等） */
+function defaultSleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * 带 429 退避重试的 GET。
+ *
+ * 只对 **429** 重试；其它错误（5xx / 超时 / 解析）一律原样抛出，
+ * 因为它们的正确处置是熔断/跳过，而不是再等一轮。
+ *
+ * @param {string} url
+ * @param {{
+ *   request?: object,        // 透传给 httpGet 的 {timeout, headers, proxy}
+ *   getImpl?: Function,      // 注入假 GET（单测）
+ *   sleep?: Function,        // 注入假 sleep（单测）
+ *   maxRetries?: number,     // 默认 HTTP_429_MAX_RETRIES=2
+ *   jitterRatio?: number,
+ *   rand?: () => number,
+ *   deadlineTs?: number,     // 本轮预算的绝对截止时间戳；退避会越过它就放弃重试
+ *   onRateLimited?: (info: {attempt: number, delayMs: number, retryAfterMs: number|null, willRetry: boolean}) => void,
+ * }} [opts]
+ * @returns {Promise<string>} 响应体
+ */
+async function httpGetWithRetry(url, opts = {}) {
+  const getImpl = typeof opts.getImpl === 'function' ? opts.getImpl : httpGet;
+  const sleep = typeof opts.sleep === 'function' ? opts.sleep : defaultSleep;
+  const maxRetries = Number.isInteger(opts.maxRetries) && opts.maxRetries >= 0
+    ? opts.maxRetries
+    : HTTP_429_MAX_RETRIES;
+  const request = opts.request || {};
+  const onRateLimited = typeof opts.onRateLimited === 'function' ? opts.onRateLimited : null;
+
+  let attempt = 0;
+  for (;;) {
+    try {
+      return await getImpl(url, request);
+    } catch (e) {
+      const is429 = !!e && e.statusCode === 429;
+      if (!is429) throw e; // 5xx / 网络 / 超时：不重试，交上层熔断
+      const retryAfterMs = Number.isFinite(e.retryAfterMs) ? e.retryAfterMs : null;
+      if (attempt >= maxRetries) {
+        // 重试用尽：仍要**上报一次**（willRetry=false），否则「限流次数」会漏掉最后一次，
+        // 运维看到的 rateLimited 会小于真实 429 命中数。
+        if (onRateLimited) {
+          onRateLimited({ attempt: attempt + 1, delayMs: 0, retryAfterMs, willRetry: false });
+        }
+        throw e;
+      }
+      attempt += 1;
+      const delayMs = computeRetryDelay(attempt, retryAfterMs, {
+        jitterRatio: opts.jitterRatio,
+        rand: opts.rand,
+      });
+      // 预算闸：这一觉睡下去会越过本轮 deadline ⇒ 不重试了，直接按失败上抛。
+      // 没有这道闸，306 个目标 × 2 次退避 × 最多 10s 能凭空造出 100 分钟等待，
+      // 「最多重试 2 次」并不能保证不吃穿 budgetMs（260s）。
+      if (Number.isFinite(opts.deadlineTs) && Date.now() + delayMs > opts.deadlineTs) {
+        if (onRateLimited) {
+          onRateLimited({ attempt, delayMs, retryAfterMs, willRetry: false });
+        }
+        throw e;
+      }
+      if (onRateLimited) onRateLimited({ attempt, delayMs, retryAfterMs, willRetry: true });
+      await sleep(delayMs, { attempt, url });
+    }
+  }
+}
+
+/**
+ * 源级并发限制器（per-source semaphore）。
+ *
+ * 语义：某源的**在飞请求数**不超过 `min(全局 concurrency, 该源 maxConcurrency)`。
+ * 全局 12 仍然生效，只是 agroline 这种单点依赖源自己再收一道。
+ *
+ * 额外能力 `reduce(site)`：观测到 429 时把该源上限**减半**（下限 `SOURCE_MIN_CONCURRENCY`），
+ * 本轮不再回升。为什么只降不升：一轮刷新只有 260s，先保命；下轮重新按配置起步。
+ *
+ * @param {number} globalLimit 全局并发
+ * @param {Array<{key: string, maxConcurrency?: number}>} [sources] 源配置（读 maxConcurrency）
+ * @returns {{acquire: (site: string) => Promise<void>, release: (site: string) => void, reduce: (site: string) => number, limitOf: (site: string) => number, snapshot: () => Record<string, {limit: number, inflight: number, waiting: number}>}}
+ */
+function makeSourceLimiter(globalLimit, sources = []) {
+  const cfg = new Map();
+  for (const s of sources || []) {
+    if (!s || !s.key) continue;
+    const cap = Number(s.maxConcurrency);
+    if (Number.isFinite(cap) && cap > 0) cfg.set(s.key, Math.trunc(cap));
+  }
+  const g = Math.max(1, Math.trunc(Number(globalLimit) || 1));
+  const state = new Map(); // site -> {limit, inflight, waiters: []}
+
+  const read = (site) => {
+    let s = state.get(site);
+    if (!s) {
+      const cap = cfg.get(site);
+      const limit = cap ? Math.max(1, Math.min(g, cap)) : g;
+      s = { limit, inflight: 0, waiters: [] };
+      state.set(site, s);
+    }
+    return s;
+  };
+
+  return {
+    limitOf(site) {
+      return read(site).limit;
+    },
+    acquire(site) {
+      const s = read(site);
+      if (s.inflight < s.limit) {
+        s.inflight += 1;
+        return Promise.resolve();
+      }
+      // 排队等一个槽位（release 时唤醒队首）
+      return new Promise((resolve) => s.waiters.push(resolve));
+    },
+    release(site) {
+      const s = read(site);
+      // 上限被 reduce() 降过时，在飞数可能仍高于新上限 ⇒ 先把额度还回去，
+      // 不再放行新请求，直到 inflight 回落到 limit 以内。
+      if (s.inflight > s.limit) {
+        s.inflight -= 1;
+        return;
+      }
+      const next = s.waiters.shift();
+      if (next) {
+        // 槽位直接转交给等待者（inflight 不变）
+        next();
+        return;
+      }
+      s.inflight = Math.max(0, s.inflight - 1);
+    },
+    reduce(site) {
+      const s = read(site);
+      const next = Math.max(SOURCE_MIN_CONCURRENCY, Math.floor(s.limit / 2));
+      s.limit = next;
+      return next;
+    },
+    snapshot() {
+      const out = {};
+      for (const [site, s] of state.entries()) {
+        out[site] = { limit: s.limit, inflight: s.inflight, waiting: s.waiters.length };
+      }
+      return out;
+    },
+  };
 }
 
 // —— 取 FX（foreign→CNY）。优先 open.er-api，失败用兜底 ——
@@ -947,17 +1188,36 @@ async function upsertBenchmark(row, opts = {}) {
 }
 
 // —— 单目标采集（网络不可达/无样本则降级，不写脏数据）——
-async function fetchOneTarget(target, fx, timeoutMs) {
+/**
+ * @param {object} target 靶标
+ * @param {Record<string, number>} fx
+ * @param {number} timeoutMs 单次请求超时
+ * @param {{getImpl?: Function, sleep?: Function, maxRetries?: number, rand?: () => number,
+ *          jitterRatio?: number, onRateLimited?: Function}} [opts]
+ *   `getImpl`/`sleep` 是给单测注入的（离线跑 429 退避，不打真网络）。
+ *   `onRateLimited` 由 runRefresh 传进来，用来「记一次限流 + 把该源并发减半」。
+ */
+async function fetchOneTarget(target, fx, timeoutMs, opts = {}) {
   const source = SOURCES.find((s) => s.key === target.sourceSite);
   if (!source) return { status: 'skip', reason: 'no-source' };
   const url = buildSearchUrl(source, target);
   // 俄线源：若配置了住宅代理则强制走代理破反爬（Avito/OLX 从数据中心 IP 必被 403/429）
   const proxy = target.russian && process.env.RESIDENTIAL_PROXY ? process.env.RESIDENTIAL_PROXY : null;
   try {
-    const html = await httpGet(url, {
-      timeout: timeoutMs,
-      proxy,
-      headers: target.russian ? { 'Accept-Language': 'ru-RU,ru;q=0.9' } : {},
+    // 429（服务端让我慢点）在这里退避重试；5xx/网络错误不重试，直接抛给熔断
+    const html = await httpGetWithRetry(url, {
+      request: {
+        timeout: timeoutMs,
+        proxy,
+        headers: target.russian ? { 'Accept-Language': 'ru-RU,ru;q=0.9' } : {},
+      },
+      getImpl: opts.getImpl,
+      sleep: opts.sleep,
+      maxRetries: opts.maxRetries,
+      jitterRatio: opts.jitterRatio,
+      rand: opts.rand,
+      deadlineTs: opts.deadlineTs,
+      onRateLimited: opts.onRateLimited,
     });
     const listings = parseListings(source, html, target);
     if (!listings.length) return { status: 'skip', reason: 'no-listing' };
@@ -972,6 +1232,10 @@ async function fetchOneTarget(target, fx, timeoutMs) {
     });
     return { status: 'ok', count: listings.length };
   } catch (e) {
+    // 429 重试仍失败：单独打标，让上层「记 failed 但不喂熔断」+ failReasons 可区分
+    if (e && e.statusCode === 429) {
+      return { status: 'failed', reason: 'http-429', rateLimited: true };
+    }
     return { status: 'failed', reason: e.message };
   }
 }
@@ -2101,8 +2365,15 @@ function makeSourceCircuit({ failureThreshold = 3 } = {}) {
     },
     /**
      * 记录一次采集结果。
+     *
+     * `ratelimited`（429）是**特例**：既不 +1 也不重置。
+     * 理由：429 的语义是「你太快了」，不是「我坏了」。把它计入失败，
+     * `failureThreshold=3` 三个限流就能把 agroline 整源封死，剩下几十个目标直接
+     * `circuit-open` —— 而 agroline 是 12 个品牌的唯一数据源，这一封就是全站归零。
+     * 真正该熔断的是 5xx / 连不上 / 解析炸（那些记 'failed'）。
+     *
      * @param {string} site 源站 key
-     * @param {'ok'|'skip'|'failed'} status 采集状态
+     * @param {'ok'|'skip'|'failed'|'ratelimited'} status 采集状态
      */
     record(site, status) {
       const cur = read(site);
@@ -2113,7 +2384,7 @@ function makeSourceCircuit({ failureThreshold = 3 } = {}) {
       } else if (status === 'ok') {
         next = { consecutiveFails: 0, open: false };
       } else {
-        // 'skip' 及其他未知状态：保持原样（不计数、不重置）
+        // 'skip' / 'ratelimited' / 未知状态：保持原样（不计数、不重置）
         next = { consecutiveFails: cur.consecutiveFails, open: cur.open };
       }
       state.set(site, next);
@@ -2134,16 +2405,27 @@ function makeSourceCircuit({ failureThreshold = 3 } = {}) {
 // 与 `fetchOneTarget` 完全同一套取数流程（httpGet→parseListings→aggregateListings），
 // 唯一区别：**不调用 upsertBenchmark**，因此可以证明「只统计不写库」。
 // 刻意与 fetchOneTarget 保持行为同步；若将来改了取数逻辑，两处需一起改。
-async function probeOneTarget(target, fx, timeoutMs) {
+async function probeOneTarget(target, fx, timeoutMs, opts = {}) {
   const source = SOURCES.find((s) => s.key === target.sourceSite);
   if (!source) return { status: 'skip', reason: 'no-source' };
   const url = buildSearchUrl(source, target);
   const proxy = target.russian && process.env.RESIDENTIAL_PROXY ? process.env.RESIDENTIAL_PROXY : null;
   try {
-    const html = await httpGet(url, {
-      timeout: timeoutMs,
-      proxy,
-      headers: target.russian ? { 'Accept-Language': 'ru-RU,ru;q=0.9' } : {},
+    // 与 fetchOneTarget 用同一套 429 退避（dryRun 的意义就是「同一管线，只是不写库」，
+    // 若这里少了退避，dryRun 测出来的耗时会比真跑偏乐观）
+    const html = await httpGetWithRetry(url, {
+      request: {
+        timeout: timeoutMs,
+        proxy,
+        headers: target.russian ? { 'Accept-Language': 'ru-RU,ru;q=0.9' } : {},
+      },
+      getImpl: opts.getImpl,
+      sleep: opts.sleep,
+      maxRetries: opts.maxRetries,
+      jitterRatio: opts.jitterRatio,
+      rand: opts.rand,
+      deadlineTs: opts.deadlineTs,
+      onRateLimited: opts.onRateLimited,
     });
     const listings = parseListings(source, html, target);
     if (!listings.length) return { status: 'skip', reason: 'no-listing' };
@@ -2151,6 +2433,9 @@ async function probeOneTarget(target, fx, timeoutMs) {
     if (!agg) return { status: 'skip', reason: 'no-agg' };
     return { status: 'ok', count: listings.length }; // 只返回统计，不写库
   } catch (e) {
+    if (e && e.statusCode === 429) {
+      return { status: 'failed', reason: 'http-429', rateLimited: true };
+    }
     return { status: 'failed', reason: e.message };
   }
 }
@@ -2164,6 +2449,12 @@ async function probeOneTarget(target, fx, timeoutMs) {
 //   mascusMaxPages=5,     // mascus bulk 每段翻页数（见 fetchMascusBulk）
 //   mascusTimeoutMs=25000,// mascus bulk 单页超时（=< timeoutMs 时以 timeoutMs 为准的下限抬升）
 //   mascusMinSamples=3,   // mascus 单组最少样本数
+//   // —— 429 加固（默认值即生产口径，单测注入前四个做离线验证）——
+//   maxRetries=2,         // 429 最多重试次数（1s → 2s 指数退避，±30% 抖动）
+//   jitterRatio=0.3,
+//   rand,                 // 抖动随机源（注入便于断言）
+//   retrySleep,           // 退避用的 sleep（注入假 sleep，单测里不真的等）
+//   httpGetImpl,          // 注入假 GET（离线跑整条 worker 链路）
 // }
 async function runRefresh(opts = {}) {
   const fx = opts.fx || (await getFxRates());
@@ -2210,6 +2501,14 @@ async function runRefresh(opts = {}) {
     // mascus 走 bulk 通道，计数单位是「组（brand×model）」而不是「靶标」，
     // 明细单独挂在 mascus 上，避免污染靶标口径的 ok/skip/failed 语义歧义。
     mascus: null,
+    // 失败原因分布（'http-429' / 'HTTP 503' / 'timeout' …），与 skipReasons 分开，
+    // 因为 failed 的目标既不是「没数据」也不是「成功」，运维要能一眼看出是不是限流。
+    failReasons: {},
+    // 429 事件数（一次 429 命中计一次，含被重试救回来的那些）
+    rateLimited: 0,
+    // 实际发生的退避等待次数与其总时长（判断「加固有没有把预算吃光」）
+    retries: 0,
+    retryWaitMs: 0,
   };
 
   const circuit = makeSourceCircuit({ failureThreshold: opts.failureThreshold ?? 3 });
@@ -2217,6 +2516,10 @@ async function runRefresh(opts = {}) {
   const timeoutMs = opts.timeoutMs || 8000;
   const dryRun = opts.dryRun === true;
   const startTs = Date.now();
+  // 本轮预算的绝对截止时间：退避重试也要受它约束，否则「最多 2 次重试」照样能吃穿 260s
+  const deadlineTs = startTs + budgetMs;
+  // 源级并发限制器（读 SOURCES 的 maxConcurrency；429 时还会再减半）
+  const limiter = makeSourceLimiter(Math.max(1, opts.concurrency || 12), SOURCES);
 
   const bumpReason = (reason) => {
     const k = reason || 'unknown';
@@ -2308,15 +2611,48 @@ async function runRefresh(opts = {}) {
       }
 
       // ③ 真抓（dryRun 走只读探针，构造上就不可能写库）
-      const r = dryRun
-        ? await probeOneTarget(t, fx, timeoutMs)
-        : await fetchOneTarget(t, fx, timeoutMs);
+      //    源级信号量：agroline 这类单点依赖源自己再收一道（见 SOURCES.maxConcurrency）
+      await limiter.acquire(t.sourceSite);
+      let r;
+      try {
+        const perTargetOpts = {
+          getImpl: opts.httpGetImpl,
+          sleep: opts.retrySleep,
+          maxRetries: opts.maxRetries,
+          jitterRatio: opts.jitterRatio,
+          rand: opts.rand,
+          deadlineTs,
+          onRateLimited: (info) => {
+            stats.rateLimited += 1;
+            if (info.willRetry === false) return; // 重试用尽那一次：只计数，不再降并发（已在降了）
+            stats.retries += 1;
+            stats.retryWaitMs += info.delayMs;
+            // 命中限流 ⇒ 该源本轮降并发（减半，下限 2）。只降不升：本轮先保命。
+            const nextLimit = limiter.reduce(t.sourceSite);
+            console.warn(
+              `⚠️ 429 限流 ${t.sourceSite}：退避 ${info.delayMs}ms（第 ${info.attempt} 次），` +
+                `该源并发降至 ${nextLimit}`
+            );
+          },
+        };
+        r = dryRun
+          ? await probeOneTarget(t, fx, timeoutMs, perTargetOpts)
+          : await fetchOneTarget(t, fx, timeoutMs, perTargetOpts);
+      } finally {
+        limiter.release(t.sourceSite);
+      }
 
-      circuit.record(t.sourceSite, r.status);
+      // ④ 熔断口径：429 记 'ratelimited'（不 +1 也不重置），其余按原状
+      circuit.record(t.sourceSite, r.rateLimited === true ? 'ratelimited' : r.status);
       stats[r.status] = (stats[r.status] || 0) + 1;
       if (r.status === 'skip') bumpReason(r.reason);
+      if (r.status === 'failed') {
+        const k = r.reason || 'unknown';
+        stats.failReasons[k] = (stats.failReasons[k] || 0) + 1;
+      }
       const bs = bumpSite(t.sourceSite);
       bs[r.status] = (bs[r.status] || 0) + 1;
+      if (r.rateLimited === true) bs.rateLimited = (bs.rateLimited || 0) + 1;
 
       // 兜底触发点之二：本次直连**失败**（不是 skip —— skip = 有页面但没样本，
       // 说明站点是通的，再拿检索去补就是拿低置信度数据覆盖可直连的源）
@@ -2421,6 +2757,8 @@ async function runRefresh(opts = {}) {
     }
   }
 
+  // 本轮最终的源级并发上限（429 会把命中源减半，这里把结果留档，方便回看加固是否生效）
+  stats.sourceConcurrency = limiter.snapshot();
   stats.durationMs = Date.now() - startTs;
 
   // Ark 兜底明细：**只在开启时才挂字段**，保证默认关时 stats 形状与加此功能之前一致
@@ -2655,6 +2993,14 @@ module.exports = {
   FX_FALLBACK,
   buildTargets,
   httpGet,
+  httpGetWithRetry,
+  parseRetryAfterMs,
+  computeRetryDelay,
+  makeSourceLimiter,
+  HTTP_429_MAX_RETRIES,
+  HTTP_429_BASE_DELAY_MS,
+  HTTP_429_MAX_RETRY_AFTER_MS,
+  SOURCE_MIN_CONCURRENCY,
   getFxRates,
   buildSearchUrl,
   extractPrices,
