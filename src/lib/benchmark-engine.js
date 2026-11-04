@@ -79,8 +79,37 @@ const MASCUS_CATEGORY_PATH = {
   baler: 'hay-and-forage-machines',
   mower_tedder: 'hay-and-forage-machines',
   combine: 'agricultural-harvesters',
-  soil: 'soil-preparation',
+  // ⚠️ 2026-11 修正：原值 'soil-preparation' 已是死路径（实测 items=0 / totalResults=0，
+  //    页面实为 "Wine Growing Equipment" 葡萄酒种植设备，与耕整机械无关）。
+  //    真实耕整机械段是 'tillage-machines'（实测 items=40 / total=2545）。
+  //    同类死路径黑名单见 src/lib/mascus-leads/parse.ts 文件头：
+  //    soil-preparation（0 条）、tillage-equipment（404）、loaders（0 条）、/agriculture 根（0 条）。
+  soil: 'tillage-machines',
 };
+
+// —— mascus 品类级 bulk 扫描（替代失效的「按型号搜索」）——
+// 站点改版后服务端**完全忽略** `?q=` 与品牌/型号参数，所以「每个 brand×model 打一次搜索」
+// 这条路在 mascus 上永远拿不到对应机型（旧的 38 次靶标请求只会在 4 个品类页上重复 9.5 倍）。
+// 改为：按品类段拉列表页 → 全量合并去重 → 在本地按 (brand, model) 匹配。
+//
+// 段清单必须与 src/lib/mascus-leads/parse.ts 的 MASCUS_SCAN_SEGMENTS **保持一致**
+// （那条链路是线索池采集，本文件是价格基准采集，两条链路共用同一组「已验证可用」的段路径）。
+// 改这里时必须同步改那里，否则一条链路会静默扫到 0 条。
+const MASCUS_BULK_SEGMENTS = [
+  'tractors',
+  'tillage-machines',
+  'hay-and-forage-machines',
+  'other-agricultural-machines',
+  'agricultural-harvesters',
+];
+// 时间窗：60 天。`lastcreateddays` 决定「挂牌新鲜度」，写入的 sourceDate 取抓取当天
+// （与 agroline 语义一致：URL 已把范围限定为近 60 天新挂牌）。
+const MASCUS_BULK_RECENT_DAYS = 60;
+// 每段翻页数：5 段 × 5 页 × 40 条/页 = 最多 1000 条（mascus 每页固定 40）
+const MASCUS_BULK_MAX_PAGES = 5;
+// 单组最少样本数：不足 3 条不写库（3 条才够算「中位价 + IQR 离群」的最小统计口径）
+const MASCUS_MIN_SAMPLES = 3;
+const MASCUS_ORIGIN = 'https://www.mascus.com';
 
 // 18 个品牌（拖拉机 11 + 收获青贮 4 + 耕整 3）
 const BRANDS = [
@@ -230,7 +259,7 @@ function buildTargets() {
 
 // —— 简单 GET（带 UA + 超时 + 可选住宅代理），失败时抛错由调用方降级 ——
 // proxy: 住宅代理 URL（如 https://user:pass@host:port）；俄线源经此破反爬
-function httpGet(url, { timeout = 12000, headers = {}, proxy = null } = {}) {
+function httpGet(url, { timeout = 12000, headers = {}, proxy = null, _redirects = 0 } = {}) {
   const opts = {
     timeout,
     headers: {
@@ -245,7 +274,21 @@ function httpGet(url, { timeout = 12000, headers = {}, proxy = null } = {}) {
     const lib = url.startsWith('https') ? https : http;
     const req = lib.get(url, opts, (res) => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        return httpGet(res.headers.location, { timeout, headers, proxy }).then(resolve, reject);
+        // ⚠️ Location 可以是**相对路径**（实测 mascus 的
+        // `/agriculture/other-agricultural-machines` 会 308 跳到
+        // `/agriculture/agriculture---others?lastcreateddays=..&page=1`）。
+        // 旧实现把原始 Location 直接当 URL 再请求，node 抛 `TypeError: Invalid URL`
+        // （ERR_INVALID_URL），表现为「该品类段 5 页全部失败」且看不出是重定向问题。
+        // 必须先按当前 URL 解析成绝对地址；解析失败/超过 5 跳直接判定失败，避免死循环。
+        res.resume(); // 丢弃重定向响应体，避免 socket 悬挂
+        if (_redirects >= 5) return reject(new Error('too-many-redirects'));
+        let next;
+        try {
+          next = new URL(res.headers.location, url).href;
+        } catch (e) {
+          return reject(new Error(`bad-redirect: ${res.headers.location}`));
+        }
+        return httpGet(next, { timeout, headers, proxy, _redirects: _redirects + 1 }).then(resolve, reject);
       }
       if (res.statusCode !== 200) {
         res.resume();
@@ -471,8 +514,164 @@ function parseMascusDiagnostics(html) {
   };
 }
 
+// —— mascus bulk 采集的三个纯函数（解析 / 匹配 / 折价）——
+// 之所以拆成纯函数：`fetchMascusBulk` 里要跑 25 次网络请求，
+// 匹配规则若埋在请求循环里就没法用缓存 HTML 离线回归（本次改版就是吃了这个亏：
+// 解析器静默返回 0 条，因为没人能在不发网络请求的前提下验证匹配规则）。
+
+/**
+ * 从 mascus 列表页 HTML 抽取 `__NEXT_DATA__` 里的**原始** items 数组。
+ *
+ * 与上面的 `parseMascusNextData(html, target, source)` 的区别：
+ *   - 那个是「按单个 target 过滤 + 只保留有价」的旧口径，签名已被 route/单测占用；
+ *   - 本函数只负责「把页面数据挖出来」，**不做任何过滤**（品牌/型号/价格都交给调用方），
+ *     因为 bulk 模式下是「先全量合并去重，再在内存里按 18 个品牌逐一匹配」。
+ *
+ * 任何异常（无 script / JSON 坏 / 结构变更）一律返回 `{ ok:false, items:[] }`，
+ * **绝不抛错** —— 25 页里坏一页不能炸掉整轮采集。
+ *
+ * @param {string} html 列表页完整 HTML
+ * @returns {{ ok: boolean, reason?: string, items: Array<Record<string, any>>, totalResults: number }}
+ */
+function parseMascusNextDataItems(html) {
+  if (typeof html !== 'string' || html.length === 0) {
+    return { ok: false, reason: 'empty-html', items: [], totalResults: 0 };
+  }
+  // 属性顺序无关、容忍单/双引号（与 mascus-leads/parse.ts 的正则保持一致）
+  const m = /<script\b[^>]*\bid\s*=\s*["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/i.exec(html);
+  if (!m || !m[1]) return { ok: false, reason: 'no-next-data', items: [], totalResults: 0 };
+  let root;
+  try {
+    root = JSON.parse(m[1]);
+  } catch (e) {
+    return { ok: false, reason: 'bad-json', items: [], totalResults: 0 };
+  }
+  const searchRes = root && root.props && root.props.pageProps ? root.props.pageProps.searchRes : null;
+  const searchData = searchRes && typeof searchRes === 'object' ? searchRes.searchData : null;
+  const rawItems = searchData && typeof searchData === 'object' ? searchData.items : null;
+  if (!Array.isArray(rawItems)) {
+    return { ok: false, reason: 'no-items', items: [], totalResults: 0 };
+  }
+  // totalResults 与 items 同层；个别页面版本把它上提到 searchRes 层，两处都兼容
+  const totalRaw =
+    (searchData && searchData.totalResults != null ? searchData.totalResults : null) ??
+    (searchRes && searchRes.totalResults != null ? searchRes.totalResults : null);
+  const totalNum = Number(totalRaw);
+  return {
+    ok: true,
+    items: rawItems,
+    totalResults: Number.isFinite(totalNum) ? Math.max(0, Math.trunc(totalNum)) : 0,
+  };
+}
+
+/**
+ * 品牌匹配：归一化后「相等 或 互相包含」。
+ *
+ * 为什么允许双向包含：mascus 的 `brand` 字段写法不统一（实测同站内既有
+ * `Case IH` 也有 `Case`、既有 `New Holland` 也有 `NewHolland`）。归一化（`norm`）后
+ * 双向包含能覆盖这些变体。**必须有非空 + 长度下限**：`norm('')` 是空串，而
+ * `'johndeere'.includes('')` 恒为 true —— 少了这道闸，137 条 brand 为空的拍卖填充件
+ * 会同时命中全部 18 个品牌（本次实测这个 bug 让每个品牌的「命中数」都虚高 137）。
+ *
+ * @param {unknown} itemBrand mascus item.brand 原值
+ * @param {string} nameEn 目标品牌英文名（如 'John Deere'）
+ * @returns {boolean}
+ */
+function mascusBrandMatches(itemBrand, nameEn) {
+  const ib = norm(itemBrand);
+  const tb = norm(nameEn);
+  if (!ib || !tb) return false;
+  if (ib.length < 2 || tb.length < 2) return false;
+  return ib === tb || ib.includes(tb) || tb.includes(ib);
+}
+
+/**
+ * 型号 token 化：`'8R 410' → ['8r','410']`、`'T7.315' → ['t7','315']`。
+ *
+ * ⚠️ 必须在**原始字符串**上 `/[a-z0-9]+/g` 切分，**不能**先过 `norm()`：
+ * `norm()` 会把空格/点号一起剥掉，`'8R 410'` 归一化成 `'8r410'` 后只剩一个 token，
+ * 词块匹配直接失效（这个坑本次实测踩过一次：`8R 410` 反而匹配不到 `8R 410`）。
+ *
+ * @param {string} model 目标机型（MODELS 里配置的写法）
+ * @returns {string[]}
+ */
+function mascusModelTokens(model) {
+  return (String(model == null ? '' : model).toLowerCase().match(/[a-z0-9]+/g) || []).filter(
+    (t) => t.length > 0
+  );
+}
+
+/**
+ * 型号匹配：**每个** model token 都必须作为独立词块出现在条目自身的 `model` 字段里。
+ *
+ * 语义要点（容易写错的地方）：
+ *   - mascus 的 `model` 字段本身就只含型号（如 `5075E` / `8R 410`），
+ *     **不要**再要求品牌名出现在 model 里 —— 那会让 100% 的条目匹配失败；
+ *   - 匹配前把两侧都按「非字母数字」切成词块再比对（而不是裸 `includes`）：
+ *     裸 `includes('410')` 会让目标 `8R 410` 误中 `8R 4100`、目标 `724 Vario`
+ *     误中 `7240 Vario`，把不相干的机型价混进中位价。词块口径下
+ *     `8R 410` 能匹配 `8R 410` / `8R 410 Premium` / `8R410`（切成 `8r410` 后
+ *     token 会退化，见下面的二次尝试），但匹配不到 `8R 4100`。
+ *
+ * @param {unknown} itemModel mascus item.model 原值
+ * @param {string[]} tokens 目标机型的 token 列表
+ * @returns {boolean}
+ */
+function mascusModelMatches(itemModel, tokens) {
+  if (!tokens.length) return false;
+  const text = String(itemModel == null ? '' : itemModel).toLowerCase();
+  // 词块序列：'8R-410 Premium' → ['8r','410','premium']；两侧加空格便于整词匹配
+  const words = text.split(/[^a-z0-9]+/).filter((w) => w.length > 0);
+  if (!words.length) return false;
+
+  // ① 首选：每个 token 都是独立词块（最严格，无假阳性）
+  const padded = ` ${words.join(' ')} `;
+  if (tokens.every((tok) => padded.includes(` ${tok} `))) return true;
+
+  // ② 回退：mascus 把型号连写成一格（'8R410' / 'T7.315' 归一化后 't7315'）。
+  //    此时要求「整个 token 串」作为单个词块出现，仍然不接受前缀式假阳性
+  //    （'8r410' ≠ '8r4100'，因为是整词比较而非 includes）。
+  const joined = tokens.join('');
+  return words.some((w) => w === joined);
+}
+
+/**
+ * 单条 mascus 挂牌 → EUR 金额（**绝不编造价格**）。
+ *
+ * 折算规则（`fx` 是「外币 → CNY」的汇率表，方向不要算反）：
+ *   1. `priceEURO > 0` → 直接用（mascus 已按当日汇率折好）；
+ *   2. 否则若 `priceOriginal > 0` → 按 `priceOriginalUnit`（回落 `userCurrency`）
+ *      折成 EUR：`amountEur = priceOriginal * fx[unit] / fx.EUR`
+ *      （先乘成 CNY，再除以「1 EUR 值多少 CNY」）；
+ *   3. 两者都 ≤ 0 → 返回 null（询价条目，一律不入库）。
+ *
+ * @param {Record<string, any>} item mascus item
+ * @param {Record<string, number>} fx 外币→CNY 汇率表
+ * @returns {{ amount: number, currency: string } | null}
+ */
+function mascusItemPriceEur(item, fx) {
+  const eur = Number(item && item.priceEURO) || 0;
+  if (Number.isFinite(eur) && eur > 0) return { amount: eur, currency: 'EUR' };
+
+  const original = Number(item && item.priceOriginal) || 0;
+  if (!Number.isFinite(original) || original <= 0) return null;
+
+  const unit = String((item && (item.priceOriginalUnit || item.userCurrency)) || '')
+    .trim()
+    .toUpperCase();
+  if (!unit || unit === 'EUR') return { amount: original, currency: 'EUR' };
+
+  const rates = fx || {};
+  const unitToCny = Number(rates[unit]) || Number(FX_FALLBACK[unit]) || 0;
+  const eurToCny = Number(rates.EUR) || Number(FX_FALLBACK.EUR) || 0;
+  if (!(unitToCny > 0) || !(eurToCny > 0)) return null; // 汇率缺失 → 宁可跳过，也不猜
+  const amountEur = Math.round((original * unitToCny) / eurToCny);
+  return amountEur > 0 ? { amount: amountEur, currency: 'EUR' } : null;
+}
+
 // ⚠️ 已失效：Mascus 整站改版为 Next.js 后，旧版 CSS class（SearchResultItem_brandmodel）
 // 匹配不到任何卡片，正常路径改走 parseMascusNextData；此函数仅作极端回退保留。
+
 // Mascus：React 客户端渲染，原始 HTML 多为拍卖填充件；仅接受含真实数字价格的卡片
 function parseMascus(html, target, source) {
   const $ = cheerio.load(html);
@@ -714,6 +913,311 @@ async function fetchOneTarget(target, fx, timeoutMs) {
   }
 }
 
+// —— mascus 品类级 bulk 采集（唯一能拿到 mascus 价格的通道）——
+/**
+ * 抓 mascus 品类段列表页 → 全量合并去重 → 按 (brand, model) 本地匹配 → 聚合 → 写库。
+ *
+ * 为什么必须走 bulk 而不能再走 `fetchOneTarget`：
+ *   mascus 改版后服务端**完全忽略** `?q=` 与品牌/型号参数（实测 `/tractors/john-deere`
+ *   返回 Case IH / Challenger 等泛结果）。也就是说「每个 brand×model 打一次搜索」在
+ *   mascus 上原理性地拿不到对应机型 —— 38 个靶标只会命中 4 个品类页（去重 9.5 倍），
+ *   每次都是同一批全站结果。故改为「按品类段批量拉，再在内存里匹配」。
+ *
+ * 流程与口径：
+ *   1. 段清单 = `MASCUS_BULK_SEGMENTS`（与 mascus-leads/parse.ts 的 MASCUS_SCAN_SEGMENTS 同步）；
+ *      每段 P=1..maxPages，URL 带 `lastcreateddays=60&page=P` 限定「近 60 天新挂牌」；
+ *   2. 全量 items 按 `productId` 去重（同一台机常同时出现在多个品类段）；
+ *   3. 对 `BRANDS`/`MODELS` 的每个 (brand, model) 在合并集里匹配
+ *      （品牌：归一化双向包含；型号：token 全命中），**只保留有价条目**；
+ *   4. 折价统一到 EUR（见 `mascusItemPriceEur`），复用 `aggregateListings` 做
+ *      IQR 离群过滤 + 中位价 + 置信度；
+ *   5. 每组样本数 `< minSamples`（默认 3）记 skip（reason `too-few-samples`）不写库；
+ *   6. `sourceDate` 取**抓取当天**（与 agroline 语义一致：URL 已把范围限定为近 60 天）；
+ *   7. 写库走 `upsertBenchmark`，幂等键 brand+model+sourceSite ⇒ 同一批跑两次只更新不新增。
+ *
+ * 网络失败策略：单页失败不抛错、计入 `failedPages` 后继续；整段 0 条会进 `emptySegments`
+ * （那是「路径失效」的唯一信号，必须能被告警看到）。
+ *
+ * @param {object} [opts]
+ * @param {Record<string, number>} [opts.fx] 外币→CNY 汇率表（缺省自行拉取）
+ * @param {number} [opts.maxPages=5] 每个品类段翻页数
+ * @param {number} [opts.timeoutMs=25000] 单页超时（mascus 页 650KB / 实测 1–4s，8s 会误杀）
+ * @param {number} [opts.recentDays=60] `lastcreateddays`
+ * @param {number} [opts.minSamples=3] 单组最少样本数
+ * @param {number} [opts.concurrency=4] 并发页数（对 mascus 不宜过高，避免被限流）
+ * @param {number} [opts.budgetMs=90000] bulk 自身预算上限（超预算停止翻页，已抓到的照常聚合）
+ * @param {boolean} [opts.dryRun=false] true = 只统计不写库
+ * @returns {Promise<{
+ *   ok: boolean,
+ *   dryRun: boolean,
+ *   totalPages: number, fetchedPages: number, failedPages: number,
+ *   items: number, uniqueItems: number, pricedItems: number,
+ *   groups: number, written: number, skipped: number, failed: number,
+ *   rows: Array<Record<string, any>>,
+ *   byReason: Record<string, number>,
+ *   bySegment: Record<string, { items: number, priced: number, totalResults: number, pages: number, failedPages: number, ok: boolean }>,
+ *   emptySegments: string[],
+ *   durationMs: number
+ * }>}
+ */
+async function fetchMascusBulk(opts = {}) {
+  const startTs = Date.now();
+  const fx = opts.fx || (await getFxRates());
+  const rawMaxPages = Number(opts.maxPages);
+  const maxPages =
+    Number.isFinite(rawMaxPages) && rawMaxPages > 0
+      ? Math.min(50, Math.trunc(rawMaxPages))
+      : MASCUS_BULK_MAX_PAGES;
+  const rawRecent = Number(opts.recentDays);
+  const recentDays =
+    Number.isFinite(rawRecent) && rawRecent > 0 ? Math.trunc(rawRecent) : MASCUS_BULK_RECENT_DAYS;
+  const rawTimeout = Number(opts.timeoutMs);
+  const timeoutMs = Number.isFinite(rawTimeout) && rawTimeout > 0 ? Math.trunc(rawTimeout) : 25000;
+  const rawMin = Number(opts.minSamples);
+  const minSamples =
+    Number.isFinite(rawMin) && rawMin >= 1 ? Math.trunc(rawMin) : MASCUS_MIN_SAMPLES;
+  const rawConc = Number(opts.concurrency);
+  const concurrency = Number.isFinite(rawConc) && rawConc > 0 ? Math.min(8, Math.trunc(rawConc)) : 4;
+  const rawBudget = Number(opts.budgetMs);
+  const budgetMs = Number.isFinite(rawBudget) && rawBudget > 0 ? Math.trunc(rawBudget) : 90000;
+  const dryRun = opts.dryRun === true;
+  const today = new Date().toISOString().slice(0, 10);
+
+  // ① 待抓页面清单（段 × 页），顺序固定便于复现
+  const jobs = [];
+  for (const seg of MASCUS_BULK_SEGMENTS) {
+    for (let page = 1; page <= maxPages; page += 1) {
+      jobs.push({
+        segment: seg,
+        page,
+        url: `${MASCUS_ORIGIN}/agriculture/${seg}?lastcreateddays=${recentDays}&page=${page}`,
+      });
+    }
+  }
+
+  const bySegment = {};
+  for (const seg of MASCUS_BULK_SEGMENTS) {
+    bySegment[seg] = { items: 0, priced: 0, totalResults: 0, pages: 0, failedPages: 0, ok: false };
+  }
+
+  const collected = []; // { item, url }（去重前）
+  let fetchedPages = 0;
+  let failedPages = 0;
+  let budgetExhausted = false;
+
+  const runJob = async (job) => {
+    try {
+      const html = await httpGet(job.url, { timeout: timeoutMs });
+      const parsed = parseMascusNextDataItems(html);
+      if (!parsed.ok) {
+        failedPages += 1;
+        bySegment[job.segment].failedPages += 1;
+        return;
+      }
+      fetchedPages += 1;
+      const st = bySegment[job.segment];
+      st.pages += 1;
+      st.ok = true;
+      st.items += parsed.items.length;
+      if (parsed.totalResults > st.totalResults) st.totalResults = parsed.totalResults;
+      for (const item of parsed.items) collected.push({ item, url: job.url, segment: job.segment });
+    } catch (e) {
+      failedPages += 1;
+      bySegment[job.segment].failedPages += 1;
+    }
+  };
+
+  const queue = jobs.slice();
+  const worker = async () => {
+    while (queue.length) {
+      if (Date.now() - startTs > budgetMs) {
+        budgetExhausted = true;
+        queue.length = 0;
+        break;
+      }
+      const job = queue.shift();
+      await runJob(job);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(concurrency, jobs.length) }, () => worker()));
+
+  // ② 按 productId 去重（保留首次出现；同一台机常跨段重复）
+  const seen = new Set();
+  const unique = [];
+  for (const entry of collected) {
+    const pid = entry.item && entry.item.productId;
+    if (!pid) continue; // productId 缺失 = 脏数据，丢弃（无法追溯）
+    if (seen.has(pid)) continue;
+    seen.add(pid);
+    unique.push(entry);
+  }
+
+  // ③ 折价：统一折成 EUR，并顺手统计「有价条数」
+  //    `pricedByProductId` 是后续匹配的核心索引：**只有在这里出现过的 productId 才允许入库**，
+  //    两条路径都不可能有价格的一律 map miss ⇒ 天然不会编造价格。
+  const pricedByProductId = new Map();
+  for (const entry of unique) {
+    const price = mascusItemPriceEur(entry.item, fx);
+    if (!price) continue;
+    pricedByProductId.set(entry.item.productId, price);
+  }
+
+  // ④ 分段「有价条数」（按去重后条目首次出现的段归集；用于发现「该段整体无价」这类结构变化）
+  for (const seg of MASCUS_BULK_SEGMENTS) bySegment[seg].priced = 0;
+  for (const entry of unique) {
+    if (!pricedByProductId.has(entry.item.productId)) continue;
+    if (bySegment[entry.segment]) bySegment[entry.segment].priced += 1;
+  }
+
+  // ⑤ 按 (brand, model) 匹配 + 聚合 + 写库
+  const groups = [];
+  const byReason = {};
+  const bump = (reason) => {
+    const k = reason || 'unknown';
+    byReason[k] = (byReason[k] || 0) + 1;
+  };
+
+  for (const brand of BRANDS) {
+    const models = MODELS[brand.slug] || [];
+    for (const modelDef of models) {
+      const tokens = mascusModelTokens(modelDef.model);
+      const listings = [];
+      let firstUrl = null;
+      for (const entry of unique) {
+        const item = entry.item;
+        if (!mascusBrandMatches(item.brand, brand.nameEn)) continue;
+        if (!mascusModelMatches(item.model, tokens)) continue;
+        const price = pricedByProductId.get(item.productId);
+        if (!price) continue; // 询价条目：绝不编造价格
+        listings.push({
+          priceForeign: price.amount,
+          currency: price.currency,
+          title: `${item.brand || ''} ${item.model || ''}`.trim(),
+          productId: item.productId,
+        });
+        if (!firstUrl) firstUrl = entry.url;
+      }
+
+      const group = {
+        brand: brand.slug,
+        brandNameZh: brand.nameZh,
+        model: modelDef.model,
+        category: modelDef.category,
+        samples: listings.length,
+        status: 'skip',
+        reason: null,
+      };
+
+      if (listings.length === 0) {
+        group.reason = 'no-listing';
+        bump('no-listing');
+        groups.push(group);
+        continue;
+      }
+      if (listings.length < minSamples) {
+        group.reason = 'too-few-samples';
+        bump('too-few-samples');
+        groups.push(group);
+        continue;
+      }
+
+      const agg = aggregateListings(listings, fx, { priceType: 'listing' });
+      if (!agg) {
+        group.reason = 'no-agg';
+        bump('no-agg');
+        groups.push(group);
+        continue;
+      }
+
+      Object.assign(group, {
+        medianForeign: agg.priceForeign,
+        currency: agg.currency,
+        medianCny: agg.priceCny,
+        exchangeRate: agg.exchangeRate,
+        listingCount: agg.listingCount,
+        sampleSize: agg.sampleSize,
+        confidenceScore: agg.confidenceScore,
+        sourceDate: today,
+      });
+
+      if (dryRun) {
+        group.status = 'ok';
+        group.reason = 'dry-run';
+        groups.push(group);
+        continue;
+      }
+
+      try {
+        const res = await upsertBenchmark({
+          brand: brand.slug,
+          brandNameZh: brand.nameZh,
+          model: modelDef.model,
+          category: modelDef.category,
+          sourceSite: 'mascus',
+          priceForeign: agg.priceForeign,
+          medianPrice: agg.medianPrice,
+          currency: agg.currency,
+          priceCny: agg.priceCny,
+          exchangeRate: agg.exchangeRate,
+          sourceUrl: firstUrl,
+          sourceDate: today,
+          confidenceScore: agg.confidenceScore,
+          sampleSize: agg.sampleSize,
+          listingCount: agg.listingCount,
+          priceType: 'listing',
+          region: 'GLOBAL',
+        });
+        if (res && res.skipped) {
+          group.status = 'skip';
+          group.reason = res.reason || 'upsert-skipped';
+          bump(group.reason);
+        } else {
+          group.status = 'ok';
+          group.id = res && res.id;
+        }
+      } catch (e) {
+        group.status = 'failed';
+        group.reason = `write-failed: ${e.message}`;
+        bump('write-failed');
+      }
+      groups.push(group);
+    }
+  }
+
+  // ⑥ 汇总
+  const written = groups.filter((g) => g.status === 'ok').length;
+  const skipped = groups.filter((g) => g.status === 'skip').length;
+  const failed = groups.filter((g) => g.status === 'failed').length;
+  const emptySegments = MASCUS_BULK_SEGMENTS.filter((seg) => {
+    const st = bySegment[seg];
+    return st.items === 0 && st.totalResults === 0;
+  });
+
+  return {
+    ok: fetchedPages > 0,
+    dryRun,
+    budgetExhausted,
+    recentDays,
+    maxPages,
+    totalPages: jobs.length,
+    fetchedPages,
+    failedPages,
+    items: collected.length,
+    uniqueItems: unique.length,
+    pricedItems: pricedByProductId.size,
+    groups: groups.length,
+    written,
+    skipped,
+    failed,
+    rows: groups.filter((g) => g.status === 'ok'),
+    groupDetail: groups,
+    byReason,
+    bySegment,
+    emptySegments,
+    durationMs: Date.now() - startTs,
+  };
+}
+
 // —— 源级熔断器（纯逻辑，无 I/O，便于单测）——
 /**
  * 同一源连续 N 次 `failed` 即「开路」，该源剩余目标直接跳过。
@@ -801,6 +1305,9 @@ async function probeOneTarget(target, fx, timeoutMs) {
 //   failureThreshold=3,   // 源级熔断阈值
 //   budgetMs=260000,      // 总预算兜底（< maxDuration 300s，留 40s 给种子/告警/序列化）
 //   dryRun=false,         // true = 只统计不写库
+//   mascusMaxPages=5,     // mascus bulk 每段翻页数（见 fetchMascusBulk）
+//   mascusTimeoutMs=25000,// mascus bulk 单页超时（=< timeoutMs 时以 timeoutMs 为准的下限抬升）
+//   mascusMinSamples=3,   // mascus 单组最少样本数
 // }
 async function runRefresh(opts = {}) {
   const fx = opts.fx || (await getFxRates());
@@ -809,6 +1316,18 @@ async function runRefresh(opts = {}) {
     const set = new Set(opts.sources);
     all = all.filter((t) => set.has(t.sourceSite));
   }
+  // mascus 走独立的 bulk 通道（它的靶标已在 buildTargets 里被 skipInTargets 摘除）。
+  //
+  // 启用条件（三个都必须满足）：
+  //   ① 调用方**没有**注入 opts.targets —— 注入 targets = 「我明确只要跑这些靶标」
+  //      （单测、dryRun 探针、临时脚本），此时绝不能再自作主张去打 25 次真实网络；
+  //   ② 没显式指定 sources，或 sources 里列了 mascus；
+  //   ③ 没有显式 opts.mascus === false（给运维留的开关）。
+  const targetInjected = Array.isArray(opts.targets);
+  const mascusEnabled =
+    opts.mascus !== false &&
+    !targetInjected &&
+    (!Array.isArray(opts.sources) || opts.sources.length === 0 || opts.sources.includes('mascus'));
   const queue = all.slice();
 
   // ⚠️ ok / skip / failed / total 四个字段的名字与语义保持不变（route.ts 的 message 在用）
@@ -823,6 +1342,9 @@ async function runRefresh(opts = {}) {
     budgetExhausted: false,
     circuitOpen: [],
     durationMs: 0,
+    // mascus 走 bulk 通道，计数单位是「组（brand×model）」而不是「靶标」，
+    // 明细单独挂在 mascus 上，避免污染靶标口径的 ok/skip/failed 语义歧义。
+    mascus: null,
   };
 
   const circuit = makeSourceCircuit({ failureThreshold: opts.failureThreshold ?? 3 });
@@ -877,8 +1399,102 @@ async function runRefresh(opts = {}) {
     }
   };
 
+  // —— mascus bulk 通道：与靶标池**并行**跑 ——
+  // 为什么并行：bulk 是 25 次独立请求（5 段 × 5 页），与靶标池无任何数据依赖；
+  // 串行会把总时长白加一份（实测 25 页 ≈ 20–60s），直接吃掉 Vercel 300s 预算。
+  // 失败一律降级为 null/空结果，**绝不**把整轮刷新炸掉（靶标池的结果已经采到了）。
+  const bulkRemainingMs = Math.max(1000, budgetMs - (Date.now() - startTs));
+  const emptyBulk = {
+    ok: false,
+    error: null,
+    totalPages: 0,
+    fetchedPages: 0,
+    failedPages: 0,
+    items: 0,
+    uniqueItems: 0,
+    pricedItems: 0,
+    groups: 0,
+    written: 0,
+    skipped: 0,
+    failed: 0,
+    rows: [],
+    groupDetail: [],
+    byReason: {},
+    bySegment: {},
+    emptySegments: [],
+    durationMs: 0,
+  };
+  const bulkPromise = mascusEnabled
+    ? fetchMascusBulk({
+        fx,
+        maxPages: opts.mascusMaxPages,
+        // mascus 单页 650KB / 实测 1–4s：靶标默认 8s 超时会误杀，故取两者更大值
+        timeoutMs: Math.max(timeoutMs, Number(opts.mascusTimeoutMs) || 25000),
+        minSamples: opts.mascusMinSamples,
+        dryRun,
+        budgetMs: bulkRemainingMs,
+      }).catch((e) => ({ ...emptyBulk, error: e && e.message ? e.message : String(e) }))
+    : Promise.resolve(null);
+
   const n = Math.max(1, Math.min(opts.concurrency || 12, all.length));
-  await Promise.all(Array.from({ length: n }, () => worker()));
+  const [, bulk] = await Promise.all([
+    Promise.all(Array.from({ length: n }, () => worker())),
+    bulkPromise,
+  ]);
+
+  if (bulk) {
+    // 明细（供 route 拼 message、日志与人工复核）
+    stats.mascus = {
+      ok: bulk.written,
+      skip: bulk.skipped,
+      failed: bulk.failed,
+      total: bulk.groups,
+      items: bulk.items,
+      uniqueItems: bulk.uniqueItems,
+      pricedItems: bulk.pricedItems,
+      fetchedPages: bulk.fetchedPages,
+      failedPages: bulk.failedPages,
+      totalPages: bulk.totalPages,
+      budgetExhausted: bulk.budgetExhausted === true,
+      byReason: bulk.byReason,
+      bySegment: bulk.bySegment,
+      emptySegments: bulk.emptySegments,
+      rows: bulk.rows.map((r) => ({
+        brand: r.brand,
+        model: r.model,
+        samples: r.samples,
+        medianForeign: r.medianForeign,
+        currency: r.currency,
+        medianCny: r.medianCny,
+        sourceDate: r.sourceDate,
+      })),
+      durationMs: bulk.durationMs,
+      error: bulk.error || null,
+    };
+
+    // 总数口径：mascus 的计数单位是「组」，直接把组的 ok/skip/failed 汇入总数，
+    // 这样 route 的「成功 X / 跳过 Y / 失败 Z / 共 N」仍然是自洽的（N 也含组数）。
+    const site = bumpSite('mascus');
+    stats.ok += bulk.written;
+    stats.skip += bulk.skipped;
+    stats.failed += bulk.failed;
+    stats.total += bulk.groups;
+    site.ok += bulk.written;
+    site.skip += bulk.skipped;
+    site.failed += bulk.failed;
+    for (const [reason, cnt] of Object.entries(bulk.byReason || {})) {
+      // write-failed 已经计入 failed，不再重复进 skip 原因分布
+      if (reason === 'write-failed') continue;
+      stats.skipReasons[reason] = (stats.skipReasons[reason] || 0) + cnt;
+    }
+    // 整轮一页都没抓到（全失败 / 预算耗尽 / 抛错）⇒ 记一次源级失败，让陈旧的 mascus
+    // 数据能被 checkSourceStaleness + 告警看见，而不是静默「成功 0 条」。
+    if (!bulk.ok) {
+      stats.failed += 1;
+      site.failed += 1;
+      bumpReason(bulk.error ? 'mascus-bulk-error' : 'mascus-all-pages-failed');
+    }
+  }
 
   stats.durationMs = Date.now() - startTs;
 
@@ -1119,7 +1735,17 @@ module.exports = {
   parseAgroline,
   parseMascus,
   parseMascusNextData,
+  parseMascusNextDataItems,
   parseMascusDiagnostics,
+  mascusBrandMatches,
+  mascusModelTokens,
+  mascusModelMatches,
+  mascusItemPriceEur,
+  fetchMascusBulk,
+  MASCUS_BULK_SEGMENTS,
+  MASCUS_BULK_RECENT_DAYS,
+  MASCUS_BULK_MAX_PAGES,
+  MASCUS_MIN_SAMPLES,
   extractCurrencyAmount,
   isRelevant,
   aggregateListings,
