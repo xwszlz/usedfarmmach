@@ -29,11 +29,16 @@
  *   ⑬ arkHostMatchesSite：同品牌国别站（.com ↔ .com.au）要认，不同品牌要拒
  *   ⑭ 币种闸：镜像站的 `AUD $88,227` 不得被当成 USD（只取 `USD $61,500`）
  *   ⑮ 机型闸：同页里 `Jaguar 8700` 的价不得算进 `Jaguar 870`
+ *   ⑰ P0 止血：**会写库的 `arkSearchProbe`** 必须过双重门控（未开 env ⇒ 抛错 + 0 网络 + 0 写库）
+ *   ⑱ 纯 `arkSearchDryRun:true` 在**未设 env** 时仍正常跑（影子验证依赖这条路径）
+ *   ⑲ mascus / agroline 两个健康源在 probe 通道里也被硬排除，连请求都不发
+ *   ⑳ 两条并发 `/responses` 的 usage **累加**（旧实现只记第一条 ⇒ 成本账少一半）
  *
  * ⚠️ 文件名必须是 `.test.ts`（vitest.config.ts include = `src/**\/*.test.ts`）。
  * 运行：npx vitest run src/lib/__tests__/benchmark-ark-search.test.ts --no-file-parallelism
  */
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from "vitest";
+import https from "node:https";
 
 process.env.DATABASE_URL =
   process.env.DATABASE_URL || "postgresql://bench:bench@127.0.0.1:5432/benchmark_test";
@@ -58,8 +63,8 @@ interface FakeCitation {
   title?: string;
 }
 
-/** 构造一个 Ark Responses 响应（message + content[].text + annotations[]） */
-function arkResp(text: string, citations: FakeCitation[] = []) {
+/** 构造一个 Ark Responses 响应（message + content[].text + annotations[] + 可选 usage） */
+function arkResp(text: string, citations: FakeCitation[] = [], usage?: any) {
   return {
     output: [
       {
@@ -80,6 +85,7 @@ function arkResp(text: string, citations: FakeCitation[] = []) {
         ],
       },
     ],
+    ...(usage === undefined ? {} : { usage }),
   };
 }
 
@@ -87,6 +93,8 @@ interface FakeReply {
   /** 模型正文（**永不参与聚合**，只进 prosePrices 诊断） */
   text?: string;
   citations?: FakeCitation[];
+  /** 本次 `/responses` 的 usage（用于验证并发两路的成本累加） */
+  usage?: any;
 }
 
 /** 生成 fake fetch：按 query 顺序返回预设回复，并记录调用 */
@@ -97,7 +105,7 @@ function makeFakeFetch(replies: FakeReply[]) {
     calls.push({ url, body });
     const r = replies[Math.min(i, replies.length - 1)] || {};
     i += 1;
-    return arkResp(r.text || "", r.citations || []);
+    return arkResp(r.text || "", r.citations || [], r.usage);
   };
   return { fn, calls };
 }
@@ -601,5 +609,191 @@ describe("runRefresh —— 探针模式与双重门控", () => {
     expect(fb.total).toBe(0);
     // 闭合不变量不受影响
     expect(stats.ok + stats.skip + stats.failed + stats.skippedByBudget).toBe(stats.total);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// P0 止血（第 6 个 commit）：probe 通道写库口子 / 健康源硬排除 / 成本账累加
+// 全部离线：注入 arkSearchFetch / fetchImpl mock，零真实网络、零写库。
+// ═══════════════════════════════════════════════════════════════════════════
+describe("P0 止血 —— probe 写库门控 / blocked set / usage 累加", () => {
+  const originalKey = process.env.ARK_API_KEY;
+  const originalGate = process.env.BENCHMARK_ARK_FALLBACK;
+  beforeEach(() => {
+    process.env.ARK_API_KEY = "test-key-not-real";
+  });
+  afterEach(() => {
+    if (originalKey === undefined) delete process.env.ARK_API_KEY;
+    else process.env.ARK_API_KEY = originalKey;
+    if (originalGate === undefined) delete process.env.BENCHMARK_ARK_FALLBACK;
+    else process.env.BENCHMARK_ARK_FALLBACK = originalGate;
+    vi.restoreAllMocks();
+  });
+
+  const PROBE = [
+    { sourceSite: "tractorhouse", brand: "john-deere", model: "5075E" },
+  ];
+  const SRC = { key: "tractorhouse", currency: "USD", region: "US" };
+  const TGT = {
+    brand: "john-deere",
+    brandNameZh: "约翰迪尔",
+    nameEn: "John Deere",
+    model: "5075E",
+    category: "tractor",
+  };
+
+  it("⑰ 未设 env + arkSearchProbe + 不带 arkSearchDryRun ⇒ 明确抛错，0 网络 0 写库", async () => {
+    delete process.env.BENCHMARK_ARK_FALLBACK;
+    const { fn, calls } = makeFakeFetch([{ citations: TH_CITES }]);
+    // 故意**不传 fx**：若门控被放在 getFxRates() 之后，这里就会去打 open.er-api.com。
+    // 用 https.get spy 证明「连汇率请求都没发」。
+    const spy = vi.spyOn(https, "get").mockImplementation(() => {
+      throw new Error("network-must-not-happen");
+    });
+    try {
+      await expect(
+        engine.runRefresh({
+          arkSearchProbe: PROBE,
+          arkSearchFetch: fn,
+        })
+      ).rejects.toThrow(/arkSearchDryRun:true/);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(calls).toHaveLength(0); // 0 次 /responses
+    expect(spy).not.toHaveBeenCalled(); // 0 次汇率请求
+  });
+
+  it("⑰b 双闸缺一不可：只有 opts 或只有 env，都照样拒绝", async () => {
+    const onlyOpts = async () => {
+      delete process.env.BENCHMARK_ARK_FALLBACK;
+      const { fn, calls } = makeFakeFetch([{ citations: TH_CITES }]);
+      await expect(
+        engine.runRefresh({ fx: FX, arkSearchProbe: PROBE, arkSearchFallback: true, arkSearchFetch: fn })
+      ).rejects.toThrow(/opts=on \/ env=off/);
+      expect(calls).toHaveLength(0);
+    };
+    const onlyEnv = async () => {
+      process.env.BENCHMARK_ARK_FALLBACK = "1";
+      const { fn, calls } = makeFakeFetch([{ citations: TH_CITES }]);
+      await expect(
+        engine.runRefresh({ fx: FX, arkSearchProbe: PROBE, arkSearchFetch: fn })
+      ).rejects.toThrow(/opts=off \/ env=on/);
+      expect(calls).toHaveLength(0);
+    };
+    await onlyOpts();
+    await onlyEnv();
+  });
+
+  it("⑰c 双闸齐开 + 非 dryRun probe ⇒ 允许进入（确实走到了 fetch，且不写库）", async () => {
+    process.env.BENCHMARK_ARK_FALLBACK = "1";
+    // 两条 reply 都给空结果 ⇒ 自然 skip 'no-price'，不会构造 row、不会碰 upsertBenchmark。
+    // 本例只验证「门控放行」，不验证写入。
+    const { fn, calls } = makeFakeFetch([{ text: "" }, { text: "" }]);
+    const stats = await engine.runRefresh({
+      fx: FX,
+      arkSearchProbe: PROBE,
+      arkSearchFallback: true,
+      arkSearchFetch: fn,
+    });
+    expect(calls).toHaveLength(2); // 两条 query 都发出去了
+    expect(stats.total).toBe(1);
+    expect(stats.arkProbe).toHaveLength(1);
+    expect(stats.arkProbe![0].status).toBe("skip");
+    expect(stats.arkProbe![0].wrote).toBe(false); // 全程没写库
+  });
+
+  it("⑱ 回归：纯 arkSearchDryRun:true 的 probe 在**未设 env** 时仍正常跑", async () => {
+    delete process.env.BENCHMARK_ARK_FALLBACK;
+    const { fn, calls } = makeFakeFetch([{ citations: TH_CITES }]);
+    const stats = await engine.runRefresh({
+      fx: FX,
+      arkSearchProbe: PROBE,
+      arkSearchDryRun: true,
+      arkSearchFetch: fn,
+    });
+    expect(calls).toHaveLength(2);
+    expect(stats.ok).toBe(1);
+    expect(stats.arkProbe![0].medianForeign).toBe(49900);
+    expect(stats.arkProbe![0].wrote).toBe(false);
+    expect(stats.mascus).toBeNull(); // 没跑 mascus bulk
+  });
+
+  it("⑲ mascus 与 agroline 在 probe 通道里也被硬排除：skip + 0 次请求", async () => {
+    delete process.env.BENCHMARK_ARK_FALLBACK;
+    const { fn, calls } = makeFakeFetch([{ citations: TH_CITES }]);
+    const stats = await engine.runRefresh({
+      fx: FX,
+      arkSearchProbe: [
+        { sourceSite: "mascus", brand: "john-deere", model: "5075E" },
+        { sourceSite: "agroline", brand: "john-deere", model: "5075E" },
+      ],
+      arkSearchDryRun: true,
+      arkSearchFetch: fn,
+    });
+    expect(calls).toHaveLength(0); // 两个源连 /responses 都没发
+    expect(stats.skip).toBe(2);
+    expect(stats.arkProbe!.map((p) => p.reason)).toEqual([
+      "ark-source-blocked",
+      "ark-source-blocked",
+    ]);
+    expect(engine.ARK_SEARCH_BLOCKED_SOURCES.has("mascus")).toBe(true);
+    expect(engine.ARK_SEARCH_BLOCKED_SOURCES.has("agroline")).toBe(true);
+  });
+
+  it("⑳ 两条并发 /responses 的 usage 累加（含嵌套计数字段），结构与单请求一致", async () => {
+    const usageA = {
+      input_tokens: 100,
+      output_tokens: 20,
+      total_tokens: 120,
+      input_tokens_details: { cached_tokens: 10 },
+      output_tokens_details: { reasoning_tokens: 5 },
+      tool_usage: { web_search: 3 },
+      tool_usage_details: { web_search: { search_engine: 3 } },
+    };
+    const usageB = {
+      input_tokens: 200,
+      output_tokens: 30,
+      total_tokens: 230,
+      input_tokens_details: { cached_tokens: 20 },
+      output_tokens_details: { reasoning_tokens: 7 },
+      tool_usage: { web_search: 5 },
+      tool_usage_details: { web_search: { search_engine: 5 } },
+    };
+    const { fn } = makeFakeFetch([
+      { citations: TH_CITES, usage: usageA },
+      { text: "", usage: usageB },
+    ]);
+    const r = await engine.fetchViaArkSearch(SRC, TGT, FX, { fetchImpl: fn, dryRun: true });
+    expect(r.usage).toBeTruthy();
+    expect(r.usage.input_tokens).toBe(300);
+    expect(r.usage.output_tokens).toBe(50);
+    expect(r.usage.total_tokens).toBe(350);
+    expect(r.usage.input_tokens_details.cached_tokens).toBe(30);
+    expect(r.usage.output_tokens_details.reasoning_tokens).toBe(12);
+    expect(r.usage.tool_usage.web_search).toBe(8);
+    expect(r.usage.tool_usage_details.web_search.search_engine).toBe(8);
+    // 结构与单请求一致（没被包一层数组 / 没有多余字段）
+    expect(Object.keys(r.usage).sort()).toEqual(Object.keys(usageA).sort());
+  });
+
+  it("⑳b usage 为 null / 字段缺失 / 值为字符串都不得抛错", async () => {
+    const { fn } = makeFakeFetch([
+      { citations: TH_CITES, usage: null },
+      {
+        text: "",
+        usage: {
+          input_tokens: "100",
+          output_tokens: "not-a-number",
+          total_tokens: null,
+          tool_usage: { web_search: "4" },
+        },
+      },
+    ]);
+    const r = await engine.fetchViaArkSearch(SRC, TGT, FX, { fetchImpl: fn, dryRun: true });
+    expect(r.status).toBe("ok");
+    expect(r.usage.input_tokens).toBe(100); // 数字字符串被折算
+    expect(r.usage.output_tokens).toBe("not-a-number"); // 非数字字符串留档，不抛错
+    expect(r.usage.tool_usage.web_search).toBe(4);
   });
 });
