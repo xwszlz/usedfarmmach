@@ -1556,8 +1556,9 @@ async function fetchMascusBulk(opts = {}) {
 //   1. **默认全关**：`opts.arkSearchFallback === true` 且 `BENCHMARK_ARK_FALLBACK=1`
 //      两个条件同时满足才生效（双重门控，缺一不可）。关着的时候本模块零网络、零写库，
 //      与加它之前逐字节等价。
-//   2. **只兜「直连失败」**：永不用于直连健康的源（agroline 在 ARK_SEARCH_BLOCKED_SOURCES 里
-//      硬排除）。检索来的价格置信度只有 0.3，混进健康源就是污染。
+//   2. **只兜「直连失败」**：永不用于直连健康的源（agroline / mascus 在
+//      ARK_SEARCH_BLOCKED_SOURCES 里硬排除）。检索来的价格置信度只有 0.3，
+//      混进健康源就是用二手转述覆盖一手价。
 //   3. **绝不编造**：抽不到 ≥ MASCUS_MIN_SAMPLES 条带币种符号的价格就 skip。
 //      不许用「估算 / AI 推断 / 历史均价」补 —— 宁可空缺。
 const ARK_SEARCH_TIMEOUT_MS = 45000;
@@ -1586,8 +1587,13 @@ const SOURCE_SEARCH_DOMAIN = {
 };
 
 // 兜底通道的**永久排除**名单：这些源直连健康，任何兜底都是污染。
-// agroline 现在是唯一稳定活的源（61 行、ok 37/skip 12/failed 2），绝不能让它被检索价覆盖。
-const ARK_SEARCH_BLOCKED_SOURCES = new Set(['agroline']);
+// - agroline：唯一稳定活的直连源（61 行、ok 37 / skip 12 / failed 2）；
+// - mascus：已改走 __NEXT_DATA__ 品类级 bulk 通道，拿到 22 行 2026-11-04 的一手新价。
+//   让 0.3 置信度的二手检索价覆盖它，等于把刚复活的数据又降一级。
+// ⚠️ 这个 Set 同时被 `fetchViaArkSearch` 入口（:2005）与 `runArkFallback`/`shouldArkFallback`
+//    读取；`runArkSearchProbe` 也是调 `fetchViaArkSearch`，所以**只改这里**就能同时封住
+//    fallback 与 probe 两条通道，不需要在 probe 函数里再加一份判断。
+const ARK_SEARCH_BLOCKED_SOURCES = new Set(['agroline', 'mascus']);
 
 // 「像 TLD 的后缀」白名单：只用来判断两个域名是否同品牌不同国别站
 // （`tractorhouse.com` ↔ `tractorhouse.com.au` ↔ `tractorhouse.co.uk`）。
@@ -1956,6 +1962,53 @@ function extractArkCitations(payload) {
 }
 
 /**
+ * 把一次 `/responses` 的 usage 累加进总账（递归合并数值叶子）。
+ *
+ * 为什么必须累加：`fetchViaArkSearch` 用 `Promise.allSettled` **并发发 2 个请求**，
+ * 旧写法 `if (!usage && resp.usage) usage = resp.usage` 被 `!usage` 短路，
+ * 只记了第一条 —— 成本账直接少一半（实测单 target ≈54,818 input / 28 次检索，
+ * 而不是 27,409 / 14）。
+ *
+ * 容错要求：usage 为 null、字段缺失、值为字符串都**不得抛错**；
+ * 非数值字符串保留首个值，其余情况忽略。返回结构与单请求时保持一致。
+ *
+ * @param {object|null} acc 累计值
+ * @param {any} src 本次响应的 usage
+ * @returns {object|null}
+ */
+function addArkUsage(acc, src) {
+  if (!src || typeof src !== 'object' || Array.isArray(src)) return acc;
+  const out = acc && typeof acc === 'object' && !Array.isArray(acc) ? acc : {};
+  for (const [key, value] of Object.entries(src)) {
+    if (value === null || value === undefined) continue;
+    if (typeof value === 'number') {
+      if (!Number.isFinite(value)) continue;
+      const prev = out[key];
+      out[key] = (typeof prev === 'number' && Number.isFinite(prev) ? prev : 0) + value;
+    } else if (typeof value === 'string') {
+      const num = Number(value);
+      if (Number.isFinite(num)) {
+        const prevNum = Number(out[key]);
+        out[key] = (Number.isFinite(prevNum) ? prevNum : 0) + num;
+      } else if (!(key in out)) {
+        out[key] = value; // 非数字字符串：留档即可，不参与累加
+      }
+    } else if (typeof value === 'object' && !Array.isArray(value)) {
+      const child = addArkUsage(
+        out[key] && typeof out[key] === 'object' && !Array.isArray(out[key]) ? out[key] : null,
+        value
+      );
+      if (child && Object.keys(child).length) out[key] = child;
+    } else if (Array.isArray(value)) {
+      if (!(key in out)) out[key] = value; // usage 里不该有数组，留首个不抛错
+    } else if (!(key in out)) {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
+/**
  * 用 Ark web_search 抓单个 (源, 品牌, 机型) 的挂牌价，聚合并（可选）入库。
  *
  * 两次检索：
@@ -2088,7 +2141,10 @@ async function fetchViaArkSearch(source, target, fx, opts = {}) {
       continue;
     }
     const resp = s.value;
-    if (!usage && resp && resp.usage) usage = resp.usage;
+    // 两个并发请求都要进成本账（旧写法被 `!usage` 短路，只记第一条 ⇒ 账少一半）
+    if (resp && resp.usage && typeof resp.usage === 'object') {
+      usage = addArkUsage(usage, resp.usage);
+    }
     const text = extractArkSearchText(resp);
     let added = 0;
     let found = 0;
@@ -2457,12 +2513,43 @@ async function probeOneTarget(target, fx, timeoutMs, opts = {}) {
 //   httpGetImpl,          // 注入假 GET（离线跑整条 worker 链路）
 // }
 async function runRefresh(opts = {}) {
+  // —— 🔴 P0 止血：probe 通道的写库口子必须也过双重门控 ——
+  // 原实现里 `arkSearchProbe` 在**门控之前**就早返回了：
+  //   runArkSearchProbe 的 `dryRun = opts.arkSearchDryRun === true`（默认 false），
+  //   fetchViaArkSearch 只在 dryRun 时跳过 upsertBenchmark，
+  //   ⇒ 只要调用方没显式传 `arkSearchDryRun:true`，probe 既不查
+  //   `BENCHMARK_ARK_FALLBACK` 也不查 `opts.arkSearchFallback`，就能直接写生产库。
+  // 现在：**只有会写库的 probe** 才要求双闸；纯验证（dryRun）仍是零 env 可跑、
+  // 零写库，这是 `benchmark-ark-search.test.ts:⑪` 与后续影子验证依赖的路径。
+  //
+  // 位置刻意放在 `getFxRates()` **之前**：被拒绝时连汇率请求都不发，
+  // 真正做到「未开 env 时 0 网络 0 写库」。
+  // 不静默返回空 stats —— 那会让调用方误以为探针跑过了，必须明确抛错。
+  if (
+    Array.isArray(opts.arkSearchProbe) &&
+    opts.arkSearchProbe.length > 0 &&
+    opts.arkSearchDryRun !== true
+  ) {
+    const gateOpts = opts.arkSearchFallback === true;
+    const gateEnv = arkSearchGloballyEnabled();
+    if (!gateOpts || !gateEnv) {
+      throw new Error(
+        '[benchmark-engine] arkSearchProbe 会写库，必须同时满足 ' +
+          'opts.arkSearchFallback===true 与 BENCHMARK_ARK_FALLBACK=1 双重门控' +
+          `（当前 opts=${gateOpts ? 'on' : 'off'} / env=${gateEnv ? 'on' : 'off'}）；` +
+          '纯验证请改用 arkSearchDryRun:true（只读、零 env 可跑、绝不写库）'
+      );
+    }
+  }
+
   const fx = opts.fx || (await getFxRates());
 
   // —— Ark 检索探针模式（小范围验证用）：注入即隔离 ——
   // 传了 `arkSearchProbe` 就**只跑这几条**：不建靶标池、不跑 mascus bulk、不写其他任何行。
   // 与 `opts.targets` 注入同一设计思路（见下面 mascusEnabled 的第 ① 条），
   // 目的是能在生产引擎上精确打几条探针做验收，而不污染库里既有数据。
+  // ⚠️ 「会写库的 probe」的双重门控已加在本函数**最开头**（getFxRates 之前），
+  //    这里只负责 dryRun / 已过闸的隔离执行，不要再在这里补一份判断。
   if (Array.isArray(opts.arkSearchProbe) && opts.arkSearchProbe.length > 0) {
     return runArkSearchProbe(opts.arkSearchProbe.slice(), fx, opts);
   }
