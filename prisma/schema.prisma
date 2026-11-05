@@ -2504,3 +2504,69 @@ model ModelDictionary {
   @@index([categoryCode])
   @@index([brandCode, categoryCode])
 }
+
+// ─── 国内农机补贴库（.cn 专属数据 / additive，不碰任何现有表）─────
+
+/// 国内农机补贴库 —— 外层聚合脱敏目录（公开层）
+/// 与 Brand / Category / Product / ModelDictionary / RawListing / ShowcaseItem 完全解耦，无外键。
+/// 本表在 .com（境外）库中应始终为 0 行；若发现数据即为合规事故
+/// （SITE 闸门只保证不写入，schema 两站同源会被 db push 建出空表）。
+model SubsidyCatalog {
+  id                  String   @id @default(cuid())
+  batchCode           String
+  policyYear          Int
+  province            String
+  category            String
+  brandName           String   // 归并后真实品牌（厂家法人全称，未做 [:4] 截断）
+  modelName           String
+  machineryType       String?
+  manufacturer        String
+  medianPriceCny      Float
+  p25PriceCny         Float?
+  p75PriceCny         Float?
+  medianCentralSubsidy Float?
+  medianTotalSubsidy  Float?
+  sampleSize          Int
+  contentHash         String   @unique
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([province, policyYear, category])
+  @@index([brandName])
+  @@index([modelName])
+  @@index([batchCode])
+}
+
+/// 国内农机补贴库 —— 内层 PII 明细（车源线索池，只落 .cn 的 cn-postgres，绝不公开）
+/// 与 Brand / Category / Product / ModelDictionary / RawListing / ShowcaseItem 完全解耦，无外键。
+/// 本表在 .com（境外）库中应始终为 0 行；若发现数据即为合规事故
+/// （SITE 闸门只保证不写入，schema 两站同源会被 db push 建出空表）。
+model SubsidyRecordRaw {
+  id                 String   @id @default(cuid())
+  batchCode          String
+  sourceFile         String
+  province           String
+  county             String
+  township           String
+  buyerName          String
+  manufacturer       String
+  category           String
+  productName        String
+  modelName          String
+  quantity           Int
+  dealer             String
+  purchaseDate       DateTime
+  salePriceCny       Float
+  centralSubsidyCny  Float?
+  totalSubsidyCny    Float?
+  serialNo           String
+  status             String
+  goodsRegion        String   @default("cn")
+  contentHash        String   @unique
+  createdAt          DateTime @default(now())
+
+  @@index([province, purchaseDate])
+  @@index([modelName])
+  @@index([batchCode])
+}

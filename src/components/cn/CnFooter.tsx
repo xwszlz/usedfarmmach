@@ -71,6 +71,15 @@ export function CnFooter() {
         )}
       </div>
 
+      <div className="mt-2 px-4 pb-1 text-center text-sm">
+        <a
+          href="/zh/subsidy"
+          className="font-medium text-slate-600 underline-offset-2 transition-colors hover:text-blue-700 hover:underline"
+        >
+          国内农机补贴库
+        </a>
+      </div>
+
       <div className="mt-2 px-4 pb-5 text-center text-sm text-slate-500">
         © 2026 石家庄神雕农机科技有限公司. 保留所有权利。
       </div>
