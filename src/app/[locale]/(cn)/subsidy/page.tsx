@@ -15,6 +15,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { setRequestLocale } from "next-intl/server";
 import { isCnSite, siteConfig } from "@/config/site";
+import { SITE_ORIGIN } from "@/lib/site-url";
 import {
   toPublicCatalog,
   assertPublicSafe,
@@ -27,7 +28,7 @@ import { ArrowRight, Search } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
-const BASE_URL = siteConfig.domains.canonical;
+const BASE_URL = SITE_ORIGIN;
 
 export async function generateMetadata({
   params,
