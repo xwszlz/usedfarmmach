@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SubsidySpecTable } from "@/components/subsidy/SubsidySpecTable";
 import { isCnSite, siteConfig } from "@/config/site";
+import { SITE_ORIGIN } from "@/lib/site-url";
 import {
   toPublicCatalog,
   assertPublicSafe,
@@ -34,7 +35,7 @@ import {
 
 export const dynamic = "force-dynamic";
 
-const BASE_URL = siteConfig.domains.canonical;
+const BASE_URL = SITE_ORIGIN;
 
 export async function generateMetadata({
   params,
