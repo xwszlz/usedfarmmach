@@ -197,7 +197,20 @@ describe("mascus 段路径与 bulk 段清单", () => {
   });
 
   it("⑦ bulk 段清单与 mascus-leads 的 MASCUS_SCAN_SEGMENTS 一致", () => {
-    expect(engine.MASCUS_BULK_SEGMENTS).toEqual(MASCUS_SCAN_SEGMENTS.map((s) => s.key));
+    expect(engine.MASCUS_BULK_SEGMENTS).toEqual(MASCUS_SCAN_SEGMENTS.map((s) => s.key)); // 原 ⑦ 保留
+    // ⑦-a 新增：段数锁 6（防误删/误加）
+    expect(engine.MASCUS_BULK_SEGMENTS).toHaveLength(6);
+    // ⑦-b 新增：sprayers 两段都在，且 path 精确
+    expect(engine.MASCUS_BULK_SEGMENTS).toContain("sprayers");
+    expect(MASCUS_SCAN_SEGMENTS.find((s) => s.key === "sprayers")?.path).toBe(
+      "/agriculture/sprayers"
+    );
+    // ⑦-c 新增：无重复 key、所有 path 以 /agriculture/ 开头
+    expect(new Set(engine.MASCUS_BULK_SEGMENTS).size).toBe(engine.MASCUS_BULK_SEGMENTS.length);
+    expect(MASCUS_SCAN_SEGMENTS.every((s) => s.path.startsWith("/agriculture/"))).toBe(true);
+    // ⑦-d 新增：trailers / 死路径黑名单不得混入
+    expect(engine.MASCUS_BULK_SEGMENTS).not.toContain("trailers");
+    expect(engine.MASCUS_BULK_SEGMENTS).not.toContain("soil-preparation");
   });
 });
 
@@ -248,5 +261,246 @@ describe("runRefresh —— mascus bulk 门控", () => {
     });
     expect(stats.mascus).toBeNull();
     expect(stats.total).toBe(0);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// B 档（2026-11-06）：采样深度 5 段×5 页 → 6 段×20 页、机型串按库存原样重写、
+// fetchMascusBulk 离线注入点。以下用例全程零真实网络（注入 fx 跳过 getFxRates，
+// 注入 httpGetImpl 使 120 个 job 全部由 fake GET 接收）。dryRun:true 让引擎跳过
+// upsertBenchmark —— 这是静态分支核对，不以下面任何断言冒充「零写库」的运行时验证。
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** 离线 fixture 固定汇率表（注入 fx 跳过 getFxRates() 真实汇率请求） */
+const OFFLINE_FX: Record<string, number> = { EUR: 8, USD: 7.2, GBP: 9.6, CNY: 1 };
+
+/** 造一条 mascus 挂牌（priceEURO>0 ⇒ mascusItemPriceEur 直接采用，绝不编造价格） */
+function offlineItem(productId: string, brand: string, model: string, priceEURO: number) {
+  return {
+    productId,
+    brand,
+    model,
+    yearOfManufacture: 2020,
+    priceEURO,
+    priceOriginal: 0,
+    priceOriginalUnit: "EUR",
+    userCurrency: "EUR",
+    locationCountryCode: "DE",
+    createDate: "2026-11-03T22:58:30.5",
+  };
+}
+
+/** 6 段×20 页 job 的 URL 形如 …/agriculture/<seg>?lastcreateddays=60&page=<n> */
+function offlineParseUrl(url: string): { seg: string; page: number } {
+  const seg = /\/agriculture\/([^?]+)/.exec(url)?.[1] ?? "tractors";
+  const page = Number(/[?&]page=(\d+)/.exec(url)?.[1] ?? "1");
+  return { seg, page };
+}
+
+describe("B 档 · 数据契约（T01/T02）", () => {
+  it("⑩ MASCUS_BULK_MAX_PAGES=20、段清单 6 段、buildTargets 净变化 0", () => {
+    expect(engine.MASCUS_BULK_MAX_PAGES).toBe(20);
+    expect(engine.MASCUS_BULK_SEGMENTS).toHaveLength(6);
+    expect(engine.MASCUS_BULK_SEGMENTS).toContain("sprayers");
+    expect(engine.MASCUS_BULK_SEGMENTS).not.toContain("trailers");
+
+    const all = engine.buildTargets();
+    expect(all.length).toBe(306); // 51 机型 × 6 源，删 3 增 3 ⇒ 净变化 0（不是 324）
+    expect(all.length % 6).toBe(0);
+    expect(all.length).toBeLessThanOrEqual(500);
+    expect(all.filter((t) => t.sourceSite === "mascus")).toHaveLength(0);
+  });
+
+  it("⑪ 6 条机型串逐条核对：无品牌前缀、删 3 增 3、JD 15 条与 fendt/724 Vario 不动", () => {
+    const flat = Object.values(engine.MODELS).flat();
+    const forbidden = /\bMF\b|BigX|BiG Pack|John Deere|New Holland\b/;
+    for (const def of flat) {
+      expect(def.model).not.toMatch(forbidden);
+    }
+    expect(flat).toHaveLength(51); // 净变化 0
+
+    const modelsOf = (slug: string): string[] =>
+      (engine.MODELS[slug] || []).map((m) => m.model);
+
+    // 删 3：全部 0 命中错配串，且无已验证替换串 ⇒ 只删不加
+    expect(modelsOf("massey-ferguson")).not.toContain("MF 7700");
+    expect(modelsOf("krone")).not.toContain("BigX 1180");
+    expect(modelsOf("krone")).not.toContain("BiG Pack 1290");
+
+    // 增 3：库存 model 字段原样，不带品牌前缀
+    expect(modelsOf("new-holland")).toContain("T7.260");
+    expect(modelsOf("new-holland")).toContain("T5.120");
+    expect(modelsOf("john-deere")).toContain("450M");
+
+    // 「不动」清单
+    expect(modelsOf("fendt")).toContain("1050 Vario");
+    expect(modelsOf("fendt")).toContain("724 Vario");
+    for (const kept of [
+      "8R 410", "6R 250", "5075E", "8R 370", "6R 155", "S780", "8R 280",
+      "5055E", "5045E", "4066R", "8370R", "6155M", "8R 310", "S790", "S680",
+    ]) {
+      expect(modelsOf("john-deere")).toContain(kept);
+    }
+    for (const kept of ["T7.315", "T8.435", "FR920"]) {
+      expect(modelsOf("new-holland")).toContain(kept);
+    }
+  });
+
+  it("⑫ 词块口径：T7.260 命中、T7.2600 与 7240 Vario 前缀假阳性不命中", () => {
+    const tk = engine.mascusModelTokens("T7.260");
+    expect(tk).toEqual(["t7", "260"]);
+    expect(engine.mascusModelMatches("T7.260", tk)).toBe(true);
+    expect(engine.mascusModelMatches("T7.2600", tk)).toBe(false);
+    expect(
+      engine.mascusModelMatches("7240 Vario", engine.mascusModelTokens("724 Vario"))
+    ).toBe(false);
+    // 450M 单 token 全命中，且防 4500M 前缀假阳性
+    expect(engine.mascusModelMatches("450M", engine.mascusModelTokens("450M"))).toBe(true);
+    expect(engine.mascusModelMatches("4500M", engine.mascusModelTokens("450M"))).toBe(false);
+  });
+});
+
+describe("B 档 · fetchMascusBulk 离线注入点（T03，零真实网络）", () => {
+  // ── 零写库的如实证据与已知局限（偏差 A 裁决，2026-11-06）──────────────────────
+  // 静态核对：benchmark-engine.js 的 fetchMascusBulk 在 :1481-1486 命中 `if (dryRun)`
+  // 后 `continue`，跳过 :1489 的 `await upsertBenchmark(...)`，故 dryRun:true 分支
+  // 结构上不会走到写库调用。这是**静态分支核对**，不是运行时写库次数断言。
+  // 已知局限：本轮注入面仅 `fx` 与 `httpGetImpl`，没有 db 层注入点，因此「写库次数
+  // === 0」在本轮**不可运行时断言，属已知局限**；按裁决不为此新增 db 注入点（超出
+  // T03 封闭改动清单），也绝不拿 written===0 冒充该验证。
+  // ───────────────────────────────────────────────────────────────────────────
+  it("⑬ 6 段×20 页离线 dryRun：totalPages=120 / bySegment 6 段 / sprayers 存在 / 零达标组 fixture ⇒ written=0", async () => {
+    let calls = 0;
+    const seenUrls: string[] = [];
+    const fakeGet = async (url: string): Promise<string> => {
+      calls += 1;
+      seenUrls.push(url);
+      const { seg, page } = offlineParseUrl(url);
+      // 零达标组 fixture：带价但 brand 不匹配任何 BRANDS ⇒ 51 组全部 no-listing，
+      // 使真身语义下 rows=[] / written=0 自然成立（不修改引擎任何计数语义）。
+      const items = [
+        offlineItem(`{off-${seg}-${page}-1}`, "Hardi", "Unrelated 101", 10000 + page),
+        offlineItem(`{off-${seg}-${page}-2}`, "Vaderstad", "Unrelated 202", 20000 + page),
+      ];
+      return htmlWithNextData({
+        searchRes: { searchData: { items, totalResults: 471 } },
+      });
+    };
+
+    const r = await engine.fetchMascusBulk({
+      fx: OFFLINE_FX,
+      httpGetImpl: fakeGet,
+      dryRun: true,
+      maxPages: 20,
+    });
+
+    expect(r.totalPages).toBe(120); // 6 段 × 20 页
+    expect(r.maxPages).toBe(20);
+    expect(r.fetchedPages).toBe(120);
+    expect(r.failedPages).toBe(0);
+    expect(r.budgetExhausted).toBe(false);
+    expect(Object.keys(r.bySegment)).toHaveLength(6);
+    expect(r.bySegment.sprayers).toBeDefined();
+    expect(r.bySegment.sprayers?.pages).toBe(20);
+    expect(r.bySegment.sprayers?.items).toBe(40); // 20 页 × 2 条
+    expect(r.bySegment.sprayers?.priced).toBe(40);
+    expect(r.emptySegments).toEqual([]);
+    // 结构契约（非写库验证）：零达标组 fixture ⇒ 51 组全 no-listing ⇒ rows=[] ⇒
+    // written=0。真身 `written = groups.filter(status==='ok').length`（:1526）是达标组
+    // 数，不是写库行数；此处 0 来自「没有达标组」，与 dryRun 是否写库无关。
+    expect(r.written).toBe(0);
+    expect(r.rows).toEqual([]); // 与假数据一致：51 组全 no-listing
+    expect(r.groups).toBe(51);
+    expect(r.byReason["no-listing"]).toBe(51);
+    expect(r.items).toBe(240); // 120 页 × 2 条
+    expect(r.uniqueItems).toBe(240);
+    expect(r.pricedItems).toBe(240); // 与假数据一致
+
+    // 零真实网络反证：120 个 job 的 URL 全部由 fakeGet 接收，且 0 失败页 / 120 成功页
+    // ⇒ 没有任何一次走真实 httpGet（否则必打 www.mascus.com，测试环境必失败或超时）。
+    expect(calls).toBe(120);
+    expect(seenUrls).toHaveLength(120);
+    expect(seenUrls.every((u) => u.startsWith("https://www.mascus.com/agriculture/"))).toBe(true);
+    expect(seenUrls.filter((u) => u.includes("/agriculture/sprayers?"))).toHaveLength(20);
+  });
+
+  // §10.3 测法 1（可选量化对照）：确定性 fixture 复现「改前 5 页 vs 改后 20 页」的收益。
+  // 14 / 16 / 7 是 fixture 确定值，不是生产数字（库存每日漂移，单测只锁管线与契约）。
+  it("⑭ 5 页 vs 20 页量化对照：达标组 14→≥16、非 JD 0→≥1、fendt/724 Vario 7 样本", async () => {
+    // 14 个 JD 机型：page 1..20 每页各 1 条 ⇒ 5 页/20 页两种口径都达标
+    const JD_FIXTURE_MODELS = [
+      "8R 410", "6R 250", "5075E", "8R 370", "6R 155", "S780", "8R 280",
+      "5055E", "5045E", "4066R", "8370R", "6155M", "8R 310", "S790",
+    ];
+    const LATE_JD_MODEL = "S680"; // 只在 page 6..8 ⇒ 5 页口径 0 条、20 页口径 3 条
+    const FENDT_MODEL = "724 Vario"; // 只在 page 6..12 ⇒ 5 页口径 0 条、20 页口径 7 条
+
+    function depthItems(seg: string, page: number): ReturnType<typeof offlineItem>[] {
+      const items: ReturnType<typeof offlineItem>[] = [];
+      const key = (tag: string) => `{depth-${seg}-${page}-${tag}}`;
+      if (seg === "tractors") {
+        for (let i = 0; i < JD_FIXTURE_MODELS.length; i += 1) {
+          items.push(
+            offlineItem(key(`jd${i}`), "John Deere", JD_FIXTURE_MODELS[i], 50000 + i * 100 + page)
+          );
+        }
+        if (page >= 6 && page <= 8) {
+          items.push(offlineItem(key("jdLate"), "John Deere", LATE_JD_MODEL, 61000 + page));
+        }
+        if (page >= 6 && page <= 12) {
+          items.push(offlineItem(key("fendt"), "Fendt", FENDT_MODEL, 70000 + page));
+        }
+      } else if (seg === "sprayers") {
+        // sprayers 段刻意放非目标品牌假条目（段覆盖断言用，model 不匹配 ⇒ 不产生达标组）
+        items.push(offlineItem(key("sp1"), "Case IH", "Unrelated 301", 30000 + page));
+        items.push(offlineItem(key("sp2"), "Amazone", "Unrelated 401", 31000 + page));
+        items.push(offlineItem(key("sp3"), "New Holland", "Unrelated 501", 32000 + page));
+      } else {
+        items.push(offlineItem(key("bg"), "Hardi", "Unrelated 601", 40000 + page));
+      }
+      return items;
+    }
+
+    const fakeGet = async (url: string): Promise<string> => {
+      const { seg, page } = offlineParseUrl(url);
+      return htmlWithNextData({
+        searchRes: { searchData: { items: depthItems(seg, page), totalResults: 471 } },
+      });
+    };
+
+    const base = { fx: OFFLINE_FX, httpGetImpl: fakeGet, dryRun: true, concurrency: 4 };
+    const before = await engine.fetchMascusBulk({ ...base, maxPages: 5 });
+    const after = await engine.fetchMascusBulk({ ...base, maxPages: 20 });
+
+    const okGroups = (r: typeof after) => r.rows.filter((g) => g.status === "ok");
+    const nonJd = (r: typeof after) => okGroups(r).filter((g) => g.brand !== "john-deere");
+    const metMin = (r: typeof after) => okGroups(r).filter((g) => g.samples >= 3);
+
+    expect(before.totalPages).toBe(30); // 6 段 × 5 页
+    expect(after.totalPages).toBe(120); // 6 段 × 20 页
+    expect(Object.keys(after.bySegment)).toHaveLength(6);
+    expect(after.bySegment.sprayers).toBeDefined();
+    expect(after.budgetExhausted).toBe(false);
+    expect(after.failedPages).toBe(0);
+
+    expect(metMin(before).length).toBe(14); // fixture 确定值
+    expect(metMin(after).length).toBeGreaterThanOrEqual(16);
+    expect(metMin(after).length - metMin(before).length).toBeGreaterThanOrEqual(2);
+    expect(nonJd(before).length).toBe(0);
+    expect(nonJd(after).length).toBeGreaterThanOrEqual(1);
+    expect(nonJd(after).some((g) => g.brand === "fendt" && g.model === FENDT_MODEL)).toBe(true);
+    expect(nonJd(after).find((g) => g.model === FENDT_MODEL)?.samples).toBe(7);
+
+    // ⚠️ 规格勘误 A（真身语义）：dryRun 达标组在 :1481-1486 被标为 status='ok'，而
+    //    :1526 written 与返回体 rows 同为 groups.filter(status==='ok') ⇒ written ===
+    //    rows.length。真身 written 是**达标组数**，不是写库行数；架构报告 §8.2 /
+    //    §10.3 的「written===0 = dryRun 零写库」是口径误读。故此处按真身断言（不写 0）；
+    //    派工单要求的「written===0」由用例 ⑬ 的零达标组 fixture 落地。两处不矛盾，
+    //    且全程不修改引擎任何计数语义（R11 additive-only）。
+    expect(after.written).toBe(after.rows.length);
+    expect(after.written).toBeGreaterThan(0);
+    expect(after.groupDetail.filter((g) => g.reason === "dry-run")).toHaveLength(
+      after.rows.length
+    );
   });
 });

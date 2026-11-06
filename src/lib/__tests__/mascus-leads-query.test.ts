@@ -455,7 +455,7 @@ describe("列表脱敏与筛选口径", () => {
     expect(lastWhere.followStatus).toBeUndefined();
   });
 
-  it("lookups：segments 5 段、countries 去 null 排序、assignees 用 username 兜 email", async () => {
+  it("lookups：segments 6 段（含 sprayers）、countries 去 null 排序、assignees 用 username 兜 email", async () => {
     useInMemoryTable([]);
     const res = await listMascusListings({});
 
@@ -465,6 +465,7 @@ describe("列表脱敏与筛选口径", () => {
       "hay-and-forage-machines",
       "other-agricultural-machines",
       "agricultural-harvesters",
+      "sprayers",
     ]);
     expect(res.lookups.countries).toEqual(["DE", "US"]);
     expect(res.lookups.assignees).toEqual([{ id: "u1", label: "alice" }]);

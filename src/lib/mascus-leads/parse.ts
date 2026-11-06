@@ -35,8 +35,8 @@ export const MASCUS_ORIGIN = "https://www.mascus.com";
  *   /agriculture/hay-and-forage-machines     items=40  total=151
  *   /agriculture/other-agricultural-machines items=40  total=106  ← Farm Equipment - Others，量大
  *   /agriculture/agricultural-harvesters     items=40  total=43
- *   /agriculture/trailers                    items=40  total=40   （有效但未纳入：机型偏离线索池目标）
- *   /agriculture/sprayers                    items=17  total=17   （有效但未纳入，同上）
+ *   /agriculture/trailers                    items=40  total=40   （仍排除：0 个目标品牌命中，QA 实测）
+ *   /agriculture/sprayers                    items=17  total=17   （sprayers 已纳入 B 档，2026-11-06）
  *
  * ⛔ 实测「0 条 / 404」黑名单 —— **不要再从 benchmark-engine 的旧品类映射里抄路径**：
  *   /agriculture/soil-preparation   → items=0 total=0，页面实际是 "Wine Growing Equipment"
@@ -55,6 +55,7 @@ export const MASCUS_SCAN_SEGMENTS: { key: string; path: string }[] = [
   { key: "hay-and-forage-machines", path: "/agriculture/hay-and-forage-machines" },
   { key: "other-agricultural-machines", path: "/agriculture/other-agricultural-machines" },
   { key: "agricultural-harvesters", path: "/agriculture/agricultural-harvesters" },
+  { key: "sprayers", path: "/agriculture/sprayers" }, // B 档 2026-11-06 纳入
 ];
 
 /** 单页固定条数（mascus 服务端固定 40，用于判断是否还有下一页） */
