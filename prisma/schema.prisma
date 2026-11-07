@@ -2570,3 +2570,54 @@ model SubsidyRecordRaw {
   @@index([modelName])
   @@index([batchCode])
 }
+
+/// 国内农机补贴库 —— 机型级实拍图（.cn 专属 / additive，零改既有表）
+/// 按 modelKey = brandName|category|modelName 机型级关联，不按 SubsidyCatalog.id：
+/// 同一机型跨省跨年的 3 个 catalog id 共享一组图（G3 去重复，避免三页重复图）。
+/// 每条必须留全 11 项来源/复核留痕；缺任一不得置 approved（fail-closed）。
+/// 仅 approved 对前端可见；pending / rejected 不上架，rejected 保留原因不物理删除。
+/// 本表在 .com（境外）库中应始终为 0 行；若发现数据即为合规事故。
+model SubsidyModelImage {
+  id           String    @id @default(cuid())
+  modelKey     String
+  brandName    String
+  category     String
+  modelName    String
+  sourceUrl    String
+  sourceDomain String
+  finalUrl     String
+  httpStatus   Int
+  contentType  String
+  fetchedAt    DateTime
+  sha256       String
+  ossUrl       String
+  sortOrder    Int       @default(0)
+  isPrimary    Boolean   @default(false)
+  reviewStatus String    @default("pending") // pending | approved | rejected
+  reviewedBy   String?
+  reviewedAt   DateTime?
+  reviewNote   String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([modelKey, reviewStatus])
+  @@index([reviewStatus])
+}
+
+/// 国内农机补贴库 —— C 档明文访问审计（.cn 专属 / additive）
+/// 只记谁/何时/看了哪条/返回几行/什么模式，绝不存 buyerName 等任何 PII 值。
+/// login 模式 100% 有 userId；public 模式记匿名限流键哈希（不存原始 IP）。
+model SubsidyRawAccessLog {
+  id          String   @id @default(cuid())
+  catalogId   String
+  userId      String?
+  anonKeyHash String?
+  mode        String   // login | public
+  rowCount    Int
+  decision    String   // allowed | denied
+  reason      String?
+  createdAt   DateTime @default(now())
+
+  @@index([catalogId, createdAt])
+  @@index([userId, createdAt])
+}
