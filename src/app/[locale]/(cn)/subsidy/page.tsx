@@ -21,6 +21,7 @@ import {
   assertPublicSafe,
   assertNoPiiDrillDown,
 } from "@/lib/subsidy/aggregate";
+import { getRawMode } from "@/lib/subsidy/raw-mode";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -87,6 +88,7 @@ export default async function SubsidyBrowsePage({
   const baseWhere = { isActive: true, sampleSize: { gte: 10 } } as const;
   const fmtCny = (v: number | null) => (v == null ? "—" : "¥" + Math.round(v).toLocaleString("zh-CN"));
   const t = (zh: string, en: string) => (locale === "zh" ? zh : en);
+  const rawMode = getRawMode();
 
   // 第 4 层：已选到 品牌 + 品类 + 型号 → 列出公开聚合条目
   if (brand && category && model) {
@@ -152,7 +154,10 @@ export default async function SubsidyBrowsePage({
                     {t("样本量 n", "Sample n")}：{e.sampleSize.toLocaleString("zh-CN")}
                   </div>
                   <div className="flex items-center justify-end text-sm font-medium text-blue-600">
-                    {t("查看归档", "View archive")} <ArrowRight className="ml-1 h-4 w-4" />
+                    {t(
+                      `查看 ${e.province} ${e.policyYear} 归档（n=${e.sampleSize.toLocaleString("zh-CN")}）`,
+                      `View ${e.province} ${e.policyYear} archive (n=${e.sampleSize.toLocaleString("zh-CN")})`
+                    )} <ArrowRight className="ml-1 h-4 w-4" />
                   </div>
                 </CardContent>
               </Card>
@@ -219,9 +224,13 @@ export default async function SubsidyBrowsePage({
       </h1>
       <p className="mb-6 text-sm text-gray-500">
         {t(
-          "按品牌检索。数据为「资金已兑付」历史补贴公示，已做 k-匿名脱敏（n≥10），非在售商品。",
-          "Search by brand. Data is historical “funds-disbursed” subsidy records, k-anonymity masked (n≥10), not for-sale listings."
-        )}
+          rawMode === "off"
+            ? "按品牌检索。数据为「资金已兑付」历史补贴公示，已做 k-匿名脱敏（n≥10），非在售商品。"
+            : "按品牌检索。数据为「资金已兑付」历史补贴公示，已做 k-匿名脱敏（n≥10）；详情页可按省份与年份查看原始公示明细档案（仅 .cn 提供）。",
+          rawMode === "off"
+            ? "Search by brand. Data is historical “funds-disbursed” subsidy records, k-anonymity masked (n≥10), not for-sale listings."
+            : "Search by brand. Data is historical “funds-disbursed” subsidy records, k-anonymity masked (n≥10); detail pages provide original public-record archives by province and policy year (cn only).")
+        }
       </p>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {brands.map((b) => (

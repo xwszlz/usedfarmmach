@@ -41,6 +41,18 @@ const nextConfig = {
     ],
   },
 
+  // 国内农机补贴明细页 / raw JSON 通道：动态内容 + fail-closed 门禁，禁用缓存。
+  // 仅覆盖 /:locale/subsidy/*（详情页与 /api/(cn)/subsidy/raw/* 由 API 自身再补 no-store），
+  // 不动其它路由、不动 redirects / images / env（T04 仅 additive）。
+  async headers() {
+    return [
+      {
+        source: "/:locale(zh|en)/subsidy/:path*",
+        headers: [{ key: "Cache-Control", value: "no-store" }],
+      },
+    ];
+  },
+
   // 黑龙江农机展（2026-09-19~21）与天津 CIAME（2026-10-26~28）均已收官，专题页已下线。
   // 旧 URL 永久 301 到仍在运营的线上展馆 /:locale/expo（神雕云展常年在线），
   // 而不是让它 404 —— 这两条 URL 此前在 sitemap 里 priority 0.8 收录过，权重不能白扔。
