@@ -17,7 +17,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { isCnSite } from "@/config/site";
-import { getRawMode, getRawFeatureConfig } from "@/lib/subsidy/raw-mode";
+import { getEffectiveRawMode, getRawFeatureConfig } from "@/lib/subsidy/raw-mode";
 import {
   assertRawDetailAllowedOrThrow,
   queryRawDetail,
@@ -123,7 +123,7 @@ export async function GET(
   }
 
   // 第二道闸：off / 非法值 → 404
-  const mode = getRawMode();
+  const mode = await getEffectiveRawMode();
   if (mode === "off") {
     return notFoundNoStore();
   }
