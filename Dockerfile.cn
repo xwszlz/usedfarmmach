@@ -64,6 +64,18 @@ ENV NODE_ENV=production
 RUN npx prisma generate
 RUN npm run build
 
+# INFRA-002：把 .cn 补贴实拍图抓取脚本预编译为单文件 CJS（清 @/ alias、
+# 内联 ali-oss、@prisma/client external），供 runner 以 node 直接执行。
+# 生产容器不装 tsx、不做运行时转译、不复制 .ts 源码；运行参数 --seed-file / --limit 20 不变。
+# proxy-agent 是 urllib 的可选惰性依赖（仅显式启用代理时触发），lockfile 未安装故一并 external。
+RUN mkdir -p /app/dist && \
+    ./node_modules/.bin/esbuild scripts/fetch_subsidy_images.ts \
+      --bundle --platform=node --format=cjs \
+      --alias:@=./src \
+      --external:@prisma/client \
+      --external:proxy-agent \
+      --outfile=/app/dist/fetch_subsidy_images.js
+
 # ============================================================
 # 运行阶段
 # ============================================================
@@ -115,6 +127,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/scripts/eu-benchmark-evidence.jso
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/seed-eu-benchmark.js ./scripts/seed-eu-benchmark.js
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/seed-market-intel-arbitrage.js ./scripts/seed-market-intel-arbitrage.js
 COPY --from=builder --chown=nextjs:nodejs /app/market_intel_arbitrage_2026-08-16.json ./market_intel_arbitrage_2026-08-16.json
+
+# INFRA-002：只复制编译后的 .js（不复制 .ts 源码、不装 tsx）。
+# 运行：node scripts/fetch_subsidy_images.js --seed-file <jsonl> --limit 20
+COPY --from=builder --chown=nextjs:nodejs /app/dist/fetch_subsidy_images.js ./scripts/fetch_subsidy_images.js
 
 # AI 销售策略 PDF 导出：Noto Sans SC 字体（standalone 产物不会自动带 src/ 下的字体文件）。
 # 显式复制到运行镜像，与 export.ts 的 process.cwd()/src/lib/sales-strategy/fonts 路径对齐。
