@@ -62,11 +62,12 @@ declare module '@/lib/benchmark-engine' {
   /**
    * mascus bulk 采集的品类段清单（与 src/lib/mascus-leads/parse.ts 的
    * MASCUS_SCAN_SEGMENTS 保持一致；改一处必须同步另一处）。
+   * B 档 2026-11-06：现 6 段，末尾追加 sprayers（不含 trailers）。
    */
   export const MASCUS_BULK_SEGMENTS: string[];
   /** mascus bulk 的 `lastcreateddays`（挂牌新鲜度窗口），当前 60 */
   export const MASCUS_BULK_RECENT_DAYS: number;
-  /** mascus bulk 默认每段翻页数，当前 5 */
+  /** mascus bulk 默认每段翻页数，B 档 2026-11-06 由 5 改为 20（6 段 × 20 页 = 120 页） */
   export const MASCUS_BULK_MAX_PAGES: number;
   /** mascus 单组最少样本数（不足不写库），当前 3 */
   export const MASCUS_MIN_SAMPLES: number;
@@ -156,6 +157,9 @@ declare module '@/lib/benchmark-engine' {
   /**
    * mascus 品类级 bulk 采集：按段拉列表页 → 合并去重 → 本地按 (brand,model) 匹配
    * → 折 EUR → 聚合（3 条起）→ upsertBenchmark。
+   *
+   * B 档 2026-11-06 离线注入点：`httpGetImpl` 省略时**默认仍走裸 httpGet**
+   * （O1=A，不接 429 重试），单测/QA 传假 GET 可零真实网络跑完整条管线。
    */
   export function fetchMascusBulk(opts?: {
     fx?: Record<string, number>;
@@ -166,6 +170,15 @@ declare module '@/lib/benchmark-engine' {
     concurrency?: number;
     budgetMs?: number;
     dryRun?: boolean;
+    /** 注入假 GET（离线跑整条 bulk 管线，零真实网络）；省略 = 默认 httpGet */
+    httpGetImpl?: (
+      url: string,
+      request: {
+        timeout?: number;
+        headers?: Record<string, string>;
+        proxy?: string | null;
+      }
+    ) => Promise<string>;
   }): Promise<MascusBulkResult>;
 
   // —— Ark 检索兜底通道（直连失败的源，改用豆包 web_search 抓公开挂牌价）——
@@ -659,7 +672,7 @@ declare module '@/lib/benchmark-engine' {
     budgetMs?: number;
     /** true = 只统计不写库（验证用） */
     dryRun?: boolean;
-    /** mascus bulk 每段翻页数（默认 5，见 fetchMascusBulk） */
+    /** mascus bulk 每段翻页数（默认 20，见 fetchMascusBulk） */
     mascusMaxPages?: number;
     /** mascus bulk 单页超时（默认取 max(timeoutMs, 25000)） */
     mascusTimeoutMs?: number;

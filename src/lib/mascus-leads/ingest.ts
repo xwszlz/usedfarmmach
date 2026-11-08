@@ -39,7 +39,7 @@ import type { ParsedMascusListing, SegmentScanStat } from "./parse";
 
 /** `ingestMascusLeads` 的可选参数（全部有默认值，cron 里零参数调用即可） */
 export interface IngestOptions {
-  /** 只扫指定品类路径；默认扫全部 5 段（见 MASCUS_SCAN_SEGMENTS） */
+  /** 只扫指定品类路径；默认扫全部 6 段（见 MASCUS_SCAN_SEGMENTS） */
   segmentPaths?: string[];
   /** 最近 N 天上新（mascus `lastcreateddays`），默认 2 */
   recentDays?: number;

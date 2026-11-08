@@ -169,8 +169,8 @@ describe("MASCUS 常量", () => {
     expect(MASCUS_ORIGIN).toBe("https://www.mascus.com");
   });
 
-  it("扫描段恰好 5 段：含 tillage-machines / other-agricultural-machines，不含已废弃的 soil-preparation", () => {
-    expect(MASCUS_SCAN_SEGMENTS).toHaveLength(5);
+  it("扫描段恰好 6 段：含 tillage-machines / other-agricultural-machines / sprayers，不含已废弃的 soil-preparation", () => {
+    expect(MASCUS_SCAN_SEGMENTS).toHaveLength(6);
     const paths = MASCUS_SCAN_SEGMENTS.map((segment) => segment.path);
     const keys = MASCUS_SCAN_SEGMENTS.map((segment) => segment.key);
     expect(paths).toEqual([
@@ -179,10 +179,14 @@ describe("MASCUS 常量", () => {
       "/agriculture/hay-and-forage-machines",
       "/agriculture/other-agricultural-machines",
       "/agriculture/agricultural-harvesters",
+      "/agriculture/sprayers",
     ]);
     // 新增的两个高产段必须在（2026-11 实测 total=166 / total=106）
     expect(keys).toContain("tillage-machines");
     expect(keys).toContain("other-agricultural-machines");
+    // B 档 2026-11-06：sprayers 已纳入（trailers 0 目标品牌命中，仍排除）
+    expect(keys).toContain("sprayers");
+    expect(keys).not.toContain("trailers");
     // 防回退锁：soil-preparation 实测已指向 "Wine Growing Equipment"、0 条；tillage-equipment 是 404
     expect(keys).not.toContain("soil-preparation");
     expect(paths.some((path) => path.includes("soil-preparation"))).toBe(false);
@@ -441,15 +445,15 @@ describe("ingestMascusLeads（db 与 fetch 均已 mock，不触网不连库）",
     expect(dbMock.upsert).not.toHaveBeenCalled();
   });
 
-  it("5 段全部 0 条时 emptySegments 覆盖全部段，并逐段打告警", async () => {
+  it("6 段全部 0 条时 emptySegments 覆盖全部段，并逐段打告警", async () => {
     const urls = stubFetch(() => buildFixtureHtml([], 0));
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
       const result = await ingestMascusLeads();
 
-      // 每段第 1 页就判定末页（items.length 0 < 40），故只发 5 次请求
-      expect(urls).toHaveLength(5);
-      expect(result.fetchedPages).toBe(5);
+      // 每段第 1 页就判定末页（items.length 0 < 40），故只发 6 次请求
+      expect(urls).toHaveLength(6);
+      expect(result.fetchedPages).toBe(6);
       expect(result.items).toBe(0);
       expect(result.inserted).toBe(0);
       expect(result.updated).toBe(0);
@@ -460,7 +464,7 @@ describe("ingestMascusLeads（db 与 fetch 均已 mock，不触网不连库）",
       const warned = warn.mock.calls
         .map((call) => String(call[0]))
         .filter((line) => line.includes("本轮 0 条"));
-      expect(warned).toHaveLength(5);
+      expect(warned).toHaveLength(6);
       expect(warned[0]).toContain(`seg=${MASCUS_SCAN_SEGMENTS[0].key}`);
     } finally {
       warn.mockRestore();
@@ -480,12 +484,12 @@ describe("ingestMascusLeads（db 与 fetch 均已 mock，不触网不连库）",
     const result = await ingestMascusLeads();
 
     // 若没有 totalResults 收敛，每段会打到 maxPages 默认 5 页
-    expect(urls).toHaveLength(5);
-    expect(result.fetchedPages).toBe(5);
-    expect(result.items).toBe(200);
-    expect(result.uniqueItems).toBe(200);
+    expect(urls).toHaveLength(6);
+    expect(result.fetchedPages).toBe(6);
+    expect(result.items).toBe(240);
+    expect(result.uniqueItems).toBe(240);
     expect(result.emptySegments).toEqual([]);
-    expect(dbMock.upsert).toHaveBeenCalledTimes(200);
+    expect(dbMock.upsert).toHaveBeenCalledTimes(240);
   });
 
   it("dryRun 只统计不写库", async () => {
@@ -614,8 +618,8 @@ describe("ingestMascusLeads（db 与 fetch 均已 mock，不触网不连库）",
 
     const result = await ingestMascusLeads();
 
-    expect(result.fetchedPages).toBe(25); // 5 段 × 5 页（maxPages 默认 5）
-    expect(result.items).toBe(1000);
+    expect(result.fetchedPages).toBe(30); // 6 段 × 5 页（maxPages 默认 5）
+    expect(result.items).toBe(1200);
     expect(result.truncatedSegments).toEqual(MASCUS_SCAN_SEGMENTS.map((segment) => segment.key));
     expect(result.emptySegments).toEqual([]);
   });
@@ -634,7 +638,7 @@ describe("ingestMascusLeads（db 与 fetch 均已 mock，不触网不连库）",
     const result = await ingestMascusLeads();
 
     // 5 页 × 40 = 200 ≥ 166，且第 5 页抓完即满足 totalResults 收敛
-    expect(result.fetchedPages).toBe(25);
+    expect(result.fetchedPages).toBe(30); // 6 段 × 5 页
     expect(result.truncatedSegments).toEqual([]);
   });
 

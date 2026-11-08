@@ -103,12 +103,13 @@ const MASCUS_BULK_SEGMENTS = [
   'hay-and-forage-machines',
   'other-agricultural-machines',
   'agricultural-harvesters',
+  'sprayers', // B 档 2026-11-06 纳入，放末尾保持前 5 段顺序稳定
 ];
 // 时间窗：60 天。`lastcreateddays` 决定「挂牌新鲜度」，写入的 sourceDate 取抓取当天
 // （与 agroline 语义一致：URL 已把范围限定为近 60 天新挂牌）。
 const MASCUS_BULK_RECENT_DAYS = 60;
-// 每段翻页数：5 段 × 5 页 × 40 条/页 = 最多 1000 条（mascus 每页固定 40）
-const MASCUS_BULK_MAX_PAGES = 5;
+// 每段翻页数：6 段 × 20 页 × 40 条/页 = 最多 4800 条（mascus 每页固定 40）
+const MASCUS_BULK_MAX_PAGES = 20;
 // 单组最少样本数：不足 3 条不写库（3 条才够算「中位价 + IQR 离群」的最小统计口径）
 const MASCUS_MIN_SAMPLES = 3;
 const MASCUS_ORIGIN = 'https://www.mascus.com';
@@ -155,6 +156,13 @@ const BRANDS = [
 // ⚠️ category 依据 mascus `categoryName` 字段判定（`tractors` → tractor，
 //    `combineharvesters` → combine），**不要凭型号名猜**。
 // ⚠️ 总 target 上限 500（当前 51 机型 × 6 源 = 306，见 buildTargets）；超限时按样本数截断。
+//
+// 📌 2026-11-06 B 档（mascus 采样深度）：按 20 页 / 4000 条库存的 `model` 字段**原样**
+//    重写 6 条 —— 删 3 条 0 命中错配串（'MF 7700' 带品牌前缀、'BigX 1180' 与
+//    'BiG Pack 1290' 写法不符，均无已验证替换串 ⇒ 只删不加）；增 3 条库存原串
+//    （new-holland 'T7.260'/'T5.120'、john-deere '450M'，categoryName=tractors）。
+//    净变化 0 ⇒ MODELS 仍 51 条 ⇒ buildTargets() 仍 306；mascus 被 skipInTargets
+//    排除，加 sprayers 段不增加任何 target。JD 现有 15 条与 fendt/'724 Vario' 不动。
 const MODELS = {
   'john-deere': [
     // —— 旗舰（原有）——
@@ -174,11 +182,14 @@ const MODELS = {
     { model: '8R 310', category: CATEGORY.TRACTOR }, // 3，tractors
     { model: 'S790', category: CATEGORY.COMBINE }, // 3，combineharvesters
     { model: 'S680', category: CATEGORY.COMBINE }, // 3，combineharvesters
+    { model: '450M', category: CATEGORY.TRACTOR }, // B 档增：库存原样，5 有价样本，tractors
   ],
   'new-holland': [
     { model: 'T7.315', category: CATEGORY.TRACTOR },
     { model: 'T8.435', category: CATEGORY.TRACTOR },
     { model: 'FR920', category: CATEGORY.FORAGE },
+    { model: 'T7.260', category: CATEGORY.TRACTOR }, // B 档增：库存原样，4 有价样本，tractors
+    { model: 'T5.120', category: CATEGORY.TRACTOR }, // B 档增：库存原样，3 有价样本，tractors
   ],
   'case-ih': [
     { model: 'Magnum 380', category: CATEGORY.TRACTOR },
@@ -186,7 +197,6 @@ const MODELS = {
   ],
   'massey-ferguson': [
     { model: '8S.305', category: CATEGORY.TRACTOR },
-    { model: 'MF 7700', category: CATEGORY.TRACTOR },
   ],
   fendt: [
     { model: '1050 Vario', category: CATEGORY.TRACTOR },
@@ -221,10 +231,8 @@ const MODELS = {
     { model: 'Lexion 8600', category: CATEGORY.COMBINE },
     { model: 'Xerion 5000', category: CATEGORY.TRACTOR },
   ],
-  krone: [
-    { model: 'BigX 1180', category: CATEGORY.FORAGE },
-    { model: 'BiG Pack 1290', category: CATEGORY.BALER },
-  ],
+  // B 档 2026-11-06：两条均为 4000 条库存 0 命中错配串，且无已验证替换串 ⇒ 只删不加
+  krone: [],
   vermeer: [
     { model: '604 Pro', category: CATEGORY.BALER },
     { model: 'WR360', category: CATEGORY.HAY },
@@ -1306,7 +1314,7 @@ async function fetchMascusBulk(opts = {}) {
   const rawConc = Number(opts.concurrency);
   const concurrency = Number.isFinite(rawConc) && rawConc > 0 ? Math.min(8, Math.trunc(rawConc)) : 4;
   const rawBudget = Number(opts.budgetMs);
-  const budgetMs = Number.isFinite(rawBudget) && rawBudget > 0 ? Math.trunc(rawBudget) : 90000;
+  const budgetMs = Number.isFinite(rawBudget) && rawBudget > 0 ? Math.trunc(rawBudget) : 120000;
   const dryRun = opts.dryRun === true;
   const today = new Date().toISOString().slice(0, 10);
 
@@ -1334,7 +1342,10 @@ async function fetchMascusBulk(opts = {}) {
 
   const runJob = async (job) => {
     try {
-      const html = await httpGet(job.url, { timeout: timeoutMs });
+      // B 档 T03 离线注入点：默认仍走裸 httpGet（O1=A，不接 429 重试），
+      // 单测/QA 可注入 httpGetImpl 实现零真实网络跑完整条 bulk 管线。
+      const get = typeof opts.httpGetImpl === 'function' ? opts.httpGetImpl : httpGet;
+      const html = await get(job.url, { timeout: timeoutMs });
       const parsed = parseMascusNextDataItems(html);
       if (!parsed.ok) {
         failedPages += 1;
@@ -2781,6 +2792,7 @@ async function runRefresh(opts = {}) {
         minSamples: opts.mascusMinSamples,
         dryRun,
         budgetMs: bulkRemainingMs,
+        httpGetImpl: opts.httpGetImpl, // B 档 T03：复用 runRefresh 现成注入点，零新增类型
       }).catch((e) => ({ ...emptyBulk, error: e && e.message ? e.message : String(e) }))
     : Promise.resolve(null);
 
