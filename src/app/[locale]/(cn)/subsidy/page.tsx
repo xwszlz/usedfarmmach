@@ -21,7 +21,7 @@ import {
   assertPublicSafe,
   assertNoPiiDrillDown,
 } from "@/lib/subsidy/aggregate";
-import { getRawMode } from "@/lib/subsidy/raw-mode";
+import { getEffectiveRawMode } from "@/lib/subsidy/raw-mode";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -88,7 +88,7 @@ export default async function SubsidyBrowsePage({
   const baseWhere = { isActive: true, sampleSize: { gte: 10 } } as const;
   const fmtCny = (v: number | null) => (v == null ? "—" : "¥" + Math.round(v).toLocaleString("zh-CN"));
   const t = (zh: string, en: string) => (locale === "zh" ? zh : en);
-  const rawMode = getRawMode();
+  const rawMode = await getEffectiveRawMode();
 
   // 第 4 层：已选到 品牌 + 品类 + 型号 → 列出公开聚合条目
   if (brand && category && model) {

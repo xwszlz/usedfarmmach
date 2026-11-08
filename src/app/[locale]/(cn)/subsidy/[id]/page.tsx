@@ -34,7 +34,7 @@ import {
   toPublicCatalog,
   assertPublicSafe,
 } from "@/lib/subsidy/aggregate";
-import { getRawFeatureConfig, getRawMode } from "@/lib/subsidy/raw-mode";
+import { getRawFeatureConfig, getEffectiveRawMode } from "@/lib/subsidy/raw-mode";
 import { resolveRawViewer } from "@/lib/subsidy/raw-identity";
 import { assertRawDetailAllowed, resolveGroupKey } from "@/lib/subsidy/raw-detail";
 import { loadRawDetailRows } from "@/lib/subsidy/raw-detail-view";
@@ -90,7 +90,7 @@ export async function generateMetadata({
 
   // 只在 off 态保持可索引；login/public 明文态一律 noindex,nofollow。
   // 🔴 本函数绝不查 raw，也绝不把任何 PII 写进 title / description / og。
-  const mode = getRawMode();
+  const mode = await getEffectiveRawMode();
 
   return {
     title: locale === "zh" ? titleZh : titleEn,
@@ -151,7 +151,7 @@ export default async function SubsidyDetailPage({
   // ── T03 内容级门禁（唯一身份入口 = resolveRawViewer，可插拔 provider）──
   // off 态不读 token（§3.3.1）；viewer 只在非 off 时解析，失败一律返回 null，
   // 由 assertRawDetailAllowed 6 道 fail-closed 决策，绝不抛 / 不 302 / 不 500。
-  const mode = getRawMode();
+  const mode = await getEffectiveRawMode();
   const site = isCnSite() ? "cn" : "com";
   const viewer = mode === "off" ? null : await resolveRawViewer();
   const gate = assertRawDetailAllowed({ site, mode, viewer, locale });
