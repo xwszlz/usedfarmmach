@@ -1,16 +1,9 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import { RecruitmentBanner } from "@/components/home/recruitment-banner";
-import { PartsEntrance } from "@/components/home/parts-entrance";
-import { ServicesEntrance } from "@/components/home/services-entrance";
-import { EngineerCertSection } from "@/components/home/engineer-cert-section";
-import { ExpoEntrance } from "@/components/home/expo-entrance";
 import { HotEquipment } from "@/components/home/hot-equipment";
-import { ResearchHubEntry } from "@/components/home/research-hub-entry";
-import { DailyReportSection } from "@/components/home/daily-report-section";
 import { TrustBadges } from "@/components/home/trust-badges";
-import { CTASection } from "@/components/home/cta-section";
-import { ArbitrageShowcase } from "@/components/home/arbitrage-showcase";
+import { HomeSearchBar } from "@/components/home/home-search-bar";
 import { generatePageMetadata } from "@/lib/seo-metadata";
 import { BreadcrumbStructuredData, ItemListStructuredData } from "@/components/seo/structured-data";
 import { getImageUrl } from "@/lib/image-url";
@@ -162,9 +155,6 @@ export default async function HomePage({
 
   // 安全获取产品数据（带容错）
   const { hotProducts, rankedProducts } = await fetchHomeProducts();
-  const initialArticles = await fetchLatestArticles(3);
-  const expoCounts = await fetchExpoPavilionCounts();
-
 
   return (
     <div>
@@ -189,14 +179,8 @@ export default async function HomePage({
 
 
       <RecruitmentBanner locale={locale} />
+      <HomeSearchBar locale={locale} />
       <HotEquipment products={hotProducts} locale={locale} />
-      <DailyReportSection locale={locale} initialArticles={initialArticles} />
-      <ExpoEntrance locale={locale} counts={expoCounts} />
-      <PartsEntrance locale={locale} />
-      <ServicesEntrance locale={locale} />
-      <CTASection locale={locale} />
-      <EngineerCertSection locale={locale} />
-      <ResearchHubEntry locale={locale} />
       <TrustBadges locale={locale} />
     </div>
   );
