@@ -1,4 +1,27 @@
 {
+  "benchmarkPublic": {
+    "metaTitle": "Preços de referência de máquinas agrícolas usadas · Shendiao",
+    "metaDescription": "Faixas de preço agregadas por marca, sem anúncios individuais nem contactos de vendedores.",
+    "title": "Preços de referência por marca (resumo público)",
+    "description": "Faixas agregadas por marca em dezenas de milhares de CNY, apenas informativas.",
+    "notice": "Os valores são agregados por marca e arredondados para 10 mil CNY. Marcas com menos de 5 amostras não são exibidas. Não inclui anúncios individuais, contactos de vendedores, arbitragem nem spreads de preço.",
+    "loginHint": "Precisa do painel completo (arbitragem, anúncios nacionais, spreads)? Inicie sessão com uma conta de administrador.",
+    "brand": "Marca",
+    "priceRange": "Faixa de referência",
+    "sample": "Amostras",
+    "models": "Modelos",
+    "brandsLabel": "Marcas cobertas",
+    "samplesLabel": "Total de amostras",
+    "sourcesLabel": "Fontes de dados",
+    "unitWan": "10 mil CNY",
+    "unitHint": "Preços convertidos para CNY e arredondados. Apenas indicativos, não constituem cotação.",
+    "empty": "Sem dados disponíveis",
+    "emptyHint": "Este site ainda não possui dados de referência publicáveis. Volte mais tarde.",
+    "errorTitle": "Dados temporariamente indisponíveis",
+    "loading": "A carregar…",
+    "adminTitle": "Painel de preços globais e arbitragem transfronteiriça",
+    "adminDescription": "① Índice de preços por marca · ② Arbitragem transfronteiriça · ③ Anúncios de vendedores nacionais."
+  },
   "valuationGate": {
     "membershipUpsell": "Use pontos para liberar o relatório completo",
     "membershipUpsellDesc": "Avaliações ilimitadas, detalhamento completo e dicas de compra",

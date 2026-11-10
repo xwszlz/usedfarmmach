@@ -1,4 +1,27 @@
 {
+  "benchmarkPublic": {
+    "metaTitle": "全球二手农机品牌基准价 · 神雕农机",
+    "metaDescription": "按品牌聚合的二手农机参考价区间，不含单条挂牌与卖家联系方式。",
+    "title": "全球品牌基准价（公开摘要）",
+    "description": "按品牌聚合的万元级参考区间，仅供行情参考。",
+    "notice": "以下为品牌级聚合参考价（取整到万元）；样本不足 5 条的品牌不予展示。不含单条挂牌、卖家联系方式、跨境套利与价差数据。",
+    "loginHint": "需要查看完整看板（跨境套利、境内挂牌、价差）？请使用管理员账号登录后访问本页面。",
+    "brand": "品牌",
+    "priceRange": "参考区间",
+    "sample": "样本",
+    "models": "机型数",
+    "brandsLabel": "覆盖品牌",
+    "samplesLabel": "样本总数",
+    "sourcesLabel": "数据源",
+    "unitWan": "万元",
+    "unitHint": "价格已折算为人民币并取整到万元，仅供行情参考，不构成报价。",
+    "empty": "暂无数据",
+    "emptyHint": "当前站点暂无可公开的基准价数据，请稍后再试。",
+    "errorTitle": "数据接口暂不可用",
+    "loading": "加载中…",
+    "adminTitle": "全球基准价 & 跨境套利看板",
+    "adminDescription": "① 全球品牌基准价指数 · ② 跨境套利匹配 · ③ 国内卖方采集挂牌。"
+  },
 
   "valuationGate": {
 
