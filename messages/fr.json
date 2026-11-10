@@ -1,4 +1,27 @@
 {
+  "benchmarkPublic": {
+    "metaTitle": "Prix de référence des machines agricoles d'occasion · Shendiao",
+    "metaDescription": "Fourchettes de prix agrégées par marque, sans annonces individuelles ni coordonnées de vendeurs.",
+    "title": "Prix de référence par marque (résumé public)",
+    "description": "Fourchettes agrégées par marque en dizaines de milliers de CNY, à titre indicatif.",
+    "notice": "Les valeurs ci-dessous sont des agrégats par marque arrondis à 10 000 CNY. Les marques avec moins de 5 échantillons sont masquées. Aucune annonce individuelle, coordonnée de vendeur, arbitrage ni écart de prix n'est inclus.",
+    "loginHint": "Besoin du tableau de bord complet (arbitrage, annonces nationales, écarts) ? Connectez-vous avec un compte administrateur.",
+    "brand": "Marque",
+    "priceRange": "Fourchette de référence",
+    "sample": "Échantillons",
+    "models": "Modèles",
+    "brandsLabel": "Marques couvertes",
+    "samplesLabel": "Total des échantillons",
+    "sourcesLabel": "Sources de données",
+    "unitWan": "10 k CNY",
+    "unitHint": "Prix convertis en CNY et arrondis. Purement indicatifs, ne constituent pas un devis.",
+    "empty": "Aucune donnée disponible",
+    "emptyHint": "Ce site ne dispose pas encore de données de référence publiable. Revenez plus tard.",
+    "errorTitle": "Données temporairement indisponibles",
+    "loading": "Chargement…",
+    "adminTitle": "Tableau de bord des prix mondiaux et de l'arbitrage transfrontalier",
+    "adminDescription": "① Indice des prix par marque · ② Arbitrage transfrontalier · ③ Annonces de vendeurs nationaux."
+  },
   "valuationGate": {
     "membershipUpsell": "Utilisez des points pour débloquer le rapport complet",
     "membershipUpsellDesc": "Évaluations illimitées, détail complet et conseils d'achat",

@@ -1,4 +1,27 @@
 {
+  "benchmarkPublic": {
+    "metaTitle": "Global Used Farm Machinery Benchmark Prices · Shendiao",
+    "metaDescription": "Brand-level aggregate reference price ranges for used farm machinery; no individual listings or seller contacts.",
+    "title": "Global Brand Benchmark Prices (Public Summary)",
+    "description": "Brand-level reference ranges in CNY 10k, for market information only.",
+    "notice": "Figures below are brand-level aggregates rounded to CNY 10k. Brands with fewer than 5 samples are hidden. No individual listings, seller contacts, cross-border arbitrage or price spreads are included.",
+    "loginHint": "Need the full dashboard (arbitrage, domestic listings, spreads)? Sign in with an administrator account and revisit this page.",
+    "brand": "Brand",
+    "priceRange": "Reference range",
+    "sample": "Samples",
+    "models": "Models",
+    "brandsLabel": "Brands covered",
+    "samplesLabel": "Total samples",
+    "sourcesLabel": "Data sources",
+    "unitWan": "CNY 10k",
+    "unitHint": "Prices converted to CNY and rounded to 10k units. Indicative only, not a quotation.",
+    "empty": "No data available",
+    "emptyHint": "No publishable benchmark data on this site yet. Please check back later.",
+    "errorTitle": "Data temporarily unavailable",
+    "loading": "Loading…",
+    "adminTitle": "Global Benchmark & Cross-border Arbitrage Dashboard",
+    "adminDescription": "① Global brand benchmark index · ② Cross-border arbitrage · ③ Domestic seller listings."
+  },
 
   "valuationGate": {
 
