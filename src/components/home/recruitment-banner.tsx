@@ -41,7 +41,7 @@ export function RecruitmentBanner({ locale }: RecruitmentBannerProps) {
           >
             {t("bannerBrand")}
           </span>
-          <span
+          <h1
             className="font-bold leading-tight"
             style={{
               fontSize: "clamp(1.2rem, 3.8vw, 3.5rem)",
@@ -52,7 +52,7 @@ export function RecruitmentBanner({ locale }: RecruitmentBannerProps) {
             }}
           >
             {bannerMain}
-          </span>
+          </h1>
         </div>
         {/* Line 2: Subtitle (green) */}
         <p

@@ -209,7 +209,13 @@
     "research": "Recherche",
     "credits": "Centre de points",
     "arbitrageAnalysis": "Analyse arbitrage",
-    "machineryExpo": "Expo de machinerie"
+    "machineryExpo": "Expo de machinerie",
+
+    "benchmark": "Prix de référence mondiaux",
+
+    "aiValuation": "Évaluation par IA",
+
+    "finance": "Services financiers"
   },
   "hero": {
     "arenaTitle": "AI Machinery Arena",
@@ -397,6 +403,8 @@
   "home": {
     "bannerBrand": "Shendiao",
     "bannerMain": "Connecter le commerce mondial de machines agricoles d'occasion",
+
+    "searchPlaceholder": "Rechercher une marque, un modèle ou une catégorie",
     "bannerSub": "Construire l'écosystème IA de machines agricoles avec les agriculteurs du monde",
     "heroTitle": "Machines agricoles mondiales, une seule plateforme",
     "heroSubtitle": "Nous connectons la Chine au marché mondial. Estimation IA, logistique transfrontalière, transactions sécurisées",

@@ -137,6 +137,10 @@ export const mainNav: TopNavItem[] = [
 
       { href: "/blog", labelKey: "nav.blog" },
 
+      { href: "/benchmark", labelKey: "nav.benchmark" },
+
+      { href: "/arena", labelKey: "nav.arena" },
+
     ],
 
   },
@@ -160,6 +164,14 @@ export const mainNav: TopNavItem[] = [
       { href: "/solutions", labelKey: "nav.solutions" },
 
       { href: "/standards", labelKey: "nav.standards" },
+
+      { href: "/services/valuation", labelKey: "nav.aiValuation" },
+
+      { href: "/arbitrage-calculator", labelKey: "nav.arbitrageCalculator" },
+
+      { href: "/finance", labelKey: "nav.finance" },
+
+      { href: "/engineer", labelKey: "nav.engineer" },
 
     ],
 

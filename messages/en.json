@@ -386,7 +386,13 @@
 
     "credits": "Credits Center",
 
-    "machineryExpo": "Machinery Expo"
+    "machineryExpo": "Machinery Expo",
+
+    "benchmark": "Global Benchmark Prices",
+
+    "aiValuation": "AI Valuation",
+
+    "finance": "Financial Services"
 
   },
 
@@ -749,6 +755,8 @@
     "bannerBrand": "Shendiao",
 
     "bannerMain": "Connecting Global Used Farm Machinery Trade",
+
+    "searchPlaceholder": "Search brand, model, or category",
 
     "bannerSub": "Building an AI Farm Machinery Ecosystem with Farmers Worldwide",
 

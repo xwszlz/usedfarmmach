@@ -388,7 +388,13 @@
 
     "credits": "积分中心",
 
-    "machineryExpo": "农机博览会"
+    "machineryExpo": "农机博览会",
+
+    "benchmark": "全球基准价",
+
+    "aiValuation": "AI 智能估值",
+
+    "finance": "金融服务"
 
   },
 
@@ -751,6 +757,8 @@
     "bannerBrand": "神雕农机",
 
     "bannerMain": "连接全球二手农机交易",
+
+    "searchPlaceholder": "搜索品牌、型号或品类",
 
     "bannerSub": "与世界农机人共建AI农机全生态平台",
 

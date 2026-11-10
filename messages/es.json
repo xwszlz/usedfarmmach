@@ -209,7 +209,13 @@
     "research": "Investigación",
     "credits": "Centro de puntos",
     "arbitrageAnalysis": "Análisis arbitraje",
-    "machineryExpo": "Expo de maquinaria"
+    "machineryExpo": "Expo de maquinaria",
+
+    "benchmark": "Precios de referencia globales",
+
+    "aiValuation": "Valoración con IA",
+
+    "finance": "Servicios financieros"
   },
   "hero": {
     "arenaTitle": "AI Machinery Arena",
@@ -397,6 +403,8 @@
   "home": {
     "bannerBrand": "Shendiao",
     "bannerMain": "Conectando el comercio global de maquinaria agrícola usada",
+
+    "searchPlaceholder": "Buscar marca, modelo o categoría",
     "bannerSub": "Construyendo un ecosistema de IA de maquinaria agrícola con agricultores del mundo",
     "heroTitle": "Maquinaria agrícola global, un solo lugar",
     "heroSubtitle": "Conectamos China con el mercado global. Valoración IA, logística transfronteriza, transacciones seguras",

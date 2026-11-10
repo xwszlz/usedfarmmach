@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { Select, type SelectOption } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,12 @@ export function ProductFilters({
 }: ProductFiltersProps) {
   const t = useTranslations("products.filters");
   const [searchInput, setSearchInput] = useState(filters.query || "");
+
+  // 同步外部 query 变化：首页搜索经 G-B 的 useEffect 异步注入 filters.query，
+  // 顶层 filters 首帧不含 query，需在此回显搜索词并驱动清除按钮显示。
+  useEffect(() => {
+    setSearchInput(filters.query || "");
+  }, [filters.query]);
 
   // 防抖搜索
   const handleSearchSubmit = useCallback((e: React.FormEvent) => {

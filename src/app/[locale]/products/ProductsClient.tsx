@@ -46,6 +46,18 @@ export default function ProductsClient({
   });
   const [seoHydrated, setSeoHydrated] = useState(initialProducts.length > 0);
 
+  // G-B: /[locale]/products 是 ISR 页面（revalidate = 300），在客户端组件里
+  // 直接调用 useSearchParams() 会让静态生成触发
+  // "useSearchParams() should be wrapped in a suspense boundary" 构建失败。
+  // 改为挂载后从 location.search 读取 query，既保留 SSR 完整 HTML，
+  // 也不需要改动 page.tsx 的 SSR 逻辑或 /api/products。
+  useEffect(() => {
+    const query = new URLSearchParams(window.location.search).get("query");
+    if (!query) return;
+    setSeoHydrated(false);
+    setFilters((prev) => ({ ...prev, query, page: 1 }));
+  }, []);
+
   const [brands, setBrands] = useState<{ value: string; label: string }[]>(initialBrands);
   const [categories, setCategories] = useState<CategoryOption[]>(initialCategories);
   const [locations, setLocations] = useState<{ value: string; label: string }[]>(initialLocations);
