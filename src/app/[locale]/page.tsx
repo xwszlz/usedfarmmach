@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import { RecruitmentBanner } from "@/components/home/recruitment-banner";
 import { HotEquipment } from "@/components/home/hot-equipment";
-import { TrustBadges } from "@/components/home/trust-badges";
 import { HomeSearchBar } from "@/components/home/home-search-bar";
 import { generatePageMetadata } from "@/lib/seo-metadata";
 import { BreadcrumbStructuredData, ItemListStructuredData } from "@/components/seo/structured-data";
@@ -175,13 +174,11 @@ export default async function HomePage({
         }))}
       />
 
-      {/* 10 屏组装 */}
-
+      {/* 3 区块组装 */}
 
       <RecruitmentBanner locale={locale} />
       <HomeSearchBar locale={locale} />
       <HotEquipment products={hotProducts} locale={locale} />
-      <TrustBadges locale={locale} />
     </div>
   );
 }
