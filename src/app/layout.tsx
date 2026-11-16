@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { siteConfig } from "@/config/site";
+import { SITE, siteConfig } from "@/config/site";
 import { SITE_ORIGIN } from "@/lib/site-url";
 import "./globals.css";
 
@@ -25,7 +25,9 @@ export const metadata: Metadata = {
     template: "%s",
   },
   description:
-    "神雕农机—中国二手农机交易平台，提供CLAAS青储机、约翰迪尔拖拉机、凯斯农机等品牌二手农机买卖服务。AI智能估价、跨境套利分析、一站式物流，让农机交易更透明高效。",
+    SITE === "cn"
+      ? "神雕农机—中国二手农机交易平台，提供CLAAS青储机、约翰迪尔拖拉机、凯斯农机等品牌二手农机买卖服务。AI智能估价、跨境套利分析、一站式物流，让农机交易更透明高效。"
+      : "神雕农机—全球二手农机交易平台，提供CLAAS青储机、约翰迪尔拖拉机、凯斯农机等品牌二手农机买卖服务。AI智能估价、跨境套利分析、一站式物流，让农机交易更透明高效。",
   keywords: [
     "二手农机", "农机交易", "跨境农机", "农机出口", "CLAAS青储机",
     "约翰迪尔拖拉机", "克拉斯收割机", "二手农机价格", "农机跨境套利",
@@ -51,21 +53,23 @@ export const metadata: Metadata = {
     locale: "zh_CN",
     title: "二手农机交易平台_跨境农机出口_全球二手农机买卖_神雕农机",
     description:
-      "神雕农机—中国二手农机交易平台，提供CLAAS青储机、约翰迪尔拖拉机、凯斯农机等品牌二手农机买卖服务。",
+      SITE === "cn"
+        ? "神雕农机—中国二手农机交易平台，提供CLAAS青储机、约翰迪尔拖拉机、凯斯农机等品牌二手农机买卖服务。"
+        : "神雕农机—全球二手农机交易平台，提供CLAAS青储机、约翰迪尔拖拉机、凯斯农机等品牌二手农机买卖服务。",
     url: `${BASE_URL}/zh`,
     images: [
       {
         url: `${BASE_URL}/images/og.png`,
         width: 1200,
         height: 630,
-        alt: "神雕农机 - 中国二手农机交易平台",
+        alt: SITE === "cn" ? "神雕农机 - 中国二手农机交易平台" : "神雕农机 - 全球二手农机交易平台",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "神雕农机 - 中国二手农机交易平台",
-    description: "服务中国二手农机交易，AI估价+跨境套利+一站式物流",
+    title: SITE === "cn" ? "神雕农机 - 中国二手农机交易平台" : "神雕农机 - 全球二手农机交易平台",
+    description: SITE === "cn" ? "服务中国二手农机交易，AI估价+跨境套利+一站式物流" : "连接中国与全球农机市场，AI估价+跨境套利+一站式物流",
   },
   manifest: "/manifest.webmanifest",
   appleWebApp: {

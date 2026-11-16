@@ -24,7 +24,7 @@ export function Footer({ locale }: FooterProps) {
                 className="h-8 w-auto object-contain"
               />
             </div>
-            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">{t("description")}</p>
+            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">{isCnSite() ? t("description") : t("descriptionGlobal")}</p>
           </div>
 
           {/* Quick Links — 行业权威平台 */}
