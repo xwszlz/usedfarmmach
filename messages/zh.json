@@ -319,6 +319,7 @@
   },
 
   "nav": {
+    "subsidy": "国内农机补贴库",
     "brands": "品牌",
 
     "credits": "积分中心",
@@ -781,7 +782,7 @@
 
     "bannerMain": "连接全球二手农机交易",
 
-    "searchPlaceholder": "搜索品牌、型号或品类",
+    "searchPlaceholder": "搜索品牌、品类或型号",
 
     "bannerSub": "与世界农机人共建AI农机全生态平台",
 
@@ -807,7 +808,7 @@
 
     "hotEquipment": "热门农机",
 
-    "hotEquipmentDesc": "精选好机 · 全球直供",
+    "hotEquipmentDesc": "精选好机，自主交易",
 
     "hotEquipmentSubtitle": "来自全球认证卖家，台台经过质检",
 
@@ -1589,7 +1590,7 @@
 
   "footer": {
 
-    "description": "全球二手农机交易平台，连接中国与全球农机市场",
+    "description": "中国二手农机交易平台，服务中国二手农机交易",
 
     "quickLinks": "行业权威平台",
 

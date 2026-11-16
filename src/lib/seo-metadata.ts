@@ -8,7 +8,7 @@ const localizedMeta: Record<string, Record<string, { title: string; description:
   home: {
     zh: {
       title: "二手农机交易平台_跨境农机出口_全球二手农机买卖_神雕农机",
-      description: "神雕农机—全球二手农机交易平台，提供CLAAS青储机、约翰迪尔拖拉机、凯斯农机等品牌二手农机买卖服务。AI智能估价、跨境套利分析、一站式物流，让农机交易更透明高效。",
+      description: "神雕农机—中国二手农机交易平台，提供CLAAS青储机、约翰迪尔拖拉机、凯斯农机等品牌二手农机买卖服务。AI智能估价、跨境套利分析、一站式物流，让农机交易更透明高效。",
     },
     en: {
       title: "Used Farm Machinery Trading Platform | Global Agri Export | AgriTrade",
@@ -388,7 +388,7 @@ const localizedMeta: Record<string, Record<string, { title: string; description:
   about: {
     zh: {
       title: "关于神雕农机_全球二手农机交易平台_跨境农机出口专家_神雕农机",
-      description: "神雕农机—石家庄神雕农机科技有限公司旗下全球二手农机交易平台。连接中国与全球农机市场，通过AI估价、跨境套利和一站式物流，让农机交易更透明。",
+      description: "神雕农机—石家庄神雕农机科技有限公司旗下中国二手农机交易平台。服务中国二手农机交易，通过AI估价、跨境套利和一站式物流，让农机交易更透明。",
     },
     en: {
       title: "About AgriTrade | Global Used Farm Machinery Trading Platform",

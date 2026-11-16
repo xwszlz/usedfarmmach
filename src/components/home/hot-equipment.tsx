@@ -20,7 +20,6 @@ export function HotEquipment({ products, locale }: HotEquipmentProps) {
           <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
             {t("hotEquipmentDesc")}
           </h2>
-          <p className="mt-2 text-sm text-gray-500">{t("hotEquipmentSubtitle")}</p>
           <Link href={`/${locale}/products`}>
             <Button variant="default" className="mt-3">
               {t("viewAll")}

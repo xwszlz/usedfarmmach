@@ -27,31 +27,31 @@ function rows(n: number): Array<{ id: string; rank: number }> {
   return Array.from({ length: n }, (_, i) => ({ id: `p${i + 1}`, rank: i + 1 }));
 }
 
-describe("pickHomeCards：浏览量前 4 台上卡，不跳过头名", () => {
-  it("4 个元素 → 返回全部 4 个，顺序不变", () => {
-    const out = pickHomeCards(rows(4));
+describe("pickHomeCards：浏览量前 12 台上卡，不跳过头名", () => {
+  it("12 个元素 → 返回全部 12 个，顺序不变", () => {
+    const out = pickHomeCards(rows(12));
 
-    expect(out).toHaveLength(4);
-    expect(out.map((r) => r.id)).toEqual(["p1", "p2", "p3", "p4"]);
+    expect(out).toHaveLength(12);
+    expect(out.map((r) => r.id)).toEqual(["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "p10", "p11", "p12"]);
   });
 
-  it("6 个元素 → 只返回前 4 个（不能返回后 4 个、不能反转）", () => {
-    const out = pickHomeCards(rows(6));
+  it("14 个元素 → 只返回前 12 个（不能返回后 2 个、不能反转）", () => {
+    const out = pickHomeCards(rows(14));
 
-    expect(out).toHaveLength(4);
-    expect(out.map((r) => r.id)).toEqual(["p1", "p2", "p3", "p4"]);
-    // 反向断言：第 1 名（浏览量最高的那台）必须在，第 5/6 名必须不在
+    expect(out).toHaveLength(12);
+    expect(out.map((r) => r.id)).toEqual(["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "p10", "p11", "p12"]);
+    // 反向断言：第 1 名（浏览量最高的那台）必须在，第 13/14 名必须不在
     expect(out.map((r) => r.id)).toContain("p1");
-    expect(out.map((r) => r.id)).not.toContain("p5");
-    expect(out.map((r) => r.id)).not.toContain("p6");
+    expect(out.map((r) => r.id)).not.toContain("p13");
+    expect(out.map((r) => r.id)).not.toContain("p14");
   });
 
-  it("不足 4 行时自然收敛，不补空卡（防御性兜底，不是 .cn 现状）", () => {
-    // .cn 站有 120 个 active 产品（119 个有图），远超 4；这条只防
-    // 「将来库内 active + 有图产品真的不足 4 台」的退化场景。
-    const out = pickHomeCards(rows(3));
+  it("不足 12 行时自然收敛，不补空卡（防御性兜底，不是 .cn 现状）", () => {
+    // .cn 站有 120 个 active 产品（119 个有图），远超 12；这条只防
+    // 「将来库内 active + 有图产品真的不足 12 台」的退化场景。
+    const out = pickHomeCards(rows(11));
 
-    expect(out.map((r) => r.id)).toEqual(["p1", "p2", "p3"]);
+    expect(out.map((r) => r.id)).toEqual(["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "p10", "p11"]);
   });
 
   it("0 个元素 → 返回 []（不是 undefined）", () => {
@@ -62,19 +62,19 @@ describe("pickHomeCards：浏览量前 4 台上卡，不跳过头名", () => {
   });
 
   it("不修改入参（原数组长度不变）", () => {
-    const input = rows(6);
+    const input = rows(14);
     pickHomeCards(input);
 
-    expect(input).toHaveLength(6);
-    expect(input.map((r) => r.id)).toEqual(["p1", "p2", "p3", "p4", "p5", "p6"]);
+    expect(input).toHaveLength(14);
+    expect(input.map((r) => r.id)).toEqual(["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "p10", "p11", "p12", "p13", "p14"]);
   });
 
   it("返回的是新数组（改动结果不影响入参）", () => {
-    const input = rows(6);
+    const input = rows(14);
     const out = pickHomeCards(input);
     out.pop();
 
-    expect(input).toHaveLength(6);
+    expect(input).toHaveLength(14);
   });
 });
 
@@ -106,16 +106,16 @@ describe("HOME_PRODUCT_ORDER_BY：三级排序契约", () => {
 });
 
 describe("首页取量常量", () => {
-  it("HOME_CARD_COUNT === 4", () => {
-    expect(HOME_CARD_COUNT).toBe(4);
+  it("HOME_CARD_COUNT === 12", () => {
+    expect(HOME_CARD_COUNT).toBe(12);
   });
 
   it("HOME_PRODUCT_TAKE === HOME_CARD_COUNT（核心回归防线：取量必须等于卡片数）", () => {
     expect(HOME_PRODUCT_TAKE).toBe(HOME_CARD_COUNT);
   });
 
-  it("HOME_PRODUCT_TAKE === 4（不是 5，5 会多取再丢弃、跳过头名）", () => {
-    expect(HOME_PRODUCT_TAKE).toBe(4);
-    expect(HOME_PRODUCT_TAKE).not.toBe(5);
+  it("HOME_PRODUCT_TAKE === 12（不是 13，13 会多取再丢弃、跳过头名）", () => {
+    expect(HOME_PRODUCT_TAKE).toBe(12);
+    expect(HOME_PRODUCT_TAKE).not.toBe(13);
   });
 });
