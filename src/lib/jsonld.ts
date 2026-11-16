@@ -19,7 +19,7 @@ export function generateOrganizationJsonLd(locale: string) {
     logo: `${BASE_URL}/images/logo.png`,
     description:
       locale === "zh"
-        ? "全球二手农机交易平台，连接中国与全球农机市场，提供AI智能估价、跨境套利分析和一站式物流服务。"
+        ? "中国二手农机交易平台，服务中国二手农机交易，提供AI智能估价、跨境套利分析和一站式物流服务。"
         : "Global used farm machinery trading platform connecting China with global markets. AI valuation, cross-border arbitrage & one-stop logistics.",
     address: {
       "@type": "PostalAddress",
@@ -297,7 +297,7 @@ export function generateLocalBusinessJsonLd(locale: string) {
     logo: `${BASE_URL}/images/logo.png`,
     description:
       locale === "zh"
-        ? "全球二手农机交易平台，专注跨境农机出口、AI智能估价和一站式物流服务"
+        ? "中国二手农机交易平台，专注二手农机交易、AI智能估价和一站式物流服务"
         : "Global used farm machinery trading platform specializing in cross-border export, AI valuation & logistics",
     address: {
       "@type": "PostalAddress",

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Globe, Menu, X, Store, LayoutDashboard, LayoutGrid, ChevronDown } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { mainNav, isDropdown, type NavItem, type TopNavItem } from "@/config/navigation";
+import { isCnSite } from "@/config/site";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/lib/theme/theme-toggle";
@@ -321,7 +322,7 @@ function DesktopDropdown({ item, locale, t, isLoggedIn }: DesktopDropdownProps) 
 
       {open && (
         <div className="absolute left-0 top-full z-50 mt-1 min-w-[13rem] rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg dark:border-gray-700 dark:bg-gray-900">
-          {item.children.map((child) => {
+          {item.children.filter((child) => !child.cnOnly || isCnSite()).map((child) => {
             const childLabel = t(child.labelKey);
             // 「发布产品」未登录时跳登录页（带回跳），登录后直达发布页
             const isPublish = child.href === "/seller/products/new";
@@ -376,7 +377,7 @@ function MobileDropdown({ item, locale, t, setMobileOpen, isLoggedIn }: MobileDr
       </button>
       {open && (
         <div className="ml-3 space-y-0.5 border-l border-gray-200 pl-3 dark:border-gray-700">
-          {item.children.map((child) => {
+          {item.children.filter((child) => !child.cnOnly || isCnSite()).map((child) => {
             const isPublish = child.href === "/seller/products/new";
             const href = isPublish && !isLoggedIn
               ? `/${locale}/auth/login?redirect=${encodeURIComponent(`/${locale}/seller/products/new`)}`

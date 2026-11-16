@@ -29,7 +29,7 @@ export function HomeSearchBar({ locale }: HomeSearchBarProps) {
       action={`/${locale}/products`}
       role="search"
       dir={locale === "ar" ? "rtl" : undefined}
-      className="mx-auto flex w-full max-w-xl items-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-2 shadow-sm"
+      className="mx-auto flex w-full max-w-xl items-center gap-2 rounded-full border border-blue-400 bg-white px-4 py-2.5 shadow-lg ring-2 ring-blue-100"
     >
       <label htmlFor="home-search-input" className="sr-only">
         {placeholder}
@@ -40,12 +40,12 @@ export function HomeSearchBar({ locale }: HomeSearchBarProps) {
         name="query"
         placeholder={placeholder}
         autoComplete="off"
-        className="w-full bg-transparent text-base text-gray-800 outline-none placeholder:text-gray-400"
+        className="w-full bg-transparent text-base font-medium text-gray-800 outline-none placeholder:text-gray-400"
       />
       <button
         type="submit"
         aria-label={placeholder}
-        className="shrink-0 rounded-full bg-blue-600 p-2 text-white transition-colors hover:bg-blue-700"
+        className="shrink-0 rounded-full bg-blue-600 p-2.5 text-white shadow-md transition-colors hover:bg-blue-700"
       >
         <Search aria-hidden="true" className="h-5 w-5" />
       </button>

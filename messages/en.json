@@ -319,6 +319,7 @@
   },
 
   "nav": {
+    "subsidy": "Domestic Machinery Subsidy Database",
     "brands": "Brands",
 
     "home": "Home",
@@ -779,7 +780,7 @@
 
     "bannerMain": "Connecting Global Used Farm Machinery Trade",
 
-    "searchPlaceholder": "Search brand, model, or category",
+    "searchPlaceholder": "Search brand, category, or model",
 
     "bannerSub": "Building an AI Farm Machinery Ecosystem with Farmers Worldwide",
 
@@ -1587,7 +1588,7 @@
 
   "footer": {
 
-    "description": "Global used farm machinery trading platform, connecting China and global markets",
+    "description": "China used farm machinery trading platform, serving China's used machinery trade",
 
     "quickLinks": "Industry Partners",
 

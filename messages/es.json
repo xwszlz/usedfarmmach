@@ -186,6 +186,7 @@
 
   },
   "nav": {
+    "subsidy": "Base de subvenciones para maquinaria agrícola en China",
     "brands": "Marcas",
     "home": "Inicio",
     "products": "Maquinaria",
@@ -427,7 +428,7 @@
     "bannerBrand": "Shendiao",
     "bannerMain": "Conectando el comercio global de maquinaria agrícola usada",
 
-    "searchPlaceholder": "Buscar marca, modelo o categoría",
+    "searchPlaceholder": "Buscar marca, categoría o modelo",
     "bannerSub": "Construyendo un ecosistema de IA de maquinaria agrícola con agricultores del mundo",
     "heroTitle": "Maquinaria agrícola global, un solo lugar",
     "heroSubtitle": "Conectamos China con el mercado global. Valoración IA, logística transfronteriza, transacciones seguras",
@@ -829,7 +830,7 @@
     "note": "Nota: Datos calculados con precios internacionales y tipo de cambio en tiempo real. Solo referencia. Considere costos reales de transporte, aranceles y seguros."
   },
   "footer": {
-    "description": "Plataforma global de maquinaria agrícola usada, conectando China con el mundo",
+    "description": "Plataforma china de maquinaria agrícola usada, al servicio del comercio de maquinaria usada en China",
     "quickLinks": "Plataformas destacadas",
     "quickLinkRb": "Ritchie Bros Auctioneers",
     "quickLinkCamda": "Asociación China de Distribución de Maquinaria Agrícola",

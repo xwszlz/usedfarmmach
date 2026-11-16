@@ -10,6 +10,9 @@ export interface NavItem {
 
   spotlight?: boolean;
 
+  /** 仅 .cn 站显示的二级项（.com 无对应路由，避免死链 404） */
+  cnOnly?: boolean;
+
 }
 
 
@@ -85,6 +88,8 @@ export const mainNav: TopNavItem[] = [
     children: [
 
       { href: "/products", labelKey: "nav.machinery" },
+
+      { href: "/subsidy", labelKey: "nav.subsidy", cnOnly: true },
 
       { href: "/auctions", labelKey: "nav.bargain", spotlight: true },
 
