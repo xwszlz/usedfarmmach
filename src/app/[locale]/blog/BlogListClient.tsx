@@ -101,6 +101,45 @@ export default function BlogListClient({
     fetchArticles();
   }, [activeCategory, page, locale, initialCategory, seoHydrated]);
 
+  // Silently refresh viewCount from the live API after mount; SSR/ISR data may be stale.
+  // Only viewCount is patched into existing state so SSR titles/excerpts & user browsing stay intact.
+  useEffect(() => {
+    let cancelled = false;
+
+    async function refreshViewCounts() {
+      try {
+        const params = new URLSearchParams({
+          status: 'published',
+          page: '1',
+          limit: '12',
+          lang: locale,
+        });
+        if (initialCategory && initialCategory !== 'all') params.set('category', initialCategory);
+
+        const res = await fetch(`/api/articles?${params}`);
+        const data = await res.json();
+        if (cancelled || !Array.isArray(data.articles)) return;
+
+        const viewCountMap = new Map<string, number>();
+        for (const article of data.articles) {
+          if (article && typeof article.id === 'string' && typeof article.viewCount === 'number') {
+            viewCountMap.set(article.id, article.viewCount);
+          }
+        }
+        setArticles((prev) =>
+          prev.map((a) =>
+            viewCountMap.has(a.id) ? { ...a, viewCount: viewCountMap.get(a.id)! } : a
+          )
+        );
+      } catch {}
+    }
+    refreshViewCounts();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [locale, initialCategory]);
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
