@@ -12,7 +12,7 @@
   {
     "keywords": ["联系", "电话", "微信", "人工", "客服", "找人", "沟通", "邮箱", "洽谈"],
     "intent": "hand_over",
-    "answer": "联系我们：\n· 邮箱：jiusei0319@gmail.com\n· 公司地址：河北省石家庄市元氏县马村镇聊村\n· 官网：usedfarmmach.com\n我们会尽快回复。"
+    "answer": "联系我们：\n· 邮箱：{{SUPPORT_EMAIL}}\n· 公司地址：河北省石家庄市元氏县马村镇聊村\n· 官网：usedfarmmach.com\n我们会尽快回复。"
   },
   {
     "keywords": ["公司", "地址", "官网", "营业执照", "资质", "在哪"],

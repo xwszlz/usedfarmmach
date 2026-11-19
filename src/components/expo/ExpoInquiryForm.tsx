@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getSupportEmail } from "@/config/support-email";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle2, Loader2, Send } from "lucide-react";
 
@@ -66,9 +67,9 @@ const TEXTS: Record<string, FormTexts> = {
     submit: "提交，请顾问协助我",
     submitting: "提交中...",
     success: "提交成功！我们将在24小时内与您联系。",
-    error: "提交失败，请稍后重试或直接联系 jiusei0319@gmail.com",
+    error: `提交失败，请稍后重试或直接联系 ${getSupportEmail()}`,
     selectPlaceholder: "请选择",
-    contactNote: "Email: jiusei0319@gmail.com",
+    contactNote: `Email: ${getSupportEmail()}`,
   },
   en: {
     fields: {
@@ -99,9 +100,9 @@ const TEXTS: Record<string, FormTexts> = {
     submit: "Submit — advisor will contact me",
     submitting: "Submitting...",
     success: "Submitted successfully! We'll contact you within 24 hours.",
-    error: "Submission failed. Please try again or contact jiusei0319@gmail.com",
+    error: `Submission failed. Please try again or contact ${getSupportEmail()}`,
     selectPlaceholder: "Please select",
-    contactNote: "Email: jiusei0319@gmail.com",
+    contactNote: `Email: ${getSupportEmail()}`,
   },
   ru: {
     fields: {
@@ -132,9 +133,9 @@ const TEXTS: Record<string, FormTexts> = {
     submit: "Отправить — свяжитесь со мной",
     submitting: "Отправка...",
     success: "Заявка отправлена! Мы свяжемся с вами в течение 24 часов.",
-    error: "Ошибка отправки. Повторите или напишите на jiusei0319@gmail.com",
+    error: `Ошибка отправки. Повторите или напишите на ${getSupportEmail()}`,
     selectPlaceholder: "Выберите",
-    contactNote: "Email: jiusei0319@gmail.com",
+    contactNote: `Email: ${getSupportEmail()}`,
   },
 };
 

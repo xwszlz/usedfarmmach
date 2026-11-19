@@ -1,6 +1,7 @@
 "use client";
 
 import { translate } from "@/lib/i18n-runtime";
+import { getSupportEmail } from "@/config/support-email";
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -411,9 +412,9 @@ export default function PartDetailClient({ part, relatedParts, locale }: PartDet
                       <ArrowRight className="h-4 w-4" />
                     </button>
                     <div className="flex items-center gap-4 text-sm text-gray-500">
-                      <a href="mailto:jiusei0319@gmail.com" className="flex items-center gap-1 hover:text-orange-600">
+                      <a href={`mailto:${getSupportEmail()}`} className="flex items-center gap-1 hover:text-orange-600">
                         <Mail className="h-4 w-4" />
-                        jiusei0319@gmail.com
+                        {getSupportEmail()}
                       </a>
                     </div>
                   </div>

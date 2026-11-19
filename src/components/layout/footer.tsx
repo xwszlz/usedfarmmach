@@ -2,6 +2,7 @@ import { useTranslations } from "next-intl";
 import { DisclaimerBanner } from "@/components/expo/DisclaimerBanner";
 import { CnFooter } from "@/components/cn/CnFooter";
 import { isCnSite } from "@/config/site";
+import { getSupportEmail } from "@/config/support-email";
 
 interface FooterProps {
   locale: string;
@@ -86,7 +87,7 @@ export function Footer({ locale }: FooterProps) {
                 {t("company")}: {t("companyName")}
               </li>
               <li className="text-sm text-gray-500 dark:text-gray-400">
-                {t("email")}: jiusei0319@gmail.com
+                {t("email")}: {getSupportEmail()}
               </li>
               <li className="text-sm text-gray-500 dark:text-gray-400">
                 {t("address")}: {t("companyAddress")}

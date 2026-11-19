@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email";
 import { prisma } from "@/lib/db";
+import { getSupportEmail } from "@/config/support-email";
 
 /**
  * 农机博览会 — 招商意向表提交 API
@@ -12,7 +13,7 @@ import { prisma } from "@/lib/db";
  * 3. 保留前端传入的 source 归因字段（展会展位/渠道来源），无则回退 "website"
  */
 
-const ADMIN_EMAIL = "jiusei0319@gmail.com";
+const ADMIN_EMAIL = getSupportEmail();
 
 export const dynamic = "force-dynamic"; // 防 .cn 构建期静态固化，详见 scripts/check-route-dynamic.mjs
 export async function POST(request: NextRequest) {

@@ -1,4 +1,5 @@
 import { translate } from "@/lib/i18n-runtime";
+import { getSupportEmail } from "@/config/support-email";
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
@@ -291,7 +292,7 @@ export default async function ServicesPage({
             </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
               <a
-                href="mailto:jiusei0319@gmail.com"
+                href={`mailto:${getSupportEmail()}`}
                 className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 font-semibold text-violet-700 transition-colors hover:bg-violet-50"
               >
                 {translate("📧 邮件咨询", locale)}

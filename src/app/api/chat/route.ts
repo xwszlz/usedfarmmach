@@ -8,6 +8,7 @@
 //   → WECOM_GROUP_WEBHOOK_URL 未配则静默跳过推群
 // ───────────────────────────────────────────────
 import { pushToGroup } from "@/lib/wecom/group-webhook";
+import { getSupportEmail } from "@/config/support-email";
 import faqCommon from "@/lib/agents/buyer-chat/faq-common.json";
 import faqProfile from "@/lib/agents/buyer-chat/faq-profile.json";
 import faqAbout from "@/lib/agents/buyer-chat/faq-about.json";
@@ -33,7 +34,7 @@ const COMMON_FAQ: FaqItem[] = faqCommon as FaqItem[];
 
 const FALLBACK =
   "这个问题我暂时没有标准答案，已为你转人工。\n" +
-  "请复制邮箱联系：jiusei0319@gmail.com\n" +
+  `请复制邮箱联系：${getSupportEmail()}\n` +
   "也可在「我的 → 关于」页查看联系方式。\n" +
   "（你也可换种说法，比如「怎么发布」「运费多少」「怎么估价」）";
 
@@ -91,6 +92,10 @@ export async function POST(request: Request) {
     // 详情场景个性化：用机器名替换占位符
     if (productTitle && reply.includes("{{title}}")) {
       reply = reply.replace(/\{\{title\}\}/g, productTitle);
+    }
+    // P2/T04: FAQ 静态 JSON 中的客服邮箱占位符按当前分站解析（JSON 不重序列化）
+    if (reply.includes("{{SUPPORT_EMAIL}}")) {
+      reply = reply.replace(/\{\{SUPPORT_EMAIL\}\}/g, getSupportEmail());
     }
 
     // 推监控群（未配 webhook 静默跳过，不影响主流程）

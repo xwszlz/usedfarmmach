@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getTokenFromHeaders, getUserFromToken } from "@/lib/auth";
 import { sendEmail } from "@/lib/email";
+import { getSupportEmail } from "@/config/support-email";
 
 export const dynamic = "force-dynamic";
 
@@ -98,7 +99,7 @@ export async function POST(
 
     // 邮件通知卖家（二手农机业务使用卖家固定邮箱）
     try {
-      const sellerEmail = "932133255@qq.com";
+      const sellerEmail = getSupportEmail();
       const productName = auction.product.brand
         ? `${auction.product.brand.nameZh} ${auction.product.modelName}`
         : auction.product.modelName;

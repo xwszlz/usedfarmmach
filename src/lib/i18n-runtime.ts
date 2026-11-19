@@ -15,6 +15,7 @@
 
 import { I18N_DICT } from "./i18n-dictionary";
 import type { RtLocale, I18nEntry } from "./i18n-types";
+import { localizeSupportEmail } from "@/config/support-email";
 
 export type { RtLocale, I18nEntry } from "./i18n-types";
 
@@ -23,19 +24,21 @@ export type { RtLocale, I18nEntry } from "./i18n-types";
  * Pure and synchronous — safe in both Server and Client Components.
  */
 export function translate(sourceZh: string, locale: string): string {
-  if (!sourceZh) return sourceZh;
+  // P2/T04: 单一汇聚点 —— 所有翻译结果（含字典死键的源串回落）统一经
+  // localizeSupportEmail() 把历史 gmail/qq 客服字面量替换为当前分站地址。
+  if (!sourceZh) return localizeSupportEmail(sourceZh);
   const loc = (locale || "zh") as RtLocale;
-  if (loc === "zh") return sourceZh;
+  if (loc === "zh") return localizeSupportEmail(sourceZh);
 
   const entry = I18N_DICT[sourceZh];
   if (entry) {
     const direct = entry[loc];
-    if (direct) return direct;
-    if (loc !== "en" && entry.en) return entry.en as string;
+    if (direct) return localizeSupportEmail(direct);
+    if (loc !== "en" && entry.en) return localizeSupportEmail(entry.en as string);
   }
   // Gap: no translation yet. Return the source so the UI is never blank.
   // Track these by grepping for `tr("<untranslated>")` after switching locale.
-  return sourceZh;
+  return localizeSupportEmail(sourceZh);
 }
 
 /**
