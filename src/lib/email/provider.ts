@@ -1,16 +1,11 @@
 /**
- * 邮件发送 Provider 抽象层（阶段 1，任务 T02）
+ * 邮件发送 Provider 抽象层（P1 · T02）
  *
- * 共享知识 §2：所有邮件经 src/lib/email.ts 门面发出，组件/路由禁止直接 new Resend()。
- * 新增服务商只需在此加实现类 + 在 email.ts 注册，业务代码零改动。
- *
- * 阶段 1 仅 resend 生效；当 RESEND_API_KEY 缺失时，email.ts 自动降级为
- * ConsoleProvider（把渲染后的邮件打到 server console），保证本地开发与测试流程跑通。
+ * 本文件只保留运行时抽象与「国内/降级」实现；ResendProvider 已迁出到
+ * provider-resend.ts，仅由 config.ts 在非 cn 分支动态 import（D3 构建期隔离）。
+ * 所有邮件经 src/lib/email.ts 门面发出，组件/路由禁止直接 new Resend()/createTransport()。
  */
-// 类型仅用于编译期；运行时经动态 import("resend") 延迟加载，
-// 仅当启用 ResendProvider 且 resend 已安装时才真正解析模块，
-// 避免本地未安装 resend 时模块加载失败（见 src/types/resend.d.ts）。
-import type { Resend } from "resend";
+import { resolveMailConfig } from "./config";
 
 /** 发送输入 */
 export interface EmailInput {
@@ -18,6 +13,7 @@ export interface EmailInput {
   subject: string;
   html: string;
   text?: string;
+  replyTo?: string;
 }
 
 /** 发送结果 */
@@ -30,45 +26,6 @@ export interface EmailSendResult {
 export interface EmailProvider {
   readonly name: string;
   send(input: EmailInput): Promise<EmailSendResult>;
-}
-
-/** Resend Provider（Resend Node SDK，API key 走 env RESEND_API_KEY） */
-export class ResendProvider implements EmailProvider {
-  readonly name = "resend";
-  private client: Resend | null = null;
-  private readonly apiKey: string;
-  private readonly from: string;
-
-  constructor(apiKey: string, from: string) {
-    this.apiKey = apiKey;
-    this.from = from;
-  }
-
-  async send(input: EmailInput): Promise<EmailSendResult> {
-    // 延迟加载 resend（仅真正发信时构造），避免未安装即触发模块解析。
-    const { Resend } = await import("resend");
-    if (!this.client) {
-      this.client = new Resend(this.apiKey);
-    }
-
-    const { data, error } = await this.client.emails.send({
-      from: this.from,
-      to: input.to,
-      subject: input.subject,
-      html: input.html,
-      text: input.text,
-    });
-
-    if (error) {
-      const message =
-        typeof error === "string"
-          ? error
-          : (error as { message?: string }).message;
-      throw new Error(message || "Resend send failed");
-    }
-
-    return { id: data?.id ?? null, provider: this.name };
-  }
 }
 
 /**
@@ -105,23 +62,78 @@ export class AliyunDirectMailProvider implements EmailProvider {
   }
 }
 
+/** 腾讯云 SES SMTP 连接参数（授权码，不是 SecretKey） */
+export interface TencentSesConfig {
+  user: string;
+  pass: string;
+  host: string;
+  port: number;
+  from: string;
+  fromName?: string;
+  replyTo?: string;
+}
+
 /**
- * 腾讯云 SES Provider（阶段 2 / ICP 备案后启用，先留接口）。
+ * 腾讯云 SES Provider（P1 · D3）
+ * 动态 import nodemailer → createTransport(465/SSL) → sendMail()；
+ * 错误向上抛，由 facade 写 failed 日志。
  */
 export class TencentSesProvider implements EmailProvider {
   readonly name = "tencent_ses";
-  async send(_input: EmailInput): Promise<EmailSendResult> {
-    throw new Error("Tencent SES provider is not implemented yet");
+  private readonly cfg: TencentSesConfig;
+
+  constructor(cfg: TencentSesConfig) {
+    this.cfg = cfg;
+  }
+
+  async send(input: EmailInput): Promise<EmailSendResult> {
+    const mod = await import("nodemailer");
+    const transport = (
+      mod as unknown as {
+        createTransport: (opts: Record<string, unknown>) => {
+          sendMail: (mail: Record<string, unknown>) => Promise<{ messageId?: string }>;
+        };
+      }
+    ).createTransport({
+      host: this.cfg.host,
+      port: this.cfg.port,
+      secure: true,
+      auth: { user: this.cfg.user, pass: this.cfg.pass },
+    });
+
+    const from = this.cfg.fromName
+      ? `${this.cfg.fromName} <${this.cfg.from}>`
+      : this.cfg.from;
+    const replyTo = input.replyTo ?? this.cfg.replyTo;
+    const info = await transport.sendMail({
+      from,
+      to: input.to,
+      subject: input.subject,
+      html: input.html,
+      text: input.text,
+      ...(replyTo ? { replyTo } : {}),
+    });
+
+    return { id: typeof info.messageId === "string" ? info.messageId : null, provider: this.name };
   }
 }
 
 /**
- * 国内 provider 工厂（P1-c C1 接线点；C2 真实实现）。
- * 当前 C1 阶段 routing 对国内用户统一降级 ConsoleProvider（绝不出境），
- * 此工厂预留给 C2 备案完成后按 EMAIL_PROVIDER_DOMESTIC 切换真实通道。
+ * 国内 provider 工厂（保留导出兼容）；P1 起委托 resolveMailConfig()，
+ * .cn 直接返回 SES / Console，不再使用 EMAIL_PROVIDER_DOMESTIC 作为路由主依据。
  */
 export function createDomesticProvider(): EmailProvider {
-  const kind = (process.env.EMAIL_PROVIDER_DOMESTIC || "aliyun_directmail").toLowerCase();
-  if (kind === "tencent_ses") return new TencentSesProvider();
-  return new AliyunDirectMailProvider();
+  const cfg = resolveMailConfig();
+  if (cfg.site === "cn" && cfg.providerKind === "tencent_ses") {
+    return new TencentSesProvider({
+      user: process.env.TENCENT_SES_SMTP_USER || "",
+      pass: process.env.TENCENT_SES_SMTP_PASS || "",
+      host: process.env.TENCENT_SES_SMTP_HOST || "smtp.qcloudmail.com",
+      port: Number(process.env.TENCENT_SES_SMTP_PORT || "465"),
+      from: cfg.fromEmail,
+      fromName: cfg.fromName,
+      replyTo: cfg.replyTo,
+    });
+  }
+  return new ConsoleProvider(cfg.fromEmail);
 }

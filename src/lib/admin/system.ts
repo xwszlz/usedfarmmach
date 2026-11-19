@@ -83,6 +83,10 @@ export function getSystemConfig() {
       RESEND_CONFIGURED: configured(process.env.RESEND_API_KEY),
       ALIYUN_DM_CONFIGURED: configured(process.env.ALIYUN_DM_ACCESS_KEY),
       TENCENT_SES_CONFIGURED: configured(process.env.TENCENT_SES_SECRET_ID),
+      // P1：.cn 真实发信凭证（SMTP 授权码）；SecretKey 声明仅保留兼容、unused-by-design
+      TENCENT_SES_SMTP_CONFIGURED:
+        configured(process.env.TENCENT_SES_SMTP_USER) &&
+        configured(process.env.TENCENT_SES_SMTP_PASS),
     },
     providers: {
       resend: { configured: configured(process.env.RESEND_API_KEY), label: "Resend（境外）" },
@@ -91,7 +95,10 @@ export function getSystemConfig() {
         label: "阿里云 DirectMail（国内·需备案）",
       },
       tencent_ses: {
-        configured: configured(process.env.TENCENT_SES_SECRET_ID),
+        configured:
+          configured(process.env.TENCENT_SES_SECRET_ID) ||
+          (configured(process.env.TENCENT_SES_SMTP_USER) &&
+            configured(process.env.TENCENT_SES_SMTP_PASS)),
         label: "腾讯云 SES（国内·需备案）",
       },
       console: { configured: true, label: "Console 降级（本地/未配置）" },
@@ -104,7 +111,8 @@ export const COMPLIANCE_THRESHOLD = 100000;
 
 /**
  * 数据出境合规指标：
- *   - crossBorderRecipients = distinct EmailSendLog.recipientHash WHERE provider='resend'（console 降级不计；国内通道不计）
+ *   - crossBorderRecipients = distinct EmailSendLog.recipientHash WHERE provider='resend'
+ *     （仅 resend 计出境；P1 起 .cn 的 tencent_ses 属境内通道、console 为本地降级，均不计出境）
  *   - providers = 各 provider 发送次数分布
  */
 export async function getComplianceMetrics() {

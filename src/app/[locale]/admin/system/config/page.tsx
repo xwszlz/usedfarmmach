@@ -4,6 +4,7 @@ import { verifyToken } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getTranslations } from "next-intl/server";
 import { getSystemConfig } from "@/lib/admin/system";
+import { isCnSite } from "@/config/site";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +34,8 @@ export default async function AdminConfigPage({ params }: { params: Promise<{ lo
   if (role !== "super_admin") redirect(`/${locale}/admin`);
 
   const cfg = getSystemConfig();
+  // P1 Q4：处理方列表按 SITE 分流 —— .cn 展示境内 SES，.com 展示 Resend
+  const isCn = isCnSite();
   const t = await getTranslations("adminSystem");
   const yes = (b: boolean) => (b ? t("configured") : t("notConfigured"));
 
@@ -56,8 +59,10 @@ export default async function AdminConfigPage({ params }: { params: Promise<{ lo
               <td className="py-2">{cfg.env.EMAIL_PROVIDER_DOMESTIC}</td>
             </tr>
             <tr className="border-b">
-              <td className="py-2">Resend</td>
-              <td className="py-2">{yes(cfg.env.RESEND_CONFIGURED)}</td>
+              <td className="py-2">{isCn ? "腾讯云 SES（境内）" : "Resend"}</td>
+              <td className="py-2">
+                {yes(isCn ? cfg.env.TENCENT_SES_SMTP_CONFIGURED : cfg.env.RESEND_CONFIGURED)}
+              </td>
             </tr>
             <tr className="border-b">
               <td className="py-2">Aliyun DirectMail</td>

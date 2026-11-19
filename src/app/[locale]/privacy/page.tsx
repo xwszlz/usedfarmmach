@@ -2,6 +2,7 @@ import { translate } from "@/lib/i18n-runtime";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { isCnSite } from "@/config/site";
+import { getSupportEmail } from "@/config/support-email";
 
 export async function generateMetadata({
   params,
@@ -39,12 +40,15 @@ export default async function PrivacyPage({
       </p>
 
       <div className="prose prose-sm dark:prose-invert mt-8 max-w-none text-gray-700 dark:text-gray-300 leading-relaxed space-y-6">
+        {/* P1 Q4 合规口径分流：.cn → 境内服务商处理 / 数据不出境（PrivacyContentCn）；
+            .com → 保留 Resend 境外处理方披露（PrivacyContentZh / PrivacyContentEn）。 */}
         {isCn ? <PrivacyContentCn /> : isZh ? <PrivacyContentZh /> : <PrivacyContentEn />}
       </div>
     </div>
   );
 }
 
+/** .com 中文版：按 P1 Q4 保留 Resend 境外处理方披露（.cn 不渲染本组件） */
 function PrivacyContentZh() {
   return (
     <>
@@ -61,7 +65,7 @@ function PrivacyContentZh() {
         <ul className="space-y-1">
           <li><strong>运营主体：</strong>石家庄神雕农机科技有限公司</li>
           <li><strong>注册地址：</strong>河北省石家庄市元氏县马村乡聊村</li>
-          <li><strong>联系邮箱：</strong>jiusei0319@gmail.com</li>
+          <li><strong>联系邮箱：</strong>{getSupportEmail()}</li>
           <li><strong>个人信息保护负责人（DPO）：</strong>您可通过上述邮箱联系我们，邮件标题请注明&ldquo;个人信息保护咨询&rdquo;。</li>
         </ul>
       </section>
@@ -402,7 +406,7 @@ function PrivacyContentZh() {
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">十四、联系我们</h2>
         <p>如您对本隐私政策有任何疑问、意见或建议，或希望行使您的个人信息主体权利，请通过以下方式联系我们：</p>
         <ul className="space-y-1 mt-2">
-          <li><strong>邮箱：</strong>jiusei0319@gmail.com（邮件标题请注明&ldquo;个人信息保护咨询&rdquo;）</li>
+          <li><strong>邮箱：</strong>{getSupportEmail()}（邮件标题请注明&ldquo;个人信息保护咨询&rdquo;）</li>
           <li><strong>地址：</strong>河北省石家庄市元氏县马村乡聊村</li>
           <li><strong>回复时限：</strong>15个工作日</li>
         </ul>
@@ -419,6 +423,7 @@ function PrivacyContentZh() {
   );
 }
 
+/** .com 英文版：按 P1 Q4 保留 Resend 境外处理方披露（.cn 不渲染本组件） */
 function PrivacyContentEn() {
   return (
     <>
@@ -502,6 +507,7 @@ function PrivacyContentEn() {
   );
 }
 
+/** .cn 版：P1 Q4 境内服务商处理、数据不出境，不出现 Resend / 境外接收方 */
 function PrivacyContentCn() {
   return (
     <>
@@ -518,7 +524,7 @@ function PrivacyContentCn() {
         <ul className="space-y-1">
           <li><strong>运营主体：</strong>石家庄神雕农机科技有限公司</li>
           <li><strong>注册地址：</strong>河北省石家庄市元氏县马村乡聊村</li>
-          <li><strong>联系邮箱：</strong>jiusei0319@gmail.com</li>
+          <li><strong>联系邮箱：</strong>{getSupportEmail()}</li>
           <li><strong>个人信息保护负责人（DPO）：</strong>您可通过上述邮箱联系我们，邮件标题请注明&ldquo;个人信息保护咨询&rdquo;。</li>
         </ul>
       </section>
@@ -810,7 +816,7 @@ function PrivacyContentCn() {
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">十四、联系我们</h2>
         <p>如您对本隐私政策有任何疑问、意见或建议，或希望行使您的个人信息主体权利，请通过以下方式联系我们：</p>
         <ul className="space-y-1 mt-2">
-          <li><strong>邮箱：</strong>jiusei0319@gmail.com（邮件标题请注明&ldquo;个人信息保护咨询&rdquo;）</li>
+          <li><strong>邮箱：</strong>{getSupportEmail()}（邮件标题请注明&ldquo;个人信息保护咨询&rdquo;）</li>
           <li><strong>地址：</strong>河北省石家庄市元氏县马村乡聊村</li>
           <li><strong>回复时限：</strong>15个工作日</li>
         </ul>

@@ -3,7 +3,7 @@
  *
  * 口径（与既有 getComplianceMetrics 一致）：
  *  - distinctRecipients = distinct EmailSendLog.recipientHash WHERE provider='resend'
- *    （resend 计为数据出境；console 降级 / 国内通道不计）
+ *    （仅 resend 计为数据出境；P1 起 .cn 走 tencent_ses 境内通道，console 降级亦不计出境）
  *  - threshold = 100000（10 万人阈值）
  *  - 达到 80000（阈值 80%）即触发预警，建议补 PIPIA / 标准合同（SCC）。
  *

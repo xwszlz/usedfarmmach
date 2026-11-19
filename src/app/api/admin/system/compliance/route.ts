@@ -4,7 +4,7 @@
  *
  * 指标口径：
  *   - crossBorderRecipients = distinct EmailSendLog.recipientHash WHERE provider='resend'
- *     （console 为本地降级不计；国内通道不计；仅 resend 计为出境）
+ *     （仅 resend 计出境；P1 起 .cn 的 tencent_ses 属境内通道、console 为本地降级，均不计出境）
  *   - threshold = 100000（10 万人阈值）
  *   - providers = 各 provider 发送次数分布
  * 双层校验：middleware SUPER_ADMIN_PATHS 网关 + 本处 requireSuperAdmin。

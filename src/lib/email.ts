@@ -12,14 +12,10 @@
  */
 import { createHash } from "crypto";
 import { prisma } from "@/lib/db";
-import {
-  ResendProvider,
-  ConsoleProvider,
-  AliyunDirectMailProvider,
-  TencentSesProvider,
-  type EmailProvider,
-} from "./email/provider";
+import type { EmailProvider } from "./email/provider";
+import { resolveMailConfig, createProvider } from "./email/config";
 import { selectProviderForUser } from "./email/routing";
+import { getSupportEmail } from "@/config/support-email";
 import {
   renderVerifyEmail,
   renderResetPassword,
@@ -62,73 +58,44 @@ export function sha256Email(input: string): string {
   return createHash("sha256").update(input.toLowerCase()).digest("hex");
 }
 
-/** 按 env 选择 provider（缺 key 时降级 console） */
-function selectProvider(): { provider: EmailProvider; name: string } {
-  const env = (process.env.EMAIL_PROVIDER || "resend").toLowerCase();
-  const from = process.env.EMAIL_FROM || "no-reply@usedfarmmach.com";
-  const apiKey = process.env.RESEND_API_KEY;
-
-  switch (env) {
-    case "aliyun_directmail":
-      return { provider: new AliyunDirectMailProvider(), name: "aliyun_directmail" };
-    case "tencent_ses":
-      return { provider: new TencentSesProvider(), name: "tencent_ses" };
-    case "resend":
-    default:
-      if (!apiKey) {
-        // 降级：本地 / 测试环境无 key 时打到 console，保证流程可跑通
-        return { provider: new ConsoleProvider(from), name: "console" };
-      }
-      return { provider: new ResendProvider(apiKey, from), name: "resend" };
-  }
+/** 按 SITE 选择 provider（P1：委托 config，缺凭证时 console 降级） */
+async function selectProvider(): Promise<{ provider: EmailProvider; name: string }> {
+  const cfg = resolveMailConfig();
+  const provider = await createProvider(cfg);
+  return { provider, name: provider.name };
 }
 
 /**
- * 旧式原始发送（向后兼容阶段 0 既有调用）。
- * 未配置 RESEND_API_KEY 时降级为控制台日志（开发环境）。
+ * 旧式原始发送（向后兼容阶段 0 既有调用，签名/返回值一行不改）。
+ * P1 · D1：函数体内统一走 resolveMailConfig + createProvider，
+ * 原硬编码的 Resend HTTP 调用（含沙箱默认地址/显示名）已彻底删除。
+ * 无凭证时 provider 降级 console，返回 false 语义保留（不发真信）。
  */
 async function sendRawEmail(
   params: LegacySendEmailParams
 ): Promise<boolean> {
-  const apiKey = process.env.RESEND_API_KEY;
+  const cfg = resolveMailConfig();
+  const provider = await createProvider(cfg);
 
-  if (!apiKey) {
-    // 开发环境降级：打印到控制台
+  if (cfg.degraded) {
     // eslint-disable-next-line no-console
-    console.warn("[email] RESEND_API_KEY not set, skipping email send:");
+    console.warn(`[email] ${cfg.site} 邮件凭证缺失，console 降级，跳过真实发信`);
     // eslint-disable-next-line no-console
     console.warn(`[email] To: ${params.to}, Subject: ${params.subject}`);
     // eslint-disable-next-line no-console
     console.warn(`[email] Text: ${params.text || "(no text version)"}`);
-    return false;
   }
 
   try {
-    const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
-
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: `神雕农机 <${fromEmail}>`,
-        to: [params.to],
-        subject: params.subject,
-        html: params.html,
-        text: params.text || undefined,
-      }),
+    await provider.send({
+      to: params.to,
+      subject: params.subject,
+      html: params.html,
+      text: params.text,
+      replyTo: cfg.replyTo,
     });
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      // eslint-disable-next-line no-console
-      console.error("[email] Resend API error:", response.status, errorData);
-      return false;
-    }
-
-    return true;
+    // console 降级不发真信，保持既有 false 语义
+    return provider.name !== "console";
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error("[email] Send failed:", error);
@@ -190,14 +157,14 @@ async function sendTemplateEmail(
 
   // P1-c C1：按收件人属地路由（国内→国内通道；其余→Resend）。
   // 业务调用方零改动；匿名/无 userId 场景回退全局 selectProvider()。
-  let selected = selectProvider();
+  let selected = await selectProvider();
   if (opts.userId) {
     const recipient = await prisma.user.findUnique({
       where: { id: opts.userId },
       select: { country: true, preferredLanguage: true },
     });
     if (recipient) {
-      selected = selectProviderForUser(recipient);
+      selected = await selectProviderForUser(recipient, resolveMailConfig());
     }
   }
   const providerName = selected.name;
@@ -254,7 +221,7 @@ export async function sendEmail(
 /**
  * 询盘管理员告警（阶段 0 既有能力；门面重构后恢复此导出，避免 inquiries/route.ts 编译失败）。
  * 采用旧式原始发信（LegacySendEmailParams）通知管理员，不写 EmailSendLog（非阶段 1 模板）。
- * 收件人为后台管理员邮箱（env ADMIN_EMAIL，缺省 jiusei0319@gmail.com）。
+ * 收件人为分站客服邮箱 getSupportEmail()（P1 Q2 已拍板：.cn → support@usedfarmmach.cn）。
  */
 export async function notifyInquiry(params: {
   productName: string;
@@ -262,7 +229,7 @@ export async function notifyInquiry(params: {
   buyerContact: string;
   buyerMessage: string;
 }): Promise<void> {
-  const adminEmail = process.env.ADMIN_EMAIL || "jiusei0319@gmail.com";
+  const adminEmail = getSupportEmail();
   const subject = `[询盘] ${params.productName} - ${params.buyerName}`;
   const text =
     `产品：${params.productName}\n` +
