@@ -56,6 +56,8 @@ export default async function CrossBorderConsentPage({
       </p>
 
       <div className="prose prose-sm dark:prose-invert mt-8 max-w-none text-gray-700 dark:text-gray-300 leading-relaxed space-y-6">
+        {/* P1 Q4 合规口径分流：.cn 本页已被上方 notFound 门禁拦截，不可达；
+            其境内表述见隐私政策 .cn 版。.com 保留 Resend 境外处理方披露。 */}
         {isCn ? <CrossBorderContentCn /> : isZh ? <CrossBorderContentZh /> : <CrossBorderContentEn />}
       </div>
 
@@ -71,6 +73,7 @@ export default async function CrossBorderConsentPage({
   );
 }
 
+/** .com 中文版：按 P1 Q4 保留 Resend 境外处理方披露 */
 function CrossBorderContentZh() {
   return (
     <>
@@ -150,6 +153,7 @@ function CrossBorderContentZh() {
   );
 }
 
+/** .com 英文版：按 P1 Q4 保留 Resend 境外处理方披露 */
 function CrossBorderContentEn() {
   return (
     <>
@@ -229,6 +233,7 @@ function CrossBorderContentEn() {
   );
 }
 
+/** .cn 版（当前被 notFound 门禁拦截，不可达）：境内存储、数据不出境表述 */
 function CrossBorderContentCn() {
   return (
     <>

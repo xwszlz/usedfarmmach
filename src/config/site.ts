@@ -64,6 +64,10 @@ export interface SiteConfigItem {
   payments: SitePayments;
   features: SiteFeatures;
   compliance: SiteCompliance;
+  /** 客服邮箱（分站，不带 notify. 前缀） */
+  supportEmail: string;
+  /** 系统发信 from（分站，notify. 子域） */
+  systemFromEmail: string;
   /** 版本标识，用于构建/部署追溯 */
   version: string;
 }
@@ -102,6 +106,8 @@ export const siteConfigMap: SiteConfigMap = {
       serveDomesticUsers: false,
       auctionLicenseNo: null,
     },
+    supportEmail: "support@usedfarmmach.com",
+    systemFromEmail: "no-reply@notify.usedfarmmach.com",
     version: "1.0.0",
   },
   cn: {
@@ -133,6 +139,8 @@ export const siteConfigMap: SiteConfigMap = {
       serveDomesticUsers: true,
       auctionLicenseNo: process.env.CN_AUCTION_LICENSE_NO ?? null,
     },
+    supportEmail: "support@usedfarmmach.cn",
+    systemFromEmail: "no-reply@notify.usedfarmmach.cn",
     version: "1.0.0-cn",
   },
 };
@@ -157,6 +165,16 @@ export function getSiteVariant(): SiteVariant {
     }
   }
   return SITE;
+}
+
+/** 当前站点客服邮箱（客户端 meta 优先，服务端构建期 SITE） */
+export function getSupportEmail(): string {
+  return siteConfigMap[getSiteVariant()].supportEmail;
+}
+
+/** 当前站点系统发信 from 地址 */
+export function getSystemFromEmail(): string {
+  return siteConfigMap[getSiteVariant()].systemFromEmail;
 }
 
 /** 是否为 .cn 站点 */
