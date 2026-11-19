@@ -14,6 +14,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { isCnSite } from "@/config/site";
+import { getSupportEmail } from "@/config/support-email";
 
 interface ExpoLandingProps {
   locale: string;
@@ -209,7 +210,7 @@ const TEXTS: Record<string, {
     submit: "Submit Application",
     submitting: "Submitting...",
     success: "Submitted successfully! We'll contact you within 24 hours.",
-    error: "Submission failed. Please try again or contact Email: jiusei0319@gmail.com",
+    error: `Submission failed. Please try again or contact Email: ${getSupportEmail()}`,
     selectPlaceholder: "Please select",
     videoShowcase: "WingShow Field Operation Videos",
     showroomShowcase: "Digital Showroom — New Arrivals",
@@ -355,7 +356,7 @@ const TEXTS: Record<string, {
     submit: "Enviar Solicitud",
     submitting: "Enviando...",
     success: "¡Enviado con éxito! Le contactaremos en 24 horas.",
-    error: "Error. Intente de nuevo o contacte Email: jiusei0319@gmail.com",
+    error: `Error. Intente de nuevo o contacte Email: ${getSupportEmail()}`,
     selectPlaceholder: "Seleccione",
     videoShowcase: "Vídeos de operación real de WingShow",
     showroomShowcase: "Showroom digital — novedades",
@@ -550,7 +551,7 @@ const TEXTS: Record<string, {
     submit: "Envoyer la Demande",
     submitting: "Envoi...",
     success: "Envoyé avec succès! Nous vous contacterons sous 24 heures.",
-    error: "Échec de l'envoi. Réessayez ou contactez Email: jiusei0319@gmail.com",
+    error: `Échec de l'envoi. Réessayez ou contactez Email: ${getSupportEmail()}`,
     selectPlaceholder: "Sélectionner",
     videoShowcase: "Vidéos d'opération réelle WingShow",
     showroomShowcase: "Showroom numérique — nouveautés",

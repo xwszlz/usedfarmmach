@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
+import { getSupportEmail } from "@/config/support-email";
 
 /**
  * 品牌认领 API
@@ -9,7 +10,7 @@ import { sendEmail } from "@/lib/email";
  * 品牌方提交认领申请，写入 ExpoRegistration 表（source=brand_claim）
  * 同时发送邮件通知管理员
  */
-const ADMIN_EMAIL = "jiusei0319@gmail.com";
+const ADMIN_EMAIL = getSupportEmail();
 
 export async function POST(request: NextRequest) {
   try {

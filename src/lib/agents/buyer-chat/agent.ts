@@ -20,6 +20,7 @@ import {
   fetchBrandMap,
 } from "./sources";
 import { chatCompletionDoubao, getArkModelId } from "@/lib/ai/ark-client";
+import { getSupportEmail } from "@/config/support-email";
 
 // ── 意图分类（快速规则层，避免 LLM 延迟）──────
 function ruleBasedIntent(query: string, locale: ChatLocale): ChatIntent | null {
@@ -50,6 +51,7 @@ function buildSystemPrompt(ctx: {
   brandMap?: Record<string, string>;
 }): string {
   const { locale, product, arbitrageTop3 } = ctx;
+  const supportEmail = getSupportEmail();
   const langName: Record<ChatLocale, string> = {
     zh: "中文", en: "English", ru: "Русский",
     es: "Español", pt: "Português", ar: "العربية",
@@ -75,8 +77,8 @@ RULES:
 8. Suggest 1-2 related products if relevant.
 9. If the user asks "操作手册", "保养", "配件", or equivalents in other languages, provide detailed operation/maintenance/accessory info.
 10. If the user wants to contact us directly, provide:
-    - For used machinery products: WhatsApp: +86 15511395016, Phone: +86 18633878701, Email: 932133255@qq.com
-    - For parts/accessories and all other inquiries: Email: jiusei0319@gmail.com
+    - For used machinery products: WhatsApp: +86 15511395016, Phone: +86 18633878701, Email: ${supportEmail}
+    - For parts/accessories and all other inquiries: Email: ${supportEmail}
 `;
 
   if (product) {
@@ -110,8 +112,8 @@ ${arbitrageTop3
   // 国内中文买家联系方式口径（覆盖默认出口口径，避免直接甩私微）
   if (locale === "zh") {
     prompt = prompt.replace(
-      /10\. If the user wants to contact us directly[\s\S]*?jiusei0319@gmail\.com/,
-      "10. 如果用户想直接联系我们，请引导：在小程序内点「联系客服」转人工，或拨打 18633878701，或邮件 932133255@qq.com。不要直接暴露私人微信号。"
+      /10\. If the user wants to contact us directly[\s\S]*?- For parts\/accessories and all other inquiries: Email: [^\n]+/,
+      `10. 如果用户想直接联系我们，请引导：在小程序内点「联系客服」转人工，或拨打 18633878701，或邮件 ${supportEmail}。不要直接暴露私人微信号。`
     );
   }
 
