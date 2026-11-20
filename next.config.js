@@ -63,6 +63,17 @@ const nextConfig = {
           path.resolve(__dirname, "src/lib/email/provider-resend.disabled.ts")
         )
       );
+      // 同理：收信转发执行体（含 api.resend.com 与出网代码）在 .cn 产物中也必须零命中。
+      // /api/resend/inbound 路由本身保留（返回 200 跳过），只是执行体被换成占位实现。
+      config.plugins.push(
+        new webpack.NormalModuleReplacementPlugin(
+          /[\\/]inbound-forwarder$/,
+          path.resolve(
+            __dirname,
+            "src/lib/email/inbound-forwarder.disabled.ts"
+          )
+        )
+      );
     }
     return config;
   },
