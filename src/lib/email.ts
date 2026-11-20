@@ -97,8 +97,13 @@ async function sendRawEmail(
     // console 降级不发真信，保持既有 false 语义
     return provider.name !== "console";
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    // 排障必需：把 provider / from 一起打出来。只打一句 "Send failed" 不够 ——
+    // 2026-11-20 那次「Vercel 产物缺 resend 包」正是靠完整日志才定位到根因。
     // eslint-disable-next-line no-console
-    console.error("[email] Send failed:", error);
+    console.error(
+      `[email] Send failed (provider=${provider.name}, from=${cfg.fromEmail}): ${message}`
+    );
     return false;
   }
 }
