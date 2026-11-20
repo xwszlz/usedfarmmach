@@ -26,7 +26,7 @@ async function loadModules(site: Site, cred: Cred) {
   vi.stubEnv("RESEND_API_KEY", cred === "present" ? "re_test_key" : "");
   vi.stubEnv(
     "TENCENT_SES_SMTP_USER",
-    site === "cn" && cred === "present" ? "no-reply@notify.usedfarmmach.cn" : ""
+    site === "cn" && cred === "present" ? "support@usedfarmmach.cn" : ""
   );
   vi.stubEnv("TENCENT_SES_SMTP_PASS", site === "cn" && cred === "present" ? "test-pass" : "");
   vi.stubEnv("TENCENT_SES_SMTP_HOST", "smtp.qcloudmail.com");
@@ -36,6 +36,29 @@ async function loadModules(site: Site, cred: Cred) {
   const routing = await import("../routing");
   const support = await import("@/config/support-email");
   return { config, routing, support };
+}
+
+/**
+ * 不注入品牌相关变量（SEND_FROM_NAME / EMAIL_REPLY_TO 置空），
+ * 用于验证「默认值」是否符合发件人规范，而不是被 stub 掩盖。
+ */
+async function loadModulesDefaults(site: Site, cred: Cred) {
+  vi.resetModules();
+  vi.stubEnv("SITE", site);
+  vi.stubEnv("NEXT_PUBLIC_SITE", site);
+  vi.stubEnv("SEND_FROM_NAME", "");
+  vi.stubEnv("EMAIL_REPLY_TO", "");
+  vi.stubEnv("RESEND_API_KEY", cred === "present" ? "re_test_key" : "");
+  vi.stubEnv(
+    "TENCENT_SES_SMTP_USER",
+    site === "cn" && cred === "present" ? "support@usedfarmmach.cn" : ""
+  );
+  vi.stubEnv("TENCENT_SES_SMTP_PASS", site === "cn" && cred === "present" ? "test-pass" : "");
+  vi.stubEnv("TENCENT_SES_SMTP_HOST", "smtp.qcloudmail.com");
+  vi.stubEnv("TENCENT_SES_SMTP_PORT", "465");
+
+  const config = await import("../config");
+  return { config };
 }
 
 afterEach(() => {
@@ -51,9 +74,7 @@ describe("resolveMailConfig · SITE-first", () => {
         const cfg = config.resolveMailConfig();
         expect(cfg.site).toBe(site);
         expect(cfg.fromEmail).toBe(
-          site === "cn"
-            ? "no-reply@notify.usedfarmmach.cn"
-            : "no-reply@notify.usedfarmmach.com"
+          site === "cn" ? "support@usedfarmmach.cn" : "support@usedfarmmach.com"
         );
         expect(cfg.supportEmail).toBe(
           site === "cn" ? "support@usedfarmmach.cn" : "support@usedfarmmach.com"
@@ -102,9 +123,7 @@ describe("support-email · 分站地址与字面量替换", () => {
       const expected = site === "cn" ? "support@usedfarmmach.cn" : "support@usedfarmmach.com";
       expect(support.getSupportEmail()).toBe(expected);
       expect(support.getSystemFromEmail()).toBe(
-        site === "cn"
-          ? "no-reply@notify.usedfarmmach.cn"
-          : "no-reply@notify.usedfarmmach.com"
+        site === "cn" ? "support@usedfarmmach.cn" : "support@usedfarmmach.com"
       );
       expect(support.localizeSupportEmail("联系 jiusei0319@gmail.com 或 932133255@qq.com")).toBe(
         `联系 ${expected} 或 ${expected}`
@@ -112,4 +131,34 @@ describe("support-email · 分站地址与字面量替换", () => {
       expect(support.localizeSupportEmail("无字面量")).toBe("无字面量");
     });
   }
+});
+
+describe("发件人规范守卫（2026-11-20 拍板：废 no-reply / 不用 notify 子域）", () => {
+  for (const site of ["cn", "com"] as const) {
+    for (const cred of ["present", "missing"] as const) {
+      it(`${site} × 凭证${cred} → from 必须是 support@ 本站域名`, async () => {
+        const { config } = await loadModulesDefaults(site, cred);
+        const cfg = config.resolveMailConfig();
+
+        // 发件人 = 客服地址，两站各自域名
+        expect(cfg.fromEmail).toBe(
+          site === "cn" ? "support@usedfarmmach.cn" : "support@usedfarmmach.com"
+        );
+        // 反向守卫：三个历史坑一个都不许回来
+        expect(cfg.fromEmail).not.toMatch(/no-?reply/i);
+        expect(cfg.fromEmail).not.toContain("notify.");
+        expect(cfg.fromEmail).not.toContain("resend.dev");
+        // Reply-To 默认回落客服地址：客户点「回复」直达 Inbox
+        expect(cfg.replyTo).toBe(cfg.supportEmail);
+      });
+    }
+  }
+
+  it("显示名默认按站分流：.cn=神雕农机 / .com=UsedFarmMach", async () => {
+    const cnMod = await loadModulesDefaults("cn", "present");
+    expect(cnMod.config.resolveMailConfig().fromName).toBe("神雕农机");
+
+    const comMod = await loadModulesDefaults("com", "present");
+    expect(comMod.config.resolveMailConfig().fromName).toBe("UsedFarmMach");
+  });
 });
