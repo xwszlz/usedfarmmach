@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Building2, Globe, Video, BarChart3, Shield, ChevronRight, CheckCircle2, Sparkles } from "lucide-react";
 import { useTr } from "@/lib/i18n-tr";
+import { SUPPORT_EMAIL_DICT_KEY } from "@/config/support-email";
 
 interface SelfBoothLandingProps {
   locale: string;
@@ -259,7 +260,7 @@ export default function SelfBoothLanding({ locale }: SelfBoothLandingProps) {
             </div>
           </div>
           <p className="mt-6 text-center text-xs text-gray-400">
-            {tr("付款后请将截图发送至 932133255@qq.com 或致电 +86 18633878701 确认")}
+            {tr(`付款后请将截图发送至 ${SUPPORT_EMAIL_DICT_KEY} 或致电 +86 18633878701 确认`)}
           </p>
         </div>
       </section>

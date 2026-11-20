@@ -1,6 +1,7 @@
 "use client";
 
 import { translate } from "@/lib/i18n-runtime";
+import { SUPPORT_EMAIL_DICT_KEY } from "@/config/support-email";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
@@ -116,7 +117,7 @@ export default function BrandClaimClient({ locale }: { locale: string }) {
                 </div>
               </div>
               <div className="mt-4 rounded-lg bg-yellow-50 border border-yellow-200 p-3 text-xs text-gray-700">
-                {translate("📌 付款后请将截图发至 932133255@qq.com 或致电 +86 18633878701，24小时内开通自助展台。", locale)}
+                {translate(`📌 付款后请将截图发至 ${SUPPORT_EMAIL_DICT_KEY} 或致电 +86 18633878701，24小时内开通自助展台。`, locale)}
               </div>
             </div>
           )}
@@ -369,7 +370,7 @@ export default function BrandClaimClient({ locale }: { locale: string }) {
           </button>
 
           <p className="text-center text-xs text-gray-400">
-            {translate("提交后我们将在2个工作日内审核。如需加急，请联系 932133255@qq.com 或致电 +86 18633878701", locale)}
+            {translate(`提交后我们将在2个工作日内审核。如需加急，请联系 ${SUPPORT_EMAIL_DICT_KEY} 或致电 +86 18633878701`, locale)}
           </p>
         </form>
       </div>

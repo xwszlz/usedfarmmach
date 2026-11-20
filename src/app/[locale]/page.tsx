@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db";
 import { RecruitmentBanner } from "@/components/home/recruitment-banner";
 import { HotEquipment } from "@/components/home/hot-equipment";
 import { HomeSearchBar } from "@/components/home/home-search-bar";
+import { MarketSubscribe } from "@/components/home/market-subscribe";
+import { isComSite } from "@/config/site";
 import { generatePageMetadata } from "@/lib/seo-metadata";
 import { BreadcrumbStructuredData, ItemListStructuredData } from "@/components/seo/structured-data";
 import { getImageUrl } from "@/lib/image-url";
@@ -179,6 +181,14 @@ export default async function HomePage({
       <RecruitmentBanner locale={locale} />
       <HomeSearchBar locale={locale} />
       <HotEquipment products={hotProducts} locale={locale} />
+
+      {/*
+        订阅入口（2026-11-20 老板拍板）：只在 `.com` 渲染。
+        - `.cn` 需要单独的合规口径（客服地址为 support@usedfarmmach.cn，且 SES 尚未验证），
+          按老板要求留到下一轮处理，故此处用 isComSite() 硬门控，`.cn` 行为零变化。
+        - 位置放在最后：不打断「搜索 → 热门设备」这条主转化路径。
+      */}
+      {isComSite() && <MarketSubscribe locale={locale} />}
     </div>
   );
 }

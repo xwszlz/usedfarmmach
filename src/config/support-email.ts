@@ -14,6 +14,18 @@ export const SUPPORT_EMAIL_LITERALS: RegExp = /jiusei0319@gmail\.com|932133255@q
 /** URL 编码变体（@ → %40），部分文案以链接形式出现 */
 const SUPPORT_EMAIL_ENCODED_LITERALS: RegExp = /jiusei0319%40gmail\.com|932133255%40qq\.com/gi;
 
+/**
+ * 字典键内嵌的历史客服邮箱字面量。
+ *
+ * `src/lib/i18n-dictionary.ts` 的键是「中文源串」，其中 3 条文案的源串里带着这个
+ * 历史 gmail 地址。组件传给 `translate()` / `useTr()` 的源串必须与字典键**逐字节一致**
+ * 才查得到译文；差一个字符就会静默回落到中文源串（现象＝英文站漏出中文原文）。
+ *
+ * ⚠️ 这不是「要展示给用户的邮箱」，**不要**为了"清理脏数据"把它改掉。
+ *    用户看到的地址由 localizeSupportEmail() 在翻译结果上统一替换成当前分站地址。
+ */
+export const SUPPORT_EMAIL_DICT_KEY = "jiusei0319@gmail.com";
+
 /** 当前站点客服邮箱，由 getSiteVariant() 决定（客户端 meta 优先） */
 export function getSupportEmail(): string {
   return siteConfigMap[getSiteVariant()].supportEmail;
