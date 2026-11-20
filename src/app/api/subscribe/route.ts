@@ -48,8 +48,8 @@ export async function POST(req: Request) {
       },
     });
 
-    // 发送订阅确认邮件（Resend）。未配置 / 发件域名未验证时 sendEmail 内部自动降级，
-    // 不影响订阅结果；用户后续可在 Resend 验证正式域名后切换 RESEND_FROM_EMAIL。
+    // 发送订阅确认邮件。发件人统一由 src/lib/email/config.ts 的 resolveMailConfig() 决定
+    // （= support@usedfarmmach.{com|cn}），凭证缺失时降级 console，不影响订阅结果。
     await sendEmail({
       to: email,
       subject: "神雕农机 — 订阅成功",

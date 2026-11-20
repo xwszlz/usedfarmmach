@@ -8,7 +8,7 @@
  * Resend 只在非 cn 分支动态 import；CN_BUILD_GUARD 为构建期常量，
  * .cn 产物中该分支被 webpack/Terser 整段消除（D3 构建期隔离）。
  */
-import { SITE, type SiteVariant } from "@/config/site";
+import { SITE, siteConfigMap, type SiteVariant } from "@/config/site";
 import { ConsoleProvider, TencentSesProvider } from "./provider";
 import type { EmailProvider } from "./provider";
 
@@ -17,11 +17,11 @@ export type ProviderKind = "resend" | "tencent_ses" | "console" | "aliyun_direct
 export interface MailSiteConfig {
   site: SiteVariant;
   providerKind: ProviderKind;
-  /** no-reply@notify.usedfarmmach.{com|cn} */
+  /** support@usedfarmmach.{com|cn}（= supportEmail，单一真源见 site.ts） */
   fromEmail: string;
-  /** env SEND_FROM_NAME ?? "神雕农机" */
+  /** env SEND_FROM_NAME ?? "UsedFarmMach"(.com) / "神雕农机"(.cn) */
   fromName: string;
-  /** env EMAIL_REPLY_TO，未配置则 undefined（默认不设 header） */
+  /** env EMAIL_REPLY_TO ?? supportEmail（默认回落客服地址，客户点回复直达 Inbox） */
   replyTo?: string;
   /** support@usedfarmmach.{com|cn}（不带 notify. 前缀） */
   supportEmail: string;
@@ -44,14 +44,15 @@ export function isCnBuild(): boolean {
 /** 解析当前构建的邮件配置（纯读 env，无副作用） */
 export function resolveMailConfig(): MailSiteConfig {
   const site: SiteVariant = SITE;
-  const fromEmail = site === "cn"
-    ? "no-reply@notify.usedfarmmach.cn"
-    : "no-reply@notify.usedfarmmach.com";
-  const supportEmail = site === "cn"
-    ? "support@usedfarmmach.cn"
-    : "support@usedfarmmach.com";
-  const fromName = process.env.SEND_FROM_NAME || "神雕农机";
-  const replyTo = process.env.EMAIL_REPLY_TO || undefined;
+  // 单一真源：发件人与客服地址都取自 siteConfigMap，避免与 site.ts 双份硬编码漂移。
+  const siteCfg = siteConfigMap[site];
+  const fromEmail = siteCfg.systemFromEmail;
+  const supportEmail = siteCfg.supportEmail;
+  // 显示名按站分流：.com 面向海外用英文品牌名，.cn 用中文品牌名。
+  const fromName =
+    process.env.SEND_FROM_NAME || (site === "cn" ? "神雕农机" : "UsedFarmMach");
+  // 回复地址默认回落客服邮箱：客户点「回复」直达 support 收件箱，不再石沉大海。
+  const replyTo = process.env.EMAIL_REPLY_TO || supportEmail;
 
   if (site === "cn") {
     const user = process.env.TENCENT_SES_SMTP_USER;
@@ -104,7 +105,15 @@ export async function createProvider(cfg: MailSiteConfig): Promise<EmailProvider
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) return new ConsoleProvider(cfg.fromEmail);
     const { ResendProvider } = await import("./provider-resend");
-    return new ResendProvider(apiKey, cfg.fromEmail, cfg.replyTo);
+    // 显示名必须拼进 From 头：Resend 只收完整 header，不像 SES 那样分 from/fromName 两参。
+    // env 里已带 "<...>" 的（历史写法）原样透传，避免二次包装成 "Name <Name <addr>>"。
+    if (/<[^>]+>/.test(cfg.fromEmail)) {
+      return new ResendProvider(apiKey, cfg.fromEmail, cfg.replyTo);
+    }
+    const fromHeader = cfg.fromName
+      ? `${cfg.fromName} <${cfg.fromEmail}>`
+      : cfg.fromEmail;
+    return new ResendProvider(apiKey, fromHeader, cfg.replyTo);
   }
   return new ConsoleProvider(cfg.fromEmail);
 }

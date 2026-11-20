@@ -107,7 +107,11 @@ export const siteConfigMap: SiteConfigMap = {
       auctionLicenseNo: null,
     },
     supportEmail: "support@usedfarmmach.com",
-    systemFromEmail: "no-reply@notify.usedfarmmach.com",
+    // 系统发件人 = 客服地址本身（2026-11-20 老板拍板统一规范）：
+    // ① 废掉 no-reply（不礼貌、拉低送达率、客户无处追问）；
+    // ② 不用 notify. 子域——该子域从未在 Resend 验证，发信必被拒；
+    //    usedfarmmach.com 根域已通过 DKIM(resend._domainkey) + send. 子域 SPF 验证。
+    systemFromEmail: "support@usedfarmmach.com",
     version: "1.0.0",
   },
   cn: {
@@ -140,7 +144,9 @@ export const siteConfigMap: SiteConfigMap = {
       auctionLicenseNo: process.env.CN_AUCTION_LICENSE_NO ?? null,
     },
     supportEmail: "support@usedfarmmach.cn",
-    systemFromEmail: "no-reply@notify.usedfarmmach.cn",
+    // 同 .com 口径：发件人即客服地址，不再使用 no-reply / notify. 子域。
+    // .cn 走腾讯云 SES，发信域名需在 SES 侧单独验证（与 Resend 无关）。
+    systemFromEmail: "support@usedfarmmach.cn",
     version: "1.0.0-cn",
   },
 };
