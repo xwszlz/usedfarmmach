@@ -1,6 +1,10 @@
+const path = require("path");
 const createNextIntlPlugin = require("next-intl/plugin");
 
 const withNextIntl = createNextIntlPlugin("./i18n.ts");
+
+/** .cn 构建标记（与下方 output / env 的判据保持同一表达式，避免两处漂移） */
+const IS_CN_BUILD = process.env.SITE === "cn";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -39,6 +43,28 @@ const nextConfig = {
         hostname: "oss-cn-beijing.aliyuncs.com",
       },
     ],
+  },
+
+  /**
+   * D3 数据不出境：`.cn` 产物必须物理零命中 Resend。
+   *
+   * ⚠️ 只靠 config.ts 里的 `if (CN_BUILD_GUARD) { ...return }` 不够 —— 2026-11-20
+   * 实测 `SITE=cn npx next build`，`.next/server/chunks/*.js` 里仍有 api.resend.com：
+   * webpack 在 Terser 做死代码消除之前就建好了 async chunk 图，提前 return 挡不住它。
+   * 故这里做**结构性替换**：.cn 构建把 ./provider-resend 换成 disabled 占位实现，
+   * 不依赖任何优化器行为，产物里物理上不存在 Resend 端点与出网代码。
+   * 该替换只影响打包结果，不影响 tsc（真实实现照常接受类型检查）。
+   */
+  webpack(config, { webpack }) {
+    if (IS_CN_BUILD) {
+      config.plugins.push(
+        new webpack.NormalModuleReplacementPlugin(
+          /[\\/]provider-resend$/,
+          path.resolve(__dirname, "src/lib/email/provider-resend.disabled.ts")
+        )
+      );
+    }
+    return config;
   },
 
   // 国内农机补贴明细页 / raw JSON 通道：动态内容 + fail-closed 门禁，禁用缓存。
