@@ -122,6 +122,13 @@ export function Footer({ locale }: FooterProps) {
         {/* Legal Links */}
         <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
           <a
+            href={`/${locale}/contact`}
+            className="text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400"
+          >
+            {t("contactUs")}
+          </a>
+          <span className="text-gray-300 dark:text-gray-600">|</span>
+          <a
             href={`/${locale}/privacy`}
             className="text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400"
           >
