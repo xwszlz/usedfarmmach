@@ -429,6 +429,8 @@ export function ContactClient({
                 </span>
                 <input
                   type="text"
+                  name="name"
+                  autoComplete="name"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -443,6 +445,9 @@ export function ContactClient({
                 </span>
                 <input
                   type="email"
+                  name="email"
+                  autoComplete="email"
+                  inputMode="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -457,6 +462,9 @@ export function ContactClient({
                 </span>
                 <input
                   type="tel"
+                  name="phone"
+                  autoComplete="tel"
+                  inputMode="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   maxLength={40}
