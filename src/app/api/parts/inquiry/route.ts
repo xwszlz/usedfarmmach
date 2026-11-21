@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email";
-import { getSupportEmail } from "@/config/support-email";
+import { getSalesEmail } from "@/config/support-email";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +34,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const adminEmail = process.env.ADMIN_EMAIL || getSupportEmail();
+    // 配件询价 = 商机，默认落销售邮箱（.cn 未开通 sales ⇒ 自动回退 support@usedfarmmach.cn）
+    const adminEmail = process.env.ADMIN_EMAIL || getSalesEmail();
 
     const html = `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">

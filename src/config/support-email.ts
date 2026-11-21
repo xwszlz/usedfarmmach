@@ -37,6 +37,27 @@ export function getSystemFromEmail(): string {
 }
 
 /**
+ * 当前站点**销售**邮箱 —— 站内所有「我要买」类询盘的落点。
+ *
+ * 分工（2026-11-21 老板拍板）：
+ * - sales   ← 客户问价 / 配件询价 / 展会招商 / 验机预约（国外业务部接）
+ * - support ← 出问题才找（订单、账号、退订、账号安全、法律投诉）
+ * - marketing ← 只用于我们对别人提交（广告目录、媒体、协会名录），不上前台
+ *
+ * ⚠️ `.cn` 未开通 sales 地址 ⇒ 回退 supportEmail。绝不下发收不到信的地址。
+ */
+export function getSalesEmail(): string {
+  const cfg = siteConfigMap[getSiteVariant()];
+  return cfg.salesEmail || cfg.supportEmail;
+}
+
+/** 当前站点**市场 / 商务合作**邮箱；`.cn` 未开通 ⇒ 回退 supportEmail */
+export function getMarketingEmail(): string {
+  const cfg = siteConfigMap[getSiteVariant()];
+  return cfg.marketingEmail || cfg.supportEmail;
+}
+
+/**
  * 把历史客服邮箱字面量替换为当前站点的客服邮箱。
  * 纯函数、同步、客户端安全；无命中时原样返回。
  */
