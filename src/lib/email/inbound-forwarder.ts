@@ -18,6 +18,9 @@ import {
   escapeHtml,
   extractAddress,
   isOwnAddress,
+  isSelfDelivery,
+  isSystemSender,
+  pickReplyTo,
   resolveGroupTarget,
   verifySvixSignature,
   type InboundResult,
@@ -36,6 +39,11 @@ interface ReceivedEmailContent {
   html?: string | null;
   text?: string | null;
   from?: string;
+  /**
+   * 原始邮件头（Resend `GET /emails/receiving/{id}` 返回，键名大小写不统一）。
+   * 只用来取 `Reply-To`，其余一概不用。
+   */
+  headers?: Record<string, string> | null;
   attachments?: Array<{
     id?: string;
     filename?: string | null;
@@ -192,8 +200,17 @@ export async function handleInboundEmail(req: Request): Promise<InboundResult> {
   if (!target) return ok({ skipped: "no-route", to: toList });
 
   // 回路保险：发件人是自有域名 → 多半是我们自己人回复/系统信，转了会自激
+  // ⚠️ 但有两类必须放行，否则最该送到的信全被静默吞掉（2026-11-21 实测踩过）：
+  //    ① 自投递（From == To）：网站联系表单通知，From=To=support@usedfarmmach.com
+  //    ② 系统发信（From == EMAIL_FROM）：展会/配件询价、品牌认领，From=support@
+  //       而 To=sales@ 或 marketing@，From≠To 但同属自有域
+  //    真正的回路风险 From 是收件人那侧的地址，两类都不命中，保险不削弱。
   const senderAddr = extractAddress(originalFrom);
-  if (isOwnAddress(senderAddr)) {
+  if (
+    isOwnAddress(senderAddr) &&
+    !isSelfDelivery(senderAddr, toList) &&
+    !isSystemSender(senderAddr, process.env.EMAIL_FROM)
+  ) {
     return ok({ skipped: "own-domain", from: senderAddr });
   }
 
@@ -238,13 +255,16 @@ export async function handleInboundEmail(req: Request): Promise<InboundResult> {
     text: email.text ?? null,
   });
 
+  // Reply-To 优先用原信的 Reply-To（表单通知里是访客邮箱），退化才用发件人。
+  const replyToAddr = pickReplyTo(email.headers) ?? senderAddr ?? undefined;
+
   const sendRes = await fetch(`${RESEND_API}/emails`, {
     method: "POST",
     headers: authHeaders(apiKey),
     body: JSON.stringify({
       from: `神雕农机 <${target.inboxAddress}>`,
       to: [target.groupAddress],
-      reply_to: senderAddr ?? undefined,
+      reply_to: replyToAddr,
       subject,
       html,
       text,
