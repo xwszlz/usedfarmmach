@@ -44,6 +44,17 @@ export interface LegacySendEmailParams {
   subject: string;
   html: string;
   text?: string;
+  /**
+   * 按次覆盖 Reply-To。
+   *
+   * 现状：`sendRawEmail` 默认用配置里的 `cfg.replyTo`（= EMAIL_REPLY_TO || 分站 support），
+   * 也就是「不管发给谁，回复都回到我们客服」。这对告警类邮件是对的，但联系表单
+   * （`/api/contact`）的收件人是我们自己、发件人才是访客 —— 团队看到告警点「回复」
+   * 必须直接落到访客邮箱，否则得手工复制地址，容易漏回。
+   *
+   * 不传 ⇒ 行为与改动前完全一致（现有调用方零影响）。
+   */
+  replyTo?: string;
 }
 
 /** 邮件类型 → EmailSendLog.type 映射 */
@@ -92,7 +103,7 @@ async function sendRawEmail(
       subject: params.subject,
       html: params.html,
       text: params.text,
-      replyTo: cfg.replyTo,
+      replyTo: params.replyTo ?? cfg.replyTo,
     });
     // console 降级不发真信，保持既有 false 语义
     return provider.name !== "console";
