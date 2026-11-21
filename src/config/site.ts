@@ -163,13 +163,23 @@ export const siteConfigMap: SiteConfigMap = {
       serveDomesticUsers: true,
       auctionLicenseNo: process.env.CN_AUCTION_LICENSE_NO ?? null,
     },
-    supportEmail: "support@usedfarmmach.cn",
+    // 🔴 2026-11-21 老板拍板 A 方案：.cn 站客服邮箱改用 shendiaotech.cn 域。
+    //
+    // 为什么不是 support@usedfarmmach.cn（原值）——两个硬约束：
+    //   ① usedfarmmach.cn **没有任何 MX 记录**（nslookup 8.8.8.8 实测，NS=vip1.alidns.com），
+    //      即该地址是「死信箱」：页面上挂出去的客服邮箱，客户来信全部静默消失。
+    //   ② 腾讯企业邮**免费版只允许绑定 1 个自有域名**，名额已被 shendiaotech.cn 占用
+    //      （MX=mxbiz1.qq.com/mxbiz2.qq.com）；且只允许本域账号发信。
+    //      ⇒ 拿 shendiaotech.cn 的账号密码，却在信头写 usedfarmmach.cn，收发两头都不成立。
+    // 代价：发件人显示的是公司域（shendiaotech.cn）而非平台域（usedfarmmach.cn），可接受。
+    supportEmail: "support@shendiaotech.cn",
     // ⚠️ .cn 站**没有** sales@ / marketing@ 邮箱（腾讯企业邮只开了 support 一个公共邮箱）。
     //    这里刻意留空，getSalesEmail() / getMarketingEmail() 会回退到 supportEmail，
     //    避免页面挂出一个收不到信的死地址。将来 .cn 开通再填即可。
     // 同 .com 口径：发件人即客服地址，不再使用 no-reply / notify. 子域。
-    // .cn 走腾讯云 SES，发信域名需在 SES 侧单独验证（与 Resend 无关）。
-    systemFromEmail: "support@usedfarmmach.cn",
+    // .cn 走腾讯企业邮 SMTP（smtp.exmail.qq.com:465 SSL），
+    //   凭据为 support@shendiaotech.cn 的「客户端专用密码」——不是登录密码。
+    systemFromEmail: "support@shendiaotech.cn",
     version: "1.0.0-cn",
   },
 };

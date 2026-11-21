@@ -11,7 +11,7 @@
  * 只能点邮箱；而邮箱依赖访客本机装了邮件客户端，实测大量 Windows 用户没有（本机
  * `mailto` 关联甚至指向一个已卸载的 AppX 应用）。所以补一条不依赖任何客户端的通路。
  *
- * 落点按主题分流，`.cn` 未开通的地址由 getter 自动回退 `support@usedfarmmach.cn`，
+ * 落点按主题分流，`.cn` 未开通的地址由 getter 自动回退 `support@shendiaotech.cn`，
  * 绝不产生「发出去没人收」的死信箱。
  */
 

@@ -128,7 +128,8 @@ export function createDomesticProvider(): EmailProvider {
     return new TencentSesProvider({
       user: process.env.TENCENT_SES_SMTP_USER || "",
       pass: process.env.TENCENT_SES_SMTP_PASS || "",
-      host: process.env.TENCENT_SES_SMTP_HOST || "smtp.qcloudmail.com",
+      // 默认值与企业邮对齐（2026-11-21）：见 config.ts 同处说明，漏填 HOST 也不会连错服务器。
+      host: process.env.TENCENT_SES_SMTP_HOST || "smtp.exmail.qq.com",
       port: Number(process.env.TENCENT_SES_SMTP_PORT || "465"),
       from: cfg.fromEmail,
       fromName: cfg.fromName,

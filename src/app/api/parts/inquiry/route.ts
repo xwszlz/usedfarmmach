@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 配件询价 = 商机，默认落销售邮箱（.cn 未开通 sales ⇒ 自动回退 support@usedfarmmach.cn）
+    // 配件询价 = 商机，默认落销售邮箱（.cn 未开通 sales ⇒ 自动回退 support@shendiaotech.cn）
     const adminEmail = process.env.ADMIN_EMAIL || getSalesEmail();
 
     const html = `
