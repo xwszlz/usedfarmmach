@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -9,10 +9,34 @@ import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2 } from "lucide-react";
 import { isComSite } from "@/config/site";
+import {
+  applyDraft,
+  clearDraft,
+  collectDraft,
+  readDraft,
+  writeDraft,
+  type DraftSpec,
+} from "@/lib/form-draft";
 
 interface CompleteProfileFormProps {
   locale: string;
 }
+
+/**
+ * 补全资料表单的草稿白名单（机制见 `src/lib/form-draft.ts` 顶部）。
+ * 🔴 `password` 不在名单里：这里虽然只是「设置密码」，但它照样是密码，不落盘。
+ */
+const PROFILE_DRAFT: DraftSpec = {
+  key: "ufm:profile-draft:v1",
+  textFields: ["email", "companyName", "country"],
+  checkboxFields: ["consent"],
+};
+
+/** 「已恢复草稿」提示（本组件是双语页面，沿用文件里既有的 locale === "zh" 三元式风格） */
+const DRAFT_RESTORED_HINT = {
+  zh: "已恢复你上次填写的内容，密码需要重新输入。",
+  en: "We restored what you entered earlier. Please re-enter your password.",
+};
 
 /**
  * 补全资料表单（Client，阶段 0 任务 T11①）
@@ -34,6 +58,23 @@ export function CompleteProfileForm({ locale }: CompleteProfileFormProps) {
     giftAmount: number;
   } | null>(null);
   const [consent, setConsent] = useState(false);
+
+  const formRef = useRef<HTMLFormElement>(null);
+  const [draftRestored, setDraftRestored] = useState(false);
+
+  // 恢复草稿放 effect 里：首屏是服务端渲染，那时没有 sessionStorage（详见 form-draft.ts）
+  useEffect(() => {
+    const form = formRef.current;
+    if (!form) return;
+    const draft = readDraft(PROFILE_DRAFT);
+    if (!applyDraft(form, draft, PROFILE_DRAFT)) return;
+    if (draft?.consent === true && isCom) setConsent(true);
+    setDraftRestored(true);
+  }, [isCom]);
+
+  const handleDraftChange = useCallback(() => {
+    writeDraft(PROFILE_DRAFT, collectDraft(formRef.current, PROFILE_DRAFT));
+  }, []);
 
   const countryOptions = [
     { value: "CN", label: locale === "zh" ? "中国" : locale === "ru" ? "Китай" : "China" },
@@ -88,6 +129,8 @@ export function CompleteProfileForm({ locale }: CompleteProfileFormProps) {
       const json = await res.json();
 
       if (json.success && json.data) {
+        // 提交成功清草稿，避免下次进来被灌回上一轮的旧内容
+        clearDraft(PROFILE_DRAFT);
         setSuccess(true);
         setResult({
           credits: json.data.credits ?? 0,
@@ -159,7 +202,18 @@ export function CompleteProfileForm({ locale }: CompleteProfileFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form
+      ref={formRef}
+      onSubmit={handleSubmit}
+      // React 的 onChange 会冒泡，挂在 form 上即可覆盖所有子字段
+      onChange={handleDraftChange}
+      className="space-y-4"
+    >
+      {draftRestored && (
+        <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
+          {locale === "zh" ? DRAFT_RESTORED_HINT.zh : DRAFT_RESTORED_HINT.en}
+        </p>
+      )}
       <Input
         id="cp-email"
         name="email"
@@ -194,14 +248,22 @@ export function CompleteProfileForm({ locale }: CompleteProfileFormProps) {
         <label className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300">
           <input
             type="checkbox"
+            // name 供草稿读取勾选状态
+            name="consent"
             checked={consent}
             onChange={(e) => setConsent(e.target.checked)}
             className="mt-1 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
           />
           <span>
             {locale === "zh" ? "我已阅读并同意" : t("crossBorderConsent")}{" "}
+            {/*
+              新标签打开 + 草稿兜底：填到一半点进条款页再回来，内容不能丢
+              （同一处修改见 auth/register-form.tsx）
+            */}
             <Link
               href={`/${locale}/cross-border-consent`}
+              target="_blank"
+              rel="noopener noreferrer"
               className="font-medium text-primary-600 hover:underline"
             >
               {t("crossBorderConsentLink")}
