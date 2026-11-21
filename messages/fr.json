@@ -762,7 +762,10 @@
     "value4Title": "Gagnant-gagnant",
     "value4Desc": "Opportunités d'arbitrage au bénéfice de tous",
     "team": "Notre équipe",
-    "teamText": "Une équipe avec une vaste expérience en machines agricoles et commerce international. Membres de Chine, États-Unis, Japon et plus, dédiés à construire la plateforme leader de machines agricoles d'occasion."
+    "teamText": "Une équipe avec une vaste expérience en machines agricoles et commerce international. Membres de Chine, États-Unis, Japon et plus, dédiés à construire la plateforme leader de machines agricoles d'occasion.",
+    "complianceTitle": "Bilan de conformité gratuit",
+    "complianceDesc": "10 questions, 2 minutes — identifiez les 3 actions prioritaires. Projet public open source, calcul local sans collecte de données. Entièrement gratuit.",
+    "complianceBtn": "Commencer le bilan"
   },
   "arbitrageCalculator": {
     "title": "Calculateur d'arbitrage",
