@@ -1,5 +1,6 @@
 import { translate } from "@/lib/i18n-runtime";
 import { getSalesEmail } from "@/config/support-email";
+import { EmailLink } from "@/components/ui/email-link";
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
@@ -291,12 +292,15 @@ export default async function ServicesPage({
               {translate("联系我们的专家团队，为您定制专属的跨境农机贸易解决方案", locale)}
             </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
-              <a
-                href={`mailto:${getSalesEmail()}`}
+              {/* 点击即复制地址（访客电脑常常没装邮件客户端，裸 mailto 会点空），
+                  按钮文字直接摊开地址，避免"复制到了什么"说不清。 */}
+              <EmailLink
+                email={getSalesEmail()}
+                locale={locale}
+                showMailAppIcon={false}
+                label={`📧 ${getSalesEmail()}`}
                 className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 font-semibold text-violet-700 transition-colors hover:bg-violet-50"
-              >
-                {translate("📧 邮件咨询", locale)}
-              </a>
+              />
               <Link
                 href={`/${locale}/about`}
                 className="inline-flex items-center gap-2 rounded-lg border border-white/30 px-6 py-3 font-semibold text-white transition-colors hover:bg-white/10"

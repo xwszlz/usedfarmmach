@@ -2,6 +2,7 @@ import { translate } from "@/lib/i18n-runtime";
 import type { Metadata } from "next";
 import { isCnSite } from "@/config/site";
 import { getSupportEmail } from "@/config/support-email";
+import { EmailLink } from "@/components/ui/email-link";
 
 export async function generateMetadata({
   params,
@@ -45,7 +46,7 @@ export default async function TermsPage({
   );
 }
 
-function TermsContentZh() {
+function TermsContentZh({ locale = "zh" }: { locale?: string }) {
   return (
     <>
       <div className="rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-4">
@@ -204,7 +205,7 @@ function TermsContentZh() {
           </li>
           <li>
             <strong>侵权投诉：</strong>
-            如您发现平台上有侵犯您知识产权的内容，请发送侵权通知至 {getSupportEmail()}，
+            如您发现平台上有侵犯您知识产权的内容，请发送侵权通知至 <EmailLink email={getSupportEmail()} locale={locale} showMailAppIcon={false} className="text-primary-600 underline underline-offset-2 hover:text-primary-700 dark:text-primary-400" />，
             我们将在收到通知后及时处理。
           </li>
         </ol>
@@ -272,7 +273,7 @@ function TermsContentZh() {
       <section>
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">第十一条　账号注销</h2>
         <ol className="list-decimal pl-6 space-y-2">
-          <li>您可随时通过&ldquo;个人中心&rdquo;申请注销账号，也可发送邮件至 {getSupportEmail()} 申请注销。</li>
+          <li>您可随时通过&ldquo;个人中心&rdquo;申请注销账号，也可发送邮件至 <EmailLink email={getSupportEmail()} locale={locale} showMailAppIcon={false} className="text-primary-600 underline underline-offset-2 hover:text-primary-700 dark:text-primary-400" /> 申请注销。</li>
           <li>账号注销后，我们将在15个工作日内删除您的个人信息或进行匿名化处理。</li>
           <li>账号注销前，请确保已完成所有进行中的交易。注销后未完成的交易由您自行承担后果。</li>
           <li>账号注销后无法恢复，您如需再次使用本平台服务须重新注册。</li>
@@ -327,7 +328,7 @@ function TermsContentZh() {
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">第十六条　联系方式</h2>
         <ul className="space-y-1">
           <li><strong>运营主体：</strong>石家庄神雕农机科技有限公司</li>
-          <li><strong>联系邮箱：</strong>{getSupportEmail()}</li>
+          <li><strong>联系邮箱：</strong><EmailLink email={getSupportEmail()} locale={locale} showMailAppIcon={false} className="text-primary-600 underline underline-offset-2 hover:text-primary-700 dark:text-primary-400" /></li>
           <li><strong>注册地址：</strong>河北省石家庄市元氏县马村乡聊村</li>
         </ul>
       </section>
@@ -343,7 +344,7 @@ function TermsContentZh() {
   );
 }
 
-function TermsContentEn() {
+function TermsContentEn({ locale = "en" }: { locale?: string }) {
   return (
     <>
       <p className="text-gray-600 dark:text-gray-400">
@@ -360,7 +361,7 @@ function TermsContentEn() {
   );
 }
 
-function TermsContentCn() {
+function TermsContentCn({ locale = "zh" }: { locale?: string }) {
   return (
     <>
       <div className="rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-4">
@@ -519,7 +520,7 @@ function TermsContentCn() {
           </li>
           <li>
             <strong>侵权投诉：</strong>
-            如您发现平台上有侵犯您知识产权的内容，请发送侵权通知至 {getSupportEmail()}，
+            如您发现平台上有侵犯您知识产权的内容，请发送侵权通知至 <EmailLink email={getSupportEmail()} locale={locale} showMailAppIcon={false} className="text-primary-600 underline underline-offset-2 hover:text-primary-700 dark:text-primary-400" />，
             我们将在收到通知后及时处理。
           </li>
         </ol>
@@ -587,7 +588,7 @@ function TermsContentCn() {
       <section>
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">第十一条　账号注销</h2>
         <ol className="list-decimal pl-6 space-y-2">
-          <li>您可随时通过&ldquo;个人中心&rdquo;申请注销账号，也可发送邮件至 {getSupportEmail()} 申请注销。</li>
+          <li>您可随时通过&ldquo;个人中心&rdquo;申请注销账号，也可发送邮件至 <EmailLink email={getSupportEmail()} locale={locale} showMailAppIcon={false} className="text-primary-600 underline underline-offset-2 hover:text-primary-700 dark:text-primary-400" /> 申请注销。</li>
           <li>账号注销后，我们将在15个工作日内删除您的个人信息或进行匿名化处理。</li>
           <li>账号注销前，请确保已完成所有进行中的交易。注销后未完成的交易由您自行承担后果。</li>
           <li>账号注销后无法恢复，您如需再次使用本平台服务须重新注册。</li>
@@ -642,7 +643,7 @@ function TermsContentCn() {
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">第十六条　联系方式</h2>
         <ul className="space-y-1">
           <li><strong>运营主体：</strong>石家庄神雕农机科技有限公司</li>
-          <li><strong>联系邮箱：</strong>{getSupportEmail()}</li>
+          <li><strong>联系邮箱：</strong><EmailLink email={getSupportEmail()} locale={locale} showMailAppIcon={false} className="text-primary-600 underline underline-offset-2 hover:text-primary-700 dark:text-primary-400" /></li>
           <li><strong>注册地址：</strong>河北省石家庄市元氏县马村乡聊村</li>
         </ul>
       </section>
