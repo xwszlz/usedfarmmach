@@ -88,7 +88,7 @@ export function EmailLink({
   copiedLabel,
 }: EmailLinkProps) {
   const normalized = normalizeEmail(email);
-  const [copied, setCopied] = useState(false);
+  const [hint, setHint] = useState<null | "copied" | "mailApp">(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(
@@ -97,6 +97,12 @@ export function EmailLink({
     },
     []
   );
+
+  const showHint = useCallback((kind: "copied" | "mailApp") => {
+    setHint(kind);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setHint(null), 2400);
+  }, []);
 
   const handleCopy = useCallback(
     async (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -111,17 +117,43 @@ export function EmailLink({
         return;
       }
 
-      setCopied(true);
-      if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => setCopied(false), 2000);
+      showHint("copied");
     },
-    [normalized]
+    [normalized, showHint]
+  );
+
+  /**
+   * 小信封：**先复制、再唤起客户端**，绝不能只剩一个裸 `mailto:` 跳转。
+   *
+   * 2026-11-21 实测：老板本机（Win11 + Foxmail 7.2）系统级 `mailto` 关联完全正确，
+   * 但 Foxmail 收到后不弹写邮件窗口 —— 裸跳的话点下去「毫无反应」，
+   * 用户既不知道成没成、手里也没拿到地址。
+   * 改成先写剪贴板（此刻页面仍在前台，Clipboard API 成功率最高）再唤起，
+   * 无论如何地址都已经在手上，toast 直接告诉用户「可粘贴到邮件应用」。
+   */
+  const handleMailApp = useCallback(
+    async (e: React.MouseEvent<HTMLAnchorElement>) => {
+      // 必须 preventDefault：先同步走完复制，再自己发起跳转，顺序可控。
+      e.preventDefault();
+      if (!normalized) return;
+
+      const ok = await copyText(normalized);
+      if (ok) showHint("mailApp");
+
+      // 唤起失败（没装客户端 / 客户端不响应）也不影响已经完成的复制
+      window.location.href = `mailto:${normalized}`;
+    },
+    [normalized, showHint]
   );
 
   if (!normalized) return null;
 
   const display = label || normalized;
   const copiedText = copiedLabel || translate("已复制", locale);
+  const hintText =
+    hint === "mailApp"
+      ? translate("已复制，可粘贴到邮件应用", locale)
+      : copiedText;
   const mailAppTitle = translate("在邮件应用中打开", locale);
 
   return (
@@ -138,6 +170,7 @@ export function EmailLink({
       {showMailAppIcon && (
         <a
           href={`mailto:${normalized}`}
+          onClick={handleMailApp}
           title={mailAppTitle}
           aria-label={mailAppTitle}
           className="inline-flex shrink-0 items-center opacity-50 transition-opacity hover:opacity-100"
@@ -147,15 +180,15 @@ export function EmailLink({
       )}
 
       {/* 视觉提示：绝对定位飘在下沿，不占布局、不撑动正文行距 */}
-      {copied && (
+      {hint && (
         <span className="pointer-events-none absolute start-0 top-full z-20 mt-1 whitespace-nowrap rounded bg-gray-900 px-2 py-0.5 text-xs font-normal text-white shadow-sm dark:bg-gray-100 dark:text-gray-900">
-          {copiedText}
+          {hintText}
         </span>
       )}
 
       {/* 无障碍播报：视觉提示对读屏器不可见，单开一条 live region */}
       <span className="sr-only" aria-live="polite">
-        {copied ? copiedText : ""}
+        {hint ? hintText : ""}
       </span>
     </span>
   );

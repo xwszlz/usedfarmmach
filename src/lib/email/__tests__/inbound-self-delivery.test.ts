@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { isOwnAddress, isSelfDelivery, pickReplyTo } from "@/lib/email/inbound";
+import {
+  isOwnAddress,
+  isSelfDelivery,
+  isSystemSender,
+  pickReplyTo,
+} from "@/lib/email/inbound";
 
 /**
  * 2026-11-21 线上事故回归：网站联系表单通知被自域保险静默丢弃。
@@ -66,6 +71,50 @@ describe("自域保险的组合判定（与 forwarder 里的真实条件一致�
     expect(
       shouldSkip("support@shendiaotech.cn", ["support@usedfarmmach.com"])
     ).toBe(true);
+  });
+});
+
+describe("isSystemSender —— 系统内部通知（展会/配件询价、品牌认领）不被吞", () => {
+  const EMAIL_FROM = "support@usedfarmmach.com";
+
+  it("发件人就是 EMAIL_FROM ⇒ 是我们自己系统发的", () => {
+    expect(isSystemSender(EMAIL_FROM, EMAIL_FROM)).toBe(true);
+  });
+
+  it("EMAIL_FROM 被配成 `Name <addr>` 形式也认", () => {
+    expect(
+      isSystemSender("support@usedfarmmach.com", `UsedFarmMach <${EMAIL_FROM}>`)
+    ).toBe(true);
+  });
+
+  it("群组成员 / 自动回复的发件地址不等于 EMAIL_FROM ⇒ 不算系统发信", () => {
+    expect(isSystemSender("support@shendiaotech.cn", EMAIL_FROM)).toBe(false);
+    expect(isSystemSender("someone@qq.com", EMAIL_FROM)).toBe(false);
+  });
+
+  it("EMAIL_FROM 未配置时一律放不起来（保守）", () => {
+    expect(isSystemSender(EMAIL_FROM, undefined)).toBe(false);
+    expect(isSystemSender(EMAIL_FROM, "")).toBe(false);
+  });
+
+  it("展会/配件询价：From=support@、To=sales@，虽然 From≠To 但必须放行", () => {
+    const shouldSkip = (from: string, to: string[]) =>
+      isOwnAddress(from) &&
+      !isSelfDelivery(from, to) &&
+      !isSystemSender(from, EMAIL_FROM);
+
+    expect(shouldSkip(EMAIL_FROM, ["sales@usedfarmmach.com"])).toBe(false);
+    expect(shouldSkip(EMAIL_FROM, ["marketing@usedfarmmach.com"])).toBe(false);
+  });
+
+  it("但群组回灌、自动回复仍然被拦（回路保险没被削弱）", () => {
+    const shouldSkip = (from: string, to: string[]) =>
+      isOwnAddress(from) &&
+      !isSelfDelivery(from, to) &&
+      !isSystemSender(from, EMAIL_FROM);
+
+    expect(shouldSkip("support@shendiaotech.cn", ["support@usedfarmmach.com"])).toBe(true);
+    expect(shouldSkip("auto-reply@usedfarmmach.com", ["support@usedfarmmach.com"])).toBe(true);
   });
 });
 

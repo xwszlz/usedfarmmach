@@ -77,6 +77,30 @@ export function isSelfDelivery(
 }
 
 /**
+ * 发件人是否就是我们自己的系统发信地址（`EMAIL_FROM`）。
+ *
+ * 覆盖的是「系统主动发出的内部通知」：`/api/expo/inquiry`（展会询价）、
+ * `/api/parts/inquiry`（配件询价）、`/api/expo/brand-claim`（品牌认领）都把通知
+ * 发给 `getSalesEmail()`（`sales@usedfarmmach.com`），而 `From` 统一是
+ * `EMAIL_FROM`（`support@usedfarmmach.com`）。
+ *
+ * 这类信 `From ≠ To`，`isSelfDelivery` 盖不住，会被回路保险判 `own-domain` 丢掉，
+ * 但它们恰恰是最该送到的业务线索（客户询价、品牌认领）。用「发件人 == 系统发信地址」
+ * 把它们捞回来。
+ *
+ * 为什么不担心放宽 —— 真正的回路风险（群组成员回信、邮件系统自动回复）`From`
+ * 是收件人那侧的地址（`@shendiaotech.cn` 或外部域），不等于 `EMAIL_FROM`，依旧被拦。
+ */
+export function isSystemSender(
+  sender: string | null,
+  systemFrom: string | null | undefined
+): boolean {
+  if (!sender) return false;
+  const addr = extractAddress(systemFrom ?? null);
+  return !!addr && addr === sender;
+}
+
+/**
  * 从收信内容的 `headers` 里取原信的 `Reply-To`。
  *
  * Resend `GET /emails/receiving/{id}` 把原始邮件头放在 `headers`，

@@ -19,6 +19,7 @@ import {
   extractAddress,
   isOwnAddress,
   isSelfDelivery,
+  isSystemSender,
   pickReplyTo,
   resolveGroupTarget,
   verifySvixSignature,
@@ -199,11 +200,17 @@ export async function handleInboundEmail(req: Request): Promise<InboundResult> {
   if (!target) return ok({ skipped: "no-route", to: toList });
 
   // 回路保险：发件人是自有域名 → 多半是我们自己人回复/系统信，转了会自激
-  // ⚠️ 但「自投递」（From == To）必须放行：网站联系表单通知就是这种形态
-  //    （From=To=support@usedfarmmach.com），一律按自有域拦掉会让客户询价
-  //    永远到不了团队邮箱 —— 2026-11-21 实测踩过，勿简化回单条件。
+  // ⚠️ 但有两类必须放行，否则最该送到的信全被静默吞掉（2026-11-21 实测踩过）：
+  //    ① 自投递（From == To）：网站联系表单通知，From=To=support@usedfarmmach.com
+  //    ② 系统发信（From == EMAIL_FROM）：展会/配件询价、品牌认领，From=support@
+  //       而 To=sales@ 或 marketing@，From≠To 但同属自有域
+  //    真正的回路风险 From 是收件人那侧的地址，两类都不命中，保险不削弱。
   const senderAddr = extractAddress(originalFrom);
-  if (isOwnAddress(senderAddr) && !isSelfDelivery(senderAddr, toList)) {
+  if (
+    isOwnAddress(senderAddr) &&
+    !isSelfDelivery(senderAddr, toList) &&
+    !isSystemSender(senderAddr, process.env.EMAIL_FROM)
+  ) {
     return ok({ skipped: "own-domain", from: senderAddr });
   }
 
