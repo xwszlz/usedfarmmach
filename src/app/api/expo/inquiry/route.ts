@@ -13,7 +13,7 @@ import { getSalesEmail } from "@/config/support-email";
  * 3. 保留前端传入的 source 归因字段（展会展位/渠道来源），无则回退 "website"
  */
 
-// 招商意向 / 展位申请 = 商机，落销售邮箱（.cn 未开通 sales ⇒ 自动回退 support@usedfarmmach.cn）
+// 招商意向 / 展位申请 = 商机，落销售邮箱（.cn 未开通 sales ⇒ 自动回退 support@shendiaotech.cn）
 const ADMIN_EMAIL = getSalesEmail();
 
 export const dynamic = "force-dynamic"; // 防 .cn 构建期静态固化，详见 scripts/check-route-dynamic.mjs

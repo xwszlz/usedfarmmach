@@ -97,7 +97,7 @@ export async function POST(
       },
     });
 
-    // 验机预约 = 明确购买意向，落销售邮箱（.cn 未开通 sales ⇒ 自动回退 support@usedfarmmach.cn）
+    // 验机预约 = 明确购买意向，落销售邮箱（.cn 未开通 sales ⇒ 自动回退 support@shendiaotech.cn）
     try {
       const sellerEmail = getSalesEmail();
       const productName = auction.product.brand

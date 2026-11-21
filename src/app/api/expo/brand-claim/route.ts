@@ -10,7 +10,7 @@ import { getSalesEmail } from "@/config/support-email";
  * 品牌方提交认领申请，写入 ExpoRegistration 表（source=brand_claim）
  * 同时发送邮件通知管理员
  */
-// 品牌认领 = 商务接洽，落销售邮箱（.cn 未开通 sales ⇒ 自动回退 support@usedfarmmach.cn）
+// 品牌认领 = 商务接洽，落销售邮箱（.cn 未开通 sales ⇒ 自动回退 support@shendiaotech.cn）
 const ADMIN_EMAIL = getSalesEmail();
 
 export async function POST(request: NextRequest) {

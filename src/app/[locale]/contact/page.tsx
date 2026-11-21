@@ -88,7 +88,7 @@ export default async function ContactPage({
   const { locale } = await params;
 
   // 三个地址在服务端解析好再下发：.cn 侧 sales/marketing 未开通，
-  // getter 会自动回退成 support@usedfarmmach.cn，客户端不用再猜。
+  // getter 会自动回退成 support@shendiaotech.cn，客户端不用再猜。
   return (
     <ContactClient
       locale={locale}

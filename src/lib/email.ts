@@ -240,7 +240,7 @@ export async function sendEmail(
  *
  * 收件人为分站**销售**邮箱 getSalesEmail()（2026-11-21 老板拍板，覆盖 P1 Q2 的
  * 「收件人为分站客服邮箱」口径）：询盘 = 商机，归国外业务部接；.cn 未开通 sales
- * 地址 ⇒ getSalesEmail() 自动回退 support@usedfarmmach.cn，行为不变。
+ * 地址 ⇒ getSalesEmail() 自动回退 support@shendiaotech.cn，行为不变。
  */
 export async function notifyInquiry(params: {
   productName: string;

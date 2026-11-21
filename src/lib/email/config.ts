@@ -17,13 +17,13 @@ export type ProviderKind = "resend" | "tencent_ses" | "console" | "aliyun_direct
 export interface MailSiteConfig {
   site: SiteVariant;
   providerKind: ProviderKind;
-  /** support@usedfarmmach.{com|cn}（= supportEmail，单一真源见 site.ts） */
+  /** .cn=support@shendiaotech.cn / .com=support@usedfarmmach.com（= supportEmail，单一真源见 site.ts） */
   fromEmail: string;
   /** env SEND_FROM_NAME ?? "UsedFarmMach"(.com) / "神雕农机"(.cn) */
   fromName: string;
   /** env EMAIL_REPLY_TO ?? supportEmail（默认回落客服地址，客户点回复直达 Inbox） */
   replyTo?: string;
-  /** support@usedfarmmach.{com|cn}（不带 notify. 前缀） */
+  /** .cn=support@shendiaotech.cn / .com=support@usedfarmmach.com（不带 notify. 前缀） */
   supportEmail: string;
   /** true = console 降级（缺凭证），不发真信 */
   degraded: boolean;
@@ -90,7 +90,12 @@ export async function createProvider(cfg: MailSiteConfig): Promise<EmailProvider
       return new TencentSesProvider({
         user: process.env.TENCENT_SES_SMTP_USER || "",
         pass: process.env.TENCENT_SES_SMTP_PASS || "",
-        host: process.env.TENCENT_SES_SMTP_HOST || "smtp.qcloudmail.com",
+        // 🔴 默认值 = **腾讯企业邮**（exmail），不是腾讯云 SES（qcloudmail）。
+        //    2026-11-21 老板改用企业微信企业邮免费版：IMAP imap.exmail.qq.com:993、
+        //    SMTP smtp.exmail.qq.com:465(SSL)。两者账号体系完全不同，连错服务器
+        //    表现是 `535 Authentication failed`，看起来像密码错、其实地址错。
+        //    环境变量名沿用 TENCENT_SES_* 是为了不破坏既有部署，语义已是「腾讯系 SMTP」。
+        host: process.env.TENCENT_SES_SMTP_HOST || "smtp.exmail.qq.com",
         port: Number(process.env.TENCENT_SES_SMTP_PORT || "465"),
         from: cfg.fromEmail,
         fromName: cfg.fromName,
