@@ -7,6 +7,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getOrCreateSystemSellerId } from "@/lib/system-seller";
 
 // Vercel Serverless Function 超时延长至60秒（默认10秒，含SCP优化可能超时）
 export const dynamic = "force-dynamic"; // 防 .cn 构建期静态固化，详见 scripts/check-route-dynamic.mjs
@@ -181,10 +182,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 卖家兜底：未显式传 sellerId 时挂「系统卖家」
+    // ⚠️ 历史坑：此处曾写死 "miniapp_default"（与 cn-sync 认定的系统卖家
+    //    miniprogram@shendiao.com 不是同一账号），导致这些产品在 .cn→.com
+    //    同步时被判「id 被非同步来源产品占用」而反复告警。勿改回去。
+    const sellerId = body.sellerId || (await getOrCreateSystemSellerId(prisma));
+
     // 创建产品
     const product = await prisma.product.create({
       data: {
-        sellerId: body.sellerId || "miniapp_default",
+        sellerId,
         brandId: body.brandId,
         categoryId: body.categoryId,
         modelName: body.modelName,
