@@ -3,6 +3,7 @@ import { DisclaimerBanner } from "@/components/expo/DisclaimerBanner";
 import { CnFooter } from "@/components/cn/CnFooter";
 import { isCnSite } from "@/config/site";
 import { getSalesEmail, getSupportEmail } from "@/config/support-email";
+import { EmailLink } from "@/components/ui/email-link";
 
 interface FooterProps {
   locale: string;
@@ -88,24 +89,22 @@ export function Footer({ locale }: FooterProps) {
               </li>
               <li className="text-sm text-gray-500 dark:text-gray-400">
                 {t("email")}:{" "}
-                <a
-                  href={`mailto:${getSalesEmail()}`}
+                <EmailLink
+                  email={getSalesEmail()}
+                  locale={locale}
                   className="hover:text-primary-600 dark:hover:text-primary-400"
-                >
-                  {getSalesEmail()}
-                </a>
+                />
               </li>
               {/* .com 才有 sales 独立地址；.cn 回退 support，故只在两者不同时多显示一行。
                   标签刻意用英文 "Support"，避免为 8 语字典新增 key（重序列化风险）。 */}
               {getSupportEmail() !== getSalesEmail() && (
                 <li className="text-sm text-gray-500 dark:text-gray-400">
                   Support:{" "}
-                  <a
-                    href={`mailto:${getSupportEmail()}`}
+                  <EmailLink
+                    email={getSupportEmail()}
+                    locale={locale}
                     className="hover:text-primary-600 dark:hover:text-primary-400"
-                  >
-                    {getSupportEmail()}
-                  </a>
+                  />
                 </li>
               )}
               <li className="text-sm text-gray-500 dark:text-gray-400">

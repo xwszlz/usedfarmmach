@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { isCnSite } from "@/config/site";
 import { getSupportEmail } from "@/config/support-email";
+import { EmailLink } from "@/components/ui/email-link";
 
 export async function generateMetadata({
   params,
@@ -49,7 +50,7 @@ export default async function PrivacyPage({
 }
 
 /** .com 中文版：按 P1 Q4 保留 Resend 境外处理方披露（.cn 不渲染本组件） */
-function PrivacyContentZh() {
+function PrivacyContentZh({ locale = "zh" }: { locale?: string }) {
   return (
     <>
       <p className="text-gray-600 dark:text-gray-400">
@@ -65,7 +66,7 @@ function PrivacyContentZh() {
         <ul className="space-y-1">
           <li><strong>运营主体：</strong>石家庄神雕农机科技有限公司</li>
           <li><strong>注册地址：</strong>河北省石家庄市元氏县马村乡聊村</li>
-          <li><strong>联系邮箱：</strong>{getSupportEmail()}</li>
+          <li><strong>联系邮箱：</strong><EmailLink email={getSupportEmail()} locale={locale} showMailAppIcon={false} className="text-primary-600 underline underline-offset-2 hover:text-primary-700 dark:text-primary-400" /></li>
           <li><strong>个人信息保护负责人（DPO）：</strong>您可通过上述邮箱联系我们，邮件标题请注明&ldquo;个人信息保护咨询&rdquo;。</li>
         </ul>
       </section>
@@ -406,7 +407,7 @@ function PrivacyContentZh() {
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">十四、联系我们</h2>
         <p>如您对本隐私政策有任何疑问、意见或建议，或希望行使您的个人信息主体权利，请通过以下方式联系我们：</p>
         <ul className="space-y-1 mt-2">
-          <li><strong>邮箱：</strong>{getSupportEmail()}（邮件标题请注明&ldquo;个人信息保护咨询&rdquo;）</li>
+          <li><strong>邮箱：</strong><EmailLink email={getSupportEmail()} locale={locale} showMailAppIcon={false} className="text-primary-600 underline underline-offset-2 hover:text-primary-700 dark:text-primary-400" />（邮件标题请注明&ldquo;个人信息保护咨询&rdquo;）</li>
           <li><strong>地址：</strong>河北省石家庄市元氏县马村乡聊村</li>
           <li><strong>回复时限：</strong>15个工作日</li>
         </ul>
@@ -424,7 +425,7 @@ function PrivacyContentZh() {
 }
 
 /** .com 英文版：按 P1 Q4 保留 Resend 境外处理方披露（.cn 不渲染本组件） */
-function PrivacyContentEn() {
+function PrivacyContentEn({ locale = "en" }: { locale?: string }) {
   return (
     <>
       <p className="text-gray-600 dark:text-gray-400">
@@ -508,7 +509,7 @@ function PrivacyContentEn() {
 }
 
 /** .cn 版：P1 Q4 境内服务商处理、数据不出境，不出现 Resend / 境外接收方 */
-function PrivacyContentCn() {
+function PrivacyContentCn({ locale = "zh" }: { locale?: string }) {
   return (
     <>
       <p className="text-gray-600 dark:text-gray-400">
@@ -524,7 +525,7 @@ function PrivacyContentCn() {
         <ul className="space-y-1">
           <li><strong>运营主体：</strong>石家庄神雕农机科技有限公司</li>
           <li><strong>注册地址：</strong>河北省石家庄市元氏县马村乡聊村</li>
-          <li><strong>联系邮箱：</strong>{getSupportEmail()}</li>
+          <li><strong>联系邮箱：</strong><EmailLink email={getSupportEmail()} locale={locale} showMailAppIcon={false} className="text-primary-600 underline underline-offset-2 hover:text-primary-700 dark:text-primary-400" /></li>
           <li><strong>个人信息保护负责人（DPO）：</strong>您可通过上述邮箱联系我们，邮件标题请注明&ldquo;个人信息保护咨询&rdquo;。</li>
         </ul>
       </section>
@@ -816,7 +817,7 @@ function PrivacyContentCn() {
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">十四、联系我们</h2>
         <p>如您对本隐私政策有任何疑问、意见或建议，或希望行使您的个人信息主体权利，请通过以下方式联系我们：</p>
         <ul className="space-y-1 mt-2">
-          <li><strong>邮箱：</strong>{getSupportEmail()}（邮件标题请注明&ldquo;个人信息保护咨询&rdquo;）</li>
+          <li><strong>邮箱：</strong><EmailLink email={getSupportEmail()} locale={locale} showMailAppIcon={false} className="text-primary-600 underline underline-offset-2 hover:text-primary-700 dark:text-primary-400" />（邮件标题请注明&ldquo;个人信息保护咨询&rdquo;）</li>
           <li><strong>地址：</strong>河北省石家庄市元氏县马村乡聊村</li>
           <li><strong>回复时限：</strong>15个工作日</li>
         </ul>

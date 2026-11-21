@@ -7570,8 +7570,17 @@ export const I18N_DICT: Record<string, I18nEntry> = {
     "es": "Copiado",
     "pt": "Copiado",
     "ar": "تم النسخ",
-    "fr": "Déjà copié",
+    "fr": "Copié",
     "hi": "कॉपी किया गया",
+  },
+  "在邮件应用中打开": {
+    "en": "Open in mail app",
+    "ru": "Открыть в почтовом приложении",
+    "es": "Abrir en la aplicación de correo",
+    "pt": "Abrir no aplicativo de e-mail",
+    "ar": "فتح في تطبيق البريد",
+    "fr": "Ouvrir dans l'application de messagerie",
+    "hi": "मेल ऐप में खोलें",
   },
   "复制链接": {
     "en": "Copy",

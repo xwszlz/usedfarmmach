@@ -2,6 +2,7 @@
 
 import { translate } from "@/lib/i18n-runtime";
 import { getSupportEmail } from "@/config/support-email";
+import { EmailLink } from "@/components/ui/email-link";
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -412,10 +413,13 @@ export default function PartDetailClient({ part, relatedParts, locale }: PartDet
                       <ArrowRight className="h-4 w-4" />
                     </button>
                     <div className="flex items-center gap-4 text-sm text-gray-500">
-                      <a href={`mailto:${getSupportEmail()}`} className="flex items-center gap-1 hover:text-orange-600">
-                        <Mail className="h-4 w-4" />
-                        {getSupportEmail()}
-                      </a>
+                      <Mail className="h-4 w-4" aria-hidden="true" />
+                      <EmailLink
+                        email={getSupportEmail()}
+                        locale={locale}
+                        showMailAppIcon={false}
+                        className="flex items-center gap-1 hover:text-orange-600"
+                      />
                     </div>
                   </div>
                 </form>

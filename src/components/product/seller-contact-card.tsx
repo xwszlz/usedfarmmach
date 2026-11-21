@@ -10,6 +10,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Mail, MessageCircle, Phone, Lock, Loader2, User } from "lucide-react";
+import { EmailLink, normalizeEmail } from "@/components/ui/email-link";
 
 const LABELS: Record<string, {
   title: string;
@@ -174,8 +175,15 @@ export function SellerContactCard({ productId, locale }: { productId: string; lo
     );
   }
 
+  // contactEmail 是卖家自填的，可能为空 / 带空格 / 压根不是邮箱。
+  // 用 normalizeEmail 一起判定「有没有内容」，否则会出现卡片认为有联系方式
+  // 但邮箱那行渲染不出东西的空壳。
   const hasAny =
-    contact && (contact.contactName || contact.contactPhone || contact.contactWechat || contact.contactEmail);
+    contact &&
+    (contact.contactName ||
+      contact.contactPhone ||
+      contact.contactWechat ||
+      normalizeEmail(contact.contactEmail));
   if (!hasAny) {
     return <p className="text-sm text-gray-500">{t.none}</p>;
   }
@@ -208,16 +216,16 @@ export function SellerContactCard({ productId, locale }: { productId: string; lo
           <span className="font-medium">{contact!.contactWechat}</span>
         </div>
       )}
-      {contact!.contactEmail && (
+      {normalizeEmail(contact!.contactEmail) && (
         <div className="flex items-center gap-2">
           <Mail className="h-4 w-4 text-gray-400" />
           <span className="text-gray-500">{t.email}: </span>
-          <a
-            href={`mailto:${contact!.contactEmail}`}
+          <EmailLink
+            email={contact!.contactEmail}
+            locale={locale}
+            showMailAppIcon={false}
             className="font-medium text-primary-600 hover:text-primary-700"
-          >
-            {contact!.contactEmail}
-          </a>
+          />
         </div>
       )}
     </div>
