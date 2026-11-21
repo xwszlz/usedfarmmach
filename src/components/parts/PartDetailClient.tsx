@@ -417,7 +417,6 @@ export default function PartDetailClient({ part, relatedParts, locale }: PartDet
                       <EmailLink
                         email={getSupportEmail()}
                         locale={locale}
-                        showMailAppIcon={false}
                         className="flex items-center gap-1 hover:text-orange-600"
                       />
                     </div>

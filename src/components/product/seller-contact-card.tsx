@@ -223,7 +223,6 @@ export function SellerContactCard({ productId, locale }: { productId: string; lo
           <EmailLink
             email={contact!.contactEmail}
             locale={locale}
-            showMailAppIcon={false}
             className="font-medium text-primary-600 hover:text-primary-700"
           />
         </div>

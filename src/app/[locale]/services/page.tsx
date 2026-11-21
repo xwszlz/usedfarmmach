@@ -297,7 +297,6 @@ export default async function ServicesPage({
               <EmailLink
                 email={getSalesEmail()}
                 locale={locale}
-                showMailAppIcon={false}
                 label={`📧 ${getSalesEmail()}`}
                 className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 font-semibold text-violet-700 transition-colors hover:bg-violet-50"
               />
