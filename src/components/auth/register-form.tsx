@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -9,10 +9,49 @@ import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { UserPlus } from "lucide-react";
 import { isComSite } from "@/config/site";
+import {
+  applyDraft,
+  clearDraft,
+  collectDraft,
+  readDraft,
+  writeDraft,
+  type DraftSpec,
+} from "@/lib/form-draft";
 
 interface RegisterFormProps {
   locale: string;
 }
+
+/**
+ * 注册表单草稿的字段白名单（机制见 `src/lib/form-draft.ts` 顶部）。
+ *
+ * 🔴 `password` / `confirmPassword` **故意不在名单里**：草稿落在 sessionStorage，多数
+ * 浏览器重启/崩溃恢复后它还在盘上，同源任意 XSS 也读得到，密码不配进这个名单。
+ * 好消息是老板报的那个场景已经不靠它了 —— 点《数据出境》条款现在是**新标签打开**，
+ * 原标签的表单动都不动，密码也不丢；只有手动刷新页面才需要重填密码。
+ */
+const REGISTER_DRAFT: DraftSpec = {
+  key: "ufm:register-draft:v1",
+  textFields: ["username", "email", "phone", "companyName", "country", "role"],
+  checkboxFields: ["consent"],
+};
+
+/**
+ * 「已恢复草稿」提示的 8 语文案。
+ *
+ * 刻意内联在这里而不是塞进 `messages/*.json`：那 8 个文件不可重序列化（见项目铁律），
+ * 为一句提示去对 8 个文件做字节级手术不值当。跟联系页 `ContactClient` 的做法一致。
+ */
+const DRAFT_RESTORED_HINT: Record<string, string> = {
+  zh: "已恢复你上次填写的内容，密码需要重新输入。",
+  en: "We restored what you entered earlier. Please re-enter your password.",
+  ru: "Мы восстановили ранее введённые данные. Пароль нужно ввести заново.",
+  es: "Hemos restaurado los datos que introdujiste antes. Vuelve a escribir la contraseña.",
+  pt: "Restauramos os dados que você preencheu antes. Digite a senha novamente.",
+  fr: "Nous avons restauré ce que vous aviez saisi. Veuillez saisir à nouveau votre mot de passe.",
+  ar: "استعدنا البيانات التي أدخلتها سابقًا. يرجى إعادة إدخال كلمة المرور.",
+  hi: "आपने पहले जो जानकारी भरी थी, वह बहाल कर दी गई है। कृपया अपना पासवर्ड फिर से दर्ज करें।",
+};
 
 // 重定向目标净化：只接受「解析后同源」的站内路径。
 // 用 WHATWG URL 解析再比对 origin，天然免疫 //evil.com、/\evil.com、\\evil.com、
@@ -40,6 +79,33 @@ export function RegisterForm({ locale }: RegisterFormProps) {
   const [error, setError] = useState("");
   // 数据出境单独同意（后端 register 已强制校验 dataCrossBorderConsent）
   const [consent, setConsent] = useState(false);
+
+  const formRef = useRef<HTMLFormElement>(null);
+  // 是否真的恢复出了内容 —— 决定要不要显示「已恢复上次填写的内容」
+  const [draftRestored, setDraftRestored] = useState(false);
+
+  /**
+   * 恢复草稿。必须放在 effect 里，不能在 useState 初始化函数里读：
+   * 首屏走服务端渲染，那时没有 sessionStorage，读到空值、到客户端才补上，
+   * 首屏 DOM 与客户端不一致会直接触发 hydration 报错。
+   */
+  useEffect(() => {
+    const form = formRef.current;
+    if (!form) return;
+    const draft = readDraft(REGISTER_DRAFT);
+    if (!applyDraft(form, draft, REGISTER_DRAFT)) return;
+    // 勾选框是受控的（checked={consent}），DOM 改了还得同步 state，否则下次渲染被 React 抹掉
+    if (draft?.consent === true && isCom) setConsent(true);
+    setDraftRestored(true);
+  }, [isCom]);
+
+  /**
+   * 表单任意字段一变就存一次草稿。8 个字段序列化出来一百多字节，
+   * sessionStorage 同步写这个量级完全感觉不到，不值得为它引防抖。
+   */
+  const handleDraftChange = useCallback(() => {
+    writeDraft(REGISTER_DRAFT, collectDraft(formRef.current, REGISTER_DRAFT));
+  }, []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -100,6 +166,8 @@ export function RegisterForm({ locale }: RegisterFormProps) {
       const result = await res.json();
 
       if (result.success) {
+        // 注册成功就清草稿，否则下次进注册页会被灌回上一轮的旧内容
+        clearDraft(REGISTER_DRAFT);
         localStorage.setItem("token", result.data.token);
         localStorage.setItem("user", JSON.stringify(result.data.user));
         // 支持 ?redirect=/membership 等回跳（仅接受站内相对路径）
@@ -133,7 +201,19 @@ export function RegisterForm({ locale }: RegisterFormProps) {
   ];
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form
+      ref={formRef}
+      onSubmit={handleSubmit}
+      // onChange 在 React 里是会冒泡的合成事件，挂在 form 上就能吃到所有子字段的变更
+      // （文本框、下拉框、勾选框），以后再加字段也不用回来补埋点
+      onChange={handleDraftChange}
+      className="space-y-4"
+    >
+      {draftRestored && (
+        <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
+          {DRAFT_RESTORED_HINT[locale] || DRAFT_RESTORED_HINT.en}
+        </p>
+      )}
       {/* 用户名 - 最上面 */}
       <Input
         id="reg-username"
@@ -207,14 +287,24 @@ export function RegisterForm({ locale }: RegisterFormProps) {
         <label className="flex items-start gap-2 text-sm text-gray-600">
           <input
             type="checkbox"
+            // name 是给草稿用的：collectDraft 按 name 从 form.elements 里取勾选状态
+            name="consent"
             checked={consent}
             onChange={(e) => setConsent(e.target.checked)}
             className="mt-1"
           />
           <span>
             {locale === "zh" ? "我已阅读并同意" : t("crossBorderConsent")}{" "}
+            {/*
+              新标签打开（2026-11-21）：老板填到一半点进条款页，点「返回注册」回来表单全空。
+              改新标签后原标签的表单根本不动，一个字段都不丢，这是最省事也最彻底的一条路；
+              草稿机制再兜住刷新/后退这些新标签救不了的场景。
+              rel=noopener 防止新页通过 window.opener 反过来操作注册页。
+            */}
             <Link
               href={`/${locale}/cross-border-consent`}
+              target="_blank"
+              rel="noopener noreferrer"
               className="font-medium text-primary-600 hover:underline"
             >
               {t("crossBorderConsentLink")}
