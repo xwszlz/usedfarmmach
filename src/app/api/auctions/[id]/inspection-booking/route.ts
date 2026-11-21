@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getTokenFromHeaders, getUserFromToken } from "@/lib/auth";
 import { sendEmail } from "@/lib/email";
-import { getSupportEmail } from "@/config/support-email";
+import { getSalesEmail } from "@/config/support-email";
 
 export const dynamic = "force-dynamic";
 
@@ -97,9 +97,9 @@ export async function POST(
       },
     });
 
-    // 邮件通知卖家（二手农机业务使用卖家固定邮箱）
+    // 验机预约 = 明确购买意向，落销售邮箱（.cn 未开通 sales ⇒ 自动回退 support@usedfarmmach.cn）
     try {
-      const sellerEmail = getSupportEmail();
+      const sellerEmail = getSalesEmail();
       const productName = auction.product.brand
         ? `${auction.product.brand.nameZh} ${auction.product.modelName}`
         : auction.product.modelName;

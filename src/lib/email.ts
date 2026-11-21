@@ -15,7 +15,7 @@ import { prisma } from "@/lib/db";
 import type { EmailProvider } from "./email/provider";
 import { resolveMailConfig, createProvider } from "./email/config";
 import { selectProviderForUser } from "./email/routing";
-import { getSupportEmail } from "@/config/support-email";
+import { getSalesEmail } from "@/config/support-email";
 import {
   renderVerifyEmail,
   renderResetPassword,
@@ -226,7 +226,10 @@ export async function sendEmail(
 /**
  * 询盘管理员告警（阶段 0 既有能力；门面重构后恢复此导出，避免 inquiries/route.ts 编译失败）。
  * 采用旧式原始发信（LegacySendEmailParams）通知管理员，不写 EmailSendLog（非阶段 1 模板）。
- * 收件人为分站客服邮箱 getSupportEmail()（P1 Q2 已拍板：.cn → support@usedfarmmach.cn）。
+ *
+ * 收件人为分站**销售**邮箱 getSalesEmail()（2026-11-21 老板拍板，覆盖 P1 Q2 的
+ * 「收件人为分站客服邮箱」口径）：询盘 = 商机，归国外业务部接；.cn 未开通 sales
+ * 地址 ⇒ getSalesEmail() 自动回退 support@usedfarmmach.cn，行为不变。
  */
 export async function notifyInquiry(params: {
   productName: string;
@@ -234,7 +237,7 @@ export async function notifyInquiry(params: {
   buyerContact: string;
   buyerMessage: string;
 }): Promise<void> {
-  const adminEmail = getSupportEmail();
+  const adminEmail = getSalesEmail();
   const subject = `[询盘] ${params.productName} - ${params.buyerName}`;
   const text =
     `产品：${params.productName}\n` +

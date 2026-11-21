@@ -66,6 +66,21 @@ export interface SiteConfigItem {
   compliance: SiteCompliance;
   /** 客服邮箱（分站，不带 notify. 前缀） */
   supportEmail: string;
+  /**
+   * 销售邮箱（分站，可选）—— 站内所有「我要买」类询盘的落点：
+   * 产品询盘、配件询价、展会/品牌招商、验机预约、页脚与 services 页 CTA。
+   *
+   * 该地址只在 .com 开通；.cn 未开通 ⇒ 留空，`getSalesEmail()` 回退 supportEmail，
+   * 保证 .cn 永不下发一个收不到信的地址（2026-11-21 老板拍板）。
+   */
+  salesEmail?: string;
+  /**
+   * 市场 / 商务合作邮箱（分站，可选）—— 只用于「我们对别人提交」的场景
+   * （广告目录收录、媒体联络、协会名录），**不上前台主打位**，避免被爬虫抓走后灌垃圾邮件。
+   *
+   * 同样只在 .com 开通；.cn 留空 ⇒ `getMarketingEmail()` 回退 supportEmail。
+   */
+  marketingEmail?: string;
   /** 系统发信 from（分站，notify. 子域） */
   systemFromEmail: string;
   /** 版本标识，用于构建/部署追溯 */
@@ -107,6 +122,11 @@ export const siteConfigMap: SiteConfigMap = {
       auctionLicenseNo: null,
     },
     supportEmail: "support@usedfarmmach.com",
+    // 销售 / 市场两个地址（2026-11-21）：Resend 收信 webhook 已按地址分流到
+    // sales@shendiaotech.cn / marketing@shendiaotech.cn 企业邮公共邮箱，
+    // 再由公共邮箱 + 邮件群组落到国外业务部与市场组。
+    salesEmail: "sales@usedfarmmach.com",
+    marketingEmail: "marketing@usedfarmmach.com",
     // 系统发件人 = 客服地址本身（2026-11-20 老板拍板统一规范）：
     // ① 废掉 no-reply（不礼貌、拉低送达率、客户无处追问）；
     // ② 不用 notify. 子域——该子域从未在 Resend 验证，发信必被拒；
@@ -144,6 +164,9 @@ export const siteConfigMap: SiteConfigMap = {
       auctionLicenseNo: process.env.CN_AUCTION_LICENSE_NO ?? null,
     },
     supportEmail: "support@usedfarmmach.cn",
+    // ⚠️ .cn 站**没有** sales@ / marketing@ 邮箱（腾讯企业邮只开了 support 一个公共邮箱）。
+    //    这里刻意留空，getSalesEmail() / getMarketingEmail() 会回退到 supportEmail，
+    //    避免页面挂出一个收不到信的死地址。将来 .cn 开通再填即可。
     // 同 .com 口径：发件人即客服地址，不再使用 no-reply / notify. 子域。
     // .cn 走腾讯云 SES，发信域名需在 SES 侧单独验证（与 Resend 无关）。
     systemFromEmail: "support@usedfarmmach.cn",
