@@ -18,6 +18,8 @@ import {
   escapeHtml,
   extractAddress,
   isOwnAddress,
+  isSelfDelivery,
+  pickReplyTo,
   resolveGroupTarget,
   verifySvixSignature,
   type InboundResult,
@@ -36,6 +38,11 @@ interface ReceivedEmailContent {
   html?: string | null;
   text?: string | null;
   from?: string;
+  /**
+   * 原始邮件头（Resend `GET /emails/receiving/{id}` 返回，键名大小写不统一）。
+   * 只用来取 `Reply-To`，其余一概不用。
+   */
+  headers?: Record<string, string> | null;
   attachments?: Array<{
     id?: string;
     filename?: string | null;
@@ -192,8 +199,11 @@ export async function handleInboundEmail(req: Request): Promise<InboundResult> {
   if (!target) return ok({ skipped: "no-route", to: toList });
 
   // 回路保险：发件人是自有域名 → 多半是我们自己人回复/系统信，转了会自激
+  // ⚠️ 但「自投递」（From == To）必须放行：网站联系表单通知就是这种形态
+  //    （From=To=support@usedfarmmach.com），一律按自有域拦掉会让客户询价
+  //    永远到不了团队邮箱 —— 2026-11-21 实测踩过，勿简化回单条件。
   const senderAddr = extractAddress(originalFrom);
-  if (isOwnAddress(senderAddr)) {
+  if (isOwnAddress(senderAddr) && !isSelfDelivery(senderAddr, toList)) {
     return ok({ skipped: "own-domain", from: senderAddr });
   }
 
@@ -238,13 +248,16 @@ export async function handleInboundEmail(req: Request): Promise<InboundResult> {
     text: email.text ?? null,
   });
 
+  // Reply-To 优先用原信的 Reply-To（表单通知里是访客邮箱），退化才用发件人。
+  const replyToAddr = pickReplyTo(email.headers) ?? senderAddr ?? undefined;
+
   const sendRes = await fetch(`${RESEND_API}/emails`, {
     method: "POST",
     headers: authHeaders(apiKey),
     body: JSON.stringify({
       from: `神雕农机 <${target.inboxAddress}>`,
       to: [target.groupAddress],
-      reply_to: senderAddr ?? undefined,
+      reply_to: replyToAddr,
       subject,
       html,
       text,

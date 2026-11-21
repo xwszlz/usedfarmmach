@@ -53,6 +53,54 @@ export function isOwnAddress(address: string | null): boolean {
 }
 
 /**
+ * 自投递判定：发件人地址本身也出现在收件地址里（`support@x` 发给 `support@x`）。
+ *
+ * 为什么必须单独判这一条 —— 2026-11-21 实测：网站联系表单 `/api/contact`
+ * 的通知信 From 取 `EMAIL_FROM`（`support@usedfarmmach.com`）、To 又是
+ * `support@usedfarmmach.com`，天然命中 `isOwnAddress` ⇒ 整封信被判
+ * `skipped: "own-domain"` **静默丢弃**：既不转发到腾讯企业邮群组，也不推企微。
+ * 表现就是老板在 Resend Inbox 里明明看得见那封信，团队邮箱里永远收不到，
+ * 只能自己去 Resend 后台翻。
+ *
+ * 而回路保险真正要拦的是「两端都在自有域、来回自动回复」的自激，
+ * 那种场景的特征恰恰是 **From ≠ To**（A 回给 B，B 再回给 A）。
+ * From == To 属于自投递/系统通知，放行不会自激：转发出去的 Reply-To
+ * 指向外部访客，群组成员点回复直接落到访客，不会再进 Resend webhook。
+ */
+export function isSelfDelivery(
+  sender: string | null,
+  toList: string[] | undefined
+): boolean {
+  if (!sender) return false;
+  if (!Array.isArray(toList)) return false;
+  return toList.some((raw) => extractAddress(raw) === sender);
+}
+
+/**
+ * 从收信内容的 `headers` 里取原信的 `Reply-To`。
+ *
+ * Resend `GET /emails/receiving/{id}` 把原始邮件头放在 `headers`，
+ * 键名大小写不统一（实测有 `Reply-To` / `reply-to` 两种），所以逐个大小写不敏感比对。
+ * 取不到返回 null，调用方回退到发件人。
+ *
+ * 为什么转发时必须优先用它 —— 网站联系表单的通知信 From 是 `support@…`（自家域名），
+ * 真正的对话对象在 `Reply-To`（访客邮箱）。若转发时把 reply_to 设成 From，
+ * 团队点「回复」会回到 support@ 自己 → 又进 webhook → 被判自有域拦掉，
+ * **客户永远收不到回信**。2026-11-21 实测踩过。
+ */
+export function pickReplyTo(
+  headers: Record<string, string> | null | undefined
+): string | null {
+  if (!headers || typeof headers !== "object") return null;
+  for (const [key, value] of Object.entries(headers)) {
+    if (key.toLowerCase() !== "reply-to") continue;
+    const addr = extractAddress(typeof value === "string" ? value : null);
+    if (addr) return addr;
+  }
+  return null;
+}
+
+/**
  * Resend 收件地址 → 腾讯企业邮邮件群组地址，一一对应。
  *
  * 为什么必须走「群组」：Resend 一次转发只能填一个目标地址，
