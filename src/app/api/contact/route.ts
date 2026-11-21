@@ -52,8 +52,15 @@ function esc(v: unknown, max = 200): string {
     .replace(/'/g, "&#39;");
 }
 
+/**
+ * 主题 → 收件人。
+ *
+ * `other` 走 `support@` 兜底（2026-11-21 老板拍板改）：它原先和 `sales` 同落销售箱，
+ * 对内部零分流价值，等于一个没人认领的垃圾桶；改投售后以后，客服是唯一「什么都接」
+ * 的岗位，看不属于自己的一律转出去，比躺在销售箱里没人管强。
+ */
 function recipientFor(topic: Topic): string {
-  if (topic === "support") return getSupportEmail();
+  if (topic === "support" || topic === "other") return getSupportEmail();
   if (topic === "partner") return getMarketingEmail();
   return getSalesEmail();
 }
