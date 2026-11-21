@@ -44,6 +44,8 @@ interface Copy {
   tSupport: string;
   tPartner: string;
   tOther: string;
+  /** 下拉框下方那行小字：告诉访客四个主题分别该在什么情况下选，避免乱选投错团队 */
+  topicHint: string;
 }
 
 const COPY: Record<string, Copy> = {
@@ -76,6 +78,8 @@ const COPY: Record<string, Copy> = {
     tSupport: "售后 / 账号支持",
     tPartner: "商务合作 / 媒体",
     tOther: "其他",
+    topicHint:
+      "买机器、问配件选「购机 / 配件询价」；订单或账号出问题选「售后 / 账号支持」；拿不准选「其他」，我们会转给对应同事。",
   },
   en: {
     title: "Contact us",
@@ -106,6 +110,8 @@ const COPY: Record<string, Copy> = {
     tSupport: "Support / account",
     tPartner: "Partnership / media",
     tOther: "Other",
+    topicHint:
+      "Buying or asking about equipment: choose “Machines / parts”. Order or account issue: “Support / account”. Not sure: “Other” — we will route it to the right team.",
   },
   ru: {
     title: "Связаться с нами",
@@ -136,6 +142,8 @@ const COPY: Record<string, Copy> = {
     tSupport: "Поддержка / аккаунт",
     tPartner: "Сотрудничество / СМИ",
     tOther: "Другое",
+    topicHint:
+      "Покупка техники или запчастей — «Техника / запчасти»; проблема с заказом или аккаунтом — «Поддержка / аккаунт»; не уверены — «Другое», перешлём нужному отделу.",
   },
   es: {
     title: "Contáctenos",
@@ -166,6 +174,8 @@ const COPY: Record<string, Copy> = {
     tSupport: "Soporte / cuenta",
     tPartner: "Alianzas / medios",
     tOther: "Otro",
+    topicHint:
+      "Comprar o preguntar por máquinas o repuestos: «Máquinas / repuestos». Problema con un pedido o su cuenta: «Soporte / cuenta». Si no está seguro: «Otro», lo derivamos al equipo correcto.",
   },
   pt: {
     title: "Fale conosco",
@@ -196,6 +206,8 @@ const COPY: Record<string, Copy> = {
     tSupport: "Suporte / conta",
     tPartner: "Parcerias / mídia",
     tOther: "Outro",
+    topicHint:
+      "Comprar ou perguntar sobre máquinas ou peças: «Máquinas / peças». Problema com pedido ou conta: «Suporte / conta». Em dúvida: «Outro», encaminhamos à equipe certa.",
   },
   fr: {
     title: "Nous contacter",
@@ -226,6 +238,8 @@ const COPY: Record<string, Copy> = {
     tSupport: "Assistance / compte",
     tPartner: "Partenariats / presse",
     tOther: "Autre",
+    topicHint:
+      "Acheter ou se renseigner sur des machines ou pièces : « Machines / pièces ». Problème de commande ou de compte : « Assistance / compte ». Sans certitude : « Autre », nous transmettons au bon service.",
   },
   ar: {
     title: "اتصل بنا",
@@ -256,6 +270,8 @@ const COPY: Record<string, Copy> = {
     tSupport: "الدعم / الحساب",
     tPartner: "الشراكات / الإعلام",
     tOther: "أخرى",
+    topicHint:
+      "للشراء أو الاستفسار عن الآلات وقطع الغيار: «الآلات / قطع الغيار». لمشكلة في طلب أو حساب: «الدعم / الحساب». إن لم تكن متأكداً: «أخرى»، وسنوجّه رسالتك إلى القسم المختص.",
   },
   hi: {
     title: "संपर्क करें",
@@ -286,6 +302,8 @@ const COPY: Record<string, Copy> = {
     tSupport: "सहायता / खाता",
     tPartner: "साझेदारी / मीडिया",
     tOther: "अन्य",
+    topicHint:
+      "मशीन या पुर्ज़े खरीदने/पूछने के लिए: «मशीनें / पुर्ज़े»। ऑर्डर या खाते की समस्या के लिए: «सहायता / खाता»। समझ न आए तो: «अन्य» चुनें, हम इसे सही टीम तक पहुँचा देंगे।",
   },
 };
 
@@ -472,11 +490,21 @@ export function ContactClient({
                 />
               </label>
 
-              <label className="block">
-                <span className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              {/*
+                这里不用 <label> 包住整个区块：提示小字如果落在 label 内部，会被算进
+                下拉框的 accessible name，读屏器每次聚焦都会把整段说明念一遍。
+                改成 label[htmlFor] + id 显式关联，提示语用 aria-describedby 挂上去。
+              */}
+              <div className="block">
+                <label
+                  htmlFor="contact-topic"
+                  className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
                   {t.topic}
-                </span>
+                </label>
                 <select
+                  id="contact-topic"
+                  aria-describedby="contact-topic-hint"
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white"
@@ -486,7 +514,13 @@ export function ContactClient({
                   <option value="partner">{t.tPartner}</option>
                   <option value="other">{t.tOther}</option>
                 </select>
-              </label>
+                <p
+                  id="contact-topic-hint"
+                  className="mt-1 text-xs leading-relaxed text-gray-500 dark:text-gray-400"
+                >
+                  {t.topicHint}
+                </p>
+              </div>
             </div>
 
             <label className="block">
