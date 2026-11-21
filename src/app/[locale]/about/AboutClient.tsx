@@ -94,6 +94,29 @@ export default function AboutClient() {
         </Card>
       </div>
 
+      {/* 免费合规体检 — 2026-11-21 新增：公益工具，纯前端零依赖、不收集数据，数据不出境。 */}
+      <div className="mb-8">
+        <Card className="border-0 bg-gradient-to-br from-green-50 to-white shadow-sm">
+          <CardContent className="p-8 text-center">
+            <Shield className="mx-auto mb-4 h-10 w-10 text-green-600" />
+            <h2 className="mb-4 text-xl font-bold text-gray-900">
+              {t("complianceTitle")}
+            </h2>
+            <p className="mx-auto mb-6 max-w-2xl text-gray-600 leading-relaxed">
+              {t("complianceDesc")}
+            </p>
+            <a
+              href="/compliance/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-green-700"
+            >
+              {t("complianceBtn")}
+            </a>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* 行业资质与协会关系 — 合规口径（唯一标准称谓，含分会层级） */}
       <div className="mb-8">
         <Card className="border-0 bg-primary-50 shadow-sm">

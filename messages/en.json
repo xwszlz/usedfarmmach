@@ -1452,7 +1452,10 @@
 
     "team": "Our Team",
 
-    "teamText": "We are a team with deep expertise in the agricultural machinery industry and rich experience in international trade and technology development. Team members are from China, the US, Japan and beyond, dedicated to building the world's leading used farm machinery trading platform."
+    "teamText": "We are a team with deep expertise in the agricultural machinery industry and rich experience in international trade and technology development. Team members are from China, the US, Japan and beyond, dedicated to building the world's leading used farm machinery trading platform.",
+    "complianceTitle": "Free Compliance Checkup",
+    "complianceDesc": "10 questions, 2 minutes — find the 3 things you should do first. Open-source public project, computed locally with no data collected. Always free.",
+    "complianceBtn": "Start Checkup"
 
   },
 

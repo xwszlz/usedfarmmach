@@ -762,7 +762,10 @@
     "value4Title": "Ganar-ganar",
     "value4Desc": "Oportunidades de arbitraje para beneficio mutuo",
     "team": "Nuestro equipo",
-    "teamText": "Equipo con amplia experiencia en maquinaria agrícola y comercio internacional. Miembros de China, EE.UU., Japón y m s, dedicados a construir la plataforma líder de maquinaria agrícola usada."
+    "teamText": "Equipo con amplia experiencia en maquinaria agrícola y comercio internacional. Miembros de China, EE.UU., Japón y m s, dedicados a construir la plataforma líder de maquinaria agrícola usada.",
+    "complianceTitle": "Chequeo de cumplimiento gratuito",
+    "complianceDesc": "10 preguntas, 2 minutos — descubre las 3 cosas que deberías hacer primero. Proyecto público de código abierto, cálculo local sin recopilar datos. Totalmente gratis.",
+    "complianceBtn": "Empezar chequeo"
   },
   "arbitrageCalculator": {
     "title": "Calculadora de arbitraje",
