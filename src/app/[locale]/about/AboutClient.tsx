@@ -106,7 +106,7 @@ export default function AboutClient() {
               {t("complianceDesc")}
             </p>
             <a
-              href="/compliance/"
+              href={`/compliance/index.html?lang=${locale}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-green-700"
