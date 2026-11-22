@@ -16,7 +16,9 @@ const JWT_SECRET = process.env.JWT_SECRET!;
 export type EmailTokenPurpose =
   | "verify_email"
   | "reset_password"
-  | "complete_profile_reminder";
+  | "complete_profile_reminder"
+  /** 2026-11-22 新增：验证产品的卖家联系邮箱（contactEmail），与账号邮箱验证互不复用 */
+  | "verify_contact_email";
 
 /** 签名输入 */
 export interface SignEmailTokenInput {
@@ -25,6 +27,8 @@ export interface SignEmailTokenInput {
   purpose: EmailTokenPurpose;
   /** 仅 reset_password 需要：内嵌 passwordHash 摘要，实现"改密即作废" */
   pwdHash?: string;
+  /** 仅 verify_contact_email 需要：验证的是哪个产品上的联系邮箱 */
+  productId?: string;
 }
 
 /** 校验结果 */
@@ -33,6 +37,8 @@ export interface VerifyEmailTokenResult {
   email: string;
   /** 仅 reset_password 校验时返回；用于比对"改密即失效" */
   pwdHash?: string;
+  /** 仅 verify_contact_email 校验时返回 */
+  productId?: string;
 }
 
 /** 各用途过期时间（JWT 字符串格式） */
@@ -40,6 +46,7 @@ const PURPOSE_EXPIRES: Record<EmailTokenPurpose, string> = {
   verify_email: "24h",
   reset_password: "30m",
   complete_profile_reminder: "7d",
+  verify_contact_email: "24h",
 };
 
 /** SHA-256（小写十六进制），用于 passwordHash 摘要与限流 key */
@@ -55,6 +62,7 @@ export function signEmailToken(input: SignEmailTokenInput): string {
       email: input.email,
       purpose: input.purpose,
       pwdHash: input.pwdHash,
+      productId: input.productId,
     },
     JWT_SECRET,
     { expiresIn: PURPOSE_EXPIRES[input.purpose] as SignOptions["expiresIn"] }
@@ -75,7 +83,9 @@ export function verifyEmailToken(
     if (typeof userId !== "string" || typeof email !== "string") return null;
     const pwdHash =
       typeof decoded.pwdHash === "string" ? decoded.pwdHash : undefined;
-    return { userId, email, pwdHash };
+    const productId =
+      typeof decoded.productId === "string" ? decoded.productId : undefined;
+    return { userId, email, pwdHash, productId };
   } catch {
     return null;
   }

@@ -258,6 +258,13 @@ model Product {
   contactPhone          String?
   contactWechat         String?
   contactEmail          String?
+  /// 卖家是否同意在商品详情页公开展示联系邮箱。默认 false = 仅平台内部转达。
+  /// 存量产品一律落 false（老板 2026-11-22 拍板：一刀切隐藏，不设超管白名单）。
+  contactEmailPublic        Boolean   @default(false)
+  /// 联系邮箱完成验证的时间（卖家点邮件里的验证链接）。未验证 ⇒ 不展示、也不作为询价收件人。
+  contactEmailVerifiedAt    DateTime?
+  /// 最近一次发送验证邮件的时间，仅用于发信限频（防止拿平台当发信跳板去打别人信箱）。
+  contactEmailVerifySentAt  DateTime?
   promotedUntil         DateTime?
   promotedAt            DateTime?
   refreshedAt           DateTime?
