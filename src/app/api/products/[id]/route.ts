@@ -6,6 +6,7 @@ import { ArbitrageCalculator } from "@/lib/services/arbitrage-calculator";
 import { cache, cacheKey } from "@/lib/cache";
 import { stripContactFields } from "@/lib/pii";
 import { checkProductEditPermission, describeEditDenial, canDeleteAnyProduct } from "@/lib/product-edit-auth";
+import { contactEmailChanged } from "@/lib/products/contact-visibility";
 
 /**
  * 缓存 key 前缀（v2）：v1 时期详情响应曾把卖家联系方式一起缓存/下发，
@@ -317,7 +318,19 @@ export async function PATCH(
     if (body.contactName !== undefined) updateData.contactName = body.contactName === null ? null : String(body.contactName);
     if (body.contactPhone !== undefined) updateData.contactPhone = body.contactPhone === null ? null : String(body.contactPhone);
     if (body.contactWechat !== undefined) updateData.contactWechat = body.contactWechat === null ? null : String(body.contactWechat);
-    if (body.contactEmail !== undefined) updateData.contactEmail = body.contactEmail === null ? null : String(body.contactEmail);
+    if (body.contactEmail !== undefined) {
+      const nextEmail = body.contactEmail === null ? null : String(body.contactEmail);
+      updateData.contactEmail = nextEmail;
+      // 改邮箱必须作废旧验证，否则可通过「验证 A → 改成 B」绕过验证公开展示 B
+      const before = await prisma.product.findUnique({
+        where: { id },
+        select: { contactEmail: true },
+      });
+      if (contactEmailChanged(before?.contactEmail, nextEmail)) {
+        updateData.contactEmailVerifiedAt = null;
+        updateData.contactEmailVerifySentAt = null;
+      }
+    }
 
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json({ success: false, error: "没有需要更新的字段" }, { status: 400 });

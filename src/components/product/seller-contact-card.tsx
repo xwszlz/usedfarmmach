@@ -21,6 +21,8 @@ const LABELS: Record<string, {
   phone: string;
   wechat: string;
   email: string;
+  /** 免责提示：只在该行真的渲染出来时显示（不得写成整块常驻文案） */
+  emailDisclaimer: string;
 }> = {
   zh: {
     title: "加载卖家联系方式",
@@ -31,6 +33,7 @@ const LABELS: Record<string, {
     phone: "电话",
     wechat: "微信",
     email: "邮箱",
+    emailDisclaimer: "该邮箱由卖家自行提供，平台不担保其真实性与有效性，交易前请自行核实。",
   },
   en: {
     title: "Loading seller contact",
@@ -41,6 +44,8 @@ const LABELS: Record<string, {
     phone: "Phone",
     wechat: "WeChat",
     email: "Email",
+    emailDisclaimer:
+      "This email is provided by the seller. The platform does not guarantee its authenticity, and you should verify it independently before trading.",
   },
   ru: {
     title: "Загрузка контактов",
@@ -51,6 +56,8 @@ const LABELS: Record<string, {
     phone: "Тел.",
     wechat: "WeChat",
     email: "Email",
+    emailDisclaimer:
+      "Этот адрес указан продавцом. Платформа не гарантирует его достоверность — проверьте его самостоятельно перед сделкой.",
   },
   es: {
     title: "Cargando contacto del vendedor",
@@ -61,6 +68,8 @@ const LABELS: Record<string, {
     phone: "Teléfono",
     wechat: "WeChat",
     email: "Correo",
+    emailDisclaimer:
+      "El vendedor proporciona este correo. La plataforma no garantiza su autenticidad; verifíquelo por su cuenta antes de operar.",
   },
   pt: {
     title: "Carregando contacto do vendedor",
@@ -71,6 +80,8 @@ const LABELS: Record<string, {
     phone: "Telefone",
     wechat: "WeChat",
     email: "E-mail",
+    emailDisclaimer:
+      "Este e-mail é fornecido pelo vendedor. A plataforma não garante a sua autenticidade; verifique por conta própria antes de negociar.",
   },
   ar: {
     title: "جارٍ تحميل بيانات البائع",
@@ -81,6 +92,8 @@ const LABELS: Record<string, {
     phone: "الهاتف",
     wechat: "WeChat",
     email: "البريد الإلكتروني",
+    emailDisclaimer:
+      "هذا البريد مقدَّم من البائع. لا تضمن المنصة صحته أو صلاحيته، لذا يرجى التحقق منه بنفسك قبل التعامل.",
   },
   fr: {
     title: "Chargement du contact du vendeur",
@@ -91,6 +104,8 @@ const LABELS: Record<string, {
     phone: "Téléphone",
     wechat: "WeChat",
     email: "E-mail",
+    emailDisclaimer:
+      "Le vendeur fournit cet e-mail. La plateforme ne garantit ni son authenticité ni sa validité ; vérifiez-le vous-même avant toute transaction.",
   },
   hi: {
     title: "विक्रेता संपर्क लोड हो रहा है",
@@ -101,6 +116,8 @@ const LABELS: Record<string, {
     phone: "फ़ोन",
     wechat: "WeChat",
     email: "ईमेल",
+    emailDisclaimer:
+      "यह ईमेल विक्रेता द्वारा दिया गया है। प्लेटफ़ॉर्म इसकी प्रामाणिकता की गारंटी नहीं देता; लेन-देन से पहले स्वयं सत्यापित करें।",
   },
 };
 
@@ -217,14 +234,21 @@ export function SellerContactCard({ productId, locale }: { productId: string; lo
         </div>
       )}
       {normalizeEmail(contact!.contactEmail) && (
-        <div className="flex items-center gap-2">
-          <Mail className="h-4 w-4 text-gray-400" />
-          <span className="text-gray-500">{t.email}: </span>
-          <EmailLink
-            email={contact!.contactEmail}
-            locale={locale}
-            className="font-medium text-primary-600 hover:text-primary-700"
-          />
+        <div>
+          <div className="flex items-center gap-2">
+            <Mail className="h-4 w-4 text-gray-400" />
+            <span className="text-gray-500">{t.email}: </span>
+            <EmailLink
+              email={contact!.contactEmail}
+              locale={locale}
+              className="font-medium text-primary-600 hover:text-primary-700"
+            />
+          </div>
+          {/* 免责提示跟随邮箱行一起出现：邮箱行不渲染时绝不出现，
+              否则只留电话/微信的卖家也会被免责，观感变差（红线 §10.8）。 */}
+          <p className="mt-1 pl-6 text-xs leading-relaxed text-gray-400">
+            {t.emailDisclaimer}
+          </p>
         </div>
       )}
     </div>

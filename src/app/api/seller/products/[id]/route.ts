@@ -18,6 +18,7 @@ import {
   describeEditDenial,
   canDeleteAnyProduct,
 } from "@/lib/product-edit-auth";
+import { contactEmailChanged } from "@/lib/products/contact-visibility";
 
 export const dynamic = "force-dynamic";
 
@@ -136,7 +137,19 @@ export async function PUT(
       // 2026-10-29 补齐：编辑页需要能改描述 / 状态 / 负责人联系方式
       descriptionZh, status,
       contactName, contactPhone, contactWechat, contactEmail,
+      // 2026-11-22 新增：卖家是否同意在商品页公开展示联系邮箱
+      contactEmailPublic,
     } = body;
+
+    // 联系邮箱改了就作废旧验证（防止「验证 A 邮箱 → 改成 B 邮箱」绕过验证直接展示）
+    let resetContactEmailVerification = false;
+    if (contactEmail !== undefined) {
+      const current = await prisma.product.findUnique({
+        where: { id: params.id },
+        select: { contactEmail: true },
+      });
+      resetContactEmailVerification = contactEmailChanged(current?.contactEmail, contactEmail);
+    }
 
     // ── 品牌解析：brandName → brandId ──
     let brandId: string | undefined;
@@ -254,6 +267,14 @@ export async function PUT(
         }),
         ...(contactEmail !== undefined && {
           contactEmail: contactEmail === null || contactEmail === "" ? null : String(contactEmail),
+        }),
+        // 公开开关：只接受布尔真值；前端勾选后传 true/false
+        ...(contactEmailPublic !== undefined && {
+          contactEmailPublic: contactEmailPublic === true || contactEmailPublic === "true",
+        }),
+        ...(resetContactEmailVerification && {
+          contactEmailVerifiedAt: null,
+          contactEmailVerifySentAt: null,
         }),
 
         updatedAt: new Date(),
