@@ -35,6 +35,10 @@ interface ProductDetail {
   contactPhone: string | null;
   contactWechat: string | null;
   contactEmail: string | null;
+  /** 卖家是否同意在商品页公开展示联系邮箱（默认 false） */
+  contactEmailPublic?: boolean | null;
+  /** 邮箱验证通过时间；有值才允许展示 */
+  contactEmailVerifiedAt?: string | null;
   engineType: string | null;
   enginePower: number | null;
   driveSystem: string | null;
@@ -80,6 +84,35 @@ export default function EditProductPage() {
   const [canDelete, setCanDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // 联系邮箱验证：idle 未操作 / sending 发信中 / sent 已发出 / error 失败
+  const [emailVerify, setEmailVerify] = useState<{
+    status: "idle" | "sending" | "sent" | "error";
+    message?: string;
+  }>({ status: "idle" });
+  // 验证通过时间（本地维护，避免验证后还得刷新页面才能看到状态）
+  const [emailVerifiedAt, setEmailVerifiedAt] = useState<string | null>(null);
+
+  // 处理验证邮件回跳：?emailVerified=1 / ?emailVerifyError=xxx
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search);
+    if (sp.get("emailVerified") === "1") {
+      setEmailVerifiedAt(new Date().toISOString());
+      setEmailVerify({
+        status: "sent",
+        message: "邮箱验证成功。若已勾选「在商品页公开展示」，买家登录后即可看到。",
+      });
+    } else if (sp.get("emailVerifyError")) {
+      const code = sp.get("emailVerifyError") || "";
+      const text =
+        code === "email_changed"
+          ? "验证链接已失效：该产品的联系邮箱已被修改，请重新发起验证。"
+          : code === "invalid_token"
+            ? "验证链接无效或已过期（24 小时内有效），请重新发起验证。"
+            : "验证失败，请重新发起验证。";
+      setEmailVerify({ status: "error", message: text });
+    }
+  }, []);
+
   // 加载产品数据
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -93,6 +126,7 @@ export default function EditProductPage() {
           setProduct(found);
           setEditScope(d.editScope === "any" ? "any" : "own");
           setCanDelete(d.canDelete === true);
+          setEmailVerifiedAt(found.contactEmailVerifiedAt || null);
           setForm({
             brandName: found.brand?.nameZh || "",
             modelName: found.modelName || "",
@@ -119,6 +153,7 @@ export default function EditProductPage() {
             contactPhone: found.contactPhone || "",
             contactWechat: found.contactWechat || "",
             contactEmail: found.contactEmail || "",
+            contactEmailPublic: found.contactEmailPublic === true,
           });
           // 提取图片URL（用于AI重新识别）
           const list = found.images || [];
@@ -185,6 +220,39 @@ export default function EditProductPage() {
       setSaving(false);
     }
   };
+
+  // 发送联系邮箱验证邮件。真正「完成验证」发生在卖家点邮件里的链接之后
+  // （/api/seller/products/contact-email/verify），这里只是发起。
+  async function handleVerifyEmail() {
+    const email = String(form.contactEmail || "").trim();
+    if (!email) {
+      setEmailVerify({ status: "error", message: "请先填写联系邮箱，再点「发送验证邮件」。" });
+      return;
+    }
+    setEmailVerify({ status: "sending", message: "正在发送验证邮件…" });
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/seller/products/${id}/contact-email`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ email, locale }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setEmailVerify({
+          status: "sent",
+          message: `验证邮件已发到 ${data.data?.email || email}，请到邮箱点链接完成验证（24 小时内有效）。`,
+        });
+      } else {
+        setEmailVerify({ status: "error", message: data.error || "发送失败，请稍后重试。" });
+      }
+    } catch (err: any) {
+      setEmailVerify({ status: "error", message: err.message || "网络错误，请稍后重试。" });
+    }
+  }
 
   // 删除产品：owner 可删自己发的（发错了要能撤），editor/admin 可删全站任意产品。
   // 是否显示按钮由后端下发的 canDelete 决定，前端不自行判断角色。
@@ -790,16 +858,60 @@ export default function EditProductPage() {
                 className="w-full rounded-lg border px-3 py-2 text-sm"
               />
             </div>
-            <div>
+            <div className="col-span-2">
               <label className="mb-1 block text-sm font-medium text-gray-700">
                 邮箱
               </label>
-              <input
-                type="email"
-                value={form.contactEmail || ""}
-                onChange={(e) => updateField("contactEmail", e.target.value)}
-                className="w-full rounded-lg border px-3 py-2 text-sm"
-              />
+              <div className="flex items-center gap-2">
+                <input
+                  type="email"
+                  value={form.contactEmail || ""}
+                  onChange={(e) => updateField("contactEmail", e.target.value)}
+                  className="w-full rounded-lg border px-3 py-2 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={handleVerifyEmail}
+                  disabled={emailVerify.status === "sending" || !form.contactEmail}
+                  className="shrink-0 rounded-lg border border-primary-500 px-3 py-2 text-sm font-medium text-primary-600 hover:bg-primary-50 disabled:opacity-50"
+                >
+                  {emailVerify.status === "sending" ? "发送中…" : "发送验证邮件"}
+                </button>
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                {emailVerifiedAt ? (
+                  <span className="rounded bg-green-50 px-2 py-0.5 font-medium text-green-700">
+                    ✅ 已验证
+                  </span>
+                ) : (
+                  <span className="rounded bg-amber-50 px-2 py-0.5 font-medium text-amber-700">
+                    未验证
+                  </span>
+                )}
+                <label className="flex items-center gap-2 text-gray-600">
+                  <input
+                    type="checkbox"
+                    checked={form.contactEmailPublic === true}
+                    onChange={(e) => updateField("contactEmailPublic", e.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  />
+                  在商品页公开展示此邮箱
+                </label>
+              </div>
+              {emailVerify.message && (
+                <p
+                  className={`mt-2 text-xs leading-relaxed ${
+                    emailVerify.status === "error" ? "text-red-600" : "text-gray-600"
+                  }`}
+                >
+                  {emailVerify.message}
+                </p>
+              )}
+              <p className="mt-2 text-xs leading-relaxed text-gray-500">
+                邮箱默认不在商品页展示，只用于接收询价通知。要公开展示必须两步都完成：
+                ① 勾选上面的公开选项；② 点「发送验证邮件」并到邮箱点链接完成验证。
+                邮箱改了需要重新验证。
+              </p>
             </div>
           </div>
           <p className="mt-3 rounded-lg bg-blue-50 p-3 text-xs leading-relaxed text-blue-700">

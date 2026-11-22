@@ -107,6 +107,8 @@ export async function POST(request: NextRequest) {
     const contactPhone = formData.get("contactPhone")?.toString() || null;
     const contactWechat = formData.get("contactWechat")?.toString() || null;
     const contactEmail = formData.get("contactEmail")?.toString() || null;
+    // 2026-11-22：公开开关。默认不公开（未勾选即 false），且发布时未验证 ⇒ 页面不展示。
+    const contactEmailPublic = formData.get("contactEmailPublic") === "true";
 
     // 自动生成 location 显示文本（如果结构化字段已提供但 location 为空）
     let finalLocation = location;
@@ -310,6 +312,7 @@ export async function POST(request: NextRequest) {
         contactPhone,
         contactWechat,
         contactEmail,
+        contactEmailPublic,
       },
     });
 

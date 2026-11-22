@@ -25,6 +25,7 @@ export async function createNotification({
   email,
   origin,
   locale,
+  replyTo,
 }: {
   userId: string;
   type: NotificationType;
@@ -36,6 +37,12 @@ export async function createNotification({
   origin?: string;
   /** 收件人语种（如 zh）；缺省回退 "zh" */
   locale?: string;
+  /**
+   * 按次覆盖 Reply-To。询价通知必须传买家邮箱 —— 卖家点「回复」要直接回到买家，
+   * 否则会回到平台客服箱，卖家只能手工复制地址，成交通常就断在这里。
+   * 不传 ⇒ 行为与改动前完全一致。
+   */
+  replyTo?: string | null;
 }): Promise<void> {
   try {
     await prisma.notification.create({
@@ -65,6 +72,8 @@ export async function createNotification({
         html: `<div style="font-family:sans-serif;line-height:1.6">${title}${
           body ? `<p>${body}</p>` : ""
         }${href ? `<p><a href="${href}">查看详情</a></p>` : ""}</div>`,
+        // 只有显式传入才覆盖；未传时 sendRawEmail 仍用配置里的分站默认 Reply-To
+        ...(replyTo ? { replyTo } : {}),
       });
     }
   } catch (e) {

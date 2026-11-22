@@ -14,6 +14,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getTokenFromHeaders, getUserFromToken } from "@/lib/auth";
 import { createNotification } from "@/lib/notifications";
+import { resolveInquiryRecipient } from "@/lib/products/contact-visibility";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +47,11 @@ export async function POST(
           select: {
             modelName: true,
             brand: { select: { nameZh: true, nameEn: true } },
+            // 2026-11-22：询价通知优先发到卖家验证过的联系邮箱（原实现只发 seller.email，
+            // 卖家在发布页填的邮箱填了也收不到询价，是真实线上 bug）
+            contactEmail: true,
+            contactEmailPublic: true,
+            contactEmailVerifiedAt: true,
           },
         },
       },
@@ -102,13 +108,21 @@ export async function POST(
 
     // 通知卖家收到新报价（站内信 + 邮件）
     const pName = `${bargain.product.brand?.nameZh || bargain.product.brand?.nameEn || ""} ${bargain.product.modelName}`.trim();
+    // 收件人优先级：已验证的 contactEmail > 账号邮箱（未验证的 contactEmail 永不投递）
+    const recipient = resolveInquiryRecipient({
+      product: bargain.product,
+      sellerEmail: bargain.seller.email,
+    });
     await createNotification({
       userId: bargain.sellerId,
       type: "inquiry_new_offer",
       title: "收到新的询价报价",
       body: `${pName}：买家报价 ¥${parseFloat(amount).toLocaleString()}`,
       link: "/seller/inquiries",
-      email: bargain.seller.email,
+      email: recipient.email,
+      // 卖家点「回复」直接回到买家（.cn 无 inbound 解析，只能填买家真实邮箱；
+      // 代价是卖家能看到买家邮箱，P2 才在 .com 侧做匿名转发）
+      replyTo: user.email,
       origin: request.nextUrl.origin,
       locale: bargain.seller.preferredLanguage || "zh",
     });

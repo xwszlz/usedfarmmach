@@ -51,6 +51,8 @@ export default function NewProductPage() {
     priceMode: "por", tradeTerm: "FOB", tradePort: "天津港",
     isChineseBrand: false as boolean,
     contactName: "", contactPhone: "", contactWechat: "", contactEmail: "",
+    // 2026-11-22：邮箱是否在商品页公开展示。默认 false；且必须验证通过才真的展示。
+    contactEmailPublic: false,
   });
 
   const [imageFiles, setImageFiles] = useState<File[]>([]);
@@ -741,6 +743,7 @@ export default function NewProductPage() {
       fd.append("contactPhone", form.contactPhone);
       fd.append("contactWechat", form.contactWechat);
       fd.append("contactEmail", form.contactEmail);
+      fd.append("contactEmailPublic", String(form.contactEmailPublic));
       // 传递 OSS URL 数组（JSON 字符串），不再是文件
       fd.append("imageUrls", JSON.stringify(imageUrls));
       if (videoUrls.length > 0) {
@@ -1264,10 +1267,18 @@ export default function NewProductPage() {
             <label className="mb-1 block text-sm font-medium text-gray-700">邮箱</label>
             <input type="email" value={form.contactEmail} onChange={e => update("contactEmail", e.target.value)}
               placeholder="如：you@example.com" className={fieldClass("contactEmail")} />
+            <label className="mt-2 flex items-start gap-2 text-xs text-gray-600">
+              <input type="checkbox" checked={form.contactEmailPublic}
+                onChange={e => update("contactEmailPublic", e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
+              <span>在商品页公开展示此邮箱（需先验证，验证通过后买家才能看到）</span>
+            </label>
           </div>
         </div>
         <div className="mb-4 rounded-lg bg-blue-50 p-3 text-xs leading-relaxed text-blue-700">
           填写后，买家在你的产品页登录即可直接看到这些联系方式，双方直接洽谈、成交更快（至少填一项）。已用你的注册信息预填，可修改。仅登录用户可见，不对外公开抓取。
+          <br />
+          <strong>关于邮箱：</strong>默认不在商品页展示，只用于接收询价通知。勾选公开后，还需在产品发布完成、进入「编辑产品」页点「验证此邮箱」，点击邮件里的链接验证通过，买家才会看到。
         </div>
       </div>
 
