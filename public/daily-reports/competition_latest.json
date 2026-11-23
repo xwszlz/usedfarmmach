@@ -1,12 +1,12 @@
 {
-  "date": "2026-11-16",
+  "date": "2026-11-23",
   "eurCny": 7.91,
   "eurRub": "今日无数据",
   "usdCny": 7.25,
-  "agrolineCount": 257,
+  "agrolineCount": 262,
   "machineryPeteCount": 13,
   "productCount": 2,
-  "totalCount": 162,
+  "totalCount": 101,
   "topArbitrage": [
     {
       "model": "科罗尼 BiG Pack 1290 XC(2012)",
@@ -19,10 +19,10 @@
     },
     {
       "model": "克拉斯 970(2021)",
-      "rate": "49.9%",
-      "intlPrice": "244.4万",
+      "rate": "50%",
+      "intlPrice": "244.5万",
       "domPrice": "163.0万",
-      "spread": "81.4万",
+      "spread": "81.5万",
       "source": "Agroline",
       "sourceUrl": "https://www.agroline.com/search_text.php?query=CLAAS%20Jaguar%20970"
     }
@@ -42,7 +42,7 @@
       "rate": "361.5%",
       "spread": "21.7万",
       "source": "Agroline",
-      "reason": "链接与机型不符：URL 指向 john deere，与本机品牌 krone 不一致；数据陈旧：抓取于 2026-08-17，已 91 天未更新",
+      "reason": "链接与机型不符：URL 指向 john deere，与本机品牌 krone 不一致；数据陈旧：抓取于 2026-08-17，已 98 天未更新",
       "sourceUrl": ""
     },
     {
@@ -50,7 +50,7 @@
       "rate": "205.8%",
       "spread": "30.9万",
       "source": "Mascus",
-      "reason": "数据陈旧：抓取于 2026-08-17，已 91 天未更新",
+      "reason": "数据陈旧：抓取于 2026-08-17，已 98 天未更新",
       "sourceUrl": "https://www.mascus.co.uk/agriculture/round-balers/krone"
     },
     {
@@ -120,11 +120,11 @@
     "白俄罗斯"
   ],
   "keyEvents": [
-    "EUR/CNY 7.91（真实抓取 20261115），USD/CNY 7.25",
-    "Agroline CLAAS 在售 257 条（真实聚合，供给充足）",
+    "EUR/CNY 7.91（真实抓取 20261122），USD/CNY 7.25",
+    "Agroline CLAAS 在售 262 条（真实聚合，供给充足）",
     "MachineryPete 13 条（样本偏旧，不做趋势判断）",
-    "本期 2 台套利率>30%，理论总毛利 126.6 万元",
-    "国际价配对覆盖率仅 12/162 台（7.4%），缺比价基准",
+    "本期 2 台套利率>30%，理论总毛利 126.7 万元",
+    "国际价配对覆盖率仅 12/101 台（11.9%），缺比价基准",
     "配对校验：2 台可信 / 10 台待核实（品类错配、无来源、超 60 天），后者已排除出套利榜",
     "ICP备案 冀ICP备2024053719号-4 已通过、长期有效（无到期日），公安联网备案已完成（冀公网安备 13013202000274）"
   ]
