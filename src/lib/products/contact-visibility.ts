@@ -15,6 +15,8 @@
  *   （自由发布场景下任何人能填别人邮箱，直接投递会让平台成为发信跳板）
  */
 
+import { isUndeliverableEmail } from "@/lib/email/undeliverable";
+
 /** 只取判定需要的字段，方便单测与不同调用方复用 */
 export interface ContactEmailFields {
   contactEmail?: string | null;
@@ -28,12 +30,19 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 /**
  * 归一化卖家自填邮箱：去空白 → 校验格式 → 不合格返回 null。
  * 不做大小写改写（原样保存，比对时才忽略大小写），避免把用户习惯的写法改掉。
+ *
+ * 🔴 除格式外还拦「域名收不到信」的地址（`isUndeliverableEmail`）。
+ *    卖家邮箱是「验证通过后展示给买家、并接收询盘」的通道，
+ *    若填了 usedfarmmach.cn 这种无 MX 的域，验证邮件根本发不出去，
+ *    卖家会一直卡在「未验证」且不知道为什么 —— 不如在保存时就判为不合格。
  */
 export function normalizeContactEmail(raw?: string | null): string | null {
   if (!raw) return null;
   const value = String(raw).trim();
   if (!value) return null;
-  return EMAIL_RE.test(value) ? value : null;
+  if (!EMAIL_RE.test(value)) return null;
+  if (isUndeliverableEmail(value)) return null;
+  return value;
 }
 
 /** 邮箱是否已完成验证（必须有验证时间戳，且邮箱本身格式合法） */

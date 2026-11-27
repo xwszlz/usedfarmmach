@@ -21,6 +21,7 @@ import {
   renderResetPassword,
   renderCompleteProfileReminder,
 } from "./email/templates";
+import { shouldBlockDelivery } from "./email/undeliverable";
 
 // ─── 阶段 1 模板类型 ───────────────────────────────────────
 export type EmailTemplateName =
@@ -228,7 +229,29 @@ export async function sendEmail(
 export async function sendEmail(
   params: LegacySendEmailParams | SendEmailOptions
 ): Promise<boolean | { ok: boolean; error?: string }> {
-  if (params && typeof (params as SendEmailOptions).template === "string") {
+  const isTemplate =
+    params && typeof (params as SendEmailOptions).template === "string";
+
+  // 🔴 不可投递收件域兜底（2026-11-27）。
+  //
+  // 注册/改邮箱/卖家邮箱三处校验只能拦住**新写入**的地址；数据库里已经存在的
+  // 死地址（本次事故：.cn 库有一个 email=support@usedfarmmach.cn 的账号）
+  // 不会因此消失。不在这里拦，它每被触发一次找回密码/重发验证就退一封信 ——
+  // 白耗发信配额，还会拉低发件域信誉（退信率是 ISP 判垃圾邮件的主要指标）。
+  //
+  // 判据与内部原因见 src/lib/email/undeliverable.ts。
+  if (shouldBlockDelivery(params?.to)) {
+    // eslint-disable-next-line no-console
+    console.error(
+      `[email] 收件域不可投递，已跳过发信: ${params.to} ` +
+        `（该域无 MX 记录，投递必然退信；见 src/lib/email/undeliverable.ts）`
+    );
+    return isTemplate
+      ? { ok: false, error: "undeliverable_recipient" }
+      : false;
+  }
+
+  if (isTemplate) {
     return sendTemplateEmail(params as SendEmailOptions);
   }
   return sendRawEmail(params as LegacySendEmailParams);
