@@ -179,3 +179,33 @@ describe("contactEmailChanged —— 改邮箱必须作废旧验证", () => {
     expect(contactEmailChanged("a@qq.com", "")).toBe(true);
   });
 });
+
+/**
+ * 不可投递域拦截（2026-11-27 追加）
+ *
+ * 卖家邮箱是「验证通过后展示给买家、并接收询盘」的通道。若卖家填了
+ * `xxx@usedfarmmach.cn`（该域无 MX，实测必退信），验证邮件根本发不出去，
+ * 卖家会永远卡在「未验证」且不知道为什么 —— 所以在归一化阶段就判为不合格。
+ */
+describe("normalizeContactEmail —— 拦截不可投递域", () => {
+  it("usedfarmmach.cn 地址判为不合格（返回 null）", () => {
+    expect(normalizeContactEmail("support@usedfarmmach.cn")).toBeNull();
+    expect(normalizeContactEmail("someone@mail.usedfarmmach.cn")).toBeNull();
+  });
+
+  it("正常邮箱仍然通过（不能误伤）", () => {
+    expect(normalizeContactEmail("787478895@qq.com")).toBe("787478895@qq.com");
+    expect(normalizeContactEmail("support@shendiaotech.cn")).toBe(
+      "support@shendiaotech.cn"
+    );
+  });
+
+  it("不合格的地址即使带验证时间戳，也不算已验证", () => {
+    expect(
+      isContactEmailVerified({
+        contactEmail: "support@usedfarmmach.cn",
+        contactEmailVerifiedAt: new Date(),
+      })
+    ).toBe(false);
+  });
+});

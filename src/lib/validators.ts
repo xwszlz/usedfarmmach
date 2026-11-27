@@ -1,5 +1,9 @@
 import { z } from "zod";
 import { isComSite } from "@/config/site";
+import {
+  UNDELIVERABLE_EMAIL_MESSAGE,
+  isUndeliverableEmail,
+} from "@/lib/email/undeliverable";
 
 export const registerSchema = z
   .object({
@@ -8,7 +12,16 @@ export const registerSchema = z
       .min(3, "Username must be at least 3 characters")
       .max(30, "Username too long")
       .regex(/^[a-zA-Z0-9_\-\u4e00-\u9fa5]+$/, "Username can only contain letters, numbers, underscore, hyphen and Chinese"),
-    email: z.string().email("Invalid email address").optional().or(z.literal("")),
+    // 🔴 除语法外还要拦「域名收不到信」的地址（usedfarmmach.cn 无 MX，实测必退信）。
+    //    允许这类地址注册 = 批量制造永远无法自助找回密码的僵尸账号。
+    email: z
+      .string()
+      .email("Invalid email address")
+      .refine((v) => !isUndeliverableEmail(v), {
+        message: UNDELIVERABLE_EMAIL_MESSAGE,
+      })
+      .optional()
+      .or(z.literal("")),
     password: z
       .string()
       .min(6, "Password must be at least 6 characters"),
@@ -76,7 +89,15 @@ export type ProductQueryInput = z.infer<typeof productQuerySchema>;
  * dataCrossBorderConsent 仅 .com 站强制；.cn 不涉及出境。
  */
 export const completeProfileSchema = z.object({
-  email: z.string().email("Invalid email address").optional().or(z.literal("")),
+  // 同 registerSchema：改邮箱时同样要拦不可投递域，否则老账号可以把自己改成死地址。
+  email: z
+    .string()
+    .email("Invalid email address")
+    .refine((v) => !isUndeliverableEmail(v), {
+      message: UNDELIVERABLE_EMAIL_MESSAGE,
+    })
+    .optional()
+    .or(z.literal("")),
   companyName: z.string().optional(),
   country: z.string().optional(),
   password: z.string().min(6, "Password must be at least 6 characters").optional(),
