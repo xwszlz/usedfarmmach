@@ -5,6 +5,7 @@ import { HotEquipment } from "@/components/home/hot-equipment";
 import { HomeSearchBar } from "@/components/home/home-search-bar";
 import { MarketSubscribe } from "@/components/home/market-subscribe";
 import { isComSite } from "@/config/site";
+import { SITE_ORIGIN } from "@/lib/site-url";
 import { generatePageMetadata } from "@/lib/seo-metadata";
 import { BreadcrumbStructuredData, ItemListStructuredData } from "@/components/seo/structured-data";
 import { getImageUrl } from "@/lib/image-url";
@@ -18,7 +19,11 @@ import type { Product } from "@/types";
 
 export const revalidate = 300;
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
+// 统一取 canonical host（= siteConfig.domains.canonical，.com 带 www / .cn 裸域）。
+// 不用 NEXT_PUBLIC_APP_URL：线上它是**裸域**，全站 308 跳 www，
+// 拿它拼 og:image 与 JSON-LD 的 url 会让结构化数据和 canonical/sitemap
+// 各自声明一个不同 host —— 同一份页面出现两个身份，白耗抓取预算。
+const BASE_URL = SITE_ORIGIN;
 
 
 export async function generateMetadata({

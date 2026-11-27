@@ -3,8 +3,10 @@ import { EngineerCertClient } from "./EngineerCertClient";
 import { generatePageMetadata } from "@/lib/seo-metadata";
 import { BreadcrumbStructuredData, CourseStructuredData } from "@/components/seo/structured-data";
 import { translate } from "@/lib/i18n-runtime";
+import { SITE_ORIGIN } from "@/lib/site-url";
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://usedfarmmach.com";
+// 同首页：走 canonical host，避免 og:image / JSON-LD 输出裸域而全站 308 跳 www。
+const BASE_URL = SITE_ORIGIN;
 
 export async function generateMetadata({
   params,
@@ -12,7 +14,10 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  return generatePageMetadata("engineer", locale, "", {
+  // pagePath 必须传 "/engineer"：之前传空串，导致本页的 canonical 与 og:url
+  // 都指向语言首页（/en），等于把这个页面声明成首页的重复内容 —— 搜索引擎
+  // 会因此不单独收录它。全站 30 个 generatePageMetadata 调用点里只有这一处传空。
+  return generatePageMetadata("engineer", locale, "/engineer", {
     openGraph: {
       images: [{ url: `${BASE_URL}/images/og-engineer.png`, width: 1200, height: 630 }],
     },

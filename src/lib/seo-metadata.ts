@@ -14,32 +14,32 @@ const localizedMeta: Record<string, Record<string, { title: string; description:
           : "神雕农机—全球二手农机交易平台，提供CLAAS青储机、约翰迪尔拖拉机、凯斯农机等品牌二手农机买卖服务。AI智能估价、跨境套利分析、一站式物流，让农机交易更透明高效。",
     },
     en: {
-      title: "Used Farm Machinery Trading Platform | Global Agri Export | AgriTrade",
-      description: "AgriTrade — Global used farm machinery trading platform. CLAAS forage harvesters, John Deere tractors & more. AI valuation, cross-border arbitrage & one-stop logistics.",
+      title: "Used Farm Machinery Trading | Global Export | AgriTrade",
+      description: "AgriTrade — Global used farm machinery trading platform. CLAAS harvesters, John Deere tractors and more. AI valuation, cross-border arbitrage, logistics.",
     },
     ru: {
-      title: "Платформа торговли подержанной сельхозтехникой | Глобальный экспорт | AgriTrade",
-      description: "AgriTrade — глобальная платформа торговли подержанной сельхозтехникой. Кормоуборочные комбайны CLAAS, тракторы John Deere и многое другое. AI оценка, арбитраж и логистика.",
+      title: "Подержанная сельхозтехника | Глобальный экспорт | AgriTrade",
+      description: "AgriTrade — платформа подержанной сельхозтехники. Комбайны CLAAS, тракторы John Deere. AI-оценка, арбитраж, логистика.",
     },
     es: {
-      title: "Plataforma de Maquinaria Agrícola Usada | Exportación Global | AgriTrade",
-      description: "AgriTrade — Plataforma global de maquinaria agrícola usada. Cosechadoras CLAAS, tractores John Deere y más. Valoración IA, arbitraje transfronterizo y logística integral.",
+      title: "Maquinaria Agrícola Usada | Exportación Global | AgriTrade",
+      description: "AgriTrade — Plataforma global de maquinaria agrícola usada. Cosechadoras CLAAS, tractores John Deere. Valoración IA, arbitraje y logística.",
     },
     pt: {
-      title: "Plataforma de Máquinas Agrícolas Usadas | Exportação Global | AgriTrade",
+      title: "Máquinas Agrícolas Usadas | Exportação Global | AgriTrade",
       description: "AgriTrade — Plataforma global de máquinas agrícolas usadas. Colheitadeiras CLAAS, tratores John Deere e mais. Avaliação IA, arbitragem e logística integrada.",
     },
     ar: {
-      title: "منصة تجارة الآلات الزراعية المستعملة | التصدير العالمي | AgriTrade",
+      title: "الآلات الزراعية المستعملة | التصدير العالمي | AgriTrade",
       description: "AgriTrade — منصة عالمية لتجارة الآلات الزراعية المستعملة. حصادات CLAAS وجرارات John Deere وغيرها. تقييم بالذكاء الاصطناعي وخدمات لوجستية متكاملة.",
     },
     fr: {
-      title: "Plateforme de Machines Agricoles d'Occasion | Export Mondial | AgriTrade",
-      description: "AgriTrade — Plateforme mondiale de machines agricoles d'occasion. Ensileuses CLAAS, tracteurs John Deere et plus. Évaluation IA, arbitrage et logistique intégrée.",
+      title: "Machines Agricoles d'Occasion | Export Mondial | AgriTrade",
+      description: "AgriTrade — Plateforme mondiale de machines agricoles d'occasion. Ensileuses CLAAS, tracteurs John Deere. Évaluation IA, arbitrage et logistique.",
     },
     hi: {
-      title: "प्रयुक्त कृषि मशीनरी ट्रेडिंग प्लेटफॉर्म | वैश्विक निर्यात | AgriTrade",
-      description: "AgriTrade — वैश्विक प्रयुक्त कृषि मशीनरी ट्रेडिंग प्लेटफॉर्म। CLAAS फोरेज हार्वेस्टर, John Deere ट्रैक्टर और अधिक। AI मूल्यांकन, आर्बिट्राज और एकीकृत लॉजिस्टिक्स।",
+      title: "प्रयुक्त कृषि मशीनरी | वैश्विक निर्यात | AgriTrade",
+      description: "AgriTrade — वैश्विक प्रयुक्त कृषि मशीनरी प्लेटफ़ॉर्म। CLAAS हार्वेस्टर, John Deere ट्रैक्टर। AI मूल्यांकन, आर्बिट्राज और लॉजिस्टिक्स।",
     },
   },
   expo: {
@@ -830,6 +830,14 @@ export function generatePageMetadata(
   const path = pagePath || "";
   const localePath = locale === "zh" ? `/zh${path}` : `/${locale}${path}`;
 
+  // 🔴 overrides.openGraph 必须与基础 openGraph **深合并**，不能整体替换。
+  //    历史写法把 `...overrides` 摊在返回值最末尾，导致调用方只要传了 openGraph
+  //    ——哪怕只是为了补一张分享图（首页 / engineer 页就是这么用的）——
+  //    基础 openGraph 里的 url / type / siteName 就会被整个对象覆盖掉。
+  //    2026-11-25 审计报告判定的「og:type / og:url 缺失」正是由此产生，
+  //    根因不在 layout.tsx 漏写，而在这里的浅覆盖。
+  const { openGraph: ogOverride, ...restOverrides } = overrides ?? {};
+
   return {
     title: meta.title,
     description: meta.description,
@@ -844,6 +852,7 @@ export function generatePageMetadata(
       siteName: locale === "zh" ? "神雕农机" : "AgriTrade",
       locale: locale,
       type: "website",
+      ...(ogOverride ?? {}),
     },
     twitter: {
       card: "summary_large_image",
@@ -856,7 +865,7 @@ export function generatePageMetadata(
       "max-snippet": -1,
       "max-image-preview": "large",
     },
-    ...overrides,
+    ...restOverrides,
   };
 }
 

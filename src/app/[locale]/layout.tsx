@@ -22,8 +22,17 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   return {
+    // metadataBase 是 OG 图片相对路径绝对化、以及部分 canonical 兜底的基础。
+    // 取 SITE_ORIGIN（= siteConfig.domains.canonical，.com 带 www / .cn 裸域），
+    // 不用 NEXT_PUBLIC_APP_URL —— 后者线上是裸域，全站 308 跳 www，
+    // 拿它做 metadataBase 等于对外声明一个非最终 host。
+    metadataBase: new URL(BASE_URL),
     openGraph: {
       locale: locale === "zh" ? "zh_CN" : locale,
+      // 兜底值：有 generatePageMetadata 的页面会各自覆盖成更准确的 type。
+      // 这里是给不走那套封装的路由（后台、详情页等）一个合法默认值，
+      // 避免 og:type 缺失 —— 2026-11-25 审计报告的 High/Medium 项之一。
+      type: "website",
     },
   };
 }
