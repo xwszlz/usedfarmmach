@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
 import { LogIn, CheckCircle2, Loader2 } from "lucide-react";
 
@@ -121,11 +122,10 @@ export function LoginForm({ locale }: LoginFormProps) {
         placeholder={t("identifierPlaceholder") || "请输入用户名或邮箱"}
         required
       />
-      <Input
+      <PasswordInput
         id="login-password"
         name="password"
         label={t("password")}
-        type="password"
         placeholder={t("passwordPlaceholder")}
         required
       />

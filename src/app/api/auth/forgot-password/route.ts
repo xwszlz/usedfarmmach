@@ -7,7 +7,8 @@
  *   2) 经新门面 sendEmail({ template:"resetPassword" }) 发信，写 EmailSendLog（仅存邮箱 hash）；
  *   3) 统一口径：无论账号是否存在 / 是否验证，均返回"若该账号存在，已发送指引"，
  *      绝不泄露邮箱 / 用户名是否注册（防枚举攻击）；
- *   4) 仅对"已验证邮箱"的用户真正发信（未验证 / 无邮箱静默返回同口径）；
+ *   4) 仅对「已设置邮箱」的用户真正发信（无邮箱静默返回同口径）。
+ *      ⚠️ 2026-11-28 变更：不再要求 emailVerified —— 见下方发信分支的注释。
  *   5) 限流：按 IP（1h≤5）+ 按邮箱（1h≤3），复用 cache.ts。
  */
 import { NextRequest, NextResponse } from "next/server";
@@ -23,8 +24,12 @@ function getClientIp(req: NextRequest): string | undefined {
   return req.headers.get("x-real-ip") || undefined;
 }
 
-/** 统一成功口径（不泄露账号是否存在） */
-const SUCCESS_MESSAGE = "如果该账号存在且绑定了已验证邮箱，重置链接已发送，请查收邮件（注意垃圾邮件文件夹）。";
+/**
+ * 统一成功口径（不泄露账号是否存在）。
+ * 2026-11-28：随发信条件放宽，「已验证邮箱」改为「填写了邮箱」——
+ * 措辞不能停留在旧规则上，否则用户会以为必须先验证邮箱才能找回。
+ */
+const SUCCESS_MESSAGE = "如果该账号存在且填写了邮箱，重置链接已发送，请查收邮件（注意垃圾邮件文件夹）。";
 
 export async function POST(request: NextRequest) {
   try {
@@ -69,8 +74,16 @@ export async function POST(request: NextRequest) {
     // 统一口径：无论是否存在，客户端始终收到成功响应（防枚举）
     const okResponse = NextResponse.json({ success: true, message: SUCCESS_MESSAGE });
 
-    // 仅对已验证邮箱的用户真正发信（未验证 / 无邮箱静默跳过）
-    if (user && user.email && user.emailVerified) {
+    // 发信条件（2026-11-28 放宽）：只要账号存在且填了邮箱就发，**不再要求 emailVerified**。
+    //
+    // 为什么必须放宽：注册流程写入的是 emailVerified=false（要用户点验证链接才置 true），
+    // 而这里原先只给「已验证」的发信 ⇒ 新注册用户永远收不到重置邮件，
+    // 页面却照样提示「已发送」—— 用户看到的是一个永远等不到结果的死循环。
+    //
+    // 安全性没有降低：能收到这封信本身就证明对该邮箱有控制权；
+    // 「重置密码」本质就是一次邮箱所有权验证，与是否提前验证过无关。
+    // 滥用防护仍在：IP 1h≤5 + 邮箱 1h≤3 双限流，且响应统一口径、不泄露账号是否存在。
+    if (user && user.email) {
       // 按邮箱限流（1h≤3）
       const emailRl = await rateLimit({
         key: rateLimitKeys.forgotPasswordEmail(user.email),

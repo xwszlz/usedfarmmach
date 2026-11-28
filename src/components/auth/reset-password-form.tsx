@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
 import { KeyRound } from "lucide-react";
 
@@ -101,20 +101,18 @@ export function ResetPasswordForm({ locale }: ResetPasswordFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <Input
+      <PasswordInput
         id="reset-new-password"
         name="newPassword"
         label={t("newPassword") || "新密码"}
-        type="password"
         placeholder={t("passwordPlaceholder") || "至少6位"}
         required
         minLength={6}
       />
-      <Input
+      <PasswordInput
         id="reset-confirm-password"
         name="confirmPassword"
         label={t("confirmPassword") || "确认新密码"}
-        type="password"
         placeholder={t("confirmPlaceholder") || "再次输入新密码"}
         required
         minLength={6}

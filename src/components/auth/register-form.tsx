@@ -5,9 +5,10 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { UserPlus } from "lucide-react";
+import { CheckCircle2, Home, Mail, UserPlus } from "lucide-react";
 import { isComSite } from "@/config/site";
 import {
   applyDraft,
@@ -53,6 +54,105 @@ const DRAFT_RESTORED_HINT: Record<string, string> = {
   hi: "आपने पहले जो जानकारी भरी थी, वह बहाल कर दी गई है। कृपया अपना पासवर्ड फिर से दर्ज करें।",
 };
 
+/**
+ * 「注册成功」卡片的 8 语文案。
+ *
+ * 同上，内联而不进 `messages/*.json`（那 8 个文件不可重序列化，为一个新页面做字节级手术不划算）。
+ */
+interface SuccessCopy {
+  title: string;
+  body: string;
+  goHome: string;
+  resend: string;
+  resending: string;
+  resent: string;
+  resendErr: string;
+  noEmailHint: string;
+}
+
+const SUCCESS_COPY: Record<string, SuccessCopy> = {
+  zh: {
+    title: "注册成功",
+    body: "账号已创建，并已为你自动登录。",
+    goHome: "进入首页",
+    resend: "没收到验证邮件？点此重新发送",
+    resending: "发送中…",
+    resent: "已重新发送，请查收（先看垃圾邮件文件夹）",
+    resendErr: "发送失败，请稍后再试",
+    noEmailHint: "你没有填写邮箱，稍后可在账号资料中补充并验证。",
+  },
+  en: {
+    title: "Account created",
+    body: "Your account is ready and you are signed in.",
+    goHome: "Go to homepage",
+    resend: "Didn't get the verification email? Resend it",
+    resending: "Sending…",
+    resent: "Sent again. Please check your inbox (and spam folder).",
+    resendErr: "Could not send. Please try again later.",
+    noEmailHint: "You did not provide an email. You can add and verify one later.",
+  },
+  ru: {
+    title: "Регистрация завершена",
+    body: "Аккаунт создан, вы вошли в систему.",
+    goHome: "На главную",
+    resend: "Не получили письмо? Отправить снова",
+    resending: "Отправка…",
+    resent: "Письмо отправлено повторно. Проверьте почту и папку «Спам».",
+    resendErr: "Не удалось отправить. Попробуйте позже.",
+    noEmailHint: "Вы не указали email. Его можно добавить и подтвердить позже.",
+  },
+  es: {
+    title: "Registro completado",
+    body: "Tu cuenta está lista y has iniciado sesión.",
+    goHome: "Ir al inicio",
+    resend: "¿No recibiste el correo? Reenviar",
+    resending: "Enviando…",
+    resent: "Reenviado. Revisa tu bandeja de entrada y la carpeta de spam.",
+    resendErr: "No se pudo enviar. Inténtalo más tarde.",
+    noEmailHint: "No indicaste un correo. Puedes añadirlo y verificarlo más tarde.",
+  },
+  pt: {
+    title: "Cadastro concluído",
+    body: "Sua conta foi criada e você já está conectado.",
+    goHome: "Ir para a página inicial",
+    resend: "Não recebeu o e-mail? Reenviar",
+    resending: "Enviando…",
+    resent: "Reenviado. Verifique sua caixa de entrada e o spam.",
+    resendErr: "Não foi possível enviar. Tente novamente mais tarde.",
+    noEmailHint: "Você não informou um e-mail. Pode adicionar e verificar depois.",
+  },
+  fr: {
+    title: "Inscription réussie",
+    body: "Votre compte est créé et vous êtes connecté.",
+    goHome: "Aller à l’accueil",
+    resend: "Vous n’avez pas reçu l’e-mail ? Renvoyer",
+    resending: "Envoi…",
+    resent: "E-mail renvoyé. Vérifiez votre boîte de réception et les spams.",
+    resendErr: "Envoi impossible. Réessayez plus tard.",
+    noEmailHint: "Vous n’avez pas indiqué d’e-mail. Vous pourrez l’ajouter et le vérifier plus tard.",
+  },
+  ar: {
+    title: "تم إنشاء الحساب",
+    body: "تم إنشاء حسابك وتم تسجيل دخولك تلقائيًا.",
+    goHome: "الانتقال إلى الصفحة الرئيسية",
+    resend: "لم تستلم رسالة التحقق؟ أعد الإرسال",
+    resending: "جارٍ الإرسال…",
+    resent: "تمت إعادة الإرسال. يرجى التحقق من بريدك ومجلد الرسائل غير المرغوب فيها.",
+    resendErr: "تعذّر الإرسال. حاول لاحقًا.",
+    noEmailHint: "لم تُدخل بريدًا إلكترونيًا. يمكنك إضافته والتحقق منه لاحقًا.",
+  },
+  hi: {
+    title: "पंजीकरण सफल",
+    body: "आपका खाता बन गया है और आप साइन इन हैं।",
+    goHome: "होम पेज पर जाएँ",
+    resend: "सत्यापन ईमेल नहीं मिला? फिर से भेजें",
+    resending: "भेजा जा रहा है…",
+    resent: "फिर से भेज दिया गया। अपना इनबॉक्स और स्पैम फ़ोल्डर देखें।",
+    resendErr: "भेजा नहीं जा सका। बाद में पुनः प्रयास करें।",
+    noEmailHint: "आपने ईमेल नहीं दिया। इसे बाद में जोड़कर सत्यापित कर सकते हैं।",
+  },
+};
+
 // 重定向目标净化：只接受「解析后同源」的站内路径。
 // 用 WHATWG URL 解析再比对 origin，天然免疫 //evil.com、/\evil.com、\\evil.com、
 // javascript:、前导 tab 等解析期绕过手法（字符串前缀检查做不到这一点）。
@@ -83,6 +183,19 @@ export function RegisterForm({ locale }: RegisterFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   // 是否真的恢复出了内容 —— 决定要不要显示「已恢复上次填写的内容」
   const [draftRestored, setDraftRestored] = useState(false);
+
+  /**
+   * 注册成功态（2026-11-28 老板实测反馈）。
+   *
+   * 旧的收尾是 `router.push(target)` 紧接着 `window.location.reload()`：
+   * reload 会把还没完成的客户端跳转打断，并重载**当前**的 `/auth/register`，
+   * 结果就是「已经登录了（header 显示积分/退出）但页面还是空白注册表单」。
+   * 现在改为同页切成功卡片，由用户点按钮再走 `router.push`，不再 reload。
+   */
+  const [registered, setRegistered] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState("");
+  const [continueHref, setContinueHref] = useState("");
+  const [resendState, setResendState] = useState<"idle" | "sending" | "sent" | "error">("idle");
 
   /**
    * 恢复草稿。必须放在 effect 里，不能在 useState 初始化函数里读：
@@ -172,8 +285,12 @@ export function RegisterForm({ locale }: RegisterFormProps) {
         localStorage.setItem("user", JSON.stringify(result.data.user));
         // 支持 ?redirect=/membership 等回跳（仅接受站内相对路径）
         const redirect = new URLSearchParams(window.location.search).get("redirect");
-        router.push(resolveSafeRedirect(redirect, `/${locale}`));
-        window.location.reload();
+        setContinueHref(resolveSafeRedirect(redirect, `/${locale}`));
+        setRegisteredEmail(
+          typeof result.data?.user?.email === "string" ? result.data.user.email : ""
+        );
+        setResendState("idle");
+        setRegistered(true);
       } else {
         setError(result.error || t("error"));
       }
@@ -182,6 +299,78 @@ export function RegisterForm({ locale }: RegisterFormProps) {
     } finally {
       setLoading(false);
     }
+  }
+
+  /**
+   * 重发验证邮件。注册时后端已自动发过一封（T05），这里只是给「没收到」的兜底。
+   * 接口按邮箱限流 1h≤3，超限返回 429，统一落到错误提示。
+   */
+  async function handleResend() {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setResendState("error");
+      return;
+    }
+    setResendState("sending");
+    try {
+      const res = await fetch("/api/auth/send-verify-email", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setResendState(data?.success ? "sent" : "error");
+    } catch {
+      setResendState("error");
+    }
+  }
+
+  const copy = SUCCESS_COPY[locale] || SUCCESS_COPY.en;
+
+  // 注册成功 → 整页换成成功卡片（不再停在空白注册表单上）
+  if (registered) {
+    return (
+      <div className="space-y-4 text-center">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
+          <CheckCircle2 className="h-7 w-7 text-green-600" />
+        </div>
+        <h2 className="text-xl font-bold text-gray-900">{copy.title}</h2>
+        <p className="text-gray-600">{copy.body}</p>
+
+        {registeredEmail ? (
+          <>
+            <div className="flex items-center justify-center gap-2 rounded-lg bg-gray-50 px-3 py-3 text-sm text-gray-700">
+              <Mail className="h-4 w-4 flex-shrink-0 text-gray-400" />
+              <span className="break-all">{registeredEmail}</span>
+            </div>
+            {resendState === "sent" && (
+              <p className="text-xs text-green-600">{copy.resent}</p>
+            )}
+            {resendState === "error" && (
+              <p className="text-xs text-red-500">{copy.resendErr}</p>
+            )}
+            <button
+              type="button"
+              onClick={handleResend}
+              disabled={resendState === "sending"}
+              className="text-sm font-medium text-primary-600 hover:underline disabled:opacity-50"
+            >
+              {resendState === "sending" ? copy.resending : copy.resend}
+            </button>
+          </>
+        ) : (
+          <p className="text-xs text-gray-500">{copy.noEmailHint}</p>
+        )}
+
+        <Button
+          type="button"
+          className="w-full"
+          onClick={() => router.push(continueHref || `/${locale}`)}
+        >
+          <Home className="mr-2 h-4 w-4" />
+          {copy.goHome}
+        </Button>
+      </div>
+    );
   }
 
   const countryOptions = [
@@ -225,21 +414,19 @@ export function RegisterForm({ locale }: RegisterFormProps) {
         minLength={3}
       />
 
-      {/* 密码 */}
-      <Input
+      {/* 密码（带显示/隐藏开关） */}
+      <PasswordInput
         id="reg-password"
         name="password"
         label={t("password")}
-        type="password"
         placeholder={t("passwordPlaceholder") || "至少6位密码"}
         required
         minLength={6}
       />
-      <Input
+      <PasswordInput
         id="reg-confirm-password"
         name="confirmPassword"
         label={t("confirmPassword")}
-        type="password"
         placeholder={t("confirmPasswordPlaceholder") || "再次输入密码"}
         required
         minLength={6}

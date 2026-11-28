@@ -1,20 +1,17 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import { ForgotPasswordForm } from "@/components/auth/forgot-password-form";
 
 export default function ForgotPasswordPage() {
-  const t = useTranslations("auth.forgotPassword");
   const { locale } = useParams();
 
+  // 标题与副标题交给表单自己渲染：提交成功后整块会换成「邮件已发送」，
+  // 留在页面层会导致成功态上方仍挂着「输入用户名或邮箱…」的副标题，
+  // 用户会误以为没发出去、还想再填一次（2026-11-28 老板实测反馈）。
   return (
     <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center px-4">
       <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-gray-900">{t("title") || "忘记密码"}</h1>
-          <p className="mt-1 text-gray-500">{t("subtitle") || "输入用户名或邮箱，我们将发送重置链接"}</p>
-        </div>
         <ForgotPasswordForm locale={locale as string} />
       </div>
     </div>
