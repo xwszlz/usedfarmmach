@@ -2,10 +2,10 @@
 
 import { translate } from "@/lib/i18n-runtime";
 import { useEffect, useState, useCallback } from "react";
-import { Wrench, Package, Loader2, ArrowRight, AlertCircle, ChevronUp } from "lucide-react";
+import { Wrench, Package, Loader2, ArrowRight, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import PartCard, { type PartCardData } from "@/components/parts/PartCard";
+import type { PartCardData } from "@/components/parts/PartCard";
 import { getImageUrl } from "@/lib/image-url";
 
 interface CompatiblePartsSectionProps {
@@ -25,7 +25,7 @@ interface ApiResponse {
   error?: string;
 }
 
-const COMPACT_LIMIT = 4; // 紧凑行显示 4 个 +「查看全部」按钮
+const COMPACT_LIMIT = 4; // 紧凑行显示 4 个 +「查看全部」入口
 
 export default function CompatiblePartsSection({
   productId,
@@ -37,11 +37,6 @@ export default function CompatiblePartsSection({
   const [matchedBy, setMatchedBy] = useState<"brand" | "generic" | "none" | "">("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-
-  // 展开态：完整配件列表（点击"查看全部"后按需加载）
-  const [expanded, setExpanded] = useState(false);
-  const [allParts, setAllParts] = useState<PartCardData[]>([]);
-  const [loadingAll, setLoadingAll] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -68,27 +63,8 @@ export default function CompatiblePartsSection({
     load();
   }, [load]);
 
-  // 展开时再拉取完整列表（最多 200 条）
-  const expand = useCallback(async () => {
-    setExpanded(true);
-    if (allParts.length > 0) return;
-    setLoadingAll(true);
-    try {
-      const res = await fetch(`/api/products/${productId}/compatible-parts?limit=200`, {
-        cache: "no-store",
-      });
-      const json: ApiResponse = await res.json();
-      if (json.success) setAllParts(json.data?.parts ?? []);
-    } catch (e) {
-      console.error("Failed to load all compatible parts:", e);
-    } finally {
-      setLoadingAll(false);
-    }
-  }, [productId, allParts.length]);
-
-  const showViewAll = total > parts.length;
-  const compactParts = parts.slice(0, COMPACT_LIMIT);
-  const displayParts = allParts.length > 0 ? allParts : parts;
+  const allPartsHref = `/${locale}/products/${productId}/parts`;
+  const showViewAll = total > 0;
 
   return (
     <Card>
@@ -141,9 +117,9 @@ export default function CompatiblePartsSection({
         )}
 
         {/* 紧凑态：详情页一行（移动端自动换行成两行），每个 chip 带缩略图 */}
-        {!loading && !error && !expanded && parts.length > 0 && (
+        {!loading && !error && parts.length > 0 && (
           <div className="flex flex-wrap items-center gap-2">
-            {compactParts.map((part) => {
+            {parts.map((part) => {
               const name = isZh ? part.nameZh : (part.nameEn || part.nameZh);
               const thumb = part.images && part.images.length > 0 ? part.images[0] : null;
               return (
@@ -169,45 +145,16 @@ export default function CompatiblePartsSection({
                 </Link>
               );
             })}
+
+            {/* 查看全部 → 该整机的独立零部件清单页 */}
             {showViewAll && (
-              <button
-                type="button"
-                onClick={expand}
+              <Link
+                href={allPartsHref}
                 className="inline-flex items-center gap-1 rounded-full bg-primary-50 px-3 py-1 text-xs font-medium text-primary-700 hover:bg-primary-100 transition-colors"
               >
                 {isZh ? `查看全部零部件 (${total})` : `View all parts (${total})`}
                 <ArrowRight className="h-3 w-3" />
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* 展开态：自由编排的完整配件网格 */}
-        {!loading && !error && expanded && (
-          <div>
-            {loadingAll ? (
-              <div className="flex items-center justify-center py-10 text-gray-400">
-                <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                <span className="text-sm">{translate("加载全部配件...", locale)}</span>
-              </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                  {displayParts.map((part) => (
-                    <PartCard key={part.id} part={part} locale={locale} />
-                  ))}
-                </div>
-                <div className="mt-6 text-center">
-                  <button
-                    type="button"
-                    onClick={() => setExpanded(false)}
-                    className="inline-flex items-center gap-1 text-sm font-medium text-primary-600 hover:text-primary-700"
-                  >
-                    <ChevronUp className="h-4 w-4" />
-                    {translate("收起", locale)}
-                  </button>
-                </div>
-              </>
+              </Link>
             )}
           </div>
         )}
